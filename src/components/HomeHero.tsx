@@ -9,6 +9,14 @@ import { useNotificationHelpers } from './NotificationSystem'
 import JobTickerItem from './JobTickerItem'
 import GeneratedPlanView from './GeneratedPlanView'
 import JobDetailModal from './JobDetailModal'
+import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
+import {
+    readPendingGuestResume,
+    savePendingGuestResume,
+    clearPendingGuestResume,
+    hydrateGuestResumeFile,
+    claimPendingGuestResume,
+} from '../services/guest-resume-bridge'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_CACHE_TTL = 6 * 60 * 60 * 1000
@@ -222,13 +230,45 @@ function normalizePlanForView(plan: any) {
     if ((!normalized.milestones || normalized.milestones.length === 0) && normalized.plan_v2?.milestones) {
         normalized.milestones = normalized.plan_v2.milestones
     }
+    if ((!normalized.milestones || normalized.milestones.length === 0) && Array.isArray(normalized.phases)) {
+        normalized.milestones = normalized.phases.map((phase: any, idx: number) => ({
+            month: phase.phase_name || `阶段 ${idx + 1}`,
+            focus: phase.focus || phase.phase_key || '行动推进',
+            tasks: (phase.tasks || []).map((task: any) => task.task_name || task.task || task)
+        }))
+    }
+    if ((!normalized.summary || !normalized.summary.trim()) && Array.isArray(normalized.phases) && normalized.phases.length > 0) {
+        normalized.summary = `AI 已基于你的目标与准备周期生成 ${normalized.phases.length} 个阶段的求职行动计划，可按阶段逐步推进。`
+    }
     return normalized
 }
 
+function extractParsedResumeHints(parsed: any) {
+    return Array.from(new Set([
+        parsed?.title,
+        parsed?.targetRole,
+        parsed?.summary,
+        ...(typeof parsed?.skills === 'string' ? parsed.skills.split(/[,，、/\n|]+/g) : []),
+        ...(typeof parsed?.workExperience === 'string' ? parsed.workExperience.split(/[\n,，、/|]+/g) : []),
+    ]
+        .map(item => String(item || '').trim())
+        .filter(item => item.length >= 2)
+    )).slice(0, 12)
+}
+
+
+const TICKER_FALLBACK = [
+    { id: 201, title: 'Senior Product Manager', company_name: 'ClickHouse', company_logo: '', logo_candidates: resolveLogoCandidates('', 'ClickHouse', 'clickhouse.com'), salary: '$145k - $225k' },
+    { id: 202, title: 'Sr. Full Stack Developer', company_name: 'MetroStar', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MetroStar', 'metrostar.com'), salary: '$101k - $147k' },
+    { id: 203, title: 'Sr. Data Scientist', company_name: 'MoneyGram', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MoneyGram', 'moneygram.com'), salary: '$130k - $185k' },
+    { id: 204, title: 'UX Designer', company_name: 'PEXA Group', company_logo: '', logo_candidates: resolveLogoCandidates('', 'PEXA Group', 'pexa.com'), salary: '£45k - £55k' },
+    { id: 205, title: 'Remote PM (Cloud)', company_name: 'ClickHouse', company_logo: '', logo_candidates: resolveLogoCandidates('', 'ClickHouse', 'clickhouse.com'), salary: '$145k+' },
+    { id: 206, title: 'Remote Full Stack', company_name: 'MetroStar', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MetroStar', 'metrostar.com'), salary: '$101k+' },
+]
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { isAuthenticated, token } = useAuth()
+    const { isAuthenticated, token, isMember } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
 
     // Background Parallax State
@@ -239,6 +279,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [positionType, setPositionType] = useState('full-time')
     const [resumeId, setResumeId] = useState<string | null>(null)
     const [resumeName, setResumeName] = useState<string | null>(null)
+    const [guestResumeFile, setGuestResumeFile] = useState<File | null>(null)
+    const [guestResumeHints, setGuestResumeHints] = useState<string[]>([])
     const [privacyAccepted, setPrivacyAccepted] = useState(false)
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -255,10 +297,18 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
     const [previewJobs, setPreviewJobs] = useState<any[]>([])
     const autoRefreshedAfterLogin = useRef(false)
+    const pendingResumeSyncAttempted = useRef(false)
     const displayRecommendations = hasResults && recommendations.length > 0
-        ? recommendations
+        ? (isAuthenticated ? recommendations : recommendations.slice(0, 1))
         : SAMPLE_RECOMMENDATIONS
     const dailyLimit = isAuthenticated ? 5 : 1
+    const positionTypeLabel = positionType === 'full-time'
+        ? '全职远程'
+        : positionType === 'contract'
+            ? '合同/兼职'
+            : positionType === 'freelance'
+                ? '自由职业'
+                : '实习'
     const formattedUpdatedAt = new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -267,7 +317,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         minute: '2-digit'
     }).format(lastUpdatedAt)
     
-    const [tickerJobs, setTickerJobs] = useState<any[]>([])
+    const previewDisplayJobs = (() => {
+        if (previewJobs.length >= 3) return previewJobs.slice(0, 3)
+        const filler = PREVIEW_PM_RECOMMENDATIONS.filter(p => !previewJobs.find(j => j.id === p.id))
+        return [...previewJobs, ...filler].slice(0, 3)
+    })()
+
+    const [tickerJobs, setTickerJobs] = useState<any[]>(TICKER_FALLBACK)
     const tickerLoop = [...tickerJobs, ...tickerJobs]
 
     // Load saved form data from local storage for guest/returning users
@@ -276,8 +332,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         if (cached) {
             try {
                 const data = JSON.parse(cached)
-                if (Date.now() - data.timestamp < HERO_CACHE_TTL) {
-                    if (data.timestamp) setLastUpdatedAt(data.timestamp)
+                const cacheTimestamp = data.lastUpdatedAt || data.timestamp
+                if (cacheTimestamp && Date.now() - cacheTimestamp < HERO_CACHE_TTL) {
+                    setLastUpdatedAt(cacheTimestamp)
                     if (data.jobDirection) setJobDirection(data.jobDirection)
                     if (data.positionType) setPositionType(data.positionType)
                     if (Array.isArray(data.recommendations)) {
@@ -303,14 +360,50 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 // ignore
             }
         }
+        const pendingGuestResume = readPendingGuestResume()
+        if (pendingGuestResume) {
+            setResumeId('guest-temp-id')
+            setResumeName(pendingGuestResume.fileName)
+            setGuestResumeHints(Array.isArray(pendingGuestResume.resumeHints) ? pendingGuestResume.resumeHints : [])
+            setGuestResumeFile(hydrateGuestResumeFile(pendingGuestResume))
+        }
         setHasHydrated(true)
     }, [])
 
     useEffect(() => {
         if (!hasHydrated) return
-        const payload = { jobDirection, positionType, recommendations, hasResults, timestamp: Date.now() }
+        const payload = { jobDirection, positionType, recommendations, hasResults, lastUpdatedAt, timestamp: Date.now() }
         localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(payload))
-    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated])
+    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated, lastUpdatedAt])
+
+    useEffect(() => {
+        if (!hasHydrated || !isAuthenticated || !token) return
+        if (pendingResumeSyncAttempted.current) return
+        pendingResumeSyncAttempted.current = true
+        let mounted = true
+
+        const syncPendingResumeToUser = async () => {
+            try {
+                const result = await claimPendingGuestResume(token)
+                if (mounted && result.claimed) {
+                    setResumeId(result.resumeId || null)
+                    setGuestResumeFile(null)
+                    showSuccess('简历已同步', '已自动关联到当前账号，可在个人中心查看')
+                }
+            } catch {
+                // ignore sync error silently to avoid interrupting推荐链路
+            }
+        }
+
+        syncPendingResumeToUser()
+        return () => { mounted = false }
+    }, [hasHydrated, isAuthenticated, token, showSuccess])
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            pendingResumeSyncAttempted.current = false
+        }
+    }, [isAuthenticated])
 
     useEffect(() => {
         let mounted = true
@@ -326,45 +419,47 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 const resp = await fetch(`/api/data?${params.toString()}`)
                 const data = await resp.json().catch(() => ({}))
                 if (!resp.ok || !Array.isArray(data.jobs)) throw new Error('ticker jobs unavailable')
-                const normalized = data.jobs
-                    .filter((j: any) => j?.title && j?.company)
-                    .map((j: any) => ({
-                        id: j.id || j.job_id,
-                        title: j.title,
-                        company_name: j.company,
-                        company_logo: j.logo || '',
-                        logo_candidates: resolveLogoCandidates(j.logo, j.company, j.companyWebsite || j.company_website),
-                        salary: j.salary || '薪资面议'
-                    }))
-                const dispersedTicker = spreadByCompany(normalized, 6).slice(0, 10)
+                const normalizedTicker = data.jobs
+                    .filter((j: any) => j?.title && (j?.company || j?.company_name))
+                    .map((j: any) => {
+                        const companyName = j.company || j.company_name
+                        return {
+                            id: j.id || j.job_id,
+                            title: j.title,
+                            company_name: companyName,
+                            company_logo: j.logo || '',
+                            logo_candidates: resolveLogoCandidates(j.logo, companyName, j.companyWebsite || j.company_website),
+                            salary: j.salary || '薪资面议'
+                        }
+                    })
+                const dispersedTicker = spreadByCompany(normalizedTicker, 6).slice(0, 10)
                 if (mounted && dispersedTicker.length > 0) {
                     setTickerJobs(dispersedTicker)
                     const pmPreview = data.jobs
-                        .filter((j: any) => j?.title && j?.company && /product|pm|产品/i.test(`${j.title} ${j.company}`))
-                        .map((j: any) => ({
-                            id: j.id || j.job_id,
-                            title: j.title,
-                            company_name: j.company,
-                            company_logo: j.logo || '',
-                            logo_candidates: resolveLogoCandidates(j.logo, j.company, j.companyWebsite || j.company_website),
-                            location: j.location || 'Remote',
-                            salary: j.salary || '薪资面议',
-                            company_intro: j.companyDescription || j.description || ''
-                        }))
+                        .filter((j: any) => {
+                            const companyName = j.company || j.company_name || ''
+                            return j?.title && companyName && /product|pm|产品/i.test(`${j.title} ${companyName}`)
+                        })
+                        .map((j: any) => {
+                            const companyName = j.company || j.company_name
+                            return {
+                                id: j.id || j.job_id,
+                                title: j.title,
+                                company_name: companyName,
+                                company_logo: j.logo || '',
+                                logo_candidates: resolveLogoCandidates(j.logo, companyName, j.companyWebsite || j.company_website),
+                                location: j.location || 'Remote',
+                                salary: j.salary || '薪资面议',
+                                company_intro: j.companyDescription || j.description || ''
+                            }
+                        })
                     if (pmPreview.length > 0) setPreviewJobs(spreadByCompany(pmPreview, 3).slice(0, 3))
                     return
                 }
                 throw new Error('empty ticker jobs')
             } catch {
                 if (mounted) {
-                    setTickerJobs([
-                        { id: 201, title: 'Senior Product Manager', company_name: 'ClickHouse', company_logo: '', logo_candidates: resolveLogoCandidates('', 'ClickHouse', 'clickhouse.com'), salary: '$145k - $225k' },
-                        { id: 202, title: 'Sr. Full Stack Developer', company_name: 'MetroStar', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MetroStar', 'metrostar.com'), salary: '$101k - $147k' },
-                        { id: 203, title: 'Sr. Data Scientist', company_name: 'MoneyGram', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MoneyGram', 'moneygram.com'), salary: '$130k - $185k' },
-                        { id: 204, title: 'UX Designer', company_name: 'PEXA Group', company_logo: '', logo_candidates: resolveLogoCandidates('', 'PEXA Group', 'pexa.com'), salary: '£45k - £55k' },
-                        { id: 205, title: 'Remote PM (Cloud)', company_name: 'ClickHouse', company_logo: '', logo_candidates: resolveLogoCandidates('', 'ClickHouse', 'clickhouse.com'), salary: '$145k+' },
-                        { id: 206, title: 'Remote Full Stack', company_name: 'MetroStar', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MetroStar', 'metrostar.com'), salary: '$101k+' },
-                    ])
+                    setTickerJobs(TICKER_FALLBACK)
                     setPreviewJobs(PREVIEW_PM_RECOMMENDATIONS)
                 }
             }
@@ -380,14 +475,21 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         }
         setUploading(true)
         try {
-            const token = localStorage.getItem('haigoo_auth_token')
-            if (!token) {
-                setTimeout(() => {
-                    setResumeId('guest-temp-id')
-                    setResumeName(file.name)
-                    setUploading(false)
-                    showSuccess('简历已就绪', '可进行推荐匹配')
-                }, 800)
+            const authToken = token || localStorage.getItem('haigoo_auth_token')
+            if (!authToken) {
+                setResumeId('guest-temp-id')
+                setResumeName(file.name)
+                setGuestResumeFile(file)
+                let parsedHints: string[] = []
+                try {
+                    const parsed = await parseResumeFileEnhanced(file)
+                    parsedHints = extractParsedResumeHints(parsed)
+                } catch {
+                    parsedHints = []
+                }
+                setGuestResumeHints(parsedHints)
+                await savePendingGuestResume(file, parsedHints)
+                showSuccess('简历已保存', '未登录状态已保存，5分钟内登录会自动同步到个人中心')
                 return
             }
             const fd = new FormData()
@@ -395,13 +497,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             fd.append('metadata', JSON.stringify({ source: 'copilot', module: 'copilot', from: 'home_hero' }))
             const resp = await fetch('/api/resumes', {
                 method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}` },
+                headers: { 'Authorization': `Bearer ${authToken}` },
                 body: fd
             })
             const result = await resp.json()
             if (!resp.ok || !result.success) throw new Error(result.error || '上传失败')
             setResumeId(result.id)
             setResumeName(file.name)
+            setGuestResumeFile(null)
+            setGuestResumeHints([])
+            clearPendingGuestResume()
             showSuccess('简历上传成功', '已准备好进行精准匹配')
         } catch (error: any) {
             showError('上传失败', error.message)
@@ -420,41 +525,52 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
         try {
             const authToken = localStorage.getItem('haigoo_auth_token') || token
-            const params = new URLSearchParams({
-                resource: 'processed-jobs',
-                page: '1',
-                limit: authToken ? '20' : '6',
-                search: jobDirection,
-                sortBy: authToken ? 'relevance' : 'recent',
-                _t: Date.now().toString()
-            })
-            if (positionType === 'full-time') params.append('type', 'full-time')
-            const res = await fetch(`/api/data?${params.toString()}`, {
-                headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined
+            let parsedResumeHints = guestResumeHints
+            if (!authToken && guestResumeFile && parsedResumeHints.length === 0) {
+                const parsed = await parseResumeFileEnhanced(guestResumeFile)
+                parsedResumeHints = extractParsedResumeHints(parsed)
+                setGuestResumeHints(parsedResumeHints)
+            }
+            const res = await fetch('/api/copilot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+                },
+                body: JSON.stringify({
+                    action: 'hero-recommend',
+                    jobDirection,
+                    positionType,
+                    resumeId,
+                    resumeHints: authToken ? undefined : parsedResumeHints,
+                    limit: dailyLimit
+                })
             })
             const data = await res.json().catch(() => ({}))
-            if (!res.ok || !Array.isArray(data.jobs)) {
+            if (!res.ok || !Array.isArray(data.matches)) {
                 throw new Error(data.error || '获取推荐失败')
             }
-            const normalized = data.jobs.map((j: any) => ({
-                id: j.id || j.job_id,
+            const normalized = data.matches.map((j: any) => ({
+                id: j.jobId || j.id,
                 title: j.title,
-                company_name: j.company,
-                company: j.company,
+                company_name: j.company_name || j.company,
+                company: j.company_name || j.company,
                 location: j.location || 'Remote',
                 timezone: j.timezone || '',
                 salary: j.salary || '薪酬面议',
-                company_intro: j.companyDescription || j.company_description || '',
+                company_intro: j.companyIntro || j.company_intro || '',
                 description: j.description || '',
                 company_logo: j.logo || '',
                 company_website: j.companyWebsite || j.company_website,
-                logo_candidates: resolveLogoCandidates(j.logo, j.company, j.companyWebsite || j.company_website)
+                logo_candidates: resolveLogoCandidates(j.logo, j.company_name || j.company, j.companyWebsite || j.company_website),
+                matchScore: j.matchScore
             }))
-            const capped = spreadByCompany(normalized, 6).slice(0, dailyLimit)
+            const capped = normalized.slice(0, dailyLimit)
             if (capped.length === 0) {
                 throw new Error('当前未检索到匹配岗位')
             }
             setRecommendations(capped)
+            setActiveCard(0)
             setHasResults(true)
             setLastUpdatedAt(Date.now())
             showSuccess('匹配完成', `已为您找到 ${capped.length} 个相关岗位`)
@@ -465,12 +581,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             const fallback = SAMPLE_RECOMMENDATIONS.slice(0, dailyLimit)
             setTimeout(() => {
                 setRecommendations(fallback)
+                setActiveCard(0)
                 setHasResults(true)
                 setLastUpdatedAt(Date.now())
                 setLoading(false)
             }, 1500)
         } finally {
-            if (isAuthenticated) setLoading(false)
+            setLoading(false)
         }
     }
 
@@ -547,18 +664,22 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 )}
 
                 {/* ── Copilot Card ── */}
-                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-4 relative">
+                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-4 relative lg:h-[640px]">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
                     <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
 
                     <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 h-full">
 
                         {/* ── Left Column ── */}
-                        <div className="lg:col-span-5 bg-white/60 backdrop-blur-xl rounded-[24px] border border-white/40 shadow-sm p-4 flex flex-col gap-3 h-full">
+                        <div className={`lg:col-span-5 backdrop-blur-xl rounded-[24px] border p-4 flex flex-col gap-3 h-full transition-all ${
+                            hasResults
+                                ? 'bg-white/60 border-white/40 shadow-sm'
+                                : 'bg-white/82 border-indigo-100 shadow-[0_24px_48px_-32px_rgba(79,70,229,0.35)]'
+                        }`}>
                             {/* Shared title area with logo */}
                             <div className="mb-1">
                                 <div>
-                                    <h2 className="text-[32px] md:text-[34px] font-bold text-slate-900 leading-[1.12] tracking-tight">每天为你推荐一组<br/>最匹配的岗位</h2>
+                                    <h2 className="text-[34px] md:text-[38px] font-bold text-slate-900 leading-[1.1] tracking-tight">每天为你推荐一组<br/>最匹配的岗位</h2>
                                     {hasResults && (
                                         <p className="text-xs text-slate-500 mt-1.5">今日推荐岗位已于 {formattedUpdatedAt} 更新</p>
                                     )}
@@ -594,13 +715,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         ) : resumeName ? (
                                             <div className="flex items-center justify-center gap-2">
                                                 <span className="text-sm font-semibold text-indigo-700 truncate max-w-[180px]">{resumeName}</span>
-                                                <button onClick={e => { e.stopPropagation(); setResumeName(null); setResumeId(null) }} className="text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>
+                                                <button onClick={e => { e.stopPropagation(); setResumeName(null); setResumeId(null); setGuestResumeFile(null); setGuestResumeHints([]); clearPendingGuestResume() }} className="text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>
                                             </div>
                                         ) : (
                                             <>
-                                                <UploadCloud className="w-5 h-5 text-indigo-400 mx-auto mb-1" />
+                                                <div className="flex items-center justify-center gap-2 mb-1">
+                                                    <UploadCloud className="w-5 h-5 text-indigo-400" />
+                                                    <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 border border-indigo-100">简历可选</span>
+                                                </div>
                                                 <p className="text-xs font-semibold text-slate-600">拖拽简历到此 / 点击上传</p>
-                                                <p className="text-[10px] text-slate-400 mt-0.5">PDF / Word 格式</p>
+                                                <p className="text-[10px] text-slate-400 mt-0.5">PDF / Word 格式，用于后续规划补充参考</p>
                                             </>
                                         )}
                                     </div>
@@ -625,16 +749,20 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                             <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">每日推荐数量</div>
                                         </div>
                                         <div className="text-[54px] font-black text-slate-900 leading-none">{Math.min(recommendations.length || 1, dailyLimit)}<span className="text-slate-300">/{dailyLimit}</span></div>
-                                        <p className="text-sm text-slate-500 mt-2 leading-relaxed">{isAuthenticated ? '今日推荐已更新，可继续浏览 5 个精选岗位。' : '游客模式每日可获得 1 个推荐，登录后每日 5 个。'}</p>
+                                        <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+                                            {isAuthenticated
+                                                ? (isMember ? '今日推荐已更新，会员可继续拓展方案并深度打磨求职计划。' : '今日推荐已更新，可继续浏览 5 个精选岗位，并进入完整规划查看行动建议。')
+                                                : '游客模式每日可获得 1 个推荐，登录后每日 5 个。'}
+                                        </p>
                                     </div>
                                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">当前偏好</div>
                                             <button onClick={() => { setHasResults(false); setActiveCard(0) }} className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors">修改偏好</button>
                                         </div>
-                                        <div className="text-sm font-semibold text-indigo-600 truncate">{jobDirection || '未填写'} · {positionType === 'full-time' ? '全职远程' : positionType === 'contract' ? '合同/兼职' : positionType === 'freelance' ? '自由职业' : '实习'}</div>
+                                        <div className="text-sm font-semibold text-indigo-600 truncate">{jobDirection || '未填写'} · {positionTypeLabel}</div>
                                     </div>
-                                    <div className="h-[52px] mt-3">
+                                    <div className="h-[52px] mt-auto">
                                         <button onClick={handleGeneratePlan}
                                             className="w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-[0_8px_20px_rgba(79,70,229,0.30)] transition-all flex items-center justify-center gap-2">
                                             <Sparkles className="w-4 h-4" />
@@ -646,7 +774,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                         </div>
 
                         {/* ── Right Column ── */}
-                        <div className="lg:col-span-7 bg-white/50 backdrop-blur-2xl rounded-[24px] border border-white/50 flex flex-col shadow-sm overflow-hidden h-full">
+                        <div className={`lg:col-span-7 backdrop-blur-2xl rounded-[24px] border border-white/50 flex flex-col shadow-sm overflow-hidden h-full ${
+                            hasResults ? 'bg-white/50' : 'bg-white/38'
+                        }`}>
                             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
                                 <h3 className={`${hasResults ? 'text-[24px]' : 'text-[20px]'} font-bold text-slate-800 leading-none`}>{hasResults ? '今日推荐' : '每日推荐预览'}</h3>
                                 {hasResults && (
@@ -664,39 +794,45 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                 )}
                             </div>
 
-                            <div className="flex-1 px-5 pt-5 pb-3 flex flex-col min-h-0">
+                            <div className="flex-1 px-5 pt-5 pb-4 flex flex-col min-h-0">
                                 {!hasResults ? (
-                                    <div className="h-full min-h-[420px] flex flex-col gap-4 relative">
-                                        {(previewJobs.length > 0 ? previewJobs : PREVIEW_PM_RECOMMENDATIONS).map((job, idx, arr) => (
-                                            <div key={job.id} className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                                                <div className="flex items-start gap-4">
-                                                    <div className="w-11 h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                                        <CompanyLogo companyName={job.company_name} logoCandidates={job.logo_candidates || resolveLogoCandidates(job.company_logo, job.company_name, job.company_website)} className="w-full h-full object-contain p-1.5" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <div className="flex items-start justify-between gap-3">
-                                                            <div className="font-bold text-slate-900 text-[15px] leading-tight">{job.title}</div>
-                                                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 whitespace-nowrap">Top Pick</span>
+                                    <div className="flex-1 flex flex-col gap-4 relative min-h-0 overflow-hidden rounded-[28px] border border-white/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.4)_0%,rgba(243,244,255,0.72)_100%)]">
+                                        <div className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.1),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.08),transparent_36%)]" />
+                                        <div className="relative z-0 select-none pointer-events-none filter blur-[10px] saturate-[0.82] opacity-52 px-4 pt-4 pb-5">
+                                            {(previewDisplayJobs.length > 0 ? previewDisplayJobs : PREVIEW_PM_RECOMMENDATIONS).map((job, idx, arr) => (
+                                                <div key={job.id} className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-4 opacity-60">
+                                                    <div className="flex items-start gap-4">
+                                                        <div className="w-11 h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                                            <CompanyLogo companyName={job.company_name} logoCandidates={job.logo_candidates || resolveLogoCandidates(job.company_logo, job.company_name, job.company_website)} className="w-full h-full object-contain p-1.5" />
                                                         </div>
-                                                        <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                                            <span className="font-semibold text-slate-600">{job.company_name}</span>
-                                                            <span>•</span>
-                                                            <span>{job.location}</span>
-                                                            <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-semibold">Remote</span>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-start justify-between gap-3">
+                                                                <div className="font-bold text-slate-900 text-[15px] leading-tight">{job.title}</div>
+                                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 whitespace-nowrap">Top Pick</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                                                <span className="font-semibold text-slate-600">{job.company_name}</span>
+                                                                <span>•</span>
+                                                                <span>{job.location}</span>
+                                                                <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-semibold">Remote</span>
+                                                            </div>
+                                                            <div className="text-sm text-indigo-600 font-semibold mt-1">{job.salary}</div>
                                                         </div>
-                                                        <div className="text-sm text-indigo-600 font-semibold mt-1">{job.salary}</div>
-                                                        <p className="text-[11px] text-slate-500 mt-1.5 line-clamp-1">{job.company_intro}</p>
                                                     </div>
+                                                    {idx < arr.length - 1 && (
+                                                        <div className="mt-3 border-t border-slate-100" />
+                                                    )}
                                                 </div>
-                                                {idx < arr.length - 1 && (
-                                                    <div className="mt-3 border-t border-slate-100" />
-                                                )}
-                                            </div>
-                                        ))}
-                                        <div className="absolute inset-0 bg-gradient-to-b from-white/28 via-white/50 to-white/30 backdrop-blur-[2px] flex items-center justify-center rounded-2xl">
-                                            <div className="bg-white/62 border border-white/80 shadow-sm rounded-2xl px-8 py-6 max-w-[540px] mx-6">
-                                                <p className="text-[26px] leading-tight font-extrabold text-slate-900 text-center">上传简历后解锁专属每日岗位推荐</p>
-                                                <p className="text-sm text-slate-600 text-center mt-2">基于你的职业方向与背景，自动生成更精准的推荐结果</p>
+                                            ))}
+                                        </div>
+                                        <div className="absolute inset-0 z-[2] pointer-events-none bg-gradient-to-b from-white/34 via-white/70 to-[#f6f8ff]/94 backdrop-blur-[2px]" />
+                                        <div className="absolute inset-0 z-[3] pointer-events-none flex items-center justify-center px-6">
+                                            <div className="w-full max-w-[350px] rounded-[20px] border border-white/92 bg-white/68 backdrop-blur-md shadow-[0_16px_36px_-28px_rgba(79,70,229,0.42)] px-4 py-4 sm:px-5 sm:py-4 text-center">
+                                                <p className="text-[22px] sm:text-[24px] font-semibold leading-[1.2] tracking-tight text-slate-700">解锁你的专属推荐</p>
+                                                <div className="flex flex-wrap justify-center gap-2 mt-2.5">
+                                                    <span className="inline-flex items-center rounded-full border border-white/90 bg-white/84 px-3 py-1 text-[10px] font-medium text-slate-500 shadow-sm">游客每日 1 个推荐</span>
+                                                    <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50/82 px-3 py-1 text-[10px] font-medium text-indigo-600 shadow-sm">登录后每日 5 个推荐</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -710,23 +846,32 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         const salary = job?.salary || job?.salary_range || '薪酬面议'
                                         const companyIntro = job?.company_intro || job?.description || `${company} 是一家全球化远程优先军业公司，岗位面向全球中文人才开放申请。`
                                         const detail = job?.description || `该岗位聚焦${jobDirection || '核心岗位能力'}，要求跨团队协作、远程沟通与业务驱动思维，适合希望在国际化团队长期发展的候选人。`
+                                        const openJobDetail = () => setSelectedJobDetail({
+                                            id: String(job?.id || `hero-job-${activeCard}`),
+                                            title,
+                                            company,
+                                            company_name: company,
+                                            location,
+                                            salary,
+                                            timezone,
+                                            description: detail,
+                                            company_intro: companyIntro,
+                                            source: 'hero_copilot'
+                                        })
                                         return (
                                             <div className="flex-1 min-h-0 flex flex-col relative">
                                                 <div className="absolute inset-x-4 top-2 bottom-0 rounded-2xl border border-indigo-50 bg-white shadow-sm" />
                                                 <div className="absolute inset-x-8 top-4 bottom-0 rounded-2xl border border-indigo-50 bg-white shadow-sm" />
-                                                <button
-                                                    onClick={() => setSelectedJobDetail({
-                                                        id: String(job?.id || `hero-job-${activeCard}`),
-                                                        title,
-                                                        company,
-                                                        company_name: company,
-                                                        location,
-                                                        salary,
-                                                        timezone,
-                                                        description: detail,
-                                                        company_intro: companyIntro,
-                                                        source: 'hero_copilot'
-                                                    })}
+                                                <div
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onClick={openJobDetail}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' || e.key === ' ') {
+                                                            e.preventDefault()
+                                                            openJobDetail()
+                                                        }
+                                                    }}
                                                     onTouchStart={(e) => { touchStartXRef.current = e.changedTouches[0].clientX }}
                                                     onTouchEnd={(e) => {
                                                         if (touchStartXRef.current === null) return
@@ -758,24 +903,45 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     {/* Company Intro */}
                                                     <div className="mb-3">
                                                         <div className="text-xs font-bold text-slate-500 mb-1.5">企业介绍</div>
-                                                        <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">{companyIntro}</p>
+                                                        <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{companyIntro}</p>
                                                     </div>
-                                                    <div>
+                                                    <div className="relative flex-1 overflow-hidden">
                                                         <div className="text-xs font-bold text-slate-500 mb-1.5">岗位详情</div>
-                                                        <p className="text-sm text-slate-500 leading-relaxed line-clamp-4">{detail}</p>
+                                                        <p className="text-sm text-slate-500 leading-relaxed">{detail}</p>
+                                                        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" />
                                                     </div>
-                                                </button>
+                                                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-shrink-0">
+                                                        {!isAuthenticated ? (
+                                                            <div className="text-[11px] leading-5 text-slate-500 inline-flex items-center gap-1.5">
+                                                                <span>登录后可继续浏览更多推荐。</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation()
+                                                                        navigate('/login')
+                                                                    }}
+                                                                    className="text-indigo-600 font-semibold underline underline-offset-2 hover:text-indigo-700 transition-colors"
+                                                                >
+                                                                    去登录
+                                                                </button>
+                                                            </div>
+                                                        ) : <span />}
+                                                        <button
+                                                            type="button"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                openJobDetail()
+                                                            }}
+                                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-600 shadow-sm whitespace-nowrap hover:bg-indigo-100 transition-colors"
+                                                        >
+                                                            查看详情
+                                                            <span>→</span>
+                                                        </button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         )
                                     })()
-                                )}
-                                {hasResults && !isAuthenticated && (
-                                    <div className="h-[52px] mt-3 relative z-10">
-                                        <div className="h-full flex items-center justify-between bg-indigo-600 rounded-xl px-4">
-                                            <span className="text-sm font-bold text-white">登录后解锁每日 5 个精选推荐</span>
-                                            <button onClick={() => navigate('/login')} className="text-sm font-bold text-indigo-100 hover:text-white underline transition-colors">去登录</button>
-                                        </div>
-                                    </div>
                                 )}
                             </div>
                         </div>
@@ -805,13 +971,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 }
 
 function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { onClose: () => void, jobDirection: string, positionType: string, resumeId: string | null }) {
-    const { isAuthenticated, token } = useAuth()
-    const [timeline, setTimeline] = useState('1-3个月')
-    const [weeklyHours, setWeeklyHours] = useState('5-10小时')
+    const { isAuthenticated, token, isMember } = useAuth()
+    const [timeline] = useState('1-3个月')
+    const [weeklyHours] = useState('5-10小时')
     const [planData, setPlanData] = useState<any | null>(null)
     const [planLoading, setPlanLoading] = useState(false)
-    const [routeUpdating, setRouteUpdating] = useState(false)
-    const [routeDirty, setRouteDirty] = useState(false)
 
     useEffect(() => {
         const prev = document.body.style.overflow
@@ -827,30 +991,66 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
             if (!isAuthenticated || !token) return
             setPlanLoading(true)
             try {
-                const getResp = await fetch('/api/copilot', {
-                    headers: { Authorization: `Bearer ${token}` }
-                })
-                const getData = await getResp.json().catch(() => ({}))
-                if (getResp.ok && getData?.success && getData?.plan) {
-                    if (mounted) setPlanData(getData.plan)
-                    return
+                if (resumeId) {
+                    await fetch('/api/copilot', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            action: 'extract-resume',
+                            resumeId
+                        })
+                    }).catch(() => null)
                 }
-                const genResp = await fetch('/api/copilot', {
+
+                const assessResp = await fetch('/api/copilot', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${token}`
                     },
                     body: JSON.stringify({
+                        action: 'assess',
                         goal: positionType,
                         timeline: '1-3 months',
-                        background: { industry: jobDirection },
-                        resumeId
+                        background: { industry: jobDirection, availability: weeklyHours }
                     })
                 })
-                const genData = await genResp.json().catch(() => ({}))
-                if (genResp.ok && genData?.plan && mounted) {
-                    setPlanData(genData.plan)
+                const assessData = await assessResp.json().catch(() => ({}))
+
+                const planResp = await fetch('/api/copilot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        action: 'create-plan',
+                        goal: positionType,
+                        timeline: '1-3 months',
+                        background: { industry: jobDirection, availability: weeklyHours }
+                    })
+                })
+                const planResult = await planResp.json().catch(() => ({}))
+                const nextPlan = planResult?.planData || planResult?.plan || null
+
+                if (planResp.ok && nextPlan && mounted) {
+                    setPlanData({
+                        ...nextPlan,
+                        readiness: assessData?.readinessData?.remote_readiness_score,
+                        summary: nextPlan.summary || `AI 已根据你的岗位偏好生成专属求职规划，默认按 ${timeline}、每周 ${weeklyHours} 的投入节奏推进。`
+                    })
+                    return
+                }
+
+                const getResp = await fetch('/api/copilot', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                const getData = await getResp.json().catch(() => ({}))
+                if (getResp.ok && getData?.success && getData?.plan && mounted) {
+                    setPlanData(getData.plan)
                 }
             } catch {
                 if (mounted) setPlanData(null)
@@ -861,58 +1061,6 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
         loadPlan()
         return () => { mounted = false }
     }, [isAuthenticated, token, positionType, jobDirection, resumeId])
-
-    const handleUpdateActionRoute = async () => {
-        if (!routeDirty || routeUpdating) return
-        if (!isAuthenticated || !token) {
-            setRouteDirty(false)
-            return
-        }
-        setRouteUpdating(true)
-        try {
-            const timelineValue = timeline === '1-3个月' ? '1-3 months' : timeline === '3-6个月' ? '3-6 months' : 'flexible'
-            const payload = {
-                goal: positionType,
-                timeline: timelineValue,
-                background: {
-                    industry: jobDirection,
-                    availability: weeklyHours
-                },
-                resumeId
-            }
-
-            const actionResp = await fetch('/api/copilot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({ action: 'create-plan', ...payload })
-            })
-            const actionData = await actionResp.json().catch(() => ({}))
-            if (actionResp.ok && (actionData?.plan || actionData?.planData)) {
-                setPlanData(actionData.plan || actionData.planData)
-                setRouteDirty(false)
-                return
-            }
-
-            const fallbackResp = await fetch('/api/copilot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            })
-            const fallbackData = await fallbackResp.json().catch(() => ({}))
-            if (fallbackResp.ok && fallbackData?.plan) {
-                setPlanData(fallbackData.plan)
-                setRouteDirty(false)
-            }
-        } finally {
-            setRouteUpdating(false)
-        }
-    }
 
     const guestPlan = {
         summary: '这是简版远程求职规划，用于体验核心流程。登录后可获得完整方案与更多细节分析。',
@@ -948,7 +1096,7 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white">Copilot 求职助手</h2>
-                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '可在下方调整关键行动路线，并同步更新专属求职规划。' : '未登录也可体验简版求职规划，登录后解锁完整方案与更多岗位推荐。'}</p>
+                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '基于你的偏好生成的专属求职规划。' : '未登录也可体验简版求职规划，登录后解锁完整方案与更多岗位推荐。'}</p>
                         </div>
                     </div>
                     <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
@@ -969,34 +1117,37 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
 
                     <div className="bg-white border border-indigo-100 rounded-2xl p-4">
                         <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm font-bold text-slate-900">关键行动路线设置</div>
-                            <button
-                                onClick={handleUpdateActionRoute}
-                                disabled={!isAuthenticated || !routeDirty || routeUpdating}
-                                className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-indigo-700 transition-colors"
-                            >
-                                {routeUpdating ? '更新中...' : '更新行动路线'}
-                            </button>
+                            <div className="text-sm font-bold text-slate-900">准备时间参考</div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-end">
-                            <div>
-                                <div className="text-xs text-slate-500 mb-1">准备周期</div>
-                                <select value={timeline} onChange={(e) => { setTimeline(e.target.value); setRouteDirty(true) }} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-                                    <option value="1-3个月">1-3个月</option>
-                                    <option value="3-6个月">3-6个月</option>
-                                    <option value="6个月以上">6个月以上</option>
-                                </select>
-                            </div>
-                            <div>
-                                <div className="text-xs text-slate-500 mb-1">每周投入时间</div>
-                                <select value={weeklyHours} onChange={(e) => { setWeeklyHours(e.target.value); setRouteDirty(true) }} className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-200">
-                                    <option value="5-10小时">5-10小时</option>
-                                    <option value="10-20小时">10-20小时</option>
-                                    <option value="20小时以上">20小时以上</option>
-                                </select>
-                            </div>
+                        <div className="text-sm text-slate-600 bg-slate-50 rounded-xl px-4 py-3">
+                            以下方案按照准备周期<span className="font-bold text-slate-800">【1-3个月】</span>、每周投入<span className="font-bold text-slate-800">【5-10小时】</span>来设计，可供参考。
                         </div>
                     </div>
+
+                    {isAuthenticated ? (
+                        isMember ? (
+                            <div className="bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-100 rounded-2xl p-4">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <div className="text-sm font-bold text-slate-900">会员专属能力已解锁</div>
+                                        <div className="text-xs text-slate-600 mt-1">你可以继续拓展求职方案、在 Copilot 工作台拆解行动阶段，并在个人中心深度打磨求职计划。</div>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <Link to="/copilot" onClick={onClose} className="px-4 py-2 rounded-xl bg-white text-emerald-700 border border-emerald-200 text-sm font-semibold hover:bg-emerald-50 transition-colors no-underline hover:no-underline">拓展方案</Link>
+                                        <Link to="/profile?tab=custom-plan" onClick={onClose} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors no-underline hover:no-underline">深度打磨计划</Link>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                <div>
+                                    <div className="text-sm font-bold text-slate-900">升级会员可继续深化方案</div>
+                                    <div className="text-xs text-slate-600 mt-1">当前已可查看完整规划；升级后可继续拓展求职方案，并深度打磨执行计划。</div>
+                                </div>
+                                <Link to="/membership" onClick={onClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员权益</Link>
+                            </div>
+                        )
+                    ) : null}
 
                     {planLoading && isAuthenticated ? (
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm text-slate-500">正在加载你的完整求职规划...</div>

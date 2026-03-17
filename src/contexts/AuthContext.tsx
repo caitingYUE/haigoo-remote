@@ -6,6 +6,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
 import type { User, AuthResponse } from '../types/auth-types'
 import { trackingService } from '../services/tracking-service'
+import { claimPendingGuestResume } from '../services/guest-resume-bridge'
 
 interface AuthContextValue {
   user: User | null
@@ -136,6 +137,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Tracking
         trackingService.identify(data.user.user_id || data.user.id)
         trackingService.track('login_success', { method: 'email' })
+
+        try {
+          await claimPendingGuestResume(data.token)
+        } catch (e) {
+          console.warn('[AuthContext] Failed to bind guest resume after login:', e)
+        }
       }
 
       return data
@@ -172,6 +179,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
              trackingService.track('signup_success', { method: 'google' })
         }
         trackingService.track('login_success', { method: 'google' })
+
+        try {
+          await claimPendingGuestResume(data.token)
+        } catch (e) {
+          console.warn('[AuthContext] Failed to bind guest resume after Google login:', e)
+        }
       }
 
       return data
@@ -201,6 +214,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         trackingService.identify(data.user.user_id || data.user.id)
         trackingService.track('signup_success', { method: 'email' })
         trackingService.track('login_success', { method: 'email' })
+
+        try {
+          await claimPendingGuestResume(data.token)
+        } catch (e) {
+          console.warn('[AuthContext] Failed to bind guest resume after register:', e)
+        }
       }
 
       return data

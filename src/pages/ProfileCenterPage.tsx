@@ -1493,6 +1493,62 @@ export default function ProfileCenterPage() {
                         </div>
                       )}
                       <GeneratedPlanView plan={copilotPlan} isGuest={false} />
+                      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Sparkles className="w-4 h-4 text-indigo-600" />
+                            <div className="text-sm font-bold text-slate-900">求职方案拓展</div>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">会员</span>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed">基于你的历史进展与目标岗位变化，补充下一阶段行动策略与里程碑拓展。</p>
+                          {isMember ? (
+                            <Link
+                              to="/copilot"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors no-underline"
+                            >
+                              前往拓展
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => navigate('/membership')}
+                              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-50 transition-colors"
+                            >
+                              升级后解锁
+                              <Crown className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Zap className="w-4 h-4 text-indigo-600" />
+                            <div className="text-sm font-bold text-slate-900">关键行动路线深度打磨</div>
+                            <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px] font-bold">会员</span>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed">针对关键阶段任务做深度拆解，生成更细粒度执行建议与优先级排序。</p>
+                          {isMember ? (
+                            <Link
+                              to="/copilot"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-semibold hover:bg-indigo-700 transition-colors no-underline"
+                            >
+                              前往打磨
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          ) : (
+                            <button
+                              onClick={() => navigate('/membership')}
+                              className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 bg-white border border-indigo-200 text-indigo-600 rounded-lg text-xs font-semibold hover:bg-indigo-50 transition-colors"
+                            >
+                              升级后解锁
+                              <Crown className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 px-4">
