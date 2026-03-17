@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 import JobAlertSubscribe from '../components/JobAlertSubscribe'
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
-import CopilotSection from '../components/home/CopilotSection'
+import HomeHero from '../components/HomeHero'
 import FeaturedJobsSection from '../components/FeaturedJobsSection'
 import JobDetailModal from '../components/JobDetailModal'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -223,7 +223,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Premium Dark Hero Section */}
-      <CopilotSection />
+      <HomeHero stats={undefined} />
 
       {/* Featured Jobs Section */}
       <FeaturedJobsSection 
