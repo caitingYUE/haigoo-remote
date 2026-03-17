@@ -1572,3 +1572,26 @@
 .animate-step-slide-in-left {
   animation: stepSlideInLeft 0.22s ease-out both;
 }
+
+@keyframes hero-marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.hero-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+  animation: hero-marquee var(--marquee-duration, 90s) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-marquee-track {
+    animation-duration: calc(var(--marquee-duration, 90s) * 1.2);
+  }
+}
