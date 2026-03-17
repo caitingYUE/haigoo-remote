@@ -321,20 +321,80 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [tickerJobs, setTickerJobs] = useState<any[]>([])
     const tickerLoop = [...tickerJobs, ...tickerJobs]
 
-    const openTickerJobDetail = (job: any) => {
+    const normalizeHeroJob = (job: any) => {
         const company = job?.company_name || job?.company || 'Company'
-        setSelectedJobDetail({
-            id: String(job?.id || ''),
+        return {
+            ...job,
+            id: String(job?.id || job?.jobId || job?.job_id || ''),
             title: job?.title || '远程岗位',
             company,
             company_name: company,
             location: job?.location || '远程',
-            salary: job?.salary || '薪酬面议',
-            timezone: job?.timezone || '',
-            description: job?.description || job?.company_intro || `${company} 当前开放远程岗位，点击查看完整岗位详情。`,
-            company_intro: job?.company_intro || job?.description || '',
-            source: 'hero_ticker'
-        })
+            salary: job?.salary || job?.salary_range || '薪酬面议',
+            timezone: job?.timezone || job?.remote_timezone || '',
+            description: typeof job?.description === 'string' ? job.description : '',
+            company_intro: job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || '',
+            companyDescription: job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || '',
+            translations: job?.translations || null,
+            companyId: job?.companyId || job?.company_id,
+            logo: job?.logo || job?.company_logo || '',
+            company_logo: job?.logo || job?.company_logo || '',
+            company_website: job?.companyWebsite || job?.company_website || '',
+            companyWebsite: job?.companyWebsite || job?.company_website || '',
+            url: job?.url || job?.sourceUrl || '',
+            sourceUrl: job?.sourceUrl || job?.url || '',
+            source: job?.source || 'hero',
+            publishedAt: job?.publishedAt || job?.published_at || '',
+            createdAt: job?.createdAt || job?.created_at || '',
+            logo_candidates: job?.logo_candidates || resolveLogoCandidates(job?.logo || job?.company_logo, company, job?.companyWebsite || job?.company_website),
+        }
+    }
+
+    const fetchHeroJobDetail = async (job: any) => {
+        const normalized = normalizeHeroJob(job)
+        if (!normalized.id) return normalized
+
+        const authToken = token || localStorage.getItem('haigoo_auth_token')
+        const baseParams = {
+            id: normalized.id,
+            skipAggregations: 'true',
+            _t: Date.now().toString()
+        }
+
+        const requestDetail = async (url: string) => {
+            const resp = await fetch(url, {
+                cache: 'no-store',
+                headers: {
+                    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+                    'cache-control': 'no-cache'
+                }
+            })
+            const data = await resp.json().catch(() => ({}))
+            if (!resp.ok || !Array.isArray(data.jobs) || !data.jobs[0]) return null
+            return normalizeHeroJob({ ...normalized, ...data.jobs[0] })
+        }
+
+        const directParams = new URLSearchParams(baseParams)
+        const direct = await requestDetail(`/api/data/processed-jobs?${directParams.toString()}`)
+        if (direct) return direct
+
+        const fallbackParams = new URLSearchParams({ resource: 'processed-jobs', ...baseParams })
+        return await requestDetail(`/api/data?${fallbackParams.toString()}`) || normalized
+    }
+
+    const openHeroJobDetail = async (job: any) => {
+        const initial = normalizeHeroJob(job)
+        setSelectedJobDetail(initial)
+        try {
+            const detailed = await fetchHeroJobDetail(job)
+            setSelectedJobDetail((current: any) => current?.id === initial.id ? detailed : current)
+        } catch {
+            // keep the optimistic detail card if hydration fails
+        }
+    }
+
+    const openTickerJobDetail = (job: any) => {
+        openHeroJobDetail({ ...job, source: job?.source || 'hero_ticker' })
     }
 
     // Load saved form data from local storage for guest/returning users
@@ -420,14 +480,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         let mounted = true
         const loadTickerJobs = async () => {
             try {
-                const fetchWindowJobs = async (days: number) => {
-                    const dateFrom = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+                const fetchLatestJobs = async () => {
                     const baseParams = {
                         page: '1',
-                        limit: '60',
+                        limit: '120',
                         sortBy: 'recent',
-                        dateFrom,
-                        _t: `${Date.now()}-${days}`
+                        skipAggregations: 'true',
+                        _t: `${Date.now()}`
                     }
 
                     const directParams = new URLSearchParams(baseParams)
@@ -453,58 +512,51 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     return data.jobs
                 }
 
+                const rawJobs = await fetchLatestJobs()
                 const dedupedRaw = new Map<string, any>()
-                for (const windowDays of TICKER_RECENT_WINDOWS) {
-                    const jobs = await fetchWindowJobs(windowDays)
-                    jobs.forEach((j: any) => {
-                        const id = String(j?.id || j?.job_id || '')
-                        if (id && !dedupedRaw.has(id)) dedupedRaw.set(id, j)
-                    })
-                    if (dedupedRaw.size >= TICKER_TARGET_MAX) break
-                }
+                rawJobs.forEach((j: any) => {
+                    const id = String(j?.id || j?.job_id || '')
+                    if (id && !dedupedRaw.has(id)) dedupedRaw.set(id, j)
+                })
 
                 const normalizedTicker = Array.from(dedupedRaw.values())
-                    .filter((j: any) => j?.title && (j?.company || j?.company_name))
-                    .map((j: any) => {
-                        const companyName = j.company || j.company_name
-                        return {
-                            id: j.id || j.job_id,
-                            title: j.title,
-                            company_name: companyName,
-                            company_logo: j.logo || '',
-                            logo_candidates: resolveLogoCandidates(j.logo, companyName, j.companyWebsite || j.company_website),
-                            salary: j.salary || '薪资面议',
-                            location: j.location || 'Remote',
-                            timezone: j.timezone || '',
-                            description: j.description || '',
-                            company_intro: j.companyDescription || j.description || '',
-                            company_website: j.companyWebsite || j.company_website
-                        }
-                    })
+                    .map((j: any) => normalizeHeroJob(j))
+                    .filter((j: any) => j?.id && j?.title && (j?.company || j?.company_name))
+
+                const getJobTimestamp = (job: any) => {
+                    const raw = job?.publishedAt || job?.createdAt
+                    const ts = raw ? new Date(raw).getTime() : 0
+                    return Number.isFinite(ts) ? ts : 0
+                }
+                const sortedTicker = normalizedTicker.sort((a: any, b: any) => getJobTimestamp(b) - getJobTimestamp(a))
+                const now = Date.now()
+                const withinDays = (job: any, days: number) => {
+                    const ts = getJobTimestamp(job)
+                    if (!ts) return false
+                    return now - ts <= days * 24 * 60 * 60 * 1000
+                }
+                let tickerCandidates = sortedTicker
+                for (const windowDays of TICKER_RECENT_WINDOWS) {
+                    const windowJobs = sortedTicker.filter((job: any) => withinDays(job, windowDays))
+                    if (windowJobs.length >= TICKER_TARGET_MIN) {
+                        tickerCandidates = windowJobs
+                        break
+                    }
+                    if (windowDays === TICKER_RECENT_WINDOWS[TICKER_RECENT_WINDOWS.length - 1] && windowJobs.length > 0) {
+                        tickerCandidates = windowJobs
+                    }
+                }
                 if (normalizedTicker.length < TICKER_TARGET_MIN) {
                     console.warn(`[Hero] ticker jobs less than expected: ${normalizedTicker.length}/${TICKER_TARGET_MIN}`)
                 }
 
-                const dispersedTicker = spreadByCompany(normalizedTicker, 5).slice(0, TICKER_TARGET_MAX)
+                const dispersedTicker = spreadByCompany(tickerCandidates, 5).slice(0, TICKER_TARGET_MAX)
                 if (mounted && dispersedTicker.length > 0) {
                     setTickerJobs(dispersedTicker)
-                    const pmPreview = Array.from(dedupedRaw.values())
+                    const pmPreview = tickerCandidates
                         .filter((j: any) => {
                             const companyName = j.company || j.company_name || ''
                             return j?.title && companyName && /product|pm|产品/i.test(`${j.title} ${companyName}`)
-                        })
-                        .map((j: any) => {
-                            const companyName = j.company || j.company_name
-                            return {
-                                id: j.id || j.job_id,
-                                title: j.title,
-                                company_name: companyName,
-                                company_logo: j.logo || '',
-                                logo_candidates: resolveLogoCandidates(j.logo, companyName, j.companyWebsite || j.company_website),
-                                location: j.location || 'Remote',
-                                salary: j.salary || '薪资面议',
-                                company_intro: j.companyDescription || j.description || ''
-                            }
                         })
                     if (pmPreview.length > 0) setPreviewJobs(spreadByCompany(pmPreview, 3).slice(0, 3))
                     return
@@ -603,20 +655,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (!res.ok || !Array.isArray(data.matches)) {
                 throw new Error(data.error || '获取推荐失败')
             }
-            const normalized = data.matches.map((j: any) => ({
-                id: j.jobId || j.id,
-                title: j.title,
-                company_name: j.company_name || j.company,
-                company: j.company_name || j.company,
-                location: j.location || 'Remote',
-                timezone: j.timezone || '',
-                salary: j.salary || '薪酬面议',
-                company_intro: j.companyIntro || j.company_intro || '',
-                description: j.description || '',
-                company_logo: j.logo || '',
-                company_website: j.companyWebsite || j.company_website,
-                logo_candidates: resolveLogoCandidates(j.logo, j.company_name || j.company, j.companyWebsite || j.company_website),
-                matchScore: j.matchScore
+            const normalized = data.matches.map((j: any) => normalizeHeroJob({
+                ...j,
+                company_intro: j.companyIntro || j.company_intro || j.companyDescription || ''
             }))
             const capped = normalized.slice(0, dailyLimit)
             if (capped.length === 0) {
@@ -885,26 +926,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                     </div>
                                 ) : (
                                     (() => {
-                                        const job = displayRecommendations[activeCard] || displayRecommendations[0]
-                                        const title = job?.title || job?.role || '远程岗位'
+                                        const job = normalizeHeroJob(displayRecommendations[activeCard] || displayRecommendations[0])
+                                        const title = (isMember && job?.translations?.title) ? job.translations.title : (job?.title || job?.role || '远程岗位')
                                         const company = job?.company_name || job?.company || 'Company'
-                                        const location = job?.location || job?.remote_location || '远程'
+                                        const location = (isMember && job?.translations?.location) ? job.translations.location : (job?.location || job?.remote_location || '远程')
                                         const timezone = job?.timezone || job?.remote_timezone || ''
                                         const salary = job?.salary || job?.salary_range || '薪酬面议'
-                                        const companyIntro = job?.company_intro || job?.description || `${company} 是一家全球化远程优先军业公司，岗位面向全球中文人才开放申请。`
-                                        const detail = job?.description || `该岗位聚焦${jobDirection || '核心岗位能力'}，要求跨团队协作、远程沟通与业务驱动思维，适合希望在国际化团队长期发展的候选人。`
-                                        const openJobDetail = () => setSelectedJobDetail({
-                                            id: String(job?.id || `hero-job-${activeCard}`),
-                                            title,
-                                            company,
-                                            company_name: company,
-                                            location,
-                                            salary,
-                                            timezone,
-                                            description: detail,
-                                            company_intro: companyIntro,
-                                            source: 'hero_copilot'
-                                        })
+                                        const translatedDetail = isMember ? (job?.translations?.description || '') : ''
+                                        const companyIntro = job?.companyDescription || job?.company_intro || job?.description || ''
+                                        const detail = translatedDetail || job?.description || companyIntro || '点击查看完整岗位详情'
+                                        const openJobDetail = () => openHeroJobDetail({ ...job, source: 'hero_copilot' })
                                         return (
                                             <div className="flex-1 min-h-0 flex flex-col relative">
                                                 <div className="absolute inset-x-4 top-2 bottom-0 rounded-2xl border border-indigo-50 bg-white shadow-sm" />
@@ -950,7 +981,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                     {/* Company Intro */}
                                                     <div className="mb-3">
                                                         <div className="text-xs font-bold text-slate-500 mb-1.5">企业介绍</div>
-                                                        <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{companyIntro}</p>
+                                                        <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{companyIntro || '点击查看详情，查看完整企业介绍。'}</p>
                                                     </div>
                                                     <div className="relative flex-1 overflow-hidden">
                                                         <div className="text-xs font-bold text-slate-500 mb-1.5">岗位详情</div>
