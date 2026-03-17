@@ -409,16 +409,29 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         let mounted = true
         const loadTickerJobs = async () => {
             try {
-                const params = new URLSearchParams({
-                    resource: 'processed-jobs',
+                const query = new URLSearchParams({
                     page: '1',
-                    limit: '12',
+                    limit: '20',
                     sortBy: 'recent',
                     _t: Date.now().toString()
-                })
-                const resp = await fetch(`/api/data?${params.toString()}`)
-                const data = await resp.json().catch(() => ({}))
+                }).toString()
+
+                // 优先走明确路由，兼容旧环境再回退 resource 形式
+                let resp = await fetch(`/api/data/processed-jobs?${query}`)
+                let data = await resp.json().catch(() => ({}))
+                if (!resp.ok || !Array.isArray(data.jobs)) {
+                    const fallbackParams = new URLSearchParams({
+                        resource: 'processed-jobs',
+                        page: '1',
+                        limit: '20',
+                        sortBy: 'recent',
+                        _t: Date.now().toString()
+                    })
+                    resp = await fetch(`/api/data?${fallbackParams.toString()}`)
+                    data = await resp.json().catch(() => ({}))
+                }
                 if (!resp.ok || !Array.isArray(data.jobs)) throw new Error('ticker jobs unavailable')
+
                 const normalizedTicker = data.jobs
                     .filter((j: any) => j?.title && (j?.company || j?.company_name))
                     .map((j: any) => {
@@ -432,7 +445,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             salary: j.salary || '薪资面议'
                         }
                     })
-                const dispersedTicker = spreadByCompany(normalizedTicker, 6).slice(0, 10)
+                const tickerSeed = normalizedTicker.length >= 8
+                    ? normalizedTicker
+                    : [...normalizedTicker, ...TICKER_FALLBACK]
+                const dispersedTicker = spreadByCompany(tickerSeed, 6).slice(0, 10)
                 if (mounted && dispersedTicker.length > 0) {
                     setTickerJobs(dispersedTicker)
                     const pmPreview = data.jobs
@@ -577,15 +593,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
         } catch (error: any) {
             console.error(error)
-            // Fallback for error
-            const fallback = SAMPLE_RECOMMENDATIONS.slice(0, dailyLimit)
-            setTimeout(() => {
-                setRecommendations(fallback)
-                setActiveCard(0)
-                setHasResults(true)
-                setLastUpdatedAt(Date.now())
-                setLoading(false)
-            }, 1500)
+            setRecommendations([])
+            setHasResults(false)
+            showError('获取推荐失败', error?.message || '请稍后重试')
         } finally {
             setLoading(false)
         }
@@ -976,6 +986,8 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
     const [weeklyHours] = useState('5-10小时')
     const [planData, setPlanData] = useState<any | null>(null)
     const [planLoading, setPlanLoading] = useState(false)
+    const [planError, setPlanError] = useState('')
+    const [planReloadTick, setPlanReloadTick] = useState(0)
 
     useEffect(() => {
         const prev = document.body.style.overflow
@@ -990,6 +1002,7 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
         const loadPlan = async () => {
             if (!isAuthenticated || !token) return
             setPlanLoading(true)
+            setPlanError('')
             try {
                 if (resumeId) {
                     await fetch('/api/copilot', {
@@ -1045,22 +1058,50 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     return
                 }
 
+                // 兼容旧版线上链路：直接走 legacy generate，确保方案落到 copilot_sessions 供个人中心读取
+                const legacyResp = await fetch('/api/copilot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        goal: positionType,
+                        timeline: '1-3 months',
+                        background: { industry: jobDirection, availability: weeklyHours },
+                        resumeId
+                    })
+                })
+                const legacyData = await legacyResp.json().catch(() => ({}))
+                if (legacyResp.ok && legacyData?.plan && mounted) {
+                    setPlanData(legacyData.plan)
+                    return
+                }
+
                 const getResp = await fetch('/api/copilot', {
                     headers: { Authorization: `Bearer ${token}` }
                 })
                 const getData = await getResp.json().catch(() => ({}))
                 if (getResp.ok && getData?.success && getData?.plan && mounted) {
                     setPlanData(getData.plan)
+                    return
+                }
+                if (mounted) {
+                    setPlanData(null)
+                    setPlanError('方案生成失败或未保存成功，请重试。')
                 }
             } catch {
-                if (mounted) setPlanData(null)
+                if (mounted) {
+                    setPlanData(null)
+                    setPlanError('加载求职方案失败，请重试。')
+                }
             } finally {
                 if (mounted) setPlanLoading(false)
             }
         }
         loadPlan()
         return () => { mounted = false }
-    }, [isAuthenticated, token, positionType, jobDirection, resumeId])
+    }, [isAuthenticated, token, positionType, jobDirection, resumeId, planReloadTick])
 
     const guestPlan = {
         summary: '这是简版远程求职规划，用于体验核心流程。登录后可获得完整方案与更多细节分析。',
@@ -1151,8 +1192,19 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
 
                     {planLoading && isAuthenticated ? (
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm text-slate-500">正在加载你的完整求职规划...</div>
+                    ) : (isAuthenticated && !planData) ? (
+                        <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6">
+                            <div className="text-sm font-semibold text-rose-700">{planError || '暂未拿到可用方案数据。'}</div>
+                            <button
+                                type="button"
+                                onClick={() => setPlanReloadTick(v => v + 1)}
+                                className="mt-3 px-4 py-2 rounded-lg border border-rose-200 bg-white text-rose-700 text-sm font-semibold hover:bg-rose-100 transition-colors"
+                            >
+                                重新生成并保存
+                            </button>
+                        </div>
                     ) : (
-                        <GeneratedPlanView plan={normalizePlanForView(isAuthenticated ? (planData || guestPlan) : guestPlan)} isGuest={!isAuthenticated} openInNewTab />
+                        <GeneratedPlanView plan={normalizePlanForView(isAuthenticated ? planData : guestPlan)} isGuest={!isAuthenticated} openInNewTab />
                     )}
                 </div>
             </div>
