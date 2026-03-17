@@ -257,14 +257,9 @@ function extractParsedResumeHints(parsed: any) {
 }
 
 
-const TICKER_FALLBACK = [
-    { id: 201, title: 'Senior Product Manager', company_name: 'ClickHouse', company_logo: '', logo_candidates: resolveLogoCandidates('', 'ClickHouse', 'clickhouse.com'), salary: '$145k - $225k' },
-    { id: 202, title: 'Sr. Full Stack Developer', company_name: 'MetroStar', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MetroStar', 'metrostar.com'), salary: '$101k - $147k' },
-    { id: 203, title: 'Sr. Data Scientist', company_name: 'MoneyGram', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MoneyGram', 'moneygram.com'), salary: '$130k - $185k' },
-    { id: 204, title: 'UX Designer', company_name: 'PEXA Group', company_logo: '', logo_candidates: resolveLogoCandidates('', 'PEXA Group', 'pexa.com'), salary: '£45k - £55k' },
-    { id: 205, title: 'Remote PM (Cloud)', company_name: 'ClickHouse', company_logo: '', logo_candidates: resolveLogoCandidates('', 'ClickHouse', 'clickhouse.com'), salary: '$145k+' },
-    { id: 206, title: 'Remote Full Stack', company_name: 'MetroStar', company_logo: '', logo_candidates: resolveLogoCandidates('', 'MetroStar', 'metrostar.com'), salary: '$101k+' },
-]
+const TICKER_TARGET_MIN = 8
+const TICKER_TARGET_MAX = 10
+const TICKER_RECENT_WINDOWS = [3, 7, 14]
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
@@ -323,7 +318,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         return [...previewJobs, ...filler].slice(0, 3)
     })()
 
-    const [tickerJobs, setTickerJobs] = useState<any[]>(TICKER_FALLBACK)
+    const [tickerJobs, setTickerJobs] = useState<any[]>([])
     const tickerLoop = [...tickerJobs, ...tickerJobs]
 
     // Load saved form data from local storage for guest/returning users
@@ -409,30 +404,33 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         let mounted = true
         const loadTickerJobs = async () => {
             try {
-                const query = new URLSearchParams({
-                    page: '1',
-                    limit: '20',
-                    sortBy: 'recent',
-                    _t: Date.now().toString()
-                }).toString()
-
-                // 优先走明确路由，兼容旧环境再回退 resource 形式
-                let resp = await fetch(`/api/data/processed-jobs?${query}`)
-                let data = await resp.json().catch(() => ({}))
-                if (!resp.ok || !Array.isArray(data.jobs)) {
-                    const fallbackParams = new URLSearchParams({
+                const fetchWindowJobs = async (days: number) => {
+                    const dateFrom = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+                    const params = new URLSearchParams({
                         resource: 'processed-jobs',
                         page: '1',
-                        limit: '20',
+                        limit: '60',
                         sortBy: 'recent',
+                        dateFrom,
                         _t: Date.now().toString()
                     })
-                    resp = await fetch(`/api/data?${fallbackParams.toString()}`)
-                    data = await resp.json().catch(() => ({}))
+                    const resp = await fetch(`/api/data?${params.toString()}`)
+                    const data = await resp.json().catch(() => ({}))
+                    if (!resp.ok || !Array.isArray(data.jobs)) return []
+                    return data.jobs
                 }
-                if (!resp.ok || !Array.isArray(data.jobs)) throw new Error('ticker jobs unavailable')
 
-                const normalizedTicker = data.jobs
+                const dedupedRaw = new Map<string, any>()
+                for (const windowDays of TICKER_RECENT_WINDOWS) {
+                    const jobs = await fetchWindowJobs(windowDays)
+                    jobs.forEach((j: any) => {
+                        const id = String(j?.id || j?.job_id || '')
+                        if (id && !dedupedRaw.has(id)) dedupedRaw.set(id, j)
+                    })
+                    if (dedupedRaw.size >= TICKER_TARGET_MAX) break
+                }
+
+                const normalizedTicker = Array.from(dedupedRaw.values())
                     .filter((j: any) => j?.title && (j?.company || j?.company_name))
                     .map((j: any) => {
                         const companyName = j.company || j.company_name
@@ -445,13 +443,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             salary: j.salary || '薪资面议'
                         }
                     })
-                const tickerSeed = normalizedTicker.length >= 8
-                    ? normalizedTicker
-                    : [...normalizedTicker, ...TICKER_FALLBACK]
-                const dispersedTicker = spreadByCompany(tickerSeed, 6).slice(0, 10)
+                if (normalizedTicker.length < TICKER_TARGET_MIN) {
+                    console.warn(`[Hero] ticker jobs less than expected: ${normalizedTicker.length}/${TICKER_TARGET_MIN}`)
+                }
+
+                const dispersedTicker = spreadByCompany(normalizedTicker, 5).slice(0, TICKER_TARGET_MAX)
                 if (mounted && dispersedTicker.length > 0) {
                     setTickerJobs(dispersedTicker)
-                    const pmPreview = data.jobs
+                    const pmPreview = Array.from(dedupedRaw.values())
                         .filter((j: any) => {
                             const companyName = j.company || j.company_name || ''
                             return j?.title && companyName && /product|pm|产品/i.test(`${j.title} ${companyName}`)
@@ -475,8 +474,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 throw new Error('empty ticker jobs')
             } catch {
                 if (mounted) {
-                    setTickerJobs(TICKER_FALLBACK)
-                    setPreviewJobs(PREVIEW_PM_RECOMMENDATIONS)
+                    setTickerJobs([])
+                    setPreviewJobs([])
                 }
             }
         }
@@ -785,7 +784,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                         {/* ── Right Column ── */}
                         <div className={`lg:col-span-7 backdrop-blur-2xl rounded-[24px] border border-white/50 flex flex-col shadow-sm overflow-hidden h-full ${
-                            hasResults ? 'bg-white/50' : 'bg-white/38'
+                            hasResults ? 'bg-white/50' : 'bg-white/30'
                         }`}>
                             <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
                                 <h3 className={`${hasResults ? 'text-[24px]' : 'text-[20px]'} font-bold text-slate-800 leading-none`}>{hasResults ? '今日推荐' : '每日推荐预览'}</h3>
@@ -837,11 +836,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         </div>
                                         <div className="absolute inset-0 z-[2] pointer-events-none bg-gradient-to-b from-white/34 via-white/70 to-[#f6f8ff]/94 backdrop-blur-[2px]" />
                                         <div className="absolute inset-0 z-[3] pointer-events-none flex items-center justify-center px-6">
-                                            <div className="w-full max-w-[350px] rounded-[20px] border border-white/92 bg-white/68 backdrop-blur-md shadow-[0_16px_36px_-28px_rgba(79,70,229,0.42)] px-4 py-4 sm:px-5 sm:py-4 text-center">
-                                                <p className="text-[22px] sm:text-[24px] font-semibold leading-[1.2] tracking-tight text-slate-700">解锁你的专属推荐</p>
-                                                <div className="flex flex-wrap justify-center gap-2 mt-2.5">
-                                                    <span className="inline-flex items-center rounded-full border border-white/90 bg-white/84 px-3 py-1 text-[10px] font-medium text-slate-500 shadow-sm">游客每日 1 个推荐</span>
-                                                    <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50/82 px-3 py-1 text-[10px] font-medium text-indigo-600 shadow-sm">登录后每日 5 个推荐</span>
+                                            <div className="w-full max-w-[290px] rounded-2xl border border-white/90 bg-white/56 backdrop-blur-md shadow-[0_8px_24px_-20px_rgba(79,70,229,0.34)] px-4 py-3 text-center">
+                                                <p className="text-[18px] sm:text-[19px] font-semibold leading-tight tracking-tight text-slate-700">解锁你的专属推荐</p>
+                                                <div className="flex flex-wrap justify-center gap-1.5 mt-2">
+                                                    <span className="inline-flex items-center rounded-full border border-white/90 bg-white/84 px-2.5 py-1 text-[10px] font-medium text-slate-500">游客每日 1 个推荐</span>
+                                                    <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50/82 px-2.5 py-1 text-[10px] font-medium text-indigo-600">登录后每日 5 个推荐</span>
                                                 </div>
                                             </div>
                                         </div>
