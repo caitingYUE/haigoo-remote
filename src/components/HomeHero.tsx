@@ -406,27 +406,27 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 pb-20">
+        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-white pt-28 pb-20">
             {/* ── Background ── */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50">
+            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-white">
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
                     <img
                         src="/background.webp?v=2"
                         alt="Background"
-                        className="absolute inset-0 w-full h-full object-cover opacity-90"
+                        className="absolute inset-0 w-full h-full object-cover opacity-95"
                         style={{ transform: `translate(${bgPosition.x - 50}px, ${bgPosition.y - 50}px)` }}
                     />
                 </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/30 to-slate-50" />
-                <div className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-indigo-200/20 blur-[100px] animate-pulse" />
-                <div className="absolute top-1/3 -right-48 w-[500px] h-[500px] rounded-full bg-indigo-300/20 blur-[100px] animate-pulse delay-1000" />
+                <div className="absolute inset-0 bg-gradient-to-b from-white/25 via-white/40 to-white/80" />
+                <div className="absolute -top-24 -left-24 w-[560px] h-[560px] rounded-full bg-indigo-200/18 blur-[110px] animate-pulse" />
+                <div className="absolute top-1/3 -right-40 w-[460px] h-[460px] rounded-full bg-violet-200/18 blur-[110px] animate-pulse delay-1000" />
             </div>
 
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
                 
                 {/* ── Hero Text ── */}
                 <div className="text-center mb-10 max-w-5xl mx-auto">
-                    <h1 className="text-4xl md:text-6xl font-bold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm">
+                    <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm">
                         理想生活，
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
                             从远程工作开始
