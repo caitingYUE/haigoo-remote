@@ -151,7 +151,7 @@ function InputCard({
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { isAuthenticated } = useAuth()
+    const { isAuthenticated, token } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
 
     // Background Parallax State
@@ -175,6 +175,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [activeCard, setActiveCard] = useState(0)
     const [selectedJobDetail, setSelectedJobDetail] = useState<any | null>(null)
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
+    const [previewJobs, setPreviewJobs] = useState<any[]>([])
+    const autoRefreshedAfterLogin = useRef(false)
     const displayRecommendations = hasResults && recommendations.length > 0
         ? recommendations
         : SAMPLE_RECOMMENDATIONS
@@ -187,15 +189,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         minute: '2-digit'
     }).format(lastUpdatedAt)
     
-    // Mock active jobs for marquee (would be fetched from API in real app)
-    const tickerJobs = [
-        { id: 201, title: 'Senior Product Manager', company_name: 'ClickHouse', company_logo: '', salary: '$145k - $225k' },
-        { id: 202, title: 'Sr. Full Stack Developer', company_name: 'MetroStar', company_logo: '', salary: '$101k - $147k' },
-        { id: 203, title: 'Sr. Data Scientist', company_name: 'MoneyGram', company_logo: '', salary: '$130k - $185k' },
-        { id: 204, title: 'UX Designer', company_name: 'PEXA Group', company_logo: '', salary: '£45k - £55k' },
-        { id: 205, title: 'Remote PM (Cloud)', company_name: 'ClickHouse', company_logo: '', salary: '$145k+' },
-        { id: 206, title: 'Remote Full Stack', company_name: 'MetroStar', company_logo: '', salary: '$101k+' },
-    ]
+    const [tickerJobs, setTickerJobs] = useState<any[]>([])
     const tickerLoop = [...tickerJobs, ...tickerJobs]
 
     // Load saved form data from local storage for guest/returning users
@@ -239,6 +233,66 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         const payload = { jobDirection, positionType, recommendations, hasResults, timestamp: Date.now() }
         localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(payload))
     }, [jobDirection, positionType, recommendations, hasResults, hasHydrated])
+
+    useEffect(() => {
+        let mounted = true
+        const loadTickerJobs = async () => {
+            try {
+                const params = new URLSearchParams({
+                    resource: 'processed-jobs',
+                    page: '1',
+                    limit: '12',
+                    sortBy: 'recent',
+                    _t: Date.now().toString()
+                })
+                const resp = await fetch(`/api/data?${params.toString()}`)
+                const data = await resp.json().catch(() => ({}))
+                if (!resp.ok || !Array.isArray(data.jobs)) throw new Error('ticker jobs unavailable')
+                const normalized = data.jobs
+                    .filter((j: any) => j?.title && j?.company)
+                    .map((j: any) => ({
+                        id: j.id || j.job_id,
+                        title: j.title,
+                        company_name: j.company,
+                        company_logo: j.logo || '',
+                        salary: j.salary || '薪资面议'
+                    }))
+                    .slice(0, 10)
+                if (mounted && normalized.length > 0) {
+                    setTickerJobs(normalized)
+                    const pmPreview = data.jobs
+                        .filter((j: any) => j?.title && j?.company && /product|pm|产品/i.test(`${j.title} ${j.company}`))
+                        .map((j: any) => ({
+                            id: j.id || j.job_id,
+                            title: j.title,
+                            company_name: j.company,
+                            company_logo: j.logo || '',
+                            location: j.location || 'Remote',
+                            salary: j.salary || '薪资面议',
+                            company_intro: j.companyDescription || j.description || ''
+                        }))
+                        .slice(0, 3)
+                    if (pmPreview.length > 0) setPreviewJobs(pmPreview)
+                    return
+                }
+                throw new Error('empty ticker jobs')
+            } catch {
+                if (mounted) {
+                    setTickerJobs([
+                        { id: 201, title: 'Senior Product Manager', company_name: 'ClickHouse', company_logo: '', salary: '$145k - $225k' },
+                        { id: 202, title: 'Sr. Full Stack Developer', company_name: 'MetroStar', company_logo: '', salary: '$101k - $147k' },
+                        { id: 203, title: 'Sr. Data Scientist', company_name: 'MoneyGram', company_logo: '', salary: '$130k - $185k' },
+                        { id: 204, title: 'UX Designer', company_name: 'PEXA Group', company_logo: '', salary: '£45k - £55k' },
+                        { id: 205, title: 'Remote PM (Cloud)', company_name: 'ClickHouse', company_logo: '', salary: '$145k+' },
+                        { id: 206, title: 'Remote Full Stack', company_name: 'MetroStar', company_logo: '', salary: '$101k+' },
+                    ])
+                    setPreviewJobs(PREVIEW_PM_RECOMMENDATIONS)
+                }
+            }
+        }
+        loadTickerJobs()
+        return () => { mounted = false }
+    }, [])
 
     const handleResumeUpload = async (file: File) => {
         if (!privacyAccepted) {
@@ -286,46 +340,39 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection, positionType, timestamp: Date.now() }))
 
         try {
-            const token = localStorage.getItem('haigoo_auth_token')
-            // Guest (not logged in): show exactly 1 sample
-            if (!token) {
-                setTimeout(() => {
-                    setRecommendations(SAMPLE_RECOMMENDATIONS.slice(0, 1))
-                    setHasResults(true)
-                    setLastUpdatedAt(Date.now())
-                    setLoading(false)
-                    showSuccess('找到 1 个匹配岗位', '登录后可解锁更多推荐')
-                }, 1500)
-                return
-            }
-
-            const res = await fetch('/api/copilot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'refresh-recommendations',
-                    goal: positionType,
-                    background: { industry: jobDirection },
-                    resumeId
-                })
+            const authToken = localStorage.getItem('haigoo_auth_token') || token
+            const params = new URLSearchParams({
+                resource: 'processed-jobs',
+                page: '1',
+                limit: authToken ? '20' : '6',
+                search: jobDirection,
+                sortBy: authToken ? 'relevance' : 'recent',
+                _t: Date.now().toString()
             })
-
-            const data = await res.json()
-            if (!res.ok) {
-                if (res.status === 401) {
-                    showWarning('请先登录', '登录后查看更多推荐')
-                    navigate('/login')
-                    return
-                }
+            if (positionType === 'full-time') params.append('type', 'full-time')
+            const res = await fetch(`/api/data?${params.toString()}`, {
+                headers: authToken ? { Authorization: `Bearer ${authToken}` } : undefined
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !Array.isArray(data.jobs)) {
                 throw new Error(data.error || '获取推荐失败')
             }
-
-            // Non-member: cap to 1 result
-            const recs = data.recommendations || []
-            const capped = recs.slice(0, dailyLimit)
+            const normalized = data.jobs.map((j: any) => ({
+                id: j.id || j.job_id,
+                title: j.title,
+                company_name: j.company,
+                company: j.company,
+                location: j.location || 'Remote',
+                timezone: j.timezone || '',
+                salary: j.salary || '薪酬面议',
+                company_intro: j.companyDescription || j.company_description || '',
+                description: j.description || '',
+                company_logo: j.logo || ''
+            }))
+            const capped = normalized.slice(0, dailyLimit)
+            if (capped.length === 0) {
+                throw new Error('当前未检索到匹配岗位')
+            }
             setRecommendations(capped)
             setHasResults(true)
             setLastUpdatedAt(Date.now())
@@ -345,6 +392,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (isAuthenticated) setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (!hasHydrated || !isAuthenticated || autoRefreshedAfterLogin.current) return
+        if (jobDirection && hasResults && recommendations.length > 0 && recommendations.length < dailyLimit && !loading) {
+            autoRefreshedAfterLogin.current = true
+            handleGetRecommendations()
+        }
+    }, [hasHydrated, isAuthenticated, hasResults, recommendations.length, dailyLimit, loading, jobDirection])
     
     const handleGeneratePlan = () => {
         setShowPlanModal(true)
@@ -530,7 +585,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             <div className="flex-1 px-5 pt-5 pb-3 flex flex-col">
                                 {!hasResults ? (
                                     <div className="h-full min-h-[420px] flex flex-col gap-4 relative">
-                                        {PREVIEW_PM_RECOMMENDATIONS.map((job, idx) => (
+                                        {(previewJobs.length > 0 ? previewJobs : PREVIEW_PM_RECOMMENDATIONS).map((job, idx, arr) => (
                                             <div key={job.id} className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                                                 <div className="flex items-start gap-4">
                                                     <div className="w-11 h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -555,7 +610,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         <p className="text-[11px] text-slate-500 mt-1.5 line-clamp-1">{job.company_intro}</p>
                                                     </div>
                                                 </div>
-                                                {idx < PREVIEW_PM_RECOMMENDATIONS.length - 1 && (
+                                                {idx < arr.length - 1 && (
                                                     <div className="mt-3 border-t border-slate-100" />
                                                 )}
                                             </div>
@@ -648,7 +703,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
             {/* ── Copilot Plan Modal ── */}
             {showPlanModal && (
-                <CopilotPlanModal onClose={() => setShowPlanModal(false)} />
+                <CopilotPlanModal
+                    onClose={() => setShowPlanModal(false)}
+                    jobDirection={jobDirection}
+                    positionType={positionType}
+                    resumeId={resumeId}
+                />
             )}
             <JobDetailModal
                 job={selectedJobDetail}
@@ -660,10 +720,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     )
 }
 
-function CopilotPlanModal({ onClose }: { onClose: () => void }) {
-    const { isAuthenticated } = useAuth()
+function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { onClose: () => void, jobDirection: string, positionType: string, resumeId: string | null }) {
+    const { isAuthenticated, token } = useAuth()
     const [timeline, setTimeline] = useState('1-3个月')
     const [weeklyHours, setWeeklyHours] = useState('5-10小时')
+    const [planData, setPlanData] = useState<any | null>(null)
+    const [planLoading, setPlanLoading] = useState(false)
 
     useEffect(() => {
         const prev = document.body.style.overflow
@@ -672,6 +734,47 @@ function CopilotPlanModal({ onClose }: { onClose: () => void }) {
             document.body.style.overflow = prev
         }
     }, [])
+
+    useEffect(() => {
+        let mounted = true
+        const loadPlan = async () => {
+            if (!isAuthenticated || !token) return
+            setPlanLoading(true)
+            try {
+                const getResp = await fetch('/api/copilot', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                const getData = await getResp.json().catch(() => ({}))
+                if (getResp.ok && getData?.success && getData?.plan) {
+                    if (mounted) setPlanData(getData.plan)
+                    return
+                }
+                const genResp = await fetch('/api/copilot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        goal: positionType,
+                        timeline: '1-3 months',
+                        background: { industry: jobDirection },
+                        resumeId
+                    })
+                })
+                const genData = await genResp.json().catch(() => ({}))
+                if (genResp.ok && genData?.plan && mounted) {
+                    setPlanData(genData.plan)
+                }
+            } catch {
+                if (mounted) setPlanData(null)
+            } finally {
+                if (mounted) setPlanLoading(false)
+            }
+        }
+        loadPlan()
+        return () => { mounted = false }
+    }, [isAuthenticated, token, positionType, jobDirection, resumeId])
 
     const guestPlan = {
         summary: '这是简版远程求职规划，用于体验核心流程。登录后可获得完整方案与更多细节分析。',
@@ -724,6 +827,7 @@ function CopilotPlanModal({ onClose }: { onClose: () => void }) {
                         </div>
                     ) : null}
 
+                    {!isAuthenticated && (
                     <div className="bg-white border border-indigo-100 rounded-2xl p-4">
                         <div className="text-sm font-bold text-slate-900 mb-3">关键行动路线设置</div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -745,8 +849,13 @@ function CopilotPlanModal({ onClose }: { onClose: () => void }) {
                             </div>
                         </div>
                     </div>
+                    )}
 
-                    <GeneratedPlanView plan={guestPlan} isGuest={!isAuthenticated} />
+                    {planLoading && isAuthenticated ? (
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm text-slate-500">正在加载你的完整求职规划...</div>
+                    ) : (
+                        <GeneratedPlanView plan={isAuthenticated ? (planData || guestPlan) : guestPlan} isGuest={!isAuthenticated} />
+                    )}
 
                     <div className="text-center pt-2">
                         <Link to="/copilot" onClick={onClose} className="text-sm text-indigo-600 font-semibold hover:underline">
