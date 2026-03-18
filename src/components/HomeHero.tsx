@@ -10,6 +10,7 @@ import JobTickerItem from './JobTickerItem'
 import GeneratedPlanView from './GeneratedPlanView'
 import JobDetailModal from './JobDetailModal'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
+import { stripMarkdown } from '../utils/text-formatter'
 import {
     readPendingGuestResume,
     savePendingGuestResume,
@@ -162,6 +163,18 @@ function getHeroDisplaySalary(rawSalary: any) {
         if (!min && !max) return '薪资Open'
     }
     return rawSalary
+}
+
+function cleanHeroRichText(text?: string) {
+    if (!text) return ''
+    const decoded = String(text)
+        .replace(/&lt;/gi, '<')
+        .replace(/&gt;/gi, '>')
+        .replace(/&amp;/gi, '&')
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'")
+        .replace(/&nbsp;/gi, ' ')
+    return stripMarkdown(decoded).replace(/\s+/g, ' ').trim()
 }
 
 // ── Unified Input Card Component ──
@@ -336,7 +349,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     })()
 
     const [tickerJobs, setTickerJobs] = useState<any[]>([])
-    const tickerLoop = [...tickerJobs, ...tickerJobs]
+    const tickerRepeatCount = tickerJobs.length > 0 ? Math.max(4, Math.ceil(12 / tickerJobs.length)) : 0
+    const tickerLoop = tickerRepeatCount > 0 ? Array.from({ length: tickerRepeatCount }, () => tickerJobs).flat() : []
 
     const normalizeHeroJob = (job: any) => {
         const company = job?.company_name || job?.company || 'Company'
@@ -350,8 +364,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             salary: getHeroDisplaySalary(job?.salary || job?.salary_range),
             timezone: job?.timezone || job?.remote_timezone || '',
             description: typeof job?.description === 'string' ? job.description : '',
-            company_intro: job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || '',
-            companyDescription: job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || '',
+            company_intro: cleanHeroRichText(job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || ''),
+            companyDescription: cleanHeroRichText(job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || ''),
             translations: job?.translations || null,
             companyTranslations: job?.companyTranslations || job?.company_translations || null,
             companyId: job?.companyId || job?.company_id,
@@ -760,7 +774,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     <div className="w-full max-w-5xl mx-auto mt-4 mb-4 overflow-hidden rounded-full opacity-90 hover:opacity-100 transition-opacity [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)] relative h-[56px]">
                         <div 
                             className="hero-marquee-track absolute top-0 left-0 pointer-events-none"
-                            style={{ '--marquee-duration': '90s' } as CSSProperties}
+                            style={{
+                                '--marquee-duration': `${Math.max(36, tickerJobs.length * 8)}s`,
+                                '--marquee-shift': `calc(-100% / ${Math.max(1, tickerRepeatCount)})`
+                            } as CSSProperties}
                         >
                             {tickerLoop.map((job, i) => (
                                 <div
@@ -956,10 +973,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         const location = job?.translations?.location || job?.location || job?.remote_location || '远程'
                                         const timezone = job?.timezone || job?.remote_timezone || ''
                                         const salary = getHeroDisplaySalary(job?.salary || job?.salary_range)
-                                        const translatedDetail = job?.translations?.description || ''
-                                        const translatedCompanyIntro = job?.companyTranslations?.description || ''
-                                        const companyIntro = translatedCompanyIntro || job?.companyDescription || job?.company_intro || job?.description || ''
-                                        const detail = translatedDetail || job?.description || companyIntro || '点击查看完整岗位详情'
+                                        const translatedDetail = cleanHeroRichText(job?.translations?.description || '')
+                                        const translatedCompanyIntro = cleanHeroRichText(job?.companyTranslations?.description || '')
+                                        const companyIntro = translatedCompanyIntro || cleanHeroRichText(job?.companyDescription || job?.company_intro || job?.description || '')
+                                        const detail = translatedDetail || cleanHeroRichText(job?.description || '') || companyIntro || '点击查看完整岗位详情'
                                         const openJobDetail = () => openHeroJobDetail({ ...job, source: 'hero_copilot' })
                                         return (
                                             <div className="flex-1 min-h-0 flex flex-col relative">

@@ -1579,7 +1579,7 @@
   }
 
   100% {
-    transform: translateX(-50%);
+    transform: translateX(var(--marquee-shift, -50%));
   }
 }
 
