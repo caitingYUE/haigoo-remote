@@ -48,7 +48,7 @@ export default function JobTickerItem({ job, onOpen }: { job: any, onOpen?: (job
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                     <span className="truncate max-w-[80px]">{job.company_name}</span>
                     <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />
-                    <span>{job.salary || 'Salary Open'}</span>
+                    <span>{job.salary || '薪资Open'}</span>
                 </div>
             </div>
 

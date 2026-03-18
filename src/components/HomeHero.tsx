@@ -147,6 +147,23 @@ function spreadByCompany<T extends { company_name?: string; company?: string }>(
     return result
 }
 
+function getHeroDisplaySalary(rawSalary: any) {
+    if (!rawSalary) return '薪资Open'
+    if (typeof rawSalary === 'string') {
+        const normalized = rawSalary.trim()
+        if (!normalized || normalized === '0' || normalized === 'null' || normalized === 'Open' || normalized === '0-0' || normalized === 'Competitive' || normalized === 'Unspecified') {
+            return '薪资Open'
+        }
+        return normalized
+    }
+    if (typeof rawSalary === 'object' && rawSalary) {
+        const min = Number(rawSalary.min || 0)
+        const max = Number(rawSalary.max || 0)
+        if (!min && !max) return '薪资Open'
+    }
+    return rawSalary
+}
+
 // ── Unified Input Card Component ──
 function InputCard({ 
     label, 
@@ -330,12 +347,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             company,
             company_name: company,
             location: job?.location || '远程',
-            salary: job?.salary || job?.salary_range || '薪酬面议',
+            salary: getHeroDisplaySalary(job?.salary || job?.salary_range),
             timezone: job?.timezone || job?.remote_timezone || '',
             description: typeof job?.description === 'string' ? job.description : '',
             company_intro: job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || '',
             companyDescription: job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || '',
             translations: job?.translations || null,
+            companyTranslations: job?.companyTranslations || job?.company_translations || null,
             companyId: job?.companyId || job?.company_id,
             logo: job?.logo || job?.company_logo || '',
             company_logo: job?.logo || job?.company_logo || '',
@@ -546,11 +564,17 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                         tickerCandidates = windowJobs
                     }
                 }
+                if (tickerCandidates.length < 2) {
+                    tickerCandidates = sortedTicker.slice(0, Math.max(TICKER_TARGET_MIN, Math.min(TICKER_TARGET_MAX, sortedTicker.length)))
+                }
                 if (normalizedTicker.length < TICKER_TARGET_MIN) {
                     console.warn(`[Hero] ticker jobs less than expected: ${normalizedTicker.length}/${TICKER_TARGET_MIN}`)
                 }
 
-                const dispersedTicker = spreadByCompany(tickerCandidates, 5).slice(0, TICKER_TARGET_MAX)
+                let dispersedTicker = spreadByCompany(tickerCandidates, 5).slice(0, TICKER_TARGET_MAX)
+                if (dispersedTicker.length < 2 && sortedTicker.length > 1) {
+                    dispersedTicker = spreadByCompany(sortedTicker, 5).slice(0, TICKER_TARGET_MAX)
+                }
                 if (mounted && dispersedTicker.length > 0) {
                     setTickerJobs(dispersedTicker)
                     const pmPreview = tickerCandidates
@@ -927,13 +951,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                 ) : (
                                     (() => {
                                         const job = normalizeHeroJob(displayRecommendations[activeCard] || displayRecommendations[0])
-                                        const title = (isMember && job?.translations?.title) ? job.translations.title : (job?.title || job?.role || '远程岗位')
+                                        const title = job?.translations?.title || job?.title || job?.role || '远程岗位'
                                         const company = job?.company_name || job?.company || 'Company'
-                                        const location = (isMember && job?.translations?.location) ? job.translations.location : (job?.location || job?.remote_location || '远程')
+                                        const location = job?.translations?.location || job?.location || job?.remote_location || '远程'
                                         const timezone = job?.timezone || job?.remote_timezone || ''
-                                        const salary = job?.salary || job?.salary_range || '薪酬面议'
-                                        const translatedDetail = isMember ? (job?.translations?.description || '') : ''
-                                        const companyIntro = job?.companyDescription || job?.company_intro || job?.description || ''
+                                        const salary = getHeroDisplaySalary(job?.salary || job?.salary_range)
+                                        const translatedDetail = job?.translations?.description || ''
+                                        const translatedCompanyIntro = job?.companyTranslations?.description || ''
+                                        const companyIntro = translatedCompanyIntro || job?.companyDescription || job?.company_intro || job?.description || ''
                                         const detail = translatedDetail || job?.description || companyIntro || '点击查看完整岗位详情'
                                         const openJobDetail = () => openHeroJobDetail({ ...job, source: 'hero_copilot' })
                                         return (
