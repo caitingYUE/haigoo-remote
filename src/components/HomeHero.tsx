@@ -22,6 +22,7 @@ import {
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_CACHE_TTL = 6 * 60 * 60 * 1000
 const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
+const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
 
 // Sample data from public remote job listings for local preview.
 const SAMPLE_RECOMMENDATIONS = [
@@ -367,6 +368,24 @@ function clearStoredHeroResumeState() {
     }
 }
 
+function readStoredPlanStatus() {
+    try {
+        const raw = localStorage.getItem(HERO_PLAN_STATUS_KEY)
+        if (!raw) return null
+        return JSON.parse(raw)
+    } catch {
+        return null
+    }
+}
+
+function writeStoredPlanStatus(status: 'idle' | 'pending' | 'ready') {
+    try {
+        localStorage.setItem(HERO_PLAN_STATUS_KEY, JSON.stringify({ status, updatedAt: Date.now() }))
+    } catch {
+        // ignore
+    }
+}
+
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
     const { isAuthenticated, token, isMember } = useAuth()
@@ -393,6 +412,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [hasHydrated, setHasHydrated] = useState(false)
     const [showPlanModal, setShowPlanModal] = useState(false)
     const [keepPlanWorkerAlive, setKeepPlanWorkerAlive] = useState(false)
+    const [planStatus, setPlanStatus] = useState<'idle' | 'pending' | 'ready'>('idle')
     const [activeCard, setActiveCard] = useState(0)
     const touchStartXRef = useRef<number | null>(null)
     const resumeHydratedFromAccount = useRef(false)
@@ -459,6 +479,45 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             logo_candidates: job?.logo_candidates || resolveLogoCandidates(job?.logo || job?.company_logo, company, job?.companyWebsite || job?.company_website),
         }
     }
+
+    useEffect(() => {
+        const stored = readStoredPlanStatus()
+        if (stored?.status === 'pending' && Date.now() - Number(stored.updatedAt || 0) < 30 * 60 * 1000) {
+            setPlanStatus('pending')
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!isAuthenticated || !token) {
+            setPlanStatus('idle')
+            return
+        }
+        let cancelled = false
+        ;(async () => {
+            try {
+                const res = await fetch('/api/copilot', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                const data = await res.json().catch(() => ({}))
+                if (cancelled) return
+                if (res.ok && data?.plan) {
+                    setPlanStatus('ready')
+                    writeStoredPlanStatus('ready')
+                    return
+                }
+                const stored = readStoredPlanStatus()
+                if (stored?.status === 'pending' && Date.now() - Number(stored.updatedAt || 0) < 30 * 60 * 1000) {
+                    setPlanStatus('pending')
+                    return
+                }
+                setPlanStatus('idle')
+                writeStoredPlanStatus('idle')
+            } catch {
+                if (!cancelled) setPlanStatus(prev => prev)
+            }
+        })()
+        return () => { cancelled = true }
+    }, [isAuthenticated, token])
 
     const fetchHeroJobDetail = async (job: any) => {
         const normalized = normalizeHeroJob(job)
@@ -905,6 +964,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const handleGeneratePlan = () => {
         setKeepPlanWorkerAlive(true)
         setShowPlanModal(true)
+        if (isAuthenticated) {
+            setPlanStatus(prev => prev === 'ready' ? 'ready' : 'pending')
+            writeStoredPlanStatus('pending')
+        }
     }
 
     return (
@@ -1085,7 +1148,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         <button onClick={handleGeneratePlan}
                                             className="w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-[0_8px_20px_rgba(79,70,229,0.30)] transition-all flex items-center justify-center gap-2">
                                             <Sparkles className="w-4 h-4" />
-                                            查看完整求职规划 →
+                                            {isAuthenticated
+                                                ? planStatus === 'pending'
+                                                    ? '方案生成中'
+                                                    : planStatus === 'ready'
+                                                        ? '查看已生成方案'
+                                                        : '生成求职规划'
+                                                : '查看规划预览'}
                                         </button>
                                     </div>
                                 </div>
@@ -1267,6 +1336,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     visible={showPlanModal}
                     onClose={() => setShowPlanModal(false)}
                     onDispose={() => setKeepPlanWorkerAlive(false)}
+                    onStatusChange={(status) => {
+                        setPlanStatus(status)
+                        writeStoredPlanStatus(status)
+                    }}
                     jobDirection={jobDirection}
                     positionType={positionType}
                     resumeId={resumeId}
@@ -1286,6 +1359,7 @@ function CopilotPlanModal({
     visible,
     onClose,
     onDispose,
+    onStatusChange,
     jobDirection,
     positionType,
     resumeId
@@ -1293,6 +1367,7 @@ function CopilotPlanModal({
     visible: boolean
     onClose: () => void
     onDispose: () => void
+    onStatusChange: (status: 'idle' | 'pending' | 'ready') => void
     jobDirection: string
     positionType: string
     resumeId: string | null
@@ -1335,6 +1410,7 @@ function CopilotPlanModal({
             if (!isAuthenticated || !token) return
             setPlanLoading(true)
             setPlanError('')
+            onStatusChange('pending')
             try {
                 const shouldForceRefresh = planReloadTick > 0
                 const currentContext = {
@@ -1351,6 +1427,7 @@ function CopilotPlanModal({
                     const existingData = await existingResp.json().catch(() => ({}))
                     if (existingResp.ok && existingData?.plan && isStoredPlanReusable(existingData.plan, currentContext) && mounted) {
                         setPlanData(existingData.plan)
+                        onStatusChange('ready')
                         return
                     }
                 }
@@ -1422,6 +1499,7 @@ function CopilotPlanModal({
                         readiness: assessData?.readinessData?.remote_readiness_score,
                         summary: nextPlan.summary || `AI 已根据你的岗位偏好生成专属求职规划，默认按 ${planDefaults.preparationTime}、每周 ${planDefaults.weeklyHours} 的投入节奏推进。`
                     })
+                    onStatusChange('ready')
                     return
                 }
 
@@ -1449,6 +1527,7 @@ function CopilotPlanModal({
                 const legacyData = await legacyResp.json().catch(() => ({}))
                 if (legacyResp.ok && legacyData?.plan && mounted) {
                     setPlanData(legacyData.plan)
+                    onStatusChange('ready')
                     return
                 }
 
@@ -1458,16 +1537,19 @@ function CopilotPlanModal({
                 const getData = await getResp.json().catch(() => ({}))
                 if (getResp.ok && getData?.success && getData?.plan && mounted) {
                     setPlanData(getData.plan)
+                    onStatusChange('ready')
                     return
                 }
                 if (mounted) {
                     setPlanData(null)
                     setPlanError('方案生成失败或未保存成功，请重试。')
+                    onStatusChange('idle')
                 }
             } catch {
                 if (mounted) {
                     setPlanData(null)
                     setPlanError('加载求职方案失败，请重试。')
+                    onStatusChange('idle')
                 }
             } finally {
                 if (mounted) setPlanLoading(false)
@@ -1475,7 +1557,7 @@ function CopilotPlanModal({
         }
         loadPlan()
         return () => { mounted = false }
-    }, [isAuthenticated, token, positionType, jobDirection, resumeId, planReloadTick])
+    }, [isAuthenticated, token, positionType, jobDirection, resumeId, planReloadTick, onStatusChange])
 
     useEffect(() => {
         if (visible) {
@@ -1553,7 +1635,7 @@ function CopilotPlanModal({
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white">Copilot 求职助手</h2>
-                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '基于你的偏好生成的专属求职规划。' : '未登录也可体验简版求职规划，登录后解锁完整方案与更多岗位推荐。'}</p>
+                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '你的专属求职规划' : '先看预览，登录解锁完整方案'}</p>
                         </div>
                     </div>
                     <button onClick={handleModalClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
@@ -1566,7 +1648,7 @@ function CopilotPlanModal({
                         <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
                                 <div className="text-sm font-bold text-indigo-900">登录获取完整方案</div>
-                                <div className="text-xs text-indigo-700 mt-0.5">登录后可解锁完整方案内容与更多推荐功能。</div>
+                                <div className="text-xs text-indigo-700 mt-0.5">完整方案 + 更多推荐</div>
                             </div>
                             <Link to="/login" onClick={onClose} className="px-4 py-2 bg-white text-indigo-700 border border-indigo-200 rounded-xl text-sm font-semibold hover:bg-indigo-50 transition-colors text-center">登录解锁</Link>
                         </div>
@@ -1576,7 +1658,7 @@ function CopilotPlanModal({
                         <div className="flex items-center justify-between mb-3 gap-3">
                             <div>
                                 <div className="text-sm font-bold text-slate-900">默认参考项</div>
-                                <div className="text-xs text-slate-500 mt-1">默认使用英语能力、学历、准备周期与每周投入来生成方案结构。</div>
+                                <div className="text-xs text-slate-500 mt-1">方案默认项</div>
                             </div>
                             {canCustomizeDefaults && (
                                 <button
@@ -1617,10 +1699,10 @@ function CopilotPlanModal({
                         </div>
                         <div className="text-xs text-slate-600 bg-slate-50 rounded-xl px-4 py-3 mt-3">
                             {!isAuthenticated
-                                ? '当前先按默认参考项展示预览版方案。登录后可生成完整方案；会员可调整默认项后重新生成。'
+                                ? '登录后生成完整方案'
                                 : canCustomizeDefaults
-                                    ? '你可以调整默认项后重新生成完整方案，方案结构会同步更新到个人中心。'
-                                    : '当前默认项已锁定。升级会员后可调整默认项并重新生成完整方案。'}
+                                    ? '可改默认项'
+                                    : '会员可改默认项'}
                         </div>
                     </div>
 
@@ -1630,7 +1712,7 @@ function CopilotPlanModal({
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <div className="text-sm font-bold text-slate-900">会员专属能力已解锁</div>
-                                        <div className="text-xs text-slate-600 mt-1">方案生成后会同步到个人中心，后续可继续查看完整方案并深度打磨执行计划。</div>
+                                        <div className="text-xs text-slate-600 mt-1">可继续深度打磨</div>
                                     </div>
                                     <Link to="/profile?tab=custom-plan" onClick={handleModalClose} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors no-underline hover:no-underline">去个人中心继续打磨</Link>
                                 </div>
@@ -1639,7 +1721,7 @@ function CopilotPlanModal({
                             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
                                     <div className="text-sm font-bold text-slate-900">升级会员可继续深化方案</div>
-                                    <div className="text-xs text-slate-600 mt-1">当前已可查看完整规划；升级后可继续拓展求职方案，并深度打磨执行计划。</div>
+                                    <div className="text-xs text-slate-600 mt-1">会员可改默认项并深化方案</div>
                                 </div>
                                 <Link to="/membership" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员权益</Link>
                             </div>
@@ -1650,17 +1732,17 @@ function CopilotPlanModal({
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
                             <div className="flex items-center gap-3 text-sm text-slate-600">
                                 <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
-                                <span className="font-medium text-slate-700">正在生成你的完整求职规划</span>
+                                <span className="font-medium text-slate-700">方案生成中</span>
                             </div>
                             <div className="text-xs text-slate-500 mt-2 leading-relaxed">
-                                预计 3-5 分钟完成，复杂情况下可能更久。你可以先关闭弹窗去浏览岗位，方案生成完成后会自动提醒，并同步到个人中心。
+                                约 3-5 分钟，复杂情况更久。
                             </div>
                             <button
                                 type="button"
                                 onClick={handleModalClose}
                                 className="mt-4 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
                             >
-                                关闭弹窗，后台继续生成
+                                先去看岗位
                             </button>
                         </div>
                     ) : (isAuthenticated && !planData) ? (
