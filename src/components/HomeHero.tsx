@@ -21,6 +21,7 @@ import {
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_CACHE_TTL = 6 * 60 * 60 * 1000
+const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
 
 // Sample data from public remote job listings for local preview.
 const SAMPLE_RECOMMENDATIONS = [
@@ -290,6 +291,46 @@ function extractParsedResumeHints(parsed: any) {
 const TICKER_TARGET_MIN = 8
 const TICKER_TARGET_MAX = 10
 const TICKER_RECENT_WINDOWS = [3, 7, 14]
+const PLAN_LANGUAGE_OPTIONS = [
+    '中等（可借助翻译软件线上交流）',
+    '较强（可独立完成英文面试与协作）',
+    '基础（需要更多准备）',
+]
+const PLAN_EDUCATION_OPTIONS = ['大学本科', '大专', '硕士及以上', '其他']
+const PLAN_TIMELINE_OPTIONS = ['1-3个月', '1个月内', '3-6个月']
+const PLAN_WEEKLY_HOUR_OPTIONS = ['5-10小时', '10-15小时', '15小时以上', '3-5小时']
+
+function mapPreparationTimelineToApi(value: string) {
+    if (value === '1个月内') return 'immediately'
+    if (value === '3-6个月') return '3-6 months'
+    return '1-3 months'
+}
+
+function readStoredHeroResumeState() {
+    try {
+        const raw = localStorage.getItem(HERO_RESUME_STATE_KEY)
+        if (!raw) return null
+        return JSON.parse(raw)
+    } catch {
+        return null
+    }
+}
+
+function writeStoredHeroResumeState(payload: any) {
+    try {
+        localStorage.setItem(HERO_RESUME_STATE_KEY, JSON.stringify(payload))
+    } catch {
+        // ignore
+    }
+}
+
+function clearStoredHeroResumeState() {
+    try {
+        localStorage.removeItem(HERO_RESUME_STATE_KEY)
+    } catch {
+        // ignore
+    }
+}
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
@@ -318,6 +359,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [showPlanModal, setShowPlanModal] = useState(false)
     const [activeCard, setActiveCard] = useState(0)
     const touchStartXRef = useRef<number | null>(null)
+    const resumeHydratedFromAccount = useRef(false)
     const [selectedJobDetail, setSelectedJobDetail] = useState<any | null>(null)
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
     const [previewJobs, setPreviewJobs] = useState<any[]>([])
@@ -469,9 +511,67 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             setResumeName(pendingGuestResume.fileName)
             setGuestResumeHints(Array.isArray(pendingGuestResume.resumeHints) ? pendingGuestResume.resumeHints : [])
             setGuestResumeFile(hydrateGuestResumeFile(pendingGuestResume))
+            writeStoredHeroResumeState({
+                resumeId: 'guest-temp-id',
+                resumeName: pendingGuestResume.fileName,
+                source: 'guest',
+                dismissed: false,
+                updatedAt: Date.now(),
+            })
+        } else {
+            const storedResumeState = readStoredHeroResumeState()
+            if (storedResumeState && !storedResumeState.dismissed && storedResumeState.resumeName) {
+                setResumeId(storedResumeState.resumeId || null)
+                setResumeName(storedResumeState.resumeName)
+            }
         }
         setHasHydrated(true)
     }, [])
+
+    useEffect(() => {
+        if (!hasHydrated || !isAuthenticated || !token) return
+        if (resumeHydratedFromAccount.current) return
+        if (resumeName && resumeId) return
+
+        const storedResumeState = readStoredHeroResumeState()
+        if (storedResumeState?.dismissed) {
+            resumeHydratedFromAccount.current = true
+            return
+        }
+
+        let mounted = true
+        const hydrateLatestResume = async () => {
+            try {
+                const resp = await fetch('/api/resumes', {
+                    headers: { Authorization: `Bearer ${token}` }
+                })
+                const data = await resp.json().catch(() => ({}))
+                const resumes = Array.isArray(data?.data) ? data.data : Array.isArray(data?.resumes) ? data.resumes : []
+                const latest = resumes[0]
+                if (!mounted || !latest) return
+                const linkedResumeId = latest.id || latest.resume_id || null
+                const linkedResumeName = latest.fileName || latest.file_name || latest.name || 'Resume'
+                setResumeId(linkedResumeId)
+                setResumeName(linkedResumeName)
+                setGuestResumeFile(null)
+                setGuestResumeHints([])
+                writeStoredHeroResumeState({
+                    resumeId: linkedResumeId,
+                    resumeName: linkedResumeName,
+                    source: 'account',
+                    dismissed: false,
+                    updatedAt: Date.now(),
+                })
+            } catch {
+                // ignore hydrate errors
+            } finally {
+                resumeHydratedFromAccount.current = true
+            }
+        }
+
+        hydrateLatestResume()
+        return () => { mounted = false }
+    }, [hasHydrated, isAuthenticated, token, resumeName, resumeId])
 
     useEffect(() => {
         if (!hasHydrated) return
@@ -491,6 +591,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 if (mounted && result.claimed) {
                     setResumeId(result.resumeId || null)
                     setGuestResumeFile(null)
+                    if (resumeName) {
+                        writeStoredHeroResumeState({
+                            resumeId: result.resumeId || null,
+                            resumeName,
+                            source: 'account',
+                            dismissed: false,
+                            updatedAt: Date.now(),
+                        })
+                    }
                     showSuccess('简历已同步', '已自动关联到当前账号，可在个人中心查看')
                 }
             } catch {
@@ -505,6 +614,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     useEffect(() => {
         if (!isAuthenticated) {
             pendingResumeSyncAttempted.current = false
+            resumeHydratedFromAccount.current = false
         }
     }, [isAuthenticated])
 
@@ -632,6 +742,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 }
                 setGuestResumeHints(parsedHints)
                 await savePendingGuestResume(file, parsedHints)
+                writeStoredHeroResumeState({
+                    resumeId: 'guest-temp-id',
+                    resumeName: file.name,
+                    source: 'guest',
+                    dismissed: false,
+                    updatedAt: Date.now(),
+                })
                 showSuccess('简历已保存', '未登录状态已保存，5分钟内登录会自动同步到个人中心')
                 return
             }
@@ -650,12 +767,36 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             setGuestResumeFile(null)
             setGuestResumeHints([])
             clearPendingGuestResume()
+            writeStoredHeroResumeState({
+                resumeId: result.id,
+                resumeName: file.name,
+                source: 'account',
+                dismissed: false,
+                updatedAt: Date.now(),
+            })
             showSuccess('简历上传成功', '已准备好进行精准匹配')
         } catch (error: any) {
             showError('上传失败', error.message)
         } finally {
+            if (fileInputRef.current) fileInputRef.current.value = ''
             setUploading(false)
         }
+    }
+
+    const handleRemoveResume = () => {
+        setResumeName(null)
+        setResumeId(null)
+        setGuestResumeFile(null)
+        setGuestResumeHints([])
+        clearPendingGuestResume()
+        writeStoredHeroResumeState({
+            resumeId: null,
+            resumeName: null,
+            source: isAuthenticated ? 'account' : 'guest',
+            dismissed: true,
+            updatedAt: Date.now(),
+        })
+        if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
     const handleGetRecommendations = async () => {
@@ -829,12 +970,21 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                             { value: 'internship', label: '实习 (Internship)' },
                                         ]} />
                                     <div
-                                        className={`border-2 border-dashed rounded-2xl p-3.5 text-center cursor-pointer transition-all ${
+                                        className={`border-2 border-dashed rounded-2xl p-3.5 text-center transition-all ${
                                             resumeName ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/30'
                                         }`}
-                                        onClick={() => fileInputRef.current?.click()}
+                                        onClick={() => {
+                                            if (resumeName) return
+                                            if (fileInputRef.current) fileInputRef.current.value = ''
+                                            fileInputRef.current?.click()
+                                        }}
                                         onDragOver={e => e.preventDefault()}
-                                        onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) handleResumeUpload(f) }}
+                                        onDrop={e => {
+                                            e.preventDefault()
+                                            if (resumeName) return
+                                            const f = e.dataTransfer.files?.[0]
+                                            if (f) handleResumeUpload(f)
+                                        }}
                                     >
                                         {uploading ? (
                                             <div className="flex items-center justify-center gap-2">
@@ -842,9 +992,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                 <span className="text-sm text-indigo-600">上传中...</span>
                                             </div>
                                         ) : resumeName ? (
-                                            <div className="flex items-center justify-center gap-2">
-                                                <span className="text-sm font-semibold text-indigo-700 truncate max-w-[180px]">{resumeName}</span>
-                                                <button onClick={e => { e.stopPropagation(); setResumeName(null); setResumeId(null); setGuestResumeFile(null); setGuestResumeHints([]); clearPendingGuestResume() }} className="text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>
+                                            <div className="flex flex-col items-center gap-2">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    <span className="text-sm font-semibold text-indigo-700 truncate max-w-[220px]">{resumeName}</span>
+                                                    <button onClick={e => { e.stopPropagation(); handleRemoveResume() }} className="text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>
+                                                </div>
+                                                <p className="text-[10px] text-slate-500">已关联简历。若需更换，请先手动删除后重新上传。</p>
                                             </div>
                                         ) : (
                                             <>
@@ -1092,12 +1245,24 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
 function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { onClose: () => void, jobDirection: string, positionType: string, resumeId: string | null }) {
     const { isAuthenticated, token, isMember } = useAuth()
-    const [timeline] = useState('1-3个月')
-    const [weeklyHours] = useState('5-10小时')
+    const [planDefaults, setPlanDefaults] = useState({
+        language: '中等（可借助翻译软件线上交流）',
+        education: '大学本科',
+        preparationTime: '1-3个月',
+        weeklyHours: '5-10小时',
+    })
     const [planData, setPlanData] = useState<any | null>(null)
     const [planLoading, setPlanLoading] = useState(false)
     const [planError, setPlanError] = useState('')
     const [planReloadTick, setPlanReloadTick] = useState(0)
+    const canCustomizeDefaults = isAuthenticated && isMember
+    const positionTypeLabel = positionType === 'full-time'
+        ? '全职远程'
+        : positionType === 'contract'
+            ? '合同/兼职'
+            : positionType === 'freelance'
+                ? '自由职业'
+                : '实习'
 
     useEffect(() => {
         const prev = document.body.style.overflow
@@ -1137,8 +1302,16 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     body: JSON.stringify({
                         action: 'assess',
                         goal: positionType,
-                        timeline: '1-3 months',
-                        background: { industry: jobDirection, availability: weeklyHours }
+                        timeline: mapPreparationTimelineToApi(planDefaults.preparationTime),
+                        forceRefresh: planReloadTick > 0,
+                        background: {
+                            industry: jobDirection,
+                            availability: planDefaults.weeklyHours,
+                            education: planDefaults.education,
+                            language: planDefaults.language,
+                            preparationTime: planDefaults.preparationTime,
+                            positionTypeLabel,
+                        }
                     })
                 })
                 const assessData = await assessResp.json().catch(() => ({}))
@@ -1152,8 +1325,15 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     body: JSON.stringify({
                         action: 'create-plan',
                         goal: positionType,
-                        timeline: '1-3 months',
-                        background: { industry: jobDirection, availability: weeklyHours }
+                        timeline: mapPreparationTimelineToApi(planDefaults.preparationTime),
+                        background: {
+                            industry: jobDirection,
+                            availability: planDefaults.weeklyHours,
+                            education: planDefaults.education,
+                            language: planDefaults.language,
+                            preparationTime: planDefaults.preparationTime,
+                            positionTypeLabel,
+                        }
                     })
                 })
                 const planResult = await planResp.json().catch(() => ({}))
@@ -1163,7 +1343,7 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     setPlanData({
                         ...nextPlan,
                         readiness: assessData?.readinessData?.remote_readiness_score,
-                        summary: nextPlan.summary || `AI 已根据你的岗位偏好生成专属求职规划，默认按 ${timeline}、每周 ${weeklyHours} 的投入节奏推进。`
+                        summary: nextPlan.summary || `AI 已根据你的岗位偏好生成专属求职规划，默认按 ${planDefaults.preparationTime}、每周 ${planDefaults.weeklyHours} 的投入节奏推进。`
                     })
                     return
                 }
@@ -1177,8 +1357,15 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     },
                     body: JSON.stringify({
                         goal: positionType,
-                        timeline: '1-3 months',
-                        background: { industry: jobDirection, availability: weeklyHours },
+                        timeline: mapPreparationTimelineToApi(planDefaults.preparationTime),
+                        background: {
+                            industry: jobDirection,
+                            availability: planDefaults.weeklyHours,
+                            education: planDefaults.education,
+                            language: planDefaults.language,
+                            preparationTime: planDefaults.preparationTime,
+                            positionTypeLabel,
+                        },
                         resumeId
                     })
                 })
@@ -1214,26 +1401,38 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
     }, [isAuthenticated, token, positionType, jobDirection, resumeId, planReloadTick])
 
     const guestPlan = {
-        summary: '这是简版远程求职规划，用于体验核心流程。登录后可获得完整方案与更多细节分析。',
-        strengths: [],
-        remoteReadiness: { score: 68 },
-        plan_v2: {
-            goalContext: { goal: '远程产品/增长方向' },
-            modules: {
-                interview: { summary: '先完成 5 个高频问题的结构化回答练习。' },
-                apply: { summary: '建立每周投递节奏，并复盘转化数据。' }
-            }
+        plan_version: 'copilot_plan_v3',
+        defaults: {
+            english_level: planDefaults.language,
+            education_level: planDefaults.education,
+            preparation_time: planDefaults.preparationTime,
+            weekly_commitment: planDefaults.weeklyHours,
         },
-        recommendations: [
-            { role: 'Senior Product Manager', company: 'TechSolutions', matchScore: 92, matchLabel: '高匹配', matchLevel: 'high', reason: '产品策略与跨团队协作要求与您的背景匹配。' },
-            { role: 'Product Owner', company: 'InnovateCorp', matchScore: 86, matchLabel: '较高', matchLevel: 'medium', reason: '岗位聚焦需求管理与远程协作，适合当前方向。' }
-        ],
-        milestones: [
-            { month: '第1周', focus: `目标拆解（准备周期 ${timeline}）`, tasks: ['定义目标岗位画像', '拆解能力差距与优先级'] },
-            { month: '第2-3周', focus: `能力建设（每周投入 ${weeklyHours}）`, tasks: ['优化简历与项目表达', '完成高频题结构化练习'] },
-            { month: '第4周', focus: '投递与反馈迭代', tasks: ['建立投递节奏', '复盘面试反馈并优化'] }
-        ],
-        applicationPlan: { steps: [] }
+        goal_context: {
+            job_direction: jobDirection || '目标岗位方向',
+            position_type: positionTypeLabel,
+            has_resume: false,
+        },
+        readiness: 68,
+        suitability: {
+            level: 'prepare_more',
+            headline: `可以开始尝试 ${jobDirection || '目标方向'}，但建议先补几项关键准备。`,
+            summary: '当前预览版主要基于你的岗位偏好生成，用来帮助你先判断是否值得投入远程求职准备。登录并上传简历后，适配判断会更具体。',
+            strengths: ['方向已经明确，便于快速建立岗位画像。'],
+            risks: ['尚未结合真实工作背景，适配度判断偏保守。', '英语表达和英文面试能力需要进一步验证。'],
+            action_focus: ['先登录并保存简历，再生成更贴合背景的完整方案。', '优先准备英文自我介绍与项目案例。'],
+        },
+        english_interview: {
+            summary: '以下为预览版提纲。登录并上传简历后可生成 5 道更贴合你的问题。',
+            question_limit: 3,
+            member_maximum: 30,
+            resume_personalized: false,
+            questions: [
+                { id: 'q1', question: 'Can you introduce yourself in one minute and explain why you want a remote role?', focus: '英文自我介绍', hint: '先讲当前角色，再讲转向远程岗位的原因。' },
+                { id: 'q2', question: 'What project best shows your ability to work across teams?', focus: '项目经历', hint: '突出职责、协作对象和结果。' },
+                { id: 'q3', question: 'How do you stay aligned with teammates when working remotely?', focus: '远程协作', hint: '强调异步沟通、文档和反馈节奏。' },
+            ],
+        },
     }
 
     return (
@@ -1267,11 +1466,54 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                     ) : null}
 
                     <div className="bg-white border border-indigo-100 rounded-2xl p-4">
-                        <div className="flex items-center justify-between mb-3">
-                            <div className="text-sm font-bold text-slate-900">准备时间参考</div>
+                        <div className="flex items-center justify-between mb-3 gap-3">
+                            <div>
+                                <div className="text-sm font-bold text-slate-900">默认参考项</div>
+                                <div className="text-xs text-slate-500 mt-1">默认使用英语能力、学历、准备周期与每周投入来生成方案结构。</div>
+                            </div>
+                            {canCustomizeDefaults && (
+                                <button
+                                    type="button"
+                                    onClick={() => setPlanReloadTick(v => v + 1)}
+                                    disabled={planLoading}
+                                    className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                                >
+                                    {planLoading ? '重新生成中...' : '按当前设置重新生成'}
+                                </button>
+                            )}
                         </div>
-                        <div className="text-sm text-slate-600 bg-slate-50 rounded-xl px-4 py-3">
-                            以下方案按照准备周期<span className="font-bold text-slate-800">【1-3个月】</span>、每周投入<span className="font-bold text-slate-800">【5-10小时】</span>来设计，可供参考。
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {[
+                                { key: 'language', label: '英语能力', options: PLAN_LANGUAGE_OPTIONS },
+                                { key: 'education', label: '学历背景', options: PLAN_EDUCATION_OPTIONS },
+                                { key: 'preparationTime', label: '预计准备时间', options: PLAN_TIMELINE_OPTIONS },
+                                { key: 'weeklyHours', label: '每周可投入时间', options: PLAN_WEEKLY_HOUR_OPTIONS },
+                            ].map((field) => (
+                                <label key={field.key} className="block">
+                                    <div className="text-[11px] font-medium text-slate-500 mb-1.5">{field.label}</div>
+                                    <select
+                                        value={planDefaults[field.key as keyof typeof planDefaults]}
+                                        onChange={(e) => setPlanDefaults((prev) => ({ ...prev, [field.key]: e.target.value }))}
+                                        disabled={!canCustomizeDefaults}
+                                        className={`w-full rounded-xl border px-3 py-2.5 text-sm transition-colors ${
+                                            canCustomizeDefaults
+                                                ? 'border-slate-200 bg-white text-slate-800 focus:border-indigo-400 focus:outline-none'
+                                                : 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
+                                        }`}
+                                    >
+                                        {field.options.map((option) => (
+                                            <option key={option} value={option}>{option}</option>
+                                        ))}
+                                    </select>
+                                </label>
+                            ))}
+                        </div>
+                        <div className="text-xs text-slate-600 bg-slate-50 rounded-xl px-4 py-3 mt-3">
+                            {!isAuthenticated
+                                ? '当前先按默认参考项展示预览版方案。登录后可生成完整方案；会员可调整默认项后重新生成。'
+                                : canCustomizeDefaults
+                                    ? '你可以调整默认项后重新生成完整方案，方案结构会同步更新到个人中心。'
+                                    : '当前默认项已锁定。升级会员后可调整默认项并重新生成完整方案。'}
                         </div>
                     </div>
 
@@ -1314,7 +1556,13 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                             </button>
                         </div>
                     ) : (
-                        <GeneratedPlanView plan={normalizePlanForView(isAuthenticated ? planData : guestPlan)} isGuest={!isAuthenticated} openInNewTab />
+                        <GeneratedPlanView
+                            plan={normalizePlanForView(isAuthenticated ? planData : guestPlan)}
+                            isGuest={!isAuthenticated}
+                            openInNewTab
+                            showProfileCta={isAuthenticated}
+                            showSavedHint={isAuthenticated}
+                        />
                     )}
                 </div>
             </div>

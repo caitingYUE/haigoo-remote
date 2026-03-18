@@ -1492,7 +1492,7 @@ export default function ProfileCenterPage() {
                           </button>
                         </div>
                       )}
-                      <GeneratedPlanView plan={copilotPlan} isGuest={false} />
+                      <GeneratedPlanView plan={copilotPlan} isGuest={false} showProfileCta={false} showSavedHint={false} />
                       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
                           <div className="flex items-center gap-2 mb-2">

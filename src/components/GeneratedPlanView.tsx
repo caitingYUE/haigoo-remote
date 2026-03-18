@@ -1,294 +1,236 @@
 import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, ArrowRight, RefreshCw, Crown, Lock, Bell, Compass, Loader2, Languages, MessageSquare, Send, ChevronDown, ChevronUp, Check, Sparkles } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Crown, Loader2, Lock, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display'
 import { useAuth } from '../contexts/AuthContext'
-import { trackingService } from '../services/tracking-service'
-import JobDetailModal from './JobDetailModal'
+
+function cleanPlanText(value: any) {
+    return String(value || '')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
+function toTextArray(items: any, preferredKeys: string[] = []) {
+    if (!Array.isArray(items)) return []
+    return items
+        .map((item) => {
+            if (typeof item === 'string') return item
+            if (item && typeof item === 'object') {
+                for (const key of preferredKeys) {
+                    if (item[key]) return item[key]
+                }
+            }
+            return ''
+        })
+        .map(cleanPlanText)
+        .filter(Boolean)
+}
+
+function normalizeQuestions(items: any, startIndex = 1) {
+    if (!Array.isArray(items)) return []
+    return items
+        .map((item, idx) => {
+            const question = cleanPlanText(typeof item === 'string' ? item : item?.question || item?.title || '')
+            if (!question) return null
+            return {
+                id: typeof item === 'object' && item?.id ? String(item.id) : `q${startIndex + idx}`,
+                question,
+                focus: cleanPlanText(typeof item === 'object' ? item?.focus || item?.theme || '' : ''),
+                hint: cleanPlanText(typeof item === 'object' ? item?.hint || item?.tip || item?.why_it_matters || '' : ''),
+            }
+        })
+        .filter(Boolean)
+}
+
+function getSuitabilityLabel(level: string) {
+    if (level === 'ready') return { text: '适合开始远程求职', className: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
+    if (level === 'stretch') return { text: '建议先补基础再冲刺', className: 'bg-rose-50 text-rose-700 border-rose-100' }
+    return { text: '可以尝试，但需补关键准备', className: 'bg-amber-50 text-amber-700 border-amber-100' }
+}
+
+function buildLegacyPlan(plan: any) {
+    const readiness = Number(plan?.readiness ?? plan?.remoteReadiness?.score ?? 0)
+    const level = readiness >= 78 ? 'ready' : readiness >= 58 ? 'prepare_more' : 'stretch'
+    const legacyQuestions = normalizeQuestions(
+        plan?.english_interview?.questions
+        || plan?.interviewPrep?.sampleQA
+        || plan?.plan_v2?.modules?.interview?.questions
+        || []
+    )
+
+    const milestoneTasks = (plan?.milestones || [])
+        .flatMap((item: any) => Array.isArray(item?.tasks) ? item.tasks : [])
+        .map(cleanPlanText)
+        .filter(Boolean)
+
+    return {
+        ...plan,
+        defaults: {
+            english_level: cleanPlanText(plan?.defaults?.english_level || '中等（可借助翻译软件线上交流）'),
+            education_level: cleanPlanText(plan?.defaults?.education_level || '大学本科'),
+            preparation_time: cleanPlanText(plan?.defaults?.preparation_time || '1-3个月'),
+            weekly_commitment: cleanPlanText(plan?.defaults?.weekly_commitment || '5-10小时'),
+        },
+        goal_context: {
+            job_direction: cleanPlanText(plan?.goal_context?.job_direction || plan?.plan_v2?.goalContext?.goal || '远程岗位方向'),
+            position_type: cleanPlanText(plan?.goal_context?.position_type || '远程岗位'),
+            has_resume: Array.isArray(plan?.strengths) && plan.strengths.length > 0,
+        },
+        suitability: {
+            level,
+            headline: cleanPlanText(
+                plan?.suitability?.headline
+                || (level === 'ready'
+                    ? '整体上适合开始尝试远程岗位，并尽快进入投递和面试节奏。'
+                    : level === 'stretch'
+                        ? '当前更适合先补关键基础，再集中冲刺远程岗位。'
+                        : '可以开始尝试远程岗位，但要先处理几项关键短板。')
+            ),
+            summary: cleanPlanText(plan?.suitability?.summary || plan?.summary || 'AI 已根据你的背景生成远程求职分析。'),
+            strengths: toTextArray(plan?.suitability?.strengths || plan?.strengths, ['point', 'reason']).slice(0, 4),
+            risks: toTextArray(plan?.suitability?.risks || plan?.gaps, ['gap', 'impact']).slice(0, 4),
+            action_focus: toTextArray(plan?.suitability?.action_focus || milestoneTasks).slice(0, 5),
+        },
+        english_interview: {
+            summary: cleanPlanText(
+                plan?.english_interview?.summary
+                || plan?.interviewPrep?.languageTip
+                || plan?.plan_v2?.modules?.interview?.summary
+                || '建议先准备英文自我介绍、项目经历和远程协作表达。'
+            ),
+            question_limit: legacyQuestions.length || 5,
+            member_maximum: 30,
+            resume_personalized: Array.isArray(plan?.strengths) && plan.strengths.length > 0,
+            questions: legacyQuestions,
+        },
+    }
+}
+
+function normalizePlanForRender(plan: any) {
+    if (!plan) return null
+    if (plan?.plan_version === 'copilot_plan_v3' || plan?.defaults || plan?.suitability || plan?.english_interview) {
+        return buildLegacyPlan(plan)
+    }
+    return buildLegacyPlan(plan)
+}
 
 export default function GeneratedPlanView({
     plan,
     isGuest,
-    isMember = false,
-    deepMode = false,
-    onModuleDataUpdate,
-    trackingSetupUrl = '/community',
-    onRefreshRecommendations,
-    refreshingRecommendations = false,
-    compactMode = false,
-    onRefineMilestones,
-    refiningMilestones = false,
-    refineCount = 0
+    openInNewTab = false,
+    showProfileCta = true,
+    showSavedHint = false,
 }: {
     plan: any
     isGuest: boolean
-    isMember?: boolean
-    deepMode?: boolean
-    onModuleDataUpdate?: (module: 'interview' | 'apply', data: any) => void
-    trackingSetupUrl?: string
-    onRefreshRecommendations?: () => void
-    refreshingRecommendations?: boolean
-    compactMode?: boolean
-    onRefineMilestones?: () => void
-    refiningMilestones?: boolean
-    refineCount?: number
+    openInNewTab?: boolean
+    showProfileCta?: boolean
+    showSavedHint?: boolean
 }) {
-    if (!plan) return null;
-
-    const { token, user } = useAuth()
-    const recommendations = useMemo(() => (Array.isArray(plan.recommendations) ? plan.recommendations : []), [plan.recommendations])
-    const remoteReadiness = useMemo(() => (plan?.plan_v2?.remoteReadiness || plan?.remoteReadiness || null), [plan])
-    const readinessScore = plan?.readiness ?? remoteReadiness?.score
-    const copilotGoal = useMemo(() => String(plan?.plan_v2?.goalContext?.goal || '').trim(), [plan])
-    const jobsBrowseUrl = useMemo(() => {
-        if (!copilotGoal) return '/jobs'
-        const params = new URLSearchParams({ copilotGoal })
-        return `/jobs?${params.toString()}`
-    }, [copilotGoal])
-    const moduleSummaries = useMemo(() => ({
-        interview: plan?.plan_v2?.modules?.interview?.summary || (Array.isArray(plan?.interviewPrep?.commonQuestions) && plan.interviewPrep.commonQuestions.length > 0 ? `已识别 ${plan.interviewPrep.commonQuestions.length} 条高频面试问题，建议先做结构化回答演练。` : '建议先评估当前英语使用瓶颈，并完成行为题和项目题的 STAR 结构回答准备。'),
-        apply: plan?.plan_v2?.modules?.apply?.summary || plan?.applicationPlan?.timeline || '建议建立每周投递节奏并持续复盘转化数据。'
-    }), [plan])
-    const hasRecommendations = recommendations.length > 0
-    const milestonesDisplay = useMemo(() => {
-        if (plan.milestones && plan.milestones.length > 0) return plan.milestones;
-        if (Array.isArray(plan.applicationPlan?.steps) && plan.applicationPlan.steps.length > 0) {
-            return plan.applicationPlan.steps.map((s: any, i: number) => ({
-                month: s.week || `阶段 ${i + 1}`,
-                focus: s.action || s.focus || '',
-                tasks: []
-            }));
-        }
-        return [];
-    }, [plan.milestones, plan.applicationPlan])
-    const [moduleResults, setModuleResults] = useState<Record<string, any>>({})
-    const [moduleLoading, setModuleLoading] = useState<Record<string, boolean>>({})
-    const [moduleError, setModuleError] = useState<Record<string, string>>({})
-    const [moduleCollapsed, setModuleCollapsed] = useState<Record<string, boolean>>({
-        interview: false,
-        apply: false
-    })
-
-    const [updatingTasks, setUpdatingTasks] = useState<Set<string>>(new Set())
-    const [completedTasks, setCompletedTasks] = useState<Set<string>>(new Set())
-    const [generatingAnswerFor, setGeneratingAnswerFor] = useState<string | null>(null)
-    const [progressSuggestion, setProgressSuggestion] = useState<{
-        next_focus?: string;
-        adjustment_suggestions?: string[];
-        motivation_message?: string;
-    } | null>(null);
-
-    const [selectedJob, setSelectedJob] = useState<any | null>(null)
-    const [isJobModalOpen, setIsJobModalOpen] = useState(false)
-    const [loadingJobId, setLoadingJobId] = useState<string | null>(null)
-
-    const handleOpenJob = async (jobId: string) => {
-        if (!jobId) return;
-        setLoadingJobId(jobId);
-        try {
-            // Using the correct resource API route
-            const resp = await fetch(`/api/data?resource=processed-jobs&id=${jobId}`);
-            if (resp.ok) {
-                const data = await resp.json();
-                // The API ?id= query returns a list if treated like standard GET, or the single item
-                const job = Array.isArray(data.jobs) ? data.jobs[0] : (data.job || data);
-                if (job) {
-                    setSelectedJob(job);
-                    setIsJobModalOpen(true);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to load job details', error);
-        } finally {
-            setLoadingJobId(null);
-        }
-    };
-
-
-    const handleGenerateAnswer = async (question: string) => {
-        if (!token || !isMember) return;
-        setGeneratingAnswerFor(question);
-
-        try {
-            const res = await fetch('/api/copilot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'generate-answer',
-                    userId: user?.user_id || (user as any)?.id,
-                    goal: copilotGoal || undefined,
-                    role: plan?.plan_v2?.goalContext?.industry || undefined,
-                    seniority: plan?.plan_v2?.goalContext?.seniority || undefined,
-                    question,
-                    questionType: '综合'
-                })
-            });
-            const data = await res.json();
-            if (res.ok && data.success && (data.sampleAnswer || data.answer)) {
-                // Format the generated answer for display
-                const formattedAnswer = [
-                    data.sampleAnswer || data.answer,
-                    data.starBreakdown ? `\n【情境】${data.starBreakdown.situation || ''}\n【任务】${data.starBreakdown.task || ''}\n【行动】${data.starBreakdown.action || ''}\n【结果】${data.starBreakdown.result || ''}` : '',
-                    data.tips?.length ? `\n💡 进阶建议：${(data.tips as string[]).join('；')}` : ''
-                ].filter(Boolean).join('');
-
-                setModuleResults(prev => {
-                    const interviewData = prev['interview'] || {};
-                    const newQuestions = (interviewData.questions || []).map((q: any) =>
-                        q.question === question ? { ...q, generatedAnswer: formattedAnswer } : q
-                    );
-                    return {
-                        ...prev,
-                        'interview': { ...interviewData, questions: newQuestions }
-                    };
-                });
-            } else {
-                alert('生成失败: ' + (data.error || '无法生成参考回答'));
-            }
-        } catch (err) {
-            console.error('Failed to generate answer', err);
-            alert('生成出错, 请稍后再试');
-        } finally {
-            setGeneratingAnswerFor(null);
-        }
-    };
-
-    const toggleTaskStatus = async (phase: string, task: string, isCompleted: boolean) => {
-        if (!token || !isMember) return;
-
-        const taskKey = `${phase}-${task}`;
-        setUpdatingTasks(prev => new Set(prev).add(taskKey));
-
-        try {
-            const res = await fetch('/api/copilot', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    action: 'update-progress',
-                    phase,
-                    taskName: task,
-                    status: isCompleted ? 'completed' : 'in_progress'
-                })
-            });
-            const data = await res.json();
-            if (res.ok && data.success) {
-                setCompletedTasks(prev => {
-                    const next = new Set(prev);
-                    if (isCompleted) next.add(taskKey);
-                    else next.delete(taskKey);
-                    return next;
-                });
-                if (data.suggestion) {
-                    setProgressSuggestion(data.suggestion);
-                }
-            }
-        } catch (err) {
-            console.error('Failed to update task progress', err);
-        } finally {
-            setUpdatingTasks(prev => {
-                const next = new Set(prev);
-                next.delete(taskKey);
-                return next;
-            });
-        }
-    };
-
-
+    const { token, isMember } = useAuth()
+    const normalizedPlan = useMemo(() => normalizePlanForRender(plan), [plan])
+    const [questions, setQuestions] = useState<any[]>(normalizedPlan?.english_interview?.questions || [])
+    const [answersByQuestion, setAnswersByQuestion] = useState<Record<string, any>>({})
+    const [expanding, setExpanding] = useState(false)
+    const [answerLoadingId, setAnswerLoadingId] = useState<string | null>(null)
+    const [actionError, setActionError] = useState('')
 
     useEffect(() => {
-        const baseModules = plan?.plan_v2?.modules
-        if (!baseModules || typeof baseModules !== 'object') {
-            setModuleResults({})
-            return
-        }
-        const normalized: Record<string, any> = {}
-            ; (['interview', 'apply'] as const).forEach((key) => {
-                if (baseModules[key]) {
-                    normalized[key] = baseModules[key]
-                }
-            })
-        setModuleResults(normalized)
-    }, [plan?.plan_v2?.modules])
+        setQuestions(normalizedPlan?.english_interview?.questions || [])
+        setAnswersByQuestion({})
+        setActionError('')
+    }, [normalizedPlan])
 
-    const fetchExpandedModule = async (module: 'interview' | 'apply', intent: string, forceRefresh = false) => {
-        if (!token) return
-        if (!isMember) return
+    if (!normalizedPlan) return null
 
-        const questionFromPlan = module === 'interview'
-            ? (moduleResults.interview?.questions?.[0]?.question || plan?.interviewPrep?.commonQuestions?.[0] || '')
-            : ''
+    const defaults = normalizedPlan.defaults || {}
+    const suitability = normalizedPlan.suitability || {}
+    const readinessScore = normalizedPlan.readiness
+    const interview = normalizedPlan.english_interview || {}
+    const suitabilityBadge = getSuitabilityLabel(String(suitability.level || 'prepare_more'))
+    const questionLimit = Number(interview.member_maximum || 30)
+    const canExpandInterview = !isGuest && isMember && questions.length < questionLimit
+    const canGenerateAnswer = !isGuest && isMember
+    const hasResume = Boolean(normalizedPlan?.goal_context?.has_resume)
 
-        setModuleError(prev => ({ ...prev, [module]: '' }))
-        setModuleLoading(prev => ({ ...prev, [module]: true }))
-        trackingService.track('copilot_module_expand_clicked', { module, intent, source: deepMode ? 'profile_center' : 'home' })
-
+    const handleExpandInterview = async () => {
+        if (!token || !canExpandInterview) return
+        setExpanding(true)
+        setActionError('')
         try {
-            const response = await fetch('/api/copilot', {
+            const res = await fetch('/api/copilot', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
+                    Authorization: `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    action: 'expand-module',
-                    module,
-                    intent,
-                    forceRefresh,
-                    question: questionFromPlan || undefined,
-                    goal: copilotGoal || undefined,
-                    timeline: plan?.plan_v2?.goalContext?.timeline || undefined,
-                    language: plan?.plan_v2?.goalContext?.language || undefined
-                })
+                    action: 'interview-prep',
+                    batchSize: 10,
+                    existingQuestions: questions,
+                    jobDirection: normalizedPlan?.goal_context?.job_direction,
+                    positionType: normalizedPlan?.goal_context?.position_type,
+                }),
             })
-
-            const data = await response.json()
-            if (!response.ok || !data?.success) {
-                throw new Error(data?.message || data?.error || '模块生成失败')
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data?.message || data?.error || '拓展面试题失败')
+            if (Array.isArray(data?.questions)) {
+                setQuestions(data.questions)
+            } else if (data?.planData?.english_interview?.questions) {
+                setQuestions(data.planData.english_interview.questions)
             }
-
-            const mergedData = {
-                ...(data?.moduleData || {}),
-                generatedAt: data?.generatedAt || new Date().toISOString(),
-                lastIntent: intent
-            }
-            setModuleResults(prev => ({
-                ...prev,
-                [module]: {
-                    ...(prev[module] || {}),
-                    ...mergedData
-                }
-            }))
-            onModuleDataUpdate?.(module, mergedData)
-        } catch (err: any) {
-            setModuleError(prev => ({ ...prev, [module]: err?.message || '生成失败，请稍后重试' }))
+        } catch (error: any) {
+            setActionError(error?.message || '拓展面试题失败')
         } finally {
-            setModuleLoading(prev => ({ ...prev, [module]: false }))
+            setExpanding(false)
         }
     }
 
-    const toggleModuleCollapsed = (module: 'interview' | 'apply') => {
-        setModuleCollapsed(prev => ({ ...prev, [module]: !prev[module] }))
+    const handleGenerateAnswer = async (questionItem: any) => {
+        if (!token || !canGenerateAnswer) return
+        const key = questionItem.id || questionItem.question
+        setAnswerLoadingId(key)
+        setActionError('')
+        try {
+            const res = await fetch('/api/copilot', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    action: 'generate-answer',
+                    question: questionItem.question,
+                    jobTitle: `${normalizedPlan?.goal_context?.job_direction || ''} ${normalizedPlan?.goal_context?.position_type || ''}`.trim(),
+                }),
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok) throw new Error(data?.message || data?.error || '生成回答失败')
+            setAnswersByQuestion((prev) => ({ ...prev, [key]: data }))
+        } catch (error: any) {
+            setActionError(error?.message || '生成回答失败')
+        } finally {
+            setAnswerLoadingId(null)
+        }
     }
 
     return (
         <div className="flex flex-col h-full overflow-hidden relative z-30">
-            {/* Header */}
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
                 <div>
                     <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.15em] mb-0.5">
                         AI Copilot · 专属方案
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 leading-tight">
-                        你的远程求职准备计划
+                        你的远程求职完整规划
                     </h3>
                 </div>
-                {readinessScore !== undefined && readinessScore !== null && (
+                {typeof readinessScore === 'number' && (
                     <div className="flex flex-col items-end gap-1.5">
                         <div className="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-bold rounded-full border border-emerald-100 flex items-center gap-1.5 shadow-sm">
                             <span className="relative flex h-1.5 w-1.5">
@@ -301,391 +243,220 @@ export default function GeneratedPlanView({
                 )}
             </div>
 
-            {/* Scrollable Timeline Steps */}
             <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar relative pr-2 pb-4">
-                {/* Connector line (shared absolute bg) */}
                 <div className="absolute left-[15px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none z-0" />
 
-                {/* Step 1 - Diagnosis / Summary */}
                 <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.4s_ease-out]">
                     <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
                         <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                        <div className="text-sm font-bold text-slate-800 mb-2">背景与竞争力诊断</div>
-                        {remoteReadiness?.summary && (
-                            <div className="mb-2.5 text-[11px] text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-lg px-2.5 py-2 leading-relaxed">
-                                <span className="font-semibold mr-1">远程适配结论：</span>
-                                {remoteReadiness.summary}
-                            </div>
-                        )}
-                        <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
-                            {plan.summary || "AI 已成功为您生成求职诊断分析。"}
+                        <div className="text-sm font-bold text-slate-800 mb-3">默认参考项</div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {[
+                                { label: '英语能力', value: defaults.english_level },
+                                { label: '学历背景', value: defaults.education_level },
+                                { label: '准备周期', value: defaults.preparation_time },
+                                { label: '每周投入', value: defaults.weekly_commitment },
+                            ].map((item) => (
+                                <div key={item.label} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                                    <div className="text-[11px] text-slate-500 mb-1">{item.label}</div>
+                                    <div className="text-sm font-semibold text-slate-800">{cleanPlanText(item.value)}</div>
+                                </div>
+                            ))}
                         </div>
-                        {(!plan.strengths || plan.strengths.length === 0) && (
-                            <div className="mt-3 text-[11px] text-slate-400 italic">
-                                提示：未上传简历或数据不足，当前仅提供通用职业基础分析。
+                        {!isMember && (
+                            <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700">
+                                <Lock className="w-3.5 h-3.5 mt-0.5 flex-none" />
+                                <span>调整默认项并重新生成方案为会员功能。</span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Step 2 - Recommendations */}
-                {(
-                    <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.5s_ease-out]">
-                        <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
-                            <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                        <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                            <div className="flex items-center justify-between gap-3 mb-3">
-                                <div className="text-sm font-bold text-slate-800">专属岗位推荐</div>
-                                {onRefreshRecommendations && (
-                                    <button
-                                        onClick={onRefreshRecommendations}
-                                        disabled={refreshingRecommendations}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold text-indigo-600 bg-white border border-indigo-100 rounded-lg hover:bg-indigo-50 transition-colors disabled:opacity-60"
-                                    >
-                                        <RefreshCw className={`w-3.5 h-3.5 ${refreshingRecommendations ? 'animate-spin' : ''}`} />
-                                        刷新岗位
-                                    </button>
-                                )}
-                            </div>
-                            <div className={`flex flex-col gap-2 transition-opacity duration-300 ${refreshingRecommendations ? 'opacity-40 pointer-events-none' : ''}`}>
-                                {hasRecommendations ? recommendations.map((rec: any, i: number) => {
-                                    const jobCardContent = (
-                                        <div className={`flex flex-col p-2.5 bg-white border border-slate-200 rounded-lg shadow-sm hover:border-indigo-200 transition-colors ${compactMode ? 'hover:bg-indigo-50/30' : ''}`}>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="text-xs font-bold text-slate-800 flex flex-wrap items-center gap-1.5">
-                                                    <span>{rec.role || rec.title}</span>
-                                                    {rec.aiRecommended && (
-                                                        <span className="px-1.5 py-0.5 rounded border border-indigo-100 bg-indigo-50 text-indigo-600 text-[10px] font-semibold whitespace-nowrap">
-                                                            AI推荐
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                {(rec.company || rec.matchLevel || rec.matchScore || rec.matchLabel) && (
-                                                    <div className="text-[10px] text-indigo-500 font-medium bg-indigo-50 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0 ml-2">
-                                                        <span className="truncate max-w-[80px]">{rec.company}</span>
-                                                        {(() => {
-                                                            const numericScore = Number(String(rec.matchScore || '').replace(/[^0-9]/g, '')) || 0
-                                                            const level = rec.matchLevel || resolveMatchLevel(numericScore, rec.matchLevel || rec.match_label || rec.level)
-                                                            const levelText = rec.matchLabel || rec.match || getMatchLevelLabel(level) || rec.matchScore
-                                                            const levelClass = getMatchLevelClassName(level)
-                                                            return levelText ? (
-                                                                <span className={`px-1.5 py-0.5 rounded border ${levelClass} ml-1`}>
-                                                                    {levelText}
-                                                                </span>
-                                                            ) : null
-                                                        })()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                            {!compactMode && (
-                                                <>
-                                                    <div className="text-[11px] text-slate-500 leading-snug">
-                                                        {rec.reason || rec.matchDetails?.summary || '该岗位与您的背景方向匹配，建议优先关注。'}
-                                                    </div>
-                                                    {(rec.matchLevel === 'high' || rec.matchLabel === '高匹配') && (
-                                                        <div className="mt-1.5 text-[10px] text-slate-500 bg-slate-50 border border-slate-100 rounded px-2 py-1 flex items-center gap-1.5">
-                                                            {isMember ? (
-                                                                <>
-                                                                    <Crown className="w-3 h-3 text-amber-500" />
-                                                                    <span>{rec.matchDetails?.summary ? '[AI匹配分析] 已纳入推荐理由' : '[AI匹配分析] 已启用'}</span>
-                                                                </>
-                                                            ) : (
-                                                                <>
-                                                                    <Lock className="w-3 h-3 text-slate-400" />
-                                                                    <span>会员可查看完整 AI 匹配分析结论</span>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </>
-                                            )}
-                                        </div>
-                                    );
-
-                                    return (
-                                        <div
-                                            key={i}
-                                            onClick={() => { if (rec.id || rec.jobId) handleOpenJob(rec.id || rec.jobId); }}
-                                            className="block select-none cursor-pointer"
-                                        >
-                                            {jobCardContent}
-                                        </div>
-                                    );
-                                }) : (
-                                    <div className="p-3 bg-white border border-slate-200 rounded-lg shadow-sm">
-                                        <div className="text-sm font-bold text-slate-800 mb-1">暂无特别匹配的岗位</div>
-                                        <p className="text-xs text-slate-500 leading-relaxed">
-                                            建议过 1-2 天再来看看，我们会持续更新岗位池并重新匹配你的背景。
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {deepMode && (
-                    <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.55s_ease-out]">
-                        <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
-                            <CheckCircle2 className="w-4 h-4" />
-                        </div>
-                        <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="text-sm font-bold text-slate-800">求职方案拓展</div>
-                                <span className="text-[10px] text-slate-500 bg-white border border-slate-200 px-2 py-0.5 rounded-full">个人中心专属</span>
-                            </div>
-
-                            {!isMember && (
-                                <div className="mb-3 text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2">
-                                        <Crown className="w-3.5 h-3.5 text-amber-500" />
-                                        开通会员可解锁面试沟通扩展与投递计划的深度生成。
-                                    </div>
-                                    <Link to="/membership" className="px-2 py-1 rounded-md bg-amber-100 border border-amber-200 text-[10px] font-semibold text-amber-700 hover:bg-amber-200">
-                                        去开通
-                                    </Link>
-                                </div>
-                            )}
-
-                            <div className="space-y-2.5">
-                                {[
-                                    { key: 'interview', title: '面试模拟问答', icon: MessageSquare, primaryIntent: 'more-questions', primaryLabel: '生成实战模拟题' },
-                                ].map((item) => {
-                                    const key = item.key as 'interview'
-                                    const detail = moduleResults[key] || null
-                                    const loading = Boolean(moduleLoading[key])
-                                    const collapsed = Boolean(moduleCollapsed[key])
-                                    const error = moduleError[key]
-                                    const Icon = item.icon
-                                    const summary = detail?.summary || moduleSummaries[key]
-
-                                    return (
-                                        <div key={key} className="bg-white border border-slate-200 rounded-lg px-3 py-2.5">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex items-start gap-2.5 min-w-0">
-                                                    <div className="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center flex-none">
-                                                        <Icon className="w-3.5 h-3.5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <div className="text-xs font-semibold text-slate-800">{item.title}</div>
-                                                        {loading ? (
-                                                            <div className="mt-2 space-y-2 animate-pulse mb-2">
-                                                                <div className="h-2.5 bg-indigo-100 rounded w-5/6"></div>
-                                                                <div className="h-2.5 bg-slate-100 rounded w-4/6"></div>
-                                                                <div className="flex items-center gap-1.5 mt-2">
-                                                                    <Loader2 className="w-3 h-3 text-indigo-400 animate-spin" />
-                                                                    <span className="text-[10px] text-indigo-500 font-medium tracking-wide">AI 正在为您深度生成专属方案，由于需要深度检索，平均约需 5~10 秒，请稍候...</span>
-                                                                </div>
-                                                            </div>
-                                                        ) : (
-                                                            <p className={`text-[11px] text-slate-500 leading-relaxed mt-1 ${collapsed ? 'line-clamp-2' : ''}`}>
-                                                                {summary}
-                                                            </p>
-                                                        )}
-                                                        {error && (
-                                                            <div className="text-[10px] text-rose-600 mt-1 bg-rose-50 border border-rose-100 rounded px-2 py-1">{error}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <button
-                                                    onClick={() => toggleModuleCollapsed(key)}
-                                                    className="text-[10px] text-slate-500 hover:text-slate-700 inline-flex items-center gap-1"
-                                                >
-                                                    {collapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
-                                                    {collapsed ? '展开' : '收起'}
-                                                </button>
-                                            </div>
-
-                                            {!collapsed && detail && (
-                                                <div className="mt-3 pl-9 space-y-3">
-                                                    {Array.isArray(detail?.roadmap) && (
-                                                        <div className="space-y-2">
-                                                            {detail.roadmap.map((step: any, idx: number) => (
-                                                                <div key={`roadmap-${idx}`} className="text-[11px] text-slate-600">
-                                                                    <div className="font-semibold text-slate-700">{step?.phase || `阶段${idx + 1}`}：{step?.focus || ''}</div>
-                                                                    {Array.isArray(step?.tasks) && (
-                                                                        <ul className="list-disc pl-4 mt-1 space-y-0.5 opacity-80">
-                                                                            {step.tasks.map((t: string, tidx: number) => <li key={tidx}>{t}</li>)}
-                                                                        </ul>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                    {Array.isArray(detail?.questions) && (
-                                                        <div className="space-y-3">
-                                                            {detail.questions.map((q: any, idx: number) => (
-                                                                <div key={`q-${idx}`} className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg">
-                                                                    <div className="text-[11px] text-slate-700 font-medium mb-2">Q{idx + 1}: {q?.question || ''}</div>
-                                                                    {q?.generatedAnswer ? (
-                                                                        <div className="mt-2 text-[10px] text-slate-600 bg-white p-2 rounded border border-indigo-50 leading-relaxed whitespace-pre-wrap">
-                                                                            <span className="font-bold text-indigo-600 mb-1 block">💡 参考回答 (STAR):</span>
-                                                                            {q.generatedAnswer}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <button
-                                                                            onClick={() => handleGenerateAnswer(q.question)}
-                                                                            disabled={generatingAnswerFor === q.question}
-                                                                            className="text-[10px] text-indigo-600 bg-white border border-indigo-100 hover:bg-indigo-50 px-2.5 py-1 rounded transition-colors disabled:opacity-50 flex items-center gap-1.5"
-                                                                        >
-                                                                            {generatingAnswerFor === q.question ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                                                                            {generatingAnswerFor === q.question ? '正在生成个性化回答...' : '参考回答'}
-                                                                        </button>
-                                                                    )}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-
-                                                </div>
-                                            )}
-
-                                            <div className="mt-2.5 pl-9 flex flex-wrap items-center gap-2">
-                                                {(() => {
-                                                    const questionCount = Array.isArray(detail?.questions) ? detail.questions.length : 0;
-                                                    const atCap = questionCount >= 20;
-                                                    return (
-                                                        <button
-                                                            disabled={!isMember || loading || atCap}
-                                                            onClick={() => fetchExpandedModule(key, item.primaryIntent, true)}
-                                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-md hover:bg-indigo-100 disabled:opacity-50"
-                                                            title={atCap ? '已达到20题上限' : ''}
-                                                        >
-                                                            {detail ? (atCap ? `已达上限（${questionCount}/20题）` : `生成更多问题（${questionCount}/20题）`) : item.primaryLabel}
-                                                        </button>
-                                                    );
-                                                })()}
-
-                                                {detail?.generatedAt && (
-                                                    <span className="text-[10px] text-slate-400">
-                                                        更新于 {new Date(detail.generatedAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Step 3 - Milestones */}
-            {milestonesDisplay.length > 0 && (
-                <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.6s_ease-out]">
+                <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.5s_ease-out]">
                     <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
                         <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
-                        <div className="text-sm font-bold text-slate-800 mb-3">关键行动路线</div>
-                        <div className="space-y-4">
-                            {milestonesDisplay.map((m: any, i: number) => (
-                                <div key={i} className="flex flex-col">
-                                    <div className="flex items-center gap-2 mb-1.5">
-                                        <span className="text-[9px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                                            {m.month || `阶段 ${i + 1}`}
-                                        </span>
-                                        <span className="text-xs font-semibold text-slate-700">{m.focus}</span>
-                                    </div>
-                                    <ul className="text-[11px] flex flex-col gap-2 mt-2">
-                                        {(m.tasks || []).map((t: string, j: number) => {
-                                            const phase = m.month || `阶段 ${i + 1}`;
-                                            const taskKey = `${phase}-${t}`;
-                                            const isCompleted = completedTasks.has(taskKey);
-                                            const isUpdating = updatingTasks.has(taskKey);
-                                            return (
-                                                <li key={j} className="flex items-start gap-2.5 group">
-                                                    <button
-                                                        onClick={() => toggleTaskStatus(phase, t, !isCompleted)}
-                                                        disabled={isUpdating || !isMember}
-                                                        className={`mt-0.5 flex-shrink-0 w-3.5 h-3.5 rounded border ${isCompleted ? 'bg-indigo-600 border-indigo-600' : 'bg-white border-slate-300 group-hover:border-indigo-400'} flex items-center justify-center transition-colors disabled:opacity-50`}
-                                                        title={isMember ? (isCompleted ? "取消完成" : "标记完成") : "会员专属功能"}
-                                                    >
-                                                        {isCompleted && <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />}
-                                                    </button>
-                                                    <span className={`leading-relaxed transition-colors ${isCompleted ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
-                                                        {t}
-                                                    </span>
-                                                </li>
-                                            );
-                                        })}
-                                    </ul>
-                                </div>
-                            ))}
+                        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                            <div className="text-sm font-bold text-slate-800">总概括结论</div>
+                            <span className={`px-2.5 py-1 text-[11px] font-bold rounded-full border ${suitabilityBadge.className}`}>
+                                {suitabilityBadge.text}
+                            </span>
                         </div>
+                        <div className="text-sm font-semibold text-slate-900 mb-1.5">{cleanPlanText(suitability.headline)}</div>
+                        <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">{cleanPlanText(suitability.summary)}</div>
 
-                        {onRefineMilestones && (
-                            <div className="mt-4 flex justify-end">
-                                <button
-                                    onClick={onRefineMilestones}
-                                    disabled={!isMember || refiningMilestones || (refineCount || 0) >= 3}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                                    title={!isMember ? '会员专属功能' : (refineCount || 0) >= 3 ? '已达打磨上限' : ''}
-                                >
-                                    {refiningMilestones ? (
-                                        <div className="w-3.5 h-3.5 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
-                                    ) : (
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                    )}
-                                    {(refineCount || 0) >= 3 ? '打磨次数已达上限' : `深度打磨方案 (${refineCount || 0}/3)`}
-                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+                            <div className="rounded-xl border border-emerald-100 bg-white px-3 py-3">
+                                <div className="text-xs font-bold text-emerald-700 mb-2">你当前的优势</div>
+                                <ul className="space-y-1.5 text-[11px] text-slate-600">
+                                    {(suitability.strengths || []).slice(0, 3).map((item: string, idx: number) => (
+                                        <li key={idx} className="leading-relaxed">• {item}</li>
+                                    ))}
+                                </ul>
                             </div>
-                        )}
-
-                        {progressSuggestion && (
-                            <div className="mt-4 p-3 bg-indigo-50/80 border border-indigo-100 rounded-lg animate-[fadeSlideIn_0.3s_ease-out]">
-                                <div className="text-xs font-bold text-indigo-800 flex items-center gap-1.5 mb-2">
-                                    <Crown className="w-3.5 h-3.5" /> AI 下一步建议
-                                </div>
-                                {progressSuggestion.next_focus && (
-                                    <div className="text-[11px] text-indigo-700 font-semibold mb-1">
-                                        核心聚焦: {progressSuggestion.next_focus}
-                                    </div>
-                                )}
-                                {progressSuggestion.adjustment_suggestions && progressSuggestion.adjustment_suggestions.length > 0 && (
-                                    <ul className="text-[11px] text-indigo-600 space-y-1 ml-4 list-disc marker:text-indigo-400">
-                                        {progressSuggestion.adjustment_suggestions.map((s, idx) => (
-                                            <li key={idx} className="pl-0.5">{s}</li>
-                                        ))}
-                                    </ul>
-                                )}
-                                {progressSuggestion.motivation_message && (
-                                    <div className="mt-2 text-[10px] text-indigo-500 italic block border-l-2 border-indigo-200 pl-2">
-                                        "{progressSuggestion.motivation_message}"
-                                    </div>
-                                )}
+                            <div className="rounded-xl border border-amber-100 bg-white px-3 py-3">
+                                <div className="text-xs font-bold text-amber-700 mb-2">需要更多准备的点</div>
+                                <ul className="space-y-1.5 text-[11px] text-slate-600">
+                                    {(suitability.risks || []).slice(0, 3).map((item: string, idx: number) => (
+                                        <li key={idx} className="leading-relaxed">• {item}</li>
+                                    ))}
+                                </ul>
                             </div>
-                        )}
+                            <div className="rounded-xl border border-indigo-100 bg-white px-3 py-3">
+                                <div className="text-xs font-bold text-indigo-700 mb-2">建议优先动作</div>
+                                <ul className="space-y-1.5 text-[11px] text-slate-600">
+                                    {(suitability.action_focus || []).slice(0, 4).map((item: string, idx: number) => (
+                                        <li key={idx} className="leading-relaxed">• {item}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            )}
 
-            {/* Footer / CTA Actions */}
+                <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.6s_ease-out]">
+                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
+                        <Sparkles className="w-4 h-4" />
+                    </div>
+                    <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-3">
+                            <div>
+                                <div className="text-sm font-bold text-slate-800">英文面试方案准备</div>
+                                <div className="text-xs text-slate-600 mt-1 leading-relaxed">{cleanPlanText(interview.summary)}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-1 rounded-full bg-white border border-slate-200 text-[11px] font-bold text-slate-700">
+                                    当前 {questions.length} / 上限 {questionLimit}
+                                </span>
+                                {canExpandInterview && (
+                                    <button
+                                        type="button"
+                                        onClick={handleExpandInterview}
+                                        disabled={expanding}
+                                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                                    >
+                                        {expanding ? '拓展中...' : '再拓展 10 题'}
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+
+                        {!hasResume && !isGuest && (
+                            <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700">
+                                当前未检测到简历，以下问题为通用版提纲。上传简历后再生成，问题会更贴合你的工作经历。
+                            </div>
+                        )}
+
+                        {isGuest && (
+                            <div className="mb-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-[11px] text-indigo-700">
+                                登录并上传简历后可生成 5 道更贴合自己的英文面试提纲。
+                            </div>
+                        )}
+
+                        {!isGuest && !isMember && (
+                            <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700 flex items-start gap-2">
+                                <Crown className="w-3.5 h-3.5 mt-0.5 flex-none" />
+                                <span>当前可查看基础面试提纲。升级会员后可逐批拓展到 30 道，并生成每道题的回答草稿。</span>
+                            </div>
+                        )}
+
+                        {actionError && (
+                            <div className="mb-3 rounded-xl border border-rose-100 bg-rose-50 px-3 py-2.5 text-[11px] text-rose-700">
+                                {actionError}
+                            </div>
+                        )}
+
+                        <div className="space-y-3">
+                            {questions.map((item, idx) => {
+                                const answerState = answersByQuestion[item.id || item.question]
+                                const isAnswerLoading = answerLoadingId === (item.id || item.question)
+                                return (
+                                    <div key={item.id || idx} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                            <div className="min-w-0">
+                                                <div className="text-[11px] font-bold text-indigo-600 mb-1">Question {idx + 1}</div>
+                                                <div className="text-sm font-semibold text-slate-900 leading-relaxed">{item.question}</div>
+                                                {item.focus && <div className="mt-2 text-[11px] text-slate-500">考察重点：{item.focus}</div>}
+                                                {item.hint && <div className="mt-1 text-[11px] text-slate-500">回答提示：{item.hint}</div>}
+                                            </div>
+                                            {canGenerateAnswer && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleGenerateAnswer(item)}
+                                                    disabled={isAnswerLoading}
+                                                    className="sm:ml-4 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 disabled:opacity-60 transition-colors"
+                                                >
+                                                    {isAnswerLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                                                    生成回答
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {answerState?.answer && (
+                                            <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+                                                <div className="text-[11px] font-bold text-emerald-700 mb-1.5">回答草稿</div>
+                                                <div className="text-[12px] text-slate-700 leading-relaxed whitespace-pre-line">{cleanPlanText(answerState.answer)}</div>
+                                                {Array.isArray(answerState.highlights) && answerState.highlights.length > 0 && (
+                                                    <div className="mt-2 text-[11px] text-slate-600">
+                                                        亮点提示：{answerState.highlights.map(cleanPlanText).filter(Boolean).join(' · ')}
+                                                    </div>
+                                                )}
+                                                {answerState.followUp && (
+                                                    <div className="mt-1 text-[11px] text-slate-600">补充建议：{cleanPlanText(answerState.followUp)}</div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div className="mt-4 pt-4 border-t border-slate-100 flex-shrink-0 flex flex-col items-center gap-3">
-
+                {showSavedHint && !isGuest && (
+                    <div className="w-full rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                            <div className="text-sm font-bold text-indigo-900">方案已同步到个人中心</div>
+                            <div className="text-xs text-indigo-700 mt-1">后续可在个人中心继续查看完整方案，并结合会员权益做拓展与深度打磨。</div>
+                        </div>
+                        {showProfileCta && (
+                            <Link
+                                to="/profile?tab=custom-plan"
+                                target={openInNewTab ? '_blank' : undefined}
+                                rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-indigo-700 border border-indigo-200 text-sm font-semibold hover:bg-indigo-100 transition-colors no-underline hover:no-underline"
+                            >
+                                去个人中心查看
+                            </Link>
+                        )}
+                    </div>
+                )}
                 <div className="flex w-full gap-2">
-                    <Link to={jobsBrowseUrl} className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline">
+                    <Link
+                        to="/jobs"
+                        target={openInNewTab ? '_blank' : undefined}
+                        rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                        className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline"
+                    >
                         去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
                     </Link>
-                    {!isGuest && !deepMode && (
-                        <Link to="/profile?tab=custom-plan" className="flex-1 py-2.5 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-slate-100 border border-slate-200 transition-colors">
+                    {!isGuest && showProfileCta && (
+                        <Link
+                            to="/profile?tab=custom-plan"
+                            target={openInNewTab ? '_blank' : undefined}
+                            rel={openInNewTab ? 'noopener noreferrer' : undefined}
+                            className="flex-1 py-2.5 bg-slate-50 text-slate-700 rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-slate-100 border border-slate-200 transition-colors no-underline hover:no-underline"
+                        >
                             前往个人中心查看完整版
                         </Link>
                     )}
                 </div>
             </div>
-            {/* Job Detail Modal */}
-            <JobDetailModal
-                job={selectedJob}
-                isOpen={isJobModalOpen}
-                onClose={() => setIsJobModalOpen(false)}
-                variant="center"
-            />
         </div>
     )
 }
