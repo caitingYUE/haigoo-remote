@@ -357,6 +357,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [hasResults, setHasResults] = useState(false)
     const [hasHydrated, setHasHydrated] = useState(false)
     const [showPlanModal, setShowPlanModal] = useState(false)
+    const [keepPlanWorkerAlive, setKeepPlanWorkerAlive] = useState(false)
     const [activeCard, setActiveCard] = useState(0)
     const touchStartXRef = useRef<number | null>(null)
     const resumeHydratedFromAccount = useRef(false)
@@ -867,6 +868,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }, [hasHydrated, isAuthenticated, hasResults, recommendations.length, dailyLimit, loading, jobDirection])
     
     const handleGeneratePlan = () => {
+        setKeepPlanWorkerAlive(true)
         setShowPlanModal(true)
     }
 
@@ -1225,9 +1227,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             </div>
 
             {/* ── Copilot Plan Modal ── */}
-            {showPlanModal && (
+            {(showPlanModal || keepPlanWorkerAlive) && (
                 <CopilotPlanModal
+                    visible={showPlanModal}
                     onClose={() => setShowPlanModal(false)}
+                    onDispose={() => setKeepPlanWorkerAlive(false)}
                     jobDirection={jobDirection}
                     positionType={positionType}
                     resumeId={resumeId}
@@ -1243,8 +1247,23 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     )
 }
 
-function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { onClose: () => void, jobDirection: string, positionType: string, resumeId: string | null }) {
+function CopilotPlanModal({
+    visible,
+    onClose,
+    onDispose,
+    jobDirection,
+    positionType,
+    resumeId
+}: {
+    visible: boolean
+    onClose: () => void
+    onDispose: () => void
+    jobDirection: string
+    positionType: string
+    resumeId: string | null
+}) {
     const { isAuthenticated, token, isMember } = useAuth()
+    const { showInfo, showSuccess, showWarning } = useNotificationHelpers()
     const [planDefaults, setPlanDefaults] = useState({
         language: '中等（可借助翻译软件线上交流）',
         education: '大学本科',
@@ -1255,6 +1274,7 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
     const [planLoading, setPlanLoading] = useState(false)
     const [planError, setPlanError] = useState('')
     const [planReloadTick, setPlanReloadTick] = useState(0)
+    const backgroundNotifiedRef = useRef(false)
     const canCustomizeDefaults = isAuthenticated && isMember
     const positionTypeLabel = positionType === 'full-time'
         ? '全职远程'
@@ -1266,11 +1286,13 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
 
     useEffect(() => {
         const prev = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
+        if (visible) {
+            document.body.style.overflow = 'hidden'
+        }
         return () => {
             document.body.style.overflow = prev
         }
-    }, [])
+    }, [visible])
 
     useEffect(() => {
         let mounted = true
@@ -1400,6 +1422,34 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
         return () => { mounted = false }
     }, [isAuthenticated, token, positionType, jobDirection, resumeId, planReloadTick])
 
+    useEffect(() => {
+        if (visible) {
+            backgroundNotifiedRef.current = false
+            return
+        }
+        if (!planLoading && planData && !backgroundNotifiedRef.current) {
+            backgroundNotifiedRef.current = true
+            showSuccess('求职方案已生成', '方案已同步到个人中心，你可以稍后进入查看完整版本。')
+            onDispose()
+            return
+        }
+        if (!planLoading && planError && !backgroundNotifiedRef.current) {
+            backgroundNotifiedRef.current = true
+            showWarning('方案生成未完成', planError)
+            onDispose()
+        }
+    }, [visible, planLoading, planData, planError, showSuccess, showWarning, onDispose])
+
+    const handleModalClose = () => {
+        if (planLoading && isAuthenticated) {
+            showInfo('方案继续生成中', '预计 1-2 分钟完成。你可以先去浏览岗位，生成完成后会自动提醒。')
+            onClose()
+            return
+        }
+        onClose()
+        onDispose()
+    }
+
     const guestPlan = {
         plan_version: 'copilot_plan_v3',
         defaults: {
@@ -1435,9 +1485,11 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
         },
     }
 
+    if (!visible) return null
+
     return (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && handleModalClose()}>
+            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={handleModalClose} />
             <div className="relative w-full max-w-4xl max-h-[88vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
                 <div className="bg-indigo-600 text-white px-6 py-5 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
@@ -1449,7 +1501,7 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                             <p className="text-indigo-100 text-xs">{isAuthenticated ? '基于你的偏好生成的专属求职规划。' : '未登录也可体验简版求职规划，登录后解锁完整方案与更多岗位推荐。'}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
+                    <button onClick={handleModalClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
                         <X className="w-4 h-4" />
                     </button>
                 </div>
@@ -1523,12 +1575,9 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <div className="text-sm font-bold text-slate-900">会员专属能力已解锁</div>
-                                        <div className="text-xs text-slate-600 mt-1">你可以继续拓展求职方案、在 Copilot 工作台拆解行动阶段，并在个人中心深度打磨求职计划。</div>
+                                        <div className="text-xs text-slate-600 mt-1">方案生成后会同步到个人中心，后续可继续查看完整方案并深度打磨执行计划。</div>
                                     </div>
-                                    <div className="flex flex-wrap gap-2">
-                                        <Link to="/copilot" onClick={onClose} className="px-4 py-2 rounded-xl bg-white text-emerald-700 border border-emerald-200 text-sm font-semibold hover:bg-emerald-50 transition-colors no-underline hover:no-underline">拓展方案</Link>
-                                        <Link to="/profile?tab=custom-plan" onClick={onClose} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors no-underline hover:no-underline">深度打磨计划</Link>
-                                    </div>
+                                    <Link to="/profile?tab=custom-plan" onClick={handleModalClose} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors no-underline hover:no-underline">去个人中心继续打磨</Link>
                                 </div>
                             </div>
                         ) : (
@@ -1537,13 +1586,28 @@ function CopilotPlanModal({ onClose, jobDirection, positionType, resumeId }: { o
                                     <div className="text-sm font-bold text-slate-900">升级会员可继续深化方案</div>
                                     <div className="text-xs text-slate-600 mt-1">当前已可查看完整规划；升级后可继续拓展求职方案，并深度打磨执行计划。</div>
                                 </div>
-                                <Link to="/membership" onClick={onClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员权益</Link>
+                                <Link to="/membership" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员权益</Link>
                             </div>
                         )
                     ) : null}
 
                     {planLoading && isAuthenticated ? (
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm text-slate-500">正在加载你的完整求职规划...</div>
+                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
+                            <div className="flex items-center gap-3 text-sm text-slate-600">
+                                <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                                <span className="font-medium text-slate-700">正在生成你的完整求职规划</span>
+                            </div>
+                            <div className="text-xs text-slate-500 mt-2 leading-relaxed">
+                                预计 1-2 分钟完成。你可以先关闭弹窗去浏览岗位，方案生成完成后会自动提醒，并同步到个人中心。
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleModalClose}
+                                className="mt-4 px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-slate-50 transition-colors"
+                            >
+                                关闭弹窗，后台继续生成
+                            </button>
+                        </div>
                     ) : (isAuthenticated && !planData) ? (
                         <div className="rounded-2xl border border-rose-100 bg-rose-50 p-6">
                             <div className="text-sm font-semibold text-rose-700">{planError || '暂未拿到可用方案数据。'}</div>
