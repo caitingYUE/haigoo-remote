@@ -178,6 +178,41 @@ function cleanHeroRichText(text?: string) {
     return stripMarkdown(decoded).replace(/\s+/g, ' ').trim()
 }
 
+function normalizePlanCompareText(value?: string) {
+    return String(value || '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase()
+}
+
+function isStoredPlanReusable(
+    plan: any,
+    options: {
+        jobDirection: string
+        positionTypeLabel: string
+        defaults: {
+            language: string
+            education: string
+            preparationTime: string
+            weeklyHours: string
+        }
+        hasResume: boolean
+    }
+) {
+    if (!plan || typeof plan !== 'object') return false
+    const goalContext = plan.goal_context || {}
+    const defaults = plan.defaults || {}
+    const resumeCompatible = !options.hasResume || Boolean(goalContext.has_resume)
+
+    return normalizePlanCompareText(goalContext.job_direction) === normalizePlanCompareText(options.jobDirection)
+        && normalizePlanCompareText(goalContext.position_type) === normalizePlanCompareText(options.positionTypeLabel)
+        && normalizePlanCompareText(defaults.english_level) === normalizePlanCompareText(options.defaults.language)
+        && normalizePlanCompareText(defaults.education_level) === normalizePlanCompareText(options.defaults.education)
+        && normalizePlanCompareText(defaults.preparation_time) === normalizePlanCompareText(options.defaults.preparationTime)
+        && normalizePlanCompareText(defaults.weekly_commitment) === normalizePlanCompareText(options.defaults.weeklyHours)
+        && resumeCompatible
+}
+
 // ── Unified Input Card Component ──
 function InputCard({ 
     label, 
@@ -1301,6 +1336,25 @@ function CopilotPlanModal({
             setPlanLoading(true)
             setPlanError('')
             try {
+                const shouldForceRefresh = planReloadTick > 0
+                const currentContext = {
+                    jobDirection,
+                    positionTypeLabel,
+                    defaults: planDefaults,
+                    hasResume: Boolean(resumeId),
+                }
+
+                if (!shouldForceRefresh) {
+                    const existingResp = await fetch('/api/copilot', {
+                        headers: { Authorization: `Bearer ${token}` }
+                    })
+                    const existingData = await existingResp.json().catch(() => ({}))
+                    if (existingResp.ok && existingData?.plan && isStoredPlanReusable(existingData.plan, currentContext) && mounted) {
+                        setPlanData(existingData.plan)
+                        return
+                    }
+                }
+
                 if (resumeId) {
                     await fetch('/api/copilot', {
                         method: 'POST',
@@ -1325,7 +1379,7 @@ function CopilotPlanModal({
                         action: 'assess',
                         goal: positionType,
                         timeline: mapPreparationTimelineToApi(planDefaults.preparationTime),
-                        forceRefresh: planReloadTick > 0,
+                        forceRefresh: shouldForceRefresh,
                         background: {
                             industry: jobDirection,
                             availability: planDefaults.weeklyHours,
@@ -1348,6 +1402,7 @@ function CopilotPlanModal({
                         action: 'create-plan',
                         goal: positionType,
                         timeline: mapPreparationTimelineToApi(planDefaults.preparationTime),
+                        forceRefresh: shouldForceRefresh,
                         background: {
                             industry: jobDirection,
                             availability: planDefaults.weeklyHours,
@@ -1442,7 +1497,7 @@ function CopilotPlanModal({
 
     const handleModalClose = () => {
         if (planLoading && isAuthenticated) {
-            showInfo('方案继续生成中', '预计 1-2 分钟完成。你可以先去浏览岗位，生成完成后会自动提醒。')
+            showInfo('方案继续生成中', '预计 3-5 分钟完成，复杂情况下可能更久。你可以先去浏览岗位，生成完成后会自动提醒。')
             onClose()
             return
         }
@@ -1598,7 +1653,7 @@ function CopilotPlanModal({
                                 <span className="font-medium text-slate-700">正在生成你的完整求职规划</span>
                             </div>
                             <div className="text-xs text-slate-500 mt-2 leading-relaxed">
-                                预计 1-2 分钟完成。你可以先关闭弹窗去浏览岗位，方案生成完成后会自动提醒，并同步到个人中心。
+                                预计 3-5 分钟完成，复杂情况下可能更久。你可以先关闭弹窗去浏览岗位，方案生成完成后会自动提醒，并同步到个人中心。
                             </div>
                             <button
                                 type="button"
