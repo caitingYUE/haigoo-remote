@@ -40,7 +40,6 @@ const JobBundleDetailPage = lazy(() => import('./pages/JobBundleDetailPage'))
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
-const CopilotPage = lazy(() => import('./pages/CopilotPage'))
 const ResumePrivacyPage = lazy(() => import('./pages/ResumePrivacyPage'))
 
 
@@ -156,7 +155,6 @@ function App() {
                             <Route path="/" element={<LandingPage />} />
                             <Route path="/about" element={<AboutPage />} />
                             <Route path="/privacy" element={<ResumePrivacyPage />} />
-                            <Route path="/copilot" element={<CopilotPage />} />
                             <Route path="/jobs" element={<JobsPage />} />
                             <Route path="/job-bundles/:id" element={<JobBundleDetailPage />} />
                             <Route path="/job/:id" element={<JobDetailPage />} />

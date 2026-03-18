@@ -445,7 +445,7 @@ export default function GeneratedPlanView({
                     >
                         去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
                     </Link>
-                    {!isGuest && showProfileCta && (
+                    {!isGuest && showProfileCta && !showSavedHint && (
                         <Link
                             to="/profile?tab=custom-plan"
                             target={openInNewTab ? '_blank' : undefined}
