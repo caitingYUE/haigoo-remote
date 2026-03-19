@@ -76,32 +76,17 @@ const getDarkerColor = (str: string) => {
    return `hsl(${h}, 70%, 30%)`;
 };
 
-// Radial Progress Bar Component
+// Minimalist Match Score Badge
 const MatchProgressBar = ({ score, level }: { score: number, level: string }) => {
-   const colorClass = level === 'high' ? 'text-emerald-500' : 'text-amber-500';
-   const trackClass = level === 'high' ? 'text-emerald-50' : 'text-amber-50';
-   const radius = 12;
-   const circumference = 2 * Math.PI * radius;
-   // Prevent negative offset or NaN
+   const colorClass = level === 'high' ? 'text-emerald-500 bg-emerald-50 border-emerald-100' : 'text-amber-500 bg-amber-50 border-amber-100';
    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
-   const strokeDashoffset = circumference - (safeScore / 100) * circumference;
 
    return (
-      <div className="flex items-center gap-1.5" title={`简历与该岗位需求匹配度高达 ${safeScore}%`}>
-         <span className={`text-[12px] font-bold ${colorClass}`}>{level === 'high' ? '高匹配' : '匹配'}</span>
-         <div className="relative flex items-center justify-center w-[28px] h-[28px]">
-            <svg className="w-full h-full transform -rotate-90">
-               <circle cx="14" cy="14" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" className={trackClass} />
-               <circle cx="14" cy="14" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" 
-                  strokeDasharray={circumference} 
-                  strokeDashoffset={strokeDashoffset} 
-                  strokeLinecap="round" 
-                  className={colorClass} 
-                  style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
-               />
-            </svg>
-            <span className={`absolute text-[9px] font-bold ${colorClass} leading-none`}>{safeScore}</span>
-         </div>
+      <div 
+         className={`flex items-center gap-1 px-2 py-0.5 rounded-md border ${colorClass}`}
+         title={`简历与该岗位需求匹配度高达 ${safeScore}%`}
+      >
+         <span className="text-xs font-bold whitespace-nowrap">匹配 {safeScore}</span>
       </div>
    );
 };
@@ -371,9 +356,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5 relative pr-[100px]">
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5 relative pr-4">
                {/* Right Side Floating Column (Salary & Match) */}
-               <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-1.5 w-[110px] mt-1 mr-1">
+               <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-1.5 w-auto max-w-[120px] mt-1 pr-1">
                   <div className={`text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                      {salaryText}
                   </div>
@@ -383,7 +368,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                </div>
 
                {/* Row 1: Badges & Salary (Desktop) */}
-               <div className="flex items-start justify-between gap-2 min-h-[24px]">
+               <div className="flex items-start justify-between gap-2 min-h-[24px] pr-[100px]">
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                      {/* Job Type (Amber) */}
                      {job.type && (
@@ -427,7 +412,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                </div>
 
                {/* Row 2: Title */}
-               <div className="flex items-center gap-2 mt-0.5 w-full">
+               <div className="flex items-center gap-2 mt-0.5 w-full pr-[100px]">
                   <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
                      {job.translations?.title || job.title}
                   </h3>
@@ -484,11 +469,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      ))}
                   </div>
 
-                  <div className="flex items-center gap-2 ml-auto">
+                  <div className="flex items-center gap-2 ml-auto flex-shrink-0">
                      {/* System Recommended (Bottom Right) */}
                      {isFeatured && (
-                        <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100">
-                           <Sparkles className="w-3.5 h-3.5 fill-indigo-100" />
+                        <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100 whitespace-nowrap">
+                           <Sparkles className="w-3.5 h-3.5 fill-indigo-100 flex-shrink-0" />
                            <span>精选</span>
                         </div>
                      )}
