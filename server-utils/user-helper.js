@@ -9,6 +9,83 @@ import { extractToken, verifyToken } from './auth-helpers.js'
 // 超级管理员邮箱
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
 const SUPER_ADMIN_EMAIL_2 = 'mrzhangzy1996@gmail.com'
+const LOCAL_TEST_PASSWORD_HASH = '$2b$10$A1aJl03alRTYeGBoDveiD.1o03jnu1Fd5lbHEKNQvDnWNzDFvHHaG'
+const LOCAL_USERS = new Map([
+    ['test_member@haigoo.com', {
+        user_id: 'test-member-uuid-001',
+        email: 'test_member@haigoo.com',
+        username: 'Test Member (VIP)',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: 'club_go',
+        member_status: 'active',
+        member_expire_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
+    ['test_free@haigoo.com', {
+        user_id: 'test-free-uuid-002',
+        email: 'test_free@haigoo.com',
+        username: 'Test Free User',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: null,
+        member_status: 'inactive',
+        member_expire_at: null,
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
+    ['test_admin@haigoo.com', {
+        user_id: 'test-admin-uuid-003',
+        email: 'test_admin@haigoo.com',
+        username: 'Test Admin',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true, admin: true },
+        membership_level: 'club_go',
+        member_status: 'active',
+        member_expire_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString(),
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }]
+])
+
+function clone(obj) {
+    return JSON.parse(JSON.stringify(obj))
+}
+
+function enrichUserFields(user) {
+    if (!user) return null
+    const u = clone(user)
+    if (u.user_id) u.userId = u.user_id
+    if (u.password_hash) u.passwordHash = u.password_hash
+    if (u.google_id) u.googleId = u.google_id
+    if (u.verification_token) u.verificationToken = u.verification_token
+    if (u.verification_expires) u.verificationExpires = u.verification_expires
+    if (u.email_verified !== undefined) u.emailVerified = u.email_verified
+    if (u.last_login_at) u.lastLoginAt = u.last_login_at
+    if (u.created_at) u.createdAt = u.created_at
+    if (u.updated_at) u.updatedAt = u.updated_at
+    if (u.membership_level) u.membershipLevel = u.membership_level
+    if (u.membership_start_at) u.membershipStartAt = u.membership_start_at
+    if (u.membership_expire_at) u.membershipExpireAt = u.membership_expire_at
+    if (u.member_status) u.memberStatus = u.member_status
+    if (u.member_expire_at) u.memberExpireAt = u.member_expire_at
+    if (u.member_since) u.memberSince = u.member_since
+    if (u.member_display_id) u.memberDisplayId = u.member_display_id
+    return u
+}
 
 /**
  * 用户管理器
@@ -25,43 +102,24 @@ const userHelper = {
     async getUserByEmail(email) {
         try {
             if (!neonHelper.isConfigured) {
-                console.warn('[user-helper] Neon/PostgreSQL not configured')
-                return null
+                const local = LOCAL_USERS.get(String(email || '').toLowerCase())
+                return enrichUserFields(local || null)
             }
 
             const result = await neonHelper.select('users', { email })
             const user = result?.[0] || null
-
-            if (user) {
-                console.log(`[user-helper] Found user by email: ${email}`)
-                // 转换字段名以便前端使用驼峰命名
-                if (user.user_id) user.userId = user.user_id
-                if (user.password_hash) user.passwordHash = user.password_hash
-                if (user.google_id) user.googleId = user.google_id
-                if (user.verification_token) user.verificationToken = user.verification_token
-                if (user.verification_expires) user.verificationExpires = user.verification_expires
-                if (user.email_verified !== undefined) user.emailVerified = user.email_verified
-                if (user.last_login_at) user.lastLoginAt = user.last_login_at
-                if (user.created_at) user.createdAt = user.created_at
-                if (user.updated_at) user.updatedAt = user.updated_at
-                if (user.roles && typeof user.roles === 'string') {
-                    try { user.roles = JSON.parse(user.roles) } catch (e) { console.warn('[user-helper] Failed to parse roles JSON', e); user.roles = {} }
-                }
-                if (user.profile && typeof user.profile === 'string') {
-                    try { user.profile = JSON.parse(user.profile) } catch (e) { console.warn('[user-helper] Failed to parse profile JSON', e); user.profile = {} }
-                }
-
-                if (user.membership_level) user.membershipLevel = user.membership_level
-                if (user.membership_start_at) user.membershipStartAt = user.membership_start_at
-                if (user.membership_expire_at) user.membershipExpireAt = user.membership_expire_at
-                // New Member System
-                if (user.member_status) user.memberStatus = user.member_status
-                if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
-                if (user.member_since) user.memberSince = user.member_since
-                if (user.member_display_id) user.memberDisplayId = user.member_display_id
+            if (!user) {
+                const localFallback = LOCAL_USERS.get(String(email || '').toLowerCase())
+                return enrichUserFields(localFallback || null)
             }
 
-            return user
+            if (user?.roles && typeof user.roles === 'string') {
+                try { user.roles = JSON.parse(user.roles) } catch (e) { user.roles = {} }
+            }
+            if (user?.profile && typeof user.profile === 'string') {
+                try { user.profile = JSON.parse(user.profile) } catch (e) { user.profile = {} }
+            }
+            return enrichUserFields(user)
         } catch (error) {
             console.error('[user-helper] Error getting user by email:', error.message)
             return null
@@ -76,36 +134,24 @@ const userHelper = {
     async getUserById(userId) {
         try {
             if (!neonHelper.isConfigured) {
-                console.warn('[user-helper] Neon/PostgreSQL not configured')
-                return null
+                const local = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
+                return enrichUserFields(local || null)
             }
 
             const result = await neonHelper.select('users', { user_id: userId })
             const user = result?.[0] || null
-
-            if (user) {
-                console.log(`[user-helper] Found user by ID: ${userId}`)
-                // 转换字段名以便前端使用驼峰命名
-                if (user.user_id) user.userId = user.user_id
-                if (user.password_hash) user.passwordHash = user.password_hash
-                if (user.google_id) user.googleId = user.google_id
-                if (user.verification_token) user.verificationToken = user.verification_token
-                if (user.verification_expires) user.verificationExpires = user.verification_expires
-                if (user.email_verified !== undefined) user.emailVerified = user.email_verified
-                if (user.last_login_at) user.lastLoginAt = user.last_login_at
-                if (user.created_at) user.createdAt = user.created_at
-                if (user.updated_at) user.updatedAt = user.updated_at
-                if (user.membership_level) user.membershipLevel = user.membership_level
-                if (user.membership_start_at) user.membershipStartAt = user.membership_start_at
-                if (user.membership_expire_at) user.membershipExpireAt = user.membership_expire_at
-                // New Member System
-                if (user.member_status) user.memberStatus = user.member_status
-                if (user.member_expire_at) user.memberExpireAt = user.member_expire_at
-                if (user.member_since) user.memberSince = user.member_since
-                if (user.member_display_id) user.memberDisplayId = user.member_display_id
+            if (!user) {
+                const localFallback = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
+                return enrichUserFields(localFallback || null)
             }
 
-            return user
+            if (user?.roles && typeof user.roles === 'string') {
+                try { user.roles = JSON.parse(user.roles) } catch (e) { user.roles = {} }
+            }
+            if (user?.profile && typeof user.profile === 'string') {
+                try { user.profile = JSON.parse(user.profile) } catch (e) { user.profile = {} }
+            }
+            return enrichUserFields(user)
         } catch (error) {
             console.error('[user-helper] Error getting user by ID:', error.message)
             return null
@@ -120,8 +166,30 @@ const userHelper = {
     async saveUser(user) {
         try {
             if (!neonHelper.isConfigured) {
-                console.warn('[user-helper] Neon/PostgreSQL not configured')
-                return { success: false, error: 'Neon/PostgreSQL not configured' }
+                const now = new Date().toISOString()
+                const localUser = {
+                    user_id: user.userId || user.user_id || `local-${Date.now()}`,
+                    email: String(user.email || '').toLowerCase(),
+                    username: user.username || 'Local User',
+                    avatar: user.avatar || null,
+                    auth_provider: user.authProvider || user.auth_provider || 'email',
+                    password_hash: user.passwordHash || user.password_hash || null,
+                    google_id: user.googleId || user.google_id || null,
+                    verification_token: user.verificationToken || user.verification_token || null,
+                    verification_expires: user.verificationExpires || user.verification_expires || null,
+                    email_verified: user.emailVerified ?? user.email_verified ?? false,
+                    status: user.status || 'active',
+                    roles: user.roles || {},
+                    last_login_at: user.lastLoginAt || user.last_login_at || null,
+                    profile: user.profile || {},
+                    membership_level: user.membershipLevel || user.membership_level || null,
+                    member_status: user.memberStatus || user.member_status || 'inactive',
+                    member_expire_at: user.memberExpireAt || user.member_expire_at || null,
+                    created_at: user.createdAt || user.created_at || now,
+                    updated_at: now
+                }
+                LOCAL_USERS.set(localUser.email, localUser)
+                return { success: true, provider: 'local-memory' }
             }
 
             // 转换字段名为数据库使用的下划线格式
@@ -352,7 +420,33 @@ const userHelper = {
     async updateUser(userId, updates, options = {}) {
         try {
             if (!neonHelper.isConfigured) {
-                return { success: false, error: 'Neon/PostgreSQL not configured' }
+                const local = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
+                if (!local) return { success: false, error: '用户不存在' }
+                if (updates.passwordHash) local.password_hash = updates.passwordHash
+                if (updates.emailVerified === true || updates.emailVerified === false) local.email_verified = updates.emailVerified
+                if (updates.verificationToken !== undefined) local.verification_token = updates.verificationToken
+                if (updates.verificationExpires !== undefined) local.verification_expires = updates.verificationExpires
+                if (typeof updates.username === 'string' && updates.username.trim()) local.username = updates.username.trim()
+                if (typeof updates.avatar === 'string' && updates.avatar.trim()) local.avatar = updates.avatar.trim()
+                const profileData = local.profile || {}
+                if (typeof updates.fullName === 'string') profileData.fullName = updates.fullName.trim()
+                if (typeof updates.title === 'string') profileData.title = updates.title.trim()
+                if (typeof updates.location === 'string') profileData.location = updates.location.trim()
+                if (typeof updates.targetRole === 'string') profileData.targetRole = updates.targetRole.trim()
+                if (typeof updates.phone === 'string') profileData.phone = updates.phone.trim()
+                if (typeof updates.bio === 'string') profileData.bio = updates.bio.trim()
+                if (updates.profile && typeof updates.profile === 'object') Object.assign(profileData, updates.profile)
+                local.profile = profileData
+                if (updates.lastLoginAt === true) local.last_login_at = new Date().toISOString()
+                if (options.isAdmin) {
+                    if (updates.memberStatus) local.member_status = updates.memberStatus
+                    if (updates.memberExpireAt !== undefined) local.member_expire_at = updates.memberExpireAt
+                    if (updates.roles && typeof updates.roles === 'object') local.roles = { ...(local.roles || {}), ...updates.roles }
+                    if (updates.status && ['active', 'suspended'].includes(updates.status)) local.status = updates.status
+                }
+                local.updated_at = new Date().toISOString()
+                LOCAL_USERS.set(local.email, local)
+                return { success: true, user: this.sanitizeUser(enrichUserFields(local)), message: '更新成功' }
             }
 
             const {

@@ -12,6 +12,10 @@ interface ApplyInterceptModalProps {
     companyInfo?: TrustedCompany | null;
     isMember: boolean;
     onProceedToApply: () => void;
+    // Free usage for non-members
+    referralUsageCount?: number;
+    onConsumeReferral?: () => void;
+    FREE_FEATURE_LIMIT?: number;
 }
 
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -22,7 +26,10 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     job,
     companyInfo,
     isMember,
-    onProceedToApply
+    onProceedToApply,
+    referralUsageCount = 0,
+    onConsumeReferral,
+    FREE_FEATURE_LIMIT = 5,
 }) => {
     const navigate = useNavigate();
 
@@ -151,8 +158,81 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
         );
     }
 
-    // 内推岗位且为免费用户 - 显示会员升级引导
+    // 内推岗位且为免费用户 - 有剩余次数则允许，否则显示升级引导
     if (job.canRefer && !isMember) {
+        const canReferFree = referralUsageCount < FREE_FEATURE_LIMIT;
+        const remaining = FREE_FEATURE_LIMIT - referralUsageCount;
+
+        // Still has free quota → allow with count badge
+        if (canReferFree) {
+            return createPortal(
+                <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
+                        onClick={onClose}
+                    />
+
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-20"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        {/* Header */}
+                        <div className="h-32 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+                            <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                            <div className="relative z-10 bg-white/10 p-3 rounded-full backdrop-blur-md shadow-2xl border border-white/20">
+                                <Target className="w-8 h-8 text-white/90" />
+                            </div>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 pt-6 text-center">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">
+                                <Target className="w-3.5 h-3.5" />
+                                帮我内推
+                                <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
+                                    剩余 {remaining}/{FREE_FEATURE_LIMIT}
+                                </span>
+                            </div>
+
+                            <h3 className="text-xl font-bold text-slate-900 mb-2">
+                                内推直达通道
+                            </h3>
+
+                            <p className="text-sm text-slate-600 mb-5 leading-relaxed px-4">
+                                简历直达 HR 邮箱，面试机会提升 3 倍。本次为免费体验，升级会员享受无限次内推。
+                            </p>
+
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => {
+                                        onConsumeReferral?.();
+                                        onClose();
+                                        onProceedToApply();
+                                    }}
+                                    className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                                >
+                                    立即内推 <ArrowRight className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                    onClick={onClose}
+                                    className="w-full py-2 px-6 text-slate-400 font-medium hover:text-slate-600 transition-colors text-xs"
+                                >
+                                    暂不需要，谢谢
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            );
+        }
+
+        // Quota exhausted → show upgrade
         return createPortal(
             <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
                 <div
@@ -170,7 +250,6 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
                     {/* Header Gradient */}
                     <div className="h-40 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
-                        {/* Decorative elements */}
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                         <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
                         <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-teal-400/20 rounded-full blur-[40px] animate-pulse delay-700"></div>
@@ -192,7 +271,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         </h3>
 
                         <p className="text-sm text-slate-600 mb-5 leading-relaxed px-4">
-                            该岗位支持 Haigoo 特邀会员专属内推，简历直达 HR 邮箱，面试机会提升 3 倍。
+                            免费体验次数已用完。升级为 Haigoo 会员，享受无限次内推，简历直达 HR，面试机会提升 3 倍。
                         </p>
 
                         <div className="bg-slate-50 rounded-xl p-3 mb-6 text-left space-y-2.5 border border-slate-100">
