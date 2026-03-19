@@ -82,15 +82,17 @@ const MatchProgressBar = ({ score, level }: { score: number, level: string }) =>
    const trackClass = level === 'high' ? 'text-emerald-50' : 'text-amber-50';
    const radius = 12;
    const circumference = 2 * Math.PI * radius;
-   const strokeDashoffset = circumference - (score / 100) * circumference;
+   // Prevent negative offset or NaN
+   const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+   const strokeDashoffset = circumference - (safeScore / 100) * circumference;
 
    return (
-      <div className="flex items-center gap-2" title={`简历与该岗位需求匹配度高达 ${score}%`}>
-         <span className={`text-[13px] font-bold ${colorClass}`}>{level === 'high' ? '高匹配' : '匹配'}</span>
-         <div className="relative flex items-center justify-center w-[30px] h-[30px]">
+      <div className="flex items-center gap-1.5" title={`简历与该岗位需求匹配度高达 ${safeScore}%`}>
+         <span className={`text-[12px] font-bold ${colorClass}`}>{level === 'high' ? '高匹配' : '匹配'}</span>
+         <div className="relative flex items-center justify-center w-[28px] h-[28px]">
             <svg className="w-full h-full transform -rotate-90">
-               <circle cx="15" cy="15" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" className={trackClass} />
-               <circle cx="15" cy="15" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" 
+               <circle cx="14" cy="14" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" className={trackClass} />
+               <circle cx="14" cy="14" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" 
                   strokeDasharray={circumference} 
                   strokeDashoffset={strokeDashoffset} 
                   strokeLinecap="round" 
@@ -98,7 +100,7 @@ const MatchProgressBar = ({ score, level }: { score: number, level: string }) =>
                   style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
                />
             </svg>
-            <span className={`absolute text-[9px] font-bold ${colorClass} mt-[1px]`}>{score}</span>
+            <span className={`absolute text-[9px] font-bold ${colorClass} leading-none`}>{safeScore}</span>
          </div>
       </div>
    );
@@ -356,30 +358,32 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                onClick && onClick(job);
             }}
             className={`
-               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start
+               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start min-h-[140px]
                ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
                ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
                ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
                ${className}
             `}
          >
-            {/* Featured Badge for List View - Removed absolute ribbon */}
-            {/* {isFeatured && (
-               <div className="absolute top-0 right-0 bg-gradient-to-bl from-indigo-500 to-purple-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl rounded-tr-2xl shadow-sm flex items-center gap-1 z-10">
-                 <Sparkles className="w-3 h-3" />
-                 系统推荐
-               </div>
-            )} */}
-
             {/* Left: Company Logo Card */}
-            <div className="flex-shrink-0 w-[120px] h-[120px] flex">
+            <div className="flex-shrink-0 w-[110px] h-[110px] flex">
                <CompanyCard size="sm" />
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
+            <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5 relative pr-[100px]">
+               {/* Right Side Floating Column (Salary & Match) */}
+               <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-1.5 w-[110px] mt-1 mr-1">
+                  <div className={`text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+                     {salaryText}
+                  </div>
+                  {resolvedMatchLevel !== 'none' && rawScoreNum > 0 && (
+                     <MatchProgressBar score={rawScoreNum} level={resolvedMatchLevel} />
+                  )}
+               </div>
+
                {/* Row 1: Badges & Salary (Desktop) */}
-               <div className="flex items-start justify-between gap-2">
+               <div className="flex items-start justify-between gap-2 min-h-[24px]">
                   <div className="flex flex-wrap items-center gap-2 pt-1">
                      {/* Job Type (Amber) */}
                      {job.type && (
@@ -420,20 +424,10 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </span>
                      )}
                   </div>
-
-                  {/* Salary and Match (Desktop - Top Right) */}
-                  <div className="hidden md:flex flex-col items-end gap-1.5 ml-auto flex-shrink-0">
-                     <div className={`text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
-                        {salaryText}
-                     </div>
-                     {resolvedMatchLevel !== 'none' && (
-                        <MatchProgressBar score={rawScoreNum} level={resolvedMatchLevel} />
-                     )}
-                  </div>
                </div>
 
                {/* Row 2: Title */}
-               <div className="flex items-center gap-2 mt-1">
+               <div className="flex items-center gap-2 mt-0.5 w-full">
                   <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
                      {job.translations?.title || job.title}
                   </h3>
