@@ -610,14 +610,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         )}
                     </div>
 
-                    {matchLevel !== 'none' && (
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
-                                {matchLevelLabel}
-                            </span>
-                        </div>
-                    )}
+
 
                     <div className="flex items-center gap-1.5">
                         <div className="w-1 h-1 rounded-full bg-slate-300"></div>

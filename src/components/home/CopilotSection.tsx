@@ -89,6 +89,18 @@ export default function CopilotSection() {
             if (data.success && data.plan) {
               setResult(data.plan)
               setIsTrial(data.isTrial)
+              if (data.session) {
+                 setFormData(prev => ({
+                    goal: data.session.goal || prev.goal,
+                    timeline: data.session.timeline || prev.timeline,
+                    background: {
+                       education: data.session.background?.education || prev.background.education,
+                       industry: data.session.background?.industry || data.session.background?.role || prev.background.industry,
+                       seniority: data.session.background?.seniority || data.session.background?.years || prev.background.seniority,
+                       language: data.session.background?.language || prev.background.language
+                    }
+                 }))
+              }
             }
           }
         } catch (e) {
@@ -170,16 +182,9 @@ export default function CopilotSection() {
 
   const resetForm = () => {
     setResult(null)
-    setFormData({
-      goal: '',
-      timeline: '',
-      background: {
-        education: '',
-        industry: '',
-        seniority: '',
-        language: 'Work'
-      }
-    })
+    // 根据用户反馈：用户填写过的信息不应手动清除
+    // 因此这里注销了重置为清空的逻辑，让内容保留。
+    // setFormData({ ... })
   }
 
   if (result) {

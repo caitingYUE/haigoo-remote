@@ -77,16 +77,16 @@ const getDarkerColor = (str: string) => {
 };
 
 // Minimalist Match Score Badge
-const MatchProgressBar = ({ score, level }: { score: number, level: string }) => {
-   const colorClass = level === 'high' ? 'text-emerald-500 bg-emerald-50 border-emerald-100' : 'text-amber-500 bg-amber-50 border-amber-100';
+const MatchScoreBadge = ({ score, level }: { score: number, level: string }) => {
+   const colorClass = level === 'high' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-amber-600 bg-amber-50 border-amber-100';
    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
 
    return (
       <div 
-         className={`flex items-center gap-1 px-2 py-0.5 rounded-md border ${colorClass}`}
+         className={`flex items-center justify-center min-w-[50px] px-2 py-0.5 rounded-full border shadow-sm ${colorClass}`}
          title={`简历与该岗位需求匹配度高达 ${safeScore}%`}
       >
-         <span className="text-xs font-bold whitespace-nowrap">匹配 {safeScore}</span>
+         <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
       </div>
    );
 };
@@ -358,12 +358,18 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             {/* Content Area */}
             <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5 relative pr-4">
                {/* Right Side Floating Column (Salary & Match) */}
-               <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-1.5 w-auto max-w-[120px] mt-1 pr-1">
+               <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-2 w-auto min-w-[100px] mt-1 pr-1 z-10">
                   <div className={`text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                      {salaryText}
                   </div>
                   {resolvedMatchLevel !== 'none' && rawScoreNum > 0 && (
-                     <MatchProgressBar score={rawScoreNum} level={resolvedMatchLevel} />
+                     <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
+                  )}
+                  {isFeatured && (
+                     <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
+                        <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
+                        <span>精选</span>
+                     </div>
                   )}
                </div>
 
@@ -471,12 +477,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   <div className="flex items-center gap-2 ml-auto flex-shrink-0">
                      {/* System Recommended (Bottom Right) */}
-                     {isFeatured && (
-                        <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold border border-indigo-100 whitespace-nowrap">
-                           <Sparkles className="w-3.5 h-3.5 fill-indigo-100 flex-shrink-0" />
-                           <span>精选</span>
-                        </div>
-                     )}
+                     {/* Moved to absolute top right corner */}
 
                      {/* Salary (Mobile Only) */}
                      <div className={`md:hidden text-sm whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
@@ -594,8 +595,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      {formatSalary(job.salary)}
                   </div>
                </div>
-               {resolvedMatchLevel !== 'none' ? (
-                  <MatchProgressBar score={rawScoreNum} level={resolvedMatchLevel} />
+               {resolvedMatchLevel !== 'none' && rawScoreNum > 0 ? (
+                  <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
                ) : (
                   <span className="text-xs text-slate-400 font-medium">
                      {DateFormatter.formatPublishTime(job.publishedAt)}
