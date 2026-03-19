@@ -77,17 +77,29 @@ const getDarkerColor = (str: string) => {
 };
 
 // Match Score Badge
-const MatchScoreBadge = ({ score, level }: { score: number, level: string }) => {
+const MatchScoreBadge = ({ score, level, compact = false }: { score: number, level: string, compact?: boolean }) => {
    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
    const isHigh = level === 'high';
    const title = `简历与该岗位需求匹配度 ${safeScore}%`;
 
+   if (compact) {
+      return (
+         <div
+            className={`flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'text-indigo-700 bg-indigo-50 border-indigo-100' : 'text-sky-700 bg-sky-50 border-sky-100'}`}
+            title={title}
+         >
+            <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
+         </div>
+      );
+   }
+
    return (
-      <div 
-         className={`flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'text-indigo-700 bg-indigo-50 border-indigo-100' : 'text-sky-700 bg-sky-50 border-sky-100'}`}
-         title={title}
-      >
-         <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
+      <div className="flex flex-col items-end justify-center leading-none" title={title}>
+         <span className={`whitespace-nowrap text-[30px] font-bold tracking-tight ${isHigh ? 'text-indigo-600' : 'text-sky-600'}`}>
+            {safeScore}
+            <span className="ml-0.5 text-[15px] font-semibold">%</span>
+         </span>
+         <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-indigo-500' : 'text-sky-500'}`}>匹配</span>
       </div>
    );
 };
@@ -127,6 +139,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          return false;
       }
    }, [job.publishedAt]);
+   const titleAccessoryWidth = (isTranslated ? 22 : 0) + (isNew ? 52 : 0) + ((isTranslated || isNew) ? 12 : 0);
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
@@ -233,7 +246,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       return (
          <div
-            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-3 rounded-xl transition-colors h-full w-full relative overflow-hidden"
+            className="flex-shrink-0 flex h-full w-full flex-col items-center justify-center rounded-xl px-2 py-3 transition-colors relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
             {/* Featured Badge for Grid View */}
@@ -342,7 +355,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                onClick && onClick(job);
             }}
             className={`
-               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start min-h-[140px]
+               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-stretch min-h-[140px]
                ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
                ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
                ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
@@ -350,7 +363,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             `}
          >
             {/* Left: Company Logo Card */}
-            <div className="flex-shrink-0 w-[110px] h-[110px] flex">
+            <div className="flex-shrink-0 w-[110px] self-stretch flex">
                <CompanyCard size="sm" />
             </div>
 
@@ -404,7 +417,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 2: Title */}
                   <div className="flex items-center gap-2 mt-0.5 w-full min-w-0">
-                     <h3 className="flex-1 min-w-0 text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate" title={job.translations?.title || job.title}>
+                     <h3
+                        className="min-w-0 truncate text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors"
+                        style={{ maxWidth: `calc(100% - ${titleAccessoryWidth}px)` }}
+                        title={job.translations?.title || job.title}
+                     >
                         {job.translations?.title || job.title}
                      </h3>
                      {isTranslated && (
@@ -463,7 +480,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      <div className="flex items-center gap-2 ml-auto flex-shrink-0">
                         {showMatchScore && (
                            <div className="md:hidden">
-                              <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
+                              <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} compact />
                            </div>
                         )}
 
@@ -503,12 +520,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
                </div>
 
-               <div className={`hidden md:flex flex-shrink-0 flex-col items-end text-right py-1 ${showMatchScore ? 'self-stretch justify-between min-w-[116px] lg:min-w-[132px]' : 'gap-2 min-w-fit'}`}>
+               <div className={`hidden md:flex flex-shrink-0 flex-col items-end text-right py-1 ${showMatchScore ? 'self-stretch justify-between min-w-[124px] lg:min-w-[140px]' : 'self-stretch justify-between min-w-[104px] lg:min-w-[116px]'}`}>
                   <div className={`max-w-full text-[15px] leading-tight whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                      {salaryText}
                   </div>
 
-                  <div className="flex w-full items-center justify-end">
+                  <div className="flex w-full flex-1 items-center justify-end">
                      {showMatchScore ? (
                         <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
                      ) : (
