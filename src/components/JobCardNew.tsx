@@ -5,6 +5,7 @@ import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { DateFormatter } from '../utils/date-formatter';
 import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display';
+import { trackingService } from '../services/tracking-service';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -75,6 +76,34 @@ const getDarkerColor = (str: string) => {
    return `hsl(${h}, 70%, 30%)`;
 };
 
+// Radial Progress Bar Component
+const MatchProgressBar = ({ score, level }: { score: number, level: string }) => {
+   const colorClass = level === 'high' ? 'text-emerald-500' : 'text-amber-500';
+   const trackClass = level === 'high' ? 'text-emerald-50' : 'text-amber-50';
+   const radius = 12;
+   const circumference = 2 * Math.PI * radius;
+   const strokeDashoffset = circumference - (score / 100) * circumference;
+
+   return (
+      <div className="flex items-center gap-2" title={`简历与该岗位需求匹配度高达 ${score}%`}>
+         <span className={`text-[13px] font-bold ${colorClass}`}>{level === 'high' ? '高匹配' : '匹配'}</span>
+         <div className="relative flex items-center justify-center w-[30px] h-[30px]">
+            <svg className="w-full h-full transform -rotate-90">
+               <circle cx="15" cy="15" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" className={trackClass} />
+               <circle cx="15" cy="15" r={radius} stroke="currentColor" strokeWidth="3" fill="transparent" 
+                  strokeDasharray={circumference} 
+                  strokeDashoffset={strokeDashoffset} 
+                  strokeLinecap="round" 
+                  className={colorClass} 
+                  style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
+               />
+            </svg>
+            <span className={`absolute text-[9px] font-bold ${colorClass} mt-[1px]`}>{score}</span>
+         </div>
+      </div>
+   );
+};
+
 export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
@@ -122,6 +151,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       const raw = Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0);
       return resolveMatchLevel(raw, job.matchLevel);
    }, [job, matchScore]);
+
+   const rawScoreNum = Math.round(Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0));
 
    const matchLevelLabel = useMemo(() => getMatchLevelLabel(resolvedMatchLevel), [resolvedMatchLevel]);
    const matchLevelClass = useMemo(() => getMatchLevelClassName(resolvedMatchLevel), [resolvedMatchLevel]);
@@ -315,7 +346,15 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    if (variant === 'list') {
       return (
          <div
-            onClick={() => onClick && onClick(job)}
+            onClick={() => {
+               trackingService.track('click_job_card', {
+                  jobId: job.id,
+                  matchScore: rawScoreNum,
+                  level: resolvedMatchLevel,
+                  variant: 'list'
+               });
+               onClick && onClick(job);
+            }}
             className={`
                group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start
                ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
@@ -340,13 +379,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             {/* Content Area */}
             <div className="flex-1 min-w-0 flex flex-col gap-2 py-1 relative pr-4">
                {/* Row 1: Badges & Salary (Desktop) */}
-               <div className="flex items-center justify-between gap-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                     {resolvedMatchLevel !== 'none' && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${matchLevelClass}`}>
-                           {matchLevelLabel}
-                        </span>
-                     )}
+               <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
                      {/* Job Type (Amber) */}
                      {job.type && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
@@ -387,9 +421,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
                   </div>
 
-                  {/* Salary (Desktop - Restored to Top Right) */}
-                  <div className={`hidden md:block text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
-                     {salaryText}
+                  {/* Salary and Match (Desktop - Top Right) */}
+                  <div className="hidden md:flex flex-col items-end gap-1.5 ml-auto flex-shrink-0">
+                     <div className={`text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+                        {salaryText}
+                     </div>
+                     {resolvedMatchLevel !== 'none' && (
+                        <MatchProgressBar score={rawScoreNum} level={resolvedMatchLevel} />
+                     )}
                   </div>
                </div>
 
@@ -496,7 +535,15 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    return (
       <>
          <div
-            onClick={() => onClick?.(job)}
+            onClick={() => {
+               trackingService.track('click_job_card', {
+                  jobId: job.id,
+                  matchScore: rawScoreNum,
+                  level: resolvedMatchLevel,
+                  variant: 'grid'
+               });
+               onClick?.(job);
+            }}
             className={`group relative bg-white rounded-xl p-5 border transition-all duration-200 cursor-pointer shadow-sm
             ${className || ''}
             border-slate-200 hover:border-indigo-400 hover:shadow-xl h-full flex flex-col`}
@@ -567,15 +614,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   <div className={`text-[15px] ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
                      {formatSalary(job.salary)}
                   </div>
-                  {resolvedMatchLevel !== 'none' && (
-                     <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold border ${matchLevelClass}`}>
-                        {matchLevelLabel}
-                     </span>
-                  )}
                </div>
-               <span className="text-xs text-slate-400 font-medium">
-                  {DateFormatter.formatPublishTime(job.publishedAt)}
-               </span>
+               {resolvedMatchLevel !== 'none' ? (
+                  <MatchProgressBar score={rawScoreNum} level={resolvedMatchLevel} />
+               ) : (
+                  <span className="text-xs text-slate-400 font-medium">
+                     {DateFormatter.formatPublishTime(job.publishedAt)}
+                  </span>
+               )}
             </div>
          </div>
       </>
