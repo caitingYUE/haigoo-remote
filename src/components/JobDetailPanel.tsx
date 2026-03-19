@@ -382,7 +382,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const applyViaReferralContact = async (contact: ReferralContact) => {
-        if (!isMember) {
+        const refCompanyName = job.company || companyInfo?.name || ''
+        const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName)
+        if (!isReferralUnlocked) {
             goToMembershipPayment()
             return
         }
@@ -986,7 +988,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                         <Lock className="w-4 h-4 text-slate-400" />
                                                                     </div>
                                                                     <span className="text-slate-500 font-medium">
-                                                                        {isAuthenticated ? '免费次数已用完，升级会员查看' : '企业认证信息仅会员可见'}
+                                                                        {isAuthenticated ? '免费次数已用完，升级会员查看' : '企业认证信息仅会员可见（登录可免费体验）'}
                                                                     </span>
                                                                 </>
                                                             )}
@@ -1106,8 +1108,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <h3 className="text-[15px] md:text-base font-bold text-slate-900 whitespace-nowrap">帮我内推</h3>
                                         <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border whitespace-nowrap ${isMember ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
                                             <Crown className="w-3 h-3" />
-                                            会员专属功能
+                                            {isMember ? '会员专属功能' : '会员专属功能'}
                                         </div>
+                                        {!isAuthenticated && (
+                                            <span className="text-[10px] text-slate-400 whitespace-nowrap">（登录可免费体验）</span>
+                                        )}
                                     </div>
                                     <div className="flex items-center justify-end">
                                         {!isMember && (
@@ -1125,61 +1130,182 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     海狗远程俱乐部帮您找到以下企业联系人，通过联系人工作邮箱申请，让简历更快直达企业内部，提高3x回复率。
                                 </p>
 
-                                <div className="space-y-2">
-                                    {referralContacts.map((contact, index) => (
-                                        <div key={`ref-contact-${index}`} className="rounded-lg border border-slate-200/90 bg-white px-3 py-3 shadow-[0_1px_0_0_rgba(15,23,42,0.03)]">
-                                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
-                                                <div className="min-w-0 space-y-2 flex-1">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-sm font-semibold text-slate-900 max-w-[220px] truncate">
-                                                            {isMember ? (contact.name || '-') : `${formatMaskedName(contact.name)}＊`}
-                                                        </span>
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
-                                                            {contact.title || '-'}
-                                                        </span>
-                                                    </div>
+                                {/* 免费用户解锁逻辑（复用 unlockedCompanies 机制，与企业认证信息共享解锁状态） */}
+                                {(() => {
+                                    const refCompanyName = job.company || companyInfo?.name || '';
+                                    const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName);
 
-                                                    <div className="flex items-center gap-2">
-                                                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs max-w-[260px] ${isMember ? 'bg-indigo-50 border-indigo-100 text-indigo-700 font-semibold' : 'bg-slate-50 border-slate-200 text-slate-400 blur-[2px] select-none'}`}>
-                                                            <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                                                            <span className="truncate">{isMember ? (contact.hiringEmail || '-') : '会员可见'}</span>
-                                                        </div>
-
-                                                        {isMember ? (
-                                                            <a
-                                                                href={toSafeExternalUrl(contact.linkedin)}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
-                                                                title="打开领英主页"
+                                    // 未登录：直接渲染锁定状态（无解锁按钮）
+                                    if (!isAuthenticated) {
+                                        return (
+                                            <div className="space-y-2">
+                                                {referralContacts.map((contact, index) => (
+                                                    <div key={`ref-contact-${index}`} className="rounded-lg border border-slate-200/90 bg-white px-3 py-3 shadow-[0_1px_0_0_rgba(15,23,42,0.03)]">
+                                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                                                            <div className="min-w-0 space-y-2 flex-1">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span className="text-sm font-semibold text-slate-900 max-w-[220px] truncate">
+                                                                        {`${formatMaskedName(contact.name)}＊`}
+                                                                    </span>
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
+                                                                        {contact.title || '-'}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs max-w-[260px] bg-slate-50 border-slate-200 text-slate-400 blur-[2px] select-none">
+                                                                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                                                                        <span className="truncate">会员可见</span>
+                                                                    </div>
+                                                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 text-slate-300">
+                                                                        <Lock className="w-3.5 h-3.5" />
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => navigate('/login')}
+                                                                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-500"
                                                             >
-                                                                <Linkedin className="w-3.5 h-3.5" />
-                                                            </a>
-                                                        ) : (
-                                                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 text-slate-300">
                                                                 <Lock className="w-3.5 h-3.5" />
-                                                            </span>
-                                                        )}
+                                                                找TA内推
+                                                            </button>
+                                                        </div>
+                                                        <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">
+                                                            登录可免费体验，解锁企业人脉
+                                                        </div>
                                                     </div>
-                                                </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
 
+                                    // 已登录免费用户：未解锁 + 有剩余次数 → 显示解锁按钮
+                                    if (!isReferralUnlocked && companyInfoUsageCount < FREE_FEATURE_LIMIT) {
+                                        return (
+                                            <div className="space-y-2">
+                                                {/* 解锁提示条 */}
+                                                <div className="rounded-lg border border-indigo-100 bg-indigo-50/60 p-3 flex items-center justify-between gap-3">
+                                                    <div className="text-xs text-indigo-700">
+                                                        <span className="font-semibold">免费体验次数</span>：解锁后可查看该企业所有联系人邮箱与 Linkedin
+                                                    </div>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            const token = localStorage.getItem('haigoo_auth_token');
+                                                            if (!token) { navigate('/login'); return; }
+                                                            try {
+                                                                const res = await fetch('/api/users?resource=free-usage&type=company-info', {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                                                    body: JSON.stringify({ companyName: refCompanyName })
+                                                                });
+                                                                const data = await res.json();
+                                                                if (data.success) {
+                                                                    setUnlockedCompanies(data.unlocked_companies || []);
+                                                                    setCompanyInfoUsageCount(data.usage);
+                                                                    if (data.remaining === 0) showInfo('体验次数已用完', '升级会员享受无限次内推');
+                                                                } else {
+                                                                    showError('解锁失败', data.error || '服务器错误');
+                                                                }
+                                                            } catch (err) {
+                                                                showError('解锁失败', '网络错误');
+                                                            }
+                                                        }}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition-colors whitespace-nowrap flex-shrink-0"
+                                                    >
+                                                        <Crown className="w-3.5 h-3.5" />
+                                                        免费解锁 ({FREE_FEATURE_LIMIT - companyInfoUsageCount}/{FREE_FEATURE_LIMIT}次)
+                                                    </button>
+                                                </div>
+                                                {/* 模糊预览联系人 */}
+                                                {referralContacts.map((contact, index) => (
+                                                    <div key={`ref-contact-${index}`} className="rounded-lg border border-slate-200/90 bg-white px-3 py-3 shadow-[0_1px_0_0_rgba(15,23,42,0.03)] opacity-50 pointer-events-none select-none">
+                                                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                                                            <div className="min-w-0 space-y-2 flex-1">
+                                                                <div className="flex items-center gap-2 flex-wrap">
+                                                                    <span className="text-sm font-semibold text-slate-900">{`${formatMaskedName(contact.name)}＊`}</span>
+                                                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600">{contact.title || '-'}</span>
+                                                                </div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs bg-slate-50 border-slate-200 text-slate-400 blur-[2px]">
+                                                                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                                                                        <span>会员可见</span>
+                                                                    </div>
+                                                                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 text-slate-300"><Lock className="w-3.5 h-3.5" /></span>
+                                                                </div>
+                                                            </div>
+                                                            <button className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold bg-slate-100 text-slate-500">
+                                                                <Lock className="w-3.5 h-3.5" />找TA内推
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        );
+                                    }
+
+                                    // 已登录免费用户：未解锁 + 无剩余次数 → 升级引导
+                                    if (!isReferralUnlocked && companyInfoUsageCount >= FREE_FEATURE_LIMIT) {
+                                        return (
+                                            <div className="rounded-lg border border-amber-100 bg-amber-50/60 p-4 text-center">
+                                                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-2">
+                                                    <Lock className="w-4 h-4 text-amber-600" />
+                                                </div>
+                                                <p className="text-xs text-amber-800 font-semibold mb-1">免费体验次数已用完</p>
+                                                <p className="text-[11px] text-amber-700 mb-3">升级为 Haigoo 会员，享受无限次内推结果查看</p>
                                                 <button
-                                                    onClick={() => applyViaReferralContact(contact)}
-                                                    className={`inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap ${isMember ? 'bg-slate-900 text-white hover:bg-indigo-700' : 'bg-slate-100 text-slate-500 hover:bg-indigo-50 hover:text-indigo-500'}`}
+                                                    onClick={goToMembershipPayment}
+                                                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white transition-colors"
                                                 >
-                                                    {isMember ? <Mail className="w-3.5 h-3.5" /> : <Lock className="w-3.5 h-3.5" />}
-                                                    {isMember ? '邮箱直申' : '找TA内推'}
+                                                    <Crown className="w-3.5 h-3.5" />查看会员权益
                                                 </button>
                                             </div>
+                                        );
+                                    }
 
-                                            {!isMember && (
-                                                <div className="mt-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-100 rounded-md px-2 py-1">
-                                                    加入 Haigoo，解锁企业重要联系人工作邮箱与 Linkedin
+                                    // 已解锁（会员 或 免费已解锁该企业）：正常显示所有联系人
+                                    return (
+                                        <div className="space-y-2">
+                                            {referralContacts.map((contact, index) => (
+                                                <div key={`ref-contact-${index}`} className="rounded-lg border border-slate-200/90 bg-white px-3 py-3 shadow-[0_1px_0_0_rgba(15,23,42,0.03)]">
+                                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                                                        <div className="min-w-0 space-y-2 flex-1">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="text-sm font-semibold text-slate-900 max-w-[220px] truncate">
+                                                                    {contact.name || '-'}
+                                                                </span>
+                                                                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-[11px] text-slate-600">
+                                                                    {contact.title || '-'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs max-w-[260px] bg-indigo-50 border-indigo-100 text-indigo-700 font-semibold">
+                                                                    <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                                                                    <span className="truncate">{contact.hiringEmail || '-'}</span>
+                                                                </div>
+                                                                <a
+                                                                    href={toSafeExternalUrl(contact.linkedin)}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-slate-200 text-slate-500 hover:text-indigo-600 hover:border-indigo-200 transition-colors"
+                                                                    title="打开领英主页"
+                                                                >
+                                                                    <Linkedin className="w-3.5 h-3.5" />
+                                                                </a>
+                                                            </div>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => applyViaReferralContact(contact)}
+                                                            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors whitespace-nowrap bg-slate-900 text-white hover:bg-indigo-700"
+                                                        >
+                                                            <Mail className="w-3.5 h-3.5" />
+                                                            邮箱直申
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                            )}
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    );
+                                })()}
                             </div>
                         </section>
                     )}
@@ -1271,7 +1397,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申</span>
                                             </div>
                                             <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
-                                                体验次数已用完，升级会员
+                                                {isAuthenticated ? '体验次数已用完，升级会员' : '会员专属功能'}
                                             </div>
                                         </>
                                     )}

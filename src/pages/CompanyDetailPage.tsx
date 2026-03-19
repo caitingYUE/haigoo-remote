@@ -18,7 +18,7 @@ export default function CompanyDetailPage() {
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
     const FREE_FEATURE_LIMIT = 5
-    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(FREE_FEATURE_LIMIT)
+    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(0)
     const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
 
     // Initialize usage stats for free users
@@ -515,7 +515,23 @@ export default function CompanyDetailPage() {
                                                 {/* Unlock Modal Overlay */}
                                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-50/90 via-slate-50/40 to-transparent flex flex-col items-center justify-center">
                                                     <div className="text-center transform transition-transform hover:scale-[1.02] p-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-sm max-w-sm">
-                                                        {companyInfoUsageCount < FREE_FEATURE_LIMIT ? (
+                                                        {!isAuthenticated ? (
+                                                            <>
+                                                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-slate-100">
+                                                                    <Shield className="w-5 h-5 text-slate-400" />
+                                                                </div>
+                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">企业认证信息仅会员可见</h4>
+                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
+                                                                    登录后可免费体验，包含认证招聘邮箱、评分及总部地址。
+                                                                </p>
+                                                                <button
+                                                                    onClick={() => navigate('/login')}
+                                                                    className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
+                                                                >
+                                                                    登录免费体验
+                                                                </button>
+                                                            </>
+                                                        ) : companyInfoUsageCount < FREE_FEATURE_LIMIT ? (
                                                             <>
                                                                 <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-indigo-100">
                                                                     <Crown className="w-5 h-5 text-indigo-600" />
