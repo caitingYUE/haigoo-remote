@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, ArrowRight, Globe, Building2, Briefcase, ExternalLink, MapPin, Users, Calendar, CheckCircle, Linkedin, Star, Shield, Crown, Info, Mail } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Shield, Crown, Info, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -14,8 +14,30 @@ import { LocationTooltip } from '../components/LocationTooltip'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
-    const { user, isMember } = useAuth()
+    const { user, isMember, isAuthenticated } = useAuth()
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
+
+    const FREE_FEATURE_LIMIT = 5
+    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(FREE_FEATURE_LIMIT)
+    const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
+
+    // Initialize usage stats for free users
+    useEffect(() => {
+        if (isAuthenticated && !isMember) {
+            const token = localStorage.getItem('haigoo_auth_token')
+            if (!token) return;
+            fetch('/api/users?resource=free-usage&type=company-info', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.json()).then(data => {
+                if (data.success) {
+                    setCompanyInfoUsageCount(data.usage);
+                    setUnlockedCompanies(data.unlocked_companies || []);
+                }
+            }).catch(err => console.error('[free-usage] Failed to load company info quota:', err));
+        } else if (isMember) {
+            setCompanyInfoUsageCount(0);
+        }
+    }, [isAuthenticated, isMember]);
 
 
     // DEBUG: Log user and membership status (removed for privacy)
@@ -283,226 +305,255 @@ export default function CompanyDetailPage() {
                                         )}
                                     </div>
 
-                                    <div className="p-4 relative">
-                                        {isMember ? (
-                                            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
-                                                {/* Website - Row 1 */}
-                                                {companyInfo.website && (
-                                                    <a
-                                                        href={companyInfo.website}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group h-full"
-                                                    >
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 transition-colors flex items-center justify-center flex-shrink-0">
-                                                            <Globe className="w-5 h-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">官方网站</div>
-                                                            <div className="font-bold text-indigo-600 text-sm truncate">点击访问</div>
-                                                        </div>
-                                                    </a>
-                                                )}
+                                    {(() => {
+                                        const isUnlocked = isMember || (companyInfo?.name && unlockedCompanies.includes(companyInfo.name));
+                                        
+                                        const handleUnlock = async (e: React.MouseEvent) => {
+                                            e.stopPropagation();
+                                            const token = localStorage.getItem('haigoo_auth_token');
+                                            if (!token) {
+                                                navigate('/login');
+                                                return;
+                                            }
+                                            try {
+                                                const res = await fetch('/api/users?resource=free-usage&type=company-info', {
+                                                    method: 'POST',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'Authorization': `Bearer ${token}`
+                                                    },
+                                                    body: JSON.stringify({ companyName: companyInfo?.name })
+                                                });
+                                                const data = await res.json();
+                                                if (data.success) {
+                                                    setUnlockedCompanies(data.unlocked_companies || []);
+                                                    setCompanyInfoUsageCount(data.usage);
+                                                } else {
+                                                    alert(data.error || '解锁失败');
+                                                }
+                                            } catch (err) {
+                                                console.error('解锁失败', err);
+                                            }
+                                        };
 
-                                                {/* Employees - Row 1 */}
-                                                {companyInfo.employeeCount && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                                                            <Users className="w-5 h-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">员工人数</div>
-                                                            <div className="font-bold text-slate-900 text-sm">
-                                                                {companyInfo.employeeCount}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Address - Row 1 */}
-                                                {companyInfo.address && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors relative h-full">
-                                                        <div
-                                                            className={`w-10 h-10 rounded-lg bg-indigo-50 transition-colors flex items-center justify-center flex-shrink-0 ${companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')
-                                                                ? ''
-                                                                : 'cursor-help hover:bg-indigo-100'
-                                                                }`}
-                                                            onMouseEnter={() => {
-                                                                if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
-                                                                    setShowLocationTooltip(true)
-                                                                }
-                                                            }}
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
-                                                                    setShowLocationTooltip(!showLocationTooltip);
-                                                                }
-                                                            }}
+                                        return isUnlocked ? (
+                                            <div className="p-4 relative">
+                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+                                                    {/* Website - Row 1 */}
+                                                    {companyInfo.website && (
+                                                        <a
+                                                            href={companyInfo.website}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 hover:shadow-md transition-all group h-full"
                                                         >
-                                                            <MapPin className="w-5 h-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">总部地址</div>
-                                                            <div className="font-bold text-slate-900 text-sm truncate" title={companyInfo.address}>
-                                                                {companyInfo.address}
+                                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 group-hover:bg-indigo-100 transition-colors flex items-center justify-center flex-shrink-0">
+                                                                <Globe className="w-5 h-5 text-indigo-600" />
                                                             </div>
-                                                        </div>
-
-                                                        {/* Location Tooltip */}
-                                                        {showLocationTooltip && !companyInfo.address.includes('远程') && !companyInfo.address.toLowerCase().includes('remote') && (
-                                                            <div className="absolute top-full left-0 mt-2 z-50">
-                                                                <LocationTooltip
-                                                                    location={companyInfo.address}
-                                                                    onClose={() => setShowLocationTooltip(false)}
-                                                                />
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-xs text-slate-500 mb-0.5 font-medium">官方网站</div>
+                                                                <div className="font-bold text-indigo-600 text-sm truncate">点击访问</div>
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                )}
+                                                        </a>
+                                                    )}
 
-                                                {/* Founded - Row 1 */}
-                                                {companyInfo.foundedYear && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                                                            <Calendar className="w-5 h-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="text-xs text-slate-500 mb-0.5 font-medium">成立年份</div>
-                                                            <div className="font-bold text-slate-900 text-sm">
-                                                                {companyInfo.foundedYear}
+                                                    {/* Employees - Row 1 */}
+                                                    {companyInfo.employeeCount && (
+                                                        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
+                                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                                                <Users className="w-5 h-5 text-indigo-600" />
                                                             </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                {/* Rating - Row 2 */}
-                                                {companyInfo.companyRating && (
-                                                    <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                                                            <Star className="w-5 h-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="flex items-baseline gap-2 mb-0.5">
-                                                                <div className="text-xs text-slate-500 font-medium">企业评分</div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-xs text-slate-500 mb-0.5 font-medium">员工人数</div>
                                                                 <div className="font-bold text-slate-900 text-sm">
-                                                                    {companyInfo.companyRating}
+                                                                    {companyInfo.employeeCount}
                                                                 </div>
                                                             </div>
-                                                            {companyInfo.ratingSource && (
-                                                                <div className="text-[10px] text-slate-400 truncate" title={`评分来源: ${companyInfo.ratingSource}`}>
-                                                                    来源: {companyInfo.ratingSource}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Address - Row 1 */}
+                                                    {companyInfo.address && (
+                                                        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors relative h-full">
+                                                            <div
+                                                                className={`w-10 h-10 rounded-lg bg-indigo-50 transition-colors flex items-center justify-center flex-shrink-0 ${companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')
+                                                                    ? ''
+                                                                    : 'cursor-help hover:bg-indigo-100'
+                                                                    }`}
+                                                                onMouseEnter={() => {
+                                                                    if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
+                                                                        setShowLocationTooltip(true)
+                                                                    }
+                                                                }}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    if (!companyInfo.address!.includes('远程') && !companyInfo.address!.toLowerCase().includes('remote')) {
+                                                                        setShowLocationTooltip(!showLocationTooltip);
+                                                                    }
+                                                                }}
+                                                            >
+                                                                <MapPin className="w-5 h-5 text-indigo-600" />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-xs text-slate-500 mb-0.5 font-medium">总部地址</div>
+                                                                <div className="font-bold text-slate-900 text-sm truncate" title={companyInfo.address}>
+                                                                    {companyInfo.address}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Location Tooltip */}
+                                                            {showLocationTooltip && !companyInfo.address.includes('远程') && !companyInfo.address.toLowerCase().includes('remote') && (
+                                                                <div className="absolute top-full left-0 mt-2 z-50">
+                                                                    <LocationTooltip
+                                                                        location={companyInfo.address}
+                                                                        onClose={() => setShowLocationTooltip(false)}
+                                                                    />
                                                                 </div>
                                                             )}
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
 
-                                                {/* Hiring Email - Row 2 - Flexible Width */}
-                                                {companyInfo.hiringEmail && (
-                                                    <div
-                                                        onClick={() => {
-                                                            navigator.clipboard.writeText(companyInfo.hiringEmail || '');
-                                                            // Optional: You could add a toast notification here if available
-                                                            alert(`邮箱已复制: ${companyInfo.hiringEmail}`);
-                                                        }}
-                                                        className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 overflow-hidden group/email cursor-pointer relative"
-                                                        title="点击复制完整邮箱"
-                                                    >
-                                                        <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover/email:bg-indigo-100 transition-colors">
-                                                            <Mail className="w-5 h-5 text-indigo-600" />
-                                                        </div>
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="font-bold text-slate-900 text-sm truncate group-hover/email:text-indigo-700 transition-colors">
-                                                                {companyInfo.hiringEmail}
+                                                    {/* Founded - Row 1 */}
+                                                    {companyInfo.foundedYear && (
+                                                        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
+                                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                                                <Calendar className="w-5 h-5 text-indigo-600" />
                                                             </div>
-                                                            <div className="text-[10px] text-slate-400 mt-0.5 truncate">
-                                                                {companyInfo.emailType === '招聘邮箱' ? '招聘邮箱' :
-                                                                    companyInfo.emailType === '通用邮箱' ? '通用邮箱' :
-                                                                        companyInfo.emailType === '员工邮箱' ? '员工邮箱' :
-                                                                            companyInfo.emailType === '高管邮箱' ? '高管邮箱' :
-                                                                                // Fallback for legacy long forms
-                                                                                companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' :
-                                                                                    companyInfo.emailType === '通用支持邮箱' ? '通用邮箱' :
-                                                                                        (companyInfo.emailType || '招聘邮箱')}
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-xs text-slate-500 mb-0.5 font-medium">成立年份</div>
+                                                                <div className="font-bold text-slate-900 text-sm">
+                                                                    {companyInfo.foundedYear}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        {/* Hover Hint */}
-                                                        <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/email:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-1 rounded">
-                                                            点击复制
-                                                        </div>
-                                                    </div>
-                                                )}
+                                                    )}
 
-                                                {/* Specialties - Full Width */}
-                                                {companyInfo.specialties && companyInfo.specialties.length > 0 && (
-                                                    <div className="col-span-full pt-4 mt-2 border-t border-slate-100 flex items-center gap-4">
-                                                        <div className="text-xs text-slate-500 font-medium flex-shrink-0">企业领域/专长</div>
-                                                        <div className="flex flex-wrap gap-2">
-                                                            {companyInfo.specialties.map((spec, idx) => (
-                                                                <span key={idx} className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200 text-xs font-medium">
-                                                                    {spec}
-                                                                </span>
-                                                            ))}
+                                                    {/* Rating - Row 2 */}
+                                                    {companyInfo.companyRating && (
+                                                        <div className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full">
+                                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                                                                <Star className="w-5 h-5 text-indigo-600" />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="flex items-baseline gap-2 mb-0.5">
+                                                                    <div className="text-xs text-slate-500 font-medium">企业评分</div>
+                                                                    <div className="font-bold text-slate-900 text-sm">
+                                                                        {companyInfo.companyRating}
+                                                                    </div>
+                                                                </div>
+                                                                {companyInfo.ratingSource && (
+                                                                    <div className="text-[10px] text-slate-400 truncate" title={`评分来源: ${companyInfo.ratingSource}`}>
+                                                                        来源: {companyInfo.ratingSource}
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                )}
+                                                    )}
+
+                                                    {/* Hiring Email - Row 2 - Flexible Width */}
+                                                    {companyInfo.hiringEmail && (
+                                                        <div
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(companyInfo.hiringEmail || '');
+                                                                // Optional: You could add a toast notification here if available
+                                                                alert(`邮箱已复制: ${companyInfo.hiringEmail}`);
+                                                            }}
+                                                            className="flex items-center gap-3.5 p-3.5 rounded-xl bg-white border border-slate-100 shadow-sm hover:border-indigo-200 transition-colors h-full col-span-1 overflow-hidden group/email cursor-pointer relative"
+                                                            title="点击复制完整邮箱"
+                                                        >
+                                                            <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0 group-hover/email:bg-indigo-100 transition-colors">
+                                                                <Mail className="w-5 h-5 text-indigo-600" />
+                                                            </div>
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="font-bold text-slate-900 text-sm truncate group-hover/email:text-indigo-700 transition-colors">
+                                                                    {companyInfo.hiringEmail}
+                                                                </div>
+                                                                <div className="text-[10px] text-slate-400 mt-0.5 truncate">
+                                                                    {companyInfo.emailType === '招聘邮箱' ? '招聘邮箱' :
+                                                                        companyInfo.emailType === '通用邮箱' ? '通用邮箱' :
+                                                                            companyInfo.emailType === '员工邮箱' ? '员工邮箱' :
+                                                                                companyInfo.emailType === '高管邮箱' ? '高管邮箱' :
+                                                                                    // Fallback for legacy long forms
+                                                                                    companyInfo.emailType === '招聘专用邮箱' ? '招聘邮箱' :
+                                                                                        companyInfo.emailType === '通用支持邮箱' ? '通用邮箱' :
+                                                                                            (companyInfo.emailType || '招聘邮箱')}
+                                                                </div>
+                                                            </div>
+                                                            {/* Hover Hint */}
+                                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover/email:opacity-100 transition-opacity bg-slate-800 text-white text-[10px] px-2 py-1 rounded">
+                                                                点击复制
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Specialties - Full Width */}
+                                                    {companyInfo.specialties && companyInfo.specialties.length > 0 && (
+                                                        <div className="col-span-full pt-4 mt-2 border-t border-slate-100 flex items-center gap-4">
+                                                            <div className="text-xs text-slate-500 font-medium flex-shrink-0">企业领域/专长</div>
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {companyInfo.specialties.map((spec, idx) => (
+                                                                    <span key={idx} className="px-2 py-0.5 bg-white text-slate-600 rounded border border-slate-200 text-xs font-medium">
+                                                                        {spec}
+                                                                    </span>
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
                                         ) : (
-                                            /* Locked State - Optimized Visual */
-                                            <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 min-h-[300px]">
+                                            /* Locked State - Synchronized with JobDetailPanel */
+                                            <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 min-h-[160px] mx-4 mb-4">
                                                 {/* Simulated Content Layer (Blurred) */}
-                                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-sm opacity-60 select-none pointer-events-none h-full">
-                                                    {/* Use real-looking fake data for better blur effect */}
-                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
-                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
-                                                        <div className="space-y-1.5 flex-1">
-                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
-                                                            <div className="h-3 w-20 bg-slate-200 rounded"></div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
-                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
-                                                        <div className="space-y-1.5 flex-1">
-                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
-                                                            <div className="h-3 w-16 bg-slate-200 rounded"></div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 col-span-2 lg:col-span-1 h-16">
-                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
-                                                        <div className="space-y-1.5 flex-1">
-                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
-                                                            <div className="h-3 w-24 bg-slate-200 rounded"></div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white border border-slate-100 h-16">
-                                                        <div className="w-8 h-8 bg-slate-100 rounded-md"></div>
-                                                        <div className="space-y-1.5 flex-1">
-                                                            <div className="h-2 w-12 bg-slate-100 rounded"></div>
-                                                            <div className="h-3 w-14 bg-slate-200 rounded"></div>
-                                                        </div>
-                                                    </div>
+                                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-[6px] opacity-40 select-none pointer-events-none">
+                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
+                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
                                                 </div>
 
-                                                {/* Overlay */}
-                                                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/40 backdrop-blur-[2px]">
-                                                    <div className="text-center p-4 w-full max-w-sm">
-                                                        <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg shadow-indigo-200">
-                                                            <Crown className="w-5 h-5 text-white" />
-                                                        </div>
-                                                        <h3 className="text-sm font-bold text-slate-900 mb-1">会员专属深度信息</h3>
-                                                        <p className="text-slate-500 text-xs mb-3">解锁官网、评分、业务信息等企业情报，让求职更加安心</p>
-                                                        <button
-                                                            onClick={() => navigate('/membership')}
-                                                            className="flex items-center justify-center gap-1.5 px-6 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5 mx-auto w-fit"
-                                                        >
-                                                            <span>查看详情</span>
-                                                            <ArrowRight className="w-3 h-3" />
-                                                        </button>
+                                                {/* Unlock Modal Overlay */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-50/90 via-slate-50/40 to-transparent flex flex-col items-center justify-center">
+                                                    <div className="text-center transform transition-transform hover:scale-[1.02] p-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-sm max-w-sm">
+                                                        {companyInfoUsageCount < FREE_FEATURE_LIMIT ? (
+                                                            <>
+                                                                <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-indigo-100">
+                                                                    <Crown className="w-5 h-5 text-indigo-600" />
+                                                                </div>
+                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">解锁企业认证深度信息</h4>
+                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
+                                                                    包含认证招聘邮箱、评分详情及准确总部地址，助您精准触达。
+                                                                </p>
+                                                                <button
+                                                                    onClick={handleUnlock}
+                                                                    className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
+                                                                >
+                                                                    <Crown className="w-3.5 h-3.5" />
+                                                                    免费解锁 (剩 {FREE_FEATURE_LIMIT - companyInfoUsageCount} 次)
+                                                                </button>
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-slate-100">
+                                                                    <Shield className="w-5 h-5 text-slate-400" />
+                                                                </div>
+                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">体验次数已达上限</h4>
+                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
+                                                                    升级会员即可无限次查看所有企业的深度核验信息。
+                                                                </p>
+                                                                <button
+                                                                    onClick={() => navigate('/membership')}
+                                                                    className="py-2 px-6 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full shadow-sm transition-all mx-auto"
+                                                                >
+                                                                    查看会员权益
+                                                                </button>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>
-                                        )}
-                                    </div>
+                                        );
+                                    })()}
                                 </div>
                             )}
                         </div>

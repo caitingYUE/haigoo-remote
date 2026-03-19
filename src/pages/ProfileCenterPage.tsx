@@ -26,7 +26,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'custom-plan'
+    return t && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -1420,7 +1420,7 @@ export default function ProfileCenterPage() {
               </div>
               <nav className="space-y-1" role="tablist">
                 {[
-                  { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
+                  // { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
                   { id: 'resume', label: '我的简历', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },

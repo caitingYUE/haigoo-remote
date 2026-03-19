@@ -86,6 +86,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(FREE_FEATURE_LIMIT) // conservative default → locked until loaded
     const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(FREE_FEATURE_LIMIT)   // conservative default
     const [referralUsageCount, setReferralUsageCount] = useState(0)                        // default 0 → allow until loaded
+    const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
 
     useEffect(() => {
         // Reset state when job changes
@@ -154,7 +155,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 fetch('/api/users?resource=free-usage&type=email-apply', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
             ]).then(([ciData, eaData, refData]) => {
-                if (ciData.success) setCompanyInfoUsageCount(ciData.usage);
+                if (ciData.success) {
+                    setCompanyInfoUsageCount(ciData.usage);
+                    setUnlockedCompanies(ciData.unlocked_companies || []);
+                }
                 if (eaData.success) setEmailApplyUsageCount(eaData.usage);
                 if (refData.success) setReferralUsageCount(refData.usage);
             }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
@@ -923,32 +927,72 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     <div className="mt-2">
                                         {/* Enhanced Company Info Grid */}
                                         {(() => {
-                                            // Free users can view up to FREE_FEATURE_LIMIT times
-                                            const canViewFree = !isMember && isAuthenticated && companyInfoUsageCount < FREE_FEATURE_LIMIT;
-                                            const showInfo = isMember || canViewFree;
+                                            const companyName = job.company || companyInfo?.name || '';
+                                            const isUnlocked = isMember || unlockedCompanies.includes(companyName);
+                                            const showInfo = isUnlocked;
+
+                                            const handleUnlock = async (e: React.MouseEvent) => {
+                                                e.stopPropagation();
+                                                const token = localStorage.getItem('haigoo_auth_token');
+                                                if (!token) {
+                                                    navigate('/login');
+                                                    return;
+                                                }
+                                                // Call unlock API
+                                                try {
+                                                    const res = await fetch('/api/users?resource=free-usage&type=company-info', {
+                                                        method: 'POST',
+                                                        headers: {
+                                                            'Content-Type': 'application/json',
+                                                            'Authorization': `Bearer ${token}`
+                                                        },
+                                                        body: JSON.stringify({ companyName })
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.success) {
+                                                        setUnlockedCompanies(data.unlocked_companies || []);
+                                                        setCompanyInfoUsageCount(data.usage);
+                                                    } else {
+                                                        showError('解锁失败', data.error || '服务器错误');
+                                                    }
+                                                } catch (err) {
+                                                    showError('解锁失败', '网络错误');
+                                                }
+                                            };
+
                                             return (
                                                 <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm relative overflow-hidden">
                                                     {!showInfo && (
                                                         <div
-                                                            className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center text-center p-4 cursor-pointer group/lock"
-                                                            onClick={(e) => { e.stopPropagation(); setShowUpgradeModal(true); }}
+                                                            className="absolute inset-0 bg-white/60 backdrop-blur-[4px] z-10 flex flex-col items-center justify-center text-center p-4 cursor-pointer group/lock"
+                                                            onClick={(e) => {
+                                                                if (companyInfoUsageCount >= FREE_FEATURE_LIMIT) {
+                                                                    e.stopPropagation();
+                                                                    setShowUpgradeModal(true);
+                                                                }
+                                                            }}
                                                         >
-                                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                                                                <Lock className="w-4 h-4 text-slate-400" />
-                                                            </div>
-                                                            <span className="text-slate-500 font-medium">
-                                                                {isAuthenticated ? '免费次数已用完，升级会员查看' : '企业认证信息仅会员可见'}
-                                                            </span>
+                                                            {companyInfoUsageCount < FREE_FEATURE_LIMIT ? (
+                                                                <button
+                                                                    onClick={handleUnlock}
+                                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg shadow-sm flex items-center justify-center gap-1.5 transition-colors"
+                                                                >
+                                                                    <Crown className="w-3.5 h-3.5" />
+                                                                    解锁企业信息 ({FREE_FEATURE_LIMIT - companyInfoUsageCount}/{FREE_FEATURE_LIMIT}次)
+                                                                </button>
+                                                            ) : (
+                                                                <>
+                                                                    <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                                                                        <Lock className="w-4 h-4 text-slate-400" />
+                                                                    </div>
+                                                                    <span className="text-slate-500 font-medium">
+                                                                        {isAuthenticated ? '免费次数已用完，升级会员查看' : '企业认证信息仅会员可见'}
+                                                                    </span>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     )}
-                                                    {canViewFree && (
-                                                        <div className="absolute top-1.5 right-1.5 z-10">
-                                                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
-                                                                免费体验 {FREE_FEATURE_LIMIT - companyInfoUsageCount}/{FREE_FEATURE_LIMIT}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[4px] opacity-40 select-none' : ''}`}>
                                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                                             <Users className="w-3 h-3 text-indigo-600" />
                                                         </div>
@@ -956,7 +1000,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             {showInfo ? (companyInfo?.employeeCount || '规模未知') : '500-1000人'}
                                                         </span>
                                                     </div>
-                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[4px] opacity-40 select-none' : ''}`}>
                                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                                             <MapPin className="w-3 h-3 text-indigo-600" />
                                                         </div>
@@ -964,7 +1008,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             {showInfo ? (companyInfo?.address || '总部未知') : '北京市海淀区'}
                                                         </span>
                                                     </div>
-                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[4px] opacity-40 select-none' : ''}`}>
                                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                                             <Calendar className="w-3 h-3 text-indigo-600" />
                                                         </div>
@@ -972,7 +1016,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             {showInfo ? (companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知') : '2015年成立'}
                                                         </span>
                                                     </div>
-                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[4px] opacity-40 select-none' : ''}`}>
                                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                                             <Mail className="w-3 h-3 text-indigo-600" />
                                                         </div>

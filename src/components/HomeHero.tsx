@@ -1133,7 +1133,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         <div className="text-[54px] font-black text-slate-900 leading-none">{Math.min(recommendations.length || 1, dailyLimit)}<span className="text-slate-300">/{dailyLimit}</span></div>
                                         <p className="text-sm text-slate-500 mt-2 leading-relaxed">
                                             {isAuthenticated
-                                                ? (isMember ? '今日推荐已更新，会员可继续拓展方案并深度打磨求职计划。' : '今日推荐已更新，可继续浏览 5 个精选岗位，并进入完整规划查看行动建议。')
+                                                ? (isMember ? '今日推荐已更新，会员可继续查看更多符合偏好的机会。' : '今日推荐已更新，可继续浏览 5 个精选岗位。')
                                                 : '游客模式每日可获得 1 个推荐，登录后每日 5 个。'}
                                         </p>
                                     </div>
@@ -1144,18 +1144,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         </div>
                                         <div className="text-sm font-semibold text-indigo-600 truncate">{jobDirection || '未填写'} · {positionTypeLabel}</div>
                                     </div>
-                                    <div className="h-[52px] mt-auto">
-                                        <button onClick={handleGeneratePlan}
-                                            className="w-full h-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-[0_8px_20px_rgba(79,70,229,0.30)] transition-all flex items-center justify-center gap-2">
-                                            <Sparkles className="w-4 h-4" />
-                                            {isAuthenticated
-                                                ? planStatus === 'pending'
-                                                    ? '方案生成中'
-                                                    : planStatus === 'ready'
-                                                        ? '查看已生成方案'
-                                                        : '生成求职规划'
-                                                : '查看规划预览'}
-                                        </button>
+                                    <div className="h-[52px] mt-auto flex items-center justify-center">
                                     </div>
                                 </div>
                             )}
