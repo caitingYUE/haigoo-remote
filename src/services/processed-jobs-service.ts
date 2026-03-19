@@ -30,6 +30,7 @@ export interface ProcessedJobsFilters {
   isApproved?: boolean
   companyId?: string
   skipAggregations?: boolean
+  limit?: number
 }
 
 class ProcessedJobsService {

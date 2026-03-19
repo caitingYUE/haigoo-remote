@@ -669,9 +669,10 @@ const AdminTeamPage: React.FC = () => {
       // Filters
       const matchesSource = resumeSourceFilter === 'all' ||
         (resumeSourceFilter === 'christmas' && resume.source === 'christmas_tree') ||
+        (resumeSourceFilter === 'copilot' && resume.source === 'copilot') ||
         (resumeSourceFilter === 'personal' && resume.source === 'personal_center') ||
         (resumeSourceFilter === 'application' && resume.source === 'job_application') ||
-        (resumeSourceFilter === 'unknown' && !resume.source);
+        (resumeSourceFilter === 'unknown' && (!resume.source || resume.source === 'unknown'));
 
       const matchesUserType = resumeUserTypeFilter === 'all' ||
         (resumeUserTypeFilter === 'lead' && resume.userType === 'Lead') ||
@@ -708,6 +709,7 @@ const AdminTeamPage: React.FC = () => {
 
     const getSourceLabel = (source: string, userType: string) => {
       if (source === 'christmas_tree') return <span className="status-badge high">圣诞树活动</span>;
+      if (source === 'copilot') return <span className="status-badge medium">Copilot</span>;
       if (source === 'personal_center') return <span className="status-badge medium">个人中心</span>;
       if (source === 'job_application') return <span className="status-badge low">职位申请</span>;
 
@@ -767,6 +769,7 @@ const AdminTeamPage: React.FC = () => {
               >
                 <option value="all">所有来源</option>
                 <option value="christmas">圣诞树活动</option>
+                <option value="copilot">Copilot</option>
                 <option value="personal">个人中心</option>
                 <option value="application">职位申请</option>
                 <option value="unknown">未知</option>
@@ -1181,6 +1184,7 @@ const AdminTeamPage: React.FC = () => {
                     <label className="text-sm text-slate-500">来源</label>
                     <div className="font-medium">
                       {selectedResume.source === 'christmas_tree' ? '圣诞树活动' :
+                        selectedResume.source === 'copilot' ? 'Copilot' :
                         selectedResume.source === 'personal_center' ? '个人中心' :
                           selectedResume.source === 'job_application' ? '职位申请' :
                             selectedResume.source || '未知'}

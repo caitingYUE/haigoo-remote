@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2, Clock, Mail, Linkedin } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, Zap, MessageSquare, X, ExternalLink, ChevronRight, ChevronLeft, Languages, Shield, Sparkles, Target, Crown, Lock, CheckCircle2, Clock, Mail, Linkedin, Users, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -81,6 +81,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const showReferralModule = referralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
+    // Free usage quotas for non-members (lifetime cumulative, stored in DB)
+    const FREE_FEATURE_LIMIT = 5
+    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(FREE_FEATURE_LIMIT) // conservative default → locked until loaded
+    const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(FREE_FEATURE_LIMIT)   // conservative default
+    const [referralUsageCount, setReferralUsageCount] = useState(0)                        // default 0 → allow until loaded
 
     useEffect(() => {
         // Reset state when job changes
@@ -135,6 +140,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 const count = parseInt(localStorage.getItem('translation_usage_count') || '0', 10)
                 setTranslationUsageCount(count)
             }
+        }
+    }, [isAuthenticated, isMember]);
+
+    // Load free feature usage counts from server (company info + email apply + referral)
+    useEffect(() => {
+        if (isAuthenticated && !isMember) {
+            const token = localStorage.getItem('haigoo_auth_token');
+            if (!token) return;
+            const headers = { 'Authorization': `Bearer ${token}` };
+            Promise.all([
+                fetch('/api/users?resource=free-usage&type=company-info', { headers }).then(r => r.json()),
+                fetch('/api/users?resource=free-usage&type=email-apply', { headers }).then(r => r.json()),
+                fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
+            ]).then(([ciData, eaData, refData]) => {
+                if (ciData.success) setCompanyInfoUsageCount(ciData.usage);
+                if (eaData.success) setEmailApplyUsageCount(eaData.usage);
+                if (refData.success) setReferralUsageCount(refData.usage);
+            }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
+        } else if (isMember) {
+            // Members have no limits
+            setCompanyInfoUsageCount(0);
+            setEmailApplyUsageCount(0);
+            setReferralUsageCount(0);
         }
     }, [isAuthenticated, isMember]);
 
@@ -892,7 +920,71 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         </div>
                                     </div>
 
-                                    <p className="mt-2 text-sm leading-7 text-slate-600 line-clamp-3">
+                                    <div className="mt-2">
+                                        {/* Enhanced Company Info Grid */}
+                                        {(() => {
+                                            // Free users can view up to FREE_FEATURE_LIMIT times
+                                            const canViewFree = !isMember && isAuthenticated && companyInfoUsageCount < FREE_FEATURE_LIMIT;
+                                            const showInfo = isMember || canViewFree;
+                                            return (
+                                                <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm relative overflow-hidden">
+                                                    {!showInfo && (
+                                                        <div
+                                                            className="absolute inset-0 bg-white/60 backdrop-blur-[2px] z-10 flex flex-col items-center justify-center text-center p-4 cursor-pointer group/lock"
+                                                            onClick={(e) => { e.stopPropagation(); setShowUpgradeModal(true); }}
+                                                        >
+                                                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                                                                <Lock className="w-4 h-4 text-slate-400" />
+                                                            </div>
+                                                            <span className="text-slate-500 font-medium">
+                                                                {isAuthenticated ? '免费次数已用完，升级会员查看' : '企业认证信息仅会员可见'}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    {canViewFree && (
+                                                        <div className="absolute top-1.5 right-1.5 z-10">
+                                                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
+                                                                免费体验 {FREE_FEATURE_LIMIT - companyInfoUsageCount}/{FREE_FEATURE_LIMIT}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                            <Users className="w-3 h-3 text-indigo-600" />
+                                                        </div>
+                                                        <span className="truncate font-medium text-slate-600">
+                                                            {showInfo ? (companyInfo?.employeeCount || '规模未知') : '500-1000人'}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                            <MapPin className="w-3 h-3 text-indigo-600" />
+                                                        </div>
+                                                        <span className="truncate font-medium text-slate-600" title={showInfo ? (companyInfo?.address || '总部未知') : ''}>
+                                                            {showInfo ? (companyInfo?.address || '总部未知') : '北京市海淀区'}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                            <Calendar className="w-3 h-3 text-indigo-600" />
+                                                        </div>
+                                                        <span className="font-medium text-slate-600">
+                                                            {showInfo ? (companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知') : '2015年成立'}
+                                                        </span>
+                                                    </div>
+                                                    <div className={`flex items-center gap-2 ${!showInfo ? 'blur-[3px] opacity-60 select-none' : ''}`}>
+                                                        <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+                                                            <Mail className="w-3 h-3 text-indigo-600" />
+                                                        </div>
+                                                        <span className="text-indigo-600 font-bold">
+                                                            {showInfo ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用邮箱') : 'HR直招邮箱'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                    <p className="mt-4 text-sm leading-7 text-slate-600 line-clamp-3">
                                         {companyDescription}
                                     </p>
                                 </div>
@@ -1073,39 +1165,75 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 {/* Email Apply Button - Only show if company has hiring email */}
                 {!showReferralModule && companyInfo?.hiringEmail && (
                     <div className="flex-1 flex flex-col justify-end relative group/email">
-                        <button
-                            onClick={() => {
-                                if (isMember) {
-                                    executeApply('email')
-                                } else {
-                                    setShowUpgradeModal(true)
-                                }
-                            }}
-                            className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${isMember
-                                ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5'
-                                : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
-                                }`}
-                        >
-                            {isMember ? (
-                                <>
-                                    <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
-                                    <div className="flex items-center gap-2 relative z-10">
-                                        <Mail className="w-4 h-4" />
-                                        <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用邮箱'})</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="flex items-center gap-2 mb-0.5">
-                                        <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
-                                        <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申 (会员)</span>
-                                    </div>
-                                    <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
-                                        解锁会员专属高效通道
-                                    </div>
-                                </>
-                            )}
-                        </button>
+                        {(() => {
+                            const canEmailFree = !isMember && isAuthenticated && emailApplyUsageCount < FREE_FEATURE_LIMIT;
+                            const isEmailUnlocked = isMember || canEmailFree;
+                            return (
+                                <button
+                                    onClick={async () => {
+                                        if (!isAuthenticated) {
+                                            if (window.confirm('申请职位需要登录\n\n是否前往登录？')) navigate('/login');
+                                            return;
+                                        }
+                                        if (isEmailUnlocked) {
+                                            // Consume one free use if non-member
+                                            if (!isMember) {
+                                                const token = localStorage.getItem('haigoo_auth_token');
+                                                if (token) {
+                                                    try {
+                                                        const data = await fetch('/api/users?resource=free-usage&type=email-apply', {
+                                                            method: 'POST',
+                                                            headers: { 'Authorization': `Bearer ${token}` }
+                                                        }).then(r => r.json());
+                                                        if (data.success) {
+                                                            setEmailApplyUsageCount(data.usage);
+                                                            if (data.remaining === 0) showInfo('体验次数已用完', '升级会员享受无限邮箱直申');
+                                                        }
+                                                    } catch (e) {
+                                                        console.error('[free-usage] email-apply consume failed:', e);
+                                                    }
+                                                }
+                                            }
+                                            executeApply('email');
+                                        } else {
+                                            setShowUpgradeModal(true);
+                                        }
+                                    }}
+                                    className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
+                                        isMember
+                                            ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5'
+                                            : isEmailUnlocked
+                                                ? 'bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md hover:-translate-y-0.5'
+                                                : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50 cursor-pointer'
+                                    }`}
+                                >
+                                    {isEmailUnlocked ? (
+                                        <>
+                                            <div className="absolute inset-0 bg-white/5 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300"></div>
+                                            <div className="flex items-center gap-2 relative z-10">
+                                                <Mail className="w-4 h-4" />
+                                                <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用邮箱'})</span>
+                                                {!isMember && (
+                                                    <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-200 text-xs font-bold rounded">
+                                                        {FREE_FEATURE_LIMIT - emailApplyUsageCount}/{FREE_FEATURE_LIMIT}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="flex items-center gap-2 mb-0.5">
+                                                <Lock className="w-3.5 h-3.5 text-slate-400 group-hover/btn:text-indigo-500 transition-colors" />
+                                                <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申</span>
+                                            </div>
+                                            <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
+                                                体验次数已用完，升级会员
+                                            </div>
+                                        </>
+                                    )}
+                                </button>
+                            );
+                        })()}
                     </div>
                 )}
             </footer >
@@ -1165,6 +1293,24 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 companyInfo={companyInfo}
                 isMember={isMember}
                 onProceedToApply={proceedToApply}
+                referralUsageCount={referralUsageCount}
+                FREE_FEATURE_LIMIT={FREE_FEATURE_LIMIT}
+                onConsumeReferral={async () => {
+                    const token = localStorage.getItem('haigoo_auth_token');
+                    if (!token) return;
+                    try {
+                        const data = await fetch('/api/users?resource=free-usage&type=referral', {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }).then(r => r.json());
+                        if (data.success) {
+                            setReferralUsageCount(data.usage);
+                            if (data.remaining === 0) showInfo('内推体验次数已用完', '升级会员享受无限次内推');
+                        }
+                    } catch (e) {
+                        console.error('[free-usage] referral consume failed:', e);
+                    }
+                }}
             />
             <ReferralApplicationModal
                 isOpen={isReferralModalOpen}

@@ -5,6 +5,7 @@ import applicationsHandler from '../lib/api-handlers/applications.js';
 import resumesHandler from '../lib/api-handlers/resumes.js';
 import jobMatchingHandler from '../lib/api-handlers/job-matching.js';
 import translationUsageHandler from '../lib/api-handlers/translation-usage.js';
+import freeUsageHandler from '../lib/api-handlers/free-usage.js';
 
 export default async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -15,6 +16,10 @@ export default async function handler(req, res) {
 
   if (resource === 'translation-usage') {
       return await translationUsageHandler(req, res);
+  }
+
+  if (resource === 'free-usage') {
+      return await freeUsageHandler(req, res);
   }
 
   if (resource === 'applications') {

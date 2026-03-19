@@ -2,7 +2,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
 
 // Load environment variables
 dotenv.config({ path: '.env.local' });
@@ -72,6 +71,11 @@ async function startServer() {
         const aiHandler = (await import('./api/ai.js')).default;
         app.all('/api/ai', async (req, res) => { await aiHandler(req, res); });
         console.log('AI handler imported.');
+
+        console.log('Importing copilot handler...');
+        const copilotHandler = (await import('./api/copilot.js')).default;
+        app.all('/api/copilot', async (req, res) => { await copilotHandler(req, res); });
+        console.log('Copilot handler imported.');
 
         console.log('Importing images handler...');
         const imagesHandler = (await import('./lib/api-handlers/image-proxy-handler.js')).default;

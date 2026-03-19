@@ -7,12 +7,14 @@
     "node": "20.x"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/dev-with-api.mjs",
+    "dev:web": "vite",
+    "build": "tsc && vite build",
     "type-check": "tsc --noEmit",
     "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
-    "server": "node local-server.js",
+    "server": "npm run server:api",
+    "server:api": "node local-server.js",
     "vercel-build": "echo '--- VERCEL BUILD START ---' && npm run build && echo '--- VERCEL BUILD END ---'"
   },
   "dependencies": {
