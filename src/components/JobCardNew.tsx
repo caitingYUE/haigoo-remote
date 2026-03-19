@@ -77,32 +77,14 @@ const getDarkerColor = (str: string) => {
 };
 
 // Match Score Badge
-const MatchScoreBadge = ({ score, level, mode = 'pill' }: { score: number, level: string, mode?: 'pill' | 'orb' }) => {
+const MatchScoreBadge = ({ score, level }: { score: number, level: string }) => {
    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
    const isHigh = level === 'high';
    const title = `简历与该岗位需求匹配度 ${safeScore}%`;
 
-   if (mode === 'orb') {
-      return (
-         <div
-            className={`relative flex h-[88px] w-[88px] items-center justify-center rounded-full border bg-gradient-to-br ${isHigh ? 'from-indigo-50 via-white to-sky-50 border-indigo-200 shadow-[0_12px_28px_rgba(99,102,241,0.18)]' : 'from-sky-50 via-white to-cyan-50 border-sky-200 shadow-[0_12px_28px_rgba(14,165,233,0.16)]'}`}
-            title={title}
-         >
-            <div className={`absolute inset-[7px] rounded-full border ${isHigh ? 'border-indigo-100 bg-white/90' : 'border-sky-100 bg-white/90'}`} />
-            <div className="relative flex flex-col items-center justify-center leading-none">
-               <span className={`text-[25px] font-bold tracking-tight ${isHigh ? 'text-indigo-700' : 'text-sky-700'}`}>
-                  {safeScore}
-                  <span className="text-[14px] font-semibold">%</span>
-               </span>
-               <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-indigo-500' : 'text-sky-500'}`}>匹配</span>
-            </div>
-         </div>
-      );
-   }
-
    return (
       <div 
-         className={`flex items-center justify-center min-w-[72px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'text-indigo-700 bg-indigo-50 border-indigo-100' : 'text-sky-700 bg-sky-50 border-sky-100'}`}
+         className={`flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'text-indigo-700 bg-indigo-50 border-indigo-100' : 'text-sky-700 bg-sky-50 border-sky-100'}`}
          title={title}
       >
          <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
@@ -160,7 +142,6 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const rawScoreNum = Math.round(Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0));
    const showMatchScore = resolvedMatchLevel !== 'none' && rawScoreNum > 0;
-   const desktopRailWidthClass = showMatchScore ? 'md:w-[156px] lg:w-[172px]' : 'md:w-[104px] lg:w-[124px]';
 
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
@@ -252,7 +233,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       return (
          <div
-            className="flex-shrink-0 flex h-full min-h-[126px] w-full flex-col items-center justify-center rounded-[28px] px-3 py-4 transition-colors relative overflow-hidden"
+            className="flex-shrink-0 flex flex-col items-center justify-center px-2 py-3 rounded-xl transition-colors h-full w-full relative overflow-hidden"
             style={{ backgroundColor: bgColor }}
          >
             {/* Featured Badge for Grid View */}
@@ -264,7 +245,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {/* Company Name (Top) */}
             <div
-               className="flex-shrink-0 w-full text-center text-xs font-bold leading-tight break-words line-clamp-2 mb-2"
+               className="flex-shrink-0 text-xs font-bold text-center mb-1.5 line-clamp-2 w-full leading-tight break-words"
                style={{ color: textColor }}
                title={job.translations?.company || job.company}
             >
@@ -272,7 +253,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Logo (Centered) */}
-            <div className="relative flex h-[72px] w-[72px] flex-shrink-0 items-center justify-center overflow-hidden rounded-[24px] bg-white p-2 shadow-sm">
+            <div className="relative flex-shrink-0 w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
                {job.logo ? (
                   <img
                      src={job.logo}
@@ -361,7 +342,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                onClick && onClick(job);
             }}
             className={`
-               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-stretch min-h-[156px]
+               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-start min-h-[140px]
                ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
                ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
                ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
@@ -369,7 +350,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             `}
          >
             {/* Left: Company Logo Card */}
-            <div className="flex w-[116px] md:w-[124px] lg:w-[132px] self-stretch flex-shrink-0">
+            <div className="flex-shrink-0 w-[110px] h-[110px] flex">
                <CompanyCard size="sm" />
             </div>
 
@@ -379,10 +360,10 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-start justify-between gap-2 min-h-[24px]">
-                     <div className="flex flex-wrap items-center gap-2 pt-1">
+                     <div className="flex flex-wrap md:flex-nowrap md:overflow-hidden items-center gap-2 pt-1">
                         {/* Job Type (Amber) */}
                         {job.type && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
+                           <span className="inline-flex shrink-0 items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
                               <Calendar className="w-3 h-3 mr-1" />
                               {JOB_TYPE_MAP[job.type] || job.type}
                            </span>
@@ -390,7 +371,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                         {/* Experience Level (Emerald - New) */}
                         {job.experienceLevel && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                           <span className="inline-flex shrink-0 items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
                               <TrendingUp className="w-3 h-3 mr-1" />
                               {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
                            </span>
@@ -398,7 +379,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                         {/* Industry (Purple - Differentiated from Category) */}
                         {job.companyIndustry && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
+                           <span className="inline-flex shrink-0 items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
                               <Building2 className="w-3 h-3 mr-1" />
                               {job.companyIndustry}
                            </span>
@@ -406,7 +387,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                         {/* Category (Blue/Indigo - Role related) */}
                         {job.category && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                           <span className="inline-flex shrink-0 items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
                               <Briefcase className="w-3 h-3 mr-1" />
                               {job.category}
                            </span>
@@ -422,8 +403,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Row 2: Title */}
-                  <div className="flex items-center gap-2 mt-0.5 w-full">
-                     <h3 className={`text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors ${showMatchScore ? 'line-clamp-1' : 'line-clamp-2'}`} title={job.translations?.title || job.title}>
+                  <div className="flex items-center gap-2 mt-0.5 w-full min-w-0">
+                     <h3 className="flex-1 min-w-0 text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate" title={job.translations?.title || job.title}>
                         {job.translations?.title || job.title}
                      </h3>
                      {isTranslated && (
@@ -468,11 +449,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 4: Tags & Mobile Actions */}
                   <div className="flex items-center justify-between gap-3 mt-auto pt-2">
-                     <div className="flex flex-wrap items-center gap-2">
-                        {displayTags.map((tag, i) => (
+                     <div className="flex flex-wrap md:flex-nowrap md:overflow-hidden items-center gap-2">
+                        {displayTags.slice(0, 4).map((tag, i) => (
                            <span
                               key={i}
-                              className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
+                              className="inline-flex shrink-0 items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
                            >
                               {tag.text}
                            </span>
@@ -522,14 +503,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
                </div>
 
-               <div className={`hidden md:flex ${desktopRailWidthClass} flex-col items-end justify-between text-right py-1`}>
-                  <div className={`max-w-full text-[15px] leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+               <div className={`hidden md:flex flex-shrink-0 flex-col items-end text-right py-1 ${showMatchScore ? 'self-stretch justify-between min-w-[116px] lg:min-w-[132px]' : 'gap-2 min-w-fit'}`}>
+                  <div className={`max-w-full text-[15px] leading-tight whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                      {salaryText}
                   </div>
 
-                  <div className={`flex w-full items-center justify-end ${showMatchScore ? 'min-h-[92px]' : 'flex-1'}`}>
+                  <div className="flex w-full items-center justify-end">
                      {showMatchScore ? (
-                        <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} mode="orb" />
+                        <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
                      ) : (
                         <div />
                      )}
