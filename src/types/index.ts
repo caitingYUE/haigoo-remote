@@ -78,6 +78,8 @@ export interface Job {
     strengths?: string[]
     suggestions?: string[]
     breakdown?: {
+      titleMatch?: number
+      roleTypeMatch?: number
       skillMatch?: number
       keywordSimilarity?: number
       experienceMatch?: number

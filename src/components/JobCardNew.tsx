@@ -4,7 +4,7 @@ import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Spar
 import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { DateFormatter } from '../utils/date-formatter';
-import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display';
+import { resolveMatchLevel } from '../utils/match-display';
 import { trackingService } from '../services/tracking-service';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
@@ -76,15 +76,34 @@ const getDarkerColor = (str: string) => {
    return `hsl(${h}, 70%, 30%)`;
 };
 
-// Minimalist Match Score Badge
-const MatchScoreBadge = ({ score, level }: { score: number, level: string }) => {
-   const colorClass = level === 'high' ? 'text-emerald-600 bg-emerald-50 border-emerald-100' : 'text-amber-600 bg-amber-50 border-amber-100';
+// Match Score Badge
+const MatchScoreBadge = ({ score, level, mode = 'pill' }: { score: number, level: string, mode?: 'pill' | 'orb' }) => {
    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+   const isHigh = level === 'high';
+   const title = `简历与该岗位需求匹配度 ${safeScore}%`;
+
+   if (mode === 'orb') {
+      return (
+         <div
+            className={`relative flex h-[88px] w-[88px] items-center justify-center rounded-full border bg-gradient-to-br ${isHigh ? 'from-indigo-50 via-white to-sky-50 border-indigo-200 shadow-[0_12px_28px_rgba(99,102,241,0.18)]' : 'from-sky-50 via-white to-cyan-50 border-sky-200 shadow-[0_12px_28px_rgba(14,165,233,0.16)]'}`}
+            title={title}
+         >
+            <div className={`absolute inset-[7px] rounded-full border ${isHigh ? 'border-indigo-100 bg-white/90' : 'border-sky-100 bg-white/90'}`} />
+            <div className="relative flex flex-col items-center justify-center leading-none">
+               <span className={`text-[25px] font-bold tracking-tight ${isHigh ? 'text-indigo-700' : 'text-sky-700'}`}>
+                  {safeScore}
+                  <span className="text-[14px] font-semibold">%</span>
+               </span>
+               <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-indigo-500' : 'text-sky-500'}`}>匹配</span>
+            </div>
+         </div>
+      );
+   }
 
    return (
       <div 
-         className={`flex items-center justify-center min-w-[50px] px-2 py-0.5 rounded-full border shadow-sm ${colorClass}`}
-         title={`简历与该岗位需求匹配度高达 ${safeScore}%`}
+         className={`flex items-center justify-center min-w-[72px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'text-indigo-700 bg-indigo-50 border-indigo-100' : 'text-sky-700 bg-sky-50 border-sky-100'}`}
+         title={title}
       >
          <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
       </div>
@@ -140,9 +159,6 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    }, [job, matchScore]);
 
    const rawScoreNum = Math.round(Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0));
-
-   const matchLevelLabel = useMemo(() => getMatchLevelLabel(resolvedMatchLevel), [resolvedMatchLevel]);
-   const matchLevelClass = useMemo(() => getMatchLevelClassName(resolvedMatchLevel), [resolvedMatchLevel]);
 
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
@@ -356,153 +372,175 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 min-w-0 flex flex-col gap-1.5 py-0.5 relative pr-4">
-               {/* Right Side Floating Column (Salary & Match) */}
-               <div className="absolute top-0 right-0 hidden md:flex flex-col items-end gap-2 w-auto min-w-[100px] mt-1 pr-1 z-10">
-                  <div className={`text-[15px] whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+            <div className="flex-1 min-w-0 flex gap-4 py-0.5">
+               <div className="min-w-0 flex-1 flex flex-col gap-1.5">
+
+                  {/* Row 1: Badges & Salary (Desktop) */}
+                  <div className="flex items-start justify-between gap-2 min-h-[24px]">
+                     <div className="flex flex-wrap items-center gap-2 pt-1">
+                        {/* Job Type (Amber) */}
+                        {job.type && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
+                              <Calendar className="w-3 h-3 mr-1" />
+                              {JOB_TYPE_MAP[job.type] || job.type}
+                           </span>
+                        )}
+
+                        {/* Experience Level (Emerald - New) */}
+                        {job.experienceLevel && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                              <TrendingUp className="w-3 h-3 mr-1" />
+                              {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
+                           </span>
+                        )}
+
+                        {/* Industry (Purple - Differentiated from Category) */}
+                        {job.companyIndustry && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
+                              <Building2 className="w-3 h-3 mr-1" />
+                              {job.companyIndustry}
+                           </span>
+                        )}
+
+                        {/* Category (Blue/Indigo - Role related) */}
+                        {job.category && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
+                              <Briefcase className="w-3 h-3 mr-1" />
+                              {job.category}
+                           </span>
+                        )}
+
+                        {/* Deactivated Badge */}
+                        {(job.status === '已失效' || job.status === '已结束') && (
+                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
+                              已下架
+                           </span>
+                        )}
+                     </div>
+                  </div>
+
+                  {/* Row 2: Title */}
+                  <div className="flex items-center gap-2 mt-0.5 w-full">
+                     <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
+                        {job.translations?.title || job.title}
+                     </h3>
+                     {isTranslated && (
+                        <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
+                           译
+                        </span>
+                     )}
+                     {isNew && (
+                        <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
+                           New
+                        </span>
+                     )}
+                  </div>
+
+                  {/* Row 3: Meta Info */}
+                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1">
+                     {/* Company Name (Mobile Only - since desktop has it in the card) */}
+                     <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
+                        {job.translations?.company || job.company}
+                     </span>
+
+                     <div className="flex items-center gap-1.5">
+                        <MapPin className="w-4 h-4 text-slate-400" />
+                        <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
+                     </div>
+
+                     <div className="flex items-center gap-1.5">
+                        <Clock className="w-4 h-4 text-slate-400" />
+                        <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
+                     </div>
+
+                     {(job as any).appliedAt ? (
+                        <div className="flex items-center gap-1.5 ml-2">
+                           <span className="text-slate-400 text-xs">申请于: {new Date((job as any).appliedAt).toLocaleDateString()}</span>
+                        </div>
+                     ) : (job as any).savedAt ? (
+                        <div className="flex items-center gap-1.5 ml-2">
+                           <span className="text-slate-400 text-xs">收藏于: {new Date((job as any).savedAt).toLocaleDateString()}</span>
+                        </div>
+                     ) : null}
+                  </div>
+
+                  {/* Row 4: Tags & Mobile Actions */}
+                  <div className="flex items-center justify-between gap-3 mt-auto pt-2">
+                     <div className="flex flex-wrap items-center gap-2">
+                        {displayTags.map((tag, i) => (
+                           <span
+                              key={i}
+                              className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
+                           >
+                              {tag.text}
+                           </span>
+                        ))}
+                     </div>
+
+                     <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                        {resolvedMatchLevel !== 'none' && rawScoreNum > 0 && (
+                           <div className="md:hidden">
+                              <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
+                           </div>
+                        )}
+
+                        {/* Salary (Mobile Only) */}
+                        <div className={`md:hidden text-sm whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+                           {salaryText}
+                        </div>
+
+                        {isFeatured && (
+                           <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
+                              <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
+                              <span>精选</span>
+                           </div>
+                        )}
+
+                        {/* Status Dropdown (Right side, before delete) */}
+                        {applicationStatusNode && (
+                           <div onClick={e => e.stopPropagation()} className="ml-1 z-10">
+                              {applicationStatusNode}
+                           </div>
+                        )}
+
+                        {/* Delete Button */}
+                        {onDelete && (
+                           <button
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 onDelete(job.id);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10"
+                              title="删除记录"
+                           >
+                              <Trash2 className="w-4 h-4" />
+                           </button>
+                        )}
+                     </div>
+                  </div>
+               </div>
+
+               <div className="hidden md:flex md:w-[156px] lg:w-[172px] flex-col items-end justify-between text-right py-1">
+                  <div className={`max-w-full text-[15px] leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                      {salaryText}
                   </div>
-                  {resolvedMatchLevel !== 'none' && rawScoreNum > 0 && (
-                     <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
-                  )}
-                  {isFeatured && (
-                     <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
-                        <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
-                        <span>精选</span>
-                     </div>
-                  )}
-               </div>
 
-               {/* Row 1: Badges & Salary (Desktop) */}
-               <div className="flex items-start justify-between gap-2 min-h-[24px] pr-[100px]">
-                  <div className="flex flex-wrap items-center gap-2 pt-1">
-                     {/* Job Type (Amber) */}
-                     {job.type && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-700 border border-amber-100/50">
-                           <Calendar className="w-3 h-3 mr-1" />
-                           {JOB_TYPE_MAP[job.type] || job.type}
-                        </span>
-                     )}
-
-                     {/* Experience Level (Emerald - New) */}
-                     {job.experienceLevel && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100/50">
-                           <TrendingUp className="w-3 h-3 mr-1" />
-                           {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
-                        </span>
-                     )}
-
-                     {/* Industry (Purple - Differentiated from Category) */}
-                     {job.companyIndustry && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-purple-50 text-purple-700 border border-purple-100/50">
-                           <Building2 className="w-3 h-3 mr-1" />
-                           {job.companyIndustry}
-                        </span>
-                     )}
-
-                     {/* Category (Blue/Indigo - Role related) */}
-                     {job.category && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-100/50">
-                           <Briefcase className="w-3 h-3 mr-1" />
-                           {job.category}
-                        </span>
-                     )}
-
-                     {/* Deactivated Badge */}
-                     {(job.status === '已失效' || job.status === '已结束') && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                           已下架
-                        </span>
+                  <div className="flex min-h-[92px] items-center justify-center">
+                     {resolvedMatchLevel !== 'none' && rawScoreNum > 0 ? (
+                        <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} mode="orb" />
+                     ) : (
+                        <div className="h-[88px] w-[88px]" />
                      )}
                   </div>
-               </div>
 
-               {/* Row 2: Title */}
-               <div className="flex items-center gap-2 mt-0.5 w-full pr-[100px]">
-                  <h3 className="text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-1" title={job.translations?.title || job.title}>
-                     {job.translations?.title || job.title}
-                  </h3>
-                  {isTranslated && (
-                     <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
-                        译
-                     </span>
-                  )}
-                  {isNew && (
-                     <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
-                        New
-                     </span>
-                  )}
-               </div>
-
-               {/* Row 3: Meta Info */}
-               <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1">
-                  {/* Company Name (Mobile Only - since desktop has it in the card) */}
-                  <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
-                     {job.translations?.company || job.company}
-                  </span>
-
-                  <div className="flex items-center gap-1.5">
-                     <MapPin className="w-4 h-4 text-slate-400" />
-                     <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5">
-                     <Clock className="w-4 h-4 text-slate-400" />
-                     <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
-                  </div>
-
-                  {(job as any).appliedAt ? (
-                     <div className="flex items-center gap-1.5 ml-2">
-                        <span className="text-slate-400 text-xs">申请于: {new Date((job as any).appliedAt).toLocaleDateString()}</span>
-                     </div>
-                  ) : (job as any).savedAt ? (
-                     <div className="flex items-center gap-1.5 ml-2">
-                        <span className="text-slate-400 text-xs">收藏于: {new Date((job as any).savedAt).toLocaleDateString()}</span>
-                     </div>
-                  ) : null}
-               </div>
-
-               {/* Row 4: Tags & System Recommended */}
-               <div className="flex items-center justify-between mt-auto pt-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                     {displayTags.map((tag, i) => (
-                        <span
-                           key={i}
-                           className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-medium text-slate-600 bg-slate-100/80 hover:bg-slate-200 transition-colors"
-                        >
-                           {tag.text}
-                        </span>
-                     ))}
-                  </div>
-
-                  <div className="flex items-center gap-2 ml-auto flex-shrink-0">
-                     {/* System Recommended (Bottom Right) */}
-                     {/* Moved to absolute top right corner */}
-
-                     {/* Salary (Mobile Only) */}
-                     <div className={`md:hidden text-sm whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
-                        {salaryText}
-                     </div>
-
-                     {/* Status Dropdown (Right side, before delete) */}
-                     {applicationStatusNode && (
-                        <div onClick={e => e.stopPropagation()} className="ml-1 z-10">
-                           {applicationStatusNode}
+                  <div className="flex min-h-[32px] items-end justify-end">
+                     {isFeatured ? (
+                        <div className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-bold border border-indigo-100 whitespace-nowrap shadow-sm">
+                           <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
+                           <span>精选</span>
                         </div>
-                     )}
-
-                     {/* Delete Button */}
-                     {onDelete && (
-                        <button
-                           onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete(job.id);
-                           }}
-                           className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10"
-                           title="删除记录"
-                        >
-                           <Trash2 className="w-4 h-4" />
-                        </button>
+                     ) : (
+                        <div className="h-[32px]" />
                      )}
                   </div>
                </div>

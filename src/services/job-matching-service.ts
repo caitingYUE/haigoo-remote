@@ -10,6 +10,8 @@ const getApiUrl = (): string => {
 };
 
 export interface MatchBreakdown {
+    titleMatch?: number;
+    roleTypeMatch?: number;
     skillMatch?: number;
     keywordSimilarity?: number;
     experienceMatch?: number;
