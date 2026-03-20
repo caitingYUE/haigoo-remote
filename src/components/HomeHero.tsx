@@ -20,7 +20,8 @@ import {
 } from '../services/guest-resume-bridge'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
-const HERO_CACHE_TTL = 6 * 60 * 60 * 1000
+const HERO_REFRESH_INTERVAL = 24 * 60 * 60 * 1000
+const HERO_CACHE_TTL = HERO_REFRESH_INTERVAL
 const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
 const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
 
@@ -129,6 +130,10 @@ function resolveLogoCandidates(logo?: string, company?: string, website?: string
     const fromWebsite = host ? [`https://logo.clearbit.com/${host}`] : []
     const fallback = company ? [`https://ui-avatars.com/api/?name=${encodeURIComponent(company)}&background=EEF2FF&color=4F46E5&size=96&bold=true&format=png`] : []
     return [...first, ...fromWebsite, ...fallback]
+}
+
+function getHeroCacheKey(userId?: string | null) {
+    return userId ? `${HERO_CACHE_KEY}_${userId}` : HERO_CACHE_KEY
 }
 
 function spreadByCompany<T extends { company_name?: string; company?: string }>(items: T[], bucketSize = 6) {
@@ -388,8 +393,10 @@ function writeStoredPlanStatus(status: 'idle' | 'pending' | 'ready') {
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { isAuthenticated, token, isMember } = useAuth()
+    const { user, isAuthenticated, token, isMember, updateProfile } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
+    const userId = user?.user_id || null
+    const storedTargetRole = String(user?.profile?.targetRole || '').trim()
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -421,6 +428,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [previewJobs, setPreviewJobs] = useState<any[]>([])
     const autoRefreshedAfterLogin = useRef(false)
     const pendingResumeSyncAttempted = useRef(false)
+    const accountHeroHydratedForUser = useRef<string | null>(null)
     const displayRecommendations = hasResults && recommendations.length > 0
         ? (isAuthenticated ? recommendations : recommendations.slice(0, 1))
         : SAMPLE_RECOMMENDATIONS
@@ -568,7 +576,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
     // Load saved form data from local storage for guest/returning users
     useEffect(() => {
-        const cached = localStorage.getItem(HERO_CACHE_KEY)
+        const cached = localStorage.getItem(getHeroCacheKey())
         if (cached) {
             try {
                 const data = JSON.parse(cached)
@@ -624,6 +632,47 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }, [])
 
     useEffect(() => {
+        if (!hasHydrated || !isAuthenticated || !userId) return
+        if (accountHeroHydratedForUser.current === userId) return
+
+        const cached = localStorage.getItem(getHeroCacheKey(userId))
+        let hydratedFromUserCache = false
+        if (cached) {
+            try {
+                const data = JSON.parse(cached)
+                const cacheTimestamp = data.lastUpdatedAt || data.timestamp
+                if (cacheTimestamp && Date.now() - cacheTimestamp < HERO_CACHE_TTL) {
+                    setLastUpdatedAt(cacheTimestamp)
+                    if (data.jobDirection) setJobDirection(data.jobDirection)
+                    if (data.positionType) setPositionType(data.positionType)
+                    if (Array.isArray(data.recommendations)) {
+                        setRecommendations(data.recommendations)
+                        setHasResults(Boolean(data.hasResults || data.recommendations.length > 0))
+                    } else {
+                        setRecommendations([])
+                        setHasResults(Boolean(data.hasResults))
+                    }
+                    hydratedFromUserCache = true
+                }
+            } catch {
+                // ignore broken cache for this user
+            }
+        }
+
+        if (storedTargetRole && (!hydratedFromUserCache || !jobDirection)) {
+            if (!hydratedFromUserCache && normalizePlanCompareText(jobDirection) !== normalizePlanCompareText(storedTargetRole)) {
+                setRecommendations([])
+                setHasResults(false)
+                setJobDirection(storedTargetRole)
+            } else {
+                setJobDirection(prev => prev || storedTargetRole)
+            }
+        }
+
+        accountHeroHydratedForUser.current = userId
+    }, [hasHydrated, isAuthenticated, userId, storedTargetRole, jobDirection])
+
+    useEffect(() => {
         if (!hasHydrated || !isAuthenticated || !token) return
         if (resumeHydratedFromAccount.current) return
         if (resumeName && resumeId) return
@@ -671,8 +720,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     useEffect(() => {
         if (!hasHydrated) return
         const payload = { jobDirection, positionType, recommendations, hasResults, lastUpdatedAt, timestamp: Date.now() }
-        localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(payload))
-    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated, lastUpdatedAt])
+        localStorage.setItem(getHeroCacheKey(userId), JSON.stringify(payload))
+    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated, lastUpdatedAt, userId])
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || !token) return
@@ -710,8 +759,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         if (!isAuthenticated) {
             pendingResumeSyncAttempted.current = false
             resumeHydratedFromAccount.current = false
+            accountHeroHydratedForUser.current = null
+            autoRefreshedAfterLogin.current = false
         }
     }, [isAuthenticated])
+
+    useEffect(() => {
+        autoRefreshedAfterLogin.current = false
+    }, [userId])
 
     useEffect(() => {
         let mounted = true
@@ -894,13 +949,22 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
-    const handleGetRecommendations = async () => {
-        if (!jobDirection) {
+    const handleGetRecommendations = async (options?: {
+        direction?: string
+        position?: string
+        silent?: boolean
+        skipProfileSync?: boolean
+    }) => {
+        const nextJobDirection = String(options?.direction ?? jobDirection).trim()
+        const nextPositionType = String(options?.position ?? positionType).trim() || 'full-time'
+
+        if (!nextJobDirection) {
             showWarning('信息不足', '请填写职业方向')
             return
         }
+
         setLoading(true)
-        localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection, positionType, timestamp: Date.now() }))
+        localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection: nextJobDirection, positionType: nextPositionType, timestamp: Date.now() }))
 
         try {
             const authToken = localStorage.getItem('haigoo_auth_token') || token
@@ -918,8 +982,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 },
                 body: JSON.stringify({
                     action: 'hero-recommend',
-                    jobDirection,
-                    positionType,
+                    jobDirection: nextJobDirection,
+                    positionType: nextPositionType,
                     resumeId,
                     resumeHints: authToken ? undefined : parsedResumeHints,
                     limit: dailyLimit
@@ -937,17 +1001,32 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (capped.length === 0) {
                 throw new Error('当前未检索到匹配岗位')
             }
+            if (jobDirection !== nextJobDirection) setJobDirection(nextJobDirection)
+            if (positionType !== nextPositionType) setPositionType(nextPositionType)
             setRecommendations(capped)
             setActiveCard(0)
             setHasResults(true)
             setLastUpdatedAt(Date.now())
-            showSuccess('匹配完成', `已为您找到 ${capped.length} 个相关岗位`)
+            if (isAuthenticated && nextJobDirection && !options?.skipProfileSync) {
+                const normalizedCurrentTargetRole = normalizePlanCompareText(storedTargetRole)
+                const normalizedNextTargetRole = normalizePlanCompareText(nextJobDirection)
+                if (normalizedCurrentTargetRole !== normalizedNextTargetRole) {
+                    updateProfile({ targetRole: nextJobDirection }).catch(() => false)
+                }
+            }
+            if (!options?.silent) {
+                showSuccess('匹配完成', `已为您找到 ${capped.length} 个相关岗位`)
+            }
 
         } catch (error: any) {
             console.error(error)
-            setRecommendations([])
-            setHasResults(false)
-            showError('获取推荐失败', error?.message || '请稍后重试')
+            if (!options?.silent) {
+                setRecommendations([])
+                setHasResults(false)
+            }
+            if (!options?.silent) {
+                showError('获取推荐失败', error?.message || '请稍后重试')
+            }
         } finally {
             setLoading(false)
         }
@@ -955,11 +1034,25 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || autoRefreshedAfterLogin.current) return
-        if (jobDirection && hasResults && recommendations.length > 0 && recommendations.length < dailyLimit && !loading) {
-            autoRefreshedAfterLogin.current = true
-            handleGetRecommendations()
-        }
-    }, [hasHydrated, isAuthenticated, hasResults, recommendations.length, dailyLimit, loading, jobDirection])
+        if (loading) return
+
+        const effectiveDirection = String(jobDirection || storedTargetRole || '').trim()
+        if (!effectiveDirection) return
+
+        const directionMatchesProfile = !storedTargetRole || normalizePlanCompareText(jobDirection || storedTargetRole) === normalizePlanCompareText(storedTargetRole)
+        const cacheIsFresh = Boolean(lastUpdatedAt) && (Date.now() - lastUpdatedAt) < HERO_REFRESH_INTERVAL
+        const shouldRefresh = directionMatchesProfile && (!hasResults || recommendations.length === 0 || !cacheIsFresh)
+
+        if (!shouldRefresh) return
+
+        autoRefreshedAfterLogin.current = true
+        void handleGetRecommendations({
+            direction: effectiveDirection,
+            position: positionType,
+            silent: true,
+            skipProfileSync: true
+        })
+    }, [hasHydrated, isAuthenticated, loading, jobDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType])
     
     const handleGeneratePlan = () => {
         setKeepPlanWorkerAlive(true)
@@ -1116,7 +1209,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                             我已阅读并同意{' '}<a href="/privacy" target="_blank" className="text-indigo-500 underline">简历隐私使用说明</a>，Haigoo 仅将简历用于岗位匹配分析
                                         </span>
                                     </label>
-                                    <button onClick={handleGetRecommendations} disabled={loading || !jobDirection}
+                                    <button onClick={() => { void handleGetRecommendations() }} disabled={loading || !jobDirection}
                                         className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm shadow-[0_8px_20px_rgba(79,70,229,0.30)] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto">
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                                         {loading ? '获取中...' : '获取专属推荐'}

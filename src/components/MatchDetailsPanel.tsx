@@ -6,6 +6,10 @@ interface MatchDetailsPanelProps {
   matchDetails?: any
   matchDetailsLocked?: boolean
   isMember?: boolean
+  canUseFreeTrial?: boolean
+  freeTrialRemaining?: number
+  isUnlocking?: boolean
+  onUnlockFreeTrial?: () => void
   onShowUpgrade?: () => void
   className?: string
 }
@@ -15,6 +19,10 @@ export function MatchDetailsPanel({
   matchDetails,
   matchDetailsLocked = false,
   isMember = false,
+  canUseFreeTrial = false,
+  freeTrialRemaining = 0,
+  isUnlocking = false,
+  onUnlockFreeTrial,
   onShowUpgrade,
   className = ''
 }: MatchDetailsPanelProps) {
@@ -71,20 +79,35 @@ export function MatchDetailsPanel({
         </div>
 
         {/* Content */}
-        {!isMember || matchDetailsLocked ? (
+        {matchDetailsLocked ? (
           <div className="bg-white/80 backdrop-blur-sm border border-indigo-100/60 rounded-xl p-4 mt-2">
             <div className="flex items-start gap-3 text-slate-600 text-sm mb-3">
               <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
                 <Lock className="w-4 h-4 text-slate-400" />
               </div>
-              <p className="mt-1 leading-relaxed">该岗位为高匹配岗位，开通会员后可查看极具指导意义的完整 AI 匹配分析报告（含匹配亮点及竞争力补齐建议）。</p>
+              <p className="mt-1 leading-relaxed">
+                {canUseFreeTrial
+                  ? `该岗位为高匹配岗位。当前账号还可免费体验 ${freeTrialRemaining} 次完整 AI 匹配分析，会员可无限查看全部高匹配解析。`
+                  : '该岗位为高匹配岗位，开通会员后可查看极具指导意义的完整 AI 匹配分析报告（含匹配亮点及竞争力补齐建议）。'}
+              </p>
             </div>
-            <button
-              onClick={() => onShowUpgrade?.()}
-              className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:shadow-indigo-500/20 active:scale-[0.98]"
-            >
-              立刻解锁完整分析
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2">
+              {canUseFreeTrial && (
+                <button
+                  onClick={() => onUnlockFreeTrial?.()}
+                  disabled={isUnlocking}
+                  className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-xl border border-indigo-200 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isUnlocking ? '解锁中...' : `免费体验本次分析（剩 ${freeTrialRemaining} 次）`}
+                </button>
+              )}
+              <button
+                onClick={() => onShowUpgrade?.()}
+                className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:shadow-indigo-500/20 active:scale-[0.98]"
+              >
+                {isMember ? '查看完整分析' : '会员无限查看'}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="mt-4">
@@ -167,4 +190,3 @@ export function MatchDetailsPanel({
     </div>
   )
 }
-

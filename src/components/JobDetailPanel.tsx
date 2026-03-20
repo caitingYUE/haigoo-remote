@@ -87,6 +87,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(FREE_FEATURE_LIMIT)   // conservative default
     const [referralUsageCount, setReferralUsageCount] = useState(0)                        // default 0 → allow until loaded
     const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
+    const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(FREE_FEATURE_LIMIT)
+    const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
+    const [unlockingMatchAnalysis, setUnlockingMatchAnalysis] = useState(false)
 
     useEffect(() => {
         // Reset state when job changes
@@ -154,19 +157,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 fetch('/api/users?resource=free-usage&type=company-info', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=email-apply', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
-            ]).then(([ciData, eaData, refData]) => {
+                fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
+            ]).then(([ciData, eaData, refData, maData]) => {
                 if (ciData.success) {
                     setCompanyInfoUsageCount(ciData.usage);
                     setUnlockedCompanies(ciData.unlocked_companies || []);
                 }
                 if (eaData.success) setEmailApplyUsageCount(eaData.usage);
                 if (refData.success) setReferralUsageCount(refData.usage);
+                if (maData.success) {
+                    setMatchAnalysisUsageCount(maData.usage);
+                    setUnlockedMatchAnalysisJobIds(Array.isArray(maData.unlocked_job_ids) ? maData.unlocked_job_ids.map((item: any) => String(item)) : []);
+                }
             }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
         } else if (isMember) {
             // Members have no limits
             setCompanyInfoUsageCount(0);
             setEmailApplyUsageCount(0);
             setReferralUsageCount(0);
+            setMatchAnalysisUsageCount(0);
+            setUnlockedMatchAnalysisJobIds([]);
         }
     }, [isAuthenticated, isMember]);
 
@@ -217,7 +227,40 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const matchLevelLabel = getMatchLevelLabel(matchLevel)
     const matchLevelClass = getMatchLevelClassName(matchLevel)
     const matchDetails = job?.matchDetails
-    const matchDetailsLocked = Boolean(job?.matchDetailsLocked) || (matchLevel === 'high' && !isMember)
+    const isMatchAnalysisUnlocked = isMember || unlockedMatchAnalysisJobIds.includes(String(job?.id || ''))
+    const canUseMatchAnalysisTrial = isAuthenticated && !isMember && !isMatchAnalysisUnlocked && matchAnalysisUsageCount < FREE_FEATURE_LIMIT
+    const matchDetailsLocked = Boolean(job?.matchDetailsLocked) && !isMatchAnalysisUnlocked
+
+    const handleUnlockMatchAnalysis = async () => {
+        if (!job?.id || !isAuthenticated || isMember || isMatchAnalysisUnlocked || !canUseMatchAnalysisTrial || unlockingMatchAnalysis) return
+
+        const authToken = localStorage.getItem('haigoo_auth_token')
+        if (!authToken) return
+
+        setUnlockingMatchAnalysis(true)
+        try {
+            const res = await fetch('/api/users?resource=free-usage&type=match-analysis', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${authToken}`
+                },
+                body: JSON.stringify({ jobId: String(job.id) })
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || '解锁失败')
+            }
+
+            setMatchAnalysisUsageCount(Number(data.usage) || 0)
+            setUnlockedMatchAnalysisJobIds(Array.isArray(data.unlocked_job_ids) ? data.unlocked_job_ids.map((item: any) => String(item)) : [])
+            showSuccess('已解锁本次 AI 匹配分析', `本账号还可免费体验 ${Math.max(0, FREE_FEATURE_LIMIT - (Number(data.usage) || 0))} 次`)
+        } catch (error: any) {
+            showError('解锁失败', error?.message || '请稍后重试')
+        } finally {
+            setUnlockingMatchAnalysis(false)
+        }
+    }
 
     const [logoError, setLogoError] = useState(false);
 
@@ -841,6 +884,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 matchDetails={matchDetails}
                                 matchDetailsLocked={matchDetailsLocked}
                                 isMember={isMember}
+                                canUseFreeTrial={canUseMatchAnalysisTrial}
+                                freeTrialRemaining={Math.max(0, FREE_FEATURE_LIMIT - matchAnalysisUsageCount)}
+                                isUnlocking={unlockingMatchAnalysis}
+                                onUnlockFreeTrial={handleUnlockMatchAnalysis}
                                 onShowUpgrade={() => setShowUpgradeModal(true)}
                             />
                         </div>
