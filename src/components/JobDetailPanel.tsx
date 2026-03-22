@@ -224,6 +224,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const matchLevel = useMemo(() => {
         return resolveMatchLevel(job?.matchScore, job?.matchLevel)
     }, [job])
+    const isHighDisplayBand = job?.displayBand === 'high'
+    const hasHighTrueScore = Number(job?.trueMatchScore || 0) >= 82
+    const showHighMatchDetails = isHighDisplayBand && hasHighTrueScore && matchLevel === 'high'
     const matchLevelLabel = getMatchLevelLabel(matchLevel)
     const matchLevelClass = getMatchLevelClassName(matchLevel)
     const matchDetails = job?.matchDetails
@@ -877,7 +880,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     )}
 
-                    {matchLevel === 'high' && (
+                    {showHighMatchDetails && (
                         <div className="mb-6">
                             <MatchDetailsPanel
                                 matchLevel={matchLevel}

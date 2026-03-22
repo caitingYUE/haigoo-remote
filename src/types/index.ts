@@ -71,6 +71,9 @@ export interface Job {
   timezone?: string // 时区要求
 
   matchScore?: number
+  trueMatchScore?: number
+  displayMatchScore?: number
+  displayBand?: 'hidden' | 'common' | 'high'
   matchLevel?: 'high' | 'medium' | 'low' | 'none'
   matchLabel?: string
   matchDetails?: {
@@ -87,6 +90,15 @@ export interface Job {
     }
   } | null
   matchDetailsLocked?: boolean
+  algorithmVersion?: string
+  calibrationVersion?: string
+  constraintFlags?: {
+    remoteOnlyMismatch?: boolean
+    strictLocationMismatch?: boolean
+    severeRoleMismatch?: boolean
+    severeSkillMismatch?: boolean
+    strongRoleAlignment?: boolean
+  } | null
   aiRecommended?: boolean
   goalFitScore?: number
 

@@ -11,6 +11,7 @@
     "dev:web": "vite",
     "build": "tsc && vite build",
     "type-check": "tsc --noEmit",
+    "test:match-calibration": "node test-match-score-calibration.js",
     "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
     "server": "npm run server:api",
