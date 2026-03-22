@@ -35,17 +35,30 @@ export function MatchDetailsPanel({
     if (!matchDetails) return null
     const summary = String(matchDetails.summary || matchDetails.analysis || matchDetails.text || '').trim()
     const strengths = Array.isArray(matchDetails.strengths) ? matchDetails.strengths.filter(Boolean).slice(0, 3) : []
+    const evidence = Array.isArray(matchDetails.evidence) ? matchDetails.evidence.filter(Boolean).slice(0, 3) : []
+    const risks = Array.isArray(matchDetails.risks) ? matchDetails.risks.filter(Boolean).slice(0, 2) : []
     const suggestions = Array.isArray(matchDetails.suggestions) ? matchDetails.suggestions.filter(Boolean).slice(0, 2) : []
+    const verdict = String(matchDetails.verdict || '').trim()
+    const confidence = typeof matchDetails.confidence === 'object' ? matchDetails.confidence : null
+    const breakdown = matchDetails.breakdown && typeof matchDetails.breakdown === 'object' ? matchDetails.breakdown : null
 
-    if (!summary && !strengths.length && !suggestions.length) return null
-    return { summary, strengths, suggestions }
+    if (!summary && !strengths.length && !suggestions.length && !evidence.length && !risks.length) return null
+    return { summary, strengths, evidence, risks, suggestions, verdict, confidence, breakdown }
   }, [matchDetails])
 
   // If no details, fallback to string if possible, or default text
   const fallbackText = typeof matchDetails === 'string' ? matchDetails : '该岗位与您的简历背景匹配度较高，建议优先投递。'
 
-  const hasRichContent = parsed && (parsed.strengths.length > 0 || parsed.suggestions.length > 0)
+  const hasRichContent = parsed && (parsed.strengths.length > 0 || parsed.suggestions.length > 0 || parsed.evidence.length > 0 || parsed.risks.length > 0 || !!parsed.breakdown)
   const isExpandable = hasRichContent || (parsed && parsed.summary.length > 150) || fallbackText.length > 150
+  const scoreItems = parsed?.breakdown ? [
+    { label: '方向', value: Number(parsed.breakdown.titleMatch) || 0 },
+    { label: '角色', value: Number(parsed.breakdown.roleTypeMatch) || 0 },
+    { label: '技能', value: Number(parsed.breakdown.skillMatch) || 0 },
+    { label: '语义', value: Number(parsed.breakdown.keywordSimilarity) || 0 },
+    { label: '经验', value: Number(parsed.breakdown.experienceMatch) || 0 },
+    { label: '偏好', value: Number(parsed.breakdown.preferenceMatch) || 0 }
+  ] : []
 
   return (
     <div className={`relative bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/30 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${className}`}>
@@ -71,6 +84,11 @@ export function MatchDetailsPanel({
                 <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200 flex items-center gap-1">
                   <Target className="w-3 h-3" />
                   高匹配推荐
+                </span>
+              )}
+              {!matchDetailsLocked && parsed?.confidence?.label && (
+                <span className="px-2 py-0.5 bg-white text-slate-600 text-[10px] font-bold rounded-full border border-slate-200">
+                  可信度 {parsed.confidence.label}
                 </span>
               )}
             </div>
@@ -113,10 +131,28 @@ export function MatchDetailsPanel({
           <div className="mt-4">
             {parsed ? (
               <div className="space-y-4">
+                {parsed.verdict && (
+                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50/70 text-indigo-700 rounded-full text-xs font-bold border border-indigo-100">
+                    <Target className="w-3.5 h-3.5" />
+                    {parsed.verdict}
+                  </div>
+                )}
+
                 {/* Summary (Always partially visible) */}
                 <div className={`text-sm text-slate-700 leading-relaxed ${!expanded && isExpandable ? 'line-clamp-3' : ''}`}>
                   {parsed.summary}
                 </div>
+
+                {scoreItems.length > 0 && (
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                    {scoreItems.map(item => (
+                      <div key={item.label} className="rounded-xl border border-slate-200 bg-white/80 px-2.5 py-2 text-center">
+                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{item.label}</div>
+                        <div className="mt-1 text-sm font-bold text-slate-800">{item.value}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Collapsible details (Strengths & Suggestions) */}
                 <div
@@ -126,6 +162,23 @@ export function MatchDetailsPanel({
                 >
                   <div className="overflow-hidden">
                     <div className="pt-3 space-y-4 border-t border-indigo-100/50 mt-1">
+                      {parsed.evidence.length > 0 && (
+                        <div>
+                          <h5 className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                            <Target className="w-3.5 h-3.5 text-indigo-500" />
+                            核心依据
+                          </h5>
+                          <ul className="space-y-2">
+                            {parsed.evidence.map((item: string, i: number) => (
+                              <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
+                                <span className="text-indigo-500 font-bold mt-0.5">•</span>
+                                <span>{item}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
                       {/* Strengths */}
                       {parsed.strengths.length > 0 && (
                         <div>
@@ -138,6 +191,23 @@ export function MatchDetailsPanel({
                               <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
                                 <span className="text-emerald-500 font-bold mt-0.5">•</span>
                                 <span>{str}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {parsed.risks.length > 0 && (
+                        <div>
+                          <h5 className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                            <Lightbulb className="w-3.5 h-3.5 text-rose-500" />
+                            主要风险
+                          </h5>
+                          <ul className="space-y-2">
+                            {parsed.risks.map((risk: string, i: number) => (
+                              <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
+                                <span className="text-rose-500 font-bold mt-0.5">•</span>
+                                <span>{risk}</span>
                               </li>
                             ))}
                           </ul>

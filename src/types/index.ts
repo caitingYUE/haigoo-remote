@@ -78,7 +78,14 @@ export interface Job {
   matchLabel?: string
   matchDetails?: {
     summary?: string
+    verdict?: string
+    confidence?: {
+      label?: string
+      reason?: string
+    }
     strengths?: string[]
+    evidence?: string[]
+    risks?: string[]
     suggestions?: string[]
     breakdown?: {
       titleMatch?: number
