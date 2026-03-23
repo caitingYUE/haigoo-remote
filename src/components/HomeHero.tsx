@@ -18,6 +18,7 @@ import {
     hydrateGuestResumeFile,
     claimPendingGuestResume,
 } from '../services/guest-resume-bridge'
+import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_REFRESH_INTERVAL = 24 * 60 * 60 * 1000
@@ -924,7 +925,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 dismissed: false,
                 updatedAt: Date.now(),
             })
-            showSuccess('简历上传成功', '已准备好进行精准匹配')
+            markMatchScoreRefresh('resume_upload')
+            showSuccess('简历上传成功', '岗位列表匹配度会在下次进入时自动刷新')
         } catch (error: any) {
             showError('上传失败', error.message)
         } finally {

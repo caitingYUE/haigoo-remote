@@ -14,6 +14,7 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trustedCompaniesService } from '../services/trusted-companies-service'
 import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
+import { readMatchScoreRefreshMarker } from '../utils/match-score-refresh'
 
 // Industry Options - aligned with DB canonical values (trusted-companies.js DEFAULT_CONFIG)
 const INDUSTRY_OPTIONS = [
@@ -83,6 +84,7 @@ export default function JobsPage() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300)
   // P0 Fix: AbortController ref for canceling pending requests
   const abortControllerRef = useRef<AbortController | null>(null)
+  const lastJobsLoadedAtRef = useRef(0)
 
   useEffect(() => {
     searchTermRef.current = searchTerm
@@ -336,6 +338,7 @@ export default function JobsPage() {
       setTotalJobs(data.total || 0)
       setCurrentPage(page)
       setLoadingStage('idle')
+      lastJobsLoadedAtRef.current = Date.now()
 
       // Update Dynamic Filter Options from Aggregations
       if (!loadMore && data.aggregations) {
@@ -417,6 +420,17 @@ export default function JobsPage() {
     }
   }, [token, isAuthenticated, showError, pageSize, filters, searchTerm, sortBy, location.search])
 
+  const refreshJobsIfResumeChanged = useCallback(() => {
+    if (!isAuthenticated || !token) return
+    if (jobsLoading || loadingMore) return
+
+    const marker = readMatchScoreRefreshMarker()
+    if (!marker) return
+    if (marker.timestamp <= lastJobsLoadedAtRef.current) return
+
+    void loadJobsWithFilters(1, false)
+  }, [isAuthenticated, token, jobsLoading, loadingMore, loadJobsWithFilters])
+
   // 加载更多数据
   const loadMoreJobs = async () => {
     if (loadingMore || jobsLoading) return
@@ -454,6 +468,26 @@ export default function JobsPage() {
     // 注意: loadJobsWithFilters 故意不包含在依赖中，因为其内部使用的值已在依赖数组中
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, filters, isAuthenticated, token, sortBy])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshJobsIfResumeChanged()
+      }
+    }
+
+    const handleWindowFocus = () => {
+      refreshJobsIfResumeChanged()
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleWindowFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleWindowFocus)
+    }
+  }, [refreshJobsIfResumeChanged])
 
   // 滚动监听 - 自动加载更多
   useEffect(() => {

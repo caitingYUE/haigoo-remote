@@ -15,6 +15,7 @@ import MyApplicationsTab from '../components/MyApplicationsTab'
 import GeneratedPlanView from '../components/GeneratedPlanView'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
+import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
 
@@ -435,7 +436,8 @@ export default function ProfileCenterPage() {
             }
           }
 
-          showSuccess('简历上传成功！', '您可以点击按钮进行AI深度分析')
+          markMatchScoreRefresh('resume_upload')
+          showSuccess('简历上传成功', '岗位匹配度会在您下次进入岗位列表时自动刷新')
         } else {
           throw new Error(uploadResult.error || 'Upload failed')
         }
@@ -613,7 +615,8 @@ export default function ProfileCenterPage() {
         setResumeText('')
         setResumeScore(0)
         setAiSuggestions([])
-        showSuccess('简历已删除')
+        markMatchScoreRefresh('resume_delete')
+        showSuccess('简历已删除', '重新进入岗位列表后会按当前简历状态刷新匹配度')
 
         trackingService.track('delete_resume', { resume_id: latestResume.id })
       } else {
