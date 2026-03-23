@@ -8,6 +8,8 @@ import { systemSettingsService } from '../lib/services/system-settings-service.j
 
 const APPLY_STATUS_PENDING_SET = ['pending', 'pending_apply', 'applied', 'reviewed', 'referred']
 const APPLY_STATUS_SUCCESS_SET = ['success', 'offer']
+const APPLY_STATUS_PENDING_SQL = "'pending', 'pending_apply', 'applied', 'reviewed', 'referred'"
+const APPLY_STATUS_SUCCESS_SQL = "'success', 'offer'"
 
 function buildApplySourceExpr() {
     return `
@@ -248,8 +250,6 @@ export default async function handler(req, res) {
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const safeSortDir = sortDir.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
         const searchPattern = normalizeSearchPattern(search)
-        const pendingStatuses = APPLY_STATUS_PENDING_SET
-        const successStatuses = APPLY_STATUS_SUCCESS_SET
         const applySourceExpr = buildApplySourceExpr()
         const aggregatedSortMap = {
             job_title: 'job_title',
@@ -336,11 +336,9 @@ export default async function handler(req, res) {
                 "uji.interaction_type = 'apply_redirect'",
                 `${applySourceExpr} = 'official'`
             ]
-            const officialParams = [...pendingStatuses, ...successStatuses]
             const officialCountParams = []
             if (searchPattern) {
                 officialCountParams.push(searchPattern)
-                officialParams.push(searchPattern)
                 officialFilters.push(`(
                     LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${officialCountParams.length}
                     OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${officialCountParams.length}
@@ -352,11 +350,13 @@ export default async function handler(req, res) {
                 "uji.interaction_type = 'apply_redirect'",
                 `${applySourceExpr} = 'official'`
             ]
+            const officialListParams = []
             if (searchPattern) {
+                officialListParams.push(searchPattern)
                 officialListFilters.push(`(
-                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${officialParams.length}
-                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${officialParams.length}
-                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${officialParams.length}
+                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${officialListParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${officialListParams.length}
+                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${officialListParams.length}
                 )`)
             }
             const officialListWhereClause = `WHERE ${officialListFilters.join(' AND ')}`
@@ -374,19 +374,19 @@ export default async function handler(req, res) {
                     COALESCE(MAX(j.title), MAX(uji.job_title_snapshot), '职位已失效') as job_title,
                     COALESCE(MAX(j.company), MAX(uji.company_name_snapshot), '未知企业') as job_company,
                     COUNT(*)::INTEGER as total_applications,
-                    COUNT(*) FILTER (WHERE COALESCE(uji.status, 'pending_apply') = ANY($1::text[]))::INTEGER as pending_interview,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, 'pending_apply') IN (${APPLY_STATUS_PENDING_SQL}))::INTEGER as pending_interview,
                     COUNT(*) FILTER (WHERE uji.status = 'interviewing')::INTEGER as interviewing,
-                    COUNT(*) FILTER (WHERE COALESCE(uji.status, '') = ANY($2::text[]))::INTEGER as success,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, '') IN (${APPLY_STATUS_SUCCESS_SQL}))::INTEGER as success,
                     MAX(uji.updated_at) as updated_at
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 ${officialListWhereClause}
                 GROUP BY uji.job_id
                 ${aggregatedOrderClause}
-                LIMIT $${officialParams.length + 1} OFFSET $${officialParams.length + 2}
+                LIMIT $${officialListParams.length + 1} OFFSET $${officialListParams.length + 2}
              `;
 
-            const listRes = await neonHelper.query(listQuery, [...officialParams, limit, offset]);
+            const listRes = await neonHelper.query(listQuery, [...officialListParams, limit, offset]);
 
             return res.status(200).json({
                 success: true,
@@ -399,11 +399,9 @@ export default async function handler(req, res) {
                 "uji.interaction_type = 'apply_redirect'",
                 `${applySourceExpr} = 'trusted_platform'`
             ]
-            const platformParams = [...pendingStatuses, ...successStatuses]
             const platformCountParams = []
             if (searchPattern) {
                 platformCountParams.push(searchPattern)
-                platformParams.push(searchPattern)
                 platformFilters.push(`(
                     LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${platformCountParams.length}
                     OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${platformCountParams.length}
@@ -415,11 +413,13 @@ export default async function handler(req, res) {
                 "uji.interaction_type = 'apply_redirect'",
                 `${applySourceExpr} = 'trusted_platform'`
             ]
+            const platformListParams = []
             if (searchPattern) {
+                platformListParams.push(searchPattern)
                 platformListFilters.push(`(
-                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${platformParams.length}
-                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${platformParams.length}
-                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${platformParams.length}
+                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${platformListParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${platformListParams.length}
+                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${platformListParams.length}
                 )`)
             }
             const platformListWhereClause = `WHERE ${platformListFilters.join(' AND ')}`
@@ -437,19 +437,19 @@ export default async function handler(req, res) {
                     COALESCE(MAX(j.title), MAX(uji.job_title_snapshot), '职位已失效') as job_title,
                     COALESCE(MAX(j.company), MAX(uji.company_name_snapshot), '未知企业') as job_company,
                     COUNT(*)::INTEGER as total_applications,
-                    COUNT(*) FILTER (WHERE COALESCE(uji.status, 'pending_apply') = ANY($1::text[]))::INTEGER as pending_interview,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, 'pending_apply') IN (${APPLY_STATUS_PENDING_SQL}))::INTEGER as pending_interview,
                     COUNT(*) FILTER (WHERE uji.status = 'interviewing')::INTEGER as interviewing,
-                    COUNT(*) FILTER (WHERE COALESCE(uji.status, '') = ANY($2::text[]))::INTEGER as success,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, '') IN (${APPLY_STATUS_SUCCESS_SQL}))::INTEGER as success,
                     MAX(uji.updated_at) as updated_at
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 ${platformListWhereClause}
                 GROUP BY uji.job_id
                 ${aggregatedOrderClause}
-                LIMIT $${platformParams.length + 1} OFFSET $${platformParams.length + 2}
+                LIMIT $${platformListParams.length + 1} OFFSET $${platformListParams.length + 2}
              `;
 
-            const listRes = await neonHelper.query(listQuery, [...platformParams, limit, offset]);
+            const listRes = await neonHelper.query(listQuery, [...platformListParams, limit, offset]);
 
             return res.status(200).json({
                 success: true,

@@ -74,7 +74,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     const canWebsiteApplyFree = isAuthenticated && (websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit);
     const websiteApplyRemaining = Math.max(0, websiteApplyLimit - websiteApplyUsageCount);
-    const websiteApplyActionLabel = !isAuthenticated ? '登录后继续申请' : canWebsiteApplyFree ? '继续前往申请' : '前往申请次数已用完';
+    const websiteApplyActionLabel = !isAuthenticated ? '前往申请（需登录）' : canWebsiteApplyFree ? '继续前往申请' : '前往申请次数已用完';
 
     // Member View for Trusted Company Jobs (Not Referral)
     if (isMember && (job.isTrusted || job.sourceType === 'trusted')) {

@@ -1575,15 +1575,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
                                         )}
                                         <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">
-                                            {isGuestWebsiteApply ? '登录后前往申请' : websiteApplyLabel}
+                                            {websiteApplyLabel}
                                         </span>
                                         {!isMember && !isGuestWebsiteApply && (
                                             <span className="relative z-10 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold rounded">
                                                 {websiteApplyUnlocked ? '已解锁' : `${WEBSITE_APPLY_FREE_LIMIT - websiteApplyUsageCount}/${WEBSITE_APPLY_FREE_LIMIT}`}
                                             </span>
-                                        )}
-                                        {isGuestWebsiteApply && (
-                                            <span className="relative z-10 text-[10px] text-slate-400 whitespace-nowrap">登录可免费体验</span>
                                         )}
                                     </>
                                 ) : (

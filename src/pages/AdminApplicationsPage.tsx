@@ -1,9 +1,7 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-    Search, Filter, CheckCircle, XCircle, Clock,
-    MoreHorizontal, FileText, ExternalLink,
-    MessageSquare, Briefcase, Building2, Globe
+    Search, FileText, Briefcase, Building2, Globe
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -113,13 +111,15 @@ export default function AdminApplicationsPage() {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
-            if (data.success) {
+            if (res.ok && data.success) {
                 setApplications(data.data)
                 setTotalPages(data.pagination.totalPages)
+                return
             }
+            throw new Error(data.error || '获取申请数据失败')
         } catch (e) {
             console.error('Failed to fetch applications', e)
-            showError('获取数据失败', '网络错误')
+            showError('获取数据失败', e instanceof Error ? e.message : '网络错误')
         } finally {
             setLoading(false)
         }
@@ -271,62 +271,74 @@ export default function AdminApplicationsPage() {
             <div className="bg-white rounded-lg shadow overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
-                        <tr>
-                            <th
-                                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${activeTab !== 'email' ? 'cursor-pointer hover:bg-gray-100' : ''}`}
-                                onClick={() => activeTab !== 'email' && toggleSort('job_title')}
-                            >
-                                <div className="flex items-center gap-1">
-                                    {activeTab === 'email' ? '申请用户' : '岗位信息'}
-                                    {activeTab !== 'email' && sortConfig.key === 'job_title' && (
-                                        <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
-                                    )}
-                                </div>
-                            </th>
-                            {activeTab === 'email' && (
+                        {activeTab === 'email' ? (
+                            <tr>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申请用户</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
-                            )}
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                            >
-                                <div className="flex items-center gap-1">
-                                    {activeTab === 'email' ? '状态' : '统计数据'}
-                                </div>
-                            </th>
-                            <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                onClick={() => activeTab !== 'email' && toggleSort('updated_at')}
-                            >
-                                <div className="flex items-center gap-1">
-                                    {activeTab === 'email' ? '时间' : '最后更新'}
-                                    {activeTab !== 'email' && sortConfig.key === 'updated_at' && (
-                                        <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
-                                    )}
-                                </div>
-                            </th>
-                            {activeTab === 'email' && (
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">状态</th>
+                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">时间</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">简历/备注</th>
-                            )}
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                        </tr>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        ) : (
+                            <tr>
+                                <th
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => toggleSort('job_title')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        岗位信息
+                                        {sortConfig.key === 'job_title' && (
+                                            <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                        )}
+                                    </div>
+                                </th>
+                                {aggregatedSortItems.map((item) => (
+                                    <th
+                                        key={item.key}
+                                        className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => toggleSort(item.key)}
+                                    >
+                                        <div className="inline-flex items-center gap-1">
+                                            {item.label}
+                                            {sortConfig.key === item.key && (
+                                                <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                            )}
+                                        </div>
+                                    </th>
+                                ))}
+                                <th
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => toggleSort('updated_at')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        最后更新
+                                        {sortConfig.key === 'updated_at' && (
+                                            <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                        )}
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                            </tr>
+                        )}
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={activeTab === 'email' ? 6 : 7} className="px-6 py-12 text-center text-gray-500">
                                     加载中...
                                 </td>
                             </tr>
                         ) : applications.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={activeTab === 'email' ? 6 : 7} className="px-6 py-12 text-center text-gray-500">
                                     暂无申请记录
                                 </td>
                             </tr>
                         ) : (
                             applications.map((app, idx) => (
                                 <tr key={app.id || idx} className="hover:bg-gray-50">
-                                    <td className="px-6 py-4 whitespace-nowrap">
+                                    <td className="px-6 py-4">
                                         {activeTab === 'email' ? (
                                             <div className="flex flex-col">
                                                 <span className="font-medium text-gray-900">{app.username || app.userNickname || '未知用户'}</span>
@@ -361,24 +373,20 @@ export default function AdminApplicationsPage() {
                                         {activeTab === 'email' ? (
                                             getStatusBadge(app.status)
                                         ) : (
-                                            <div className="flex flex-wrap gap-2 text-sm">
-                                                {aggregatedSortItems.map((item) => (
-                                                    <button
-                                                        key={item.key}
-                                                        type="button"
-                                                        onClick={() => toggleSort(item.key)}
-                                                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 transition-colors ${item.tone} ${sortConfig.key === item.key ? 'ring-1 ring-indigo-300' : 'hover:border-indigo-200'}`}
-                                                        title={`按${item.label}排序`}
-                                                    >
-                                                        <span>{app[item.key as keyof Application] || 0}</span>
-                                                        {sortConfig.key === item.key && (
-                                                            <span className="text-[10px]">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
-                                                        )}
-                                                    </button>
-                                                ))}
+                                            <div className="text-center">
+                                                <span className={`inline-flex min-w-[52px] items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-semibold ${aggregatedSortItems[0].tone}`}>
+                                                    {app.total_applications || 0}
+                                                </span>
                                             </div>
                                         )}
                                     </td>
+                                    {activeTab !== 'email' && aggregatedSortItems.slice(1).map((item) => (
+                                        <td key={item.key} className="px-4 py-4 whitespace-nowrap text-center">
+                                            <span className={`inline-flex min-w-[52px] items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-semibold ${item.tone}`}>
+                                                {app[item.key as keyof Application] || 0}
+                                            </span>
+                                        </td>
+                                    ))}
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex flex-col">
                                             <span>{new Date(app.updated_at).toLocaleDateString()}</span>
@@ -415,6 +423,9 @@ export default function AdminApplicationsPage() {
                                                 >
                                                     删除记录
                                                 </button>
+                                            )}
+                                            {activeTab !== 'email' && (
+                                                <span className="text-xs text-gray-300">-</span>
                                             )}
                                         </div>
                                     </td>
