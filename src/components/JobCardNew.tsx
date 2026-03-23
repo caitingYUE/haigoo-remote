@@ -106,12 +106,11 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
 
 const FreshBadge = () => (
    <span
-      className="inline-flex items-center justify-center rounded-md bg-emerald-500 px-2 py-0.5 text-[10px] font-black tracking-[0.12em] shadow-sm"
-      style={{ WebkitTextStroke: '0.65px rgba(255,255,255,0.96)', color: 'transparent' }}
-      aria-label="上新"
+      className="inline-flex items-center justify-center rounded-full border border-emerald-500/15 bg-emerald-500 px-2.5 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.08em] text-white shadow-sm"
+      aria-label="new"
       title="最近 3 天内上新"
    >
-      上新
+      new
    </span>
 );
 
@@ -166,6 +165,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const rawScoreNum = Math.round(Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0));
    const showMatchScore = resolvedMatchLevel !== 'none' && rawScoreNum > 0;
+   const hasActionControls = Boolean(applicationStatusNode || onDelete);
 
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
@@ -250,6 +250,28 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const salaryText = formatSalary(job.salary);
    const isSalaryOpen = salaryText === '薪资Open' || salaryText === '薪资 Open';
+   const renderActionControls = (mobile = false) => (
+      <>
+         {applicationStatusNode && (
+            <div onClick={e => e.stopPropagation()} className={`z-10 ${mobile ? '' : 'min-w-0'}`}>
+               {applicationStatusNode}
+            </div>
+         )}
+
+         {onDelete && (
+            <button
+               onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(job.id);
+               }}
+               className={`z-10 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 ${mobile ? '' : 'border border-transparent hover:border-red-100'}`}
+               title="删除记录"
+            >
+               <Trash2 className="w-4 h-4" />
+            </button>
+         )}
+      </>
+   );
 
    // Redesigned Company Logo Component
    // Matching reference: Large card style, dynamic background, centered logo, company name above
@@ -476,8 +498,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Row 4: Tags & Mobile Actions */}
-                  <div className="flex items-center justify-between gap-3 mt-auto pt-2">
-                     <div className="flex flex-wrap md:flex-nowrap md:overflow-hidden items-center gap-2">
+                  <div className="mt-auto flex flex-col gap-3 pt-2 md:flex-row md:items-end md:justify-between">
+                     <div className="flex min-w-0 flex-wrap items-center gap-2 md:flex-nowrap md:overflow-hidden">
                         {displayTags.slice(0, 4).map((tag, i) => (
                            <span
                               key={i}
@@ -488,50 +510,34 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         ))}
                      </div>
 
-                     <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+                     <div className="flex items-center gap-2 md:hidden">
                         {showMatchScore && (
-                           <div className="md:hidden">
+                           <div>
                               <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} compact />
                            </div>
                         )}
 
-                        {/* Salary (Mobile Only) */}
-                        <div className={`md:hidden text-sm whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
+                        <div className={`text-sm whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                            {salaryText}
                         </div>
 
                         {isFeatured && (
-                           <div className="md:hidden flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
+                           <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
                               <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
                               <span>精选</span>
                            </div>
                         )}
 
-                        {/* Status Dropdown (Right side, before delete) */}
-                        {applicationStatusNode && (
-                           <div onClick={e => e.stopPropagation()} className="ml-1 z-10">
-                              {applicationStatusNode}
+                        {hasActionControls && (
+                           <div className="ml-auto flex items-center gap-2">
+                              {renderActionControls(true)}
                            </div>
-                        )}
-
-                        {/* Delete Button */}
-                        {onDelete && (
-                           <button
-                              onClick={(e) => {
-                                 e.stopPropagation();
-                                 onDelete(job.id);
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors z-10"
-                              title="删除记录"
-                           >
-                              <Trash2 className="w-4 h-4" />
-                           </button>
                         )}
                      </div>
                   </div>
                </div>
 
-               <div className={`hidden md:flex flex-shrink-0 flex-col items-end text-right py-1 ${showMatchScore ? 'self-stretch justify-between min-w-[124px] lg:min-w-[140px]' : 'self-stretch justify-between min-w-[104px] lg:min-w-[116px]'}`}>
+               <div className={`hidden md:flex flex-shrink-0 flex-col items-end text-right py-1 ${hasActionControls ? 'min-w-[170px] lg:min-w-[210px]' : showMatchScore ? 'min-w-[124px] lg:min-w-[140px]' : 'min-w-[104px] lg:min-w-[116px]'} self-stretch justify-between`}>
                   <div className={`max-w-full text-[15px] leading-tight whitespace-nowrap ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}>
                      {salaryText}
                   </div>
@@ -544,15 +550,21 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
                   </div>
 
-                  <div className="flex min-h-[32px] items-end justify-end">
+                  <div className="flex min-h-[38px] items-end justify-end gap-2">
                      {isFeatured ? (
                         <div className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-bold border border-indigo-100 whitespace-nowrap shadow-sm">
                            <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
                            <span>精选</span>
                         </div>
-                     ) : (
+                     ) : !hasActionControls ? (
                         <div className="h-[32px]" />
-                     )}
+                     ) : null}
+
+                     {hasActionControls ? (
+                        <div className="flex items-center gap-2">
+                           {renderActionControls()}
+                        </div>
+                     ) : null}
                   </div>
                </div>
             </div>

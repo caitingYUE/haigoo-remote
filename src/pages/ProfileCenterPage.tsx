@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Bell, Trash2, Edit2, X, Check, ChevronDown, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -14,10 +14,9 @@ import { MembershipCertificateModal } from '../components/MembershipCertificateM
 import MyApplicationsTab from '../components/MyApplicationsTab'
 import GeneratedPlanView from '../components/GeneratedPlanView'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import { SUBSCRIPTION_TOPICS, MAX_SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 
-type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'subscriptions' | 'membership' | 'settings'
+type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, logout } = useAuth()
@@ -27,7 +26,7 @@ export default function ProfileCenterPage() {
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'settings'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -36,7 +35,7 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const urlTab = searchParams.get('tab') as TabKey | null
-    if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'subscriptions', 'membership', 'settings'].includes(urlTab)) {
+    if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'membership', 'settings'].includes(urlTab)) {
       setTab(urlTab)
     }
   }, [location.search])
@@ -1018,225 +1017,6 @@ export default function ProfileCenterPage() {
     )
   }
 
-  const SubscriptionsTab = () => {
-    const [subscriptions, setSubscriptions] = useState<any[]>([])
-    const [loading, setLoading] = useState(true)
-    const [editingId, setEditingId] = useState<string | null>(null)
-    const [editTopics, setEditTopics] = useState<string[]>([])
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-    const dropdownRef = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-        if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-          setIsDropdownOpen(false)
-        }
-      }
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
-
-    const fetchSubscriptions = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch('/api/auth?action=get-subscriptions', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await res.json()
-        if (data.success) {
-          setSubscriptions(data.subscriptions || [])
-        }
-      } catch (e) {
-        console.error('Failed to fetch subscriptions', e)
-        showError('加载失败', '无法获取订阅列表')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    useEffect(() => {
-      fetchSubscriptions()
-    }, [])
-
-    const startEditing = (sub: any) => {
-      setEditingId(sub.subscription_id)
-      setEditTopics(sub.topic ? sub.topic.split(',') : [])
-      setIsDropdownOpen(false)
-    }
-
-    const toggleEditTopic = (val: string) => {
-      if (editTopics.includes(val)) {
-        setEditTopics(editTopics.filter(t => t !== val))
-      } else {
-        if (editTopics.length >= MAX_SUBSCRIPTION_TOPICS) return
-        setEditTopics([...editTopics, val])
-      }
-    }
-
-    const handleUpdate = async (id: string) => {
-      if (editTopics.length === 0) {
-        showError('请至少选择一个类型')
-        return
-      }
-      try {
-        const res = await fetch('/api/auth?action=update-subscription', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id, topic: editTopics.join(',') })
-        })
-        const data = await res.json()
-        if (data.success) {
-          showSuccess('更新成功')
-          setEditingId(null)
-          fetchSubscriptions()
-        } else {
-          showError('更新失败', data.error)
-        }
-      } catch (e) {
-        showError('更新失败', '网络错误')
-      }
-    }
-
-    const handleDelete = async (id: string) => {
-      if (!confirm('确定要取消订阅吗？')) return
-      try {
-        const res = await fetch('/api/auth?action=delete-subscription', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ id })
-        })
-        const data = await res.json()
-        if (data.success) {
-          showSuccess('已取消订阅')
-          fetchSubscriptions()
-        } else {
-          showError('操作失败', data.error)
-        }
-      } catch (e) {
-        showError('操作失败', '网络错误')
-      }
-    }
-
-    const getTopicLabel = (topicStr: string, preferences?: any) => {
-      if (preferences && Object.keys(preferences).length > 0) {
-        return <span className="text-indigo-600 font-medium">详细偏好订阅</span>
-      }
-      if (!topicStr) return '无'
-      const values = topicStr.split(',')
-      return values.map(v => SUBSCRIPTION_TOPICS.find(t => t.value === v)?.label || v).join(', ')
-    }
-
-    const getEditLabel = () => {
-      // 简单编辑只支持 topic，不支持详细偏好
-      if (editTopics.length === 0) return '请选择'
-      if (editTopics.length === 1) return SUBSCRIPTION_TOPICS.find(t => t.value === editTopics[0])?.label || editTopics[0]
-      return `已选 ${editTopics.length} 个`
-    }
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">订阅管理</h2>
-            <p className="text-slate-500 mt-1">管理您的岗位推送订阅。</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-visible">
-          {loading ? (
-            <div className="p-8 text-center text-slate-500">加载中...</div>
-          ) : subscriptions.length === 0 ? (
-            <div className="p-12 text-center flex flex-col items-center">
-              <Bell className="w-12 h-12 text-slate-300 mb-3" />
-              <p className="text-slate-900 font-medium">暂无订阅</p>
-              <p className="text-slate-500 text-sm mt-1">在首页订阅后，可以在这里管理</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {subscriptions.map(sub => (
-                <div key={sub.subscription_id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-slate-50 transition-colors">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">
-                        Email
-                      </span>
-                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${sub.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
-                        {sub.status === 'active' ? '活跃' : '已暂停'}
-                      </span>
-                    </div>
-                    <div className="font-medium text-slate-900">{sub.identifier}</div>
-                    <div className="text-sm text-slate-500 mt-1 relative">
-                      订阅内容：
-                      {editingId === sub.subscription_id ? (
-                        <div className="inline-flex items-center gap-2 ml-2 relative" ref={dropdownRef}>
-                          <div className="relative">
-                            <button
-                              className="border rounded px-2 py-1 bg-white text-sm min-w-[100px] flex items-center justify-between"
-                              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                            >
-                              <span className="truncate max-w-[120px]">{getEditLabel()}</span>
-                              <ChevronDown className="w-3 h-3 ml-1 text-slate-400" />
-                            </button>
-                            {isDropdownOpen && (
-                              <div className="absolute top-full left-0 mt-1 w-64 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-lg shadow-xl z-50 p-2">
-                                <div className="text-xs text-slate-500 px-2 py-1 mb-1">最多可选 {MAX_SUBSCRIPTION_TOPICS} 个</div>
-                                {SUBSCRIPTION_TOPICS.map(opt => {
-                                  const isSelected = editTopics.includes(opt.value)
-                                  return (
-                                    <div
-                                      key={opt.value}
-                                      onClick={() => toggleEditTopic(opt.value)}
-                                      className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors
-                                                        ${isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'}
-                                                    `}
-                                    >
-                                      <span>{opt.label}</span>
-                                      {isSelected && <Check className="w-3.5 h-3.5" />}
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            )}
-                          </div>
-                          <button onClick={() => handleUpdate(sub.subscription_id)} className="p-1 text-green-600 hover:bg-green-50 rounded"><Check className="w-4 h-4" /></button>
-                          <button onClick={() => setEditingId(null)} className="p-1 text-slate-400 hover:bg-slate-100 rounded"><X className="w-4 h-4" /></button>
-                        </div>
-                      ) : (
-                        <span className="font-medium text-slate-700 ml-1">
-                          {getTopicLabel(sub.topic)}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    {editingId !== sub.subscription_id && (
-                      <>
-                        <button
-                          onClick={() => startEditing(sub)}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                          修改
-                        </button>
-                        <button
-                          onClick={() => handleDelete(sub.subscription_id)}
-                          className="flex items-center gap-1 px-3 py-1.5 text-sm text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                          取消
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    )
-  }
-
-
   const SettingsTab = () => {
     const [isDeleting, setIsDeleting] = useState(false)
 
@@ -1427,7 +1207,6 @@ export default function ProfileCenterPage() {
                   { id: 'resume', label: '我的简历', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
-                  { id: 'subscriptions', label: '订阅管理', icon: Bell },
                   { id: 'feedback', label: '我要反馈', icon: MessageSquare },
                   { id: 'settings', label: '注销账号', icon: Settings }
                 ].map((item) => (
@@ -1548,7 +1327,6 @@ export default function ProfileCenterPage() {
               {tab === 'favorites' && <FavoritesTab />}
               {tab === 'applications' && <MyApplicationsTab />}
               {tab === 'feedback' && <FeedbackTab />}
-              {tab === 'subscriptions' && <SubscriptionsTab />}
               {tab === 'membership' && <ResumeTab />}
               {tab === 'settings' && <SettingsTab />}
             </div>
