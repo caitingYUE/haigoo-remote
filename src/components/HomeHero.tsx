@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom'
-import { useState, useEffect, useRef, type CSSProperties } from 'react'
+import { useState, useEffect, useRef, useMemo, type CSSProperties } from 'react'
 import {
     Sparkles, Target, Briefcase, Loader2, X, UploadCloud,
     ChevronLeft, ChevronRight, MapPin, DollarSign, Building2
@@ -488,6 +488,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             logo_candidates: job?.logo_candidates || resolveLogoCandidates(job?.logo || job?.company_logo, company, job?.companyWebsite || job?.company_website),
         }
     }
+    const heroDetailJobs = useMemo(
+        () => displayRecommendations.map((job) => normalizeHeroJob(job)),
+        [displayRecommendations]
+    )
+    const currentHeroJobIndex = useMemo(() => {
+        if (!selectedJobDetail?.id) return -1
+        return heroDetailJobs.findIndex((job) => job.id === String(selectedJobDetail.id))
+    }, [heroDetailJobs, selectedJobDetail])
 
     useEffect(() => {
         const stored = readStoredPlanStatus()
@@ -1434,6 +1442,18 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 isOpen={Boolean(selectedJobDetail)}
                 onClose={() => setSelectedJobDetail(null)}
                 variant="center"
+                jobs={heroDetailJobs}
+                currentJobIndex={currentHeroJobIndex}
+                onNavigateJob={(direction) => {
+                    if (!heroDetailJobs.length || currentHeroJobIndex < 0) return
+                    const nextIndex = direction === 'prev'
+                        ? Math.max(0, currentHeroJobIndex - 1)
+                        : Math.min(heroDetailJobs.length - 1, currentHeroJobIndex + 1)
+                    const nextJob = heroDetailJobs[nextIndex]
+                    if (nextJob) {
+                        openHeroJobDetail(nextJob)
+                    }
+                }}
             />
         </div>
     )

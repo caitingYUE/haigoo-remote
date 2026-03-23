@@ -33,6 +33,8 @@ interface JobDetailPanelProps {
     canNavigateNext?: boolean
 }
 
+type PendingApplyWindow = Window | null
+
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     job,
     onSave,
@@ -251,6 +253,31 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setUnlockedWebsiteApplyJobIds(Array.isArray(unlockedJobIds) ? unlockedJobIds.map((item) => String(item)) : [])
     }
 
+    const openPendingWebsiteApplyWindow = (): PendingApplyWindow => {
+        const url = String(job?.url || job?.sourceUrl || '').trim()
+        if (!url) return null
+
+        const popup = window.open('', '_blank')
+        if (!popup) return null
+
+        try {
+            popup.opener = null
+            popup.document.title = '正在跳转申请页面...'
+            popup.document.body.style.margin = '0'
+            popup.document.body.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
+            popup.document.body.style.display = 'flex'
+            popup.document.body.style.alignItems = 'center'
+            popup.document.body.style.justifyContent = 'center'
+            popup.document.body.style.minHeight = '100vh'
+            popup.document.body.style.color = '#475569'
+            popup.document.body.innerHTML = '<div style="font-size:14px;">正在打开岗位申请页面...</div>'
+        } catch (_error) {
+            // Ignore cross-window DOM errors and continue with navigation handoff.
+        }
+
+        return popup
+    }
+
     const handleUnlockMatchAnalysis = async () => {
         if (!job?.id || !isAuthenticated || isMember || isMatchAnalysisUnlocked || !canUseMatchAnalysisTrial || unlockingMatchAnalysis) return
 
@@ -352,7 +379,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         proceedToApply();
     }
 
-    const executeApply = async (method: 'website' | 'email') => {
+    const executeApply = async (method: 'website' | 'email', pendingWindow: PendingApplyWindow = null) => {
         if (method === 'email' && companyInfo?.hiringEmail) {
             trackingService.track('click_apply', {
                 job_id: job.id,
@@ -392,6 +419,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         } else {
             const canProceed = await consumeWebsiteApplyIfNeeded()
             if (!canProceed) {
+                if (pendingWindow && !pendingWindow.closed) {
+                    pendingWindow.close()
+                }
                 return
             }
         }
@@ -406,7 +436,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         });
 
         if (url) {
-            window.open(url, '_blank', 'noopener,noreferrer');
+            if (pendingWindow && !pendingWindow.closed) {
+                pendingWindow.location.href = url
+            } else {
+                window.open(url, '_blank', 'noopener,noreferrer');
+            }
 
             // For authenticated users, auto-record the application
             if (isAuthenticated) {
@@ -498,12 +532,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return `https://${raw}`
     }
 
-    const proceedToApply = async () => {
+    const proceedToApply = async (pendingWindow: PendingApplyWindow = null) => {
         // Check if company has hiring email (regardless of member status)
         if (!showReferralModule && companyInfo?.hiringEmail) {
+            if (pendingWindow && !pendingWindow.closed) {
+                pendingWindow.close()
+            }
             setShowApplySelectionModal(true);
         } else {
-            executeApply('website');
+            executeApply('website', pendingWindow);
         }
     }
 
@@ -1489,7 +1526,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         setShowUpgradeModal(true)
                                         return
                                     }
-                                    executeApply('website')
+                                    executeApply('website', openPendingWebsiteApplyWindow())
                                 }}
                                 className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all min-h-[52px] group relative overflow-hidden shadow-sm flex items-center justify-center gap-2 ${isMember || isWebsiteApplyAvailable
                                     ? 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-indigo-300 hover:shadow-sm'

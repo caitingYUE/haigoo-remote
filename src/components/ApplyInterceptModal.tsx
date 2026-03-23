@@ -11,7 +11,7 @@ interface ApplyInterceptModalProps {
     job: Job;
     companyInfo?: TrustedCompany | null;
     isMember: boolean;
-    onProceedToApply: () => void;
+    onProceedToApply: (pendingWindow?: Window | null) => void;
     // Free usage for non-members
     referralUsageCount?: number;
     referralUnlocked?: boolean;
@@ -42,6 +42,31 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     websiteApplyLimit = 20,
 }) => {
     const navigate = useNavigate();
+
+    const openPendingWebsiteApplyWindow = () => {
+        const targetUrl = String(job?.url || job?.sourceUrl || '').trim();
+        if (!targetUrl) return null;
+
+        const popup = window.open('', '_blank');
+        if (!popup) return null;
+
+        try {
+            popup.opener = null;
+            popup.document.title = '正在跳转申请页面...';
+            popup.document.body.style.margin = '0';
+            popup.document.body.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif';
+            popup.document.body.style.display = 'flex';
+            popup.document.body.style.alignItems = 'center';
+            popup.document.body.style.justifyContent = 'center';
+            popup.document.body.style.minHeight = '100vh';
+            popup.document.body.style.color = '#475569';
+            popup.document.body.innerHTML = '<div style="font-size:14px;">正在打开岗位申请页面...</div>';
+        } catch (_error) {
+            // Ignore cross-window DOM errors and continue with navigation handoff.
+        }
+
+        return popup;
+    };
 
     if (!isOpen) return null;
 
@@ -386,10 +411,14 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                         navigate('/membership');
                                         return;
                                     }
+                                    const pendingWindow = openPendingWebsiteApplyWindow();
                                     const ok = await onConsumeWebsiteApply?.();
-                                    if (ok === false) return;
+                                    if (ok === false) {
+                                        if (pendingWindow && !pendingWindow.closed) pendingWindow.close();
+                                        return;
+                                    }
                                     onClose();
-                                    onProceedToApply();
+                                    onProceedToApply(pendingWindow);
                                 }}
                                 className={`w-full py-3 px-6 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
                                     ? 'bg-slate-900 hover:bg-indigo-600 text-white'
@@ -510,10 +539,14 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                         navigate('/membership');
                                         return;
                                     }
+                                    const pendingWindow = openPendingWebsiteApplyWindow();
                                     const ok = await onConsumeWebsiteApply?.();
-                                    if (ok === false) return;
+                                    if (ok === false) {
+                                        if (pendingWindow && !pendingWindow.closed) pendingWindow.close();
+                                        return;
+                                    }
                                     onClose();
-                                    onProceedToApply();
+                                    onProceedToApply(pendingWindow);
                                 }}
                                 className={`py-3 px-4 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
                                     ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'

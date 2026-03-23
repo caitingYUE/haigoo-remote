@@ -104,6 +104,17 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
    );
 };
 
+const FreshBadge = () => (
+   <span
+      className="inline-flex items-center justify-center rounded-md bg-emerald-500 px-2 py-0.5 text-[10px] font-black tracking-[0.12em] shadow-sm"
+      style={{ WebkitTextStroke: '0.65px rgba(255,255,255,0.96)', color: 'transparent' }}
+      aria-label="上新"
+      title="最近 3 天内上新"
+   >
+      上新
+   </span>
+);
+
 export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
@@ -139,7 +150,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          return false;
       }
    }, [job.publishedAt]);
-   const titleAccessoryWidth = (isTranslated ? 22 : 0) + (isNew ? 52 : 0) + ((isTranslated || isNew) ? 12 : 0);
+   const titleAccessoryWidth = (isTranslated ? 22 : 0) + (isNew ? 48 : 0) + ((isTranslated || isNew) ? 12 : 0);
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
@@ -430,9 +441,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </span>
                      )}
                      {isNew && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
-                           New
-                        </span>
+                        <div className="flex-shrink-0">
+                           <FreshBadge />
+                        </div>
                      )}
                   </div>
 
@@ -575,9 +586,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         {job.translations?.title || job.title}
                      </h3>
                      {isNew && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center px-2 py-0.5 rounded text-[10px] font-bold bg-red-50 text-red-600 border border-red-100">
-                           New
-                        </span>
+                        <div className="flex-shrink-0">
+                           <FreshBadge />
+                        </div>
                      )}
                   </div>
                   <div className="flex items-center text-sm text-slate-500 font-medium">
