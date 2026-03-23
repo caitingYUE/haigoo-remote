@@ -89,6 +89,8 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^your role$/i,
       /^your impact$/i,
       /^day[- ]to[- ]day$/i,
+      /^你会做什么$/,
+      /^你将做什么$/,
       /^岗位职责$/,
       /^工作职责$/,
       /^职责范围$/,
@@ -109,6 +111,9 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^your profile$/i,
       /^must[- ]have$/i,
       /^skills required$/i,
+      /^我们正在寻找什么$/,
+      /^我们在寻找什么$/,
+      /^你需要什么$/,
       /^任职要求$/,
       /^职位要求$/,
       /^岗位要求$/,
@@ -138,6 +143,8 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^what we offer$/i,
       /^why join us$/i,
       /^what you'll get$/i,
+      /^我们提供什么$/,
+      /^为什么加入我们$/,
       /^福利待遇$/,
       /^我们提供$/,
       /^员工福利$/,
@@ -154,6 +161,7 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^about this role$/i,
       /^the role$/i,
       /^overview$/i,
+      /^岗位说明$/,
       /^岗位介绍$/,
       /^职位描述$/,
       /^岗位概述$/,
@@ -167,6 +175,7 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^about the company$/i,
       /^who we are$/i,
       /^company overview$/i,
+      /^我们是谁$/,
       /^关于我们$/,
       /^公司介绍$/,
       /^企业介绍$/
@@ -195,79 +204,81 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
 ]
 
 const NOTE_PREFIX = /^(note|please note|备注|注意)[:：]\s*/i
+const HEADING_PREFIX_SPLITS: Array<{ canonicalTitle: JobDetailCanonicalTitle; pattern: RegExp }> = [
+  {
+    canonicalTitle: 'company',
+    pattern: /^(who we are|about us|about the company|我们是谁|关于我们|公司介绍)(?:[:：\s-]*)(.+)$/i
+  },
+  {
+    canonicalTitle: 'overview',
+    pattern: /^(about the role|the role|role overview|job description|岗位介绍|职位介绍|岗位概述|职位概述)(?:[:：\s-]*)(.+)$/i
+  },
+  {
+    canonicalTitle: 'responsibilities',
+    pattern: /^(what you'll do|what you will do|responsibilities|key responsibilities|你会做什么|你将做什么|岗位职责|工作职责)(?:[:：\s-]*)(.+)$/i
+  },
+  {
+    canonicalTitle: 'requirements',
+    pattern: /^(what we're looking for|what we are looking for|requirements|qualifications|what you need|我们正在寻找什么|我们在寻找什么|你需要什么|任职要求|岗位要求|职位要求)(?:[:：\s-]*)(.+)$/i
+  },
+  {
+    canonicalTitle: 'preferred',
+    pattern: /^(nice to have|preferred qualifications|preferred|加分项|优先条件)(?:[:：\s-]*)(.+)$/i
+  },
+  {
+    canonicalTitle: 'benefits',
+    pattern: /^(benefits|what we offer|what you'll get|why join us|福利待遇|我们提供什么|我们提供|为什么加入我们)(?:[:：\s-]*)(.+)$/i
+  },
+  {
+    canonicalTitle: 'apply',
+    pattern: /^(application process|hiring process|how to apply|next steps|申请方式|招聘流程|投递方式)(?:[:：\s-]*)(.+)$/i
+  }
+]
 
 export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobDetailSection[] {
   const originalDescription = normalizeInputText(input.description)
   const translatedDescription = normalizeInputText(input.translatedDescription)
 
-  const descriptionSections = parseDescriptionSections(originalDescription)
-  const mergedSections = mergeStructuredSections({
-    descriptionSections,
+  const originalMergedSections = mergeStructuredSections({
+    descriptionSections: parseDescriptionSections(originalDescription),
     responsibilities: toCleanLines(input.responsibilities),
     requirements: toCleanLines(input.requirements),
     benefits: toCleanLines(input.benefits)
   })
 
-  const translationStrategy = resolveTranslatedDescriptionStrategy({
+  const canUseTranslatedDescription = shouldUseTranslatedDescription(
     originalDescription,
     translatedDescription,
-    descriptionSections,
-    mergedSections
-  })
+    parseDescriptionSections(originalDescription)
+  )
 
-  const translatedSections = attachTranslatedBlocks({
-    baseSections: translationStrategy.baseSections,
-    translatedDescriptionSections: translationStrategy.translatedDescriptionSections,
-    translatedResponsibilities: toCleanLines(input.translatedResponsibilities),
-    translatedRequirements: toCleanLines(input.translatedRequirements),
-    translatedBenefits: toCleanLines(input.translatedBenefits),
-    preferTranslated: Boolean(input.preferTranslated)
-  })
+  const translatedMergedSections = canUseTranslatedDescription
+    ? mergeStructuredSections({
+      descriptionSections: parseDescriptionSections(translatedDescription),
+      responsibilities: toCleanLines(input.translatedResponsibilities),
+      requirements: toCleanLines(input.translatedRequirements),
+      benefits: toCleanLines(input.translatedBenefits)
+    })
+    : []
 
-  if (!translatedSections.length) {
-    return [createFallbackSection('暂无描述')]
+  const displaySections = Boolean(input.preferTranslated) && translatedMergedSections.length
+    ? translatedMergedSections
+    : originalMergedSections
+
+  if (!displaySections.length) {
+    return [createFallbackSection(Boolean(input.preferTranslated) && translatedDescription ? translatedDescription : '暂无描述')]
   }
 
-  return translatedSections.map((section, index) => ({
+  return displaySections.map((section, index) => ({
     id: `${section.canonicalTitle}-${index}`,
     canonicalTitle: section.canonicalTitle,
     rawTitle: section.rawTitle,
     displayTitle: section.displayTitle,
     blocks: section.blocks,
-    translatedBlocks: section.translatedBlocks,
-    activeBlocks: section.activeBlocks || section.blocks,
+    translatedBlocks: undefined,
+    activeBlocks: section.blocks,
     source: section.source
   }))
-}
-
-function resolveTranslatedDescriptionStrategy(input: {
-  originalDescription: string
-  translatedDescription: string
-  descriptionSections: ParsedSection[]
-  mergedSections: ParsedSection[]
-}): { baseSections: ParsedSection[]; translatedDescriptionSections: ParsedSection[] } {
-  if (!input.translatedDescription) {
-    return { baseSections: input.mergedSections, translatedDescriptionSections: [] }
-  }
-
-  if (!shouldUseTranslatedDescription(input.originalDescription, input.translatedDescription, input.descriptionSections)) {
-    return { baseSections: input.mergedSections, translatedDescriptionSections: [] }
-  }
-
-  const translatedDescriptionSections = parseDescriptionSections(input.translatedDescription)
-  const originalDescriptionSections = input.mergedSections.filter(section => section.source === 'description' || section.source === 'fallback')
-
-  if (originalDescriptionSections.length <= 1 || translatedDescriptionSections.length >= originalDescriptionSections.length) {
-    return {
-      baseSections: input.mergedSections,
-      translatedDescriptionSections
-    }
-  }
-
-  return {
-    baseSections: collapseDescriptionSections(input.mergedSections),
-    translatedDescriptionSections: collapseParsedSections(translatedDescriptionSections)
-  }
 }
 
 export function flattenSectionBlocks(blocks: JobDetailBlock[]): string {
@@ -338,38 +349,41 @@ function parseDescriptionSections(description: string): ParsedSection[] {
   }
 
   for (const rawLine of lines) {
-    const line = normalizeLine(rawLine)
-    if (!line) {
-      flushParagraph()
-      flushList()
-      continue
-    }
+    const expandedLines = splitHeadingPrefixedLine(normalizeLine(rawLine))
 
-    const heading = detectHeading(line)
-    if (heading) {
-      flushSection()
-      currentSection = createEmptySection(heading.canonicalTitle, 'description', sections.length)
-      currentSection.rawTitle = heading.rawTitle
-      currentSection.displayTitle = heading.displayTitle
-      continue
-    }
+    for (const line of expandedLines) {
+      if (!line) {
+        flushParagraph()
+        flushList()
+        continue
+      }
 
-    const bullet = extractListItem(line)
-    if (bullet) {
-      flushParagraph()
-      listOrdered = listOrdered || bullet.ordered
-      listBuffer.push(bullet.text)
-      continue
-    }
+      const heading = detectHeading(line)
+      if (heading) {
+        flushSection()
+        currentSection = createEmptySection(heading.canonicalTitle, 'description', sections.length)
+        currentSection.rawTitle = heading.rawTitle
+        currentSection.displayTitle = heading.displayTitle
+        continue
+      }
 
-    if (looksLikeStandaloneSubheading(line, currentSection)) {
-      flushParagraph()
-      flushList()
-      currentSection.blocks.push({ type: 'subheading', text: normalizeHeadingText(line) })
-      continue
-    }
+      const bullet = extractListItem(line)
+      if (bullet) {
+        flushParagraph()
+        listOrdered = listOrdered || bullet.ordered
+        listBuffer.push(bullet.text)
+        continue
+      }
 
-    paragraphBuffer.push(line)
+      if (looksLikeStandaloneSubheading(line, currentSection)) {
+        flushParagraph()
+        flushList()
+        currentSection.blocks.push({ type: 'subheading', text: normalizeHeadingText(line) })
+        continue
+      }
+
+      paragraphBuffer.push(line)
+    }
   }
 
   flushSection()
@@ -654,6 +668,25 @@ function detectHeading(line: string): { canonicalTitle: JobDetailCanonicalTitle;
   }
 }
 
+function splitHeadingPrefixedLine(line: string): string[] {
+  if (!line) return ['']
+
+  for (const rule of HEADING_PREFIX_SPLITS) {
+    const match = line.match(rule.pattern)
+    if (!match) continue
+
+    const headingText = normalizeHeadingText(match[1])
+    const bodyText = String(match[2] || '').trim()
+    if (!headingText || !bodyText) continue
+    if (bodyText.length < 6) continue
+    if (extractListItem(bodyText)) continue
+
+    return [headingText, bodyText]
+  }
+
+  return [line]
+}
+
 function inferCanonicalTitle(rawTitle: string): JobDetailCanonicalTitle {
   const lower = rawTitle.toLowerCase()
   if (/(team)/i.test(lower) || /团队/.test(rawTitle)) return 'team'
@@ -799,14 +832,21 @@ function shouldUseTranslatedDescription(
 ): boolean {
   if (!translatedDescription) return false
   if (!originalDescription) return true
-  if (originalDescription.length > 600 && translatedDescription.length < Math.min(240, originalDescription.length * 0.3)) {
+
+  const normalizedOriginal = originalDescription.replace(/\s+/g, '').trim()
+  const normalizedTranslated = translatedDescription.replace(/\s+/g, '').trim()
+  if (!normalizedTranslated) return false
+  if (normalizedOriginal && normalizedOriginal === normalizedTranslated) return false
+
+  const chineseCharCount = (translatedDescription.match(/[\u4e00-\u9fa5]/g) || []).length
+  if (chineseCharCount < 6) return false
+
+  if (originalDescription.length > 900 && translatedDescription.length < Math.min(180, originalDescription.length * 0.12)) {
     return false
   }
 
   const translatedSections = parseDescriptionSections(translatedDescription)
-  if (!translatedSections.length) return false
-  if (originalSections.length > 1 && translatedSections.length < Math.max(2, Math.floor(originalSections.length / 2))) {
-    return false
-  }
-  return true
+  if (translatedSections.length > 0) return true
+
+  return chineseCharCount >= 12
 }
