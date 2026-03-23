@@ -17,7 +17,7 @@ export default function CompanyDetailPage() {
     const { user, isMember, isAuthenticated } = useAuth()
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
-    const FREE_FEATURE_LIMIT = 5
+    const FREE_FEATURE_LIMIT = 3
     const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(0)
     const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
 

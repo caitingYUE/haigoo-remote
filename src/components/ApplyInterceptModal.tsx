@@ -14,6 +14,7 @@ interface ApplyInterceptModalProps {
     onProceedToApply: () => void;
     // Free usage for non-members
     referralUsageCount?: number;
+    referralUnlocked?: boolean;
     onConsumeReferral?: () => void;
     FREE_FEATURE_LIMIT?: number;
 }
@@ -28,8 +29,9 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     isMember,
     onProceedToApply,
     referralUsageCount = 0,
+    referralUnlocked = false,
     onConsumeReferral,
-    FREE_FEATURE_LIMIT = 5,
+    FREE_FEATURE_LIMIT = 3,
 }) => {
     const navigate = useNavigate();
 
@@ -160,7 +162,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     // 内推岗位且为免费用户 - 有剩余次数则允许，否则显示升级引导
     if (job.canRefer && !isMember) {
-        const canReferFree = referralUsageCount < FREE_FEATURE_LIMIT;
+        const canReferFree = referralUnlocked || referralUsageCount < FREE_FEATURE_LIMIT;
         const remaining = FREE_FEATURE_LIMIT - referralUsageCount;
 
         // Still has free quota → allow with count badge
@@ -194,7 +196,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <Target className="w-3.5 h-3.5" />
                                 帮我内推
                                 <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
-                                    剩余 {remaining}/{FREE_FEATURE_LIMIT}
+                                    {referralUnlocked ? '已解锁' : `剩余 ${remaining}/${FREE_FEATURE_LIMIT}`}
                                 </span>
                             </div>
 
@@ -209,7 +211,9 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             <div className="space-y-3">
                                 <button
                                     onClick={() => {
-                                        onConsumeReferral?.();
+                                        if (!referralUnlocked) {
+                                            onConsumeReferral?.();
+                                        }
                                         onClose();
                                         onProceedToApply();
                                     }}

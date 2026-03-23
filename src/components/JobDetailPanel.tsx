@@ -82,10 +82,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const showReferralModule = referralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
     // Free usage quotas for non-members (lifetime cumulative, stored in DB)
-    const FREE_FEATURE_LIMIT = 5
+    const FREE_FEATURE_LIMIT = 3
     const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(FREE_FEATURE_LIMIT) // conservative default → locked until loaded
     const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(FREE_FEATURE_LIMIT)   // conservative default
-    const [referralUsageCount, setReferralUsageCount] = useState(0)                        // default 0 → allow until loaded
+    const [referralUsageCount, setReferralUsageCount] = useState(FREE_FEATURE_LIMIT)        // conservative default
     const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
     const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(FREE_FEATURE_LIMIT)
     const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
@@ -155,16 +155,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             const headers = { 'Authorization': `Bearer ${token}` };
             Promise.all([
                 fetch('/api/users?resource=free-usage&type=company-info', { headers }).then(r => r.json()),
-                fetch('/api/users?resource=free-usage&type=email-apply', { headers }).then(r => r.json()),
-                fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
-            ]).then(([ciData, eaData, refData, maData]) => {
+            ]).then(([ciData, maData]) => {
                 if (ciData.success) {
-                    setCompanyInfoUsageCount(ciData.usage);
-                    setUnlockedCompanies(ciData.unlocked_companies || []);
+                    syncSharedFreeAccessState(ciData.usage, ciData.unlocked_companies || []);
                 }
-                if (eaData.success) setEmailApplyUsageCount(eaData.usage);
-                if (refData.success) setReferralUsageCount(refData.usage);
                 if (maData.success) {
                     setMatchAnalysisUsageCount(maData.usage);
                     setUnlockedMatchAnalysisJobIds(Array.isArray(maData.unlocked_job_ids) ? maData.unlocked_job_ids.map((item: any) => String(item)) : []);
@@ -172,9 +167,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
         } else if (isMember) {
             // Members have no limits
-            setCompanyInfoUsageCount(0);
-            setEmailApplyUsageCount(0);
-            setReferralUsageCount(0);
+            syncSharedFreeAccessState(0, []);
             setMatchAnalysisUsageCount(0);
             setUnlockedMatchAnalysisJobIds([]);
         }
@@ -233,6 +226,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const isMatchAnalysisUnlocked = isMember || unlockedMatchAnalysisJobIds.includes(String(job?.id || ''))
     const canUseMatchAnalysisTrial = isAuthenticated && !isMember && !isMatchAnalysisUnlocked && matchAnalysisUsageCount < FREE_FEATURE_LIMIT
     const matchDetailsLocked = Boolean(job?.matchDetailsLocked) && !isMatchAnalysisUnlocked
+
+    const syncSharedFreeAccessState = (usage: number, unlockedCompaniesList: string[] = []) => {
+        const normalizedUsage = Math.max(0, Number(usage) || 0)
+        const normalizedUnlocked = Array.isArray(unlockedCompaniesList) ? unlockedCompaniesList : []
+
+        setCompanyInfoUsageCount(normalizedUsage)
+        setEmailApplyUsageCount(normalizedUsage)
+        setReferralUsageCount(normalizedUsage)
+        setUnlockedCompanies(normalizedUnlocked)
+    }
 
     const handleUnlockMatchAnalysis = async () => {
         if (!job?.id || !isAuthenticated || isMember || isMatchAnalysisUnlocked || !canUseMatchAnalysisTrial || unlockingMatchAnalysis) return
@@ -1032,8 +1035,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     });
                                                     const data = await res.json();
                                                     if (data.success) {
-                                                        setUnlockedCompanies(data.unlocked_companies || []);
-                                                        setCompanyInfoUsageCount(data.usage);
+                                                        syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);
                                                     } else {
                                                         showError('解锁失败', data.error || '服务器错误');
                                                     }
@@ -1280,8 +1282,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                 });
                                                                 const data = await res.json();
                                                                 if (data.success) {
-                                                                    setUnlockedCompanies(data.unlocked_companies || []);
-                                                                    setCompanyInfoUsageCount(data.usage);
+                                                                    syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);
                                                                     if (data.remaining === 0) showInfo('体验次数已用完', '升级会员享受无限次内推');
                                                                 } else {
                                                                     showError('解锁失败', data.error || '服务器错误');
@@ -1416,8 +1417,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 {!showReferralModule && companyInfo?.hiringEmail && (
                     <div className="flex-1 flex flex-col justify-end relative group/email">
                         {(() => {
-                            const canEmailFree = !isMember && isAuthenticated && emailApplyUsageCount < FREE_FEATURE_LIMIT;
-                            const isEmailUnlocked = isMember || canEmailFree;
+                            const accessCompanyName = String(job.company || companyInfo?.name || '').trim();
+                            const isCompanyAccessUnlocked = isMember || unlockedCompanies.includes(accessCompanyName);
+                            const canEmailFree = !isMember && isAuthenticated && !isCompanyAccessUnlocked && emailApplyUsageCount < FREE_FEATURE_LIMIT;
+                            const isEmailUnlocked = isMember || isCompanyAccessUnlocked || canEmailFree;
                             return (
                                 <button
                                     onClick={async () => {
@@ -1426,21 +1429,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             return;
                                         }
                                         if (isEmailUnlocked) {
-                                            // Consume one free use if non-member
-                                            if (!isMember) {
+                                            // Consume one shared free use only when this company has not been unlocked yet
+                                            if (!isMember && !isCompanyAccessUnlocked) {
                                                 const token = localStorage.getItem('haigoo_auth_token');
                                                 if (token) {
                                                     try {
                                                         const data = await fetch('/api/users?resource=free-usage&type=email-apply', {
                                                             method: 'POST',
-                                                            headers: { 'Authorization': `Bearer ${token}` }
+                                                            headers: {
+                                                                'Authorization': `Bearer ${token}`,
+                                                                'Content-Type': 'application/json'
+                                                            },
+                                                            body: JSON.stringify({ companyName: accessCompanyName })
                                                         }).then(r => r.json());
                                                         if (data.success) {
-                                                            setEmailApplyUsageCount(data.usage);
+                                                            syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);
                                                             if (data.remaining === 0) showInfo('体验次数已用完', '升级会员享受无限邮箱直申');
+                                                        } else {
+                                                            throw new Error(data.error || '解锁失败');
                                                         }
                                                     } catch (e) {
                                                         console.error('[free-usage] email-apply consume failed:', e);
+                                                        showError('邮箱直申解锁失败', '请稍后重试');
+                                                        return;
                                                     }
                                                 }
                                             }
@@ -1465,7 +1476,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 <span>邮箱直申 ({companyInfo?.emailType || job.emailType || '通用邮箱'})</span>
                                                 {!isMember && (
                                                     <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-200 text-xs font-bold rounded">
-                                                        {FREE_FEATURE_LIMIT - emailApplyUsageCount}/{FREE_FEATURE_LIMIT}
+                                                        {isCompanyAccessUnlocked ? '已解锁' : `${FREE_FEATURE_LIMIT - emailApplyUsageCount}/${FREE_FEATURE_LIMIT}`}
                                                     </span>
                                                 )}
                                             </div>
@@ -1544,6 +1555,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 isMember={isMember}
                 onProceedToApply={proceedToApply}
                 referralUsageCount={referralUsageCount}
+                referralUnlocked={Boolean(isMember || unlockedCompanies.includes(String(job.company || companyInfo?.name || '').trim()))}
                 FREE_FEATURE_LIMIT={FREE_FEATURE_LIMIT}
                 onConsumeReferral={async () => {
                     const token = localStorage.getItem('haigoo_auth_token');
@@ -1551,10 +1563,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     try {
                         const data = await fetch('/api/users?resource=free-usage&type=referral', {
                             method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}` }
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ companyName: String(job.company || companyInfo?.name || '').trim() })
                         }).then(r => r.json());
                         if (data.success) {
-                            setReferralUsageCount(data.usage);
+                            syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);
                             if (data.remaining === 0) showInfo('内推体验次数已用完', '升级会员享受无限次内推');
                         }
                     } catch (e) {
