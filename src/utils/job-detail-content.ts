@@ -208,13 +208,16 @@ export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobD
     benefits: toCleanLines(input.benefits)
   })
 
-  const translatedDescriptionSections = shouldUseTranslatedDescription(originalDescription, translatedDescription, descriptionSections)
-    ? parseDescriptionSections(translatedDescription)
-    : []
+  const translationStrategy = resolveTranslatedDescriptionStrategy({
+    originalDescription,
+    translatedDescription,
+    descriptionSections,
+    mergedSections
+  })
 
   const translatedSections = attachTranslatedBlocks({
-    baseSections: mergedSections,
-    translatedDescriptionSections,
+    baseSections: translationStrategy.baseSections,
+    translatedDescriptionSections: translationStrategy.translatedDescriptionSections,
     translatedResponsibilities: toCleanLines(input.translatedResponsibilities),
     translatedRequirements: toCleanLines(input.translatedRequirements),
     translatedBenefits: toCleanLines(input.translatedBenefits),
@@ -235,6 +238,36 @@ export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobD
     activeBlocks: section.activeBlocks || section.blocks,
     source: section.source
   }))
+}
+
+function resolveTranslatedDescriptionStrategy(input: {
+  originalDescription: string
+  translatedDescription: string
+  descriptionSections: ParsedSection[]
+  mergedSections: ParsedSection[]
+}): { baseSections: ParsedSection[]; translatedDescriptionSections: ParsedSection[] } {
+  if (!input.translatedDescription) {
+    return { baseSections: input.mergedSections, translatedDescriptionSections: [] }
+  }
+
+  if (!shouldUseTranslatedDescription(input.originalDescription, input.translatedDescription, input.descriptionSections)) {
+    return { baseSections: input.mergedSections, translatedDescriptionSections: [] }
+  }
+
+  const translatedDescriptionSections = parseDescriptionSections(input.translatedDescription)
+  const originalDescriptionSections = input.mergedSections.filter(section => section.source === 'description' || section.source === 'fallback')
+
+  if (originalDescriptionSections.length <= 1 || translatedDescriptionSections.length >= originalDescriptionSections.length) {
+    return {
+      baseSections: input.mergedSections,
+      translatedDescriptionSections
+    }
+  }
+
+  return {
+    baseSections: collapseDescriptionSections(input.mergedSections),
+    translatedDescriptionSections: collapseParsedSections(translatedDescriptionSections)
+  }
 }
 
 export function flattenSectionBlocks(blocks: JobDetailBlock[]): string {
@@ -491,6 +524,44 @@ function mergeAdjacentSections(sections: ParsedSection[]): ParsedSection[] {
     previous.blocks = normalizeBlocks(mergedBlocks)
     return result
   }, [])
+}
+
+function collapseDescriptionSections(sections: ParsedSection[]): ParsedSection[] {
+  const descriptionSections = sections.filter(section => section.source === 'description' || section.source === 'fallback')
+  if (descriptionSections.length <= 1) return sections
+
+  const nonDescriptionSections = sections.filter(section => section.source !== 'description' && section.source !== 'fallback')
+  const collapsedDescription = collapseParsedSections(descriptionSections)
+
+  return [...nonDescriptionSections, ...collapsedDescription].sort((a, b) => {
+    const orderDiff = SECTION_ORDER[a.canonicalTitle] - SECTION_ORDER[b.canonicalTitle]
+    if (orderDiff !== 0) return orderDiff
+    return a.orderHint - b.orderHint
+  })
+}
+
+function collapseParsedSections(sections: ParsedSection[]): ParsedSection[] {
+  if (!sections.length) return []
+  if (sections.length === 1) return sections
+
+  const first = sections[0]
+  const canonicalTitle: JobDetailCanonicalTitle = first.canonicalTitle === 'overview' ? 'overview' : 'details'
+  const blocks = sections.flatMap((section, index) => {
+    const prefixBlocks: JobDetailBlock[] = []
+    if (index > 0 && section.rawTitle && section.rawTitle !== first.rawTitle) {
+      prefixBlocks.push({ type: 'subheading', text: section.rawTitle })
+    }
+    return [...prefixBlocks, ...section.blocks]
+  })
+
+  return [{
+    canonicalTitle,
+    rawTitle: first.rawTitle,
+    displayTitle: CANONICAL_TITLES[canonicalTitle],
+    blocks: normalizeBlocks(blocks),
+    source: first.source,
+    orderHint: SECTION_ORDER[canonicalTitle]
+  }]
 }
 
 function mergeBlocks(primaryBlocks: JobDetailBlock[], secondaryBlocks: JobDetailBlock[]): JobDetailBlock[] {
