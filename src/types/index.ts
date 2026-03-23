@@ -42,6 +42,7 @@ export interface Job {
     type?: string
     requirements?: string[]
     responsibilities?: string[]
+    benefits?: string[]
   }
   isTranslated?: boolean
   translatedAt?: string

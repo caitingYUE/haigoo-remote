@@ -3,7 +3,6 @@ import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, Zap, Messag
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
-import { segmentJobDescription } from '../utils/translation'
 import { SingleLineTags } from './SingleLineTags'
 import { MembershipUpgradeModal } from './MembershipUpgradeModal'
 import { ReferralModal } from './ReferralModal'
@@ -20,6 +19,7 @@ import { getJobSourceType } from '../utils/job-source-helper'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from './ShareJobModal'
 import { getMatchLevelClassName, getMatchLevelLabel, resolveMatchLevel } from '../utils/match-display'
+import { buildJobDetailSections, type JobDetailBlock } from '../utils/job-detail-content'
 
 interface JobDetailPanelProps {
     job: Job
@@ -271,28 +271,21 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setLogoError(false);
     }, [job?.id]); // Reset error state when job changes
 
-    const jobDescriptionData = useMemo(() => {
+    const jobDetailSections = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
         const translatedDesc = typeof job?.translations?.description === 'string' ? job.translations.description : (job?.translations?.description ? String(job.translations.description) : '')
 
-        let descToUse = originalDesc
-
-        if (showTranslation && translatedDesc) {
-            // 智能回退逻辑：如果翻译内容过短且原文较长，可能翻译不完整，回退到原文
-            // 比如：原文超过500字，但翻译少于200字
-            const isTranslationTooShort = originalDesc.length > 500 && translatedDesc.length < 200
-
-            // 或者：原文有很多段落（>10行），但翻译只有寥寥几行（<3行）
-            const originalLines = originalDesc.split('\n').length
-            const translatedLines = translatedDesc.split('\n').length
-            const isTranslationStructureLost = originalLines > 10 && translatedLines < 3
-
-            if (!isTranslationTooShort && !isTranslationStructureLost) {
-                descToUse = translatedDesc
-            }
-        }
-
-        return segmentJobDescription(descToUse)
+        return buildJobDetailSections({
+            description: originalDesc,
+            translatedDescription: translatedDesc,
+            requirements: job?.requirements || [],
+            translatedRequirements: job?.translations?.requirements || [],
+            responsibilities: job?.responsibilities || [],
+            translatedResponsibilities: job?.translations?.responsibilities || [],
+            benefits: job?.benefits || [],
+            translatedBenefits: job?.translations?.benefits || [],
+            preferTranslated: showTranslation
+        })
     }, [job, showTranslation])
 
     const handleApply = () => {
@@ -561,13 +554,48 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return originalText || ''
     }
 
-    const renderFormattedText = (text: string) => {
-        if (!text) return null
-        return text.split('\n').map((line, index) => (
-            <p key={index} className="mb-2 last:mb-0">
-                {renderInlineFormatting(line)}
-            </p>
-        ))
+    const renderSectionBlocks = (blocks: JobDetailBlock[]) => {
+        if (!Array.isArray(blocks) || blocks.length === 0) return null
+
+        return blocks.map((block, index) => {
+            if (block.type === 'list') {
+                const ListTag = block.ordered ? 'ol' : 'ul'
+                return (
+                    <ListTag
+                        key={`list-${index}`}
+                        className={`space-y-2 pl-5 text-slate-700 leading-7 ${block.ordered ? 'list-decimal' : 'list-disc'}`}
+                    >
+                        {block.items.map((item, itemIndex) => (
+                            <li key={`item-${index}-${itemIndex}`} className="pl-1 marker:text-slate-400">
+                                {renderInlineFormatting(item)}
+                            </li>
+                        ))}
+                    </ListTag>
+                )
+            }
+
+            if (block.type === 'subheading') {
+                return (
+                    <h4 key={`subheading-${index}`} className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-500">
+                        {renderInlineFormatting(block.text)}
+                    </h4>
+                )
+            }
+
+            if (block.type === 'note') {
+                return (
+                    <div key={`note-${index}`} className="rounded-xl border border-amber-100 bg-amber-50/70 px-4 py-3 text-sm leading-6 text-amber-900">
+                        {renderInlineFormatting(block.text)}
+                    </div>
+                )
+            }
+
+            return (
+                <p key={`paragraph-${index}`} className="text-slate-700 text-[15px] leading-7 lg:leading-8">
+                    {renderInlineFormatting(block.text)}
+                </p>
+            )
+        })
     }
 
     const renderInlineFormatting = (text: string) => {
@@ -897,14 +925,23 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     )}
 
                     {/* Job Description Sections */}
-                    {jobDescriptionData.sections.map((section, index) => (
+                    {jobDetailSections.map((section, index) => (
                         <section key={index} className="mb-8 last:mb-0">
-                            <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                <div className="w-1.5 h-6 bg-indigo-600 rounded-full"></div>
-                                {displayText(section.title)}
-                            </h3>
-                            <div className="text-slate-600 text-base leading-7 lg:leading-8 tracking-wide font-normal whitespace-pre-line">
-                                {renderFormattedText(displayText(section.content))}
+                            <div className="mb-4 flex items-start gap-3">
+                                <div className="w-1.5 h-7 bg-indigo-600 rounded-full mt-0.5"></div>
+                                <div className="min-w-0">
+                                    <h3 className="text-lg font-bold text-slate-900 leading-7">
+                                        {section.displayTitle}
+                                    </h3>
+                                    {section.rawTitle && section.rawTitle !== section.displayTitle && (
+                                        <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-400 break-words">
+                                            {section.rawTitle}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                {renderSectionBlocks(section.activeBlocks)}
                             </div>
                         </section>
                     ))}

@@ -1,3 +1,5 @@
+import { buildJobDetailSections, flattenSectionBlocks } from './job-detail-content'
+
 // 简化的翻译工具
 export interface TranslationDict {
   [key: string]: string;
@@ -172,157 +174,12 @@ export const extractJobSummary = (description: string): string => {
 
 // 分段职位描述 - 简化分段逻辑，保持原文完整性
 export const segmentJobDescription = (description: string) => {
-  if (!description || description.trim().length === 0) {
-    return { sections: [{ title: '职位详情', content: '暂无描述' }] };
+  const sections = buildJobDetailSections({ description }).map(section => ({
+    title: section.displayTitle,
+    content: flattenSectionBlocks(section.blocks) || '暂无描述'
+  }))
+
+  return {
+    sections: sections.length ? sections : [{ title: '职位详情', content: '暂无描述' }]
   }
-
-  // 清理描述文本，但保持基本结构
-  const cleanDescription = description
-    // 先将块级标签转换为换行，保留段落结构
-    .replace(/<\/?(p|div|br|h[1-6]|li|ul|ol)[^>]*>/gi, '\n')
-    // 将强调标签转换为Markdown以便后续渲染保留加粗/斜体
-    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
-    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
-    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
-    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
-    // 移除其他HTML标签
-    .replace(/<[^>]*>/g, '')
-    // 处理HTML实体
-    .replace(/&[a-zA-Z0-9#]+;/g, '')
-    // 保留段落间距并清理多余空白
-    .replace(/\n\s*\n/g, '\n\n')
-    .replace(/[ \t]+/g, ' ')
-    .trim();
-
-  // 即使内容很短,也返回它（修复暂无描述问题）
-  if (cleanDescription.length === 0) {
-    // 如果清理后完全没有内容，尝试使用原始内容
-    const rawContent = description.replace(/<[^>]*>/g, '').trim();
-    return {
-      sections: [{
-        title: '职位详情',
-        content: rawContent.length > 0 ? rawContent : '暂无描述'
-      }]
-    };
-  }
-
-  // 如果文本较短或没有明显的分段标志，直接返回完整内容
-  if (cleanDescription.length < 500 || !cleanDescription.includes('\n')) {
-    return {
-      sections: [{
-        title: '职位详情',
-        content: cleanDescription
-      }]
-    };
-  }
-
-  // 只在有明确分段标志时才进行分段
-  const naturalSections = [];
-
-
-  // 按自然段落分割，不要过滤短段落，避免丢失信息
-  const paragraphs = cleanDescription.split(/\n\s*\n/).filter(p => p.trim().length > 0);
-
-  if (paragraphs.length <= 1) {
-    // 只有一个段落，直接返回
-    return {
-      sections: [{
-        title: '职位详情',
-        content: cleanDescription
-      }]
-    };
-  }
-
-  // 增强分段标记识别，支持Markdown加粗格式
-  const strongSectionMarkers = [
-    /^(\*\*)?(Job Description|职位描述|工作内容|关于职位|The Role|About the Role)(\*\*)?[:：]?/im,
-    /^(\*\*)?(Requirements|Qualifications|任职要求|职位要求|资格要求|技能要求|What you need|What we are looking for|You bring|Your Profile)(\*\*)?[:：]?/im,
-    /^(\*\*)?(Responsibilities|Key Responsibilities|职责|岗位职责|工作职责|您的主要职责是|What you will do|Your Role)(\*\*)?[:：]?/im,
-    /^(\*\*)?(Benefits|What We Offer|福利|薪资福利|我们提供|待遇|Perks|Why join us)(\*\*)?[:：]?/im,
-    /^(\*\*)?(About (Us|the Company)|关于我们|公司介绍|Who we are)(\*\*)?[:：]?/im,
-    /^(\*\*)?(How to Apply|Application Process|申请方式)(\*\*)?[:：]?/im
-  ];
-
-  let currentSection = '';
-  let currentTitle = '职位详情';
-
-  // 如果第一段看起来像是一个总体介绍而不是具体分段，保留它在默认标题下
-  // 否则，如果第一段就是标题，循环会处理它
-
-  for (const paragraph of paragraphs) {
-    const trimmed = paragraph.trim();
-    let foundMarker = false;
-
-    // 检查是否有强分段标志
-    for (const marker of strongSectionMarkers) {
-      // 匹配标记，且该段落长度较短（通常标题不会太长）
-      if (marker.test(trimmed) && trimmed.length < 100) {
-        foundMarker = true;
-        // 保存之前的段落
-        if (currentSection) {
-          naturalSections.push({
-            title: currentTitle,
-            content: currentSection.trim()
-          });
-        }
-
-        // 开始新段落
-        // 提取纯文本标题（去除**和冒号）
-        currentTitle = trimmed.replace(/\*\*/g, '').split(/[:：]/)[0].trim();
-        // 如果标题提取后为空，回退到原始值
-        if (!currentTitle) currentTitle = trimmed.replace(/\*\*/g, '').trim();
-        
-        currentSection = ''; 
-        break;
-      }
-    }
-
-    // 隐式标题检测（即使没有匹配关键字）
-    if (!foundMarker) {
-      const isShort = trimmed.length < 60;
-      const endsWithColon = /[:：]$/.test(trimmed);
-      const isBold = /^\*\*.*\*\*[:：]?$/.test(trimmed);
-      const isUppercase = /^[A-Z\s&]+[:：]?$/.test(trimmed) && trimmed.length > 3;
-      const isBulletPoint = /^[-•*]\s/.test(trimmed) || /^\d+[\.)]\s/.test(trimmed);
-
-      // 如果是短行，不是列表项，且满足（以冒号结尾 OR 整体加粗 OR 全大写），则视为标题
-      if (isShort && !isBulletPoint && (endsWithColon || isBold || isUppercase)) {
-         foundMarker = true;
-         if (currentSection) {
-            naturalSections.push({
-              title: currentTitle,
-              content: currentSection.trim()
-            });
-         }
-         currentTitle = trimmed.replace(/\*\*/g, '').replace(/[:：]$/, '').trim();
-         if (!currentTitle) currentTitle = '其他信息';
-         currentSection = '';
-      }
-    }
-
-    if (!foundMarker) {
-      // 添加到当前段落
-      currentSection += (currentSection ? '\n\n' : '') + trimmed;
-    }
-  }
-
-  // 添加最后一个段落
-  if (currentSection) {
-    naturalSections.push({
-      title: currentTitle,
-      content: currentSection.trim()
-    });
-  }
-
-  // 如果没有找到有效的分段，返回完整内容
-  if (naturalSections.length === 0 || naturalSections.length === 1) {
-    return {
-      sections: [{
-        title: '职位详情',
-        content: cleanDescription
-      }]
-    };
-  }
-
-  return { sections: naturalSections };
-};
+}
