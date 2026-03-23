@@ -6,6 +6,30 @@ import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
 import adminMessagesHandler from '../lib/api-handlers/admin-messages.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
 
+const APPLY_STATUS_PENDING_SET = ['pending', 'pending_apply', 'applied', 'reviewed', 'referred']
+const APPLY_STATUS_SUCCESS_SET = ['success', 'offer']
+
+function buildApplySourceExpr() {
+    return `
+        COALESCE(
+            NULLIF(uji.application_source, ''),
+            CASE
+                WHEN j.is_trusted = true OR j.source_type = 'official' THEN 'official'
+                ELSE 'trusted_platform'
+            END
+        )
+    `
+}
+
+function normalizeSearchPattern(search) {
+    const keyword = String(search || '').trim().toLowerCase()
+    return keyword ? `%${keyword}%` : null
+}
+
+function isAdminPayload(payload) {
+    return Boolean(payload?.isAdmin || payload?.role === 'admin')
+}
+
 export default async function handler(req, res) {
     // Basic CORS and headers
     res.setHeader('Access-Control-Allow-Origin', '*')
@@ -43,23 +67,28 @@ export default async function handler(req, res) {
     // === Application Stats (Merged from admin-applications.js) ===
     if (action === 'application_stats') {
         const token = extractToken(req)
-        if (!token || !verifyToken(token)) {
+        const payload = token ? verifyToken(token) : null
+        if (!payload) {
             return res.status(401).json({ success: false, error: 'Unauthorized' })
+        }
+        if (!isAdminPayload(payload)) {
+            return res.status(403).json({ success: false, error: 'Forbidden' })
         }
 
         if (!neonHelper.isConfigured) {
             return res.status(200).json({
                 success: true,
-                stats: { referral_count: 0, official_count: 0, platform_count: 0, member_count: 0 }
+                stats: { email_count: 0, official_count: 0, platform_count: 0, member_count: 0 }
             })
         }
 
         // Job Application Stats
+        const applySourceExpr = buildApplySourceExpr()
         const jobStatsRes = await neonHelper.query(`
             SELECT 
               COUNT(*) FILTER (WHERE uji.interaction_type = 'email') as email_count,
-              COUNT(*) FILTER (WHERE uji.interaction_type = 'apply_redirect' AND j.is_trusted = true) as official_count,
-              COUNT(*) FILTER (WHERE uji.interaction_type = 'apply_redirect' AND (j.is_trusted = false OR j.is_trusted IS NULL)) as platform_count
+              COUNT(*) FILTER (WHERE uji.interaction_type = 'apply_redirect' AND ${applySourceExpr} = 'official') as official_count,
+              COUNT(*) FILTER (WHERE uji.interaction_type = 'apply_redirect' AND ${applySourceExpr} = 'trusted_platform') as platform_count
             FROM user_job_interactions uji
             LEFT JOIN jobs j ON uji.job_id = j.job_id
         `)
@@ -83,13 +112,17 @@ export default async function handler(req, res) {
     // === Application Update Status (Merged from admin-applications.js) ===
     if (action === 'application_update_status') {
         const token = extractToken(req)
-        if (!token || !verifyToken(token)) {
+        const payload = token ? verifyToken(token) : null
+        if (!payload) {
             return res.status(401).json({ success: false, error: 'Unauthorized' })
+        }
+        if (!isAdminPayload(payload)) {
+            return res.status(403).json({ success: false, error: 'Forbidden' })
         }
 
         if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-        const { id, status, userId, jobId, interactionType, startDate, endDate, type } = req.body;
+        const { id, status, notes, userId, jobId, interactionType, startDate, endDate, type } = req.body;
 
         // Member Application Update
         if (type === 'member') {
@@ -147,19 +180,36 @@ export default async function handler(req, res) {
             return res.status(200).json({ success: true });
         }
 
-        // Job Application Update
-        // (Assuming similar logic for job applications if needed, copying structure from original file)
-        // The original file didn't show the job application part fully in the snippet, 
-        // but 'update_status' was checking 'type'. 
-        // If type is not member, it might be job application?
-        // Let's assume for now only member type was implemented or important.
-        // Wait, let me check the original file again to be sure I didn't miss job app logic.
+        if (!id) return res.status(400).json({ success: false, error: 'Missing ID' });
+
+        const updateRes = await neonHelper.query(
+            `UPDATE user_job_interactions
+             SET status = $1,
+                 notes = COALESCE($2, notes),
+                 updated_at = NOW()
+             WHERE id = $3
+             RETURNING id`,
+            [status, notes || null, id]
+        );
+
+        if (!updateRes || updateRes.length === 0) {
+            return res.status(404).json({ success: false, error: 'Application record not found' });
+        }
 
         return res.status(200).json({ success: true });
     }
 
     // === Application Delete (Merged from admin-applications.js) ===
     if (action === 'application_delete' && req.method === 'DELETE') {
+        const token = extractToken(req)
+        const payload = token ? verifyToken(token) : null
+        if (!payload) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' })
+        }
+        if (!isAdminPayload(payload)) {
+            return res.status(403).json({ success: false, error: 'Forbidden' })
+        }
+
         const { id, type } = req.query;
         if (!id) return res.status(400).json({ success: false, error: 'Missing ID' });
 
@@ -168,8 +218,15 @@ export default async function handler(req, res) {
             return res.status(200).json({ success: true });
         }
 
-        if (type === 'referral') {
-            await neonHelper.query('DELETE FROM user_job_interactions WHERE id = $1', [id]);
+        if (type === 'referral' || type === 'email') {
+            const interactionType = type === 'email' ? 'email' : 'referral'
+            const deleteRes = await neonHelper.query(
+                'DELETE FROM user_job_interactions WHERE id = $1 AND interaction_type = $2 RETURNING id',
+                [id, interactionType]
+            );
+            if (!deleteRes || deleteRes.length === 0) {
+                return res.status(404).json({ success: false, error: 'Record not found' });
+            }
             return res.status(200).json({ success: true });
         }
 
@@ -179,20 +236,31 @@ export default async function handler(req, res) {
     // === Application List (Merged from admin-applications.js) ===
     if (action === 'application_list') {
         const token = extractToken(req)
-        if (!token || !verifyToken(token)) {
+        const payload = token ? verifyToken(token) : null
+        if (!payload) {
             return res.status(401).json({ success: false, error: 'Unauthorized' })
+        }
+        if (!isAdminPayload(payload)) {
+            return res.status(403).json({ success: false, error: 'Forbidden' })
         }
 
         const { type, page = 1, limit = 20, search, sortBy = 'updated_at', sortDir = 'desc' } = req.query;
         const offset = (parseInt(page) - 1) * parseInt(limit);
         const safeSortDir = sortDir.toLowerCase() === 'asc' ? 'ASC' : 'DESC';
-
-        let orderClauseOfficial = 'ORDER BY MAX(uji.updated_at) DESC';
-        if (sortBy === 'total_applications') {
-            orderClauseOfficial = `ORDER BY COUNT(*) ${safeSortDir}`;
-        } else if (sortBy === 'updated_at') {
-            orderClauseOfficial = `ORDER BY MAX(uji.updated_at) ${safeSortDir}`;
+        const searchPattern = normalizeSearchPattern(search)
+        const pendingStatuses = APPLY_STATUS_PENDING_SET
+        const successStatuses = APPLY_STATUS_SUCCESS_SET
+        const applySourceExpr = buildApplySourceExpr()
+        const aggregatedSortMap = {
+            job_title: 'job_title',
+            total_applications: 'total_applications',
+            pending_interview: 'pending_interview',
+            interviewing: 'interviewing',
+            success: 'success',
+            updated_at: 'updated_at'
         }
+        const aggregatedSortKey = aggregatedSortMap[sortBy] || 'updated_at'
+        const aggregatedOrderClause = `ORDER BY ${aggregatedSortKey} ${safeSortDir}, job_title ASC`
 
         // Case A: Member Applications
         if (type === 'member') {
@@ -219,8 +287,26 @@ export default async function handler(req, res) {
 
         if (type === 'email') {
             // Email
+            const emailFilters = ["uji.interaction_type = 'email'"]
+            const emailParams = []
+            if (searchPattern) {
+                emailParams.push(searchPattern)
+                emailFilters.push(`(
+                    LOWER(COALESCE(u.username, '')) LIKE $${emailParams.length}
+                    OR LOWER(COALESCE(u.email, '')) LIKE $${emailParams.length}
+                    OR LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${emailParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${emailParams.length}
+                    OR LOWER(COALESCE(uji.notes, '')) LIKE $${emailParams.length}
+                )`)
+            }
+            const emailWhereClause = `WHERE ${emailFilters.join(' AND ')}`
             const countRes = await neonHelper.query(
-                "SELECT COUNT(*) as total FROM user_job_interactions WHERE interaction_type = 'email'"
+                `SELECT COUNT(*) as total
+                 FROM user_job_interactions uji
+                 LEFT JOIN users u ON uji.user_id = u.user_id
+                 LEFT JOIN jobs j ON uji.job_id = j.job_id
+                 ${emailWhereClause}`,
+                emailParams
             );
             const total = parseInt(countRes[0]?.total || 0);
 
@@ -232,12 +318,12 @@ export default async function handler(req, res) {
                 LEFT JOIN users u ON uji.user_id = u.user_id
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
                 LEFT JOIN resumes r ON uji.resume_id = r.resume_id
-                WHERE uji.interaction_type = 'email'
+                ${emailWhereClause}
                 ORDER BY uji.updated_at DESC
-                LIMIT $1 OFFSET $2
+                LIMIT $${emailParams.length + 1} OFFSET $${emailParams.length + 2}
              `;
 
-            const listRes = await neonHelper.query(listQuery, [limit, offset]);
+            const listRes = await neonHelper.query(listQuery, [...emailParams, limit, offset]);
 
             return res.status(200).json({
                 success: true,
@@ -246,31 +332,61 @@ export default async function handler(req, res) {
             });
         } else if (type === 'official') {
             // Official (apply_redirect + is_trusted=true) - Aggregated by Job
+            const officialFilters = [
+                "uji.interaction_type = 'apply_redirect'",
+                `${applySourceExpr} = 'official'`
+            ]
+            const officialParams = [...pendingStatuses, ...successStatuses]
+            const officialCountParams = []
+            if (searchPattern) {
+                officialCountParams.push(searchPattern)
+                officialParams.push(searchPattern)
+                officialFilters.push(`(
+                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${officialCountParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${officialCountParams.length}
+                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${officialCountParams.length}
+                )`)
+            }
+            const officialCountWhereClause = `WHERE ${officialFilters.join(' AND ')}`
+            const officialListFilters = [
+                "uji.interaction_type = 'apply_redirect'",
+                `${applySourceExpr} = 'official'`
+            ]
+            if (searchPattern) {
+                officialListFilters.push(`(
+                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${officialParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${officialParams.length}
+                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${officialParams.length}
+                )`)
+            }
+            const officialListWhereClause = `WHERE ${officialListFilters.join(' AND ')}`
             const countRes = await neonHelper.query(`
                 SELECT COUNT(DISTINCT uji.job_id) as total 
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
-                WHERE uji.interaction_type = 'apply_redirect' AND j.is_trusted = true
-             `);
+                ${officialCountWhereClause}
+             `, officialCountParams);
             const total = parseInt(countRes[0]?.total || 0);
 
             listQuery = `
                 SELECT 
-                    j.job_id, j.title as job_title, j.company as job_company,
-                    COUNT(*) as total_applications,
-                    0 as pending_interview,
-                    0 as interviewing,
-                    0 as success,
+                    uji.job_id,
+                    COALESCE(MAX(j.title), MAX(uji.job_title_snapshot), '职位已失效') as job_title,
+                    COALESCE(MAX(j.company), MAX(uji.company_name_snapshot), '未知企业') as job_company,
+                    COUNT(*)::INTEGER as total_applications,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, 'pending_apply') = ANY($1::text[]))::INTEGER as pending_interview,
+                    COUNT(*) FILTER (WHERE uji.status = 'interviewing')::INTEGER as interviewing,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, '') = ANY($2::text[]))::INTEGER as success,
                     MAX(uji.updated_at) as updated_at
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
-                WHERE uji.interaction_type = 'apply_redirect' AND j.is_trusted = true
-                GROUP BY j.job_id, j.title, j.company
-                ${orderClauseOfficial}
-                LIMIT $1 OFFSET $2
+                ${officialListWhereClause}
+                GROUP BY uji.job_id
+                ${aggregatedOrderClause}
+                LIMIT $${officialParams.length + 1} OFFSET $${officialParams.length + 2}
              `;
 
-            const listRes = await neonHelper.query(listQuery, [limit, offset]);
+            const listRes = await neonHelper.query(listQuery, [...officialParams, limit, offset]);
 
             return res.status(200).json({
                 success: true,
@@ -279,31 +395,61 @@ export default async function handler(req, res) {
             });
         } else if (type === 'trusted_platform') {
             // Platform (apply_redirect + is_trusted=false) - Aggregated by Job
+            const platformFilters = [
+                "uji.interaction_type = 'apply_redirect'",
+                `${applySourceExpr} = 'trusted_platform'`
+            ]
+            const platformParams = [...pendingStatuses, ...successStatuses]
+            const platformCountParams = []
+            if (searchPattern) {
+                platformCountParams.push(searchPattern)
+                platformParams.push(searchPattern)
+                platformFilters.push(`(
+                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${platformCountParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${platformCountParams.length}
+                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${platformCountParams.length}
+                )`)
+            }
+            const platformCountWhereClause = `WHERE ${platformFilters.join(' AND ')}`
+            const platformListFilters = [
+                "uji.interaction_type = 'apply_redirect'",
+                `${applySourceExpr} = 'trusted_platform'`
+            ]
+            if (searchPattern) {
+                platformListFilters.push(`(
+                    LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${platformParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${platformParams.length}
+                    OR LOWER(COALESCE(uji.job_id, '')) LIKE $${platformParams.length}
+                )`)
+            }
+            const platformListWhereClause = `WHERE ${platformListFilters.join(' AND ')}`
             const countRes = await neonHelper.query(`
                 SELECT COUNT(DISTINCT uji.job_id) as total 
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
-                WHERE uji.interaction_type = 'apply_redirect' AND (j.is_trusted = false OR j.is_trusted IS NULL)
-             `);
+                ${platformCountWhereClause}
+             `, platformCountParams);
             const total = parseInt(countRes[0]?.total || 0);
 
             listQuery = `
                 SELECT 
-                    j.job_id, j.title as job_title, j.company as job_company,
-                    COUNT(*) as total_applications,
-                    0 as pending_interview,
-                    0 as interviewing,
-                    0 as success,
+                    uji.job_id,
+                    COALESCE(MAX(j.title), MAX(uji.job_title_snapshot), '职位已失效') as job_title,
+                    COALESCE(MAX(j.company), MAX(uji.company_name_snapshot), '未知企业') as job_company,
+                    COUNT(*)::INTEGER as total_applications,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, 'pending_apply') = ANY($1::text[]))::INTEGER as pending_interview,
+                    COUNT(*) FILTER (WHERE uji.status = 'interviewing')::INTEGER as interviewing,
+                    COUNT(*) FILTER (WHERE COALESCE(uji.status, '') = ANY($2::text[]))::INTEGER as success,
                     MAX(uji.updated_at) as updated_at
                 FROM user_job_interactions uji
                 LEFT JOIN jobs j ON uji.job_id = j.job_id
-                WHERE uji.interaction_type = 'apply_redirect' AND (j.is_trusted = false OR j.is_trusted IS NULL)
-                GROUP BY j.job_id, j.title, j.company
-                ${orderClauseOfficial}
-                LIMIT $1 OFFSET $2
+                ${platformListWhereClause}
+                GROUP BY uji.job_id
+                ${aggregatedOrderClause}
+                LIMIT $${platformParams.length + 1} OFFSET $${platformParams.length + 2}
              `;
 
-            const listRes = await neonHelper.query(listQuery, [limit, offset]);
+            const listRes = await neonHelper.query(listQuery, [...platformParams, limit, offset]);
 
             return res.status(200).json({
                 success: true,

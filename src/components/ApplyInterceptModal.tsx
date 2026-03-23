@@ -10,6 +10,7 @@ interface ApplyInterceptModalProps {
     onClose: () => void;
     job: Job;
     companyInfo?: TrustedCompany | null;
+    isAuthenticated?: boolean;
     isMember: boolean;
     onProceedToApply: (pendingWindow?: Window | null) => void;
     // Free usage for non-members
@@ -30,6 +31,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     onClose,
     job,
     companyInfo,
+    isAuthenticated = false,
     isMember,
     onProceedToApply,
     referralUsageCount = 0,
@@ -69,6 +71,10 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     };
 
     if (!isOpen) return null;
+
+    const canWebsiteApplyFree = isAuthenticated && (websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit);
+    const websiteApplyRemaining = Math.max(0, websiteApplyLimit - websiteApplyUsageCount);
+    const websiteApplyActionLabel = !isAuthenticated ? '登录后继续申请' : canWebsiteApplyFree ? '继续前往申请' : '前往申请次数已用完';
 
     // Member View for Trusted Company Jobs (Not Referral)
     if (isMember && (job.isTrusted || job.sourceType === 'trusted')) {
@@ -360,8 +366,6 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     // 官网/第三方岗位 - 免费用户显示审核说明
     if (!isMember) {
         const sourceType = getJobSourceType(job);
-        const canWebsiteApplyFree = websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit;
-        const websiteApplyRemaining = Math.max(0, websiteApplyLimit - websiteApplyUsageCount);
 
         // 如果是第三方可信平台（如 LinkedIn, Indeed 等），显示简化的跳转提示
         if (sourceType === 'trusted_platform') {
@@ -407,6 +411,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
                             <button
                                 onClick={async () => {
+                                    if (!isAuthenticated) {
+                                        onClose();
+                                        navigate('/login');
+                                        return;
+                                    }
                                     if (!canWebsiteApplyFree) {
                                         navigate('/membership');
                                         return;
@@ -422,20 +431,22 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 }}
                                 className={`w-full py-3 px-6 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
                                     ? 'bg-slate-900 hover:bg-indigo-600 text-white'
+                                    : !isAuthenticated
+                                        ? 'bg-slate-900 hover:bg-indigo-600 text-white'
                                     : 'bg-slate-100 text-slate-500 border border-slate-200'
                                     }`}
                             >
-                                {canWebsiteApplyFree ? (
+                                {isAuthenticated && canWebsiteApplyFree ? (
                                     <>
-                                        继续前往申请 <ArrowRight className="w-4 h-4" />
+                                        {websiteApplyActionLabel} <ArrowRight className="w-4 h-4" />
                                         <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-100 text-xs font-bold rounded">
                                             {websiteApplyUnlocked ? '已解锁' : `${websiteApplyRemaining}/${websiteApplyLimit}`}
                                         </span>
                                     </>
                                 ) : (
                                     <>
-                                        <Lock className="w-4 h-4" />
-                                        前往申请次数已用完
+                                        {!isAuthenticated ? <ArrowRight className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                        {websiteApplyActionLabel}
                                     </>
                                 )}
                             </button>
@@ -535,6 +546,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             </button>
                             <button
                                 onClick={async () => {
+                                    if (!isAuthenticated) {
+                                        onClose();
+                                        navigate('/login');
+                                        return;
+                                    }
                                     if (!canWebsiteApplyFree) {
                                         navigate('/membership');
                                         return;
@@ -550,20 +566,22 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 }}
                                 className={`py-3 px-4 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
                                     ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                                    : !isAuthenticated
+                                        ? 'bg-slate-900 hover:bg-indigo-600 text-white'
                                     : 'bg-slate-100 text-slate-500 border border-slate-200'
                                     }`}
                             >
-                                {canWebsiteApplyFree ? (
+                                {isAuthenticated && canWebsiteApplyFree ? (
                                     <>
-                                        继续前往申请 →
+                                        {websiteApplyActionLabel} →
                                         <span className="px-1.5 py-0.5 bg-white/15 text-white text-xs font-bold rounded">
                                             {websiteApplyUnlocked ? '已解锁' : `${websiteApplyRemaining}/${websiteApplyLimit}`}
                                         </span>
                                     </>
                                 ) : (
                                     <>
-                                        <Lock className="w-4 h-4" />
-                                        前往申请次数已用完
+                                        {!isAuthenticated ? <ArrowRight className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                                        {websiteApplyActionLabel}
                                     </>
                                 )}
                             </button>

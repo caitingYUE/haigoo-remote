@@ -333,6 +333,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job, showTranslation])
 
     const handleApply = () => {
+        trackingService.track('click_apply_init', {
+            job_id: job.id,
+            job_title: job.title,
+            company: job.company,
+            source: sourceType,
+            is_authenticated: isAuthenticated,
+            is_member: isMember
+        })
+
         // 0. Enforce Login first
         if (!isAuthenticated) {
             if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
@@ -385,7 +394,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 job_id: job.id,
                 job_title: job.title,
                 company: job.company,
-                apply_method: 'email'
+                apply_method: 'email',
+                source: sourceType
             });
 
             window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title}`)}`;
@@ -402,7 +412,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         body: JSON.stringify({
                             jobId: job.id,
                             type: 'email',
-                            notes: 'Applied via Email'
+                            notes: 'Applied via Email',
+                            source: 'email'
                         })
                     });
                     showSuccess('已为你记录申请，可在「我的投递」查看');
@@ -432,10 +443,19 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             job_id: job.id,
             job_title: job.title,
             company: job.company,
-            apply_method: url ? 'external_link' : 'internal_apply'
+            apply_method: url ? 'external_link' : 'internal_apply',
+            source: sourceType
         });
 
         if (url) {
+            trackingService.track('click_apply_external', {
+                job_id: job.id,
+                job_title: job.title,
+                company: job.company,
+                external_url: url,
+                source: sourceType
+            });
+
             if (pendingWindow && !pendingWindow.closed) {
                 pendingWindow.location.href = url
             } else {
@@ -456,7 +476,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         body: JSON.stringify({
                             jobId: job.id,
                             type: 'apply_redirect',
-                            notes: ''
+                            notes: '',
+                            source: sourceType
                         })
                     });
                     showSuccess('已为你记录申请，可在「我的投递」查看');
@@ -498,7 +519,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             job_id: job.id,
             job_title: job.title,
             company: job.company,
-            apply_method: 'referral_contact_email'
+            apply_method: 'referral_contact_email',
+            source: 'referral'
         })
 
         window.location.href = `mailto:${email}?subject=${encodeURIComponent(`Application for ${job.title}`)}`
@@ -515,7 +537,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     body: JSON.stringify({
                         jobId: job.id,
                         type: 'email',
-                        notes: `Applied via referral contact: ${contact.name || ''}`
+                        notes: `Applied via referral contact: ${contact.name || ''}`,
+                        source: 'referral_contact_email'
                     })
                 })
                 showSuccess('已为你记录申请，可在「我的投递」查看')
@@ -1514,10 +1537,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
                         const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
                         const isWebsiteApplyAvailable = isMember || websiteApplyUnlocked || canWebsiteApplyFree
+                        const isGuestWebsiteApply = !isAuthenticated
 
                         return (
                             <button
                                 onClick={() => {
+                                    trackingService.track('click_apply_init', {
+                                        job_id: job.id,
+                                        job_title: job.title,
+                                        company: job.company,
+                                        source: sourceType,
+                                        apply_method: 'website',
+                                        is_authenticated: isAuthenticated,
+                                        is_member: isMember
+                                    })
                                     if (!isAuthenticated) {
                                         navigate('/login')
                                         return
@@ -1528,20 +1561,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     }
                                     executeApply('website', openPendingWebsiteApplyWindow())
                                 }}
-                                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all min-h-[52px] group relative overflow-hidden shadow-sm flex items-center justify-center gap-2 ${isMember || isWebsiteApplyAvailable
+                                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all min-h-[52px] group relative overflow-hidden shadow-sm flex items-center justify-center gap-2 ${isMember || isWebsiteApplyAvailable || isGuestWebsiteApply
                                     ? 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-indigo-300 hover:shadow-sm'
                                     : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50'
                                     }`}
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                                {isMember || isWebsiteApplyAvailable ? (
+                                {isMember || isWebsiteApplyAvailable || isGuestWebsiteApply ? (
                                     <>
-                                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
-                                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">{websiteApplyLabel}</span>
-                                        {!isMember && (
+                                        {isGuestWebsiteApply ? (
+                                            <Lock className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
+                                        ) : (
+                                            <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
+                                        )}
+                                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">
+                                            {isGuestWebsiteApply ? '登录后前往申请' : websiteApplyLabel}
+                                        </span>
+                                        {!isMember && !isGuestWebsiteApply && (
                                             <span className="relative z-10 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold rounded">
                                                 {websiteApplyUnlocked ? '已解锁' : `${WEBSITE_APPLY_FREE_LIMIT - websiteApplyUsageCount}/${WEBSITE_APPLY_FREE_LIMIT}`}
                                             </span>
+                                        )}
+                                        {isGuestWebsiteApply && (
+                                            <span className="relative z-10 text-[10px] text-slate-400 whitespace-nowrap">登录可免费体验</span>
                                         )}
                                     </>
                                 ) : (
@@ -1695,6 +1737,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 onClose={() => setShowApplyInterceptModal(false)}
                 job={job}
                 companyInfo={companyInfo}
+                isAuthenticated={isAuthenticated}
                 isMember={isMember}
                 onProceedToApply={proceedToApply}
                 referralUsageCount={referralUsageCount}

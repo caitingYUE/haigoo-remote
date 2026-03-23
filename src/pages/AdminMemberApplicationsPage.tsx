@@ -149,11 +149,11 @@ export default function AdminMemberApplicationsPage() {
 
         try {
             const params = new URLSearchParams({
-                action: 'delete_application',
+                action: 'application_delete',
                 id: id.toString(),
                 type: 'member'
             });
-            const res = await fetch(`/api/admin-applications?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params.toString()}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`

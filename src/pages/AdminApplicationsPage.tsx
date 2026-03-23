@@ -53,14 +53,39 @@ export default function AdminApplicationsPage() {
     const [stats, setStats] = useState({ email_count: 0, official_count: 0, platform_count: 0 })
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'updated_at', direction: 'desc' })
 
+    const aggregatedSortItems = [
+        { key: 'total_applications', label: '总申请', tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+        { key: 'pending_interview', label: '待面试', tone: 'bg-amber-50 text-amber-700 border-amber-100' },
+        { key: 'interviewing', label: '面试中', tone: 'bg-orange-50 text-orange-700 border-orange-100' },
+        { key: 'success', label: '已录用', tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
+    ] as const
+
     useEffect(() => {
         fetchApplications()
         fetchStats()
-    }, [activeTab, page, search])
+    }, [activeTab, page, search, sortConfig])
+
+    useEffect(() => {
+        setPage(1)
+    }, [activeTab, search, sortConfig])
+
+    const formatCompactJobId = (jobId?: string) => {
+        const raw = String(jobId || '').trim()
+        if (!raw) return ''
+        if (raw.length <= 32) return raw
+        return `${raw.slice(0, 18)}...${raw.slice(-6)}`
+    }
+
+    const toggleSort = (key: string) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'desc' ? 'asc' : 'desc'
+        }))
+    }
 
     const fetchStats = async () => {
         try {
-            const res = await fetch('/api/admin-applications?action=stats', {
+            const res = await fetch('/api/admin-ops?action=application_stats', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
@@ -84,7 +109,7 @@ export default function AdminApplicationsPage() {
                 sortBy: sortConfig.key,
                 sortDir: sortConfig.direction
             })
-            const res = await fetch(`/api/admin-ops?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params.toString()}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             const data = await res.json()
@@ -107,9 +132,9 @@ export default function AdminApplicationsPage() {
             const params = new URLSearchParams({
                 action: 'application_delete',
                 id: id.toString(),
-                type: 'email' // Changed from referral
+                type: 'email'
             });
-            const res = await fetch(`/api/admin-ops?${params}`, {
+            const res = await fetch(`/api/admin-ops?${params.toString()}`, {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -130,7 +155,7 @@ export default function AdminApplicationsPage() {
 
     const handleUpdateStatus = async (id: number, status: string, notes?: string) => {
         try {
-            const res = await fetch('/api/admin-applications?action=update_status', {
+            const res = await fetch('/api/admin-ops?action=application_update_status', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -153,6 +178,7 @@ export default function AdminApplicationsPage() {
     const getStatusBadge = (status: string) => {
         const styles: Record<string, string> = {
             'pending': 'bg-yellow-100 text-yellow-800',
+            'pending_apply': 'bg-blue-50 text-blue-600',
             'applied': 'bg-blue-100 text-blue-800',
             'reviewed': 'bg-indigo-100 text-indigo-800',
             'referred': 'bg-purple-100 text-purple-800',
@@ -165,6 +191,7 @@ export default function AdminApplicationsPage() {
 
         const labels: Record<string, string> = {
             'pending': '待处理',
+            'pending_apply': '待投递',
             'applied': '已申请',
             'reviewed': '简历已阅',
             'referred': '已内推',
@@ -245,32 +272,30 @@ export default function AdminApplicationsPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {activeTab === 'email' ? '申请用户' : '岗位信息'}
+                            <th
+                                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${activeTab !== 'email' ? 'cursor-pointer hover:bg-gray-100' : ''}`}
+                                onClick={() => activeTab !== 'email' && toggleSort('job_title')}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {activeTab === 'email' ? '申请用户' : '岗位信息'}
+                                    {activeTab !== 'email' && sortConfig.key === 'job_title' && (
+                                        <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                    )}
+                                </div>
                             </th>
                             {activeTab === 'email' && (
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
                             )}
                             <th
-                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                onClick={() => activeTab !== 'email' && setSortConfig(prev => ({
-                                    key: 'total_applications',
-                                    direction: prev.key === 'total_applications' && prev.direction === 'desc' ? 'asc' : 'desc'
-                                }))}
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                             >
                                 <div className="flex items-center gap-1">
-                                    {activeTab === 'email' ? '状态' : '统计数据 (总申请/待面试/面试中/已录用)'}
-                                    {activeTab !== 'email' && sortConfig.key === 'total_applications' && (
-                                        <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
-                                    )}
+                                    {activeTab === 'email' ? '状态' : '统计数据'}
                                 </div>
                             </th>
                             <th
                                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                onClick={() => activeTab !== 'email' && setSortConfig(prev => ({
-                                    key: 'updated_at',
-                                    direction: prev.key === 'updated_at' && prev.direction === 'desc' ? 'asc' : 'desc'
-                                }))}
+                                onClick={() => activeTab !== 'email' && toggleSort('updated_at')}
                             >
                                 <div className="flex items-center gap-1">
                                     {activeTab === 'email' ? '时间' : '最后更新'}
@@ -311,7 +336,14 @@ export default function AdminApplicationsPage() {
                                             <div className="flex flex-col gap-1">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium text-gray-900">{app.job_title || app.jobTitle}</span>
-                                                    <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-mono">ID: {app.job_id}</span>
+                                                    {app.job_id && (
+                                                        <span
+                                                            className="max-w-[240px] truncate text-xs px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full font-mono"
+                                                            title={app.job_id}
+                                                        >
+                                                            ID: {formatCompactJobId(app.job_id)}
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <span className="text-sm text-gray-500">{app.job_company || app.company}</span>
                                             </div>
@@ -329,19 +361,21 @@ export default function AdminApplicationsPage() {
                                         {activeTab === 'email' ? (
                                             getStatusBadge(app.status)
                                         ) : (
-                                            <div className="flex gap-2 text-sm">
-                                                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-md" title="总申请">
-                                                    {app.total_applications || 0}
-                                                </span>
-                                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-md" title="待面试">
-                                                    {app.pending_interview || 0}
-                                                </span>
-                                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-md" title="面试中">
-                                                    {app.interviewing || 0}
-                                                </span>
-                                                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-md" title="已录用">
-                                                    {app.success || 0}
-                                                </span>
+                                            <div className="flex flex-wrap gap-2 text-sm">
+                                                {aggregatedSortItems.map((item) => (
+                                                    <button
+                                                        key={item.key}
+                                                        type="button"
+                                                        onClick={() => toggleSort(item.key)}
+                                                        className={`inline-flex items-center gap-1 rounded-md border px-2 py-1 transition-colors ${item.tone} ${sortConfig.key === item.key ? 'ring-1 ring-indigo-300' : 'hover:border-indigo-200'}`}
+                                                        title={`按${item.label}排序`}
+                                                    >
+                                                        <span>{app[item.key as keyof Application] || 0}</span>
+                                                        {sortConfig.key === item.key && (
+                                                            <span className="text-[10px]">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                                        )}
+                                                    </button>
+                                                ))}
                                             </div>
                                         )}
                                     </td>
@@ -374,15 +408,6 @@ export default function AdminApplicationsPage() {
                                     )}
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div className="flex flex-col gap-2 items-end justify-center h-full min-h-[40px]">
-                                            {/* 已移除干预状态的操作 */}
-                                            {activeTab !== 'email' && (
-                                                <button
-                                                    className="text-indigo-600 hover:text-indigo-900 text-xs"
-                                                    onClick={() => alert('此功能正在开发中：手动更新该岗位的统计数据')}
-                                                >
-                                                    更新统计
-                                                </button>
-                                            )}
                                             {activeTab === 'email' && isSuperAdmin && (
                                                 <button
                                                     onClick={() => handleDeleteApplication(app.id)}

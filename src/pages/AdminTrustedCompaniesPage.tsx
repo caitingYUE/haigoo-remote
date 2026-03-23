@@ -37,7 +37,6 @@ export default function AdminTrustedCompaniesPage() {
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [autoFilling, setAutoFilling] = useState(false)
     const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
-    const [backfillingIndustry, setBackfillingIndustry] = useState(false)
 
     // Batch crawl state
     const [batchCrawling, setBatchCrawling] = useState(false)
@@ -482,31 +481,6 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const handleBackfillIndustry = async () => {
-        if (!confirm('将为所有行业为空的岗位自动补全行业分类（从可信企业关联+AI分析），这个操作只需运行一次。确认继续？')) return
-        try {
-            setBackfillingIndustry(true)
-            const response = await fetch('/api/data/processed-jobs?action=backfill-industry', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ isAdmin: true })
-            })
-            const data = await response.json()
-            if (data.success) {
-                alert(`行业数据补全完成！
-从可信企业关联补全：${data.linkedCount ?? 0} 个岗位
-AI分类补全：${data.classifiedCount ?? 0} 个岗位`)
-            } else {
-                alert('补全失败: ' + (data.error || '未知错误'))
-            }
-        } catch (error) {
-            console.error('Backfill industry failed:', error)
-            alert('请求失败')
-        } finally {
-            setBackfillingIndustry(false)
-        }
-    }
-
     const handleBatchCrawl = async () => {
         if (batchCrawling) return
         if (!companies.length) {
@@ -578,19 +552,6 @@ AI分类补全：${data.classifiedCount ?? 0} 个岗位`)
                     >
                         <RefreshCw className="w-4 h-4" />
                         同步数据
-                    </button>
-                    <button
-                        onClick={handleBackfillIndustry}
-                        disabled={backfillingIndustry}
-                        className="px-4 py-2 bg-white text-amber-600 border border-amber-500 rounded hover:bg-amber-50 flex items-center gap-2 disabled:opacity-50"
-                        title="一次性补全所有岗位行业数据"
-                    >
-                        {backfillingIndustry ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <Wand2 className="w-4 h-4" />
-                        )}
-                        {backfillingIndustry ? '补全中...' : '同步行业数据'}
                     </button>
                     <button
                         onClick={handleAdd}
