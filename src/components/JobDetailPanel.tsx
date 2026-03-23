@@ -66,6 +66,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [showApplyInterceptModal, setShowApplyInterceptModal] = useState(false)
     const [showApplySelectionModal, setShowApplySelectionModal] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+    const skipNextWebsiteApplyConsumptionRef = React.useRef(false)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
     const referralContacts = useMemo(() => {
@@ -87,6 +88,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(FREE_FEATURE_LIMIT)   // conservative default
     const [referralUsageCount, setReferralUsageCount] = useState(FREE_FEATURE_LIMIT)        // conservative default
     const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
+    const WEBSITE_APPLY_FREE_LIMIT = 20
+    const [websiteApplyUsageCount, setWebsiteApplyUsageCount] = useState(WEBSITE_APPLY_FREE_LIMIT)
+    const [unlockedWebsiteApplyJobIds, setUnlockedWebsiteApplyJobIds] = useState<string[]>([])
     const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(FREE_FEATURE_LIMIT)
     const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
     const [unlockingMatchAnalysis, setUnlockingMatchAnalysis] = useState(false)
@@ -155,10 +159,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             const headers = { 'Authorization': `Bearer ${token}` };
             Promise.all([
                 fetch('/api/users?resource=free-usage&type=company-info', { headers }).then(r => r.json()),
+                fetch('/api/users?resource=free-usage&type=website-apply', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
-            ]).then(([ciData, maData]) => {
+            ]).then(([ciData, waData, maData]) => {
                 if (ciData.success) {
                     syncSharedFreeAccessState(ciData.usage, ciData.unlocked_companies || []);
+                }
+                if (waData.success) {
+                    syncWebsiteApplyState(waData.usage, waData.unlocked_job_ids || [])
                 }
                 if (maData.success) {
                     setMatchAnalysisUsageCount(maData.usage);
@@ -168,6 +176,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         } else if (isMember) {
             // Members have no limits
             syncSharedFreeAccessState(0, []);
+            syncWebsiteApplyState(0, [])
             setMatchAnalysisUsageCount(0);
             setUnlockedMatchAnalysisJobIds([]);
         }
@@ -235,6 +244,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setEmailApplyUsageCount(normalizedUsage)
         setReferralUsageCount(normalizedUsage)
         setUnlockedCompanies(normalizedUnlocked)
+    }
+
+    const syncWebsiteApplyState = (usage: number, unlockedJobIds: string[] = []) => {
+        setWebsiteApplyUsageCount(Math.max(0, Number(usage) || 0))
+        setUnlockedWebsiteApplyJobIds(Array.isArray(unlockedJobIds) ? unlockedJobIds.map((item) => String(item)) : [])
     }
 
     const handleUnlockMatchAnalysis = async () => {
@@ -373,6 +387,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             return;
         }
 
+        if (skipNextWebsiteApplyConsumptionRef.current) {
+            skipNextWebsiteApplyConsumptionRef.current = false
+        } else {
+            const canProceed = await consumeWebsiteApplyIfNeeded()
+            if (!canProceed) {
+                return
+            }
+        }
+
         const url = job.url || job.sourceUrl;
 
         trackingService.track('click_apply', {
@@ -481,6 +504,59 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             setShowApplySelectionModal(true);
         } else {
             executeApply('website');
+        }
+    }
+
+    const consumeWebsiteApplyIfNeeded = async () => {
+        if (!isAuthenticated || isMember || !job?.id) return true
+
+        const jobId = String(job.id)
+        if (unlockedWebsiteApplyJobIds.includes(jobId)) return true
+
+        const token = localStorage.getItem('haigoo_auth_token')
+        if (!token) return false
+
+        try {
+            const data = await fetch('/api/users?resource=free-usage&type=website-apply', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ jobId })
+            }).then(async (response) => {
+                const payload = await response.json()
+                if (!response.ok) {
+                    const error = new Error(payload.error || '次数校验失败') as Error & {
+                        status?: number
+                        payload?: any
+                    }
+                    error.status = response.status
+                    error.payload = payload
+                    throw error
+                }
+                return payload
+            })
+
+            syncWebsiteApplyState(data.usage, data.unlocked_job_ids || [])
+            return true
+        } catch (error) {
+            console.error('[free-usage] website-apply consume failed:', error)
+            const status = typeof error === 'object' && error && 'status' in error ? Number((error as any).status) : 0
+            const payload = typeof error === 'object' && error && 'payload' in error ? (error as any).payload : null
+
+            if (payload && typeof payload.usage !== 'undefined') {
+                syncWebsiteApplyState(payload.usage, payload.unlocked_job_ids || [])
+            }
+
+            if (status === 403) {
+                setShowUpgradeModal(true)
+                showInfo('前往申请次数已用完', '升级会员后可继续查看并申请更多岗位')
+                return false
+            }
+
+            showError('前往申请失败', '请稍后重试')
+            return false
         }
     }
 
@@ -1397,20 +1473,50 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             < footer className={`border-t border-slate-100 bg-white p-4 flex-shrink-0 grid ${(job.url || job.sourceUrl || !companyInfo?.hiringEmail) && companyInfo?.hiringEmail && !showReferralModule ? 'grid-cols-2' : 'grid-cols-1'} gap-3`} >
                 {/* Website Apply Button */}
                 {(job.url || job.sourceUrl || !companyInfo?.hiringEmail) && (
-                    <button
-                        onClick={() => {
-                            if (!isAuthenticated) {
-                                navigate('/login')
-                                return
-                            }
-                            executeApply('website')
-                        }}
-                        className="flex-1 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 py-3 px-4 rounded-lg font-medium transition-all hover:border-indigo-300 hover:shadow-sm flex items-center justify-center gap-2 min-h-[52px] group relative overflow-hidden"
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
-                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">{websiteApplyLabel}</span>
-                    </button>
+                    (() => {
+                        const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
+                        const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
+                        const isWebsiteApplyAvailable = isMember || websiteApplyUnlocked || canWebsiteApplyFree
+
+                        return (
+                            <button
+                                onClick={() => {
+                                    if (!isAuthenticated) {
+                                        navigate('/login')
+                                        return
+                                    }
+                                    if (!isWebsiteApplyAvailable) {
+                                        setShowUpgradeModal(true)
+                                        return
+                                    }
+                                    executeApply('website')
+                                }}
+                                className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all min-h-[52px] group relative overflow-hidden shadow-sm flex items-center justify-center gap-2 ${isMember || isWebsiteApplyAvailable
+                                    ? 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-indigo-300 hover:shadow-sm'
+                                    : 'bg-gradient-to-r from-slate-100 to-slate-200/80 border border-slate-200 text-slate-500 hover:border-indigo-300 hover:text-indigo-600 hover:from-indigo-50 hover:to-indigo-50/50'
+                                    }`}
+                            >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-slate-50/50 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
+                                {isMember || isWebsiteApplyAvailable ? (
+                                    <>
+                                        <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
+                                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-slate-900">{websiteApplyLabel}</span>
+                                        {!isMember && (
+                                            <span className="relative z-10 px-1.5 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-bold rounded">
+                                                {websiteApplyUnlocked ? '已解锁' : `${WEBSITE_APPLY_FREE_LIMIT - websiteApplyUsageCount}/${WEBSITE_APPLY_FREE_LIMIT}`}
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors relative z-10" />
+                                        <span className="relative z-10 font-semibold text-slate-600 group-hover:text-indigo-600">前往申请</span>
+                                        <span className="relative z-10 text-[10px] text-slate-400">体验次数已用完</span>
+                                    </>
+                                )}
+                            </button>
+                        )
+                    })()
                 )}
 
                 {/* Email Apply Button - Only show if company has hiring email */}
@@ -1557,6 +1663,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 referralUsageCount={referralUsageCount}
                 referralUnlocked={Boolean(isMember || unlockedCompanies.includes(String(job.company || companyInfo?.name || '').trim()))}
                 FREE_FEATURE_LIMIT={FREE_FEATURE_LIMIT}
+                websiteApplyUsageCount={websiteApplyUsageCount}
+                websiteApplyUnlocked={Boolean(isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || '')))}
+                websiteApplyLimit={WEBSITE_APPLY_FREE_LIMIT}
+                onConsumeWebsiteApply={async () => {
+                    const ok = await consumeWebsiteApplyIfNeeded()
+                    if (ok) {
+                        skipNextWebsiteApplyConsumptionRef.current = true
+                    }
+                    return ok
+                }}
                 onConsumeReferral={async () => {
                     const token = localStorage.getItem('haigoo_auth_token');
                     if (!token) return;

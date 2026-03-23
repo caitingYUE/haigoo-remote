@@ -17,6 +17,10 @@ interface ApplyInterceptModalProps {
     referralUnlocked?: boolean;
     onConsumeReferral?: () => void;
     FREE_FEATURE_LIMIT?: number;
+    websiteApplyUsageCount?: number;
+    websiteApplyUnlocked?: boolean;
+    onConsumeWebsiteApply?: () => Promise<boolean> | boolean;
+    websiteApplyLimit?: number;
 }
 
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -32,6 +36,10 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     referralUnlocked = false,
     onConsumeReferral,
     FREE_FEATURE_LIMIT = 3,
+    websiteApplyUsageCount = 0,
+    websiteApplyUnlocked = false,
+    onConsumeWebsiteApply,
+    websiteApplyLimit = 20,
 }) => {
     const navigate = useNavigate();
 
@@ -327,6 +335,8 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     // 官网/第三方岗位 - 免费用户显示审核说明
     if (!isMember) {
         const sourceType = getJobSourceType(job);
+        const canWebsiteApplyFree = websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit;
+        const websiteApplyRemaining = Math.max(0, websiteApplyLimit - websiteApplyUsageCount);
 
         // 如果是第三方可信平台（如 LinkedIn, Indeed 等），显示简化的跳转提示
         if (sourceType === 'trusted_platform') {
@@ -371,13 +381,34 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             </div>
 
                             <button
-                                onClick={() => {
+                                onClick={async () => {
+                                    if (!canWebsiteApplyFree) {
+                                        navigate('/membership');
+                                        return;
+                                    }
+                                    const ok = await onConsumeWebsiteApply?.();
+                                    if (ok === false) return;
                                     onClose();
                                     onProceedToApply();
                                 }}
-                                className="w-full py-3 px-6 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2"
+                                className={`w-full py-3 px-6 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
+                                    ? 'bg-slate-900 hover:bg-indigo-600 text-white'
+                                    : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                    }`}
                             >
-                                继续前往申请 <ArrowRight className="w-4 h-4" />
+                                {canWebsiteApplyFree ? (
+                                    <>
+                                        继续前往申请 <ArrowRight className="w-4 h-4" />
+                                        <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-100 text-xs font-bold rounded">
+                                            {websiteApplyUnlocked ? '已解锁' : `${websiteApplyRemaining}/${websiteApplyLimit}`}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="w-4 h-4" />
+                                        前往申请次数已用完
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
@@ -474,13 +505,34 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 查看企业详情
                             </button>
                             <button
-                                onClick={() => {
+                                onClick={async () => {
+                                    if (!canWebsiteApplyFree) {
+                                        navigate('/membership');
+                                        return;
+                                    }
+                                    const ok = await onConsumeWebsiteApply?.();
+                                    if (ok === false) return;
                                     onClose();
                                     onProceedToApply();
                                 }}
-                                className="py-3 px-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold rounded-xl shadow-md transition-all text-sm"
+                                className={`py-3 px-4 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
+                                    ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
+                                    : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                    }`}
                             >
-                                继续前往申请 →
+                                {canWebsiteApplyFree ? (
+                                    <>
+                                        继续前往申请 →
+                                        <span className="px-1.5 py-0.5 bg-white/15 text-white text-xs font-bold rounded">
+                                            {websiteApplyUnlocked ? '已解锁' : `${websiteApplyRemaining}/${websiteApplyLimit}`}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="w-4 h-4" />
+                                        前往申请次数已用完
+                                    </>
+                                )}
                             </button>
                         </div>
                     </div>
