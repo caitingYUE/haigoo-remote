@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase, Users } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase, Users, CircleOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -28,6 +28,7 @@ interface Plan {
    tier?: 'trial' | 'full';
    wechat_qr?: string;
    alipay_qr?: string;
+   comingSoon?: boolean;
 }
 
 interface PaymentInfo {
@@ -56,9 +57,9 @@ const STATIC_PLANS: Plan[] = [
          '解锁全部企业认证信息及联系方式',
          'AI 远程工作助手（无限次）',
          'AI 简历优化（无限次）',
-         '翻译、收藏等会员细节权益同步开放',
+         '岗位收藏、直接翻译等功能（无限次）',
          '加入精英远程工作者社区',
-         '精选企业名单暂不开放'
+         '解锁精选企业名单'
       ],
       description: '适合先体验海狗核心岗位权益，快速验证匹配度与使用价值。'
    },
@@ -77,7 +78,7 @@ const STATIC_PLANS: Plan[] = [
          '解锁全部企业认证信息及联系方式',
          'AI 远程工作助手 (无限次)',
          'AI 简历优化（无限次）',
-         '翻译、收藏等全部会员细节权益',
+         '岗位收藏、直接翻译等功能（无限次）',
          '加入精英远程工作者社区',
          '解锁精选企业名单'
       ],
@@ -91,6 +92,7 @@ const STATIC_PLANS: Plan[] = [
       price: 999,
       currency: 'CNY',
       duration_days: 365,
+      comingSoon: true,
       isPlus: true,
       tier: 'full',
       features: [
@@ -124,6 +126,41 @@ const MembershipPage: React.FC = () => {
    const isMember = (currentMembership?.isActive) || membershipCapabilities.isActive || !!user?.roles?.admin;
    const activeMemberType = (currentMembership?.memberType || membershipCapabilities.memberType);
    const isTrialMember = activeMemberType === 'trial_week';
+   const displayPlans = ['trial_week', 'quarter', 'year'].map((memberType) => {
+      const basePlan = plans.find((plan) => plan.memberType === memberType) || STATIC_PLANS.find((plan) => plan.memberType === memberType)!
+      if (memberType === 'trial_week') {
+         return {
+            ...basePlan,
+            features: [
+               '解锁全部高薪远程职位（含内推）',
+               '解锁全部企业认证信息及联系方式',
+               'AI 远程工作助手（无限次）',
+               'AI 简历优化（无限次）',
+               '岗位收藏、直接翻译等功能（无限次）',
+               '加入精英远程工作者社区',
+               '解锁精选企业名单'
+            ]
+         }
+      }
+      if (memberType === 'quarter') {
+         return {
+            ...basePlan,
+            features: [
+               '解锁全部高薪远程职位（含内推）',
+               '解锁全部企业认证信息及联系方式',
+               'AI 远程工作助手（无限次）',
+               'AI 简历优化（无限次）',
+               '岗位收藏、直接翻译等功能（无限次）',
+               '加入精英远程工作者社区',
+               '解锁精选企业名单'
+            ]
+         }
+      }
+      return {
+         ...basePlan,
+         comingSoon: true
+      }
+   });
 
    useEffect(() => {
       setPlans(STATIC_PLANS);
@@ -479,9 +516,10 @@ const MembershipPage: React.FC = () => {
                <p className="text-slate-500 text-lg">选择最适合您的探索方案，即刻启程</p>
             </div>
             <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-6 max-w-7xl mx-auto items-stretch">
-               {plans.map((plan) => {
+               {displayPlans.map((plan) => {
                   const isTrialPlan = plan.memberType === 'trial_week';
                   const isCurrentPlan = isMember && activeMemberType === plan.memberType;
+                  const isComingSoon = Boolean(plan.comingSoon);
                   const cycleLabel = plan.memberType === 'trial_week' ? '周' : (plan.duration_days > 90 ? '年' : '季度');
                   return (
                      <div
@@ -535,23 +573,31 @@ const MembershipPage: React.FC = () => {
                         </div>
 
                         <ul className="space-y-3.5 mb-8 flex-1 px-1">
-                           {plan.features.map((feature, idx) => (
+                           {plan.features.map((feature, idx) => {
+                              const isLockedFeature = isTrialPlan && feature === '解锁精选企业名单';
+                              return (
                               <li key={idx} className="flex items-start gap-4">
                                  <div className="mt-0.5 w-6 h-6 flex items-center justify-center flex-shrink-0">
-                                    <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
+                                    {isLockedFeature ? (
+                                       <CircleOff className="w-5 h-5 text-slate-300" strokeWidth={2.5} />
+                                    ) : (
+                                       <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
+                                    )}
                                  </div>
-                                 <span className="text-[14px] font-medium leading-relaxed text-slate-700">
+                                 <span className={`text-[14px] font-medium leading-relaxed ${isLockedFeature ? 'text-slate-400' : 'text-slate-700'}`}>
                                     {feature}
                                  </span>
                               </li>
-                           ))}
+                           )})}
                         </ul>
 
                         <button
                            onClick={() => handleSubscribe(plan)}
-                           disabled={isCurrentPlan}
+                           disabled={isCurrentPlan || isComingSoon}
                            className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn ${isCurrentPlan
                               ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                              : isComingSoon
+                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
                               : plan.isPlus
                                  ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xl shadow-indigo-500/30'
                                  : isTrialPlan
@@ -563,6 +609,10 @@ const MembershipPage: React.FC = () => {
                               <>
                                  <CheckCircle2 className="w-5 h-5" />
                                  当前会员 (生效中)
+                              </>
+                           ) : isComingSoon ? (
+                              <>
+                                 待上线
                               </>
                            ) : plan.isPlus ? (
                               <>

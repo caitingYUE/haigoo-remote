@@ -230,19 +230,7 @@ export default function ProfileCenterPage() {
             name: latestResumeData.fileName || latestResumeData.file_name || 'Resume'
           })
 
-          // Set resume text if available
-          if (latestResumeData.contentText) {
-            setResumeText(latestResumeData.contentText)
-          } else if (latestResumeData.content_text) {
-            setResumeText(latestResumeData.content_text)
-          } else if (latestResumeData.parseResult?.text) {
-            setResumeText(latestResumeData.parseResult.text)
-          } else if (latestResumeData.parse_result?.text) {
-            const parseResult = typeof latestResumeData.parse_result === 'string'
-              ? JSON.parse(latestResumeData.parse_result)
-              : latestResumeData.parse_result
-            setResumeText(parseResult.text || parseResult.content || '')
-          }
+          setResumeText(extractResumeText(latestResumeData))
 
           // Fetch and set preview content
           const rId = latestResumeData.id || latestResumeData.resume_id
@@ -360,6 +348,28 @@ export default function ProfileCenterPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisStep, setAnalysisStep] = useState<string>('')
 
+  const extractResumeText = (resume: any): string => {
+    if (!resume) return ''
+    if (typeof resume.contentText === 'string' && resume.contentText.trim()) return resume.contentText.trim()
+    if (typeof resume.content_text === 'string' && resume.content_text.trim()) return resume.content_text.trim()
+
+    const rawParseResult = resume.parseResult ?? resume.parse_result
+    const parseResult = typeof rawParseResult === 'string'
+      ? (() => {
+        try {
+          return JSON.parse(rawParseResult)
+        } catch {
+          return null
+        }
+      })()
+      : rawParseResult
+
+    if (typeof parseResult?.content === 'string' && parseResult.content.trim()) return parseResult.content.trim()
+    if (typeof parseResult?.text === 'string' && parseResult.text.trim()) return parseResult.text.trim()
+
+    return ''
+  }
+
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -454,8 +464,7 @@ export default function ProfileCenterPage() {
   }
 
   const handleAnalyzeResume = async () => {
-    // 确保 resumeText 存在
-    if (!resumeText || resumeText.length < 50) {
+    if (!latestResume?.id) {
       showError('无法分析', '简历内容为空或过短，请重新上传')
       return
     }
@@ -507,10 +516,6 @@ export default function ProfileCenterPage() {
       // If id is not found in DB, it returns 404.
       // So we MUST ensure the resume exists in DB before calling analyze.
 
-      // Check if ID is a timestamp (temporary)
-      const isTempId = latestResume?.id && /^\d{13}$/.test(latestResume.id);
-
-      // If temp ID or no ID, we might need to create it first (should have been done in upload, but just in case)
       const resumeIdToAnalyze = latestResume?.id;
 
       // If we are unsure if it's saved, we can try to re-save/sync content

@@ -41,6 +41,14 @@ function isMembershipActive(user?: any): boolean {
   if (user?.roles?.admin) return true
   if ((user.memberStatus || user.member_status) !== 'active') return false
 
+  const startAt = user.memberCycleStartAt || user.member_cycle_start_at
+  if (startAt) {
+    const startTime = new Date(startAt).getTime()
+    if (Number.isFinite(startTime) && startTime > Date.now()) {
+      return false
+    }
+  }
+
   const expireAt = user.memberExpireAt || user.member_expire_at
   if (!expireAt) return true
 

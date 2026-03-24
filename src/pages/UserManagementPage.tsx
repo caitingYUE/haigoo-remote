@@ -32,6 +32,54 @@ interface UserStats {
   newThisWeek: number
 }
 
+const MEMBER_DURATION_DAYS: Record<'trial_week' | 'quarter' | 'year', number> = {
+  trial_week: 7,
+  quarter: 90,
+  year: 365
+}
+
+function formatDateTimeInputValue(value?: string | null) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 16)
+}
+
+function toIsoFromDateTimeInput(value: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : date.toISOString()
+}
+
+function formatCompactDateTime(value?: string | null) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(date)
+}
+
+function formatShortUserId(userId: string) {
+  if (!userId) return '-'
+  if (userId.length <= 18) return userId
+  return `${userId.slice(0, 8)}…${userId.slice(-6)}`
+}
+
+function getQuickMemberStart(kind: 'now' | 'tomorrow') {
+  const date = new Date()
+  date.setSeconds(0, 0)
+  if (kind === 'tomorrow') {
+    date.setDate(date.getDate() + 1)
+    date.setHours(0, 0, 0, 0)
+  }
+  return date.toISOString()
+}
+
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
@@ -55,7 +103,10 @@ export default function UserManagementPage() {
   const [editAdmin, setEditAdmin] = useState(false)
   const [editMemberStatus, setEditMemberStatus] = useState<'free' | 'active' | 'expired'>('free')
   const [editMemberType, setEditMemberType] = useState<'none' | 'trial_week' | 'quarter' | 'year'>('none')
+  const [editMemberCycleStartAt, setEditMemberCycleStartAt] = useState('')
   const [editMemberExpireAt, setEditMemberExpireAt] = useState('')
+  const [editMemberScheduleDirty, setEditMemberScheduleDirty] = useState(false)
+  const [memberPlanDurations, setMemberPlanDurations] = useState(MEMBER_DURATION_DAYS)
 
   // API Token Usage State
   const [tokenUsage, setTokenUsage] = useState({
@@ -98,6 +149,28 @@ export default function UserManagementPage() {
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const response = await fetch('/api/membership?action=plans', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        })
+        const data = await response.json()
+        if (data?.success && Array.isArray(data.plans)) {
+          const nextDurations = { ...MEMBER_DURATION_DAYS }
+          for (const plan of data.plans) {
+            if (plan?.memberType && plan.memberType in nextDurations && Number(plan.duration_days) > 0) {
+              nextDurations[plan.memberType as 'trial_week' | 'quarter' | 'year'] = Number(plan.duration_days)
+            }
+          }
+          setMemberPlanDurations(nextDurations)
+        }
+      } catch (error) {
+        console.error('[UserManagement] Failed to fetch membership plans:', error)
+      }
+    })()
+  }, [token])
 
   // 过滤用户
   useEffect(() => {
@@ -169,14 +242,57 @@ export default function UserManagementPage() {
     }
   }
 
+  const calculateMemberExpireAt = useCallback((memberType: 'none' | 'trial_week' | 'quarter' | 'year', startAtIso: string) => {
+    if (memberType === 'none' || !startAtIso) return ''
+    const startDate = new Date(startAtIso)
+    if (Number.isNaN(startDate.getTime())) return ''
+    const durationDays = memberPlanDurations[memberType]
+    const expireAt = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000)
+    return expireAt.toISOString()
+  }, [memberPlanDurations])
+
   const openEdit = (user: User) => {
+    const initialMemberType: 'none' | 'trial_week' | 'quarter' | 'year' =
+      user.memberStatus === 'active' || user.memberStatus === 'expired'
+        ? ((user.memberType as 'none' | 'trial_week' | 'quarter' | 'year') || 'none')
+        : 'none'
+    const initialStartAt =
+      initialMemberType === 'none'
+        ? ''
+        : (user.memberCycleStartAt || user.memberSince || getQuickMemberStart('now'))
+
     setEditingUser(user)
     setEditUsername(user.username)
     setEditAdmin(!!user.roles?.admin)
-    setEditMemberStatus(user.memberStatus || 'free')
-    setEditMemberType((user.memberType as any) || 'none')
+    setEditMemberStatus(initialMemberType === 'none' ? 'free' : ((user.memberStatus as 'free' | 'active' | 'expired') || 'active'))
+    setEditMemberType(initialMemberType)
+    setEditMemberCycleStartAt(initialStartAt)
     setEditMemberExpireAt(user.memberExpireAt || '')
+    setEditMemberScheduleDirty(false)
   }
+
+  useEffect(() => {
+    if (!editingUser) return
+
+    if (editMemberType === 'none') {
+      if (editMemberScheduleDirty) {
+        setEditMemberCycleStartAt('')
+        setEditMemberExpireAt('')
+      }
+      return
+    }
+
+    if (!editMemberScheduleDirty) return
+
+    if (!editMemberCycleStartAt) {
+      const nextStartAt = editingUser.memberCycleStartAt || getQuickMemberStart('now')
+      setEditMemberCycleStartAt(nextStartAt)
+      setEditMemberExpireAt(calculateMemberExpireAt(editMemberType, nextStartAt))
+      return
+    }
+
+    setEditMemberExpireAt(calculateMemberExpireAt(editMemberType, editMemberCycleStartAt))
+  }, [editingUser, editMemberType, editMemberCycleStartAt, editMemberScheduleDirty, calculateMemberExpireAt])
 
   const saveEdit = async () => {
     if (!editingUser) return
@@ -188,6 +304,7 @@ export default function UserManagementPage() {
         roles: { admin: editAdmin },
         memberStatus: editMemberStatus,
         memberType: editMemberType,
+        memberCycleStartAt: editMemberType === 'none' ? null : (editMemberCycleStartAt || null),
         autoApplyMemberDuration: editMemberType !== 'none'
       }
 
@@ -228,16 +345,6 @@ export default function UserManagementPage() {
     } finally {
       setUpdatingId(null)
     }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
   }
 
   const exportUsers = () => {
@@ -396,17 +503,18 @@ export default function UserManagementPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">收藏岗位</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                    <th className="w-[26%] px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
+                    <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
+                    <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
+                    <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
+                    <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
+                    <th className="w-[13%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">会员信息</th>
+                    <th className="w-[7%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">收藏</th>
+                    <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                    <th className="w-[18%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -433,12 +541,17 @@ export default function UserManagementPage() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono text-slate-700">
-                          {user.user_id}
-                        </code>
+                      <td className="px-4 py-4">
+                        <div className="space-y-1">
+                          <code className="inline-flex max-w-full text-xs bg-slate-100 px-2 py-1 rounded font-mono text-slate-700 truncate" title={user.user_id}>
+                            {formatShortUserId(user.user_id)}
+                          </code>
+                          <div className="text-[11px] text-slate-400 truncate" title={user.user_id}>
+                            {user.user_id}
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-4 py-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
                           }`}>
                           {user.authProvider === 'google' ? 'Google' : '邮箱'}
@@ -447,57 +560,72 @@ export default function UserManagementPage() {
                           <CheckCircle className="inline-block w-4 h-4 text-green-500 ml-2" />
                         )}
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        <div className="flex items-center gap-1">
+                      <td className="px-4 py-4 text-sm text-slate-600">
+                        <div className="flex items-start gap-1.5">
                           <Calendar className="w-4 h-4 text-slate-400" />
-                          {formatDate(user.createdAt)}
+                          <div className="leading-5">{formatCompactDateTime(user.createdAt)}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        <div className="flex items-center gap-1">
+                      <td className="px-4 py-4 text-sm text-slate-600">
+                        <div className="flex items-start gap-1.5">
                           <Clock className="w-4 h-4 text-slate-400" />
-                          {user.lastLoginAt ? formatDate(user.lastLoginAt) : '-'}
+                          <div className="leading-5">{user.lastLoginAt ? formatCompactDateTime(user.lastLoginAt) : '-'}</div>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          user.memberStatus === 'active' ? 'bg-indigo-100 text-indigo-700' : 
-                          user.memberStatus === 'expired' ? 'bg-orange-100 text-orange-700' : 
-                          'bg-slate-100 text-slate-700'
-                        }`}>
-                          {user.memberStatus === 'active'
-                            ? (user.memberType === 'trial_week' ? '体验会员' : user.memberType === 'year' ? '年度会员' : '季度会员')
-                            : user.memberStatus === 'expired' ? '已过期' : '普通用户'}
-                        </span>
-                        {user.memberStatus === 'active' && user.memberExpireAt && (
-                          <div className="text-xs text-slate-400 mt-1">
-                            至 {new Date(user.memberExpireAt).toLocaleDateString()}
-                          </div>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1">
-                            <Bookmark className="w-4 h-4 text-slate-400" />
-                            <span className="font-medium">{(user as any).favoritesCount || 0}</span>
-                          </div>
-                          {(user as any).favorites && (user as any).favorites.length > 0 && (
-                            <div className="text-xs text-slate-400 max-w-[150px] truncate" title={(user as any).favorites.join(', ')}>
-                              {(user as any).favorites.join(', ')}
+                      <td className="px-4 py-4">
+                        {(() => {
+                          const memberStartAt = user.memberCycleStartAt ? new Date(user.memberCycleStartAt) : null
+                          const isPendingMember = user.memberStatus === 'active' && memberStartAt && !Number.isNaN(memberStartAt.getTime()) && memberStartAt > new Date()
+                          const memberLabel = isPendingMember
+                            ? '待生效'
+                            : user.memberStatus === 'active'
+                              ? (user.memberType === 'trial_week' ? '体验会员' : user.memberType === 'year' ? '年度会员' : '季度会员')
+                              : user.memberStatus === 'expired'
+                                ? '已过期'
+                                : '普通用户'
+                          const memberClass = isPendingMember
+                            ? 'bg-amber-100 text-amber-700'
+                            : user.memberStatus === 'active'
+                              ? 'bg-indigo-100 text-indigo-700'
+                              : user.memberStatus === 'expired'
+                                ? 'bg-orange-100 text-orange-700'
+                                : 'bg-slate-100 text-slate-700'
+                          return (
+                            <div className="space-y-1">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${memberClass}`}>
+                                {memberLabel}
+                              </span>
+                              {user.memberStatus === 'active' && user.memberExpireAt && (
+                                <div className="text-xs text-slate-400">
+                                  到期 {formatCompactDateTime(user.memberExpireAt)}
+                                </div>
+                              )}
+                              {isPendingMember && user.memberCycleStartAt && (
+                                <div className="text-xs text-slate-400">
+                                  生效 {formatCompactDateTime(user.memberCycleStartAt)}
+                                </div>
+                              )}
                             </div>
-                          )}
+                          )
+                        })()}
+                      </td>
+                      <td className="px-4 py-4 text-sm text-slate-600">
+                        <div className="flex items-center gap-1">
+                          <Bookmark className="w-4 h-4 text-slate-400" />
+                          <span className="font-medium">{(user as any).favoritesCount || 0}</span>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${user.status === 'active' ? 'bg-green-100 text-green-700' :
+                      <td className="px-4 py-4">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          user.status === 'active' ? 'bg-green-100 text-green-700' :
                           user.status === 'suspended' ? 'bg-red-100 text-red-700' :
                             'bg-slate-100 text-slate-700'
-                          }`}>
+                        }`}>
                           {user.status === 'active' ? '活跃' : user.status === 'suspended' ? '已停用' : user.status}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center gap-2 flex-wrap">
                           {user.status === 'active' ? (
                             <button
                               disabled={updatingId === user.user_id || !isSuperAdmin}
@@ -574,9 +702,14 @@ export default function UserManagementPage() {
                   onChange={(e) => setEditMemberStatus(e.target.value as any)}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-2"
                 >
-                  <option value="free">普通用户</option>
-                  <option value="active">生效中</option>
-                  <option value="expired">已过期</option>
+                  {editMemberType === 'none' ? (
+                    <option value="free">普通用户</option>
+                  ) : (
+                    <>
+                      <option value="active">生效中</option>
+                      <option value="expired">已过期</option>
+                    </>
+                  )}
                 </select>
               </div>
 
@@ -584,7 +717,15 @@ export default function UserManagementPage() {
                 <label className="block text-sm text-slate-700 mb-2">会员类型</label>
                 <select
                   value={editMemberType}
-                  onChange={(e) => setEditMemberType(e.target.value as any)}
+                  onChange={(e) => {
+                    const nextType = e.target.value as 'none' | 'trial_week' | 'quarter' | 'year'
+                    setEditMemberScheduleDirty(true)
+                    setEditMemberType(nextType)
+                    setEditMemberStatus(nextType === 'none' ? 'free' : 'active')
+                    const baseStartAt = editMemberCycleStartAt || getQuickMemberStart('now')
+                    setEditMemberCycleStartAt(nextType === 'none' ? '' : baseStartAt)
+                    setEditMemberExpireAt(nextType === 'none' ? '' : calculateMemberExpireAt(nextType, baseStartAt))
+                  }}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-2"
                 >
                   <option value="none">普通用户</option>
@@ -594,12 +735,50 @@ export default function UserManagementPage() {
                 </select>
                 {editMemberType !== 'none' && (
                   <div>
-                    <div className="text-xs text-indigo-600 mb-2">保存后将按当前会员类型自动增加对应天数，可在下方手动覆盖到期时间。</div>
-                    <label className="block text-xs text-slate-500 mb-1">手动覆盖过期时间（可选）</label>
+                    <div className="text-xs text-indigo-600 mb-3">保存后将按生效时间和当前会员类型自动计算到期时间，避免人工计算错误。</div>
+                    <label className="block text-xs text-slate-500 mb-1">生效时间</label>
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextStartAt = getQuickMemberStart('now')
+                          setEditMemberScheduleDirty(true)
+                          setEditMemberCycleStartAt(nextStartAt)
+                          setEditMemberExpireAt(calculateMemberExpireAt(editMemberType, nextStartAt))
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      >
+                        立即生效
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const nextStartAt = getQuickMemberStart('tomorrow')
+                          setEditMemberScheduleDirty(true)
+                          setEditMemberCycleStartAt(nextStartAt)
+                          setEditMemberExpireAt(calculateMemberExpireAt(editMemberType, nextStartAt))
+                        }}
+                        className="px-3 py-1.5 text-xs rounded-full border border-slate-200 text-slate-600 hover:bg-slate-50"
+                      >
+                        明天开始生效
+                      </button>
+                    </div>
                     <input
                       type="datetime-local"
-                      value={editMemberExpireAt ? new Date(editMemberExpireAt).toISOString().slice(0, 16) : ''}
-                      onChange={(e) => setEditMemberExpireAt(e.target.value ? new Date(e.target.value).toISOString() : '')}
+                      value={formatDateTimeInputValue(editMemberCycleStartAt)}
+                      onChange={(e) => {
+                        const nextStartAt = toIsoFromDateTimeInput(e.target.value)
+                        setEditMemberScheduleDirty(true)
+                        setEditMemberCycleStartAt(nextStartAt)
+                        setEditMemberExpireAt(calculateMemberExpireAt(editMemberType, nextStartAt))
+                      }}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm mb-3"
+                    />
+                    <label className="block text-xs text-slate-500 mb-1">会员到期时间</label>
+                    <input
+                      type="datetime-local"
+                      value={formatDateTimeInputValue(editMemberExpireAt)}
+                      onChange={(e) => setEditMemberExpireAt(toIsoFromDateTimeInput(e.target.value))}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm"
                     />
                   </div>

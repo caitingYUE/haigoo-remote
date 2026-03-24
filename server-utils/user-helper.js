@@ -360,7 +360,8 @@ const userHelper = {
 
             // 查询所有用户，排除敏感信息
             const result = await neonHelper.query(`
-        SELECT user_id, email, username, status, roles, created_at, updated_at,
+        SELECT user_id, email, username, auth_provider, email_verified, profile,
+               status, roles, created_at, updated_at, last_login_at,
                member_status, member_expire_at, member_since, member_display_id,
                member_type, member_cycle_start_at
         FROM users 
@@ -383,8 +384,19 @@ const userHelper = {
                         const mappedUser = {
                             ...user,
                             userId: user.user_id,
+                            authProvider: user.auth_provider,
+                            emailVerified: user.email_verified,
+                            profile: (() => {
+                                if (typeof user.profile !== 'string') return user.profile || {}
+                                try {
+                                    return JSON.parse(user.profile || '{}')
+                                } catch {
+                                    return {}
+                                }
+                            })(),
                             createdAt: user.created_at,
                             updatedAt: user.updated_at,
+                            lastLoginAt: user.last_login_at,
                             memberStatus: user.member_status,
                             memberExpireAt: user.member_expire_at,
                             memberSince: user.member_since,
@@ -484,6 +496,7 @@ const userHelper = {
                 if (options.isAdmin) {
                     if (updates.memberStatus) local.member_status = updates.memberStatus
                     if (updates.memberExpireAt !== undefined) local.member_expire_at = updates.memberExpireAt
+                    if (updates.memberCycleStartAt !== undefined) local.member_cycle_start_at = updates.memberCycleStartAt
                     if (updates.memberType !== undefined) {
                         const nextType = normalizeMemberType(updates.memberType, local.membership_level)
                         local.member_type = nextType
@@ -519,7 +532,8 @@ const userHelper = {
                 verificationExpires,
                 passwordHash,
                 memberType,
-                autoApplyMemberDuration
+                autoApplyMemberDuration,
+                memberCycleStartAt
             } = updates || {}
 
             const { isAdmin = false } = options
@@ -634,8 +648,13 @@ const userHelper = {
                             const planConfig = await getMembershipPlanConfig()
                             const plan = getPlanConfigByType(nextMemberType, planConfig)
                             const durationDays = Number(plan?.duration_days || 0)
-                            const membershipWindow = calculateMembershipWindow(user, durationDays)
-                            updateFields.member_status = 'active'
+                            const membershipWindow = calculateMembershipWindow(
+                                user,
+                                durationDays,
+                                new Date(),
+                                memberCycleStartAt || updates.member_cycle_start_at || null
+                            )
+                            updateFields.member_status = updates.memberStatus || 'active'
                             updateFields.member_cycle_start_at = membershipWindow.startAtIso
                             updateFields.member_expire_at = membershipWindow.expireAtIso
                             if (!user.memberSince && !user.member_since) {
@@ -645,12 +664,17 @@ const userHelper = {
                                 updateFields.member_display_id = await ensureMemberDisplayId(userId, null)
                             }
                         } else if (updates.memberExpireAt !== undefined) {
-                            updateFields.member_status = updates.memberExpireAt ? 'active' : (updates.memberStatus || 'free')
+                            updateFields.member_status = updates.memberStatus || (updates.memberExpireAt ? 'active' : 'free')
                             if (updates.memberExpireAt) {
-                                updateFields.member_cycle_start_at = user.member_cycle_start_at || user.memberCycleStartAt || new Date().toISOString()
+                                updateFields.member_cycle_start_at =
+                                    memberCycleStartAt ||
+                                    updates.member_cycle_start_at ||
+                                    user.member_cycle_start_at ||
+                                    user.memberCycleStartAt ||
+                                    new Date().toISOString()
                             }
                             if (updates.memberExpireAt && !user.memberSince && !user.member_since) {
-                                updateFields.member_since = new Date().toISOString()
+                                updateFields.member_since = updateFields.member_cycle_start_at || new Date().toISOString()
                             }
                             if (updates.memberExpireAt && !user.memberDisplayId && !user.member_display_id) {
                                 updateFields.member_display_id = await ensureMemberDisplayId(userId, null)
