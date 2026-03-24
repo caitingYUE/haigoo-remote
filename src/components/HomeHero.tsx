@@ -410,13 +410,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [guestResumeFile, setGuestResumeFile] = useState<File | null>(null)
     const [guestResumeHints, setGuestResumeHints] = useState<string[]>([])
     const [privacyAccepted, setPrivacyAccepted] = useState(false)
+    const [highlightPrivacyConsent, setHighlightPrivacyConsent] = useState(false)
     const [uploading, setUploading] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const privacyConsentRef = useRef<HTMLLabelElement>(null)
     
     // Process State
     const [loading, setLoading] = useState(false)
     const [recommendations, setRecommendations] = useState<any[]>([])
     const [hasResults, setHasResults] = useState(false)
+    const [isEditingPreferences, setIsEditingPreferences] = useState(false)
     const [hasHydrated, setHasHydrated] = useState(false)
     const [showPlanModal, setShowPlanModal] = useState(false)
     const [keepPlanWorkerAlive, setKeepPlanWorkerAlive] = useState(false)
@@ -883,6 +886,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const handleResumeUpload = async (file: File) => {
         if (!privacyAccepted) {
             showWarning('请同意隐私协议', '上传前请阅读并同意简历隐私使用说明')
+            setHighlightPrivacyConsent(true)
+            privacyConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
             return
         }
         setUploading(true)
@@ -1016,6 +1021,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             setRecommendations(capped)
             setActiveCard(0)
             setHasResults(true)
+            setIsEditingPreferences(false)
             setLastUpdatedAt(Date.now())
             if (isAuthenticated && nextJobDirection && !options?.skipProfileSync) {
                 const normalizedCurrentTargetRole = normalizePlanCompareText(storedTargetRole)
@@ -1045,13 +1051,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || autoRefreshedAfterLogin.current) return
         if (loading) return
+        if (isEditingPreferences) return
 
         const effectiveDirection = String(jobDirection || storedTargetRole || '').trim()
         if (!effectiveDirection) return
 
         const directionMatchesProfile = !storedTargetRole || normalizePlanCompareText(jobDirection || storedTargetRole) === normalizePlanCompareText(storedTargetRole)
         const cacheIsFresh = Boolean(lastUpdatedAt) && (Date.now() - lastUpdatedAt) < HERO_REFRESH_INTERVAL
-        const shouldRefresh = directionMatchesProfile && (!hasResults || recommendations.length === 0 || !cacheIsFresh)
+        const shouldRefresh = directionMatchesProfile && (!hasResults || recommendations.length === 0 || recommendations.length < dailyLimit || !cacheIsFresh)
 
         if (!shouldRefresh) return
 
@@ -1062,7 +1069,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             silent: true,
             skipProfileSync: true
         })
-    }, [hasHydrated, isAuthenticated, loading, jobDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType])
+    }, [hasHydrated, isAuthenticated, loading, isEditingPreferences, jobDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit])
+
+    useEffect(() => {
+        if (!highlightPrivacyConsent) return
+        const timer = window.setTimeout(() => setHighlightPrivacyConsent(false), 2200)
+        return () => window.clearTimeout(timer)
+    }, [highlightPrivacyConsent])
     
     const handleGeneratePlan = () => {
         setKeepPlanWorkerAlive(true)
@@ -1178,6 +1191,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         }`}
                                         onClick={() => {
                                             if (resumeName) return
+                                            if (!privacyAccepted) {
+                                                showWarning('请同意隐私协议', '上传前请阅读并同意简历隐私使用说明')
+                                                setHighlightPrivacyConsent(true)
+                                                privacyConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                                return
+                                            }
                                             if (fileInputRef.current) fileInputRef.current.value = ''
                                             fileInputRef.current?.click()
                                         }}
@@ -1185,6 +1204,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         onDrop={e => {
                                             e.preventDefault()
                                             if (resumeName) return
+                                            if (!privacyAccepted) {
+                                                showWarning('请同意隐私协议', '上传前请阅读并同意简历隐私使用说明')
+                                                setHighlightPrivacyConsent(true)
+                                                privacyConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                                                return
+                                            }
                                             const f = e.dataTransfer.files?.[0]
                                             if (f) handleResumeUpload(f)
                                         }}
@@ -1213,7 +1238,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                             </>
                                         )}
                                     </div>
-                                    <label className="flex items-start gap-2 cursor-pointer select-none">
+                                    <label
+                                        ref={privacyConsentRef}
+                                        className={`flex items-start gap-2 cursor-pointer select-none rounded-xl transition-all ${
+                                            highlightPrivacyConsent ? 'ring-2 ring-amber-300 bg-amber-50/70 px-2 py-2 -mx-2' : ''
+                                        }`}
+                                    >
                                         <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="mt-0.5 accent-indigo-600 w-3.5 h-3.5" />
                                         <span className="text-[11px] text-slate-500 leading-relaxed">
                                             我已阅读并同意{' '}<a href="/privacy" target="_blank" className="text-indigo-500 underline">简历隐私使用说明</a>，Haigoo 仅将简历用于岗位匹配分析
@@ -1236,14 +1266,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         <div className="text-[54px] font-black text-slate-900 leading-none">{Math.min(recommendations.length || 1, dailyLimit)}<span className="text-slate-300">/{dailyLimit}</span></div>
                                         <p className="text-sm text-slate-500 mt-2 leading-relaxed">
                                             {isAuthenticated
-                                                ? (isMember ? '今日推荐已更新，会员可继续查看更多符合偏好的机会。' : '今日推荐已更新，可继续浏览 5 个精选岗位。')
+                                                ? '今日推荐已更新，可继续浏览 5 个精选岗位。'
                                                 : '游客模式每日可获得 1 个推荐，登录后每日 5 个。'}
                                         </p>
                                     </div>
                                     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
                                         <div className="flex items-center justify-between mb-2">
                                             <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">当前偏好</div>
-                                            <button onClick={() => { setHasResults(false); setActiveCard(0) }} className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors">修改偏好</button>
+                                            <button onClick={() => { setIsEditingPreferences(true); setHasResults(false); setActiveCard(0) }} className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors">修改偏好</button>
                                         </div>
                                         <div className="text-sm font-semibold text-indigo-600 truncate">{jobDirection || '未填写'} · {positionTypeLabel}</div>
                                     </div>
