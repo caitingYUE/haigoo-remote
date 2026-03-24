@@ -8,6 +8,7 @@ interface PreviewJob {
   company: string;
   metaLine: string;
   applyLine: string;
+  shareUrl?: string;
   sourceBucketLabel: string;
 }
 
@@ -248,6 +249,16 @@ const AdminSocialPush: React.FC = () => {
                 </div>
                 <p className="mt-3 text-xs leading-6 text-slate-500">{job.metaLine}</p>
                 <p className="mt-2 text-xs leading-6 text-slate-600">{job.applyLine}</p>
+                {job.shareUrl ? (
+                  <a
+                    href={job.shareUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 inline-flex items-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                  >
+                    打开申请链接
+                  </a>
+                ) : null}
               </article>
             ))}
           </div>
