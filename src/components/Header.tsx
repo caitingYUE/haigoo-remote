@@ -15,7 +15,7 @@ export default function Header() {
   const [showBeta, setShowBeta] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout, token, isMember } = useAuth()
+  const { user, isAuthenticated, logout, token, isMember, isTrialMember } = useAuth()
 
 
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -218,7 +218,7 @@ export default function Header() {
             </Link>
 
             <Link
-              to="/trusted-companies"
+              to={isTrialMember ? '/membership' : '/trusted-companies'}
               className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
                   ? 'text-slate-900 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
@@ -364,13 +364,13 @@ export default function Header() {
                           src={user.avatar}
                           alt={user.username}
                           className={`w-8 h-8 rounded-full shadow-sm ${isMember
-                              ? 'ring-2 ring-indigo-400 border-2 border-white'
+                              ? isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white'
                               : ''
                             }`}
                         />
                         {isMember && (
-                          <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
-                            <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />
+                          <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${isTrialMember ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
+                            {isTrialMember ? <Sparkles className="w-3 h-3 text-emerald-500 fill-emerald-500" /> : <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />}
                           </div>
                         )}
                       </div>
@@ -378,7 +378,7 @@ export default function Header() {
                       <div className="relative">
                         <div
                           className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-r from-haigoo-primary to-haigoo-secondary ${isMember
-                              ? 'ring-2 ring-indigo-400 border-2 border-white'
+                              ? isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white'
                               : ''
                             }`}
                           role="img"
@@ -387,13 +387,13 @@ export default function Header() {
                           <User className="h-4 w-4 text-white" aria-hidden="true" />
                         </div>
                         {isMember && (
-                          <div className="absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm bg-indigo-100">
-                            <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />
+                          <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${isTrialMember ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
+                            {isTrialMember ? <Sparkles className="w-3 h-3 text-emerald-500 fill-emerald-500" /> : <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />}
                           </div>
                         )}
                       </div>
                     )}
-                    <span className={`text-sm font-medium hidden sm:block ${isMember ? 'text-indigo-600' : 'text-slate-700'
+                    <span className={`text-sm font-medium hidden sm:block ${isMember ? (isTrialMember ? 'text-emerald-600' : 'text-indigo-600') : 'text-slate-700'
                       }`}>
                       {user?.username || '用户'}
                     </span>
@@ -504,7 +504,7 @@ export default function Header() {
                 远程岗位
               </Link>
               <Link
-                to="/trusted-companies"
+                to={isTrialMember ? '/membership' : '/trusted-companies'}
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
@@ -553,11 +553,11 @@ export default function Header() {
                         <img
                           src={user.avatar}
                           alt={user.username}
-                          className="w-8 h-8 rounded-full"
+                          className={`w-8 h-8 rounded-full ${isMember ? (isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white') : ''}`}
                         />
                       ) : (
                         <div
-                          className="w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center"
+                          className={`w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center ${isMember ? (isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white') : ''}`}
                           role="img"
                           aria-label="用户头像"
                         >

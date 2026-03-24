@@ -18,7 +18,7 @@ import { CompanyCardSkeleton } from '../components/skeletons/CompanyCardSkeleton
 
 export default function LandingPage() {
   const navigate = useNavigate()
-  const { user, token, isAuthenticated, isMember } = useAuth()
+  const { user, token, isAuthenticated, isMember, isTrialMember, membershipCapabilities } = useAuth()
   const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [applicationStatus, setApplicationStatus] = useState<string | null>(null)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
@@ -242,7 +242,7 @@ export default function LandingPage() {
               <p className="text-slate-500">尊重员工、开放多元、持续成长的远程企业</p>
             </div>
             <button
-              onClick={() => navigate('/trusted-companies')}
+              onClick={() => navigate(membershipCapabilities.canAccessTrustedCompaniesPage ? '/trusted-companies' : '/membership')}
               className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
             >
               浏览所有企业
@@ -268,7 +268,11 @@ export default function LandingPage() {
                   key={company.id}
                   company={company}
                   jobStats={companyJobStats[company.name]}
-                  onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                  onClick={() => navigate(
+                    membershipCapabilities.canAccessTrustedCompaniesPage
+                      ? `/companies/${encodeURIComponent(company.name)}`
+                      : '/membership'
+                  )}
                 />
               ))}
             </div>
@@ -363,7 +367,7 @@ export default function LandingPage() {
                         className="px-8 py-4 bg-white hover:bg-slate-50 border border-indigo-100 text-indigo-900 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                       >
                         <CheckCircle2 className="w-5 h-5 text-indigo-600" />
-                        您已是尊贵会员 - 去探索岗位
+                        {isTrialMember ? '体验会员已生效 - 去探索岗位' : '您已是尊贵会员 - 去探索岗位'}
                       </button>
                       <button
                         onClick={() => setShowCertificateModal(true)}

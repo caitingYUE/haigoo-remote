@@ -14,7 +14,8 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
-    const { isMember } = useAuth()
+    const { membershipCapabilities } = useAuth()
+    const canAccessTrustedCompaniesPage = membershipCapabilities.canAccessTrustedCompaniesPage
 
 
     // Filters
@@ -219,7 +220,7 @@ export default function TrustedCompaniesPage() {
                     <div className="mt-6 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TrustedStandardsBanner
                             context="company"
-                            isMember={isMember}
+                            isMember={canAccessTrustedCompaniesPage}
                             onShowUpgrade={() => navigate('/membership')}
                         />
                         <CompanyNominationBanner onClick={() => setIsNominationModalOpen(true)} />
@@ -229,7 +230,7 @@ export default function TrustedCompaniesPage() {
 
             {/* Company Grid */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                {!isMember ? (
+                {!canAccessTrustedCompaniesPage ? (
                     <div className="flex flex-col items-center justify-center py-16 px-4">
                         <div className="bg-white rounded-3xl shadow-xl border border-indigo-50 p-8 md:p-12 max-w-3xl w-full text-center relative overflow-hidden">
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"></div>

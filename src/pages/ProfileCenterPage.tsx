@@ -19,7 +19,7 @@ import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'settings'
 
 export default function ProfileCenterPage() {
-  const { user: authUser, token, isMember, logout } = useAuth()
+  const { user: authUser, token, isMember, isTrialMember, logout } = useAuth()
   const location = useLocation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -1148,7 +1148,7 @@ export default function ProfileCenterPage() {
                       <div>
                         <p className="text-xs text-indigo-200 mb-1">当前等级</p>
                         <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                          {(authUser?.membershipLevel === 'club_go' || !authUser?.membershipLevel) ? 'Haigoo Member' : 'Haigoo Member'}
+                          {isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}
                           <CheckCircle className="w-4 h-4 text-teal-300" />
                         </p>
                       </div>

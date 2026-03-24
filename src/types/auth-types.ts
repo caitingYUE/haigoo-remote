@@ -51,6 +51,26 @@ export interface User {
   memberExpireAt?: string;
   memberSince?: string;
   memberDisplayId?: number;
+  memberType?: 'none' | 'trial_week' | 'quarter' | 'year';
+  memberCycleStartAt?: string;
+  memberTier?: 'none' | 'trial' | 'full';
+  membershipCapabilities?: {
+    memberType: 'none' | 'trial_week' | 'quarter' | 'year';
+    memberTier: 'none' | 'trial' | 'full';
+    isActive: boolean;
+    isTrialMember: boolean;
+    isFullMember: boolean;
+    canAccessRemotePremiumJobs: boolean;
+    canAccessReferral: boolean;
+    canAccessTrustedInfo: boolean;
+    canAccessCompanyContacts: boolean;
+    canUseTranslationUnlimited: boolean;
+    canUseCopilotUnlimited: boolean;
+    canUseResumeAiUnlimited: boolean;
+    canAccessCommunity: boolean;
+    canUseMemberFavoritesBenefits: boolean;
+    canAccessTrustedCompaniesPage: boolean;
+  };
 
   // 求职偏好
   jobPreferences?: {
@@ -136,6 +156,11 @@ export interface AuthContextState {
   user: User | null // 当前登录用户
   token: string | null // JWT token
   isAuthenticated: boolean // 是否已登录
+  isAdmin?: boolean
+  isSuperAdmin?: boolean
+  isMember?: boolean
+  isTrialMember?: boolean
+  isFullMember?: boolean
   isLoading: boolean // 是否正在加载
   login: (email: string, password: string) => Promise<AuthResponse>
   loginWithGoogle: (googleToken: string) => Promise<AuthResponse>
@@ -153,4 +178,3 @@ export interface AvatarOptions {
   style: 'initials' | 'bottts' | 'fun-emoji' | 'adventurer' | 'avataaars' | 'personas' | 'pixel-art' // DiceBear 风格
   size?: number // 尺寸
 }
-

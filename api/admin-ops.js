@@ -5,6 +5,7 @@ import bugReportsHandler from '../lib/api-handlers/bug-reports.js'
 import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
 import adminMessagesHandler from '../lib/api-handlers/admin-messages.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
+import { getLegacyMembershipLevel, MEMBER_TYPES } from '../lib/shared/membership.js'
 
 const APPLY_STATUS_PENDING_SET = ['pending', 'pending_apply', 'applied', 'reviewed', 'referred']
 const APPLY_STATUS_SUCCESS_SET = ['success', 'offer']
@@ -170,10 +171,13 @@ export default async function handler(req, res) {
                         `UPDATE users 
                           SET member_status = 'active', 
                               member_expire_at = $1, 
-                              member_since = $2,
-                              member_display_id = $3
-                          WHERE user_id = $4`,
-                        [end.toISOString(), start.toISOString(), memberDisplayId, targetUserId]
+                              member_since = COALESCE(member_since, $2),
+                              member_display_id = COALESCE(member_display_id, $3),
+                              member_type = $4,
+                              member_cycle_start_at = $2,
+                              membership_level = $5
+                          WHERE user_id = $6`,
+                        [end.toISOString(), start.toISOString(), memberDisplayId, MEMBER_TYPES.QUARTER, getLegacyMembershipLevel(MEMBER_TYPES.QUARTER), targetUserId]
                     );
                 } else if (status === 'rejected') {
                     // Optionally update user status if needed
@@ -523,17 +527,22 @@ export default async function handler(req, res) {
 
     // System Settings Handler
     if (action === 'system-settings') {
-        const token = extractToken(req)
-        if (!token || !verifyToken(token)) {
-            return res.status(401).json({ success: false, error: 'Unauthorized' })
+        const adminCheck = await userHelper.validateAdminRequest(req)
+        if (!adminCheck.valid) {
+            return res.status(adminCheck.error === 'Forbidden' ? 403 : 401).json({ success: false, error: adminCheck.error || 'Unauthorized' })
         }
 
         if (req.method === 'GET') {
             const ai_translation_enabled = await systemSettingsService.getSetting('ai_translation_enabled') || { value: true }
             const ai_token_usage = await systemSettingsService.getSetting('ai_token_usage') || { value: { input: 0, output: 0, total: 0 } }
+            const membership_plan_config = await systemSettingsService.getSetting('membership_plan_config') || null
             return res.status(200).json({
                 success: true,
-                data: { ai_translation_enabled, ai_token_usage }
+                data: {
+                    ai_translation_enabled,
+                    ai_token_usage,
+                    membership_plan_config: { value: membership_plan_config }
+                }
             })
         }
 
@@ -542,10 +551,8 @@ export default async function handler(req, res) {
             if (!key || value === undefined) {
                 return res.status(400).json({ success: false, error: 'Key and value required' })
             }
-            // Wrap value in object if needed, but service expects raw value and wraps it in JSON string
-            // But wait, the service does: VALUES ($1, $2) where $2 is JSON.stringify(value)
-            // So we pass the raw object/value.
-            const result = await systemSettingsService.setSetting(key, { value })
+            const valueToSave = key === 'membership_plan_config' ? value : { value }
+            const result = await systemSettingsService.setSetting(key, valueToSave)
             if (result) {
                 return res.status(200).json({ success: true })
             } else {

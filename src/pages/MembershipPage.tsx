@@ -9,10 +9,14 @@ import { processedJobsService } from '../services/processed-jobs-service';
 import { trackingService } from '../services/tracking-service';
 import { MembershipCertificateModal } from '../components/MembershipCertificateModal';
 import WeChatCommunityPanel from '../components/WeChatCommunityPanel';
+import { deriveMembershipCapabilities } from '../utils/membership';
 
 interface Plan {
    id: string;
+   memberType: 'trial_week' | 'quarter' | 'year';
    name: string;
+   shortLabel?: string;
+   liteLabel?: string;
    price: number;
    originalPrice?: number;
    discountLabel?: string;
@@ -21,6 +25,9 @@ interface Plan {
    duration_days: number;
    description?: string;
    isPlus?: boolean;
+   tier?: 'trial' | 'full';
+   wechat_qr?: string;
+   alipay_qr?: string;
 }
 
 interface PaymentInfo {
@@ -32,28 +39,60 @@ interface PaymentInfo {
 
 const STATIC_PLANS: Plan[] = [
    {
+      id: 'trial_week_lite',
+      memberType: 'trial_week',
+      name: '海狗远程俱乐部体验会员（周）',
+      shortLabel: '体验会员',
+      liteLabel: 'Lite',
+      price: 29.9,
+      currency: 'CNY',
+      duration_days: 7,
+      discountLabel: '轻量试用 · 7天体验',
+      tier: 'trial',
+      alipay_qr: '/alipay_mini.jpg',
+      wechat_qr: '/Wechatpay_mini.png',
+      features: [
+         '解锁全部高薪远程职位（含内推）',
+         '解锁全部企业认证信息及联系方式',
+         'AI 远程工作助手（无限次）',
+         'AI 简历优化（无限次）',
+         '翻译、收藏等会员细节权益同步开放',
+         '加入精英远程工作者社区',
+         '精选企业名单暂不开放'
+      ],
+      description: '适合先体验海狗核心岗位权益，快速验证匹配度与使用价值。'
+   },
+   {
       id: 'club_go_quarterly',
+      memberType: 'quarter',
       name: '海狗远程俱乐部会员 (季度)',
+      shortLabel: '季度会员',
       price: 199,
       currency: 'CNY',
       duration_days: 90,
       discountLabel: '灵活订阅 · 适合短期冲刺',
+      tier: 'full',
       features: [
          '解锁全部高薪远程职位（含内推）',
          '解锁全部企业认证信息及联系方式',
          'AI 远程工作助手 (无限次)',
          'AI 简历优化（无限次）',
-         '加入精英远程工作者社区'
+         '翻译、收藏等全部会员细节权益',
+         '加入精英远程工作者社区',
+         '解锁精选企业名单'
       ],
       description: '适合短期冲刺的求职者，快速获得内推机会'
    },
    {
       id: 'goo_plus_yearly',
+      memberType: 'year',
       name: '海狗远程俱乐部会员 (年度)',
+      shortLabel: '年度会员',
       price: 999,
       currency: 'CNY',
       duration_days: 365,
       isPlus: true,
+      tier: 'full',
       features: [
          '包含季度会员所有权益',
          '1V1 远程求职咨询（1次，60分钟以内）',
@@ -81,10 +120,16 @@ const MembershipPage: React.FC = () => {
    // Application Logic (Deprecated, but kept for legacy data display if needed)
    const [applicationStatus, setApplicationStatus] = useState<string | null>(null);
 
+   const membershipCapabilities = deriveMembershipCapabilities(user);
+   const isMember = (currentMembership?.isActive) || membershipCapabilities.isActive || !!user?.roles?.admin;
+   const activeMemberType = (currentMembership?.memberType || membershipCapabilities.memberType);
+   const isTrialMember = activeMemberType === 'trial_week';
+
    useEffect(() => {
-      // Use static plans immediately, but try to fetch in background if needed
-      // setPlans(STATIC_PLANS); 
+      setPlans(STATIC_PLANS);
       setLoading(false);
+
+      fetchPlans();
 
       if (isAuthenticated) {
          fetchStatus();
@@ -92,6 +137,17 @@ const MembershipPage: React.FC = () => {
       }
       trackingService.track('view_membership_page');
    }, [isAuthenticated]);
+
+   const fetchPlans = async () => {
+      try {
+         const res = await axios.get('/api/membership?action=plans');
+         if (res.data?.success && Array.isArray(res.data.plans) && res.data.plans.length > 0) {
+            setPlans(res.data.plans);
+         }
+      } catch (error) {
+         console.error('Failed to fetch membership plans', error);
+      }
+   };
 
    const fetchApplicationStatus = async () => {
       try {
@@ -141,12 +197,9 @@ const MembershipPage: React.FC = () => {
    // Simplified flow: Payment info is derived directly from state
    const currentPaymentInfo: PaymentInfo = {
       type: 'qrcode',
-      imageUrl: (() => {
-         if (selectedPlan?.price === 999) {
-            return paymentMethod === 'alipay' ? '/alipay_999.jpg' : '/wechatpay_999.png';
-         }
-         return paymentMethod === 'alipay' ? '/alipay.jpg' : '/wechatpay.png';
-      })(),
+      imageUrl: paymentMethod === 'alipay'
+         ? (selectedPlan?.alipay_qr || (selectedPlan?.price === 999 ? '/alipay_999.jpg' : '/alipay.jpg'))
+         : (selectedPlan?.wechat_qr || (selectedPlan?.price === 999 ? '/wechatpay_999.png' : '/wechatpay.png')),
       instruction: `请使用${paymentMethod === 'alipay' ? '支付宝' : '微信'}扫码支付`
    };
 
@@ -178,8 +231,6 @@ const MembershipPage: React.FC = () => {
    useEffect(() => {
       const fetchRecommended = async () => {
          // Check user membership status correctly
-         const isMember = (currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
-
          if (isMember) {
             try {
                const referralRes = await processedJobsService.getProcessedJobs(1, 6, {
@@ -217,8 +268,6 @@ const MembershipPage: React.FC = () => {
          fetchRecommended();
       }
    }, [isAuthenticated, user, currentMembership]);
-
-   const isMember = (currentMembership?.isActive) || (user?.memberStatus === 'active' && user.memberExpireAt && new Date(user.memberExpireAt) > new Date()) || !!user?.roles?.admin;
 
    if (loading) {
       return (
@@ -287,8 +336,8 @@ const MembershipPage: React.FC = () => {
                                  <Crown className="w-6 h-6 text-white" />
                               </div>
                               <div>
-                                 <div className="text-xl font-bold text-slate-900">尊贵会员</div>
-                                 <div className="text-sm text-slate-400">Haigoo Member</div>
+                                 <div className="text-xl font-bold text-slate-900">{isTrialMember ? '体验会员' : '尊贵会员'}</div>
+                                 <div className="text-sm text-slate-400">{isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}</div>
                               </div>
                            </div>
 
@@ -298,7 +347,7 @@ const MembershipPage: React.FC = () => {
                                  <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                  </div>
-                                 申请已通过，会员权益已生效
+                                 {isTrialMember ? '体验会员权益已生效' : '申请已通过，会员权益已生效'}
                               </div>
                               <div className="flex items-center gap-3 text-sm text-slate-700">
                                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -429,16 +478,28 @@ const MembershipPage: React.FC = () => {
                <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">选择您的全球成功之路</h2>
                <p className="text-slate-500 text-lg">选择最适合您的探索方案，即刻启程</p>
             </div>
-            <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto items-center">
+            <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-6 max-w-7xl mx-auto items-stretch">
                {plans.map((plan) => {
+                  const isTrialPlan = plan.memberType === 'trial_week';
+                  const isCurrentPlan = isMember && activeMemberType === plan.memberType;
+                  const cycleLabel = plan.memberType === 'trial_week' ? '周' : (plan.duration_days > 90 ? '年' : '季度');
                   return (
                      <div
                         key={plan.id}
-                        className={`relative rounded-[2.5rem] p-10 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus && plan.id !== 'goo_plus_yearly'
-                           ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10 md:scale-105'
+                        className={`relative rounded-[2rem] p-7 lg:p-8 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus && plan.id !== 'goo_plus_yearly'
+                           ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10'
+                           : isTrialPlan
+                              ? 'border border-emerald-200 shadow-xl shadow-emerald-100/50 hover:-translate-y-1'
                            : 'border shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1 border-slate-200'
                            }`}
                      >
+                        {isTrialPlan && (
+                           <div className="absolute -top-3 right-6 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-emerald-500/20 tracking-wider uppercase flex items-center gap-1.5">
+                              <Zap className="w-3.5 h-3.5" />
+                              {plan.liteLabel || 'Lite'}
+                           </div>
+                        )}
+
                         {plan.isPlus && plan.id !== 'goo_plus_yearly' && (
                            <div className="absolute -top-4 right-8 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/30 tracking-widest uppercase flex items-center gap-1.5">
                               <Star className="w-3.5 h-3.5 fill-white" />
@@ -447,39 +508,39 @@ const MembershipPage: React.FC = () => {
                         )}
 
                         <div className="mb-8 text-center border-b border-slate-100 pb-8">
-                           <h3 className={`text-2xl font-extrabold mb-3 text-slate-900`}>
+                           <h3 className={`text-[1.75rem] font-extrabold mb-3 text-slate-900 leading-tight`}>
                               {plan.name}
                            </h3>
                            <div className="flex justify-center items-baseline gap-1 mb-2">
-                              <span className="text-5xl font-extrabold tracking-tight text-slate-900">¥{plan.price}</span>
+                              <span className="text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900">¥{plan.price}</span>
                               <span className="text-sm font-bold text-slate-500">
-                                 /{plan.duration_days > 90 ? '年' : '季度'}
+                                 /{cycleLabel}
                               </span>
                            </div>
 
-                           <div className="mb-4 flex flex-col items-center gap-2 min-h-[3.5rem]">
-                              {plan.discountLabel && plan.id !== 'goo_plus_yearly' && (
-                                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-slate-50 text-slate-500 text-xs font-medium border border-slate-200">
+                           <div className="mb-4 flex flex-col items-center gap-2 min-h-[3rem]">
+                              {plan.discountLabel && (
+                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${isTrialPlan ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
                                     {plan.discountLabel}
                                  </span>
                               )}
                            </div>
 
                            <p className="text-sm text-slate-500 font-medium px-4">
-                              {plan.isPlus ? '适合致力于长期职业发展与个人品牌建设' : '适合专注短期成长与快速求职'}
+                              {isTrialPlan ? '适合先体验海狗核心岗位权益' : plan.isPlus ? '适合致力于长期职业发展与个人品牌建设' : '适合专注短期成长与快速求职'}
                            </p>
                            <p className="text-xs text-slate-400 mt-2 px-4 line-clamp-2 min-h-8">
                               {plan.description}
                            </p>
                         </div>
 
-                        <ul className="space-y-4 mb-10 flex-1 px-2">
+                        <ul className="space-y-3.5 mb-8 flex-1 px-1">
                            {plan.features.map((feature, idx) => (
                               <li key={idx} className="flex items-start gap-4">
                                  <div className="mt-0.5 w-6 h-6 flex items-center justify-center flex-shrink-0">
                                     <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
                                  </div>
-                                 <span className="text-[15px] font-medium leading-relaxed text-slate-700">
+                                 <span className="text-[14px] font-medium leading-relaxed text-slate-700">
                                     {feature}
                                  </span>
                               </li>
@@ -488,24 +549,20 @@ const MembershipPage: React.FC = () => {
 
                         <button
                            onClick={() => handleSubscribe(plan)}
-                           disabled={isMember || (plan.id === 'goo_plus_yearly')}
-                           className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn ${isMember
+                           disabled={isCurrentPlan}
+                           className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn ${isCurrentPlan
                               ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                              : (plan.id === 'goo_plus_yearly')
-                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                                 : plan.isPlus
-                                    ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xl shadow-indigo-500/30'
-                                    : 'bg-[#0F172A] hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20'
+                              : plan.isPlus
+                                 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xl shadow-indigo-500/30'
+                                 : isTrialPlan
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                 : 'bg-[#0F172A] hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20'
                               }`}
                         >
-                           {isMember ? (
+                           {isCurrentPlan ? (
                               <>
                                  <CheckCircle2 className="w-5 h-5" />
                                  当前会员 (生效中)
-                              </>
-                           ) : (plan.id === 'goo_plus_yearly') ? (
-                              <>
-                                 待上线
                               </>
                            ) : plan.isPlus ? (
                               <>
@@ -514,7 +571,7 @@ const MembershipPage: React.FC = () => {
                               </>
                            ) : (
                               <>
-                                 立即加入
+                                 {isTrialPlan ? '立即体验' : '立即加入'}
                                  <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                               </>
                            )}
@@ -635,7 +692,7 @@ const MembershipPage: React.FC = () => {
                         <h4 className="font-bold text-slate-900 text-3xl mb-3 leading-tight">{selectedPlan.name}</h4>
                         <div className="flex items-baseline gap-1">
                            <span className="text-4xl font-bold text-slate-900">¥{selectedPlan.price}</span>
-                           <span className="text-sm font-medium text-slate-500">/{selectedPlan.duration_days > 90 ? '年' : '季度'}</span>
+                           <span className="text-sm font-medium text-slate-500">/{selectedPlan.memberType === 'trial_week' ? '周' : (selectedPlan.duration_days > 90 ? '年' : '季度')}</span>
                         </div>
                      </div>
 

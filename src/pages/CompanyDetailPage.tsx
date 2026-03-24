@@ -14,7 +14,8 @@ import { LocationTooltip } from '../components/LocationTooltip'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
-    const { user, isMember, isAuthenticated } = useAuth()
+    const { user, isAuthenticated, isMember, membershipCapabilities } = useAuth()
+    const canAccessTrustedCompaniesPage = membershipCapabilities.canAccessTrustedCompaniesPage
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
     const FREE_FEATURE_LIMIT = 3
@@ -34,10 +35,11 @@ export default function CompanyDetailPage() {
                     setUnlockedCompanies(data.unlocked_companies || []);
                 }
             }).catch(err => console.error('[free-usage] Failed to load company info quota:', err));
-        } else if (isMember) {
+        } else {
             setCompanyInfoUsageCount(0);
+            setUnlockedCompanies([]);
         }
-    }, [isAuthenticated, isMember]);
+    }, [isAuthenticated, isMember, canAccessTrustedCompaniesPage]);
 
 
     // DEBUG: Log user and membership status (removed for privacy)
@@ -45,7 +47,7 @@ export default function CompanyDetailPage() {
         // if (user) {
         //     console.log('[CompanyDetail] User ID:', user.user_id);
         // }
-    }, [user, isMember]);
+    }, [user]);
 
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
@@ -287,7 +289,7 @@ export default function CompanyDetailPage() {
                             {/* Always render Certified Info for trusted companies */}
                             {companyInfo?.isTrusted && (
                                 <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 relative">
-                                    {isMember && (
+                                    {canAccessTrustedCompaniesPage && (
                                         <div className="absolute top-0 right-0 z-10">
                                             <div className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-xl shadow-sm flex items-center gap-1">
                                                 <Crown className="w-3 h-3" />
@@ -298,7 +300,7 @@ export default function CompanyDetailPage() {
                                     <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
                                         <Shield className="w-4 h-4 text-indigo-600" />
                                         <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
-                                        {!isMember && (
+                                        {!canAccessTrustedCompaniesPage && (
                                             <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium border border-amber-200 ml-1">
                                                 会员专属
                                             </span>
@@ -306,7 +308,7 @@ export default function CompanyDetailPage() {
                                     </div>
 
                                     {(() => {
-                                        const isUnlocked = isMember || (companyInfo?.name && unlockedCompanies.includes(companyInfo.name));
+                                        const isUnlocked = canAccessTrustedCompaniesPage || (!isMember && companyInfo?.name && unlockedCompanies.includes(companyInfo.name));
                                         
                                         const handleUnlock = async (e: React.MouseEvent) => {
                                             e.stopPropagation();
@@ -529,6 +531,22 @@ export default function CompanyDetailPage() {
                                                                     className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
                                                                 >
                                                                     登录免费体验
+                                                                </button>
+                                                            </>
+                                                        ) : isMember ? (
+                                                            <>
+                                                                <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-100">
+                                                                    <Crown className="w-5 h-5 text-emerald-600" />
+                                                                </div>
+                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">精选企业名单仅正式会员开放</h4>
+                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
+                                                                    当前体验会员已解锁远程岗位页全部核心权益，如需查看精选企业名单，请升级季度或年度会员。
+                                                                </p>
+                                                                <button
+                                                                    onClick={() => navigate('/membership')}
+                                                                    className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
+                                                                >
+                                                                    升级正式会员
                                                                 </button>
                                                             </>
                                                         ) : companyInfoUsageCount < FREE_FEATURE_LIMIT ? (

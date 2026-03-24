@@ -5,6 +5,14 @@
 
 import neonHelper from './dal/neon-helper.js'
 import { extractToken, verifyToken } from './auth-helpers.js'
+import { systemSettingsService } from '../lib/services/system-settings-service.js'
+import {
+    calculateMembershipWindow,
+    getDefaultMembershipPlanConfig,
+    getLegacyMembershipLevel,
+    getPlanConfigByType,
+    normalizeMemberType
+} from '../lib/shared/membership.js'
 
 // 超级管理员邮箱
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
@@ -23,6 +31,7 @@ const LOCAL_USERS = new Map([
         membership_level: 'club_go',
         member_status: 'active',
         member_expire_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+        member_type: 'quarter',
         profile: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -39,6 +48,7 @@ const LOCAL_USERS = new Map([
         membership_level: null,
         member_status: 'inactive',
         member_expire_at: null,
+        member_type: 'none',
         profile: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -55,6 +65,7 @@ const LOCAL_USERS = new Map([
         membership_level: 'club_go',
         member_status: 'active',
         member_expire_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString(),
+        member_type: 'year',
         profile: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -84,7 +95,27 @@ function enrichUserFields(user) {
     if (u.member_expire_at) u.memberExpireAt = u.member_expire_at
     if (u.member_since) u.memberSince = u.member_since
     if (u.member_display_id) u.memberDisplayId = u.member_display_id
+    if (u.member_type) u.memberType = u.member_type
+    if (u.member_cycle_start_at) u.memberCycleStartAt = u.member_cycle_start_at
     return u
+}
+
+async function getMembershipPlanConfig() {
+    const config = await systemSettingsService.getSetting('membership_plan_config')
+    return config || getDefaultMembershipPlanConfig()
+}
+
+async function ensureMemberDisplayId(userId, existingValue = null) {
+    if (existingValue) return existingValue
+
+    try {
+        await neonHelper.query(`CREATE SEQUENCE IF NOT EXISTS member_id_seq START 1`)
+        const seqRes = await neonHelper.query(`SELECT nextval('member_id_seq') AS id`)
+        return seqRes?.[0]?.id || Math.floor(Math.random() * 100000) + 900000
+    } catch (e) {
+        console.error('[user-helper] Failed to generate member_display_id:', e.message)
+        return Math.floor(Math.random() * 100000) + 900000
+    }
 }
 
 /**
@@ -185,6 +216,8 @@ const userHelper = {
                     membership_level: user.membershipLevel || user.membership_level || null,
                     member_status: user.memberStatus || user.member_status || 'inactive',
                     member_expire_at: user.memberExpireAt || user.member_expire_at || null,
+                    member_type: normalizeMemberType(user.memberType || user.member_type, user.membershipLevel || user.membership_level),
+                    member_cycle_start_at: user.memberCycleStartAt || user.member_cycle_start_at || null,
                     created_at: user.createdAt || user.created_at || now,
                     updated_at: now
                 }
@@ -210,6 +243,13 @@ const userHelper = {
                 roles: JSON.stringify(user.roles || {}),
                 last_login_at: user.lastLoginAt || user.last_login_at,
                 profile: JSON.stringify(user.profile || {}),
+                membership_level: user.membershipLevel || user.membership_level || null,
+                member_status: user.memberStatus || user.member_status || 'inactive',
+                member_expire_at: user.memberExpireAt || user.member_expire_at || null,
+                member_since: user.memberSince || user.member_since || null,
+                member_display_id: user.memberDisplayId || user.member_display_id || null,
+                member_type: normalizeMemberType(user.memberType || user.member_type, user.membershipLevel || user.membership_level),
+                member_cycle_start_at: user.memberCycleStartAt || user.member_cycle_start_at || null,
                 // 时间戳
                 updated_at: new Date().toISOString()
             }
@@ -321,7 +361,8 @@ const userHelper = {
             // 查询所有用户，排除敏感信息
             const result = await neonHelper.query(`
         SELECT user_id, email, username, status, roles, created_at, updated_at,
-               member_status, member_expire_at, member_since, member_display_id
+               member_status, member_expire_at, member_since, member_display_id,
+               member_type, member_cycle_start_at
         FROM users 
         ORDER BY created_at DESC
       `)
@@ -347,7 +388,9 @@ const userHelper = {
                             memberStatus: user.member_status,
                             memberExpireAt: user.member_expire_at,
                             memberSince: user.member_since,
-                            memberDisplayId: user.member_display_id
+                            memberDisplayId: user.member_display_id,
+                            memberType: user.member_type,
+                            memberCycleStartAt: user.member_cycle_start_at
                         }
 
                         return {
@@ -441,6 +484,15 @@ const userHelper = {
                 if (options.isAdmin) {
                     if (updates.memberStatus) local.member_status = updates.memberStatus
                     if (updates.memberExpireAt !== undefined) local.member_expire_at = updates.memberExpireAt
+                    if (updates.memberType !== undefined) {
+                        const nextType = normalizeMemberType(updates.memberType, local.membership_level)
+                        local.member_type = nextType
+                        if (nextType === 'none') {
+                            local.member_status = 'free'
+                            local.member_expire_at = null
+                            local.member_cycle_start_at = null
+                        }
+                    }
                     if (updates.roles && typeof updates.roles === 'object') local.roles = { ...(local.roles || {}), ...updates.roles }
                     if (updates.status && ['active', 'suspended'].includes(updates.status)) local.status = updates.status
                 }
@@ -465,7 +517,9 @@ const userHelper = {
                 emailVerified,
                 verificationToken,
                 verificationExpires,
-                passwordHash
+                passwordHash,
+                memberType,
+                autoApplyMemberDuration
             } = updates || {}
 
             const { isAdmin = false } = options
@@ -565,6 +619,46 @@ const userHelper = {
                 if (updates.memberExpireAt !== undefined) updateFields.member_expire_at = updates.memberExpireAt
                 if (updates.memberSince !== undefined) updateFields.member_since = updates.memberSince
 
+                if (memberType !== undefined) {
+                    const nextMemberType = normalizeMemberType(memberType, user.membershipLevel || user.membership_level)
+                    updateFields.member_type = nextMemberType
+                    updateFields.membership_level = getLegacyMembershipLevel(nextMemberType)
+
+                    if (nextMemberType === 'none') {
+                        updateFields.member_status = 'free'
+                        updateFields.member_expire_at = null
+                        updateFields.member_cycle_start_at = null
+                    } else {
+                        const shouldAutoExtend = autoApplyMemberDuration !== false
+                        if (shouldAutoExtend && updates.memberExpireAt === undefined) {
+                            const planConfig = await getMembershipPlanConfig()
+                            const plan = getPlanConfigByType(nextMemberType, planConfig)
+                            const durationDays = Number(plan?.duration_days || 0)
+                            const membershipWindow = calculateMembershipWindow(user, durationDays)
+                            updateFields.member_status = 'active'
+                            updateFields.member_cycle_start_at = membershipWindow.startAtIso
+                            updateFields.member_expire_at = membershipWindow.expireAtIso
+                            if (!user.memberSince && !user.member_since) {
+                                updateFields.member_since = membershipWindow.startAtIso
+                            }
+                            if (!user.memberDisplayId && !user.member_display_id) {
+                                updateFields.member_display_id = await ensureMemberDisplayId(userId, null)
+                            }
+                        } else if (updates.memberExpireAt !== undefined) {
+                            updateFields.member_status = updates.memberExpireAt ? 'active' : (updates.memberStatus || 'free')
+                            if (updates.memberExpireAt) {
+                                updateFields.member_cycle_start_at = user.member_cycle_start_at || user.memberCycleStartAt || new Date().toISOString()
+                            }
+                            if (updates.memberExpireAt && !user.memberSince && !user.member_since) {
+                                updateFields.member_since = new Date().toISOString()
+                            }
+                            if (updates.memberExpireAt && !user.memberDisplayId && !user.member_display_id) {
+                                updateFields.member_display_id = await ensureMemberDisplayId(userId, null)
+                            }
+                        }
+                    }
+                }
+
                 if (roles && typeof roles === 'object') {
                     // 超级管理员不可更改权限
                     if (user.email === SUPER_ADMIN_EMAIL) {
@@ -660,7 +754,11 @@ const userHelper = {
                 return { valid: false, error: 'User not found' }
             }
 
-            const isAdmin = !!(user.roles?.admin || user.email === SUPER_ADMIN_EMAIL)
+            const isAdmin = !!(
+                user.roles?.admin ||
+                user.email === SUPER_ADMIN_EMAIL ||
+                user.email === SUPER_ADMIN_EMAIL_2
+            )
             if (!isAdmin) {
                 return { valid: false, error: 'Forbidden' }
             }

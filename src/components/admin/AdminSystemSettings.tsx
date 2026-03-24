@@ -20,6 +20,15 @@ interface DetailedTokenUsage extends TokenUsage {
 interface SystemSettings {
   ai_translation_enabled: { value: boolean };
   ai_token_usage: { value: DetailedTokenUsage };
+  membership_plan_config?: {
+    value: Record<string, {
+      enabled?: boolean;
+      price?: number;
+      duration_days?: number;
+      wechat_qr?: string;
+      alipay_qr?: string;
+    }>;
+  };
 }
 
 export default function AdminSystemSettings() {
@@ -28,6 +37,7 @@ export default function AdminSystemSettings() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+  const [membershipPlanConfig, setMembershipPlanConfig] = useState<Record<string, any>>({});
 
   const fetchSettings = async () => {
     setLoading(true);
@@ -48,6 +58,7 @@ export default function AdminSystemSettings() {
       const data = await res.json();
       if (data.success) {
         setSettings(data.data);
+        setMembershipPlanConfig(data.data.membership_plan_config?.value || {});
       } else {
         throw new Error(data.error || 'Failed to fetch settings');
       }
@@ -112,6 +123,52 @@ export default function AdminSystemSettings() {
 
   const aiEnabled = settings?.ai_translation_enabled?.value ?? false;
   const tokenUsage = settings?.ai_token_usage?.value ?? { input: 0, output: 0, total: 0 };
+  const membershipSettings = membershipPlanConfig || {};
+
+  const handleMembershipFieldChange = (memberType: string, field: string, value: string | number | boolean) => {
+    setMembershipPlanConfig(prev => ({
+      ...prev,
+      [memberType]: {
+        ...(prev[memberType] || {}),
+        [field]: value
+      }
+    }));
+  };
+
+  const saveMembershipPlans = async () => {
+    setSaving(true);
+    try {
+      const params = new URLSearchParams({ action: 'system-settings' });
+      const res = await fetch(`/api/admin-ops?${params.toString()}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          key: 'membership_plan_config',
+          value: membershipPlanConfig
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || `Server returned ${res.status}`);
+      }
+      setSettings(prev => prev ? ({
+        ...prev,
+        membership_plan_config: { value: membershipPlanConfig }
+      }) : prev);
+      setMessage({ type: 'success', text: '会员计划配置已保存' });
+    } catch (error) {
+      console.error('Failed to save membership plan settings:', error);
+      setMessage({ type: 'error', text: '会员计划配置保存失败: ' + (error instanceof Error ? error.message : String(error)) });
+    } finally {
+      setSaving(false);
+      setTimeout(() => setMessage(null), 3000);
+    }
+  };
 
   const renderUsageCard = (title: string, usage?: TokenUsage, colorClass: string = 'bg-white') => {
     const safeUsage = usage || { input: 0, output: 0, total: 0 };
@@ -222,10 +279,86 @@ export default function AdminSystemSettings() {
         </div>
       </div>
 
-      {/* Placeholder for other settings */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 opacity-50 pointer-events-none">
-        <h3 className="text-lg font-semibold text-slate-900 mb-2">其他系统设置</h3>
-        <p className="text-slate-500">更多配置项开发中...</p>
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">会员计划配置</h3>
+            <p className="text-sm text-slate-500 mt-1">配置体验会员、季度会员和年度会员的价格、时长与二维码资源。</p>
+          </div>
+          <button
+            onClick={saveMembershipPlans}
+            disabled={saving}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-60"
+          >
+            <Save className="w-4 h-4" />
+            保存计划配置
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          {[
+            ['trial_week', '体验会员（周）'],
+            ['quarter', '季度会员'],
+            ['year', '年度会员']
+          ].map(([memberType, label]) => {
+            const plan = membershipSettings[memberType] || {};
+            return (
+              <div key={memberType} className="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-semibold text-slate-900">{label}</h4>
+                  <label className="inline-flex items-center gap-2 text-xs text-slate-500">
+                    <input
+                      type="checkbox"
+                      checked={plan.enabled !== false}
+                      onChange={(e) => handleMembershipFieldChange(memberType, 'enabled', e.target.checked)}
+                    />
+                    启用
+                  </label>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">价格</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={plan.price ?? ''}
+                      onChange={(e) => handleMembershipFieldChange(memberType, 'price', Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">时长（天）</label>
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={plan.duration_days ?? ''}
+                      onChange={(e) => handleMembershipFieldChange(memberType, 'duration_days', Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">微信二维码路径</label>
+                    <input
+                      value={plan.wechat_qr ?? ''}
+                      onChange={(e) => handleMembershipFieldChange(memberType, 'wechat_qr', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-slate-500 mb-1">支付宝二维码路径</label>
+                    <input
+                      value={plan.alipay_qr ?? ''}
+                      onChange={(e) => handleMembershipFieldChange(memberType, 'alipay_qr', e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

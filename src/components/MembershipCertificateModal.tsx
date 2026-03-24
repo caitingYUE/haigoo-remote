@@ -3,6 +3,7 @@ import { X, Download, Loader2, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { User } from '../types/auth-types';
 import brandLogoPng from '../assets/brandlogo.png';
+import { deriveMembershipCapabilities } from '../utils/membership';
 
 interface MembershipCertificateModalProps {
   isOpen: boolean;
@@ -51,6 +52,8 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
   const displayId = (user.memberDisplayId || 0).toString().padStart(6, '0');
   const memberName = user.username || user.email.split('@')[0];
   const joinDate = user.memberSince ? new Date(user.memberSince).toLocaleDateString() : new Date().toLocaleDateString();
+  const capabilities = deriveMembershipCapabilities(user);
+  const certificateTitle = capabilities.isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member';
 
   return (
     <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -100,7 +103,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                         {/* Header */}
                         <div className="flex justify-between items-start">
                             <div>
-                                <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">Haigoo Member</h1>
+                                <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">{certificateTitle}</h1>
                                 <p className="text-white/60 text-xs tracking-widest uppercase">Global Remote Work Club</p>
                             </div>
                             {/* Top-Right Large Logo */}

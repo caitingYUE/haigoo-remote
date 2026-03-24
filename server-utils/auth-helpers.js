@@ -6,6 +6,7 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import { deriveMembershipCapabilities, deriveMemberTier, normalizeMemberType } from '../lib/shared/membership.js'
 
 // JWT 密钥（从环境变量读取，或使用默认值）
 const JWT_SECRET = process.env.JWT_SECRET || 'haigoo-jwt-secret-key-change-in-production'
@@ -157,6 +158,12 @@ export function isValidPassword(password) {
 export function sanitizeUser(user) {
   if (!user) return null
 
+  const memberType = normalizeMemberType(user.memberType || user.member_type, user.membershipLevel || user.membership_level)
+  const membershipCapabilities = deriveMembershipCapabilities({
+    ...user,
+    memberType
+  })
+
   // 统一处理可能的不同命名格式
   const safeUser = {
     // 基本信息
@@ -182,7 +189,11 @@ export function sanitizeUser(user) {
     memberStatus: user.memberStatus || user.member_status || 'free',
     memberExpireAt: user.memberExpireAt || user.member_expire_at,
     memberSince: user.memberSince || user.member_since,
-    memberDisplayId: user.memberDisplayId || user.member_display_id
+    memberDisplayId: user.memberDisplayId || user.member_display_id,
+    memberType,
+    memberCycleStartAt: user.memberCycleStartAt || user.member_cycle_start_at,
+    memberTier: deriveMemberTier({ ...user, memberType }),
+    membershipCapabilities
   }
 
   // 移除所有值为undefined的属性
@@ -214,4 +225,3 @@ export function isTokenExpired(expiryTime) {
   if (!expiryTime) return true
   return new Date(expiryTime) < new Date()
 }
-

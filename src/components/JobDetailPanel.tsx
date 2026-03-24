@@ -47,7 +47,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     canNavigateNext = false
 }) => {
     const navigate = useNavigate()
-    const { user, isMember } = useAuth()
+    const { user, isMember, membershipCapabilities } = useAuth()
     const sourceType = getJobSourceType(job)
     const isAuthenticated = !!user
 
@@ -751,7 +751,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const handleCompanyClick = () => {
         // Navigate to company detail page using company name as identifier
         const companyName = encodeURIComponent(job.company || '')
-        navigate(`/companies/${companyName}`)
+        navigate(membershipCapabilities.canAccessTrustedCompaniesPage ? `/companies/${companyName}` : '/membership')
     }
 
     const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || '未分类'

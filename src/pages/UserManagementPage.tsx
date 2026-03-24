@@ -54,6 +54,7 @@ export default function UserManagementPage() {
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
   const [editMemberStatus, setEditMemberStatus] = useState<'free' | 'active' | 'expired'>('free')
+  const [editMemberType, setEditMemberType] = useState<'none' | 'trial_week' | 'quarter' | 'year'>('none')
   const [editMemberExpireAt, setEditMemberExpireAt] = useState('')
 
   // API Token Usage State
@@ -173,6 +174,7 @@ export default function UserManagementPage() {
     setEditUsername(user.username)
     setEditAdmin(!!user.roles?.admin)
     setEditMemberStatus(user.memberStatus || 'free')
+    setEditMemberType((user.memberType as any) || 'none')
     setEditMemberExpireAt(user.memberExpireAt || '')
   }
 
@@ -180,16 +182,25 @@ export default function UserManagementPage() {
     if (!editingUser) return
     try {
       setUpdatingId(editingUser.user_id)
+      const payload: any = {
+        id: editingUser.user_id,
+        username: editUsername,
+        roles: { admin: editAdmin },
+        memberStatus: editMemberStatus,
+        memberType: editMemberType,
+        autoApplyMemberDuration: editMemberType !== 'none'
+      }
+
+      if (editMemberExpireAt) {
+        payload.memberExpireAt = editMemberExpireAt
+      } else if (editMemberType === 'none') {
+        payload.memberExpireAt = null
+      }
+
       const resp = await fetch('/api/users', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        body: JSON.stringify({ 
-          id: editingUser.user_id, 
-          username: editUsername, 
-          roles: { admin: editAdmin },
-          memberStatus: editMemberStatus,
-          memberExpireAt: editMemberExpireAt || null
-        })
+        body: JSON.stringify(payload)
       })
       const data = await resp.json()
       if (data.success && data.user) {
@@ -454,7 +465,9 @@ export default function UserManagementPage() {
                           user.memberStatus === 'expired' ? 'bg-orange-100 text-orange-700' : 
                           'bg-slate-100 text-slate-700'
                         }`}>
-                          {user.memberStatus === 'active' ? 'Haigoo会员' : user.memberStatus === 'expired' ? '已过期' : '普通用户'}
+                          {user.memberStatus === 'active'
+                            ? (user.memberType === 'trial_week' ? '体验会员' : user.memberType === 'year' ? '年度会员' : '季度会员')
+                            : user.memberStatus === 'expired' ? '已过期' : '普通用户'}
                         </span>
                         {user.memberStatus === 'active' && user.memberExpireAt && (
                           <div className="text-xs text-slate-400 mt-1">
@@ -562,16 +575,31 @@ export default function UserManagementPage() {
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-2"
                 >
                   <option value="free">普通用户</option>
-                  <option value="active">Haigoo会员</option>
+                  <option value="active">生效中</option>
                   <option value="expired">已过期</option>
                 </select>
-                {editMemberStatus === 'active' && (
+              </div>
+
+              <div>
+                <label className="block text-sm text-slate-700 mb-2">会员类型</label>
+                <select
+                  value={editMemberType}
+                  onChange={(e) => setEditMemberType(e.target.value as any)}
+                  className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-2"
+                >
+                  <option value="none">普通用户</option>
+                  <option value="trial_week">体验会员（周）</option>
+                  <option value="quarter">季度会员</option>
+                  <option value="year">年度会员</option>
+                </select>
+                {editMemberType !== 'none' && (
                   <div>
-                    <label className="block text-xs text-slate-500 mb-1">过期时间</label>
+                    <div className="text-xs text-indigo-600 mb-2">保存后将按当前会员类型自动增加对应天数，可在下方手动覆盖到期时间。</div>
+                    <label className="block text-xs text-slate-500 mb-1">手动覆盖过期时间（可选）</label>
                     <input
                       type="datetime-local"
                       value={editMemberExpireAt ? new Date(editMemberExpireAt).toISOString().slice(0, 16) : ''}
-                      onChange={(e) => setEditMemberExpireAt(new Date(e.target.value).toISOString())}
+                      onChange={(e) => setEditMemberExpireAt(e.target.value ? new Date(e.target.value).toISOString() : '')}
                       className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm"
                     />
                   </div>

@@ -7,6 +7,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { User, AuthResponse } from '../types/auth-types'
 import { trackingService } from '../services/tracking-service'
 import { claimPendingGuestResume } from '../services/guest-resume-bridge'
+import { deriveMembershipCapabilities } from '../utils/membership'
 
 interface AuthContextValue {
   user: User | null
@@ -15,6 +16,10 @@ interface AuthContextValue {
   isAdmin: boolean
   isSuperAdmin: boolean
   isMember: boolean
+  isTrialMember: boolean
+  isFullMember: boolean
+  memberType: 'none' | 'trial_week' | 'quarter' | 'year'
+  membershipCapabilities: ReturnType<typeof deriveMembershipCapabilities>
   isLoading: boolean
   login: (email: string, password: string) => Promise<AuthResponse>
   loginWithGoogle: (idToken: string) => Promise<AuthResponse>
@@ -332,7 +337,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Calculate derived permissions
   const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com')
   const isSuperAdmin = user?.email === 'caitlinyct@gmail.com' || user?.email === 'mrzhangzy1996@gmail.com'
-  const isMember = user?.memberStatus === 'active' && (!user.memberExpireAt || new Date(user.memberExpireAt) > new Date())
+  const membershipCapabilities = deriveMembershipCapabilities(user)
+  const isMember = membershipCapabilities.isActive
+  const isTrialMember = membershipCapabilities.isTrialMember
+  const isFullMember = membershipCapabilities.isFullMember
 
   const value: AuthContextValue = {
     user,
@@ -341,6 +349,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isAdmin,
     isSuperAdmin,
     isMember,
+    isTrialMember,
+    isFullMember,
+    memberType: membershipCapabilities.memberType,
+    membershipCapabilities,
     isLoading,
     login,
     loginWithGoogle,
