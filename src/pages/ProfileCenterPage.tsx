@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap, RefreshCcw } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -78,11 +78,27 @@ export default function ProfileCenterPage() {
   const [copilotPlan, setCopilotPlan] = useState<any>(null)
   const [loadingPlan, setLoadingPlan] = useState(false)
   const defaultAnalysisMode = isMember ? 'ai_preferred' : 'local'
-  const analysisStepFallback = isMember ? '正在初始化 AI 分析引擎...' : '正在初始化本地分析引擎...'
-  const analysisDescription = isMember
-    ? '正在结合简历内容与目标岗位进行增强分析，这可能需要 30-60 秒，请耐心等待...'
-    : '正在基于本地规则评估简历结构、信息完整度和表达质量，通常会很快完成。'
-  const getAnalysisModeLabel = (mode?: string) => (mode === 'ai' ? 'AI 增强分析' : '本地分析')
+  const analysisStepFallback = '正在准备分析...'
+  const analysisDescription = '我们正在分析你的简历内容与表达，通常只需要片刻，请耐心等待。'
+  const hasSuggestions = aiSuggestions.length > 0
+
+  const openResumePicker = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+      fileInputRef.current.click()
+    }
+  }
+
+  const openAiEnhancementModal = () => {
+    setUpgradeSource('ai_resume')
+    setShowUpgradeModal(true)
+    trackingService.track('upgrade_modal_view', {
+      page_key: 'profile',
+      module: 'profile_resume',
+      feature_key: 'resume_ai_suggestion',
+      source_key: 'profile_resume'
+    })
+  }
 
   const handleRemoveFavorite = async (jobId: string) => {
     try {
@@ -408,6 +424,7 @@ export default function ProfileCenterPage() {
     ]
     if (!validTypes.includes(file.type)) {
       showError('文件格式不支持', '请上传 PDF, DOC 或 DOCX 格式的简历')
+      e.target.value = ''
       return
     }
 
@@ -484,8 +501,12 @@ export default function ProfileCenterPage() {
       // 只有在网络错误等严重情况才回滚
       showError('上传失败', error instanceof Error ? error.message : '简历上传失败，请重试')
       setLatestResume(null) // 回滚
+      setResumeText('')
+      setPreviewUrl(null)
+      setFileType('')
     } finally {
       setIsUploading(false)
+      e.target.value = ''
     }
   }
 
@@ -514,8 +535,8 @@ export default function ProfileCenterPage() {
 
     try {
       showSuccess(
-        '正在分析简历...',
-        isMember ? '正在进行 AI 增强分析' : '正在进行本地规则分析'
+        '正在生成简历建议...',
+        isMember ? '正在为你生成更深入的简历优化建议' : '正在为你生成简历优化建议'
       )
       setIsAnalyzing(true)
 
@@ -591,7 +612,7 @@ export default function ProfileCenterPage() {
         setAiSuggestions(result.data.suggestions || [])
         showSuccess(
           '简历分析完成！',
-          `${getAnalysisModeLabel(result.data.analysisMode)}得分：${result.data.score || 0}%`
+          `当前得分：${result.data.score || 0}%`
         )
 
         trackingService.track('analyze_resume', {
@@ -634,7 +655,7 @@ export default function ProfileCenterPage() {
                 setAiSuggestions(retryResult.data.suggestions || [])
                 showSuccess(
                   '简历分析完成！',
-                  `${getAnalysisModeLabel(retryResult.data.analysisMode)}得分：${retryResult.data.score || 0}%`
+                  `当前得分：${retryResult.data.score || 0}%`
                 )
                 trackingService.track('analyze_resume', {
                   page_key: 'profile',
@@ -667,7 +688,7 @@ export default function ProfileCenterPage() {
         analysis_mode: defaultAnalysisMode,
         error_message: aiError instanceof Error ? aiError.message : 'unknown_error'
       })
-      showError('分析失败', isMember ? '增强分析暂时失败，已可稍后重试' : '本地分析暂时失败，请稍后重试')
+      showError('分析失败', '暂时无法生成简历建议，请稍后重试')
     } finally {
       setIsAnalyzing(false)
       setAnalysisStep('')
@@ -694,6 +715,11 @@ export default function ProfileCenterPage() {
         setResumeText('')
         setResumeScore(0)
         setAiSuggestions([])
+        setPreviewUrl(null)
+        setFileType('')
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ''
+        }
         markMatchScoreRefresh('resume_delete')
         showSuccess('简历已删除', '重新进入岗位列表后会按当前简历状态刷新匹配度')
 
@@ -712,9 +738,6 @@ export default function ProfileCenterPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">简历优化</h2>
-          <p className="text-slate-500 mt-2 text-lg">
-            免费用户可使用本地规则分析，会员用户可解锁 AI 增强分析与更深度的优化建议。
-          </p>
         </div>
       </div>
 
@@ -745,7 +768,7 @@ export default function ProfileCenterPage() {
                 <p className="text-lg font-bold text-slate-900">暂无简历</p>
                 <p className="text-sm text-slate-500 mb-6">拖拽文件到此处或点击上传</p>
                 <button
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={openResumePicker}
                   className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
                 >
                   <Upload className="w-4 h-4 mr-2" />上传简历
@@ -763,7 +786,7 @@ export default function ProfileCenterPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={openResumePicker}
                       className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center"
                       title="重新上传简历"
                     >
@@ -813,13 +836,24 @@ export default function ProfileCenterPage() {
         <div id="ai-analysis-section" className="space-y-4 w-full">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-slate-900 px-1">简历优化建议</h3>
+            {hasSuggestions && (
+              <button
+                onClick={handleAnalyzeResume}
+                disabled={isAnalyzing}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
+                title={isMember ? '刷新 AI 增强分析建议' : '刷新简历建议'}
+              >
+                <RefreshCcw className={`h-4 w-4 ${isAnalyzing ? 'animate-spin' : ''}`} />
+                刷新建议
+              </button>
+            )}
           </div>
 
           <div className="space-y-3">
             {!resumeText ? (
               <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
                 <Crown className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p>上传简历后即可开始分析，免费用户默认使用本地规则分析。</p>
+                <p>上传简历后即可开始分析（免费）。</p>
               </div>
             ) : isAnalyzing ? (
               <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
@@ -852,28 +886,20 @@ export default function ProfileCenterPage() {
                   </div>
                 ))}
 
-                {/* Re-analyze Button */}
-                <div className="mt-4 flex justify-center">
-                  <button
-                    onClick={handleAnalyzeResume}
-                    disabled={isAnalyzing}
-                    className={`px-8 py-3 bg-indigo-600 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 w-full
-                             ${isAnalyzing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-indigo-700'}
-                          `}
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                        正在分析...
-                      </>
-                    ) : (
-                      <>
-                        <Crown className={`w-5 h-5 ${isMember ? 'text-yellow-300' : 'text-white/80'}`} />
-                        {isMember ? '重新生成 AI 建议' : '重新生成简历建议'}
-                      </>
-                    )}
-                  </button>
-                </div>
+                {!isMember && (
+                  <div className="mt-4 rounded-[28px] border border-indigo-100 bg-indigo-50 px-6 py-8 text-center shadow-sm">
+                    <button
+                      onClick={openAiEnhancementModal}
+                      className="mx-auto flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:translate-y-[-1px] hover:shadow-xl"
+                    >
+                      <Crown className="h-5 w-5 text-yellow-300" />
+                      AI增强分析建议
+                    </button>
+                    <p className="mt-4 text-sm text-indigo-600/80">
+                      会员用户可解锁 AI 增强分析与更深度的优化建议。
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
@@ -884,12 +910,23 @@ export default function ProfileCenterPage() {
                   onClick={handleAnalyzeResume}
                   className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto w-full"
                 >
-                  <Crown className={`w-5 h-5 ${isMember ? 'text-yellow-300' : 'text-white/80'}`} />
-                  {isMember ? '生成 AI 建议' : '生成简历建议'}
+                  {isMember ? (
+                    <>
+                      <Crown className="w-5 h-5 text-yellow-300" />
+                      生成 AI 建议
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-5 h-5 text-white/90" />
+                      生成简历建议
+                    </>
+                  )}
                 </button>
-                <p className="text-xs text-indigo-600/70 mt-3">
-                  {isMember ? '会员优先尝试 AI 增强，异常时自动回退本地分析' : '当前模式：免费本地分析 • 会员可解锁 AI 增强'}
-                </p>
+                {isMember && (
+                  <p className="text-xs text-indigo-600/70 mt-3">
+                    会员解锁无限次AI简历优化权益
+                  </p>
+                )}
               </div>
             )}
           </div>
