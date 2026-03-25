@@ -66,9 +66,45 @@ export default defineConfig({
     minify: 'esbuild', // 换回默认的高极速 esbuild
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          utils: ['axios', 'zustand']
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return
+
+          if (id.includes('/react/') || id.includes('/react-dom/')) {
+            return 'vendor-react'
+          }
+
+          if (id.includes('/react-router-dom/')) {
+            return 'vendor-router'
+          }
+
+          if (id.includes('/lucide-react/')) {
+            return 'vendor-icons'
+          }
+
+          if (id.includes('/recharts/')) {
+            return 'vendor-charts'
+          }
+
+          if (
+            id.includes('/html2canvas/') ||
+            id.includes('/jspdf/') ||
+            id.includes('/xlsx/')
+          ) {
+            return 'vendor-export'
+          }
+
+          if (
+            id.includes('/framer-motion/') ||
+            id.includes('/react-easy-crop/')
+          ) {
+            return 'vendor-motion'
+          }
+
+          if (id.includes('/axios/') || id.includes('/zustand/')) {
+            return 'vendor-utils'
+          }
+
+          return 'vendor-misc'
         }
       }
     }
