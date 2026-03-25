@@ -1396,7 +1396,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         <div
                                                             className="absolute inset-0 bg-white/60 backdrop-blur-[4px] z-10 flex flex-col items-center justify-center text-center p-4 cursor-pointer group/lock"
                                                             onClick={(e) => {
-                                                                if (companyInfoUsageCount >= FREE_FEATURE_LIMIT) {
+                                                                if (!isAuthenticated) {
+                                                                    e.stopPropagation();
+                                                                    navigate('/login');
+                                                                } else if (companyInfoUsageCount >= FREE_FEATURE_LIMIT) {
                                                                     e.stopPropagation();
                                                                     openUpgradeModal('company_info');
                                                                 }
@@ -1416,7 +1419,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                         <Lock className="w-4 h-4 text-slate-400" />
                                                                     </div>
                                                                     <span className="text-slate-500 font-medium">
-                                                                        {isAuthenticated ? '免费次数已用完，升级会员解锁全部企业信息' : '登录后可先查看企业认证信息'}
+                                                                        {isAuthenticated ? '免费次数已用完，升级会员解锁全部企业信息' : '登录后可查看企业认证信息'}
                                                                     </span>
                                                                 </>
                                                             )}
@@ -1530,33 +1533,30 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {showReferralModule && (
                         <section className="pb-5">
-                            <div className="rounded-[28px] border border-indigo-100/80 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.16),_transparent_24%),radial-gradient(circle_at_top_left,_rgba(34,211,238,0.12),_transparent_20%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.96))] p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-36px_rgba(79,70,229,0.35)]">
+                            <div className="rounded-[28px] border border-indigo-100/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.96))] p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-36px_rgba(79,70,229,0.18)]">
                                 <div className="flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 whitespace-nowrap tracking-tight">帮我内推</h3>
-                                        <div className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-semibold border whitespace-nowrap ${isMember ? 'bg-indigo-100 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
-                                            <Crown className="w-3 h-3" />
-                                            {isMember ? '会员专属功能' : '关键人脉预览'}
-                                        </div>
-                                        <span className="hidden md:inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-semibold text-slate-500">
-                                            <Sparkles className="w-3 h-3 text-indigo-500" />
-                                            岗位相关关键人脉
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-end">
-                                        {!isMember && (
+                                    <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 whitespace-nowrap tracking-tight">帮我内推</h3>
+                                    {(() => {
+                                        const refCompanyName = job.company || companyInfo?.name || '';
+                                        const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName);
+                                        const remainingReferralViews = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
+                                        const canUnlockReferral = isAuthenticated && !isReferralUnlocked && referralUsageCount < FREE_FEATURE_LIMIT
+                                        if (!canUnlockReferral) return null
+                                        return (
                                             <button
-                                                onClick={() => goToMembershipPayment('referral', 'job_detail_referral_header')}
-                                                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-indigo-600 to-violet-600 text-white border border-indigo-500 hover:from-indigo-700 hover:to-violet-700 transition-all shadow-sm"
+                                                onClick={handleUnlockReferralPreview}
+                                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
                                             >
-                                                <Crown className="w-3.5 h-3.5" />
-                                                加入 Haigoo，收获企业人脉
+                                                一键解锁企业人脉
+                                                <span className="rounded-full bg-white/12 px-2 py-0.5 text-xs text-white/88">
+                                                    {remainingReferralViews}/{FREE_FEATURE_LIMIT}
+                                                </span>
                                             </button>
-                                        )}
-                                    </div>
+                                        )
+                                    })()}
                                 </div>
                                 <p className="text-xs md:text-[13px] text-slate-600 leading-relaxed">
-                                    直接看到与岗位强相关的招聘负责人、业务 Leader 或核心对接人，用更高价值的入口让简历更快抵达企业内部。
+                                    Haigoo为你找到了本岗位的直接招聘HR/业务负责人，简历直达关键决策方
                                 </p>
 
                                 {/* 免费用户解锁逻辑（复用 unlockedCompanies 机制，与企业认证信息共享解锁状态） */}
@@ -1567,7 +1567,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     const renderLockedCard = (contact: ReferralContact, index: number, mode: 'guest' | 'free_available' | 'free_exhausted') => (
                                         <div
                                             key={`ref-contact-${mode}-${index}`}
-                                            className="group rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.35)]"
+                                            className="group rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]"
                                         >
                                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                                 <div className="min-w-0 flex-1">
@@ -1578,7 +1578,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         <div className="min-w-0 flex-1">
                                                             <div className="flex flex-wrap items-center gap-2">
                                                                 <span className="text-base font-black text-slate-900 tracking-tight">{formatMaskedName(contact.name)}*</span>
-                                                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-500">
+                                                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
                                                                     {getReferralAuthorityLabel(contact.title)}
                                                                 </span>
                                                             </div>
@@ -1608,48 +1608,28 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     {mode === 'guest' ? (
                                                         <button
                                                             onClick={() => navigate('/login')}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-slate-100 px-4 py-3 text-sm font-bold text-slate-700 transition-all hover:border-indigo-200 hover:bg-white hover:text-indigo-600"
+                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
                                                         >
                                                             <Lock className="w-4 h-4" />
                                                             登录查看
                                                         </button>
                                                     ) : mode === 'free_available' ? (
-                                                        <button
-                                                            onClick={handleUnlockReferralPreview}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:from-indigo-700 hover:to-violet-700"
-                                                        >
-                                                            <Sparkles className="w-4 h-4" />
-                                                            免费查看 {remainingReferralViews}/{FREE_FEATURE_LIMIT}
-                                                        </button>
+                                                        <div className="hidden lg:block lg:min-w-[172px]" />
                                                     ) : (
                                                         <button
                                                             onClick={() => goToMembershipPayment('referral', 'job_detail_referral_exhausted')}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-slate-900 to-indigo-700 px-4 py-3 text-sm font-bold text-white shadow-lg transition-all hover:-translate-y-0.5"
+                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
                                                         >
-                                                            <Crown className="w-4 h-4 text-yellow-300" />
                                                             升级解锁
                                                         </button>
                                                     )}
-                                                    <div className={`rounded-2xl border px-3 py-2 text-xs font-semibold ${
-                                                        mode === 'free_exhausted'
-                                                            ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                                            : mode === 'free_available'
-                                                                ? 'border-indigo-100 bg-indigo-50 text-indigo-700'
-                                                                : 'border-slate-200 bg-slate-50 text-slate-500'
-                                                    }`}>
-                                                        {mode === 'free_exhausted'
-                                                            ? '免费次数已用完，升级会员解锁全部人脉'
-                                                            : mode === 'free_available'
-                                                                ? '先查看这家公司的关键联系人，再决定是否升级'
-                                                                : '登录后可先查看关键联系人'}
-                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     )
 
                                     const renderUnlockedCard = (contact: ReferralContact, index: number) => (
-                                        <div key={`ref-contact-${index}`} className="group rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.35)] transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-[0_24px_60px_-32px_rgba(79,70,229,0.28)]">
+                                        <div key={`ref-contact-${index}`} className="group rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] transition-all hover:border-indigo-200">
                                             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-start gap-3">
@@ -1661,16 +1641,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                 <span className="text-[17px] font-black text-slate-900 tracking-tight max-w-[260px] truncate">
                                                                     {contact.name || '-'}
                                                                 </span>
-                                                                <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-indigo-700">
+                                                                <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
                                                                     {getReferralAuthorityLabel(contact.title)}
                                                                 </span>
                                                             </div>
                                                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                                                 <span className="inline-flex max-w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
                                                                     {contact.title || '-'}
-                                                                </span>
-                                                                <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                                                                    {normalizeEmailTypeLabel(contact.emailType)}
                                                                 </span>
                                                             </div>
                                                         </div>
@@ -1703,7 +1680,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                                                 <button
                                                     onClick={() => applyViaReferralContact(contact)}
-                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700 lg:min-w-[170px]"
+                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 lg:min-w-[170px]"
                                                 >
                                                     <Mail className="w-4 h-4" />
                                                     {getReferralActionLabel(contact)}
