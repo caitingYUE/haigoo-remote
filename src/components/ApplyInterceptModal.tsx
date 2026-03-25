@@ -96,21 +96,20 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                <div className="relative w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
-                        className="absolute top-3 right-3 p-1.5 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
+                        className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
                     >
                         <X className="w-4 h-4" />
                     </button>
 
-                    {/* Header */}
-                    <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-5 border-b border-white/10 relative overflow-hidden">
-                        {/* Decorative background elements */}
+                    <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] p-6">
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                        <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl"></div>
                         
                         <div className="relative z-10 flex items-start gap-3">
-                            <div className="bg-white/10 p-2.5 rounded-xl shadow-lg border border-white/20 backdrop-blur-md">
+                            <div className="rounded-2xl border border-white/15 bg-white/10 p-3 shadow-lg backdrop-blur-md">
                                 {companyInfo?.logo ? (
                                     <img src={companyInfo.logo} alt={companyInfo.name} className="w-8 h-8 object-contain" />
                                 ) : (
@@ -118,12 +117,15 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 )}
                             </div>
                             <div className="flex-1">
-                                <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
+                                <div className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80 backdrop-blur-md">
+                                    <Shield className="h-3.5 w-3.5 text-cyan-200" />
+                                    已认证企业
+                                </div>
+                                <h3 className="mt-3 text-lg font-bold text-white mb-1 flex items-center gap-2">
                                     {companyInfo?.name || job.company}
-                                    <span className="px-1.5 py-0.5 bg-white/20 text-white text-[10px] rounded-full font-bold border border-white/10 backdrop-blur-md">已认证</span>
                                 </h3>
                                 <p className="text-xs text-indigo-100/80">
-                                    Haigoo Member 专属认证信息
+                                    这家企业的关键信息已经过 Haigoo 核验
                                 </p>
                             </div>
                         </div>
@@ -224,17 +226,17 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         onClick={onClose}
                     />
 
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
-                        <button
-                            onClick={onClose}
-                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-20"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
+                <div className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                    <button
+                        onClick={onClose}
+                        className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
 
-                        {/* Header */}
-                        <div className="h-32 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="relative flex h-32 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)]">
                             <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                            <div className="absolute -right-8 top-4 h-24 w-24 rounded-full bg-cyan-400/15 blur-3xl"></div>
                             <div className="relative z-10 bg-white/10 p-3 rounded-full backdrop-blur-md shadow-2xl border border-white/20">
                                 <Target className="w-8 h-8 text-white/90" />
                             </div>
@@ -255,7 +257,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             </h3>
 
                             <p className="text-sm text-slate-600 mb-5 leading-relaxed px-4">
-                                简历直达 HR 邮箱，面试机会提升 3 倍。本次为免费体验，升级会员享受无限次内推。
+                                先体验一次关键人脉投递，让简历更快进入企业内部视野。
                             </p>
 
                             <div className="space-y-3">
@@ -299,19 +301,18 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                <div className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
-                        className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-20"
+                        className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
                     >
                         <X className="w-5 h-5" />
                     </button>
 
-                    {/* Header Gradient */}
-                    <div className="h-40 bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="relative flex h-36 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)]">
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
-                        <div className="absolute top-0 left-1/4 w-32 h-32 bg-indigo-400/20 rounded-full blur-[40px] animate-pulse"></div>
-                        <div className="absolute bottom-0 right-1/4 w-32 h-32 bg-teal-400/20 rounded-full blur-[40px] animate-pulse delay-700"></div>
+                        <div className="absolute top-0 left-1/4 w-28 h-28 bg-indigo-400/20 rounded-full blur-[40px]"></div>
+                        <div className="absolute bottom-0 right-1/4 w-28 h-28 bg-teal-400/20 rounded-full blur-[40px]"></div>
                         
                         <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
                             <Crown className="w-10 h-10 text-white/90" />
@@ -326,11 +327,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         </div>
 
                         <h3 className="text-xl font-bold text-slate-900 mb-2">
-                            解锁内推直达通道
+                            解锁完整关键人脉
                         </h3>
 
                         <p className="text-sm text-slate-600 mb-5 leading-relaxed px-4">
-                            免费体验次数已用完。升级为 Haigoo 会员，享受无限次内推，简历直达 HR，面试机会提升 3 倍。
+                            免费次数已用完。升级后可继续查看岗位相关联系人，并长期使用内推与高价值邮箱投递。
                         </p>
 
                         <div className="bg-slate-50 rounded-xl p-3 mb-6 text-left space-y-2.5 border border-slate-100">
@@ -338,19 +339,19 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">内推成功率提升 300%</span>
+                                <span className="text-xs font-medium text-slate-700">查看完整岗位相关联系人</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">简历直达 Hiring Manager</span>
+                                <span className="text-xs font-medium text-slate-700">高价值邮箱直申</span>
                             </div>
                             <div className="flex items-center gap-3">
                                 <div className="bg-green-100 p-1 rounded-full">
                                     <CheckCircle2 className="w-3 h-3 text-green-600" />
                                 </div>
-                                <span className="text-xs font-medium text-slate-700">内推简历优化1V1评估</span>
+                                <span className="text-xs font-medium text-slate-700">会员期内不限次使用</span>
                             </div>
                         </div>
 
@@ -367,7 +368,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 }}
                                 className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 text-sm"
                             >
-                                立即成为 Haigoo Member <ArrowRight className="w-4 h-4" />
+                                查看会员权益 <ArrowRight className="w-4 h-4" />
                             </button>
 
                             <button
@@ -397,20 +398,20 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         onClick={onClose}
                     />
 
-                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+                    <div className="relative w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all animate-in fade-in zoom-in duration-200">
                         <button
                             onClick={onClose}
-                            className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
+                            className="absolute top-4 right-4 z-10 rounded-full border border-slate-200 bg-white/90 p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
                         >
                             <X className="w-5 h-5" />
                         </button>
 
-                        <div className="bg-slate-50 p-6 border-b border-slate-100 text-center">
-                            <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4">
+                        <div className="bg-[linear-gradient(180deg,rgba(241,245,249,0.9),rgba(255,255,255,1))] p-6 border-b border-slate-100 text-center">
+                            <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4">
                                 <ExternalLink className="w-6 h-6 text-indigo-600" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-1">
-                                即将前往第三方平台
+                                即将跳转到外部申请页
                             </h3>
                             <p className="text-sm text-slate-500">
                                 该岗位发布于合作招聘平台
@@ -496,27 +497,26 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden transform transition-all">
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors z-10"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    <div className="relative w-full max-w-[470px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all">
+                        <button
+                            onClick={onClose}
+                            className="absolute top-4 right-4 z-10 rounded-full border border-slate-200 bg-white/90 p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
 
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-6 border-b border-green-100">
+                    <div className="bg-[linear-gradient(180deg,rgba(236,253,245,0.9),rgba(255,255,255,1))] p-6 border-b border-green-100">
                         <div className="flex items-start gap-4">
-                            <div className="bg-green-100 p-3 rounded-xl">
+                            <div className="bg-white p-3 rounded-2xl border border-green-100 shadow-sm">
                                 <Shield className="w-8 h-8 text-green-600" />
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-xl font-bold text-slate-900 mb-2 flex items-center gap-2">
                                     <FileCheck className="w-6 h-6 text-green-600" />
-                                    Haigoo 已人工审核此岗位
+                                    Haigoo 已审核这条岗位信息
                                 </h3>
                                 <p className="text-sm text-slate-600 mt-1">
-                                    我们已验证该岗位的真实性和有效性
+                                    你可以更安心地继续投递，也可以先查看更多企业信息
                                 </p>
                             </div>
                         </div>
@@ -555,10 +555,10 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <div className="flex-1">
                                     <p className="text-sm font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">
                                         <Sparkles className="w-4 h-4 text-indigo-600" />
-                                        升级会员，解锁企业深度信息
+                                        会员可查看更完整的企业画像
                                     </p>
                                     <p className="text-xs text-indigo-700">
-                                        企业官网、业务、总部地点、员工数量、评分等信息
+                                        企业官网、业务背景、总部地点、员工规模、评分等信息
                                     </p>
                                 </div>
                             </div>

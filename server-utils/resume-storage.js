@@ -18,7 +18,8 @@ export async function getResumes(userId = null) {
                 resume_id, user_id, file_name, file_size, file_type,
                 parse_status, parse_result, parse_error, content_text, 
                 metadata, created_at, updated_at,
-                ai_score, ai_suggestions, last_analyzed_at
+                ai_score, ai_suggestions, last_analyzed_at,
+                assistant_payload, assistant_version, assistant_updated_at
             FROM resumes 
         `
         
@@ -49,7 +50,10 @@ export async function getResumes(userId = null) {
                 updatedAt: row.updated_at,
                 aiScore: row.ai_score,
                 aiSuggestions: row.ai_suggestions,
-                lastAnalyzedAt: row.last_analyzed_at
+                lastAnalyzedAt: row.last_analyzed_at,
+                assistantPayload: row.assistant_payload,
+                assistantVersion: row.assistant_version,
+                assistantUpdatedAt: row.assistant_updated_at
                 // fileContent is intentionally omitted
             }))
             return { resumes, provider: 'neon' }
@@ -93,8 +97,9 @@ export async function saveResumes(resumes) {
                     INSERT INTO resumes (
                         resume_id, user_id, file_name, file_size, file_type,
                         parse_status, parse_result, parse_error, content_text, metadata,
-                        ai_score, ai_suggestions, last_analyzed_at, updated_at
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+                        ai_score, ai_suggestions, last_analyzed_at,
+                        assistant_payload, assistant_version, assistant_updated_at, updated_at
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW())
                     ON CONFLICT (resume_id) DO UPDATE SET
                         user_id = EXCLUDED.user_id,
                         file_name = EXCLUDED.file_name,
@@ -108,6 +113,9 @@ export async function saveResumes(resumes) {
                         ai_score = EXCLUDED.ai_score,
                         ai_suggestions = EXCLUDED.ai_suggestions,
                         last_analyzed_at = EXCLUDED.last_analyzed_at,
+                        assistant_payload = EXCLUDED.assistant_payload,
+                        assistant_version = EXCLUDED.assistant_version,
+                        assistant_updated_at = EXCLUDED.assistant_updated_at,
                         updated_at = NOW()
                 `, [
                     rId,
@@ -122,7 +130,10 @@ export async function saveResumes(resumes) {
                     resume.metadata || {},
                     resume.aiScore || null,
                     resume.aiSuggestions || null,
-                    resume.lastAnalyzedAt || null
+                    resume.lastAnalyzedAt || null,
+                    resume.assistantPayload ? JSON.stringify(resume.assistantPayload) : null,
+                    resume.assistantVersion || null,
+                    resume.assistantUpdatedAt || null
                 ])
             }
         })
@@ -269,7 +280,7 @@ function deduplicateResumes(resumes) {
 }
 
 // 更新简历分析结果
-export async function updateResumeAnalysis(resumeId, aiScore, aiSuggestions) {
+export async function updateResumeAnalysis(resumeId, aiScore, aiSuggestions, assistantPayload = null, assistantVersion = 'resume_assistant_v2') {
     if (!neonHelper.isConfigured) {
         return { success: false, error: 'Neon database not configured' }
     }
@@ -277,9 +288,20 @@ export async function updateResumeAnalysis(resumeId, aiScore, aiSuggestions) {
     try {
         await neonHelper.query(`
             UPDATE resumes 
-            SET ai_score = $1, ai_suggestions = $2, last_analyzed_at = NOW()
-            WHERE resume_id = $3
-        `, [aiScore, JSON.stringify(aiSuggestions), resumeId])
+            SET ai_score = $1,
+                ai_suggestions = $2,
+                last_analyzed_at = NOW(),
+                assistant_payload = $3,
+                assistant_version = $4,
+                assistant_updated_at = NOW()
+            WHERE resume_id = $5
+        `, [
+            aiScore,
+            JSON.stringify(aiSuggestions),
+            assistantPayload ? JSON.stringify(assistantPayload) : null,
+            assistantVersion,
+            resumeId
+        ])
 
         return { success: true }
     } catch (error) {

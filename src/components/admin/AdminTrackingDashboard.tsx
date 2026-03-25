@@ -126,6 +126,19 @@ interface DashboardData {
         };
         features: MembershipFeature[];
     };
+    resumeAssistant: {
+        openUv: number;
+        frameworkClickUv: number;
+        frameworkClickPv: number;
+        frameworkSuccessUv: number;
+        refreshUv: number;
+        interviewUv: number;
+        upgradeModalUv: number;
+        upgradeClickUv: number;
+        polishUv: number;
+        mockAnswerUv: number;
+        paymentSuccessUv: number;
+    };
     trend: TrendPoint[];
     paymentTruth: PaymentTruthItem[];
 }
@@ -319,6 +332,33 @@ export default function AdminTrackingDashboard() {
                 description: `游客 ${formatNum(summary.guestUv)} / 登录 ${formatNum(summary.loggedInUv)}`,
                 footnote: `带简历输入 ${formatNum(summary.withResumeUv)}`,
                 icon: <Users className="w-4 h-4 text-sky-600" />,
+            },
+        ];
+    }, [data]);
+
+    const resumeAssistantCards = useMemo(() => {
+        if (!data) return [];
+        return [
+            {
+                label: '框架生成 UV',
+                value: formatNum(data.resumeAssistant.frameworkSuccessUv),
+                description: `点击 UV ${formatNum(data.resumeAssistant.frameworkClickUv)} / PV ${formatNum(data.resumeAssistant.frameworkClickPv)}`,
+                footnote: `访问 UV ${formatNum(data.resumeAssistant.openUv)} / 刷新 UV ${formatNum(data.resumeAssistant.refreshUv)}`,
+                icon: <Brain className="w-4 h-4 text-violet-600" />,
+            },
+            {
+                label: '深度打磨 UV',
+                value: formatNum(data.resumeAssistant.polishUv),
+                description: `英文面试拓展 ${formatNum(data.resumeAssistant.interviewUv)} / 模拟回答 ${formatNum(data.resumeAssistant.mockAnswerUv)}`,
+                footnote: '固定统计免费用户触发的体验与升级引导',
+                icon: <Target className="w-4 h-4 text-sky-600" />,
+            },
+            {
+                label: '升级引导 UV',
+                value: formatNum(data.resumeAssistant.upgradeClickUv),
+                description: `锁卡曝光 ${formatNum(data.resumeAssistant.upgradeModalUv)}`,
+                footnote: `支付完成 ${formatNum(data.resumeAssistant.paymentSuccessUv)}`,
+                icon: <Crown className="w-4 h-4 text-amber-600" />,
             },
         ];
     }, [data]);
@@ -612,6 +652,38 @@ export default function AdminTrackingDashboard() {
                             <MetricCard key={card.label} {...card} />
                         ))}
                     </div>
+
+                    <div className="grid gap-4 lg:grid-cols-3">
+                        {resumeAssistantCards.map((card) => (
+                            <MetricCard key={card.label} {...card} />
+                        ))}
+                    </div>
+
+                    <Panel
+                        title="简历助手需求与会员引导"
+                        subtitle="看免费用户从生成框架到点击升级的关键行为，便于评估简历助手价值与会员引导效率。"
+                        icon={<Brain className="h-5 w-5 text-violet-600" />}
+                    >
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {[
+                                { label: '访问 UV', value: data.resumeAssistant.openUv, note: '进入简历助手的免费用户' },
+                                { label: '框架生成 UV', value: data.resumeAssistant.frameworkSuccessUv, note: '成功生成双模块框架' },
+                                { label: '刷新 UV', value: data.resumeAssistant.refreshUv, note: '免费用户再次查看建议' },
+                                { label: '深度打磨 UV', value: data.resumeAssistant.polishUv, note: '会员深度打磨点击' },
+                                { label: '英文面试拓展 UV', value: data.resumeAssistant.interviewUv, note: '继续扩展英文面试题' },
+                                { label: '模拟回答 UV', value: data.resumeAssistant.mockAnswerUv, note: '生成双语模拟回答' },
+                                { label: '锁卡曝光 UV', value: data.resumeAssistant.upgradeModalUv, note: '免费用户看到会员引导' },
+                                { label: '升级点击 UV', value: data.resumeAssistant.upgradeClickUv, note: '从简历助手触发升级' },
+                                { label: '支付完成 UV', value: data.resumeAssistant.paymentSuccessUv, note: '后续完成支付的人数' },
+                            ].map((item) => (
+                                <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+                                    <div className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">{item.label}</div>
+                                    <div className="mt-2 text-2xl font-bold text-slate-900">{formatNum(item.value)}</div>
+                                    <div className="mt-1 text-xs text-slate-500">{item.note}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </Panel>
 
                     <Panel
                         title="会员体验功能表现"

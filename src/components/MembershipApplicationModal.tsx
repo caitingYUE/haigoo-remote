@@ -74,27 +74,25 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
         onClick={onClose}
       />
 
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="px-6 py-6 border-b border-white/10 flex items-center justify-between bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 relative overflow-hidden">
-          {/* Decorative background elements */}
+      <div className="relative flex max-h-[88vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)]">
+        <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] px-6 py-6">
           <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+          <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl"></div>
           
           <h3 className="text-xl font-bold text-white relative z-10 flex items-center gap-2">
-            <span className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
+            <span className="rounded-2xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm">
                <Crown className="w-5 h-5 text-white" />
             </span>
             申请加入 Haigoo Member
           </h3>
           <button 
             onClick={onClose}
-            className="p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors relative z-10"
+            className="relative z-10 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-5 overflow-y-auto custom-scrollbar">
           {success ? (
             <div className="flex flex-col items-center justify-center py-8 text-center">
@@ -114,9 +112,9 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
             </div>
           ) : (
             <>
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-5">
-                <p className="text-xs text-amber-800 leading-relaxed">
-                  当前产品处于内测期，会员采用<strong>特邀制</strong>。请填写以下信息，我们将审核您的背景与远程工作的匹配度。
+              <div className="mb-5 rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                <p className="text-sm text-amber-800 leading-relaxed">
+                  会员申请会优先结合你的求职方向与远程工作匹配度进行审核，填写越具体，我们越容易更快与你对接。
                 </p>
               </div>
 
@@ -137,7 +135,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                     type="text"
                     value={formData.contact}
                     onChange={e => setFormData({...formData, contact: e.target.value})}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-sm"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     placeholder="方便我们联系你"
                   />
                 </div>
@@ -150,7 +148,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                     value={formData.experience}
                     onChange={e => setFormData({...formData, experience: e.target.value})}
                     rows={3}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none text-sm"
+                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     placeholder="例如：5年全栈开发经验，熟悉 React/Node.js，曾在大厂任职..."
                   />
                 </div>
@@ -163,7 +161,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                     value={formData.career_ideal}
                     onChange={e => setFormData({...formData, career_ideal: e.target.value})}
                     rows={2}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-none text-sm"
+                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
                     placeholder="例如：寻找海外 Web3 初创公司的前端岗位，期望薪资..."
                   />
                 </div>
@@ -172,7 +170,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-2.5 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed text-sm"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {submitting ? (
                       <>

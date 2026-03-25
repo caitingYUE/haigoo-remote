@@ -18,6 +18,88 @@ import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'settings'
 
+interface AiSuggestion {
+  category: string
+  priority: '高' | '中' | '低'
+  issue: string
+  suggestion: string
+}
+
+interface AssistantStrength {
+  title: string
+  detail: string
+}
+
+interface AssistantGrowthArea {
+  title: string
+  detail: string
+  priority?: '高' | '中' | '低'
+  focusKey?: string
+}
+
+interface AssistantStarGap {
+  title: string
+  detail: string
+  missing?: string[]
+  focusKey?: string
+}
+
+interface AssistantRewriteDirection {
+  title: string
+  direction: string
+  example?: string
+}
+
+interface AssistantInterviewQuestion {
+  question: string
+  focus?: string
+  hint?: string
+}
+
+interface AssistantFramework {
+  score?: number
+  confidenceSummary?: {
+    headline?: string
+    summary?: string
+  }
+  strengths?: AssistantStrength[]
+  growthAreas?: AssistantGrowthArea[]
+  starGaps?: AssistantStarGap[]
+  rewriteDirections?: AssistantRewriteDirection[]
+  englishInterviewFramework?: {
+    summary?: string
+    selfIntroOutline?: string[]
+    questions?: AssistantInterviewQuestion[]
+  }
+}
+
+interface AssistantPolishSection {
+  heading: string
+  body: string
+  bullets?: string[]
+}
+
+interface AssistantPolishResult {
+  mode: 'resume' | 'interview' | 'mock_answer'
+  title: string
+  sections: AssistantPolishSection[]
+  questions?: AssistantInterviewQuestion[]
+  question?: string
+}
+
+function parseJsonValue<T>(value: unknown, fallback: T): T {
+  if (!value) return fallback
+  if (typeof value === 'object') return value as T
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value) as T
+    } catch {
+      return fallback
+    }
+  }
+  return fallback
+}
+
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, isTrialMember, logout } = useAuth()
   const location = useLocation()
@@ -42,15 +124,14 @@ export default function ProfileCenterPage() {
 
   const [isUploading, setIsUploading] = useState(false)
   const [resumeScore, setResumeScore] = useState<number>(0)
-  // Define suggestion type
-  interface AiSuggestion {
-    category: string
-    priority: '高' | '中' | '低'
-    issue: string
-    suggestion: string
-  }
-
   const [aiSuggestions, setAiSuggestions] = useState<AiSuggestion[]>([]) // Store AI suggestions
+  const [assistantFramework, setAssistantFramework] = useState<AssistantFramework | null>(null)
+  const [assistantPolishResult, setAssistantPolishResult] = useState<AssistantPolishResult | null>(null)
+  const [assistantUpdatedAt, setAssistantUpdatedAt] = useState<string>('')
+  const [assistantAnalysisMode, setAssistantAnalysisMode] = useState<'local' | 'ai'>('local')
+  const [selectedPolishMode, setSelectedPolishMode] = useState<'polish_resume' | 'polish_interview' | 'mock_answer'>('polish_resume')
+  const [selectedInterviewQuestion, setSelectedInterviewQuestion] = useState<string>('')
+  const resumeAssistantUpgradeTracked = useRef(false)
 
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
@@ -81,6 +162,11 @@ export default function ProfileCenterPage() {
   const analysisStepFallback = '正在准备分析...'
   const analysisDescription = '我们正在分析你的简历内容与表达，通常只需要片刻，请耐心等待。'
   const hasSuggestions = aiSuggestions.length > 0
+  const hasAssistantFramework = Boolean(
+    assistantFramework?.strengths?.length ||
+    assistantFramework?.growthAreas?.length ||
+    assistantFramework?.englishInterviewFramework?.questions?.length
+  )
 
   const openResumePicker = () => {
     if (fileInputRef.current) {
@@ -89,14 +175,15 @@ export default function ProfileCenterPage() {
     }
   }
 
-  const openAiEnhancementModal = () => {
+  const openAiEnhancementModal = (featureKey: string = 'resume_assistant_polish') => {
     setUpgradeSource('ai_resume')
     setShowUpgradeModal(true)
     trackingService.track('upgrade_modal_view', {
       page_key: 'profile',
-      module: 'profile_resume',
-      feature_key: 'resume_ai_suggestion',
-      source_key: 'profile_resume'
+      module: 'resume_assistant',
+      feature_key: featureKey,
+      source_key: 'resume_assistant',
+      user_segment: isMember ? 'member' : 'free'
     })
   }
 
@@ -179,6 +266,43 @@ export default function ProfileCenterPage() {
     if (t && ['resume', 'favorites', 'feedback'].includes(t)) setTab(t as TabKey)
   }, [location.search])
 
+  useEffect(() => {
+    if (tab !== 'resume') return
+    trackingService.track('resume_assistant_open', {
+      page_key: 'profile',
+      module: 'resume_assistant',
+      source_key: 'profile_resume_tab',
+      feature_key: 'resume_assistant_framework',
+      has_resume: Boolean(latestResume?.id),
+      user_segment: isMember ? 'member' : 'free'
+    })
+  }, [tab, latestResume?.id, isMember])
+
+  useEffect(() => {
+    if (!hasAssistantFramework || isMember || resumeAssistantUpgradeTracked.current) return
+    resumeAssistantUpgradeTracked.current = true
+    trackingService.track('resume_assistant_upgrade_view', {
+      page_key: 'profile',
+      module: 'resume_assistant',
+      source_key: 'resume_assistant_locks',
+      feature_key: 'resume_assistant_polish',
+      user_segment: 'free',
+      has_resume: Boolean(latestResume?.id)
+    })
+  }, [hasAssistantFramework, isMember, latestResume?.id])
+
+  useEffect(() => {
+    if (!hasAssistantFramework) {
+      resumeAssistantUpgradeTracked.current = false
+    }
+  }, [hasAssistantFramework])
+
+  useEffect(() => {
+    if (!selectedInterviewQuestion && assistantFramework?.englishInterviewFramework?.questions?.length) {
+      setSelectedInterviewQuestion(assistantFramework.englishInterviewFramework.questions[0].question)
+    }
+  }, [assistantFramework, selectedInterviewQuestion])
+
   const switchTab = (t: TabKey) => {
     setTab(t)
     const sp = new URLSearchParams(location.search)
@@ -243,6 +367,11 @@ export default function ProfileCenterPage() {
           setPreviewUrl(null)
           setResumeScore(0)
           setAiSuggestions([])
+          setAssistantFramework(null)
+          setAssistantPolishResult(null)
+          setAssistantUpdatedAt('')
+          setAssistantAnalysisMode('local')
+          setSelectedInterviewQuestion('')
           setFileType('')
           return
         }
@@ -281,11 +410,28 @@ export default function ProfileCenterPage() {
           if (latestResumeData.aiScore) {
             setResumeScore(latestResumeData.aiScore)
           }
+          const assistantPayload = parseJsonValue<any>(latestResumeData.assistantPayload, null)
+          if (assistantPayload?.framework) {
+            setAssistantFramework(assistantPayload.framework)
+            setAssistantPolishResult(assistantPayload.lastPolishResult || null)
+            setAssistantUpdatedAt(
+              assistantPayload.updatedAt ||
+              latestResumeData.assistantUpdatedAt ||
+              latestResumeData.lastAnalyzedAt ||
+              ''
+            )
+            setAssistantAnalysisMode(assistantPayload.lastFrameworkMode === 'ai' ? 'ai' : 'local')
+            if (assistantPayload.lastQuestion) {
+              setSelectedInterviewQuestion(assistantPayload.lastQuestion)
+            }
+          } else {
+            setAssistantFramework(null)
+            setAssistantPolishResult(null)
+            setAssistantUpdatedAt(latestResumeData.lastAnalyzedAt || '')
+          }
           if (latestResumeData.aiSuggestions) {
             try {
-              const suggestions = typeof latestResumeData.aiSuggestions === 'string'
-                ? JSON.parse(latestResumeData.aiSuggestions)
-                : latestResumeData.aiSuggestions
+              const suggestions = parseJsonValue<any[]>(latestResumeData.aiSuggestions, [])
               if (Array.isArray(suggestions)) {
                 setAiSuggestions(suggestions)
               }
@@ -354,6 +500,11 @@ export default function ProfileCenterPage() {
           setPreviewUrl(null)
           setResumeScore(0)
           setAiSuggestions([])
+          setAssistantFramework(null)
+          setAssistantPolishResult(null)
+          setAssistantUpdatedAt('')
+          setAssistantAnalysisMode('local')
+          setSelectedInterviewQuestion('')
           setFileType('')
         }
       } catch (e) {
@@ -431,6 +582,11 @@ export default function ProfileCenterPage() {
     setIsUploading(true)
     setResumeScore(0)
     setAiSuggestions([])
+    setAssistantFramework(null)
+    setAssistantPolishResult(null)
+    setAssistantUpdatedAt('')
+    setAssistantAnalysisMode('local')
+    setSelectedInterviewQuestion('')
 
     // 1. 乐观更新：立即展示文件
     const tempId = Date.now().toString()
@@ -504,57 +660,82 @@ export default function ProfileCenterPage() {
       setResumeText('')
       setPreviewUrl(null)
       setFileType('')
+      setAssistantFramework(null)
+      setAssistantPolishResult(null)
     } finally {
       setIsUploading(false)
       e.target.value = ''
     }
   }
 
-  const handleAnalyzeResume = async () => {
+  const getFeatureKeyByStage = (stage: 'framework' | 'polish_resume' | 'polish_interview' | 'mock_answer') => {
+    if (stage === 'polish_resume') return 'resume_assistant_polish'
+    if (stage === 'polish_interview') return 'resume_assistant_interview'
+    if (stage === 'mock_answer') return 'resume_assistant_mock_answer'
+    return 'resume_assistant_framework'
+  }
+
+  const handleRunResumeAssistant = async (
+    stage: 'framework' | 'polish_resume' | 'polish_interview' | 'mock_answer' = 'framework',
+    extra: { focusKey?: string; question?: string } = {}
+  ) => {
     if (!latestResume?.id) {
-      showError('无法分析', '简历内容为空或过短，请重新上传')
+      showError('无法分析', '请先上传简历后再开始分析')
       return
     }
 
-    // 滚动到分析区域，确保用户看到进度
     const analysisSection = document.getElementById('ai-analysis-section')
     if (analysisSection) {
       analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
 
-    trackingService.track('analyze_resume', {
+    const featureKey = getFeatureKeyByStage(stage)
+    const eventName = stage === 'framework'
+      ? (hasAssistantFramework ? 'resume_assistant_refresh_click' : 'resume_assistant_generate_click')
+      : stage === 'polish_interview'
+        ? 'resume_assistant_interview_expand_click'
+        : stage === 'mock_answer'
+          ? 'resume_assistant_mock_answer_click'
+          : 'resume_assistant_polish_click'
+
+    trackingService.track(eventName, {
       page_key: 'profile',
-      module: 'profile_resume',
-      feature_key: 'resume_ai_suggestion',
+      module: 'resume_assistant',
+      feature_key: featureKey,
       source_key: 'profile_resume',
       entity_type: 'resume',
-      entity_id: latestResume?.id,
-      action: 'request',
-      analysis_mode: defaultAnalysisMode
+      entity_id: latestResume.id,
+      analysis_mode: defaultAnalysisMode,
+      stage,
+      focus_key: extra.focusKey || '',
+      question: extra.question || '',
+      has_resume: true,
+      user_segment: isMember ? 'member' : 'free'
     })
 
     try {
-      showSuccess(
-        '正在生成简历建议...',
-        isMember ? '正在为你生成更深入的简历优化建议' : '正在为你生成简历优化建议'
-      )
+      const startTitle = stage === 'framework'
+        ? (isMember ? '正在生成 AI 简历框架...' : '正在生成简历框架...')
+        : stage === 'polish_interview'
+          ? '正在拓展英文面试框架...'
+          : stage === 'mock_answer'
+            ? '正在生成模拟回答...'
+            : '正在进行深度打磨...'
+
+      showSuccess(startTitle, stage === 'framework'
+        ? '我们会先帮你梳理亮点、补强方向和英文面试框架'
+        : '请稍候，我们正在基于你的框架继续细化内容')
       setIsAnalyzing(true)
 
-      // Simulate progress steps
-      const steps = isMember
-        ? [
-            '正在解析简历结构...',
-            '正在提取关键技能...',
-            '正在评估工作经历...',
-            '正在生成优化建议...',
-            '正在计算综合得分...'
-          ]
-        : [
-            '正在读取简历结构...',
-            '正在检查关键信息完整度...',
-            '正在评估技能与经历表达...',
-            '正在生成优化建议...'
-          ]
+      const steps = stage === 'framework'
+        ? (isMember
+          ? ['正在解析简历结构...', '正在提炼优势亮点...', '正在梳理补强方向...', '正在生成英文面试框架...']
+          : ['正在梳理简历结构...', '正在提炼优势亮点...', '正在整理补强建议...'])
+        : stage === 'polish_interview'
+          ? ['正在扩展英文问题...', '正在整理练习顺序...', '正在生成拓展建议...']
+          : stage === 'mock_answer'
+            ? ['正在选择回答结构...', '正在生成英文回答...', '正在补充中文练习提示...']
+            : ['正在定位关键经历...', '正在补充 STAR 结构...', '正在生成优化方案...']
 
       let stepIndex = 0
       setAnalysisStep(steps[0])
@@ -566,26 +747,8 @@ export default function ProfileCenterPage() {
         }
       }, 2500)
 
-      // 获取用户求职意向
       const targetRole = authUser?.profile?.targetRole || ''
-
-      // Call backend API for analysis
-      // Ensure we have an ID. If latestResume.id is temporary (timestamp), we might fail if backend doesn't have it.
-      // But handleUpload logic tries to sync it.
-      // If synced successfully, backend has it.
-      // If not synced (e.g. only local parse), we need to ensure content is sent?
-      // Our API design for 'analyze' requires 'id'.
-      // If id is not found in DB, it returns 404.
-      // So we MUST ensure the resume exists in DB before calling analyze.
-
-      const resumeIdToAnalyze = latestResume?.id;
-
-      // If we are unsure if it's saved, we can try to re-save/sync content
-      // But 'analyze' endpoint reads from DB.
-      // Let's rely on the upload logic having done its job.
-      // But if we see 404 in logs, it means ID is not found.
-
-      console.log('[ProfileCenter] Requesting analysis for ID:', resumeIdToAnalyze);
+      const resumeIdToAnalyze = latestResume.id
 
       const resp = await fetch('/api/resumes', {
         method: 'POST',
@@ -597,9 +760,9 @@ export default function ProfileCenterPage() {
           action: 'analyze',
           id: resumeIdToAnalyze,
           targetRole,
-          // Fallback: send content if ID might be missing? No, API expects ID to load from DB.
-          // If we really want robustness, we could allow sending content directly to analyze endpoint,
-          // but that bypasses the "save result to DB" logic unless we also save it there.
+          stage,
+          focusKey: extra.focusKey || '',
+          question: extra.question || selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || ''
         })
       })
 
@@ -610,65 +773,84 @@ export default function ProfileCenterPage() {
       if (resp.ok && result.success) {
         setResumeScore(result.data.score || 0)
         setAiSuggestions(result.data.suggestions || [])
+        if (result.data.framework) {
+          setAssistantFramework(result.data.framework)
+        }
+        if (result.data.polishResult) {
+          setAssistantPolishResult(result.data.polishResult)
+          if (result.data.polishResult.question) {
+            setSelectedInterviewQuestion(result.data.polishResult.question)
+          }
+        } else if (stage === 'framework') {
+          setAssistantPolishResult(null)
+        }
+        setAssistantAnalysisMode(result.data.analysisMode || 'local')
+        setAssistantUpdatedAt(new Date().toISOString())
+
+        const frameworkData = result.data.framework || assistantFramework
+        const polishSuccessEvent = stage === 'framework'
+          ? 'resume_assistant_generate_success'
+          : 'resume_assistant_polish_success'
+
         showSuccess(
-          '简历分析完成！',
-          `当前得分：${result.data.score || 0}%`
+          stage === 'framework' ? '简历框架已生成' : '深度内容已更新',
+          stage === 'framework'
+            ? `已为你整理亮点、补强方向和英文面试框架`
+            : '你可以继续基于当前结果做针对性打磨'
         )
 
-        trackingService.track('analyze_resume', {
+        trackingService.track(polishSuccessEvent, {
           page_key: 'profile',
-          module: 'profile_resume',
-          feature_key: 'resume_ai_suggestion',
+          module: 'resume_assistant',
+          feature_key: featureKey,
           source_key: 'profile_resume',
           resume_id: resumeIdToAnalyze,
           score: result.data.score,
-          suggestion_count: result.data.suggestions?.length || 0,
-          action: 'success',
-          analysis_mode: result.data.analysisMode || 'local'
+          result_score: result.data.score,
+          strength_count: frameworkData?.strengths?.length || 0,
+          growth_area_count: frameworkData?.growthAreas?.length || 0,
+          star_gap_count: frameworkData?.starGaps?.length || 0,
+          interview_question_count: frameworkData?.englishInterviewFramework?.questions?.length || 0,
+          analysis_mode: result.data.analysisMode || 'local',
+          stage,
+          focus_key: extra.focusKey || '',
+          user_segment: isMember ? 'member' : 'free'
         })
       } else {
-        console.error('[ProfileCenter] Analysis failed:', result);
-        if (result.limitReached) {
-          showError('次数限制', '每天只能使用1次简历分析功能')
-        } else if (result.contentUnchanged) {
-          showError('需要更新简历', '简历内容未变更。如需重新分析，请更新简历内容并重新上传。')
+        console.error('[ProfileCenter] Analysis failed:', result)
+        if (result.requiresMembership) {
+          openAiEnhancementModal(featureKey)
+          trackingService.track('resume_assistant_upgrade_click', {
+            page_key: 'profile',
+            module: 'resume_assistant',
+            feature_key: featureKey,
+            source_key: 'resume_assistant_locks',
+            stage,
+            user_segment: 'free'
+          })
         } else {
-          // Handle "Resume content is empty" specifically
           if (result.error === 'Resume content is empty') {
-            // Try to sync content again
-            console.log('[ProfileCenter] Content missing on server, trying to sync...');
             if (resumeIdToAnalyze && resumeText) {
               await fetch('/api/resumes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ action: 'update_content', id: resumeIdToAnalyze, contentText: resumeText })
-              });
-              // Retry analysis once
+              })
               const retryResp = await fetch('/api/resumes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ action: 'analyze', id: resumeIdToAnalyze, targetRole })
-              });
-              const retryResult = await retryResp.json();
+                body: JSON.stringify({ action: 'analyze', id: resumeIdToAnalyze, targetRole, stage, focusKey: extra.focusKey || '', question: extra.question || '' })
+              })
+              const retryResult = await retryResp.json()
               if (retryResp.ok && retryResult.success) {
                 setResumeScore(retryResult.data.score || 0)
                 setAiSuggestions(retryResult.data.suggestions || [])
-                showSuccess(
-                  '简历分析完成！',
-                  `当前得分：${retryResult.data.score || 0}%`
-                )
-                trackingService.track('analyze_resume', {
-                  page_key: 'profile',
-                  module: 'profile_resume',
-                  feature_key: 'resume_ai_suggestion',
-                  source_key: 'profile_resume',
-                  resume_id: resumeIdToAnalyze,
-                  score: retryResult.data.score,
-                  suggestion_count: retryResult.data.suggestions?.length || 0,
-                  action: 'success',
-                  analysis_mode: retryResult.data.analysisMode || 'local'
-                })
-                return;
+                if (retryResult.data.framework) setAssistantFramework(retryResult.data.framework)
+                if (retryResult.data.polishResult) setAssistantPolishResult(retryResult.data.polishResult)
+                setAssistantAnalysisMode(retryResult.data.analysisMode || 'local')
+                setAssistantUpdatedAt(new Date().toISOString())
+                showSuccess(stage === 'framework' ? '简历框架已生成' : '深度内容已更新')
+                return
               }
             }
           }
@@ -677,18 +859,19 @@ export default function ProfileCenterPage() {
       }
     } catch (aiError) {
       console.warn('AI analysis failed:', aiError)
-      trackingService.track('analyze_resume', {
+      trackingService.track('resume_assistant_generate_click', {
         page_key: 'profile',
-        module: 'profile_resume',
-        feature_key: 'resume_ai_suggestion',
+        module: 'resume_assistant',
+        feature_key: featureKey,
         source_key: 'profile_resume',
         entity_type: 'resume',
         entity_id: latestResume?.id,
-        action: 'failure',
         analysis_mode: defaultAnalysisMode,
-        error_message: aiError instanceof Error ? aiError.message : 'unknown_error'
+        error_message: aiError instanceof Error ? aiError.message : 'unknown_error',
+        stage,
+        user_segment: isMember ? 'member' : 'free'
       })
-      showError('分析失败', '暂时无法生成简历建议，请稍后重试')
+      showError('分析失败', '暂时无法生成简历助手结果，请稍后重试')
     } finally {
       setIsAnalyzing(false)
       setAnalysisStep('')
@@ -715,6 +898,11 @@ export default function ProfileCenterPage() {
         setResumeText('')
         setResumeScore(0)
         setAiSuggestions([])
+        setAssistantFramework(null)
+        setAssistantPolishResult(null)
+        setAssistantUpdatedAt('')
+        setAssistantAnalysisMode('local')
+        setSelectedInterviewQuestion('')
         setPreviewUrl(null)
         setFileType('')
         if (fileInputRef.current) {
@@ -732,208 +920,482 @@ export default function ProfileCenterPage() {
     }
   }
 
-  const ResumeTab = () => (
-    <div className="space-y-6">
-      {/* 顶部标题与下载 */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">简历优化</h2>
-        </div>
-      </div>
+  const ResumeTab = () => {
+    const heroPrimaryLabel = latestResume
+      ? (hasAssistantFramework ? (isMember ? '深度打磨' : '刷新建议') : (isMember ? '生成 AI 框架' : '生成简历框架'))
+      : '上传简历'
+    const lastUpdatedLabel = assistantUpdatedAt
+      ? new Date(assistantUpdatedAt).toLocaleString()
+      : '尚未生成'
+    const lockCards = [
+      {
+        title: '深度打磨表达',
+        description: '针对重点经历给出更强表达方案、STAR 补充建议与可直接修改的方向。',
+        featureKey: 'resume_assistant_polish',
+      },
+      {
+        title: '英文面试题拓展',
+        description: '在已有英文框架上继续扩展高频追问，帮助你更系统地准备面试。',
+        featureKey: 'resume_assistant_interview',
+      },
+      {
+        title: '模拟回答（中英文）',
+        description: '生成更接近真实面试场景的中英文回答参考，帮助你建立表达信心。',
+        featureKey: 'resume_assistant_mock_answer',
+      },
+    ]
 
-      {/* 分数条 */}
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-base font-medium text-slate-900">简历综合得分</p>
-          <p className="text-base font-bold text-indigo-600">{Math.max(0, Math.min(100, resumeScore))}%</p>
-        </div>
-        <div className="w-full bg-slate-100 rounded-full h-2.5">
-          <div className="bg-indigo-600 h-2.5 rounded-full transition-all duration-500" style={{ width: `${Math.max(0, Math.min(100, resumeScore))}%` }} />
-        </div>
-      </div>
+    const triggerPrimaryAction = () => {
+      if (!latestResume) {
+        openResumePicker()
+        return
+      }
+      if (hasAssistantFramework) {
+        if (isMember) {
+          handleRunResumeAssistant(selectedPolishMode, {
+            focusKey: assistantFramework?.growthAreas?.[0]?.focusKey || assistantFramework?.starGaps?.[0]?.focusKey || '',
+            question: selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || '',
+          })
+          return
+        }
+        handleRunResumeAssistant('framework')
+        return
+      }
+      handleRunResumeAssistant('framework')
+    }
 
-      <div className="flex flex-col gap-8">
-        {/* Top Section: Resume Preview & Basic Info */}
-        <div className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[500px] flex flex-col w-full`}>
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-slate-900 px-1">您的简历</h3>
-            {!latestResume && (
-              <p className="text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
-            )}
-          </div>
-          {!latestResume ? (
-            <div className="flex-1 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">
-              <div className="flex flex-col items-center gap-2 text-center max-w-[520px] mx-auto p-8">
-                <FileText className="w-12 h-12 text-slate-400 mb-2" />
-                <p className="text-lg font-bold text-slate-900">暂无简历</p>
-                <p className="text-sm text-slate-500 mb-6">拖拽文件到此处或点击上传</p>
-                <button
-                  onClick={openResumePicker}
-                  className="px-6 py-2.5 bg-slate-900 text-white rounded-lg hover:bg-indigo-600 transition-colors font-medium flex items-center justify-center w-full max-w-[240px]"
-                >
-                  <Upload className="w-4 h-4 mr-2" />上传简历
-                </button>
-                <p className="text-xs text-slate-400 mt-4">支持 PDF、DOC、DOCX</p>
+    return (
+      <div className="space-y-6">
+        <section className="relative overflow-hidden rounded-[32px] border border-slate-200 bg-[radial-gradient(circle_at_top_left,_rgba(99,102,241,0.18),_transparent_36%),radial-gradient(circle_at_top_right,_rgba(34,211,238,0.18),_transparent_28%),linear-gradient(135deg,_#0f172a_0%,_#1e1b4b_48%,_#0f766e_100%)] p-6 text-white shadow-[0_30px_90px_-30px_rgba(15,23,42,0.85)]">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
+          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-100 backdrop-blur">
+                <Sparkles className="h-3.5 w-3.5" />
+                AI
               </div>
-            </div>
-          ) : (
-            <div className="space-y-4 h-full flex flex-col">
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-indigo-600" />
-                    <span className="font-medium text-slate-900">{latestResume.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={openResumePicker}
-                      className="px-3 py-1.5 text-sm font-medium text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors flex items-center"
-                      title="重新上传简历"
-                    >
-                      <Upload className="w-4 h-4 mr-1" />
-                      重新上传
-                    </button>
-                    <button
-                      onClick={handleDeleteResume}
-                      className="px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="删除简历"
-                    >
-                      删除
-                    </button>
-                  </div>
+              <div>
+                <h2 className="text-3xl font-black tracking-tight">简历助手</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200">
+                  先帮你看清亮点与补强方向，再把简历表达和英文面试准备串成一条更有信心的求职路径。
+                </p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+                  <div className="text-xs text-slate-300">简历状态</div>
+                  <div className="mt-1 text-lg font-bold">{latestResume ? '已上传' : '等待上传'}</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+                  <div className="text-xs text-slate-300">当前得分</div>
+                  <div className="mt-1 text-lg font-bold">{Math.max(0, Math.min(100, resumeScore))}%</div>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/10 px-4 py-3 backdrop-blur">
+                  <div className="text-xs text-slate-300">最近更新</div>
+                  <div className="mt-1 text-sm font-medium text-slate-100">{lastUpdatedLabel}</div>
                 </div>
               </div>
-              {(previewUrl || resumeText) && (
-                <div className="rounded-xl border border-slate-200 flex-1 overflow-hidden bg-slate-50/50 flex flex-col min-h-[400px] max-h-[700px]">
-                  {previewUrl && fileType === 'application/pdf' ? (
-                    <iframe
-                      src={previewUrl}
-                      className="w-full h-full min-h-[400px] bg-white"
-                      title="Resume Preview"
-                    />
-                  ) : previewUrl && fileType.startsWith('image/') ? (
-                    <div className="w-full h-full overflow-auto flex justify-center bg-slate-100 p-4">
-                      <img src={previewUrl} alt="Resume" className="max-w-full h-auto shadow-md" />
-                    </div>
-                  ) : (
-                    <div className="w-full h-full overflow-auto p-4 md:p-8 bg-slate-100 shadow-inner">
-                      <div className="max-w-[210mm] mx-auto bg-white shadow-md min-h-[297mm] p-8 md:p-12">
-                        <pre className="whitespace-pre-wrap text-sm text-slate-700 font-sans leading-relaxed max-w-none">{resumeText || '预览暂不可用'}</pre>
-                      </div>
-                    </div>
-                  )}
+            </div>
+
+            <div className="w-full max-w-md rounded-[28px] border border-white/10 bg-white/10 p-4 backdrop-blur-xl shadow-2xl">
+              <div className="mb-3 flex items-center justify-between text-xs text-slate-200">
+                <span>分析模式</span>
+                <span>{assistantAnalysisMode === 'ai' ? 'AI 增强' : '智能框架'}</span>
+              </div>
+              <div className="mb-5 h-2 rounded-full bg-white/10">
+                <div
+                  className="h-2 rounded-full bg-gradient-to-r from-cyan-300 via-indigo-300 to-emerald-300 transition-all duration-500"
+                  style={{ width: `${Math.max(12, Math.min(100, resumeScore || (latestResume ? 24 : 8)))}%` }}
+                />
+              </div>
+              <button
+                onClick={triggerPrimaryAction}
+                disabled={isUploading || isAnalyzing}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-slate-900 transition-all hover:translate-y-[-1px] hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {hasAssistantFramework ? <RefreshCcw className={`h-4 w-4 ${isAnalyzing ? 'animate-spin' : ''}`} /> : <Sparkles className="h-4 w-4" />}
+                {heroPrimaryLabel}
+              </button>
+              {isMember ? (
+                <p className="mt-3 text-center text-xs text-cyan-100/90">会员解锁简历深度打磨、英文面试拓展与模拟回答。</p>
+              ) : (
+                <p className="mt-3 text-center text-xs text-slate-200/85">免费可先生成完整框架，升级后可继续深度打磨。</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">简历预览</h3>
+                <p className="mt-1 text-sm text-slate-500">{latestResume ? latestResume.name : '支持 PDF、DOC、DOCX'}</p>
+              </div>
+              {latestResume && (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={openResumePicker}
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-600 hover:border-indigo-200 hover:text-indigo-600"
+                  >
+                    <Upload className="h-4 w-4" />
+                    重新上传
+                  </button>
+                  <button
+                    onClick={handleDeleteResume}
+                    className="rounded-full border border-rose-200 px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50"
+                  >
+                    删除
+                  </button>
                 </div>
               )}
             </div>
-          )}
-          <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
-          {isUploading && (
-            <div className="mt-4 text-sm text-slate-500 text-center">正在上传并分析...</div>
-          )}
-        </div>
 
-        {/* Bottom Section: Resume Analysis Results */}
-        <div id="ai-analysis-section" className="space-y-4 w-full">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900 px-1">简历优化建议</h3>
-            {hasSuggestions && (
-              <button
-                onClick={handleAnalyzeResume}
-                disabled={isAnalyzing}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50"
-                title={isMember ? '刷新 AI 增强分析建议' : '刷新简历建议'}
-              >
-                <RefreshCcw className={`h-4 w-4 ${isAnalyzing ? 'animate-spin' : ''}`} />
-                刷新建议
-              </button>
+            {!latestResume ? (
+              <div className="flex min-h-[460px] flex-col items-center justify-center rounded-[24px] border border-dashed border-cyan-200 bg-[linear-gradient(180deg,rgba(238,242,255,0.95),rgba(248,250,252,1))] px-8 text-center">
+                <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-slate-900 text-white shadow-lg shadow-indigo-200">
+                  <FileText className="h-10 w-10" />
+                </div>
+                <h4 className="text-2xl font-black text-slate-900">上传你的简历</h4>
+                <p className="mt-3 max-w-xl text-sm leading-7 text-slate-500">上传简历后即可开始分析（免费）。</p>
+                <button
+                  onClick={openResumePicker}
+                  className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 hover:shadow-xl"
+                >
+                  <Upload className="h-4 w-4" />
+                  上传简历
+                </button>
+                <p className="mt-4 text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {(previewUrl || resumeText) && (
+                  <div className="min-h-[520px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80">
+                    {previewUrl && fileType === 'application/pdf' ? (
+                      <iframe src={previewUrl} className="h-[560px] w-full bg-white" title="Resume Preview" />
+                    ) : previewUrl && fileType.startsWith('image/') ? (
+                      <div className="flex h-[560px] w-full justify-center overflow-auto bg-slate-100 p-4">
+                        <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
+                      </div>
+                    ) : (
+                      <div className="h-[560px] overflow-auto bg-slate-100 p-4 md:p-8">
+                        <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
+                          <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
-          </div>
 
-          <div className="space-y-3">
-            {!resumeText ? (
-              <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
-                <Crown className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p>上传简历后即可开始分析（免费）。</p>
+            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
+            {isUploading && <div className="mt-4 text-center text-sm text-slate-500">正在上传并解析简历...</div>}
+          </section>
+
+          <section id="ai-analysis-section" className="space-y-6">
+            {isAnalyzing ? (
+              <div className="rounded-[28px] border border-indigo-100 bg-white p-10 text-center shadow-sm">
+                <div className="mx-auto mb-6 h-16 w-16 animate-spin rounded-full border-4 border-indigo-100 border-t-indigo-600"></div>
+                <h4 className="text-lg font-bold text-slate-900">{analysisStep || analysisStepFallback}</h4>
+                <p className="mt-3 text-sm text-slate-500">{analysisDescription}</p>
               </div>
-            ) : isAnalyzing ? (
-              <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
-                <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6"></div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">{analysisStep || analysisStepFallback}</h4>
-                <p className="text-slate-500">{analysisDescription}</p>
+            ) : !resumeText ? (
+              <div className="rounded-[28px] border border-dashed border-slate-200 bg-white p-10 text-center text-slate-500 shadow-sm">
+                <Sparkles className="mx-auto mb-3 h-12 w-12 text-slate-300" />
+                上传简历后即可开始分析（免费）。
               </div>
-            ) : aiSuggestions.length > 0 ? (
+            ) : hasAssistantFramework ? (
+              <>
+                <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-black text-slate-900">优势与亮点</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        {assistantFramework?.confidenceSummary?.headline || '你的简历已经具备继续放大的基础。'}
+                      </p>
+                    </div>
+                    {!isMember && (
+                      <button
+                        onClick={() => handleRunResumeAssistant('framework')}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:border-indigo-200 hover:text-indigo-600"
+                      >
+                        <RefreshCcw className="h-4 w-4" />
+                        刷新建议
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-4 rounded-2xl bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-600">
+                    {assistantFramework?.confidenceSummary?.summary}
+                  </p>
+                  <div className="mt-5 grid gap-4 md:grid-cols-2">
+                    {(assistantFramework?.strengths || []).map((item, idx) => (
+                      <div key={`${item.title}-${idx}`} className="rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4">
+                        <div className="text-sm font-bold text-slate-900">{item.title}</div>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid gap-6 xl:grid-cols-2">
+                  <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900">建议补强的信息</h3>
+                    <div className="mt-4 space-y-3">
+                      {(assistantFramework?.growthAreas || []).map((item, idx) => (
+                        <div key={`${item.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                            <span className="rounded-full bg-white px-2 py-1 text-xs text-slate-500">{item.priority || '中'}</span>
+                          </div>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900">STAR 法则补充参考</h3>
+                    <div className="mt-4 space-y-3">
+                      {(assistantFramework?.starGaps || []).map((item, idx) => (
+                        <div key={`${item.title}-${idx}`} className="rounded-2xl border border-cyan-100 bg-cyan-50/50 p-4">
+                          <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                          <p className="mt-2 text-sm leading-6 text-slate-600">{item.detail}</p>
+                          {item.missing?.length ? (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {item.missing.map((tag) => (
+                                <span key={tag} className="rounded-full bg-white px-2 py-1 text-xs text-cyan-700">{tag}</span>
+                              ))}
+                            </div>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">英文面试框架</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{assistantFramework?.englishInterviewFramework?.summary}</p>
+
+                  {(assistantFramework?.englishInterviewFramework?.selfIntroOutline?.length || 0) > 0 && (
+                    <div className="mt-5 rounded-2xl border border-indigo-100 bg-indigo-50/50 p-4">
+                      <div className="text-sm font-semibold text-slate-900">60 秒自我介绍骨架</div>
+                      <ul className="mt-3 space-y-2 text-sm leading-6 text-slate-600">
+                        {assistantFramework?.englishInterviewFramework?.selfIntroOutline?.map((item, idx) => (
+                          <li key={`${item}-${idx}`} className="flex gap-2">
+                            <span className="mt-1 text-indigo-500">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  <div className="mt-5 grid gap-3">
+                    {(assistantFramework?.englishInterviewFramework?.questions || []).map((item, idx) => (
+                      <button
+                        type="button"
+                        key={`${item.question}-${idx}`}
+                        onClick={() => setSelectedInterviewQuestion(item.question)}
+                        className={`rounded-2xl border px-4 py-4 text-left transition-all ${
+                          selectedInterviewQuestion === item.question
+                            ? 'border-indigo-200 bg-indigo-50 shadow-sm'
+                            : 'border-slate-200 bg-slate-50 hover:border-indigo-100 hover:bg-white'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-slate-900">{item.question}</div>
+                        <div className="mt-2 text-xs text-slate-500">{item.focus}</div>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{item.hint}</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm">
+                  <h3 className="text-lg font-bold text-slate-900">表达优化方向</h3>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    {(assistantFramework?.rewriteDirections || []).map((item, idx) => (
+                      <div key={`${item.title}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                        <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                        <p className="mt-2 text-sm leading-6 text-slate-600">{item.direction}</p>
+                        {item.example ? <p className="mt-2 text-xs leading-5 text-slate-500">{item.example}</p> : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {!isMember ? (
+                  <div className="rounded-[28px] border border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.9),rgba(255,255,255,1))] p-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">继续升级你的简历助手</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-500">你已经拿到完整框架，升级会员后可以继续做更深入的表达打磨、英文面试拓展和模拟回答。</p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          trackingService.track('resume_assistant_upgrade_click', {
+                            page_key: 'profile',
+                            module: 'resume_assistant',
+                            feature_key: 'resume_assistant_polish',
+                            source_key: 'resume_assistant_upgrade_panel',
+                            user_segment: 'free'
+                          })
+                          openAiEnhancementModal('resume_assistant_polish')
+                        }}
+                        className="hidden rounded-full bg-slate-900 px-4 py-2 text-sm font-bold text-white hover:bg-indigo-600 lg:inline-flex"
+                      >
+                        立即升级
+                      </button>
+                    </div>
+                    <div className="mt-5 grid gap-4 md:grid-cols-3">
+                      {lockCards.map((card) => (
+                        <button
+                          key={card.featureKey}
+                          onClick={() => {
+                            trackingService.track('resume_assistant_upgrade_click', {
+                              page_key: 'profile',
+                              module: 'resume_assistant',
+                              feature_key: card.featureKey,
+                              source_key: 'resume_assistant_lock_card',
+                              user_segment: 'free'
+                            })
+                            openAiEnhancementModal(card.featureKey)
+                          }}
+                          className="rounded-[24px] border border-indigo-100 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
+                        >
+                          <div className="mb-4 inline-flex rounded-full bg-indigo-50 p-2 text-indigo-600">
+                            <Crown className="h-4 w-4" />
+                          </div>
+                          <div className="text-base font-bold text-slate-900">{card.title}</div>
+                          <p className="mt-2 text-sm leading-6 text-slate-500">{card.description}</p>
+                          <div className="mt-4 text-sm font-semibold text-indigo-600">会员专享</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-[28px] border border-cyan-100 bg-[linear-gradient(180deg,rgba(239,246,255,0.92),rgba(255,255,255,1))] p-6 shadow-sm">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div>
+                        <h3 className="text-lg font-bold text-slate-900">会员深度打磨</h3>
+                        <p className="mt-2 text-sm leading-6 text-slate-500">基于当前框架继续做简历表达打磨、英文面试拓展或中英文模拟回答。</p>
+                      </div>
+                      <button
+                        onClick={() => handleRunResumeAssistant(selectedPolishMode, {
+                          focusKey: assistantFramework?.growthAreas?.[0]?.focusKey || assistantFramework?.starGaps?.[0]?.focusKey || '',
+                          question: selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || ''
+                        })}
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                        深度打磨
+                      </button>
+                    </div>
+
+                    <div className="mt-5 inline-flex rounded-2xl bg-slate-100 p-1">
+                      {[
+                        { value: 'polish_resume', label: '简历打磨' },
+                        { value: 'polish_interview', label: '英文面试' },
+                        { value: 'mock_answer', label: '模拟回答' },
+                      ].map((item) => (
+                        <button
+                          key={item.value}
+                          onClick={() => setSelectedPolishMode(item.value as 'polish_resume' | 'polish_interview' | 'mock_answer')}
+                          className={`rounded-2xl px-4 py-2 text-sm font-medium transition-all ${
+                            selectedPolishMode === item.value ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+
+                    {selectedPolishMode === 'mock_answer' && (
+                      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+                        <label className="mb-2 block text-sm font-medium text-slate-700">选择一个英文问题做模拟回答</label>
+                        <select
+                          value={selectedInterviewQuestion}
+                          onChange={(e) => setSelectedInterviewQuestion(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300"
+                        >
+                          <option value="">请选择问题</option>
+                          {(assistantFramework?.englishInterviewFramework?.questions || []).map((item) => (
+                            <option key={item.question} value={item.question}>{item.question}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div className="mt-5 rounded-[24px] border border-slate-200 bg-white p-5">
+                      {assistantPolishResult ? (
+                        <div className="space-y-4">
+                          <div className="text-lg font-bold text-slate-900">{assistantPolishResult.title}</div>
+                          {assistantPolishResult.sections.map((section, idx) => (
+                            <div key={`${section.heading}-${idx}`} className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                              <div className="text-sm font-semibold text-slate-900">{section.heading}</div>
+                              <p className="mt-2 text-sm leading-6 text-slate-600">{section.body}</p>
+                              {section.bullets?.length ? (
+                                <ul className="mt-3 space-y-2 text-sm text-slate-600">
+                                  {section.bullets.map((bullet, bulletIndex) => (
+                                    <li key={`${bullet}-${bulletIndex}`} className="flex gap-2">
+                                      <span className="mt-1 text-indigo-500">•</span>
+                                      <span>{bullet}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="py-8 text-center text-sm text-slate-500">选择一个方向后，点击“深度打磨”即可继续展开内容。</div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : hasSuggestions ? (
               <div className="grid grid-cols-1 gap-4">
                 {aiSuggestions.map((item, idx) => (
-                  <div key={idx} className="bg-white rounded-xl p-5 shadow-sm border border-slate-200 hover:border-indigo-200 transition-colors">
+                  <div key={idx} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                     <div className="flex items-start gap-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 mt-1 ${item.priority === '高' ? 'bg-red-50 text-red-600' :
-                        item.priority === '中' ? 'bg-orange-50 text-orange-600' :
-                          'bg-blue-50 text-blue-600'
-                        }`}>
-                        <span className="font-bold text-sm">{item.priority}</span>
+                      <div className={`mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${item.priority === '高' ? 'bg-red-50 text-red-600' : item.priority === '中' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'}`}>
+                        <span className="text-sm font-bold">{item.priority}</span>
                       </div>
                       <div className="flex-1">
-                        <div className="flex items-start justify-between gap-4 mb-2">
-                          <h4 className="font-bold text-base text-slate-900 flex-1">{item.issue}</h4>
-                          <span className="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-full flex-shrink-0 whitespace-nowrap">{item.category}</span>
+                        <div className="mb-2 flex items-start justify-between gap-4">
+                          <h4 className="flex-1 text-base font-bold text-slate-900">{item.issue}</h4>
+                          <span className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600">{item.category}</span>
                         </div>
-                        <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
-                          <span className="font-semibold text-indigo-600 mr-1">建议修改：</span>
+                        <p className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-sm leading-relaxed text-slate-600">
+                          <span className="mr-1 font-semibold text-indigo-600">建议修改：</span>
                           {item.suggestion}
                         </p>
                       </div>
                     </div>
                   </div>
                 ))}
-
-                {!isMember && (
-                  <div className="mt-4 rounded-[28px] border border-indigo-100 bg-indigo-50 px-6 py-8 text-center shadow-sm">
-                    <button
-                      onClick={openAiEnhancementModal}
-                      className="mx-auto flex w-full items-center justify-center gap-3 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-4 text-lg font-bold text-white shadow-lg transition-all hover:translate-y-[-1px] hover:shadow-xl"
-                    >
-                      <Crown className="h-5 w-5 text-yellow-300" />
-                      AI增强分析建议
-                    </button>
-                    <p className="mt-4 text-sm text-indigo-600/80">
-                      会员用户可解锁 AI 增强分析与更深度的优化建议。
-                    </p>
-                  </div>
-                )}
               </div>
             ) : (
-              <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
-                <p className="text-base text-indigo-900 font-medium mb-4">
-                  准备好开始简历分析了吗？
-                </p>
+              <div className="rounded-[28px] border border-indigo-100 bg-[linear-gradient(180deg,rgba(238,242,255,0.95),rgba(255,255,255,1))] p-8 text-center shadow-sm">
+                <p className="mb-4 text-base font-medium text-indigo-900">准备好开始简历分析了吗？</p>
                 <button
-                  onClick={handleAnalyzeResume}
-                  className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto w-full"
+                  onClick={() => handleRunResumeAssistant('framework')}
+                  className="mx-auto inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-8 py-4 text-base font-bold text-white shadow-lg transition-all hover:translate-y-[-1px] hover:shadow-xl"
                 >
-                  {isMember ? (
-                    <>
-                      <Crown className="w-5 h-5 text-yellow-300" />
-                      生成 AI 建议
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-5 h-5 text-white/90" />
-                      生成简历建议
-                    </>
-                  )}
+                  {isMember ? <Crown className="h-5 w-5 text-yellow-300" /> : <Sparkles className="h-5 w-5 text-white/90" />}
+                  {isMember ? '生成 AI 框架' : '生成简历框架'}
                 </button>
-                {isMember && (
-                  <p className="text-xs text-indigo-600/70 mt-3">
-                    会员解锁无限次AI简历优化权益
-                  </p>
-                )}
+                {isMember ? (
+                  <p className="mt-3 text-xs text-indigo-600/80">会员解锁简历+面试联动深度打磨。</p>
+                ) : null}
               </div>
             )}
-          </div>
+          </section>
         </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const FavoritesTab = () => (
     <div className="space-y-6">
@@ -1325,7 +1787,7 @@ export default function ProfileCenterPage() {
               <nav className="space-y-1" role="tablist">
                 {[
                   // { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
-                  { id: 'resume', label: '我的简历', icon: FileText },
+                  { id: 'resume', label: '简历助手', icon: FileText },
                   { id: 'favorites', label: '我的收藏', icon: Heart },
                   { id: 'applications', label: '我的申请', icon: Briefcase },
                   { id: 'feedback', label: '我要反馈', icon: MessageSquare },

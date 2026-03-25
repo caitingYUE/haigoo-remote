@@ -183,26 +183,25 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                 onClick={onClose}
             />
 
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden transform transition-all">
-                {/* Header */}
-                <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 p-6 text-white relative overflow-hidden flex-shrink-0">
-                    {/* Decorative background elements */}
+            <div className="relative flex max-h-[88vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all">
+                <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] p-6 text-white flex-shrink-0">
                     <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                    <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl"></div>
                     
                     <div className="relative z-10 flex items-center gap-3 mb-2">
-                        <div className="bg-white/20 p-2 rounded-lg backdrop-blur-sm">
+                        <div className="rounded-2xl border border-white/15 bg-white/10 p-2.5 backdrop-blur-sm">
                             <Send className="w-6 h-6" />
                         </div>
                         <h2 className="text-xl font-bold text-white">申请内推</h2>
                     </div>
                     <p className="relative z-10 text-indigo-100 text-sm">
-                        填写以下信息，我们将在 <strong>3个工作日内</strong> 审核您的申请
+                        选择简历并补充信息后，我们会在 <strong>3 个工作日内</strong> 为你推进申请。
                     </p>
                 </div>
 
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-2 text-white/60 hover:text-white hover:bg-white/10 rounded-full transition-colors z-50"
+                    className="absolute right-4 top-4 z-50 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
                 >
                     <X className="w-5 h-5" />
                 </button>
@@ -211,7 +210,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                 {/* Body */}
                 <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     {/* Job Info */}
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/90 p-4">
                         <h3 className="font-bold text-slate-900 mb-1">{job.title}</h3>
                         <p className="text-sm text-slate-600">{job.company}</p>
                         <p className="text-sm text-slate-500 mt-1">{job.location}</p>
@@ -252,7 +251,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                                 加载简历中...
                             </div>
                         ) : resumes.length === 0 ? (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center">
                                 <FileText className="w-12 h-12 text-yellow-600 mx-auto mb-3" />
                                 <p className="text-sm text-yellow-800 font-medium mb-3">
                                     您还没有上传简历
@@ -324,22 +323,21 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                     </div>
 
                     {/* SLA Notice */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3">
+                    <div className="rounded-2xl border border-cyan-200 bg-cyan-50 p-4 flex items-start gap-3">
                         <Clock className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
-                            <p className="text-sm font-semibold text-blue-900 mb-1">审核时效承诺</p>
-                            <p className="text-sm text-blue-700">
-                                我们将在 <strong>3个工作日内</strong> 完成审核并转递您的简历。审核通过后，您将收到通知。
+                            <p className="text-sm font-semibold text-cyan-900 mb-1">处理节奏</p>
+                            <p className="text-sm text-cyan-700">
+                                我们会在 <strong>3 个工作日内</strong> 完成审核并推进你的申请，通过后会第一时间通知你。
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Footer / Action Buttons */}
-                <div className="p-6 pt-0 flex gap-3 flex-shrink-0 bg-white">
+                <div className="flex gap-3 border-t border-slate-100 bg-white p-5 flex-shrink-0">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 px-6 border-2 border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors"
+                        className="flex-1 rounded-2xl border border-slate-300 px-6 py-3 text-sm font-bold text-slate-700 transition-colors hover:bg-slate-50"
                         disabled={isSubmitting}
                     >
                         取消
@@ -347,7 +345,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting || !selectedResumeId || resumes.length === 0}
-                        className="flex-1 py-3 px-6 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-xl"
                     >
                         {isSubmitting ? (
                             <>
