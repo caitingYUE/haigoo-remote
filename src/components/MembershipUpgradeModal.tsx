@@ -58,7 +58,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
   }[triggerSource]
 
   return createPortal(
-    <div className="fixed inset-0 z-[2000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[4000] flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <div
         className="absolute inset-0 cursor-pointer bg-black/60 backdrop-blur-sm transition-opacity"
         onClick={onClose}
@@ -67,18 +67,18 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
       <div className="relative w-full max-w-[520px] overflow-hidden rounded-[32px] border border-indigo-100 bg-white shadow-[0_36px_120px_-52px_rgba(15,23,42,0.45)] animate-in fade-in zoom-in duration-200">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-10 rounded-full border border-white/20 bg-white/10 p-2 text-white/80 backdrop-blur transition-colors hover:bg-white/15 hover:text-white"
+          className="absolute right-4 top-4 z-20 rounded-full border border-indigo-200 bg-white/85 p-2 text-slate-500 backdrop-blur transition-colors hover:border-indigo-300 hover:bg-white hover:text-indigo-700"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative overflow-hidden bg-[linear-gradient(135deg,#312e81_0%,#4338ca_72%,#6366f1_100%)] px-6 pb-7 pt-7 text-white">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.22),_transparent_30%),radial-gradient(circle_at_bottom_left,_rgba(125,211,252,0.22),_transparent_28%)]" />
+        <div className="relative overflow-hidden bg-[linear-gradient(135deg,#eef2ff_0%,#f5f3ff_58%,#ffffff_100%)] px-6 pb-7 pt-7">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.18),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(125,211,252,0.18),_transparent_24%)]" />
           <div className="relative z-10 pr-10">
-            <h3 className="text-[30px] font-black leading-tight tracking-tight text-white">
+            <h3 className="text-[30px] font-black leading-tight tracking-tight text-slate-950">
               {content.title}
             </h3>
-            <p className="mt-3 max-w-[360px] text-sm leading-6 text-indigo-50/92">
+            <p className="mt-3 max-w-[360px] text-sm leading-6 text-slate-600">
               {content.description}
             </p>
           </div>
@@ -102,7 +102,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                 onClose()
                 navigate('/membership#pricing-plans')
               }}
-              className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#312e81_0%,#4f46e5_100%)] px-5 py-3.5 text-sm font-bold text-white shadow-[0_20px_40px_-22px_rgba(79,70,229,0.72)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-22px_rgba(79,70,229,0.8)]"
+              className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#3730a3_0%,#4f46e5_100%)] px-5 py-3.5 text-sm font-bold text-white shadow-[0_20px_40px_-22px_rgba(79,70,229,0.42)] transition-all hover:-translate-y-0.5 hover:shadow-[0_24px_48px_-22px_rgba(79,70,229,0.52)]"
             >
               查看会员权益
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

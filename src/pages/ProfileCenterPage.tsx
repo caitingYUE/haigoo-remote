@@ -144,6 +144,7 @@ export default function ProfileCenterPage() {
   const [selectedInterviewQuestion, setSelectedInterviewQuestion] = useState<string>('')
   const [assistantConversationKey, setAssistantConversationKey] = useState<AssistantConversationKey>('overview')
   const [assistantConversationRevealCount, setAssistantConversationRevealCount] = useState(0)
+  const [assistantStartChoice, setAssistantStartChoice] = useState<'pending' | 'deferred' | 'running'>('pending')
   const resumeAssistantUpgradeTracked = useRef(false)
 
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
@@ -319,10 +320,56 @@ export default function ProfileCenterPage() {
   useEffect(() => {
     if (!latestResume?.id) {
       setAssistantConversationKey('overview')
+      setAssistantStartChoice('pending')
+    } else if (!hasAssistantFramework) {
+      setAssistantStartChoice('pending')
     }
-  }, [latestResume?.id])
+  }, [latestResume?.id, hasAssistantFramework])
 
   const assistantConversationMessages = useMemo<AssistantConversationMessage[]>(() => {
+    if (!latestResume?.id) {
+      return [
+        {
+          id: 'empty-assistant',
+          role: 'assistant',
+          title: '简历助手已就绪',
+          body: '上传简历后，我会帮您逐步梳理亮点、补强方向和面试准备。',
+          accent: 'neutral'
+        }
+      ]
+    }
+
+    if (!assistantFramework && !aiSuggestions.length) {
+      const messages: AssistantConversationMessage[] = [
+        {
+          id: 'upload-complete',
+          role: 'assistant',
+          title: '简历已经上传完成',
+          body: '让我先帮您整体评估一下，看看哪些优势最值得继续放大。',
+          accent: 'neutral'
+        }
+      ]
+
+      if (assistantStartChoice === 'deferred') {
+        messages.push(
+          {
+            id: 'defer-user',
+            role: 'user',
+            body: '暂时不用了',
+            accent: 'indigo'
+          },
+          {
+            id: 'defer-assistant',
+            role: 'assistant',
+            body: '好的，需要时随时叫我开始分析。',
+            accent: 'neutral'
+          }
+        )
+      }
+
+      return messages
+    }
+
     const promptMap: Record<AssistantConversationKey, string> = {
       overview: '我想先看整体判断',
       strengths: '先告诉我最值得放大的亮点',
@@ -511,7 +558,7 @@ export default function ProfileCenterPage() {
     }
 
     return messages
-  }, [assistantConversationKey, assistantFramework, assistantPolishResult, selectedInterviewQuestion, aiSuggestions, isMember])
+  }, [assistantConversationKey, assistantFramework, assistantPolishResult, selectedInterviewQuestion, aiSuggestions, isMember, latestResume?.id, assistantStartChoice])
 
   useEffect(() => {
     if (!assistantConversationMessages.length) {
@@ -819,6 +866,7 @@ export default function ProfileCenterPage() {
     setAssistantUpdatedAt('')
     setAssistantAnalysisMode('local')
     setSelectedInterviewQuestion('')
+    setAssistantStartChoice('pending')
 
     // 1. 乐观更新：立即展示文件
     const tempId = Date.now().toString()
@@ -916,9 +964,8 @@ export default function ProfileCenterPage() {
       return
     }
 
-    const analysisSection = document.getElementById('ai-analysis-section')
-    if (analysisSection) {
-      analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (stage === 'framework') {
+      setAssistantStartChoice('running')
     }
 
     const featureKey = getFeatureKeyByStage(stage)
@@ -947,7 +994,7 @@ export default function ProfileCenterPage() {
 
     try {
       const startTitle = stage === 'framework'
-        ? (isMember ? '正在生成 AI 简历框架...' : '正在生成简历框架...')
+        ? '正在开始分析...'
         : stage === 'polish_interview'
           ? '正在拓展英文面试框架...'
           : stage === 'mock_answer'
@@ -1025,7 +1072,7 @@ export default function ProfileCenterPage() {
           : 'resume_assistant_polish_success'
 
         showSuccess(
-          stage === 'framework' ? '简历框架已生成' : '深度内容已更新',
+          stage === 'framework' ? '分析结果已准备好' : '深度内容已更新',
           stage === 'framework'
             ? `已为你整理亮点、补强方向和英文面试框架`
             : '你可以继续基于当前结果做针对性打磨'
@@ -1081,7 +1128,7 @@ export default function ProfileCenterPage() {
                 if (retryResult.data.polishResult) setAssistantPolishResult(retryResult.data.polishResult)
                 setAssistantAnalysisMode(retryResult.data.analysisMode || 'local')
                 setAssistantUpdatedAt(new Date().toISOString())
-                showSuccess(stage === 'framework' ? '简历框架已生成' : '深度内容已更新')
+                showSuccess(stage === 'framework' ? '分析结果已准备好' : '深度内容已更新')
                 return
               }
             }
@@ -1090,6 +1137,9 @@ export default function ProfileCenterPage() {
         }
       }
     } catch (aiError) {
+      if (stage === 'framework') {
+        setAssistantStartChoice('pending')
+      }
       console.warn('AI analysis failed:', aiError)
       trackingService.track('resume_assistant_generate_click', {
         page_key: 'profile',
@@ -1135,6 +1185,7 @@ export default function ProfileCenterPage() {
         setAssistantUpdatedAt('')
         setAssistantAnalysisMode('local')
         setSelectedInterviewQuestion('')
+        setAssistantStartChoice('pending')
         setPreviewUrl(null)
         setFileType('')
         if (fileInputRef.current) {
@@ -1152,27 +1203,53 @@ export default function ProfileCenterPage() {
     }
   }
 
+  const resumePreviewContent = useMemo(() => {
+    if (!latestResume) {
+      return (
+        <div className="flex flex-1 flex-col items-center justify-center rounded-[24px] border border-dashed border-indigo-200 bg-slate-50 px-8 text-center">
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-slate-900 text-white shadow-lg shadow-slate-200">
+            <FileText className="h-10 w-10" />
+          </div>
+          <h4 className="text-2xl font-black text-slate-900">上传你的简历</h4>
+          <button
+            onClick={openResumePicker}
+            className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 hover:shadow-xl"
+          >
+            <Upload className="h-4 w-4" />
+            上传简历
+          </button>
+          <p className="mt-4 text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
+        </div>
+      )
+    }
+
+    return (
+      <div className={`flex-1 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80 transition-opacity duration-200 ${showUpgradeModal ? 'pointer-events-none opacity-60' : ''}`}>
+        {previewUrl && fileType === 'application/pdf' ? (
+          <iframe src={previewUrl} className="h-full min-h-[620px] w-full bg-white" title="Resume Preview" />
+        ) : previewUrl && fileType.startsWith('image/') ? (
+          <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
+            <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
+          </div>
+        ) : (
+          <div className="h-full min-h-[620px] overflow-auto bg-slate-100 p-4 md:p-8">
+            <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
+              <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }, [latestResume, previewUrl, fileType, resumeText, showUpgradeModal])
+
   const ResumeTab = () => {
     const heroPrimaryLabel = latestResume
-      ? (hasAssistantFramework ? (isMember ? '深度打磨' : '刷新建议') : (isMember ? '生成 AI 框架' : '生成简历框架'))
+      ? (hasAssistantFramework ? (isMember ? '深度打磨' : '刷新建议') : (isMember ? '开始分析' : '开始分析'))
       : '上传简历'
     const lastUpdatedLabel = assistantUpdatedAt
       ? new Date(assistantUpdatedAt).toLocaleString()
       : '尚未生成'
     const visibleConversationMessages = assistantConversationMessages.slice(0, assistantConversationRevealCount)
-    const conversationOptions: Array<{ key: AssistantConversationKey; label: string }> = [
-      { key: 'overview', label: '整体判断' },
-      { key: 'strengths', label: '优势亮点' },
-      { key: 'growth', label: '补强重点' },
-      { key: 'interview', label: '英文面试' },
-      { key: 'polish', label: isMember ? '深度打磨' : '继续升级' }
-    ]
-    const lockCards = [
-      { title: '深度打磨表达', featureKey: 'resume_assistant_polish' },
-      { title: '英文面试拓展', featureKey: 'resume_assistant_interview' },
-      { title: '模拟回答', featureKey: 'resume_assistant_mock_answer' },
-    ]
-
     const triggerPrimaryAction = () => {
       if (!latestResume) {
         openResumePicker()
@@ -1197,6 +1274,50 @@ export default function ProfileCenterPage() {
         focusKey: assistantFramework?.growthAreas?.[0]?.focusKey || assistantFramework?.starGaps?.[0]?.focusKey || '',
         question: selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || '',
       })
+    }
+
+    const handleConversationChoice = (choice: 'start' | 'defer' | 'overview' | 'strengths' | 'growth' | 'interview' | 'upgrade' | 'polish' | 'mock') => {
+      if (choice === 'start') {
+        setAssistantConversationKey('overview')
+        handleRunResumeAssistant('framework')
+        return
+      }
+      if (choice === 'defer') {
+        setAssistantStartChoice('deferred')
+        return
+      }
+      if (choice === 'overview' || choice === 'strengths' || choice === 'growth' || choice === 'interview') {
+        setAssistantConversationKey(choice)
+        return
+      }
+      if (choice === 'upgrade') {
+        openAiEnhancementModal('resume_assistant_polish')
+        return
+      }
+      if (choice === 'polish') {
+        setSelectedPolishMode('polish_resume')
+        setAssistantConversationKey('polish')
+        if (isMember) {
+          triggerMemberPolish()
+        } else {
+          openAiEnhancementModal('resume_assistant_polish')
+        }
+        return
+      }
+      if (choice === 'mock') {
+        if (isMember) {
+          setSelectedPolishMode('mock_answer')
+          setAssistantConversationKey('polish')
+          const question = selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || ''
+          if (question) {
+            handleRunResumeAssistant('mock_answer', { question })
+          } else {
+            setAssistantConversationKey('interview')
+          }
+        } else {
+          setAssistantConversationKey('interview')
+        }
+      }
     }
 
     return (
@@ -1249,9 +1370,8 @@ export default function ProfileCenterPage() {
                 {hasAssistantFramework ? <RefreshCcw className={`h-4 w-4 ${isAnalyzing ? 'animate-spin' : ''}`} /> : <Sparkles className="h-4 w-4" />}
                 {heroPrimaryLabel}
               </button>
-              <div className="mt-4 flex items-center justify-between gap-3 text-sm text-slate-600">
-                <span>{isMember ? '继续展开简历表达与面试准备。' : '先生成一版更清晰的求职框架。'}</span>
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-600">{assistantAnalysisMode === 'ai' ? 'AI' : '基础版'}</span>
+              <div className="mt-4 flex items-center justify-end gap-3 text-sm text-slate-600">
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-600">{assistantAnalysisMode === 'ai' ? '完整版' : '基础版'}</span>
               </div>
             </div>
           </div>
@@ -1285,37 +1405,9 @@ export default function ProfileCenterPage() {
               </div>
 
               {!latestResume ? (
-                <div className="flex flex-1 flex-col items-center justify-center rounded-[24px] border border-dashed border-indigo-200 bg-slate-50 px-8 text-center">
-                  <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-slate-900 text-white shadow-lg shadow-slate-200">
-                    <FileText className="h-10 w-10" />
-                  </div>
-                  <h4 className="text-2xl font-black text-slate-900">上传你的简历</h4>
-                  <p className="mt-3 max-w-xl text-sm leading-7 text-slate-500">上传简历后即可开始分析（免费）。</p>
-                  <button
-                    onClick={openResumePicker}
-                    className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 hover:shadow-xl"
-                  >
-                    <Upload className="h-4 w-4" />
-                    上传简历
-                  </button>
-                  <p className="mt-4 text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
-                </div>
+                resumePreviewContent
               ) : (
-                <div className="flex-1 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80">
-                  {previewUrl && fileType === 'application/pdf' ? (
-                    <iframe src={previewUrl} className="h-full min-h-[620px] w-full bg-white" title="Resume Preview" />
-                  ) : previewUrl && fileType.startsWith('image/') ? (
-                    <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
-                      <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
-                    </div>
-                  ) : (
-                    <div className="h-full min-h-[620px] overflow-auto bg-slate-100 p-4 md:p-8">
-                      <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
-                        <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                resumePreviewContent
               )}
 
               <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
@@ -1334,27 +1426,12 @@ export default function ProfileCenterPage() {
                     </div>
                     <h3 className="mt-3 text-xl font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
                   </div>
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-right">
-                    <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">当前模式</div>
-                    <div className="mt-1 text-sm font-bold text-slate-800">{assistantAnalysisMode === 'ai' ? 'AI 框架' : '基础框架'}</div>
+                  <div className="text-right">
+                    <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                      {assistantAnalysisMode === 'ai' ? '完整版' : '基础版'}
+                    </div>
+                    {!isMember ? <div className="mt-2 text-[11px] text-slate-400">升级会员解锁完整版</div> : null}
                   </div>
-                </div>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {conversationOptions.map((item) => (
-                    <button
-                      key={item.key}
-                      type="button"
-                      onClick={() => setAssistantConversationKey(item.key)}
-                      className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition-all ${
-                        assistantConversationKey === item.key
-                          ? 'border-indigo-500 bg-indigo-600 text-white shadow-sm'
-                          : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-600'
-                      }`}
-                    >
-                      {item.label}
-                    </button>
-                  ))}
                 </div>
               </div>
 
@@ -1363,7 +1440,7 @@ export default function ProfileCenterPage() {
                   <div className="space-y-4">
                     <div className="flex justify-end">
                       <div className="max-w-[78%] rounded-[24px] rounded-br-md bg-slate-900 px-4 py-3 text-sm font-medium text-white">
-                        {assistantConversationKey === 'polish' ? '继续帮我往下展开' : '开始这一轮分析'}
+                        {assistantConversationKey === 'polish' ? '继续帮我往下展开' : '好啊'}
                       </div>
                     </div>
                     <div className="max-w-[82%] rounded-[24px] rounded-bl-md border border-indigo-100 bg-white px-4 py-4 shadow-sm">
@@ -1379,8 +1456,15 @@ export default function ProfileCenterPage() {
                 ) : !resumeText ? (
                   <div className="flex h-full min-h-[420px] flex-col items-center justify-center text-center">
                     <Sparkles className="mb-4 h-12 w-12 text-slate-300" />
-                    <p className="text-base font-semibold text-slate-800">上传简历后即可开始分析（免费）。</p>
-                    <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">先生成一版清晰框架，再逐步展开亮点、补强方向和英文面试准备。</p>
+                    <p className="text-base font-semibold text-slate-800">上传简历后，我会陪您一起把简历和面试准备梳理清楚。</p>
+                    <div className="mt-5">
+                      <button
+                        onClick={openResumePicker}
+                        className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
+                      >
+                        上传简历
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -1417,103 +1501,59 @@ export default function ProfileCenterPage() {
                         </div>
                       )
                     })}
-                  </div>
-                )}
-              </div>
 
-              <div className="border-t border-slate-200 bg-white px-5 py-4">
-                {!latestResume ? (
-                  <button
-                    onClick={openResumePicker}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-600"
-                  >
-                    <Upload className="h-4 w-4" />
-                    上传简历
-                  </button>
-                ) : !hasAssistantFramework ? (
-                  <button
-                    onClick={() => handleRunResumeAssistant('framework')}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-600"
-                  >
-                    {isMember ? <Crown className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
-                    {isMember ? '生成 AI 框架' : '生成简历框架'}
-                  </button>
-                ) : isMember ? (
-                  <div className="space-y-3">
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { value: 'polish_resume', label: '简历打磨' },
-                        { value: 'polish_interview', label: '英文面试' },
-                        { value: 'mock_answer', label: '模拟回答' },
-                      ].map((item) => (
-                        <button
-                          key={item.value}
-                          onClick={() => {
-                            setSelectedPolishMode(item.value as 'polish_resume' | 'polish_interview' | 'mock_answer')
-                            setAssistantConversationKey('polish')
-                          }}
-                          className={`rounded-full border px-3.5 py-2 text-sm font-semibold transition-all ${
-                            selectedPolishMode === item.value
-                              ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                              : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:text-indigo-600'
-                          }`}
-                        >
-                          {item.label}
-                        </button>
-                      ))}
-                    </div>
+                    {!hasAssistantFramework && assistantStartChoice !== 'deferred' ? (
+                      <div className="rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={() => handleConversationChoice('start')}
+                            className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-indigo-600"
+                          >
+                            好啊
+                          </button>
+                          <button
+                            onClick={() => handleConversationChoice('defer')}
+                            className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900"
+                          >
+                            暂时不用了
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
 
-                    {selectedPolishMode === 'mock_answer' && (
-                      <select
-                        value={selectedInterviewQuestion}
-                        onChange={(e) => setSelectedInterviewQuestion(e.target.value)}
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition-all focus:border-indigo-300"
-                      >
-                        <option value="">选择一个英文问题做模拟回答</option>
-                        {(assistantFramework?.englishInterviewFramework?.questions || []).map((item) => (
-                          <option key={item.question} value={item.question}>{item.question}</option>
-                        ))}
-                      </select>
-                    )}
-
-                    <button
-                      onClick={triggerMemberPolish}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-600"
-                    >
-                      <Zap className="h-4 w-4" />
-                      深度打磨
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      {lockCards.map((card) => (
-                        <button
-                          key={card.featureKey}
-                          onClick={() => {
-                            trackingService.track('resume_assistant_upgrade_click', {
-                              page_key: 'profile',
-                              module: 'resume_assistant',
-                              feature_key: card.featureKey,
-                              source_key: 'resume_assistant_lock_card',
-                              user_segment: 'free'
-                            })
-                            openAiEnhancementModal(card.featureKey)
-                          }}
-                          className="rounded-[20px] border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-left transition-all hover:border-indigo-200 hover:bg-white"
-                        >
-                          <div className="text-sm font-bold text-slate-900">{card.title}</div>
-                          <div className="mt-1 text-xs text-slate-500">会员可继续展开</div>
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      onClick={() => openAiEnhancementModal('resume_assistant_polish')}
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-indigo-200 bg-white px-5 py-3.5 text-sm font-bold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-50"
-                    >
-                      <Crown className="h-4 w-4" />
-                      解锁会员版深度打磨
-                    </button>
+                    {hasAssistantFramework && !isAnalyzing ? (
+                      <div className="rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                        <div className="text-sm font-semibold text-slate-900">接下来您想继续哪一步？</div>
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {[
+                            { id: 'overview', label: '整体评估' },
+                            { id: 'strengths', label: '优势亮点' },
+                            { id: 'growth', label: '补强重点' },
+                            { id: 'interview', label: '英文面试' }
+                          ].map((item) => (
+                            <button
+                              key={item.id}
+                              onClick={() => handleConversationChoice(item.id as 'overview' | 'strengths' | 'growth' | 'interview')}
+                              className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
+                            >
+                              {item.label}
+                            </button>
+                          ))}
+                          <button
+                            onClick={() => handleConversationChoice('polish')}
+                            className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-100"
+                          >
+                            {isMember ? '继续打磨方案' : '继续深度打磨'}
+                          </button>
+                          <button
+                            onClick={() => handleConversationChoice('mock')}
+                            className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
+                          >
+                            模拟英文面试
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
                 )}
               </div>
@@ -1805,7 +1845,7 @@ export default function ProfileCenterPage() {
 
   return (
     <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-10">
+      <div className="max-w-[1500px] mx-auto px-3 sm:px-4 lg:px-5 pt-5 pb-10">
         <div className="mb-8">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
@@ -1819,9 +1859,9 @@ export default function ProfileCenterPage() {
           </button>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
-          <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 space-y-6 relative ${isSidebarCollapsed ? 'w-20' : 'w-full lg:w-72'}`}>
+          <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 space-y-5 relative ${isSidebarCollapsed ? 'w-16' : 'w-full lg:w-64'}`}>
             {/* Toggle Button */}
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -1832,7 +1872,7 @@ export default function ProfileCenterPage() {
 
             {/* Member Card - Premium Upgrade */}
             {!isSidebarCollapsed ? (
-              <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden border border-white/10">
+                <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden border border-white/10">
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-400/20 rounded-full -mr-10 -mt-10 blur-3xl animate-pulse"></div>
