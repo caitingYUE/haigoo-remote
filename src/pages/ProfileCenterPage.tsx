@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap, RefreshCcw } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -110,6 +110,42 @@ function parseJsonValue<T>(value: unknown, fallback: T): T {
   }
   return fallback
 }
+
+const AssistantAvatar = memo(function AssistantAvatar() {
+  return (
+    <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
+      <img src="/copilot.webp" alt="Haigoo Copilot" className="h-full w-full object-cover" />
+    </div>
+  )
+})
+
+const ResumePreviewPane = memo(function ResumePreviewPane({
+  previewUrl,
+  fileType,
+  resumeText
+}: {
+  previewUrl: string | null
+  fileType: string
+  resumeText: string
+}) {
+  return (
+    <div className="flex-1 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80">
+      {previewUrl && fileType === 'application/pdf' ? (
+        <iframe src={previewUrl} className="h-full min-h-[620px] w-full bg-white" title="Resume Preview" />
+      ) : previewUrl && fileType.startsWith('image/') ? (
+        <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
+          <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
+        </div>
+      ) : (
+        <div className="h-full min-h-[620px] overflow-auto bg-slate-100 p-4 md:p-8">
+          <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
+            <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+})
 
 export default function ProfileCenterPage() {
   const { user: authUser, token, isMember, isTrialMember, logout } = useAuth()
@@ -333,7 +369,7 @@ export default function ProfileCenterPage() {
           id: 'empty-assistant',
           role: 'assistant',
           title: '简历助手已就绪',
-          body: '上传简历后，我会帮您逐步梳理亮点、补强方向和面试准备。',
+          body: '上传简历后，我会先陪您看一遍整体状态，再一起把亮点、补强方向和面试准备理顺。',
           accent: 'neutral'
         }
       ]
@@ -345,7 +381,7 @@ export default function ProfileCenterPage() {
           id: 'upload-complete',
           role: 'assistant',
           title: '简历已经上传完成',
-          body: '让我先帮您整体评估一下，看看哪些优势最值得继续放大。',
+          body: '让我先帮您整体看一遍，找出最值得继续放大的优势。',
           accent: 'neutral'
         }
       ]
@@ -361,7 +397,7 @@ export default function ProfileCenterPage() {
           {
             id: 'defer-assistant',
             role: 'assistant',
-            body: '好的，需要时随时叫我开始分析。',
+            body: '好的，您想开始时随时叫我。',
             accent: 'neutral'
           }
         )
@@ -452,7 +488,7 @@ export default function ProfileCenterPage() {
         id: 'strengths-message',
         role: 'assistant',
         title: '你已经有这些可放大的亮点',
-        body: '先稳定住这些优势，它们会成为你后续投递和面试里的核心支点。',
+        body: '这些已经是你简历里很有说服力的部分，后续投递和面试都可以围绕它们展开。',
         bullets: (assistantFramework.strengths || []).map((item) => `${item.title}：${item.detail}`),
         accent: 'emerald'
       })
@@ -476,7 +512,7 @@ export default function ProfileCenterPage() {
           id: 'growth-areas',
           role: 'assistant',
           title: '建议优先补强的信息',
-          body: '优先补这些地方，会比从头重写更有效。',
+          body: '先把这些位置补完整，会比从头重写更有效。',
           bullets: assistantFramework.growthAreas.map((item) => `${item.title}：${item.detail}`),
           accent: 'neutral'
         })
@@ -506,7 +542,7 @@ export default function ProfileCenterPage() {
         id: 'interview-summary',
         role: 'assistant',
         title: '英文面试框架',
-        body: assistantFramework.englishInterviewFramework?.summary || '先用一版清晰的英文框架，把表达重心固定下来。',
+        body: assistantFramework.englishInterviewFramework?.summary || '我先帮你把英文面试的表达主线理出来，后面再继续往下展开。',
         bullets: assistantFramework.englishInterviewFramework?.selfIntroOutline || [],
         accent: 'indigo'
       })
@@ -542,7 +578,7 @@ export default function ProfileCenterPage() {
           id: 'polish-member-empty',
           role: 'assistant',
           title: '准备开始深度打磨',
-          body: '你可以继续选择简历打磨、英文面试或模拟回答，我会基于当前框架逐步展开。',
+          body: '你可以继续选择简历打磨、英文面试或模拟回答，我会基于当前内容继续往下展开。',
           accent: 'neutral'
         })
       } else {
@@ -1223,51 +1259,27 @@ export default function ProfileCenterPage() {
       )
     }
 
-    return (
-      <div className={`flex-1 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80 transition-opacity duration-200 ${showUpgradeModal ? 'pointer-events-none opacity-60' : ''}`}>
-        {previewUrl && fileType === 'application/pdf' ? (
-          <iframe src={previewUrl} className="h-full min-h-[620px] w-full bg-white" title="Resume Preview" />
-        ) : previewUrl && fileType.startsWith('image/') ? (
-          <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
-            <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
-          </div>
-        ) : (
-          <div className="h-full min-h-[620px] overflow-auto bg-slate-100 p-4 md:p-8">
-            <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
-              <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }, [latestResume, previewUrl, fileType, resumeText, showUpgradeModal])
+    return <ResumePreviewPane previewUrl={previewUrl} fileType={fileType} resumeText={resumeText} />
+  }, [latestResume, previewUrl, fileType, resumeText])
 
   const ResumeTab = () => {
-    const heroPrimaryLabel = latestResume
-      ? (hasAssistantFramework ? (isMember ? '深度打磨' : '刷新建议') : (isMember ? '开始分析' : '开始分析'))
-      : '上传简历'
     const lastUpdatedLabel = assistantUpdatedAt
       ? new Date(assistantUpdatedAt).toLocaleString()
       : '尚未生成'
     const visibleConversationMessages = assistantConversationMessages.slice(0, assistantConversationRevealCount)
-    const triggerPrimaryAction = () => {
-      if (!latestResume) {
-        openResumePicker()
-        return
-      }
-      if (hasAssistantFramework) {
-        if (isMember) {
-          handleRunResumeAssistant(selectedPolishMode, {
-            focusKey: assistantFramework?.growthAreas?.[0]?.focusKey || assistantFramework?.starGaps?.[0]?.focusKey || '',
-            question: selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || '',
-          })
-          return
-        }
-        handleRunResumeAssistant('framework')
-        return
-      }
-      handleRunResumeAssistant('framework')
-    }
+    const analysisProgress = Math.max(8, Math.min(100, resumeScore || (latestResume ? 28 : 8)))
+    const analysisStatusLabel = isAnalyzing
+      ? (analysisStep || analysisStepFallback)
+      : hasAssistantFramework
+        ? '已整理完成'
+        : latestResume
+          ? '等待开始'
+          : '等待上传'
+    const analysisStatusNote = !latestResume
+      ? '上传简历后，我会从整体判断、亮点和面试准备开始陪你往下拆。'
+      : hasAssistantFramework
+        ? '右侧对话会陪你继续往下看亮点、补强方向和英文面试准备。'
+        : '简历已经准备好，你可以直接在右侧开始第一轮整体分析。'
 
     const triggerMemberPolish = () => {
       handleRunResumeAssistant(selectedPolishMode, {
@@ -1322,56 +1334,47 @@ export default function ProfileCenterPage() {
 
     return (
       <div className="space-y-6">
-        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_-42px_rgba(15,23,42,0.16)]">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,0.85fr)] xl:items-stretch">
+        <section className="sticky top-4 z-20 rounded-[28px] border border-slate-200 bg-white/95 px-6 py-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.18)] backdrop-blur">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)] xl:items-stretch">
             <div className="space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em] text-indigo-600">
-                <Sparkles className="h-3.5 w-3.5" />
-                AI
-              </div>
               <div>
                 <h2 className="text-[30px] font-black tracking-tight text-slate-950">简历助手</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
-                  先帮你看清亮点与补强方向，再把简历表达和英文面试准备串成一条更有信心的求职路径。
+                  帮你发现自己的优势与潜力，从简历到面试，一路通关！
                 </p>
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">简历状态</div>
+                  <div className="text-[11px] font-semibold tracking-[0.18em] text-slate-400">简历状态</div>
                   <div className="mt-2 text-lg font-black text-slate-900">{latestResume ? '已上传' : '等待上传'}</div>
                 </div>
                 <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">当前得分</div>
+                  <div className="text-[11px] font-semibold tracking-[0.18em] text-slate-400">当前得分</div>
                   <div className="mt-2 text-lg font-black text-slate-900">{Math.max(0, Math.min(100, resumeScore))}%</div>
                 </div>
                 <div className="rounded-[24px] border border-slate-200 bg-slate-50 px-4 py-4">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">最近更新</div>
+                  <div className="text-[11px] font-semibold tracking-[0.18em] text-slate-400">最近更新</div>
                   <div className="mt-2 text-sm font-semibold leading-6 text-slate-700">{lastUpdatedLabel}</div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-[28px] border border-indigo-100 bg-indigo-50/70 p-5">
-              <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.18em] text-slate-500">
-                <span>简历分析</span>
-                <span>{hasAssistantFramework ? '已生成方案' : '等待开始'}</span>
-              </div>
-              <div className="mt-4 h-2 rounded-full bg-indigo-100">
-                <div
-                  className="h-2 rounded-full bg-indigo-500 transition-all duration-500"
-                  style={{ width: `${Math.max(12, Math.min(100, resumeScore || (latestResume ? 24 : 8)))}%` }}
-                />
-              </div>
-              <button
-                onClick={triggerPrimaryAction}
-                disabled={isUploading || isAnalyzing}
-                className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-900 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {hasAssistantFramework ? <RefreshCcw className={`h-4 w-4 ${isAnalyzing ? 'animate-spin' : ''}`} /> : <Sparkles className="h-4 w-4" />}
-                {heroPrimaryLabel}
-              </button>
-              <div className="mt-4 flex items-center justify-end gap-3 text-sm text-slate-600">
-                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-indigo-600">{assistantAnalysisMode === 'ai' ? '完整版' : '基础版'}</span>
+            <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+              <div className="flex items-start gap-3">
+                <AssistantAvatar />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-bold text-slate-900">简历分析</span>
+                    <span className="text-xs font-semibold text-slate-500">{analysisStatusLabel}</span>
+                  </div>
+                  <div className="mt-4 h-2 rounded-full bg-indigo-100">
+                    <div
+                      className="h-2 rounded-full bg-indigo-500 transition-all duration-500"
+                      style={{ width: `${analysisProgress}%` }}
+                    />
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{analysisStatusNote}</p>
+                </div>
               </div>
             </div>
           </div>
@@ -1404,11 +1407,12 @@ export default function ProfileCenterPage() {
                 )}
               </div>
 
-              {!latestResume ? (
-                resumePreviewContent
-              ) : (
-                resumePreviewContent
-              )}
+              <div className="relative flex-1">
+                {resumePreviewContent}
+                {showUpgradeModal && latestResume ? (
+                  <div className="pointer-events-none absolute inset-0 z-10 rounded-[24px] bg-slate-50/70 backdrop-blur-[1px]" />
+                ) : null}
+              </div>
 
               <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" onChange={handleUpload} className="hidden" />
               {isUploading && <div className="mt-4 text-center text-sm text-slate-500">正在上传并解析简历...</div>}
@@ -1417,53 +1421,46 @@ export default function ProfileCenterPage() {
 
           <section id="ai-analysis-section" className="rounded-[28px] border border-slate-200 bg-white shadow-sm xl:h-[760px] xl:min-h-[760px] xl:overflow-hidden">
             <div className="flex h-full flex-col">
-              <div className="border-b border-slate-200 px-5 py-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-indigo-600">
-                      <MessageSquare className="h-3.5 w-3.5" />
-                      AI 对话
-                    </div>
-                    <h3 className="mt-3 text-xl font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
-                  </div>
-                  <div className="text-right">
-                    <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
-                      {assistantAnalysisMode === 'ai' ? '完整版' : '基础版'}
-                    </div>
-                    {!isMember ? <div className="mt-2 text-[11px] text-slate-400">升级会员解锁完整版</div> : null}
-                  </div>
-                </div>
+              <div className="border-b border-slate-200 px-5 py-5">
+                <h3 className="text-[28px] font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
               </div>
 
               <div className="flex-1 overflow-y-auto bg-slate-50/70 px-5 py-5">
                 {isAnalyzing ? (
                   <div className="space-y-4">
                     <div className="flex justify-end">
-                      <div className="max-w-[78%] rounded-[24px] rounded-br-md bg-slate-900 px-4 py-3 text-sm font-medium text-white">
-                        {assistantConversationKey === 'polish' ? '继续帮我往下展开' : '好啊'}
+                      <div className="max-w-[72%] rounded-[24px] rounded-br-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm">
+                        {assistantConversationKey === 'polish' ? '继续帮我往下打磨' : '好啊'}
                       </div>
                     </div>
-                    <div className="max-w-[82%] rounded-[24px] rounded-bl-md border border-indigo-100 bg-white px-4 py-4 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-100 border-t-indigo-600" />
-                        <div>
-                          <div className="text-sm font-bold text-slate-900">{analysisStep || analysisStepFallback}</div>
-                          <div className="mt-1 text-xs text-slate-500">{analysisDescription}</div>
+                    <div className="flex items-start gap-3">
+                      <AssistantAvatar />
+                      <div className="max-w-[82%] rounded-[24px] rounded-bl-md border border-indigo-100 bg-white px-4 py-4 shadow-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-100 border-t-indigo-600" />
+                          <div>
+                            <div className="text-sm font-bold text-slate-900">{analysisStep || analysisStepFallback}</div>
+                            <div className="mt-1 text-xs leading-6 text-slate-500">{analysisDescription}</div>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
                 ) : !resumeText ? (
-                  <div className="flex h-full min-h-[420px] flex-col items-center justify-center text-center">
-                    <Sparkles className="mb-4 h-12 w-12 text-slate-300" />
-                    <p className="text-base font-semibold text-slate-800">上传简历后，我会陪您一起把简历和面试准备梳理清楚。</p>
-                    <div className="mt-5">
-                      <button
-                        onClick={openResumePicker}
-                        className="inline-flex items-center justify-center rounded-full bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
-                      >
-                        上传简历
-                      </button>
+                  <div className="flex h-full min-h-[420px] items-center">
+                    <div className="mx-auto flex w-full max-w-[620px] items-start gap-3">
+                      <AssistantAvatar />
+                      <div className="w-full rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-5 py-5 shadow-sm">
+                        <p className="text-base font-semibold leading-7 text-slate-900">把简历上传给我吧，我会陪您从整体判断一路拆到面试准备。</p>
+                        <div className="mt-4">
+                          <button
+                            onClick={openResumePicker}
+                            className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                          >
+                            上传简历
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
@@ -1471,22 +1468,23 @@ export default function ProfileCenterPage() {
                     {visibleConversationMessages.map((message) => {
                       const isUser = message.role === 'user'
                       const accentClass = message.accent === 'emerald'
-                        ? 'border-emerald-100 bg-emerald-50/90'
+                        ? 'border-emerald-100 bg-emerald-50/95'
                         : message.accent === 'indigo'
-                          ? 'border-indigo-100 bg-indigo-50/90'
+                          ? 'border-indigo-100 bg-indigo-50/95'
                           : 'border-slate-200 bg-white'
 
                       return (
-                        <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                        <div key={message.id} className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                          {!isUser ? <AssistantAvatar /> : null}
                           <div className={`max-w-[84%] rounded-[24px] px-4 py-4 shadow-sm ${
                             isUser
-                              ? 'rounded-br-md bg-slate-900 text-white'
-                              : `rounded-bl-md border ${accentClass} text-slate-700`
+                              ? 'rounded-br-md bg-indigo-600 text-white'
+                              : `rounded-bl-md border ${accentClass}`
                           }`}>
                             {message.title ? (
                               <div className={`text-sm font-black ${isUser ? 'text-white' : 'text-slate-900'}`}>{message.title}</div>
                             ) : null}
-                            <p className={`text-sm leading-7 ${message.title ? 'mt-2' : ''}`}>{message.body}</p>
+                            <p className={`text-sm leading-7 ${message.title ? 'mt-2' : ''} ${isUser ? 'text-white' : 'text-slate-700'}`}>{message.body}</p>
                             {message.bullets?.length ? (
                               <div className="mt-3 space-y-2">
                                 {message.bullets.map((bullet, index) => (
@@ -1503,54 +1501,61 @@ export default function ProfileCenterPage() {
                     })}
 
                     {!hasAssistantFramework && assistantStartChoice !== 'deferred' ? (
-                      <div className="rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                        <div className="flex flex-wrap gap-2">
-                          <button
-                            onClick={() => handleConversationChoice('start')}
-                            className="rounded-full bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-indigo-600"
-                          >
-                            好啊
-                          </button>
-                          <button
-                            onClick={() => handleConversationChoice('defer')}
-                            className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900"
-                          >
-                            暂时不用了
-                          </button>
+                      <div className="flex items-start gap-3">
+                        <AssistantAvatar />
+                        <div className="w-full max-w-[82%] rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                          <div className="text-sm font-semibold text-slate-900">要不要我现在开始？</div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            <button
+                              onClick={() => handleConversationChoice('start')}
+                              className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                            >
+                              好啊
+                            </button>
+                            <button
+                              onClick={() => handleConversationChoice('defer')}
+                              className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 transition-all hover:border-slate-300 hover:text-slate-900"
+                            >
+                              暂时不用了
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ) : null}
 
                     {hasAssistantFramework && !isAnalyzing ? (
-                      <div className="rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                        <div className="text-sm font-semibold text-slate-900">接下来您想继续哪一步？</div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {[
-                            { id: 'overview', label: '整体评估' },
-                            { id: 'strengths', label: '优势亮点' },
-                            { id: 'growth', label: '补强重点' },
-                            { id: 'interview', label: '英文面试' }
-                          ].map((item) => (
+                      <div className="flex items-start gap-3">
+                        <AssistantAvatar />
+                        <div className="w-full max-w-[88%] rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
+                          <div className="text-sm font-semibold text-slate-900">接下来我们继续哪一步？</div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {[
+                              { id: 'overview', label: '先看整体判断' },
+                              { id: 'strengths', label: '看看我的亮点' },
+                              { id: 'growth', label: '告诉我怎么补强' },
+                              { id: 'interview', label: '准备英文面试' }
+                            ].map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => handleConversationChoice(item.id as 'overview' | 'strengths' | 'growth' | 'interview')}
+                                className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
+                              >
+                                {item.label}
+                              </button>
+                            ))}
                             <button
-                              key={item.id}
-                              onClick={() => handleConversationChoice(item.id as 'overview' | 'strengths' | 'growth' | 'interview')}
+                              onClick={() => handleConversationChoice('polish')}
+                              className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700"
+                            >
+                              {isMember ? '继续深度打磨' : '继续往下打磨'}
+                            </button>
+                            <button
+                              onClick={() => handleConversationChoice('mock')}
                               className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
                             >
-                              {item.label}
+                              模拟英文面试
                             </button>
-                          ))}
-                          <button
-                            onClick={() => handleConversationChoice('polish')}
-                            className="rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 transition-all hover:border-indigo-300 hover:bg-indigo-100"
-                          >
-                            {isMember ? '继续打磨方案' : '继续深度打磨'}
-                          </button>
-                          <button
-                            onClick={() => handleConversationChoice('mock')}
-                            className="rounded-full border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
-                          >
-                            模拟英文面试
-                          </button>
+                          </div>
                         </div>
                       </div>
                     ) : null}
@@ -1844,9 +1849,9 @@ export default function ProfileCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      <div className="max-w-[1500px] mx-auto px-3 sm:px-4 lg:px-5 pt-5 pb-10">
-        <div className="mb-8">
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-[1600px] px-2 sm:px-3 lg:px-4 py-4">
+        <div className="mb-5">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
             onClick={() => navigate(-1)}
@@ -1859,99 +1864,95 @@ export default function ProfileCenterPage() {
           </button>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
           {/* Sidebar */}
-          <aside className={`transition-all duration-300 ease-in-out flex-shrink-0 space-y-5 relative ${isSidebarCollapsed ? 'w-16' : 'w-full lg:w-64'}`}>
-            {/* Toggle Button */}
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="absolute -right-3 top-6 w-6 h-6 bg-white border border-slate-200 rounded-full flex items-center justify-center shadow-md text-slate-500 hover:text-indigo-600 z-10 hidden lg:flex hover:scale-110 transition-transform"
-            >
-              {isSidebarCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-            </button>
+          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[76px]' : 'w-full lg:w-[228px]'} lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]`}>
+            <div className="flex h-full flex-col gap-4">
+              <button
+                onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                className="absolute -right-3 top-5 z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition-transform hover:scale-110 hover:text-indigo-600 lg:flex"
+              >
+                {isSidebarCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              </button>
 
-            {/* Member Card - Premium Upgrade */}
-            {!isSidebarCollapsed ? (
-                <div className="bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-700 rounded-2xl p-5 text-white shadow-xl relative overflow-hidden border border-white/10">
-                {/* Background Effects */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay"></div>
-                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-400/20 rounded-full -mr-10 -mt-10 blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-0 left-0 w-24 h-24 bg-teal-400/20 rounded-full -ml-10 -mb-10 blur-2xl animate-pulse delay-700"></div>
-
-                <div className="relative z-10">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 bg-white/10 rounded-lg backdrop-blur-sm border border-white/10">
-                        <Crown className="w-5 h-5 text-indigo-200" />
+              {!isSidebarCollapsed ? (
+                <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                  <div className="border-b border-indigo-100 bg-indigo-50 px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
+                        <Crown className="h-5 w-5" />
                       </div>
-                      <span className="font-bold text-sm tracking-wide text-white/90">会员中心</span>
+                      <div>
+                        <div className="text-sm font-bold text-slate-900">会员中心</div>
+                        <div className="text-xs text-slate-500">{isMember ? '当前权益已开启' : '解锁更多求职能力'}</div>
+                      </div>
                     </div>
-                    {isMember && (
-                      <span className="px-2 py-0.5 rounded-full bg-teal-500/20 border border-teal-400/30 text-[10px] font-bold text-teal-200 uppercase">
-                        Active
-                      </span>
-                    )}
                   </div>
 
-                  {isMember ? (
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-xs text-indigo-200 mb-1">当前等级</p>
-                        <p className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                          {isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}
-                          <CheckCircle className="w-4 h-4 text-teal-300" />
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-indigo-200 mb-1">有效期至</p>
-                        <p className="text-sm font-medium text-white/80 font-mono">
-                          {authUser?.memberExpireAt ? new Date(authUser.memberExpireAt).toLocaleDateString() : '永久有效'}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => navigate('/membership')}
-                        className="w-full py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all shadow-lg backdrop-blur-md flex items-center justify-center gap-2 group"
-                      >
-                        续费 / 升级权益 <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-                      </button>
-                      <button
-                        onClick={() => setShowCertificateModal(true)}
-                        className="w-full py-2.5 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-400/30 text-indigo-100 text-xs font-bold rounded-xl transition-all shadow-lg backdrop-blur-md flex items-center justify-center gap-2 group mt-2"
-                      >
-                        下载会员证书 <Download className="w-3 h-3 group-hover:translate-y-0.5 transition-transform" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="text-lg font-bold text-white mb-2">开通会员</h4>
-                        <p className="text-xs text-indigo-100 leading-relaxed opacity-90">
-                          解锁无限次 AI 简历优化、内推直达通道及专家职业规划服务。
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => navigate('/membership')}
-                        className="w-full py-3 bg-gradient-to-r from-white via-indigo-50 to-teal-50 hover:from-indigo-100 hover:to-teal-100 text-indigo-900 text-sm font-bold rounded-xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 flex items-center justify-center gap-2 group"
-                      >
-                        立即开通 <Zap className="w-4 h-4 text-teal-600 group-hover:scale-110 transition-transform" />
-                      </button>
-                    </div>
-                  )}
+                  <div className="space-y-4 px-4 py-4">
+                    {isMember ? (
+                      <>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                          <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">当前等级</div>
+                          <div className="mt-2 flex items-center gap-2 text-base font-black text-slate-900">
+                            <span>{isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}</span>
+                            <CheckCircle className="h-4 w-4 text-emerald-500" />
+                          </div>
+                          <div className="mt-2 text-xs text-slate-500">
+                            有效期至 {authUser?.memberExpireAt ? new Date(authUser.memberExpireAt).toLocaleDateString() : '永久有效'}
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => navigate('/membership')}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                        >
+                          续费 / 升级权益
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setShowCertificateModal(true)}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
+                        >
+                          下载会员证书
+                          <Download className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                          <div className="text-base font-black text-slate-900">开通会员</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-600">
+                            解锁 AI 简历优化、关键人脉直达与更完整的求职陪伴。
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => navigate('/membership')}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                        >
+                          立即开通
+                          <Zap className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex justify-center" title="会员权益">
-                <button onClick={() => setIsSidebarCollapsed(false)} className="p-3 bg-gradient-to-br from-indigo-900 to-teal-800 text-white rounded-2xl hover:shadow-lg transition-all shadow-md border border-white/10">
-                  <Crown className="w-6 h-6" />
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="flex justify-center">
+                  <button
+                    onClick={() => setIsSidebarCollapsed(false)}
+                    className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-slate-200 bg-white text-indigo-600 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-700"
+                    title="会员中心"
+                  >
+                    <Crown className="h-6 w-6" />
+                  </button>
+                </div>
+              )}
 
-            <div>
-              <div className={`text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-4 ${isSidebarCollapsed ? 'text-center px-0' : ''}`}>
-                {isSidebarCollapsed ? 'MENU' : 'Dashboard'}
-              </div>
-              <nav className="space-y-1" role="tablist">
+              <div className="rounded-[24px] border border-slate-200 bg-white p-3 shadow-sm">
+                <div className={`mb-3 px-2 text-xs font-bold tracking-[0.16em] text-slate-400 ${isSidebarCollapsed ? 'text-center px-0' : ''}`}>
+                  {isSidebarCollapsed ? 'MENU' : '个人中心'}
+                </div>
+                <nav className="space-y-1" role="tablist">
                 {[
                   // { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
                   { id: 'resume', label: '简历助手', icon: FileText },
@@ -1960,12 +1961,12 @@ export default function ProfileCenterPage() {
                   { id: 'feedback', label: '我要反馈', icon: MessageSquare },
                   { id: 'settings', label: '注销账号', icon: Settings }
                 ].map((item) => (
-                  <button
+                    <button
                     key={item.id}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group relative
                         ${tab === item.id
-                        ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-100'
-                        : 'text-slate-500 hover:bg-white hover:text-slate-900 hover:shadow-sm'
+                        ? 'bg-indigo-50 text-indigo-600 shadow-sm'
+                        : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                       } 
                         ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
                     role="tab"
@@ -1989,7 +1990,8 @@ export default function ProfileCenterPage() {
                     )}
                   </button>
                 ))}
-              </nav>
+                </nav>
+              </div>
             </div>
           </aside>
 
