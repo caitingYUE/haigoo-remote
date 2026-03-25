@@ -98,6 +98,12 @@ interface AssistantConversationMessage {
   accent?: 'neutral' | 'indigo' | 'emerald'
 }
 
+interface AssistantConversationRenderableMessage extends AssistantConversationMessage {
+  bodyLines: string[]
+  bulletLines: string[]
+  totalLines: number
+}
+
 function parseJsonValue<T>(value: unknown, fallback: T): T {
   if (!value) return fallback
   if (typeof value === 'object') return value as T
@@ -109,6 +115,16 @@ function parseJsonValue<T>(value: unknown, fallback: T): T {
     }
   }
   return fallback
+}
+
+function splitConversationLines(text: string): string[] {
+  if (!text) return []
+
+  return text
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[。！？!?])/g))
+    .map((line) => line.trim())
+    .filter(Boolean)
 }
 
 const AssistantAvatar = memo(function AssistantAvatar() {
@@ -152,6 +168,7 @@ export default function ProfileCenterPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const conversationScrollRef = useRef<HTMLDivElement>(null)
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
@@ -179,7 +196,7 @@ export default function ProfileCenterPage() {
   const [selectedPolishMode, setSelectedPolishMode] = useState<'polish_resume' | 'polish_interview' | 'mock_answer'>('polish_resume')
   const [selectedInterviewQuestion, setSelectedInterviewQuestion] = useState<string>('')
   const [assistantConversationKey, setAssistantConversationKey] = useState<AssistantConversationKey>('overview')
-  const [assistantConversationRevealCount, setAssistantConversationRevealCount] = useState(0)
+  const [assistantConversationRevealLineCount, setAssistantConversationRevealLineCount] = useState(0)
   const [assistantStartChoice, setAssistantStartChoice] = useState<'pending' | 'deferred' | 'running'>('pending')
   const resumeAssistantUpgradeTracked = useRef(false)
 
@@ -204,6 +221,8 @@ export default function ProfileCenterPage() {
   const { showSuccess, showError } = useNotificationHelpers()
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [showCertificateModal, setShowCertificateModal] = useState(false)
+  const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [analysisStep, setAnalysisStep] = useState<string>('')
 
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
   const [copilotPlan, setCopilotPlan] = useState<any>(null)
@@ -596,27 +615,57 @@ export default function ProfileCenterPage() {
     return messages
   }, [assistantConversationKey, assistantFramework, assistantPolishResult, selectedInterviewQuestion, aiSuggestions, isMember, latestResume?.id, assistantStartChoice])
 
+  const assistantConversationRenderableMessages = useMemo<AssistantConversationRenderableMessage[]>(
+    () =>
+      assistantConversationMessages.map((message) => {
+        const bodyLines = splitConversationLines(message.body)
+        const bulletLines = message.bullets || []
+        const totalLines = (message.title ? 1 : 0) + bodyLines.length + bulletLines.length
+        return {
+          ...message,
+          bodyLines,
+          bulletLines,
+          totalLines
+        }
+      }),
+    [assistantConversationMessages]
+  )
+
   useEffect(() => {
-    if (!assistantConversationMessages.length) {
-      setAssistantConversationRevealCount(0)
+    const totalLines = assistantConversationRenderableMessages.reduce((sum, message) => sum + message.totalLines, 0)
+
+    if (!assistantConversationRenderableMessages.length || totalLines === 0) {
+      setAssistantConversationRevealLineCount(0)
       return
     }
 
-    setAssistantConversationRevealCount(1)
-    if (assistantConversationMessages.length === 1) return
+    setAssistantConversationRevealLineCount(1)
+    if (totalLines === 1) return
 
     const timer = window.setInterval(() => {
-      setAssistantConversationRevealCount((prev) => {
-        if (prev >= assistantConversationMessages.length) {
+      setAssistantConversationRevealLineCount((prev) => {
+        if (prev >= totalLines) {
           window.clearInterval(timer)
           return prev
         }
         return prev + 1
       })
-    }, 260)
+    }, 150)
 
     return () => window.clearInterval(timer)
-  }, [assistantConversationMessages, assistantConversationKey, assistantUpdatedAt])
+  }, [assistantConversationRenderableMessages, assistantConversationKey, assistantUpdatedAt])
+
+  useEffect(() => {
+    if (!conversationScrollRef.current) return
+    const node = conversationScrollRef.current
+    const frame = window.requestAnimationFrame(() => {
+      node.scrollTo({
+        top: node.scrollHeight,
+        behavior: 'smooth'
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [assistantConversationRevealLineCount, isAnalyzing])
 
   const switchTab = (t: TabKey) => {
     setTab(t)
@@ -852,9 +901,6 @@ export default function ProfileCenterPage() {
 
 
   const favoritesWithStatus = useMemo(() => favorites, [favorites])
-
-  const [isAnalyzing, setIsAnalyzing] = useState(false)
-  const [analysisStep, setAnalysisStep] = useState<string>('')
 
   const extractResumeText = (resume: any): string => {
     if (!resume) return ''
@@ -1242,19 +1288,19 @@ export default function ProfileCenterPage() {
   const resumePreviewContent = useMemo(() => {
     if (!latestResume) {
       return (
-        <div className="flex flex-1 flex-col items-center justify-center rounded-[24px] border border-dashed border-indigo-200 bg-slate-50 px-8 text-center">
-          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[24px] bg-slate-900 text-white shadow-lg shadow-slate-200">
+        <div className="flex flex-1 flex-col items-center justify-start rounded-[24px] border border-dashed border-indigo-200 bg-slate-50 px-8 pt-14 text-center">
+          <div className="mb-5 flex h-[72px] w-[72px] items-center justify-center rounded-[24px] bg-slate-900 text-white shadow-lg shadow-slate-200">
             <FileText className="h-10 w-10" />
           </div>
-          <h4 className="text-2xl font-black text-slate-900">上传你的简历</h4>
+          <h4 className="text-[20px] font-black text-slate-900">上传你的简历</h4>
           <button
             onClick={openResumePicker}
-            className="mt-8 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 hover:shadow-xl"
+            className="mt-7 inline-flex items-center gap-2 rounded-full bg-slate-900 px-8 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 hover:shadow-xl"
           >
             <Upload className="h-4 w-4" />
             上传简历
           </button>
-          <p className="mt-4 text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
+          <p className="mt-5 text-xs text-slate-400">支持 PDF、DOC、DOCX</p>
         </div>
       )
     }
@@ -1266,7 +1312,6 @@ export default function ProfileCenterPage() {
     const lastUpdatedLabel = assistantUpdatedAt
       ? new Date(assistantUpdatedAt).toLocaleString()
       : '尚未生成'
-    const visibleConversationMessages = assistantConversationMessages.slice(0, assistantConversationRevealCount)
     const analysisProgress = Math.max(8, Math.min(100, resumeScore || (latestResume ? 28 : 8)))
     const analysisStatusLabel = isAnalyzing
       ? (analysisStep || analysisStepFallback)
@@ -1333,13 +1378,13 @@ export default function ProfileCenterPage() {
     }
 
     return (
-      <div className="space-y-6">
-        <section className="sticky top-4 z-20 rounded-[28px] border border-slate-200 bg-white/95 px-6 py-5 shadow-[0_16px_40px_-30px_rgba(15,23,42,0.18)] backdrop-blur">
+      <div className="space-y-5 pb-8">
+        <section className="rounded-[24px] border border-slate-200 bg-white px-5 py-4 shadow-[0_12px_32px_-26px_rgba(15,23,42,0.16)]">
           <div className="grid gap-5 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)] xl:items-stretch">
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div>
-                <h2 className="text-[30px] font-black tracking-tight text-slate-950">简历助手</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-7 text-slate-600">
+                <h2 className="text-[24px] font-black tracking-tight text-slate-950">简历助手</h2>
+                <p className="mt-1.5 max-w-2xl text-sm leading-7 text-slate-600">
                   帮你发现自己的优势与潜力，从简历到面试，一路通关！
                 </p>
               </div>
@@ -1359,7 +1404,7 @@ export default function ProfileCenterPage() {
               </div>
             </div>
 
-            <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-5">
+            <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
               <div className="flex items-start gap-3">
                 <AssistantAvatar />
                 <div className="min-w-0 flex-1">
@@ -1380,12 +1425,12 @@ export default function ProfileCenterPage() {
           </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[minmax(360px,0.82fr)_minmax(0,1.18fr)] xl:items-stretch">
-          <section className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-sm xl:h-[760px] xl:min-h-[760px] xl:overflow-hidden">
+        <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.78fr)_minmax(0,1.22fr)] xl:items-stretch">
+          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm xl:h-[680px] xl:min-h-[680px] xl:overflow-hidden">
             <div className="flex h-full flex-col">
               <div className="mb-4 flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-slate-900">简历预览</h3>
+                  <h3 className="text-base font-bold text-slate-900">简历预览</h3>
                   <p className="mt-1 text-sm text-slate-500">{latestResume ? latestResume.name : '支持 PDF、DOC、DOCX'}</p>
                 </div>
                 {latestResume && (
@@ -1419,13 +1464,13 @@ export default function ProfileCenterPage() {
             </div>
           </section>
 
-          <section id="ai-analysis-section" className="rounded-[28px] border border-slate-200 bg-white shadow-sm xl:h-[760px] xl:min-h-[760px] xl:overflow-hidden">
+          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm xl:h-[680px] xl:min-h-[680px] xl:overflow-hidden">
             <div className="flex h-full flex-col">
-              <div className="border-b border-slate-200 px-5 py-5">
-                <h3 className="text-[28px] font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
+              <div className="border-b border-slate-200 px-5 py-4">
+                <h3 className="text-[20px] font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
               </div>
 
-              <div className="flex-1 overflow-y-auto bg-slate-50/70 px-5 py-5">
+              <div ref={conversationScrollRef} className="flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4">
                 {isAnalyzing ? (
                   <div className="space-y-4">
                     <div className="flex justify-end">
@@ -1447,10 +1492,10 @@ export default function ProfileCenterPage() {
                     </div>
                   </div>
                 ) : !resumeText ? (
-                  <div className="flex h-full min-h-[420px] items-center">
-                    <div className="mx-auto flex w-full max-w-[620px] items-start gap-3">
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-start gap-3">
                       <AssistantAvatar />
-                      <div className="w-full rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-5 py-5 shadow-sm">
+                      <div className="w-full max-w-[84%] rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-5 py-5 shadow-sm">
                         <p className="text-base font-semibold leading-7 text-slate-900">把简历上传给我吧，我会陪您从整体判断一路拆到面试准备。</p>
                         <div className="mt-4">
                           <button
@@ -1465,40 +1510,67 @@ export default function ProfileCenterPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {visibleConversationMessages.map((message) => {
-                      const isUser = message.role === 'user'
-                      const accentClass = message.accent === 'emerald'
-                        ? 'border-emerald-100 bg-emerald-50/95'
-                        : message.accent === 'indigo'
-                          ? 'border-indigo-100 bg-indigo-50/95'
-                          : 'border-slate-200 bg-white'
+                    {(() => {
+                      let remainingLines = assistantConversationRevealLineCount
 
-                      return (
-                        <div key={message.id} className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
-                          {!isUser ? <AssistantAvatar /> : null}
-                          <div className={`max-w-[84%] rounded-[24px] px-4 py-4 shadow-sm ${
-                            isUser
-                              ? 'rounded-br-md bg-indigo-600 text-white'
-                              : `rounded-bl-md border ${accentClass}`
-                          }`}>
-                            {message.title ? (
-                              <div className={`text-sm font-black ${isUser ? 'text-white' : 'text-slate-900'}`}>{message.title}</div>
-                            ) : null}
-                            <p className={`text-sm leading-7 ${message.title ? 'mt-2' : ''} ${isUser ? 'text-white' : 'text-slate-700'}`}>{message.body}</p>
-                            {message.bullets?.length ? (
-                              <div className="mt-3 space-y-2">
-                                {message.bullets.map((bullet, index) => (
-                                  <div key={`${message.id}-${index}`} className={`flex gap-2 text-sm leading-6 ${isUser ? 'text-white/90' : 'text-slate-600'}`}>
-                                    <span className={`mt-[8px] h-1.5 w-1.5 rounded-full ${isUser ? 'bg-white/80' : 'bg-indigo-400'}`} />
-                                    <span>{bullet}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : null}
+                      return assistantConversationRenderableMessages.map((message) => {
+                        const isUser = message.role === 'user'
+                        const accentClass = message.accent === 'emerald'
+                          ? 'border-emerald-100 bg-emerald-50/95'
+                          : message.accent === 'indigo'
+                            ? 'border-indigo-100 bg-indigo-50/95'
+                            : 'border-slate-200 bg-white'
+
+                        const showTitle = Boolean(message.title) && remainingLines > 0
+                        if (message.title) remainingLines = Math.max(0, remainingLines - 1)
+
+                        const visibleBodyCount = Math.min(message.bodyLines.length, remainingLines)
+                        const visibleBodyLines = message.bodyLines.slice(0, visibleBodyCount)
+                        remainingLines = Math.max(0, remainingLines - visibleBodyCount)
+
+                        const visibleBulletCount = Math.min(message.bulletLines.length, remainingLines)
+                        const visibleBulletLines = message.bulletLines.slice(0, visibleBulletCount)
+                        remainingLines = Math.max(0, remainingLines - visibleBulletCount)
+
+                        if (!showTitle && visibleBodyLines.length === 0 && visibleBulletLines.length === 0) {
+                          return null
+                        }
+
+                        return (
+                          <div key={message.id} className={`flex items-start gap-3 ${isUser ? 'justify-end' : 'justify-start'}`}>
+                            {!isUser ? <AssistantAvatar /> : null}
+                            <div className={`max-w-[84%] rounded-[24px] px-4 py-4 shadow-sm ${
+                              isUser
+                                ? 'rounded-br-md bg-indigo-600 text-white'
+                                : `rounded-bl-md border ${accentClass}`
+                            }`}>
+                              {showTitle ? (
+                                <div className={`text-sm font-black ${isUser ? 'text-white' : 'text-slate-900'}`}>{message.title}</div>
+                              ) : null}
+                              {visibleBodyLines.length ? (
+                                <div className={`${showTitle ? 'mt-2' : ''} space-y-2`}>
+                                  {visibleBodyLines.map((line, index) => (
+                                    <p key={`${message.id}-line-${index}`} className={`text-sm leading-7 ${isUser ? 'text-white' : 'text-slate-700'}`}>
+                                      {line}
+                                    </p>
+                                  ))}
+                                </div>
+                              ) : null}
+                              {visibleBulletLines.length ? (
+                                <div className="mt-3 space-y-2">
+                                  {visibleBulletLines.map((bullet, index) => (
+                                    <div key={`${message.id}-bullet-${index}`} className={`flex gap-2 text-sm leading-6 ${isUser ? 'text-white/90' : 'text-slate-600'}`}>
+                                      <span className={`mt-[8px] h-1.5 w-1.5 rounded-full ${isUser ? 'bg-white/80' : 'bg-indigo-400'}`} />
+                                      <span>{bullet}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
                           </div>
-                        </div>
-                      )
-                    })}
+                        )
+                      })
+                    })()}
 
                     {!hasAssistantFramework && assistantStartChoice !== 'deferred' ? (
                       <div className="flex items-start gap-3">
@@ -1849,9 +1921,9 @@ export default function ProfileCenterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-[1600px] px-2 sm:px-3 lg:px-4 py-4">
-        <div className="mb-5">
+    <div className="h-[calc(100vh-64px)] bg-slate-50 mt-16 overflow-hidden">
+      <div className="mx-auto flex h-full max-w-[1600px] flex-col px-2 sm:px-3 lg:px-4 py-4">
+        <div className="mb-4 shrink-0">
           <button
             className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
             onClick={() => navigate(-1)}
@@ -1864,9 +1936,9 @@ export default function ProfileCenterPage() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+        <div className="flex min-h-0 flex-1 flex-col gap-5 lg:flex-row lg:items-start">
           {/* Sidebar */}
-          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[76px]' : 'w-full lg:w-[228px]'} lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]`}>
+          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[76px]' : 'w-full lg:w-[228px]'} lg:h-full`}>
             <div className="flex h-full flex-col gap-4">
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -1996,8 +2068,8 @@ export default function ProfileCenterPage() {
           </aside>
 
           {/* Main Content Area */}
-          <main className="flex-1 min-w-0">
-            <div className="transition-all duration-300">
+          <main className="min-w-0 flex-1 overflow-hidden">
+            <div className="h-full overflow-y-auto pr-1 transition-all duration-300">
               {tab === 'custom-plan' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
                   {loadingPlan ? (
