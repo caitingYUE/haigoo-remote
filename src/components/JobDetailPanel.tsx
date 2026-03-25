@@ -1533,7 +1533,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {showReferralModule && (
                         <section className="pb-5">
-                            <div className="rounded-[28px] border border-indigo-100/90 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.14),_transparent_28%),radial-gradient(circle_at_top_left,_rgba(34,211,238,0.08),_transparent_22%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.98))] p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-36px_rgba(79,70,229,0.22)]">
+                            <div className="rounded-[28px] border border-indigo-100 bg-white p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.14)]">
                                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                     <div className="min-w-0">
                                         <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 tracking-tight">帮我内推</h3>
@@ -1550,7 +1550,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         return (
                                             <button
                                                 onClick={handleUnlockReferralPreview}
-                                                className="inline-flex items-center justify-between gap-3 self-start rounded-[22px] border border-indigo-400/25 bg-[linear-gradient(135deg,#0f172a_0%,#1e1b4b_72%,#4338ca_100%)] px-4 py-3 text-left text-white shadow-[0_22px_46px_-24px_rgba(79,70,229,0.72)] transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_54px_-24px_rgba(79,70,229,0.78)] md:min-w-[220px]"
+                                                className="inline-flex items-center justify-between gap-3 self-start rounded-[22px] border border-indigo-200 bg-[linear-gradient(180deg,rgba(15,23,42,1),rgba(30,41,59,1))] px-4 py-3 text-left text-white shadow-[0_20px_42px_-28px_rgba(79,70,229,0.55)] transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-700 md:min-w-[220px]"
                                             >
                                                 <span className="block text-sm font-black tracking-tight">一键解锁企业人脉</span>
                                                 <span className="rounded-full border border-white/10 bg-white/12 px-2.5 py-1 text-xs font-semibold text-white/88">
@@ -1565,148 +1565,151 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 {(() => {
                                     const refCompanyName = job.company || companyInfo?.name || '';
                                     const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName);
-                                    const remainingReferralViews = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
                                     const renderLockedCard = (contact: ReferralContact, index: number, mode: 'guest' | 'free_available' | 'free_exhausted') => (
                                         <div
                                             key={`ref-contact-${mode}-${index}`}
-                                            className={`group rounded-[24px] border p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] ${
+                                            className={`group overflow-hidden rounded-[26px] border shadow-[0_18px_40px_-32px_rgba(15,23,42,0.18)] ${
                                                 mode === 'free_available'
-                                                    ? 'border-indigo-200 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.1),_transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.9))] shadow-[0_18px_36px_-30px_rgba(79,70,229,0.35)]'
-                                                    : 'border-slate-200 bg-white/96'
+                                                    ? 'border-indigo-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(244,247,255,1))] shadow-[0_22px_46px_-34px_rgba(79,70,229,0.28)]'
+                                                    : 'border-slate-200 bg-white'
                                             }`}
                                         >
-                                            <div className={`flex flex-col gap-4 ${mode === 'free_available' ? 'lg:block' : 'lg:flex-row lg:items-center lg:justify-between'}`}>
-                                                <div className="min-w-0 flex-1">
+                                            <div className="h-1 w-full bg-[linear-gradient(90deg,rgba(99,102,241,0.9),rgba(125,211,252,0.9))]" />
+                                            <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                                                <div className="min-w-0">
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-400 text-lg font-black text-white shadow-lg shadow-indigo-100">
+                                                        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-400 text-lg font-black text-white shadow-lg shadow-indigo-100">
                                                             {formatMaskedName(contact.name)}
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <span className="text-[17px] font-black text-slate-900 tracking-tight">{formatMaskedName(contact.name)}*</span>
+                                                                <span className="text-[18px] font-black tracking-tight text-slate-900">{formatMaskedName(contact.name)}*</span>
                                                                 <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                                                                     mode === 'free_available'
-                                                                        ? 'border-indigo-100 bg-white/85 text-indigo-700'
+                                                                        ? 'border-indigo-100 bg-indigo-50 text-indigo-700'
                                                                         : 'border-slate-200 bg-slate-50 text-slate-500'
                                                                 }`}>
                                                                     {getReferralAuthorityLabel(contact.title)}
                                                                 </span>
                                                             </div>
-                                                            <div className={`mt-2 inline-flex max-w-full items-center rounded-2xl border px-3 py-2 text-sm font-semibold shadow-sm ${
-                                                                mode === 'free_available'
-                                                                    ? 'border-indigo-100 bg-white/90 text-slate-800'
-                                                                    : 'border-indigo-100 bg-indigo-50/80 text-slate-700'
-                                                            }`}>
+                                                            <div className="mt-2 inline-flex max-w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
                                                                 {contact.title || '关键联系人'}
                                                             </div>
                                                         </div>
                                                     </div>
-
-                                                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                                                        <div className={`inline-flex max-w-[280px] items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
-                                                            mode === 'free_available'
-                                                                ? 'border-indigo-100 bg-white/88 text-indigo-700 shadow-sm'
-                                                                : 'border-slate-200 bg-slate-50 text-slate-500'
-                                                        }`}>
-                                                            <Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                                                            <span className="truncate blur-[3px] select-none">{contact.hiringEmail || 'hidden@company.com'}</span>
-                                                            <Lock className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
-                                                        </div>
-                                                        {contact.linkedin ? (
-                                                            <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
-                                                                mode === 'free_available'
-                                                                    ? 'border-indigo-100 bg-white/88 text-indigo-700 shadow-sm'
-                                                                    : 'border-slate-200 bg-slate-50 text-slate-500'
-                                                            }`}>
-                                                                <Linkedin className="w-3.5 h-3.5 text-slate-400" />
-                                                                <span className="blur-[3px] select-none">linkedin.com/in/hidden</span>
-                                                                <Lock className="w-3.5 h-3.5 text-slate-400" />
-                                                            </div>
-                                                        ) : null}
-                                                    </div>
                                                 </div>
 
-                                                <div className={`flex w-full flex-col gap-2 ${mode === 'free_available' ? 'hidden' : 'lg:w-auto lg:min-w-[172px]'}`}>
-                                                    {mode === 'guest' ? (
-                                                        <button
-                                                            onClick={() => navigate('/login')}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
-                                                        >
-                                                            <Lock className="w-4 h-4" />
-                                                            登录查看
-                                                        </button>
-                                                    ) : mode === 'free_available' ? (
-                                                        <div className="hidden lg:block lg:min-w-[172px]" />
-                                                    ) : (
-                                                        <button
-                                                            onClick={() => goToMembershipPayment('referral', 'job_detail_referral_exhausted')}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/15 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
-                                                        >
-                                                            升级解锁
-                                                        </button>
-                                                    )}
+                                                {mode !== 'free_available' ? (
+                                                    <div className="flex w-full items-start justify-start lg:w-auto lg:justify-end">
+                                                        {mode === 'guest' ? (
+                                                            <button
+                                                                onClick={() => navigate('/login')}
+                                                                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600 lg:min-w-[140px]"
+                                                            >
+                                                                <Lock className="w-4 h-4" />
+                                                                登录查看
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => goToMembershipPayment('referral', 'job_detail_referral_exhausted')}
+                                                                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:border-indigo-300 hover:bg-indigo-600 lg:min-w-[140px]"
+                                                            >
+                                                                升级解锁
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : null}
+                                            </div>
+
+                                            <div className={`border-t px-4 py-3 ${
+                                                mode === 'free_available'
+                                                    ? 'border-indigo-100 bg-indigo-50/50'
+                                                    : 'border-slate-200 bg-slate-50/70'
+                                            }`}>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <div className={`inline-flex max-w-[290px] items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                                                        mode === 'free_available'
+                                                            ? 'border-indigo-100 bg-white text-indigo-700'
+                                                            : 'border-slate-200 bg-white text-slate-500'
+                                                    }`}>
+                                                        <Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+                                                        <span className="truncate blur-[3px] select-none">{contact.hiringEmail || 'hidden@company.com'}</span>
+                                                        <Lock className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
+                                                    </div>
+                                                    {contact.linkedin ? (
+                                                        <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                                                            mode === 'free_available'
+                                                                ? 'border-indigo-100 bg-white text-indigo-700'
+                                                                : 'border-slate-200 bg-white text-slate-500'
+                                                        }`}>
+                                                            <Linkedin className="w-3.5 h-3.5 text-slate-400" />
+                                                            <span className="blur-[3px] select-none">linkedin.com/in/hidden</span>
+                                                            <Lock className="w-3.5 h-3.5 text-slate-400" />
+                                                        </div>
+                                                    ) : null}
                                                 </div>
                                             </div>
                                         </div>
                                     )
 
                                     const renderUnlockedCard = (contact: ReferralContact, index: number) => (
-                                        <div key={`ref-contact-${index}`} className="group rounded-[24px] border border-slate-200 bg-white/98 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] transition-all hover:border-indigo-200 hover:shadow-[0_18px_36px_-28px_rgba(79,70,229,0.18)]">
-                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                                                <div className="min-w-0 flex-1">
+                                        <div key={`ref-contact-${index}`} className="group overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_40px_-32px_rgba(15,23,42,0.18)] transition-all hover:border-indigo-200 hover:shadow-[0_24px_44px_-34px_rgba(79,70,229,0.2)]">
+                                            <div className="h-1 w-full bg-[linear-gradient(90deg,rgba(99,102,241,0.9),rgba(125,211,252,0.9))]" />
+                                            <div className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                                                <div className="min-w-0">
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-400 text-lg font-black text-white shadow-lg shadow-indigo-100">
+                                                        <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-400 text-lg font-black text-white shadow-lg shadow-indigo-100">
                                                             {formatMaskedName(contact.name)}
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <span className="text-[17px] font-black text-slate-900 tracking-tight max-w-[260px] truncate">
+                                                                <span className="max-w-[260px] truncate text-[18px] font-black tracking-tight text-slate-900">
                                                                     {contact.name || '-'}
                                                                 </span>
                                                                 <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">
                                                                     {getReferralAuthorityLabel(contact.title)}
                                                                 </span>
                                                             </div>
-                                                            <div className="mt-2 flex flex-wrap items-center gap-2">
-                                                                <span className="inline-flex max-w-full items-center rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                                                                    {contact.title || '-'}
-                                                                </span>
+                                                            <div className="mt-2 inline-flex max-w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                                                                {contact.title || '-'}
                                                             </div>
                                                         </div>
-                                                    </div>
-
-                                                    <div className="mt-4 flex flex-wrap items-center gap-2">
-                                                        <div className="inline-flex max-w-[340px] items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/90 px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm">
-                                                            <Mail className="w-3.5 h-3.5 flex-shrink-0" />
-                                                            <span className="truncate">{contact.hiringEmail || '-'}</span>
-                                                        </div>
-                                                        {contact.linkedin ? (
-                                                            <a
-                                                                href={toSafeExternalUrl(contact.linkedin)}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600"
-                                                                title="打开 LinkedIn"
-                                                            >
-                                                                <Linkedin className="w-3.5 h-3.5" />
-                                                                LinkedIn
-                                                            </a>
-                                                        ) : (
-                                                            <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-400">
-                                                                <Users className="w-3.5 h-3.5" />
-                                                                企业联系人
-                                                            </span>
-                                                        )}
                                                     </div>
                                                 </div>
 
                                                 <button
                                                     onClick={() => applyViaReferralContact(contact)}
-                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/15 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 lg:min-w-[170px]"
+                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:border-indigo-300 hover:bg-indigo-600 lg:min-w-[170px]"
                                                 >
                                                     <Mail className="w-4 h-4" />
                                                     {getReferralActionLabel(contact)}
                                                 </button>
+                                            </div>
+
+                                            <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-3">
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <div className="inline-flex max-w-[340px] items-center gap-2 rounded-xl border border-indigo-100 bg-white px-3 py-2 text-xs font-semibold text-indigo-700 shadow-sm">
+                                                        <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                                                        <span className="truncate">{contact.hiringEmail || '-'}</span>
+                                                    </div>
+                                                    {contact.linkedin ? (
+                                                        <a
+                                                            href={toSafeExternalUrl(contact.linkedin)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                                                            title="打开 LinkedIn"
+                                                        >
+                                                            <Linkedin className="w-3.5 h-3.5" />
+                                                            LinkedIn
+                                                        </a>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-400">
+                                                            <Users className="w-3.5 h-3.5" />
+                                                            企业联系人
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     )
