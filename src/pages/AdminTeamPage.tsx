@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback } from 'react';
 import {
   Search,
   RefreshCw,
@@ -34,28 +34,29 @@ import {
 import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { rssService } from '../services/rss-service';
 import { dataManagementService } from '../services/data-management-service';
-import DataManagementTabs from '../components/DataManagementTabs';
-import UserManagementPage from './UserManagementPage';
-import AdminCompanyManagementPage from './AdminCompanyManagementPage';
-import AdminTrustedCompaniesPage from './AdminTrustedCompaniesPage';
-import AdminTagManagementPage from './AdminTagManagementPage';
-import AdminApplicationsPage from './AdminApplicationsPage';
-import AdminMemberApplicationsPage from './AdminMemberApplicationsPage';
-import AdminFeedbackList from '../components/AdminFeedbackList';
-import { SubscriptionsTable } from '../components/SubscriptionsTable';
-import AdminSystemSettings from '../components/admin/AdminSystemSettings';
 import CronTestControl from '../components/CronTestControl';
 import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
 import { processedJobsService } from '../services/processed-jobs-service';
 
-import AdminTrackingManagement from '../components/admin/AdminTrackingManagement';
-import AdminTrackingDashboard from '../components/admin/AdminTrackingDashboard';
-import AdminJobBundles from '../components/admin/AdminJobBundles';
-import AdminSocialPush from '../components/admin/AdminSocialPush';
-import AdminContactMiningPage from './AdminContactMiningPage';
 import logoPng from '../assets/logo.png';
 import { trackingService } from '../services/tracking-service';
+
+const DataManagementTabs = lazy(() => import('../components/DataManagementTabs'));
+const UserManagementPage = lazy(() => import('./UserManagementPage'));
+const AdminCompanyManagementPage = lazy(() => import('./AdminCompanyManagementPage'));
+const AdminTrustedCompaniesPage = lazy(() => import('./AdminTrustedCompaniesPage'));
+const AdminTagManagementPage = lazy(() => import('./AdminTagManagementPage'));
+const AdminApplicationsPage = lazy(() => import('./AdminApplicationsPage'));
+const AdminMemberApplicationsPage = lazy(() => import('./AdminMemberApplicationsPage'));
+const AdminFeedbackList = lazy(() => import('../components/AdminFeedbackList'));
+const SubscriptionsTable = lazy(() => import('../components/SubscriptionsTable').then((module) => ({ default: module.SubscriptionsTable })));
+const AdminSystemSettings = lazy(() => import('../components/admin/AdminSystemSettings'));
+const AdminTrackingManagement = lazy(() => import('../components/admin/AdminTrackingManagement'));
+const AdminTrackingDashboard = lazy(() => import('../components/admin/AdminTrackingDashboard'));
+const AdminJobBundles = lazy(() => import('../components/admin/AdminJobBundles'));
+const AdminSocialPush = lazy(() => import('../components/admin/AdminSocialPush'));
+const AdminContactMiningPage = lazy(() => import('./AdminContactMiningPage'));
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -150,6 +151,19 @@ const AdminTeamPage: React.FC = () => {
       alert('删除失败');
     }
   };
+
+  const renderLazyFallback = (label = '加载中...') => (
+    <div className="card">
+      <div className="card-content">
+        <div className="flex min-h-[220px] items-center justify-center">
+          <div className="flex items-center gap-3 text-slate-500">
+            <Loader className="w-5 h-5 animate-spin" />
+            <span>{label}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   // 修复乱码的辅助函数
   const fixEncoding = (str: string) => {
@@ -1170,23 +1184,83 @@ const AdminTeamPage: React.FC = () => {
             <div className="admin-content">
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'rss' && renderRSSManagement()}
-              {activeTab === 'jobs' && renderJobDataManagement()}
-              {activeTab === 'social-push' && <AdminSocialPush />}
-              {activeTab === 'job-bundles' && <AdminJobBundles />}
               {activeTab === 'resumes' && renderResumeLibrary()}
-              {activeTab === 'subscriptions' && <SubscriptionsTable />}
-              {activeTab === 'users' && <UserManagementPage />}
-              {activeTab === 'job-applications' && <AdminApplicationsPage />}
-              {activeTab === 'member-applications' && <AdminMemberApplicationsPage />}
-              {activeTab === 'companies' && <AdminCompanyManagementPage />}
-              {activeTab === 'trusted-companies' && <AdminTrustedCompaniesPage />}
-              {activeTab === 'tag-management' && <AdminTagManagementPage />}
               {activeTab === 'analytics' && renderAnalytics()}
-              {activeTab === 'core-metrics' && <AdminTrackingDashboard />}
-              {activeTab === 'contact-mining' && <AdminContactMiningPage />}
-              {activeTab === 'feedback' && renderFeedbackList()}
-              {activeTab === 'settings' && renderSettings()}
-              {activeTab === 'tracking' && <AdminTrackingManagement />}
+              {activeTab === 'jobs' && (
+                <Suspense fallback={renderLazyFallback('正在加载职位数据...')}>
+                  {renderJobDataManagement()}
+                </Suspense>
+              )}
+              {activeTab === 'social-push' && (
+                <Suspense fallback={renderLazyFallback('正在加载社群推送...')}>
+                  <AdminSocialPush />
+                </Suspense>
+              )}
+              {activeTab === 'job-bundles' && (
+                <Suspense fallback={renderLazyFallback('正在加载职位组合...')}>
+                  <AdminJobBundles />
+                </Suspense>
+              )}
+              {activeTab === 'subscriptions' && (
+                <Suspense fallback={renderLazyFallback('正在加载历史订阅...')}>
+                  <SubscriptionsTable />
+                </Suspense>
+              )}
+              {activeTab === 'users' && (
+                <Suspense fallback={renderLazyFallback('正在加载用户管理...')}>
+                  <UserManagementPage />
+                </Suspense>
+              )}
+              {activeTab === 'job-applications' && (
+                <Suspense fallback={renderLazyFallback('正在加载岗位申请...')}>
+                  <AdminApplicationsPage />
+                </Suspense>
+              )}
+              {activeTab === 'member-applications' && (
+                <Suspense fallback={renderLazyFallback('正在加载会员申请...')}>
+                  <AdminMemberApplicationsPage />
+                </Suspense>
+              )}
+              {activeTab === 'companies' && (
+                <Suspense fallback={renderLazyFallback('正在加载企业管理...')}>
+                  <AdminCompanyManagementPage />
+                </Suspense>
+              )}
+              {activeTab === 'trusted-companies' && (
+                <Suspense fallback={renderLazyFallback('正在加载可信企业...')}>
+                  <AdminTrustedCompaniesPage />
+                </Suspense>
+              )}
+              {activeTab === 'tag-management' && (
+                <Suspense fallback={renderLazyFallback('正在加载标签管理...')}>
+                  <AdminTagManagementPage />
+                </Suspense>
+              )}
+              {activeTab === 'core-metrics' && (
+                <Suspense fallback={renderLazyFallback('正在加载核心看板...')}>
+                  <AdminTrackingDashboard />
+                </Suspense>
+              )}
+              {activeTab === 'contact-mining' && (
+                <Suspense fallback={renderLazyFallback('正在加载联系挖掘...')}>
+                  <AdminContactMiningPage />
+                </Suspense>
+              )}
+              {activeTab === 'feedback' && (
+                <Suspense fallback={renderLazyFallback('正在加载用户反馈...')}>
+                  {renderFeedbackList()}
+                </Suspense>
+              )}
+              {activeTab === 'settings' && (
+                <Suspense fallback={renderLazyFallback('正在加载系统设置...')}>
+                  {renderSettings()}
+                </Suspense>
+              )}
+              {activeTab === 'tracking' && (
+                <Suspense fallback={renderLazyFallback('正在加载埋点管理...')}>
+                  <AdminTrackingManagement />
+                </Suspense>
+              )}
             </div>
           )}
         </div>
