@@ -130,7 +130,7 @@ function splitConversationLines(text: string): string[] {
 const AssistantAvatar = memo(function AssistantAvatar() {
   return (
     <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
-      <img src="/copilot.webp" alt="Haigoo Copilot" className="h-full w-full object-cover" />
+      <img src="/copilot.webp" alt="Haigoo Copilot" className="h-full w-full object-cover" loading="eager" decoding="async" draggable={false} />
     </div>
   )
 })
@@ -147,7 +147,7 @@ const ResumePreviewPane = memo(function ResumePreviewPane({
   return (
     <div className="flex-1 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80">
       {previewUrl && fileType === 'application/pdf' ? (
-        <iframe src={previewUrl} className="h-full min-h-[620px] w-full bg-white" title="Resume Preview" />
+        <iframe src={previewUrl} className="h-[820px] w-full bg-white" title="Resume Preview" />
       ) : previewUrl && fileType.startsWith('image/') ? (
         <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
           <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
@@ -169,6 +169,7 @@ export default function ProfileCenterPage() {
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const conversationScrollRef = useRef<HTMLDivElement>(null)
+  const loadedPreviewResumeIdRef = useRef<string | null>(null)
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
@@ -204,6 +205,7 @@ export default function ProfileCenterPage() {
   const [resumeText, setResumeText] = useState<string>('')
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [fileType, setFileType] = useState<string>('')
+  const [isResumeInitializing, setIsResumeInitializing] = useState(true)
 
   // Cleanup object URL
   useEffect(() => {
@@ -737,9 +739,12 @@ export default function ProfileCenterPage() {
           setAssistantAnalysisMode('local')
           setSelectedInterviewQuestion('')
           setFileType('')
+          loadedPreviewResumeIdRef.current = null
+          setIsResumeInitializing(false)
           return
         }
 
+        setIsResumeInitializing(true)
         console.log('[ProfileCenter] Fetching resumes from /api/resumes...')
 
         // ✅ Read directly from resumes table instead of profile.resumeFiles
@@ -823,33 +828,36 @@ export default function ProfileCenterPage() {
 
           if (rId) {
             try {
-              console.log('[ProfileCenter] Fetching preview content for', rId)
-              const contentResp = await fetch(`/api/resumes?action=content&id=${rId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-              })
-              if (contentResp.ok) {
-                const contentData = await contentResp.json()
-                if (contentData.success && contentData.content) {
-                  try {
-                    // Convert base64 to Blob
-                    const byteCharacters = atob(contentData.content)
-                    const byteNumbers = new Array(byteCharacters.length)
-                    for (let i = 0; i < byteCharacters.length; i++) {
-                      byteNumbers[i] = byteCharacters.charCodeAt(i)
+              if (loadedPreviewResumeIdRef.current !== String(rId) || !previewUrl) {
+                console.log('[ProfileCenter] Fetching preview content for', rId)
+                const contentResp = await fetch(`/api/resumes?action=content&id=${rId}`, {
+                  headers: { Authorization: `Bearer ${token}` }
+                })
+                if (contentResp.ok) {
+                  const contentData = await contentResp.json()
+                  if (contentData.success && contentData.content) {
+                    try {
+                      // Convert base64 to Blob
+                      const byteCharacters = atob(contentData.content)
+                      const byteNumbers = new Array(byteCharacters.length)
+                      for (let i = 0; i < byteCharacters.length; i++) {
+                        byteNumbers[i] = byteCharacters.charCodeAt(i)
+                      }
+                      const byteArray = new Uint8Array(byteNumbers)
+                      const blob = new Blob([byteArray], { type: mimeType })
+                      const url = URL.createObjectURL(blob)
+                      setPreviewUrl(url)
+                      loadedPreviewResumeIdRef.current = String(rId)
+                      console.log('[ProfileCenter] Preview loaded successfully with MIME', mimeType)
+                    } catch (conversionErr) {
+                      console.error('[ProfileCenter] Failed to convert content to blob:', conversionErr)
                     }
-                    const byteArray = new Uint8Array(byteNumbers)
-                    const blob = new Blob([byteArray], { type: mimeType })
-                    const url = URL.createObjectURL(blob)
-                    setPreviewUrl(url)
-                    console.log('[ProfileCenter] Preview loaded successfully with MIME', mimeType)
-                  } catch (conversionErr) {
-                    console.error('[ProfileCenter] Failed to convert content to blob:', conversionErr)
+                  } else {
+                    console.warn('[ProfileCenter] No content in response:', contentData)
                   }
                 } else {
-                  console.warn('[ProfileCenter] No content in response:', contentData)
+                  console.warn('[ProfileCenter] Content fetch failed status:', contentResp.status)
                 }
-              } else {
-                console.warn('[ProfileCenter] Content fetch failed status:', contentResp.status)
               }
             } catch (err) {
               console.error('[ProfileCenter] Failed to load preview content:', err)
@@ -870,9 +878,12 @@ export default function ProfileCenterPage() {
           setAssistantAnalysisMode('local')
           setSelectedInterviewQuestion('')
           setFileType('')
+          loadedPreviewResumeIdRef.current = null
         }
       } catch (e) {
         console.error('[ProfileCenter] ❌ Failed to fetch resumes:', e)
+      } finally {
+        setIsResumeInitializing(false)
       }
     })()
   }, [authUser, token])
@@ -1270,6 +1281,7 @@ export default function ProfileCenterPage() {
         setAssistantStartChoice('pending')
         setPreviewUrl(null)
         setFileType('')
+        loadedPreviewResumeIdRef.current = null
         if (fileInputRef.current) {
           fileInputRef.current.value = ''
         }
@@ -1286,6 +1298,15 @@ export default function ProfileCenterPage() {
   }
 
   const resumePreviewContent = useMemo(() => {
+    if (isResumeInitializing) {
+      return (
+        <div className="flex flex-1 flex-col rounded-[24px] border border-slate-200 bg-slate-50/80 p-6">
+          <div className="mb-4 h-5 w-28 animate-pulse rounded-full bg-slate-200" />
+          <div className="flex-1 animate-pulse rounded-[22px] bg-white shadow-inner" />
+        </div>
+      )
+    }
+
     if (!latestResume) {
       return (
         <div className="flex flex-1 flex-col items-center justify-start rounded-[24px] border border-dashed border-indigo-200 bg-slate-50 px-8 pt-14 text-center">
@@ -1306,7 +1327,7 @@ export default function ProfileCenterPage() {
     }
 
     return <ResumePreviewPane previewUrl={previewUrl} fileType={fileType} resumeText={resumeText} />
-  }, [latestResume, previewUrl, fileType, resumeText])
+  }, [isResumeInitializing, latestResume, previewUrl, fileType, resumeText])
 
   const ResumeTab = () => {
     const lastUpdatedLabel = assistantUpdatedAt
@@ -1425,9 +1446,9 @@ export default function ProfileCenterPage() {
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.78fr)_minmax(0,1.22fr)] xl:items-stretch">
-          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm xl:h-[680px] xl:min-h-[680px] xl:overflow-hidden">
-            <div className="flex h-full flex-col">
+        <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.78fr)_minmax(0,1.22fr)] xl:items-start">
+          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex flex-col">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-slate-900">简历预览</h3>
@@ -1452,7 +1473,7 @@ export default function ProfileCenterPage() {
                 )}
               </div>
 
-              <div className="relative flex-1">
+              <div className="relative min-h-[760px]">
                 {resumePreviewContent}
                 {showUpgradeModal && latestResume ? (
                   <div className="pointer-events-none absolute inset-0 z-10 rounded-[24px] bg-slate-50/70 backdrop-blur-[1px]" />
@@ -1464,13 +1485,13 @@ export default function ProfileCenterPage() {
             </div>
           </section>
 
-          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm xl:h-[680px] xl:min-h-[680px] xl:overflow-hidden">
-            <div className="flex h-full flex-col">
+          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
+            <div className="flex min-h-[760px] flex-col">
               <div className="border-b border-slate-200 px-5 py-4">
                 <h3 className="text-[20px] font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
               </div>
 
-              <div ref={conversationScrollRef} className="flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4">
+              <div ref={conversationScrollRef} className="min-h-[660px] max-h-[calc(100vh-260px)] flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4">
                 {isAnalyzing ? (
                   <div className="space-y-4">
                     <div className="flex justify-end">
@@ -1488,6 +1509,16 @@ export default function ProfileCenterPage() {
                             <div className="mt-1 text-xs leading-6 text-slate-500">{analysisDescription}</div>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : isResumeInitializing ? (
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 animate-pulse rounded-2xl bg-slate-200" />
+                      <div className="w-full max-w-[84%] rounded-[24px] border border-slate-200 bg-white px-5 py-5 shadow-sm">
+                        <div className="h-5 w-40 animate-pulse rounded-full bg-slate-200" />
+                        <div className="mt-4 h-10 w-32 animate-pulse rounded-full bg-slate-200" />
                       </div>
                     </div>
                   </div>
@@ -2069,7 +2100,7 @@ export default function ProfileCenterPage() {
 
           {/* Main Content Area */}
           <main className="min-w-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto pr-1 transition-all duration-300">
+            <div className="h-full overflow-y-auto pr-1 pb-8 transition-all duration-300">
               {tab === 'custom-plan' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
                   {loadingPlan ? (
