@@ -15,6 +15,7 @@ import { trustedCompaniesService, TrustedCompany } from '../services/trusted-com
 import { Job } from '../types'
 
 import { CompanyCardSkeleton } from '../components/skeletons/CompanyCardSkeleton'
+import { trackingService } from '../services/tracking-service'
 
 export default function LandingPage() {
   const navigate = useNavigate()
@@ -85,6 +86,16 @@ export default function LandingPage() {
     })
 
     try {
+      trackingService.track('click_save_job', {
+        page_key: 'home',
+        module: 'home_job_detail_modal',
+        feature_key: 'favorite',
+        source_key: 'landing_page',
+        entity_type: 'job',
+        entity_id: job.id,
+        job_id: job.id,
+        action: isSaved ? 'unsave' : 'save'
+      })
       // If saving (adding favorite), we send the full job object to ensure persistence
       const action = isSaved ? 'favorites_remove' : 'favorites_add'
       const payload = isSaved ? { jobId: job.id } : { jobId: job.id, job }

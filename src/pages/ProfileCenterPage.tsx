@@ -80,6 +80,16 @@ export default function ProfileCenterPage() {
 
   const handleRemoveFavorite = async (jobId: string) => {
     try {
+      trackingService.track('click_save_job', {
+        page_key: 'profile',
+        module: 'profile_favorites',
+        feature_key: 'favorite',
+        source_key: 'profile_favorites',
+        entity_type: 'job',
+        entity_id: jobId,
+        job_id: jobId,
+        action: 'unsave'
+      })
       const resp = await fetch(`/api/user-profile?action=favorites_remove`, {
         method: 'POST',
         headers: {
@@ -102,6 +112,16 @@ export default function ProfileCenterPage() {
 
   const handleAddFavorite = async (job: Job) => {
     try {
+      trackingService.track('click_save_job', {
+        page_key: 'profile',
+        module: 'profile_favorites',
+        feature_key: 'favorite',
+        source_key: 'profile_favorites',
+        entity_type: 'job',
+        entity_id: job.id,
+        job_id: job.id,
+        action: 'save'
+      })
       const resp = await fetch(`/api/user-profile?action=favorites_add`, {
         method: 'POST',
         headers: {
@@ -475,9 +495,25 @@ export default function ProfileCenterPage() {
       analysisSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
 
+    trackingService.track('analyze_resume', {
+      page_key: 'profile',
+      module: 'profile_resume',
+      feature_key: 'resume_ai_suggestion',
+      source_key: 'profile_resume',
+      entity_type: 'resume',
+      entity_id: latestResume?.id,
+      action: 'request'
+    })
+
     if (!isMember) {
       setUpgradeSource('ai_resume');
       setShowUpgradeModal(true);
+      trackingService.track('upgrade_modal_view', {
+        page_key: 'profile',
+        module: 'profile_resume',
+        feature_key: 'resume_ai_suggestion',
+        source_key: 'profile_resume'
+      })
       return;
     }
 
@@ -551,9 +587,14 @@ export default function ProfileCenterPage() {
         showSuccess('简历分析完成！', `您的简历得分：${result.data.score || 0}%`)
 
         trackingService.track('analyze_resume', {
+          page_key: 'profile',
+          module: 'profile_resume',
+          feature_key: 'resume_ai_suggestion',
+          source_key: 'profile_resume',
           resume_id: resumeIdToAnalyze,
           score: result.data.score,
-          suggestion_count: result.data.suggestions?.length || 0
+          suggestion_count: result.data.suggestions?.length || 0,
+          action: 'success'
         })
       } else {
         console.error('[ProfileCenter] Analysis failed:', result);

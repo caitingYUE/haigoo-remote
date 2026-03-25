@@ -19,6 +19,7 @@ import {
     claimPendingGuestResume,
 } from '../services/guest-resume-bridge'
 import { markMatchScoreRefresh } from '../utils/match-score-refresh'
+import { trackingService } from '../services/tracking-service'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_REFRESH_INTERVAL = 24 * 60 * 60 * 1000
@@ -573,6 +574,21 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
     const openHeroJobDetail = async (job: any) => {
         const initial = normalizeHeroJob(job)
+        const isCopilotRecommendation = String(job?.source || '').includes('hero_copilot')
+        if (isCopilotRecommendation) {
+            trackingService.track('copilot_recommendation_click', {
+                page_key: 'home',
+                module: 'copilot_hero',
+                source_key: 'home_hero',
+                entity_type: 'job',
+                entity_id: initial.id,
+                job_id: initial.id,
+                position: activeCard + 1,
+                match_score: Number(job?.matchScore || 0),
+                job_direction: jobDirection,
+                position_type: positionType,
+            })
+        }
         setSelectedJobDetail(initial)
         try {
             const detailed = await fetchHeroJobDetail(job)
@@ -980,6 +996,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
         setLoading(true)
         localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection: nextJobDirection, positionType: nextPositionType, timestamp: Date.now() }))
+        trackingService.track('copilot_hero_submit', {
+            page_key: 'home',
+            module: 'copilot_hero',
+            source_key: 'home_hero',
+            job_direction: nextJobDirection,
+            position_type: nextPositionType,
+            has_resume: Boolean(resumeId || guestResumeFile),
+            is_authenticated: isAuthenticated,
+        })
 
         try {
             const authToken = localStorage.getItem('haigoo_auth_token') || token
@@ -1016,6 +1041,15 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (capped.length === 0) {
                 throw new Error('当前未检索到匹配岗位')
             }
+            trackingService.track('copilot_hero_success', {
+                page_key: 'home',
+                module: 'copilot_hero',
+                source_key: 'home_hero',
+                job_direction: nextJobDirection,
+                position_type: nextPositionType,
+                has_resume: Boolean(resumeId || guestResumeFile),
+                result_count: capped.length,
+            })
             if (jobDirection !== nextJobDirection) setJobDirection(nextJobDirection)
             if (positionType !== nextPositionType) setPositionType(nextPositionType)
             setRecommendations(capped)
@@ -1078,6 +1112,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }, [highlightPrivacyConsent])
     
     const handleGeneratePlan = () => {
+        trackingService.track('copilot_plan_open', {
+            page_key: 'home',
+            module: 'copilot_hero',
+            source_key: 'home_hero',
+            job_direction: jobDirection,
+            position_type: positionType,
+            has_resume: Boolean(resumeId),
+        })
         setKeepPlanWorkerAlive(true)
         setShowPlanModal(true)
         if (isAuthenticated) {
@@ -1508,6 +1550,7 @@ function CopilotPlanModal({
 }) {
     const { isAuthenticated, token, isMember } = useAuth()
     const { showInfo, showSuccess, showWarning } = useNotificationHelpers()
+    const trackedPlanSuccessRef = useRef(false)
     const [planDefaults, setPlanDefaults] = useState({
         language: '中等（可借助翻译软件线上交流）',
         education: '大学本科',
@@ -1696,6 +1739,7 @@ function CopilotPlanModal({
     useEffect(() => {
         if (visible) {
             backgroundNotifiedRef.current = false
+            trackedPlanSuccessRef.current = false
             return
         }
         if (!planLoading && planData && !backgroundNotifiedRef.current) {
@@ -1710,6 +1754,20 @@ function CopilotPlanModal({
             onDispose()
         }
     }, [visible, planLoading, planData, planError, showSuccess, showWarning, onDispose])
+
+    useEffect(() => {
+        if (!planLoading && planData && !trackedPlanSuccessRef.current) {
+            trackedPlanSuccessRef.current = true
+            trackingService.track('copilot_plan_success', {
+                page_key: 'home',
+                module: 'copilot_plan_modal',
+                source_key: 'home_hero',
+                job_direction: jobDirection,
+                position_type: positionType,
+                has_resume: Boolean(resumeId),
+            })
+        }
+    }, [planLoading, planData, jobDirection, positionType, resumeId])
 
     const handleModalClose = () => {
         if (planLoading && isAuthenticated) {

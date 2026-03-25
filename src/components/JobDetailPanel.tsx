@@ -96,6 +96,19 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(FREE_FEATURE_LIMIT)
     const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
     const [unlockingMatchAnalysis, setUnlockingMatchAnalysis] = useState(false)
+    const exposureKeysRef = React.useRef<Set<string>>(new Set())
+
+    const openUpgradeModal = (featureKey: string, sourceKey = 'job_detail') => {
+        trackingService.track('upgrade_modal_view', {
+            page_key: 'job_detail',
+            module: 'job_detail',
+            feature_key: featureKey,
+            source_key: sourceKey,
+            entity_type: 'job',
+            entity_id: job?.id,
+        })
+        setShowUpgradeModal(true)
+    }
 
     useEffect(() => {
         // Reset state when job changes
@@ -110,7 +123,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         // Track view job detail
         if (job?.id) {
+            exposureKeysRef.current = new Set()
             trackingService.track('view_job_detail', {
+                page_key: 'job_detail',
+                module: 'job_detail',
+                entity_type: 'job',
+                entity_id: job.id,
                 job_id: job.id,
                 job_title: job.title,
                 company: job.company,
@@ -118,6 +136,43 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             })
         }
     }, [job?.id, isMember, hasTranslation, translationPreferenceKey])
+
+    useEffect(() => {
+        if (!job?.id) return
+        const baseProps = {
+            page_key: 'job_detail',
+            source_key: 'job_detail',
+            entity_type: 'job',
+            entity_id: job.id,
+        }
+
+        const expose = (featureKey: string, extra: Record<string, any> = {}) => {
+            const dedupeKey = `${job.id}:${featureKey}:${extra.entity_id || ''}`
+            if (exposureKeysRef.current.has(dedupeKey)) return
+            exposureKeysRef.current.add(dedupeKey)
+            trackingService.featureExposure(featureKey, {
+                ...baseProps,
+                module: 'job_detail',
+                ...extra,
+            })
+        }
+
+        expose('favorite')
+        if (hasTranslation) expose('translation')
+        if (job.url || job.sourceUrl || !companyInfo?.hiringEmail) expose('website_apply')
+        if (job.company || companyInfo?.name) expose('company_info', {
+            entity_type: 'company',
+            entity_id: String(job.company || companyInfo?.name || '').trim(),
+        })
+        if (!showReferralModule && companyInfo?.hiringEmail) expose('email_apply', {
+            entity_type: 'company',
+            entity_id: String(job.company || companyInfo?.name || '').trim(),
+        })
+        if (job.canRefer || showReferralModule) expose('referral', {
+            entity_type: 'company',
+            entity_id: String(job.company || companyInfo?.name || '').trim(),
+        })
+    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer])
 
     // Initialize translation usage from server
     useEffect(() => {
@@ -284,6 +339,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         const authToken = localStorage.getItem('haigoo_auth_token')
         if (!authToken) return
 
+        trackingService.featureClick('match_analysis', {
+            page_key: 'job_detail',
+            module: 'job_detail_match_analysis',
+            source_key: 'job_detail',
+            entity_type: 'job',
+            entity_id: job.id,
+        })
         setUnlockingMatchAnalysis(true)
         try {
             const res = await fetch('/api/users?resource=free-usage&type=match-analysis', {
@@ -292,7 +354,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`
                 },
-                body: JSON.stringify({ jobId: String(job.id) })
+                body: JSON.stringify({
+                    jobId: String(job.id),
+                    page_key: 'job_detail',
+                    source_key: 'job_detail',
+                    entity_type: 'job',
+                    entity_id: job.id,
+                    flow_id: `match_analysis_${job.id}`
+                })
             })
             const data = await res.json().catch(() => ({}))
             if (!res.ok || !data.success) {
@@ -334,6 +403,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const handleApply = () => {
         trackingService.track('click_apply_init', {
+            page_key: 'job_detail',
+            module: 'job_detail_apply',
+            source_key: 'job_detail',
+            entity_type: 'job',
+            entity_id: job.id,
             job_id: job.id,
             job_title: job.title,
             company: job.company,
@@ -391,6 +465,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const executeApply = async (method: 'website' | 'email', pendingWindow: PendingApplyWindow = null) => {
         if (method === 'email' && companyInfo?.hiringEmail) {
             trackingService.track('click_apply', {
+                page_key: 'job_detail',
+                module: 'job_detail_footer',
+                feature_key: 'email_apply',
+                source_key: 'job_detail',
+                entity_type: 'job',
+                entity_id: job.id,
                 job_id: job.id,
                 job_title: job.title,
                 company: job.company,
@@ -399,6 +479,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             });
 
             window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title}`)}`;
+            trackingService.track('email_apply_success', {
+                page_key: 'job_detail',
+                module: 'job_detail_footer',
+                feature_key: 'email_apply',
+                source_key: 'job_detail',
+                entity_type: 'job',
+                entity_id: job.id,
+                job_id: job.id,
+                company: job.company,
+            })
 
             if (isAuthenticated) {
                 try {
@@ -515,7 +605,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             return
         }
 
+        trackingService.featureClick('referral', {
+            page_key: 'job_detail',
+            module: 'job_detail_referral',
+            source_key: 'job_detail',
+            entity_type: 'company',
+            entity_id: refCompanyName,
+        })
         trackingService.track('click_apply', {
+            page_key: 'job_detail',
+            module: 'job_detail_referral',
+            feature_key: 'referral',
+            source_key: 'job_detail',
+            entity_type: 'job',
+            entity_id: job.id,
             job_id: job.id,
             job_title: job.title,
             company: job.company,
@@ -583,7 +686,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ jobId })
+                body: JSON.stringify({
+                    jobId,
+                    page_key: 'job_detail',
+                    source_key: 'job_detail',
+                    entity_type: 'job',
+                    entity_id: jobId,
+                    flow_id: `website_apply_${jobId}`
+                })
             }).then(async (response) => {
                 const payload = await response.json()
                 if (!response.ok) {
@@ -610,7 +720,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             }
 
             if (status === 403) {
-                setShowUpgradeModal(true)
+                openUpgradeModal('website_apply')
                 showInfo('前往申请次数已用完', '升级会员后可继续查看并申请更多岗位')
                 return false
             }
@@ -641,6 +751,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         trackingService.track('click_save_job', {
+            page_key: 'job_detail',
+            module: 'job_detail_header',
+            feature_key: 'favorite',
+            source_key: 'job_detail',
+            entity_type: 'job',
+            entity_id: job.id,
             job_id: job.id,
             action: isSaved ? 'unsave' : 'save'
         })
@@ -926,6 +1042,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         {hasTranslation && (
                             <button
                                 onClick={() => {
+                                    trackingService.featureClick('translation', {
+                                        page_key: 'job_detail',
+                                        module: 'job_detail_header',
+                                        source_key: 'job_detail',
+                                        entity_type: 'job',
+                                        entity_id: job.id,
+                                    })
                                     if (!isAuthenticated) {
                                         if (window.confirm('登录后可免费试用翻译功能（共100次）\\n\\n是否前往登录？')) {
                                             navigate('/login')
@@ -935,7 +1058,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                                     if (!isMember) {
                                         if (translationUsageCount >= TRANSLATION_FREE_LIMIT) {
-                                            setShowUpgradeModal(true)
+                                            openUpgradeModal('translation')
                                             return
                                         }
 
@@ -949,7 +1072,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             if (token) {
                                                 fetch('/api/users?resource=translation-usage', {
                                                     method: 'POST',
-                                                    headers: { 'Authorization': `Bearer ${token}` }
+                                                    headers: {
+                                                        'Authorization': `Bearer ${token}`,
+                                                        'Content-Type': 'application/json'
+                                                    },
+                                                    body: JSON.stringify({
+                                                        jobId: job.id,
+                                                        page_key: 'job_detail',
+                                                        source_key: 'job_detail',
+                                                        entity_type: 'job',
+                                                        entity_id: job.id,
+                                                        flow_id: `translation_${job.id}`
+                                                    })
                                                 })
                                                     .then(res => res.json())
                                                     .then(data => {
@@ -961,7 +1095,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         } else if (data.error === 'Translation limit reached') {
                                                             // Revert if limit reached (edge case)
                                                             setTranslationUsageCount(TRANSLATION_FREE_LIMIT)
-                                                            setShowUpgradeModal(true)
+                                                            openUpgradeModal('translation')
                                                             setShowTranslation(false) // Hide translation
                                                             if (typeof window !== 'undefined') {
                                                                 localStorage.setItem(translationPreferenceKey, 'original')
@@ -1043,7 +1177,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {job.isTrusted && isMember && (
                         <div className="mb-6">
-                            <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => setShowUpgradeModal(true)} />
+                            <TrustedStandardsBanner className="" isMember={isMember} onShowUpgrade={() => openUpgradeModal('company_info')} />
                         </div>
                     )}
 
@@ -1058,7 +1192,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 freeTrialRemaining={Math.max(0, FREE_FEATURE_LIMIT - matchAnalysisUsageCount)}
                                 isUnlocking={unlockingMatchAnalysis}
                                 onUnlockFreeTrial={handleUnlockMatchAnalysis}
-                                onShowUpgrade={() => setShowUpgradeModal(true)}
+                                onShowUpgrade={() => openUpgradeModal('match_analysis')}
                             />
                         </div>
                     )}
@@ -1154,6 +1288,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                                             const handleUnlock = async (e: React.MouseEvent) => {
                                                 e.stopPropagation();
+                                                trackingService.featureClick('company_info', {
+                                                    page_key: 'job_detail',
+                                                    module: 'job_detail_company',
+                                                    source_key: 'job_detail',
+                                                    entity_type: 'company',
+                                                    entity_id: companyName,
+                                                })
                                                 const token = localStorage.getItem('haigoo_auth_token');
                                                 if (!token) {
                                                     navigate('/login');
@@ -1167,7 +1308,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             'Content-Type': 'application/json',
                                                             'Authorization': `Bearer ${token}`
                                                         },
-                                                        body: JSON.stringify({ companyName })
+                                                        body: JSON.stringify({
+                                                            companyName,
+                                                            page_key: 'job_detail',
+                                                            source_key: 'job_detail',
+                                                            entity_type: 'company',
+                                                            entity_id: companyName,
+                                                            flow_id: `company_info_${job.id}`
+                                                        })
                                                     });
                                                     const data = await res.json();
                                                     if (data.success) {
@@ -1188,7 +1336,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             onClick={(e) => {
                                                                 if (companyInfoUsageCount >= FREE_FEATURE_LIMIT) {
                                                                     e.stopPropagation();
-                                                                    setShowUpgradeModal(true);
+                                                                    openUpgradeModal('company_info');
                                                                 }
                                                             }}
                                                         >
@@ -1542,7 +1690,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         return (
                             <button
                                 onClick={() => {
+                                    trackingService.featureClick('website_apply', {
+                                        page_key: 'job_detail',
+                                        module: 'job_detail_footer',
+                                        source_key: 'job_detail',
+                                        entity_type: 'job',
+                                        entity_id: job.id,
+                                    })
                                     trackingService.track('click_apply_init', {
+                                        page_key: 'job_detail',
+                                        module: 'job_detail_footer',
+                                        feature_key: 'website_apply',
+                                        source_key: 'job_detail',
+                                        entity_type: 'job',
+                                        entity_id: job.id,
                                         job_id: job.id,
                                         job_title: job.title,
                                         company: job.company,
@@ -1556,7 +1717,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         return
                                     }
                                     if (!isWebsiteApplyAvailable) {
-                                        setShowUpgradeModal(true)
+                                        openUpgradeModal('website_apply')
                                         return
                                     }
                                     executeApply('website', openPendingWebsiteApplyWindow())
@@ -1606,6 +1767,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             return (
                                 <button
                                     onClick={async () => {
+                                        trackingService.featureClick('email_apply', {
+                                            page_key: 'job_detail',
+                                            module: 'job_detail_footer',
+                                            source_key: 'job_detail',
+                                            entity_type: 'company',
+                                            entity_id: accessCompanyName,
+                                        })
                                         if (!isAuthenticated) {
                                             if (window.confirm('申请职位需要登录\n\n是否前往登录？')) navigate('/login');
                                             return;
@@ -1622,7 +1790,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                 'Authorization': `Bearer ${token}`,
                                                                 'Content-Type': 'application/json'
                                                             },
-                                                            body: JSON.stringify({ companyName: accessCompanyName })
+                                                            body: JSON.stringify({
+                                                                companyName: accessCompanyName,
+                                                                page_key: 'job_detail',
+                                                                source_key: 'job_detail',
+                                                                entity_type: 'company',
+                                                                entity_id: accessCompanyName,
+                                                                flow_id: `email_apply_${job.id}`
+                                                            })
                                                         }).then(r => r.json());
                                                         if (data.success) {
                                                             syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);
@@ -1639,7 +1814,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             }
                                             executeApply('email');
                                         } else {
-                                            setShowUpgradeModal(true);
+                                            openUpgradeModal('email_apply');
                                         }
                                     }}
                                     className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${
@@ -1760,7 +1935,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 'Authorization': `Bearer ${token}`,
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ companyName: String(job.company || companyInfo?.name || '').trim() })
+                            body: JSON.stringify({
+                                companyName: String(job.company || companyInfo?.name || '').trim(),
+                                page_key: 'job_detail',
+                                source_key: 'job_detail',
+                                entity_type: 'company',
+                                entity_id: String(job.company || companyInfo?.name || '').trim(),
+                                flow_id: `referral_${job.id}`
+                            })
                         }).then(r => r.json());
                         if (data.success) {
                             syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);

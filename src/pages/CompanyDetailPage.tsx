@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
+import { trackingService } from '../services/tracking-service'
 import JobCardNew from '../components/JobCardNew'
 import { SingleLineTags } from '../components/SingleLineTags'
 import JobDetailModal from '../components/JobDetailModal'
@@ -64,6 +65,18 @@ export default function CompanyDetailPage() {
         loadSavedJobs()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [companyName])
+
+    useEffect(() => {
+        if (!companyInfo?.name || !companyInfo?.isTrusted) return
+        trackingService.featureExposure('company_info', {
+            page_key: 'company_detail',
+            module: 'company_detail',
+            source_key: 'company_detail',
+            entity_type: 'company',
+            entity_id: companyInfo.name,
+            company_name: companyInfo.name,
+        })
+    }, [companyInfo?.name, companyInfo?.isTrusted])
 
     const loadCompanyData = async () => {
         setLoading(true)
@@ -162,6 +175,17 @@ export default function CompanyDetailPage() {
         }
 
         const isSaved = savedJobs.has(jobId)
+        trackingService.track('click_save_job', {
+            page_key: 'company_detail',
+            module: 'company_detail_jobs',
+            feature_key: 'favorite',
+            source_key: 'company_detail',
+            entity_type: 'job',
+            entity_id: jobId,
+            job_id: jobId,
+            company: decodedCompanyName,
+            action: isSaved ? 'remove' : 'add',
+        })
         setSavedJobs(prev => {
             const s = new Set(prev)
             isSaved ? s.delete(jobId) : s.add(jobId)
@@ -312,6 +336,14 @@ export default function CompanyDetailPage() {
                                         
                                         const handleUnlock = async (e: React.MouseEvent) => {
                                             e.stopPropagation();
+                                            trackingService.featureClick('company_info', {
+                                                page_key: 'company_detail',
+                                                module: 'company_detail',
+                                                source_key: 'company_detail',
+                                                entity_type: 'company',
+                                                entity_id: companyInfo?.name,
+                                                company_name: companyInfo?.name,
+                                            });
                                             const token = localStorage.getItem('haigoo_auth_token');
                                             if (!token) {
                                                 navigate('/login');
@@ -324,7 +356,14 @@ export default function CompanyDetailPage() {
                                                         'Content-Type': 'application/json',
                                                         'Authorization': `Bearer ${token}`
                                                     },
-                                                    body: JSON.stringify({ companyName: companyInfo?.name })
+                                                    body: JSON.stringify({
+                                                        companyName: companyInfo?.name,
+                                                        page_key: 'company_detail',
+                                                        source_key: 'company_detail',
+                                                        entity_type: 'company',
+                                                        entity_id: companyInfo?.name,
+                                                        flow_id: `company_info_${companyInfo?.name || decodedCompanyName}`
+                                                    })
                                                 });
                                                 const data = await res.json();
                                                 if (data.success) {
@@ -527,7 +566,18 @@ export default function CompanyDetailPage() {
                                                                     登录后可免费体验，包含认证招聘邮箱、评分及总部地址。
                                                                 </p>
                                                                 <button
-                                                                    onClick={() => navigate('/login')}
+                                                                    onClick={() => {
+                                                                        trackingService.track('feature_click', {
+                                                                            page_key: 'company_detail',
+                                                                            module: 'company_detail',
+                                                                            feature_key: 'company_info',
+                                                                            source_key: 'company_detail_login_gate',
+                                                                            entity_type: 'company',
+                                                                            entity_id: companyInfo?.name || decodedCompanyName,
+                                                                            action: 'login_gate'
+                                                                        })
+                                                                        navigate('/login')
+                                                                    }}
                                                                     className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
                                                                 >
                                                                     登录免费体验
@@ -543,7 +593,17 @@ export default function CompanyDetailPage() {
                                                                     当前体验会员已解锁远程岗位页全部核心权益，如需查看精选企业名单，请升级季度或年度会员。
                                                                 </p>
                                                                 <button
-                                                                    onClick={() => navigate('/membership')}
+                                                                    onClick={() => {
+                                                                        trackingService.track('upgrade_cta_click', {
+                                                                            page_key: 'company_detail',
+                                                                            module: 'company_detail',
+                                                                            feature_key: 'company_info',
+                                                                            source_key: 'company_detail_member_upgrade',
+                                                                            entity_type: 'company',
+                                                                            entity_id: companyInfo?.name || decodedCompanyName,
+                                                                        })
+                                                                        navigate('/membership')
+                                                                    }}
                                                                     className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
                                                                 >
                                                                     升级正式会员
@@ -576,7 +636,17 @@ export default function CompanyDetailPage() {
                                                                     升级会员即可无限次查看所有企业的深度核验信息。
                                                                 </p>
                                                                 <button
-                                                                    onClick={() => navigate('/membership')}
+                                                                    onClick={() => {
+                                                                        trackingService.track('upgrade_cta_click', {
+                                                                            page_key: 'company_detail',
+                                                                            module: 'company_detail',
+                                                                            feature_key: 'company_info',
+                                                                            source_key: 'company_detail_limit_reached',
+                                                                            entity_type: 'company',
+                                                                            entity_id: companyInfo?.name || decodedCompanyName,
+                                                                        })
+                                                                        navigate('/membership')
+                                                                    }}
                                                                     className="py-2 px-6 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full shadow-sm transition-all mx-auto"
                                                                 >
                                                                     查看会员权益

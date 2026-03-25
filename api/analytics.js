@@ -1,5 +1,6 @@
 
 import neonHelper from '../server-utils/dal/neon-helper.js';
+import { insertAnalyticsEvents, normalizeAnalyticsEvent } from '../lib/services/analytics-event-service.js';
 
 export default async function handler(req, res) {
   // CORS
@@ -27,34 +28,8 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'Tracking disabled (no DB)' });
     }
 
-    // Batch insert
-    // Construct values string
-    // Table: analytics_events (user_id, anonymous_id, event_name, properties, url, referrer, created_at)
-    
-    for (const event of events) {
-      const { userId, anonymousId, event: eventName, properties, sentAt } = event;
-      
-      // Extract common properties
-      const url = properties?.path || '';
-      const referrer = properties?.referrer || '';
-      
-      // Clean properties for storage
-      const propsJson = JSON.stringify(properties || {});
-
-      await neonHelper.query(`
-        INSERT INTO analytics_events 
-        (user_id, anonymous_id, event_name, properties, url, referrer, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6, $7)
-      `, [
-        userId || null,
-        anonymousId,
-        eventName,
-        propsJson,
-        url,
-        referrer,
-        sentAt || new Date().toISOString()
-      ]);
-    }
+    const normalizedEvents = events.map((event) => normalizeAnalyticsEvent(event));
+    await insertAnalyticsEvents(normalizedEvents);
 
     return res.status(200).json({ success: true, count: events.length });
 

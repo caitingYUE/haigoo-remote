@@ -4,6 +4,7 @@ import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp, Sparkles, Target
 import { useNavigate } from 'react-router-dom';
 import { Job } from '../types';
 import { TrustedCompany } from '../services/trusted-companies-service';
+import { trackingService } from '../services/tracking-service';
 
 interface ApplyInterceptModalProps {
     isOpen: boolean;
@@ -44,6 +45,16 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     websiteApplyLimit = 20,
 }) => {
     const navigate = useNavigate();
+
+    const baseTrackingProps = {
+        page_key: 'job_detail',
+        module: 'apply_intercept_modal',
+        source_key: 'apply_intercept_modal',
+        entity_type: 'job',
+        entity_id: job?.id,
+        job_id: job?.id,
+        company: job?.company,
+    };
 
     const openPendingWebsiteApplyWindow = () => {
         const targetUrl = String(job?.url || job?.sourceUrl || '').trim();
@@ -250,6 +261,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             <div className="space-y-3">
                                 <button
                                     onClick={() => {
+                                        trackingService.track('click_apply', {
+                                            ...baseTrackingProps,
+                                            feature_key: 'referral',
+                                            apply_method: 'referral_free_experience',
+                                        });
                                         if (!referralUnlocked) {
                                             onConsumeReferral?.();
                                         }
@@ -341,6 +357,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <div className="space-y-3">
                             <button
                                 onClick={() => {
+                                    trackingService.track('upgrade_cta_click', {
+                                        ...baseTrackingProps,
+                                        feature_key: 'referral',
+                                        source_key: 'referral_upgrade_modal',
+                                    });
                                     onClose();
                                     navigate('/membership');
                                 }}
@@ -411,12 +432,22 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
                             <button
                                 onClick={async () => {
+                                    trackingService.track('click_apply', {
+                                        ...baseTrackingProps,
+                                        feature_key: 'website_apply',
+                                        apply_method: 'trusted_platform_redirect',
+                                    });
                                     if (!isAuthenticated) {
                                         onClose();
                                         navigate('/login');
                                         return;
                                     }
                                     if (!canWebsiteApplyFree) {
+                                        trackingService.track('upgrade_cta_click', {
+                                            ...baseTrackingProps,
+                                            feature_key: 'website_apply',
+                                            source_key: 'trusted_platform_upgrade_gate',
+                                        });
                                         navigate('/membership');
                                         return;
                                     }
@@ -537,6 +568,11 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={() => {
+                                    trackingService.track('upgrade_cta_click', {
+                                        ...baseTrackingProps,
+                                        feature_key: 'company_info',
+                                        source_key: 'website_apply_company_info_gate',
+                                    });
                                     onClose();
                                     navigate('/membership');
                                 }}
@@ -546,12 +582,22 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             </button>
                             <button
                                 onClick={async () => {
+                                    trackingService.track('click_apply', {
+                                        ...baseTrackingProps,
+                                        feature_key: 'website_apply',
+                                        apply_method: 'screened_job_redirect',
+                                    });
                                     if (!isAuthenticated) {
                                         onClose();
                                         navigate('/login');
                                         return;
                                     }
                                     if (!canWebsiteApplyFree) {
+                                        trackingService.track('upgrade_cta_click', {
+                                            ...baseTrackingProps,
+                                            feature_key: 'website_apply',
+                                            source_key: 'screened_job_upgrade_gate',
+                                        });
                                         navigate('/membership');
                                         return;
                                     }

@@ -172,7 +172,17 @@ const MembershipPage: React.FC = () => {
          fetchStatus();
          fetchApplicationStatus();
       }
-      trackingService.track('view_membership_page');
+      trackingService.track('view_membership_page', {
+         page_key: 'membership',
+         module: 'membership_page',
+         feature_key: 'membership_center',
+         source_key: 'membership_page'
+      });
+      trackingService.featureExposure('membership_center', {
+         page_key: 'membership',
+         module: 'membership_page',
+         source_key: 'membership_page'
+      });
    }, [isAuthenticated]);
 
    const fetchPlans = async () => {
@@ -224,6 +234,22 @@ const MembershipPage: React.FC = () => {
       setSelectedPlan(plan);
       setPaymentMethod('alipay'); // Reset default
       setShowPaymentModal(true);
+      const planFeatureKey = plan.memberType === 'trial_week'
+         ? 'membership_plan_trial_week'
+         : plan.memberType === 'quarter'
+            ? 'membership_plan_quarter'
+            : 'membership_plan_year';
+      trackingService.track('membership_plan_click', {
+         page_key: 'membership',
+         module: 'membership_pricing',
+         feature_key: planFeatureKey,
+         source_key: 'membership_page',
+         entity_type: 'plan',
+         entity_id: plan.id,
+         plan_id: plan.id,
+         plan_name: plan.name,
+         price: plan.price
+      });
       trackingService.track('click_subscribe', {
          plan_id: plan.id,
          plan_name: plan.name,
@@ -249,7 +275,10 @@ const MembershipPage: React.FC = () => {
                planId: selectedPlan?.id,
                paymentMethod,
                amount: selectedPlan?.price,
-               email: user?.email
+               email: user?.email,
+               page_key: 'membership',
+               source_key: 'membership_page',
+               flow_id: selectedPlan?.id,
             }, { headers: { Authorization: `Bearer ${token}` } });
          }
       } catch (e) {
@@ -260,6 +289,11 @@ const MembershipPage: React.FC = () => {
       alert('感谢您的支付！权益将在24小时内开通。如有疑问请联系 hi@haigooremote.com');
       fetchStatus(); // Refresh status
       trackingService.track('complete_payment_client_claim', {
+         page_key: 'membership',
+         module: 'membership_payment',
+         source_key: 'membership_page',
+         entity_type: 'plan',
+         entity_id: selectedPlan?.id,
          plan_id: selectedPlan?.id
       });
    };
