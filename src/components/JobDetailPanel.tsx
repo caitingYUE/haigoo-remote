@@ -1536,8 +1536,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <div className="rounded-[28px] border border-indigo-100 bg-white p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-40px_rgba(15,23,42,0.14)]">
                                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                                     <div className="min-w-0">
-                                        <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 tracking-tight">帮我内推</h3>
-                                        <p className="mt-2 overflow-hidden text-ellipsis whitespace-nowrap text-xs md:text-[13px] text-slate-600">
+                                        <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 tracking-tight">邮箱直申</h3>
+                                        <p className="mt-2 max-w-full truncate text-xs text-slate-600 md:text-[13px]">
                                             Haigoo为你找到了本岗位的直接招聘HR/业务负责人，简历直达关键决策方
                                         </p>
                                     </div>

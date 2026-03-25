@@ -248,7 +248,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <div className="p-6 pt-6 text-center">
                             <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">
                                 <Target className="w-3.5 h-3.5" />
-                                帮我内推
+                                邮箱直申
                                 <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
                                     {referralUnlocked ? '已解锁' : `剩余 ${remaining}/${FREE_FEATURE_LIMIT}`}
                                 </span>

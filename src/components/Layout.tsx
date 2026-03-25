@@ -25,6 +25,7 @@ export default function Layout({ children }: LayoutProps) {
   const isBundle = pathname.startsWith('/job-bundles/')
   const isProfile = pathname.startsWith('/profile')
   const hideFooter = pathname.startsWith('/resume') || isJobsPage || isProfile
+  const lockViewport = isJobsPage
 
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
 
@@ -57,11 +58,11 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className={`${isJobsPage || isProfile ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col ${isProfile ? '' : 'landing-bg-page'}`}>
+    <div className={`${lockViewport ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col ${isProfile ? 'bg-slate-50' : 'landing-bg-page'}`}>
       <Header />
 
-      <main className={`flex-1 relative ${isJobsPage || isProfile ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
-        <div className={`relative z-10 ${isJobsPage || isProfile ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isAbout || isBundle) ? '' : 'pt-20'}`}`}>
+      <main className={`flex-1 relative ${lockViewport ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
+        <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isAbout || isBundle || isProfile) ? '' : 'pt-20'}`}`}>
           {children}
         </div>
       </main>

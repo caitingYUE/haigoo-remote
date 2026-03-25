@@ -1952,25 +1952,24 @@ export default function ProfileCenterPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-slate-50 mt-16 overflow-hidden">
-      <div className="mx-auto flex h-full max-w-[1600px] flex-col px-2 sm:px-3 lg:px-4 py-4">
-        <div className="mb-4 shrink-0">
-          <button
-            className="flex items-center text-slate-500 hover:text-slate-900 transition-colors group"
-            onClick={() => navigate(-1)}
-            aria-label="返回上一页"
-          >
-            <div className="w-8 h-8 rounded-full bg-white border border-slate-200 flex items-center justify-center mr-2 shadow-sm group-hover:border-indigo-300 transition-all">
-              <ArrowLeft className="w-4 h-4 text-slate-400 group-hover:text-indigo-600" />
-            </div>
-            <span className="text-sm font-medium">返回上一页</span>
-          </button>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col gap-5 lg:flex-row lg:items-start">
+    <div className="mt-16 min-h-[calc(100vh-64px)] bg-slate-50">
+      <div className="mx-auto max-w-[1600px] px-2 py-4 sm:px-3 lg:px-4">
+        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[228px_minmax(0,1fr)] lg:items-start">
           {/* Sidebar */}
-          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[76px]' : 'w-full lg:w-[228px]'} lg:h-full`}>
-            <div className="flex h-full flex-col gap-4">
+          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[76px]' : 'w-full lg:w-[228px]'} lg:sticky lg:top-20 lg:self-start`}>
+            <div className="flex flex-col gap-4">
+              <button
+                className={`group flex items-center rounded-[20px] border border-slate-200 bg-white px-3 py-3 text-slate-500 shadow-sm transition-all hover:border-indigo-200 hover:text-slate-900 ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
+                onClick={() => navigate(-1)}
+                aria-label="返回上一页"
+                title={isSidebarCollapsed ? '返回上一页' : undefined}
+              >
+                <div className={`flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 transition-all group-hover:border-indigo-200 group-hover:bg-indigo-50 ${isSidebarCollapsed ? '' : 'mr-2'}`}>
+                  <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:text-indigo-600" />
+                </div>
+                {!isSidebarCollapsed ? <span className="text-sm font-medium">返回上一页</span> : null}
+              </button>
+
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 className="absolute -right-3 top-5 z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition-transform hover:scale-110 hover:text-indigo-600 lg:flex"
@@ -1979,10 +1978,10 @@ export default function ProfileCenterPage() {
               </button>
 
               {!isSidebarCollapsed ? (
-                <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
-                  <div className="border-b border-indigo-100 bg-indigo-50 px-4 py-4">
+                <div className="overflow-hidden rounded-[24px] border border-indigo-100 bg-white shadow-[0_20px_45px_-34px_rgba(79,70,229,0.22)]">
+                  <div className="border-b border-indigo-100 bg-[linear-gradient(180deg,#eef2ff_0%,#f8fbff_100%)] px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-sm">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-[0_14px_30px_-20px_rgba(79,70,229,0.7)]">
                         <Crown className="h-5 w-5" />
                       </div>
                       <div>
@@ -1995,7 +1994,7 @@ export default function ProfileCenterPage() {
                   <div className="space-y-4 px-4 py-4">
                     {isMember ? (
                       <>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                        <div className="rounded-2xl border border-indigo-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f7ff_100%)] px-3.5 py-3 shadow-[0_12px_30px_-24px_rgba(79,70,229,0.35)]">
                           <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">当前等级</div>
                           <div className="mt-2 flex items-center gap-2 text-base font-black text-slate-900">
                             <span>{isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}</span>
@@ -2022,7 +2021,7 @@ export default function ProfileCenterPage() {
                       </>
                     ) : (
                       <>
-                        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-3">
+                        <div className="rounded-2xl border border-indigo-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7f8ff_100%)] px-3.5 py-3 shadow-[0_12px_30px_-24px_rgba(79,70,229,0.24)]">
                           <div className="text-base font-black text-slate-900">开通会员</div>
                           <div className="mt-2 text-sm leading-6 text-slate-600">
                             解锁 AI 简历优化、关键人脉直达与更完整的求职陪伴。
@@ -2099,8 +2098,8 @@ export default function ProfileCenterPage() {
           </aside>
 
           {/* Main Content Area */}
-          <main className="min-w-0 flex-1 overflow-hidden">
-            <div className="h-full overflow-y-auto pr-1 pb-8 transition-all duration-300">
+          <main className="min-w-0">
+            <div className="pr-1 pb-10 transition-all duration-300">
               {tab === 'custom-plan' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
                   {loadingPlan ? (
@@ -2178,11 +2177,11 @@ export default function ProfileCenterPage() {
                   )}
                 </div>
               )}
-              {tab === 'resume' && <ResumeTab />}
+              {tab === 'resume' && ResumeTab()}
               {tab === 'favorites' && <FavoritesTab />}
               {tab === 'applications' && <MyApplicationsTab />}
               {tab === 'feedback' && <FeedbackTab />}
-              {tab === 'membership' && <ResumeTab />}
+              {tab === 'membership' && ResumeTab()}
               {tab === 'settings' && <SettingsTab />}
             </div>
             {isJobDetailOpen && selectedJob && (
