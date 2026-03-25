@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import type { User } from '../types/auth-types'
 import { useAuth } from '../contexts/AuthContext'
+import { trackingService } from '../services/tracking-service'
 
 interface UserStats {
   total: number
@@ -108,25 +109,6 @@ export default function UserManagementPage() {
   const [editMemberScheduleDirty, setEditMemberScheduleDirty] = useState(false)
   const [memberPlanDurations, setMemberPlanDurations] = useState(MEMBER_DURATION_DAYS)
 
-  // API Token Usage State
-  const [tokenUsage, setTokenUsage] = useState({
-    input: 0,
-    output: 0,
-    total: 0
-  })
-
-  useEffect(() => {
-    if (editingUser?.apiUsage) {
-      setTokenUsage({
-        input: editingUser.apiUsage.inputTokens || 0,
-        output: editingUser.apiUsage.outputTokens || 0,
-        total: editingUser.apiUsage.totalTokens || 0
-      })
-    } else {
-      setTokenUsage({ input: 0, output: 0, total: 0 })
-    }
-  }, [editingUser])
-
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
@@ -148,6 +130,11 @@ export default function UserManagementPage() {
   // 加载用户列表
   useEffect(() => {
     fetchUsers()
+    trackingService.pageView({
+      page_key: 'admin_user_management',
+      module: 'admin_user_management',
+      source_key: 'admin_user_management'
+    })
   }, [fetchUsers])
 
   useEffect(() => {
@@ -229,6 +216,14 @@ export default function UserManagementPage() {
         console.error('[UserManagement] 更新状态失败:', data.error)
         return
       }
+      trackingService.track('admin_user_status_update', {
+        page_key: 'admin_user_management',
+        module: 'admin_user_management',
+        source_key: 'admin_user_management',
+        entity_type: 'user',
+        entity_id: userId,
+        next_status: nextStatus
+      })
       // 局部更新并重算统计
       setUsers(prev => {
         const next = prev.map(u => (u.user_id === userId ? { ...u, status: nextStatus, updatedAt: new Date().toISOString() } : u))
@@ -269,6 +264,15 @@ export default function UserManagementPage() {
     setEditMemberCycleStartAt(initialStartAt)
     setEditMemberExpireAt(user.memberExpireAt || '')
     setEditMemberScheduleDirty(false)
+    trackingService.track('admin_user_edit_open', {
+      page_key: 'admin_user_management',
+      module: 'admin_user_management',
+      source_key: 'admin_user_management',
+      entity_type: 'user',
+      entity_id: user.user_id,
+      user_status: user.status,
+      member_status: user.memberStatus || 'free'
+    })
   }
 
   useEffect(() => {
@@ -321,6 +325,16 @@ export default function UserManagementPage() {
       })
       const data = await resp.json()
       if (data.success && data.user) {
+        trackingService.track('admin_user_edit_save', {
+          page_key: 'admin_user_management',
+          module: 'admin_user_management',
+          source_key: 'admin_user_management',
+          entity_type: 'user',
+          entity_id: editingUser.user_id,
+          user_status: editMemberStatus,
+          member_type: editMemberType,
+          admin_role: editAdmin
+        })
         setUsers(prev => prev.map(u => (u.user_id === editingUser.user_id ? { ...u, ...data.user } as User : u)))
       }
     } finally {
@@ -339,6 +353,13 @@ export default function UserManagementPage() {
       })
       const data = await resp.json()
       if (data.success) {
+        trackingService.track('admin_user_delete', {
+          page_key: 'admin_user_management',
+          module: 'admin_user_management',
+          source_key: 'admin_user_management',
+          entity_type: 'user',
+          entity_id: userId
+        })
         setUsers(prev => prev.filter(u => u.user_id !== userId))
         calculateStats(users.filter(u => u.user_id !== userId))
       }
@@ -348,6 +369,12 @@ export default function UserManagementPage() {
   }
 
   const exportUsers = () => {
+    trackingService.track('admin_user_export', {
+      page_key: 'admin_user_management',
+      module: 'admin_user_management',
+      source_key: 'admin_user_management',
+      result_count: filteredUsers.length
+    })
     const csv = [
       ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '状态'].join(','),
       ...filteredUsers.map(user => [
@@ -472,7 +499,14 @@ export default function UserManagementPage() {
 
             {/* 操作按钮 */}
             <button
-              onClick={fetchUsers}
+              onClick={() => {
+                trackingService.track('admin_user_refresh', {
+                  page_key: 'admin_user_management',
+                  module: 'admin_user_management',
+                  source_key: 'admin_user_management'
+                })
+                fetchUsers()
+              }}
               className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2"
             >
               <RefreshCw className="w-4 h-4" />
@@ -678,10 +712,20 @@ export default function UserManagementPage() {
       </div>
 
       {editingUser && (
-        <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-            <h3 className="text-lg font-semibold mb-4">编辑用户</h3>
-            <div className="space-y-4">
+        <div
+          className="fixed inset-0 z-[1000] overflow-y-auto bg-black/30 p-4"
+          onClick={() => setEditingUser(null)}
+        >
+          <div className="flex min-h-full items-center justify-center">
+            <div
+              className="flex w-full max-w-2xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="border-b border-slate-200 px-6 py-4">
+                <h3 className="text-lg font-semibold">编辑用户</h3>
+              </div>
+              <div className="flex-1 overflow-y-auto px-6 py-4">
+                <div className="space-y-4">
               <div>
                 <label className="block text-sm text-slate-700 mb-2">用户名</label>
                 <input
@@ -785,28 +829,6 @@ export default function UserManagementPage() {
                 )}
               </div>
 
-              {/* API Token Usage */}
-              <div className="mt-4 pt-4 border-t border-slate-100">
-                <h4 className="font-semibold text-sm mb-3 text-slate-900 flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-slate-500" />
-                  API 消耗统计
-                </h4>
-                <div className="grid grid-cols-3 gap-3">
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-xs text-slate-500 mb-1">Total Tokens</div>
-                    <div className="text-lg font-bold text-slate-900">{tokenUsage.total.toLocaleString()}</div>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-xs text-slate-500 mb-1">Input</div>
-                    <div className="text-base font-medium text-slate-700">{tokenUsage.input.toLocaleString()}</div>
-                  </div>
-                  <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
-                    <div className="text-xs text-slate-500 mb-1">Output</div>
-                    <div className="text-base font-medium text-slate-700">{tokenUsage.output.toLocaleString()}</div>
-                  </div>
-                </div>
-              </div>
-
               {/* 求职期望展示 */}
               <div className="mt-4 pt-4 border-t border-slate-100">
                 <h4 className="font-semibold text-sm mb-3 text-slate-900">求职期望</h4>
@@ -883,11 +905,15 @@ export default function UserManagementPage() {
                 )}
               </div>
             </div>
-            <div className="mt-6 flex justify-end gap-2">
-              <button onClick={() => setEditingUser(null)} className="px-4 py-2 border rounded-lg">取消</button>
-              {isSuperAdmin && (
-                <button onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">保存</button>
-              )}
+              </div>
+              <div className="border-t border-slate-200 px-6 py-4">
+                <div className="flex justify-end gap-2">
+                  <button onClick={() => setEditingUser(null)} className="px-4 py-2 border rounded-lg">取消</button>
+                  {isSuperAdmin && (
+                    <button onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">保存</button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>

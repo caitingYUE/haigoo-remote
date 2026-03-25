@@ -55,6 +55,7 @@ import AdminJobBundles from '../components/admin/AdminJobBundles';
 import AdminSocialPush from '../components/admin/AdminSocialPush';
 import AdminContactMiningPage from './AdminContactMiningPage';
 import logoPng from '../assets/logo.png';
+import { trackingService } from '../services/tracking-service';
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -242,6 +243,16 @@ const AdminTeamPage: React.FC = () => {
     window.history.replaceState({}, '', url.toString());
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'resumes') {
+      trackingService.pageView({
+        page_key: 'admin_resume_data',
+        module: 'admin_resume_data',
+        source_key: 'admin_resume_data'
+      });
+    }
+  }, [activeTab]);
+
   // 获取简历数据
   const fetchResumes = useCallback(async () => {
     setResumeLoading(true);
@@ -294,7 +305,8 @@ const AdminTeamPage: React.FC = () => {
         if (data.success && Array.isArray(data.users)) {
           const map: Record<string, any> = {};
           data.users.forEach((u: any) => {
-            map[u.id] = u; // Store full user object
+            const key = u.user_id || u.id;
+            if (key) map[key] = u;
           });
           setUserMap(map);
         }
@@ -622,6 +634,13 @@ const AdminTeamPage: React.FC = () => {
       });
 
       if (res.ok) {
+        trackingService.track('admin_resume_delete', {
+          page_key: 'admin_resume_data',
+          module: 'admin_resume_data',
+          source_key: 'admin_resume_data',
+          entity_type: 'resume',
+          entity_id: id
+        });
         setResumes(prev => prev.filter(r => r.id !== id));
       } else {
         alert('删除失败');
@@ -645,6 +664,12 @@ const AdminTeamPage: React.FC = () => {
       });
 
       if (res.ok) {
+        trackingService.track('admin_resume_clear_all', {
+          page_key: 'admin_resume_data',
+          module: 'admin_resume_data',
+          source_key: 'admin_resume_data',
+          result_count: resumes.length
+        });
         setResumes([]);
         alert('所有简历已清空');
       } else {
@@ -735,7 +760,14 @@ const AdminTeamPage: React.FC = () => {
                   清空所有
                 </button>
                 <button
-                  onClick={fetchResumes}
+                  onClick={() => {
+                    trackingService.track('admin_resume_refresh', {
+                      page_key: 'admin_resume_data',
+                      module: 'admin_resume_data',
+                      source_key: 'admin_resume_data'
+                    });
+                    fetchResumes();
+                  }}
                   className="btn-primary"
                   disabled={resumeLoading}
                 >
@@ -887,7 +919,17 @@ const AdminTeamPage: React.FC = () => {
                           <td>
                             <div className="flex space-x-2">
                               <button
-                                onClick={() => setSelectedResume(resume)}
+                                onClick={() => {
+                                  trackingService.track('admin_resume_preview_open', {
+                                    page_key: 'admin_resume_data',
+                                    module: 'admin_resume_data',
+                                    source_key: 'admin_resume_data',
+                                    entity_type: 'resume',
+                                    entity_id: resume.id,
+                                    resume_id: resume.id
+                                  });
+                                  setSelectedResume(resume);
+                                }}
                                 className="action-btn"
                                 title="查看详情"
                               >
@@ -896,6 +938,15 @@ const AdminTeamPage: React.FC = () => {
                               <button
                                 onClick={() => {
                                   const token = localStorage.getItem('haigoo_auth_token');
+                                  trackingService.track('download_resume', {
+                                    page_key: 'admin_resume_data',
+                                    module: 'admin_resume_data',
+                                    source_key: 'admin_resume_data',
+                                    entity_type: 'resume',
+                                    entity_id: resume.id,
+                                    resume_id: resume.id,
+                                    file_name: resume.fileName
+                                  });
                                   window.open(`/api/resumes?action=download&id=${resume.id}&token=${token}`, '_blank');
                                 }}
                                 className="action-btn"
@@ -1233,6 +1284,15 @@ const AdminTeamPage: React.FC = () => {
                 <button
                   onClick={() => {
                     const token = localStorage.getItem('haigoo_auth_token');
+                    trackingService.track('download_resume', {
+                      page_key: 'admin_resume_data',
+                      module: 'admin_resume_preview',
+                      source_key: 'admin_resume_preview',
+                      entity_type: 'resume',
+                      entity_id: selectedResume.id,
+                      resume_id: selectedResume.id,
+                      file_name: selectedResume.fileName
+                    });
                     window.open(`/api/resumes?action=download&id=${selectedResume.id}&token=${token}`, '_blank');
                   }}
                   className="btn-primary"

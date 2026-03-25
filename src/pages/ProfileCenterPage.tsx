@@ -77,6 +77,12 @@ export default function ProfileCenterPage() {
   const [upgradeSource, setUpgradeSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
   const [copilotPlan, setCopilotPlan] = useState<any>(null)
   const [loadingPlan, setLoadingPlan] = useState(false)
+  const defaultAnalysisMode = isMember ? 'ai_preferred' : 'local'
+  const analysisStepFallback = isMember ? '正在初始化 AI 分析引擎...' : '正在初始化本地分析引擎...'
+  const analysisDescription = isMember
+    ? '正在结合简历内容与目标岗位进行增强分析，这可能需要 30-60 秒，请耐心等待...'
+    : '正在基于本地规则评估简历结构、信息完整度和表达质量，通常会很快完成。'
+  const getAnalysisModeLabel = (mode?: string) => (mode === 'ai' ? 'AI 增强分析' : '本地分析')
 
   const handleRemoveFavorite = async (jobId: string) => {
     try {
@@ -502,33 +508,32 @@ export default function ProfileCenterPage() {
       source_key: 'profile_resume',
       entity_type: 'resume',
       entity_id: latestResume?.id,
-      action: 'request'
+      action: 'request',
+      analysis_mode: defaultAnalysisMode
     })
 
-    if (!isMember) {
-      setUpgradeSource('ai_resume');
-      setShowUpgradeModal(true);
-      trackingService.track('upgrade_modal_view', {
-        page_key: 'profile',
-        module: 'profile_resume',
-        feature_key: 'resume_ai_suggestion',
-        source_key: 'profile_resume'
-      })
-      return;
-    }
-
     try {
-      showSuccess('正在分析简历...', 'AI 正在深度读取您的简历内容')
+      showSuccess(
+        '正在分析简历...',
+        isMember ? '正在进行 AI 增强分析' : '正在进行本地规则分析'
+      )
       setIsAnalyzing(true)
 
       // Simulate progress steps
-      const steps = [
-        '正在解析简历结构...',
-        '正在提取关键技能...',
-        '正在评估工作经历...',
-        '正在生成优化建议...',
-        '正在计算综合得分...'
-      ]
+      const steps = isMember
+        ? [
+            '正在解析简历结构...',
+            '正在提取关键技能...',
+            '正在评估工作经历...',
+            '正在生成优化建议...',
+            '正在计算综合得分...'
+          ]
+        : [
+            '正在读取简历结构...',
+            '正在检查关键信息完整度...',
+            '正在评估技能与经历表达...',
+            '正在生成优化建议...'
+          ]
 
       let stepIndex = 0
       setAnalysisStep(steps[0])
@@ -584,7 +589,10 @@ export default function ProfileCenterPage() {
       if (resp.ok && result.success) {
         setResumeScore(result.data.score || 0)
         setAiSuggestions(result.data.suggestions || [])
-        showSuccess('简历分析完成！', `您的简历得分：${result.data.score || 0}%`)
+        showSuccess(
+          '简历分析完成！',
+          `${getAnalysisModeLabel(result.data.analysisMode)}得分：${result.data.score || 0}%`
+        )
 
         trackingService.track('analyze_resume', {
           page_key: 'profile',
@@ -594,7 +602,8 @@ export default function ProfileCenterPage() {
           resume_id: resumeIdToAnalyze,
           score: result.data.score,
           suggestion_count: result.data.suggestions?.length || 0,
-          action: 'success'
+          action: 'success',
+          analysis_mode: result.data.analysisMode || 'local'
         })
       } else {
         console.error('[ProfileCenter] Analysis failed:', result);
@@ -623,7 +632,21 @@ export default function ProfileCenterPage() {
               if (retryResp.ok && retryResult.success) {
                 setResumeScore(retryResult.data.score || 0)
                 setAiSuggestions(retryResult.data.suggestions || [])
-                showSuccess('简历分析完成！', `您的简历得分：${retryResult.data.score || 0}%`)
+                showSuccess(
+                  '简历分析完成！',
+                  `${getAnalysisModeLabel(retryResult.data.analysisMode)}得分：${retryResult.data.score || 0}%`
+                )
+                trackingService.track('analyze_resume', {
+                  page_key: 'profile',
+                  module: 'profile_resume',
+                  feature_key: 'resume_ai_suggestion',
+                  source_key: 'profile_resume',
+                  resume_id: resumeIdToAnalyze,
+                  score: retryResult.data.score,
+                  suggestion_count: retryResult.data.suggestions?.length || 0,
+                  action: 'success',
+                  analysis_mode: retryResult.data.analysisMode || 'local'
+                })
                 return;
               }
             }
@@ -633,7 +656,18 @@ export default function ProfileCenterPage() {
       }
     } catch (aiError) {
       console.warn('AI analysis failed:', aiError)
-      showError('分析失败', 'AI 服务暂时繁忙，请稍后重试')
+      trackingService.track('analyze_resume', {
+        page_key: 'profile',
+        module: 'profile_resume',
+        feature_key: 'resume_ai_suggestion',
+        source_key: 'profile_resume',
+        entity_type: 'resume',
+        entity_id: latestResume?.id,
+        action: 'failure',
+        analysis_mode: defaultAnalysisMode,
+        error_message: aiError instanceof Error ? aiError.message : 'unknown_error'
+      })
+      showError('分析失败', isMember ? '增强分析暂时失败，已可稍后重试' : '本地分析暂时失败，请稍后重试')
     } finally {
       setIsAnalyzing(false)
       setAnalysisStep('')
@@ -678,7 +712,9 @@ export default function ProfileCenterPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">简历优化</h2>
-          <p className="text-slate-500 mt-2 text-lg">利用 AI 智能分析，获取专业的简历优化建议。</p>
+          <p className="text-slate-500 mt-2 text-lg">
+            免费用户可使用本地规则分析，会员用户可解锁 AI 增强分析与更深度的优化建议。
+          </p>
         </div>
       </div>
 
@@ -773,23 +809,23 @@ export default function ProfileCenterPage() {
           )}
         </div>
 
-        {/* Bottom Section: AI Analysis Results */}
+        {/* Bottom Section: Resume Analysis Results */}
         <div id="ai-analysis-section" className="space-y-4 w-full">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-bold text-slate-900 px-1">AI 优化建议</h3>
+            <h3 className="text-lg font-bold text-slate-900 px-1">简历优化建议</h3>
           </div>
 
           <div className="space-y-3">
             {!resumeText ? (
               <div className="p-8 bg-slate-50 text-slate-500 rounded-xl text-center border-2 border-dashed border-slate-200">
                 <Crown className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p>上传简历以解锁 AI 智能优化建议。</p>
+                <p>上传简历后即可开始分析，免费用户默认使用本地规则分析。</p>
               </div>
             ) : isAnalyzing ? (
               <div className="p-12 bg-white border border-indigo-100 rounded-xl text-center shadow-sm">
                 <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-6"></div>
-                <h4 className="text-lg font-bold text-slate-900 mb-2">{analysisStep || '正在初始化 AI 引擎...'}</h4>
-                <p className="text-slate-500">正在进行深度分析，这可能需要 30-60 秒，请耐心等待...</p>
+                <h4 className="text-lg font-bold text-slate-900 mb-2">{analysisStep || analysisStepFallback}</h4>
+                <p className="text-slate-500">{analysisDescription}</p>
               </div>
             ) : aiSuggestions.length > 0 ? (
               <div className="grid grid-cols-1 gap-4">
@@ -832,8 +868,8 @@ export default function ProfileCenterPage() {
                       </>
                     ) : (
                       <>
-                        <Crown className="w-5 h-5 text-yellow-300" />
-                        重新生成 AI 建议
+                        <Crown className={`w-5 h-5 ${isMember ? 'text-yellow-300' : 'text-white/80'}`} />
+                        {isMember ? '重新生成 AI 建议' : '重新生成简历建议'}
                       </>
                     )}
                   </button>
@@ -842,16 +878,18 @@ export default function ProfileCenterPage() {
             ) : (
               <div className="p-8 bg-indigo-50 border border-indigo-100 rounded-xl text-center">
                 <p className="text-base text-indigo-900 font-medium mb-4">
-                  准备好使用 AI 优化简历了吗？
+                  准备好开始简历分析了吗？
                 </p>
                 <button
                   onClick={handleAnalyzeResume}
                   className="px-8 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold shadow-md flex items-center justify-center gap-2 mx-auto w-full"
                 >
-                  <Crown className="w-5 h-5 text-yellow-300" />
-                  生成 AI 建议
+                  <Crown className={`w-5 h-5 ${isMember ? 'text-yellow-300' : 'text-white/80'}`} />
+                  {isMember ? '生成 AI 建议' : '生成简历建议'}
                 </button>
-                <p className="text-xs text-indigo-600/70 mt-3">会员专属权益 • 不限次数优化</p>
+                <p className="text-xs text-indigo-600/70 mt-3">
+                  {isMember ? '会员优先尝试 AI 增强，异常时自动回退本地分析' : '当前模式：免费本地分析 • 会员可解锁 AI 增强'}
+                </p>
               </div>
             )}
           </div>
