@@ -23,6 +23,7 @@ interface ApplyInterceptModalProps {
     websiteApplyUnlocked?: boolean;
     onConsumeWebsiteApply?: () => Promise<boolean> | boolean;
     websiteApplyLimit?: number;
+    onShowUpgrade?: (featureKey: string, sourceKey?: string) => void;
 }
 
 import { getJobSourceType } from '../utils/job-source-helper';
@@ -43,6 +44,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     websiteApplyUnlocked = false,
     onConsumeWebsiteApply,
     websiteApplyLimit = 20,
+    onShowUpgrade,
 }) => {
     const navigate = useNavigate();
 
@@ -364,7 +366,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                         source_key: 'referral_upgrade_modal',
                                     });
                                     onClose();
-                                    navigate('/membership');
+                                    onShowUpgrade?.('referral', 'referral_upgrade_modal');
                                 }}
                                 className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 text-sm"
                             >
@@ -449,7 +451,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                             feature_key: 'website_apply',
                                             source_key: 'trusted_platform_upgrade_gate',
                                         });
-                                        navigate('/membership');
+                                        onShowUpgrade?.('website_apply', 'trusted_platform_upgrade_gate');
                                         return;
                                     }
                                     const pendingWindow = openPendingWebsiteApplyWindow();
@@ -574,7 +576,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                         source_key: 'website_apply_company_info_gate',
                                     });
                                     onClose();
-                                    navigate('/membership');
+                                    onShowUpgrade?.('company_info', 'website_apply_company_info_gate');
                                 }}
                                 className="py-3 px-4 bg-white border-2 border-indigo-600 text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition-colors text-sm"
                             >
@@ -598,7 +600,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                             feature_key: 'website_apply',
                                             source_key: 'screened_job_upgrade_gate',
                                         });
-                                        navigate('/membership');
+                                        onShowUpgrade?.('website_apply', 'screened_job_upgrade_gate');
                                         return;
                                     }
                                     const pendingWindow = openPendingWebsiteApplyWindow();

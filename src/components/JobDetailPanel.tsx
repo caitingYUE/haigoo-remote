@@ -650,7 +650,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'job',
             entity_id: job?.id,
         })
-        navigate('/membership#pricing-plans')
+        openUpgradeModal(featureKey, sourceKey)
     }
 
     const applyViaReferralContact = async (contact: ReferralContact) => {
@@ -1533,9 +1533,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {showReferralModule && (
                         <section className="pb-5">
-                            <div className="rounded-[28px] border border-indigo-100/80 bg-[linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.96))] p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-36px_rgba(79,70,229,0.18)]">
-                                <div className="flex items-center justify-between gap-3">
-                                    <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 whitespace-nowrap tracking-tight">帮我内推</h3>
+                            <div className="rounded-[28px] border border-indigo-100/90 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.14),_transparent_28%),radial-gradient(circle_at_top_left,_rgba(34,211,238,0.08),_transparent_22%),linear-gradient(180deg,_rgba(255,255,255,0.98),_rgba(248,250,252,0.98))] p-4 md:p-5 space-y-4 shadow-[0_20px_60px_-36px_rgba(79,70,229,0.22)]">
+                                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                                    <div className="min-w-0">
+                                        <h3 className="text-[18px] md:text-[20px] font-black text-slate-900 tracking-tight">帮我内推</h3>
+                                        <p className="mt-2 max-w-[420px] text-xs md:text-[13px] leading-relaxed text-slate-600">
+                                            Haigoo为你找到了本岗位的直接招聘HR/业务负责人，简历直达关键决策方
+                                        </p>
+                                    </div>
                                     {(() => {
                                         const refCompanyName = job.company || companyInfo?.name || '';
                                         const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName);
@@ -1545,19 +1550,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         return (
                                             <button
                                                 onClick={handleUnlockReferralPreview}
-                                                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
+                                                className="inline-flex items-center justify-between gap-3 self-start rounded-[22px] border border-indigo-400/25 bg-[linear-gradient(135deg,#0f172a_0%,#1e1b4b_72%,#4338ca_100%)] px-4 py-3 text-left text-white shadow-[0_22px_46px_-24px_rgba(79,70,229,0.72)] transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_54px_-24px_rgba(79,70,229,0.78)] md:min-w-[220px]"
                                             >
-                                                一键解锁企业人脉
-                                                <span className="rounded-full bg-white/12 px-2 py-0.5 text-xs text-white/88">
+                                                <span className="block text-sm font-black tracking-tight">一键解锁企业人脉</span>
+                                                <span className="rounded-full border border-white/10 bg-white/12 px-2.5 py-1 text-xs font-semibold text-white/88">
                                                     {remainingReferralViews}/{FREE_FEATURE_LIMIT}
                                                 </span>
                                             </button>
                                         )
                                     })()}
                                 </div>
-                                <p className="text-xs md:text-[13px] text-slate-600 leading-relaxed">
-                                    Haigoo为你找到了本岗位的直接招聘HR/业务负责人，简历直达关键决策方
-                                </p>
 
                                 {/* 免费用户解锁逻辑（复用 unlockedCompanies 机制，与企业认证信息共享解锁状态） */}
                                 {(() => {
@@ -1567,35 +1569,55 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     const renderLockedCard = (contact: ReferralContact, index: number, mode: 'guest' | 'free_available' | 'free_exhausted') => (
                                         <div
                                             key={`ref-contact-${mode}-${index}`}
-                                            className="group rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)]"
+                                            className={`group rounded-[24px] border p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] ${
+                                                mode === 'free_available'
+                                                    ? 'border-indigo-200 bg-[radial-gradient(circle_at_top_right,_rgba(99,102,241,0.1),_transparent_24%),linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.9))] shadow-[0_18px_36px_-30px_rgba(79,70,229,0.35)]'
+                                                    : 'border-slate-200 bg-white/96'
+                                            }`}
                                         >
-                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                            <div className={`flex flex-col gap-4 ${mode === 'free_available' ? 'lg:block' : 'lg:flex-row lg:items-center lg:justify-between'}`}>
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 text-lg font-black text-white shadow-lg shadow-indigo-100">
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-400 text-lg font-black text-white shadow-lg shadow-indigo-100">
                                                             {formatMaskedName(contact.name)}
                                                         </div>
                                                         <div className="min-w-0 flex-1">
                                                             <div className="flex flex-wrap items-center gap-2">
-                                                                <span className="text-base font-black text-slate-900 tracking-tight">{formatMaskedName(contact.name)}*</span>
-                                                                <span className="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[11px] font-semibold text-slate-500">
+                                                                <span className="text-[17px] font-black text-slate-900 tracking-tight">{formatMaskedName(contact.name)}*</span>
+                                                                <span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                                    mode === 'free_available'
+                                                                        ? 'border-indigo-100 bg-white/85 text-indigo-700'
+                                                                        : 'border-slate-200 bg-slate-50 text-slate-500'
+                                                                }`}>
                                                                     {getReferralAuthorityLabel(contact.title)}
                                                                 </span>
                                                             </div>
-                                                            <div className="mt-2 inline-flex max-w-full items-center rounded-2xl border border-indigo-100 bg-indigo-50/80 px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+                                                            <div className={`mt-2 inline-flex max-w-full items-center rounded-2xl border px-3 py-2 text-sm font-semibold shadow-sm ${
+                                                                mode === 'free_available'
+                                                                    ? 'border-indigo-100 bg-white/90 text-slate-800'
+                                                                    : 'border-indigo-100 bg-indigo-50/80 text-slate-700'
+                                                            }`}>
                                                                 {contact.title || '关键联系人'}
                                                             </div>
                                                         </div>
                                                     </div>
 
                                                     <div className="mt-4 flex flex-wrap items-center gap-2">
-                                                        <div className="inline-flex max-w-[280px] items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                                        <div className={`inline-flex max-w-[280px] items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                                                            mode === 'free_available'
+                                                                ? 'border-indigo-100 bg-white/88 text-indigo-700 shadow-sm'
+                                                                : 'border-slate-200 bg-slate-50 text-slate-500'
+                                                        }`}>
                                                             <Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
                                                             <span className="truncate blur-[3px] select-none">{contact.hiringEmail || 'hidden@company.com'}</span>
                                                             <Lock className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
                                                         </div>
                                                         {contact.linkedin ? (
-                                                            <div className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                                                            <div className={`inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
+                                                                mode === 'free_available'
+                                                                    ? 'border-indigo-100 bg-white/88 text-indigo-700 shadow-sm'
+                                                                    : 'border-slate-200 bg-slate-50 text-slate-500'
+                                                            }`}>
                                                                 <Linkedin className="w-3.5 h-3.5 text-slate-400" />
                                                                 <span className="blur-[3px] select-none">linkedin.com/in/hidden</span>
                                                                 <Lock className="w-3.5 h-3.5 text-slate-400" />
@@ -1604,7 +1626,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     </div>
                                                 </div>
 
-                                                <div className="flex w-full flex-col gap-2 lg:w-auto lg:min-w-[172px]">
+                                                <div className={`flex w-full flex-col gap-2 ${mode === 'free_available' ? 'hidden' : 'lg:w-auto lg:min-w-[172px]'}`}>
                                                     {mode === 'guest' ? (
                                                         <button
                                                             onClick={() => navigate('/login')}
@@ -1618,7 +1640,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     ) : (
                                                         <button
                                                             onClick={() => goToMembershipPayment('referral', 'job_detail_referral_exhausted')}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
+                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/15 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600"
                                                         >
                                                             升级解锁
                                                         </button>
@@ -1629,11 +1651,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     )
 
                                     const renderUnlockedCard = (contact: ReferralContact, index: number) => (
-                                        <div key={`ref-contact-${index}`} className="group rounded-[24px] border border-slate-200 bg-white/95 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] transition-all hover:border-indigo-200">
-                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                        <div key={`ref-contact-${index}`} className="group rounded-[24px] border border-slate-200 bg-white/98 p-4 shadow-[0_10px_30px_-24px_rgba(15,23,42,0.18)] transition-all hover:border-indigo-200 hover:shadow-[0_18px_36px_-28px_rgba(79,70,229,0.18)]">
+                                            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-start gap-3">
-                                                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-600 to-cyan-500 text-lg font-black text-white shadow-lg shadow-indigo-100">
+                                                        <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-gradient-to-br from-indigo-600 via-indigo-500 to-cyan-400 text-lg font-black text-white shadow-lg shadow-indigo-100">
                                                             {formatMaskedName(contact.name)}
                                                         </div>
                                                         <div className="min-w-0 flex-1">
@@ -1680,7 +1702,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                                                 <button
                                                     onClick={() => applyViaReferralContact(contact)}
-                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 lg:min-w-[170px]"
+                                                    className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-500/15 bg-slate-900 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-600 lg:min-w-[170px]"
                                                 >
                                                     <Mail className="w-4 h-4" />
                                                     {getReferralActionLabel(contact)}
@@ -1977,6 +1999,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 websiteApplyUsageCount={websiteApplyUsageCount}
                 websiteApplyUnlocked={Boolean(isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || '')))}
                 websiteApplyLimit={WEBSITE_APPLY_FREE_LIMIT}
+                onShowUpgrade={(featureKey, sourceKey) => {
+                    setShowApplyInterceptModal(false)
+                    openUpgradeModal(featureKey, sourceKey || 'job_detail')
+                }}
                 onConsumeWebsiteApply={async () => {
                     const ok = await consumeWebsiteApplyIfNeeded()
                     if (ok) {
