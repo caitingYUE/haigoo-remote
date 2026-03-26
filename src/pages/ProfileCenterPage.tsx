@@ -104,6 +104,11 @@ interface AssistantConversationRenderableMessage extends AssistantConversationMe
   totalLines: number
 }
 
+interface StoredAssistantConversationHistory {
+  savedAt: string
+  messages: AssistantConversationMessage[]
+}
+
 interface AssistantProgressCard {
   current: string
   currentTone?: 'default' | 'active' | 'done'
@@ -124,6 +129,11 @@ function parseJsonValue<T>(value: unknown, fallback: T): T {
     }
   }
   return fallback
+}
+
+function getAssistantConversationStorageKey(userKey?: string | null, resumeId?: string | null) {
+  if (!userKey || !resumeId) return null
+  return `haigoo:resume-assistant-history:${userKey}:${resumeId}`
 }
 
 function splitConversationLines(text: string): string[] {
@@ -238,6 +248,7 @@ export default function ProfileCenterPage() {
   const [assistantConversationHistory, setAssistantConversationHistory] = useState<AssistantConversationMessage[]>([])
   const [assistantStartChoice, setAssistantStartChoice] = useState<'pending' | 'deferred' | 'running'>('pending')
   const resumeAssistantUpgradeTracked = useRef(false)
+  const shouldAnimateConversationRef = useRef(true)
 
   const [latestResume, setLatestResume] = useState<{ id: string; name: string } | null>(null)
   const [resumeText, setResumeText] = useState<string>('')
@@ -275,6 +286,13 @@ export default function ProfileCenterPage() {
     assistantFramework?.strengths?.length ||
     assistantFramework?.growthAreas?.length ||
     assistantFramework?.englishInterviewFramework?.questions?.length
+  )
+  const assistantHistoryStorageKey = useMemo(
+    () => getAssistantConversationStorageKey(
+      authUser?.user_id || authUser?.email || authUser?.username || null,
+      latestResume?.id || null
+    ),
+    [authUser?.email, authUser?.user_id, authUser?.username, latestResume?.id]
   )
 
   const openResumePicker = () => {
@@ -425,7 +443,27 @@ export default function ProfileCenterPage() {
     setAssistantConversationHistory([])
     setAssistantConversationRevealLineCount(0)
     previousConversationTotalLinesRef.current = 0
+    shouldAnimateConversationRef.current = true
   }, [latestResume?.id])
+
+  useEffect(() => {
+    if (!assistantHistoryStorageKey || typeof window === 'undefined') return
+    try {
+      const raw = window.localStorage.getItem(assistantHistoryStorageKey)
+      if (!raw) return
+      const parsed = parseJsonValue<StoredAssistantConversationHistory | null>(raw, null)
+      if (!parsed?.messages?.length || !parsed.savedAt) return
+      const savedAt = new Date(parsed.savedAt)
+      if (Number.isNaN(savedAt.getTime()) || Date.now() - savedAt.getTime() > 90 * 24 * 60 * 60 * 1000) {
+        window.localStorage.removeItem(assistantHistoryStorageKey)
+        return
+      }
+      setAssistantConversationHistory(parsed.messages)
+      shouldAnimateConversationRef.current = false
+    } catch (error) {
+      console.warn('[ProfileCenter] Failed to restore assistant history:', error)
+    }
+  }, [assistantHistoryStorageKey])
 
   const assistantConversationMessages = useMemo<AssistantConversationMessage[]>(() => {
     if (!latestResume?.id) {
@@ -676,6 +714,19 @@ export default function ProfileCenterPage() {
     [assistantConversationHistory, assistantConversationMessages]
   )
 
+  useEffect(() => {
+    if (!assistantHistoryStorageKey || typeof window === 'undefined' || !assistantConversationHistory.length) return
+    try {
+      const payload: StoredAssistantConversationHistory = {
+        savedAt: new Date().toISOString(),
+        messages: assistantConversationHistory
+      }
+      window.localStorage.setItem(assistantHistoryStorageKey, JSON.stringify(payload))
+    } catch (error) {
+      console.warn('[ProfileCenter] Failed to persist assistant history:', error)
+    }
+  }, [assistantConversationHistory, assistantHistoryStorageKey])
+
   const assistantConversationRenderableMessages = useMemo<AssistantConversationRenderableMessage[]>(
     () =>
       renderedConversationMessages.map((message) => {
@@ -699,6 +750,13 @@ export default function ProfileCenterPage() {
     if (!assistantConversationRenderableMessages.length || totalLines === 0) {
       setAssistantConversationRevealLineCount(0)
       previousConversationTotalLinesRef.current = 0
+      return
+    }
+
+    if (!shouldAnimateConversationRef.current) {
+      setAssistantConversationRevealLineCount(totalLines)
+      previousConversationTotalLinesRef.current = totalLines
+      shouldAnimateConversationRef.current = true
       return
     }
 
@@ -1411,35 +1469,35 @@ export default function ProfileCenterPage() {
           : '等待上传'
     const assistantProgressCard: AssistantProgressCard = !latestResume
       ? {
-          current: '还没开始，我们先把简历交给助手。',
+          current: '现在先上传简历，马上开始第一轮整体评估。',
           currentTone: 'default',
           next: [
             { label: '整体判断' },
-            { label: '亮点梳理' },
+            { label: '亮点提炼' },
             { label: '英文面试准备' }
           ]
         }
       : isAnalyzing
         ? {
-            current: analysisStep || '正在分析简历',
+            current: analysisStep || '正在帮你梳理简历重点',
             currentTone: 'active',
             next: [
-              { label: '强化表达' },
+              { label: '强化简历表达', memberOnly: true },
               { label: '补足弱项' },
-              { label: '模拟面试', memberOnly: true }
+              { label: '模拟英文面试', memberOnly: true }
             ]
           }
         : hasAssistantFramework
           ? {
               current: assistantConversationKey === 'interview'
-                ? '当前正在看英文面试准备'
+                ? '当前正在进行英文面试准备'
                 : assistantConversationKey === 'growth'
-                  ? '当前正在看补强方向'
+                  ? '当前正在补足弱项'
                   : assistantConversationKey === 'strengths'
-                    ? '当前正在看优势亮点'
+                    ? '当前正在提炼优势亮点'
                     : assistantConversationKey === 'polish'
                       ? '当前正在继续深度打磨'
-                      : '当前正在看整体判断',
+                      : '当前正在查看整体判断',
               currentTone: 'done',
               next: [
                 { label: '强化简历表达', memberOnly: true },
@@ -1448,11 +1506,11 @@ export default function ProfileCenterPage() {
               ]
             }
           : {
-              current: '简历已经准备好，随时可以开始第一轮分析。',
+              current: '简历已经准备好，可以开始第一轮整体评估。',
               currentTone: 'default',
               next: [
                 { label: '整体判断' },
-                { label: '亮点梳理' },
+                { label: '亮点提炼' },
                 { label: '英文面试准备' }
               ]
             }
@@ -1572,8 +1630,8 @@ export default function ProfileCenterPage() {
         </section>
 
         <div className="grid gap-5 xl:grid-cols-[minmax(420px,0.84fr)_minmax(0,1.16fr)] xl:items-stretch">
-          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm xl:min-h-[920px]">
-            <div className="flex flex-col">
+          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm xl:h-[min(760px,calc(100vh-270px))]">
+            <div className="flex h-full min-h-0 flex-col">
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-slate-900">简历预览</h3>
@@ -1598,7 +1656,7 @@ export default function ProfileCenterPage() {
                 )}
               </div>
 
-              <div className="relative h-[760px] md:h-[860px]">
+              <div className="relative h-[760px] flex-1 md:h-[820px] xl:min-h-0">
                 {resumePreviewContent}
                 {showUpgradeModal && latestResume ? (
                   <div className="pointer-events-none absolute inset-0 z-10 rounded-[24px] bg-slate-50/70 backdrop-blur-[1px]" />
@@ -1610,13 +1668,13 @@ export default function ProfileCenterPage() {
             </div>
           </section>
 
-          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm xl:min-h-[920px]">
-            <div className="flex min-h-[760px] flex-col md:min-h-[860px] xl:h-full xl:min-h-[920px]">
+          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm xl:h-[min(760px,calc(100vh-270px))]">
+            <div className="flex min-h-[760px] flex-col md:min-h-[820px] xl:h-full xl:min-h-0">
               <div className="border-b border-slate-200 px-5 py-4">
                 <h3 className="text-[18px] font-black tracking-tight text-slate-950 md:text-[20px]">逐步拆解你的简历与面试准备</h3>
               </div>
 
-              <div ref={conversationScrollRef} className="min-h-[660px] flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4 md:min-h-[760px] xl:min-h-0">
+              <div ref={conversationScrollRef} className="min-h-[660px] flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4 md:min-h-[720px] xl:min-h-0">
                 {isAnalyzing ? (
                   <div className="space-y-4">
                     <div className="flex justify-end">
