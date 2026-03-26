@@ -621,6 +621,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             navigate('/login')
             return
         }
+        if (isMemberRestrictedJob && !isMember) {
+            goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only_unlock')
+            return
+        }
         try {
             const res = await fetch('/api/users?resource=free-usage&type=referral', {
                 method: 'POST',
@@ -1549,18 +1553,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </div>
                                     {(() => {
                                         const refCompanyName = job.company || companyInfo?.name || '';
-                                        const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName);
+                                        const isReferralUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName));
+                                        const isMemberLocked = isAuthenticated && !isMember && isMemberRestrictedJob && !isReferralUnlocked
                                         const remainingReferralViews = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
-                                        const canUnlockReferral = isAuthenticated && !isReferralUnlocked && referralUsageCount < FREE_FEATURE_LIMIT
-                                        if (!canUnlockReferral) return null
+                                        const canUnlockReferral = isAuthenticated && !isReferralUnlocked && !isMemberLocked && referralUsageCount < FREE_FEATURE_LIMIT
+                                        if (!canUnlockReferral && !isMemberLocked) return null
                                         return (
                                             <button
-                                                onClick={handleUnlockReferralPreview}
-                                                className="inline-flex items-center justify-between gap-3 self-start rounded-[22px] border border-indigo-200 bg-[linear-gradient(180deg,rgba(15,23,42,1),rgba(30,41,59,1))] px-4 py-3 text-left text-white shadow-[0_20px_42px_-28px_rgba(79,70,229,0.55)] transition-all hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-700 md:min-w-[220px]"
+                                                onClick={isMemberLocked ? () => goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only') : handleUnlockReferralPreview}
+                                                className={`inline-flex items-center justify-between gap-3 self-start rounded-[22px] px-4 py-3 text-left shadow-[0_20px_42px_-28px_rgba(79,70,229,0.32)] transition-all hover:-translate-y-0.5 md:min-w-[220px] ${
+                                                    isMemberLocked
+                                                        ? 'border border-indigo-200 bg-white text-slate-900 hover:border-indigo-300 hover:bg-indigo-50'
+                                                        : 'border border-indigo-500 bg-indigo-600 text-white hover:border-indigo-600 hover:bg-indigo-700'
+                                                }`}
                                             >
-                                                <span className="block text-sm font-black tracking-tight">一键解锁企业人脉</span>
-                                                <span className="rounded-full border border-white/10 bg-white/12 px-2.5 py-1 text-xs font-semibold text-white/88">
-                                                    {remainingReferralViews}/{FREE_FEATURE_LIMIT}
+                                                <span className="block text-sm font-black tracking-tight">
+                                                    {isMemberLocked ? '仅会员可申请' : '一键解锁企业人脉'}
+                                                </span>
+                                                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                                    isMemberLocked
+                                                        ? 'border border-indigo-100 bg-indigo-50 text-indigo-700'
+                                                        : 'border border-white/20 bg-white/12 text-white'
+                                                }`}>
+                                                    {isMemberLocked ? '体验会员可用' : `${remainingReferralViews}/${FREE_FEATURE_LIMIT}`}
                                                 </span>
                                             </button>
                                         )
@@ -1570,13 +1585,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 {/* 免费用户解锁逻辑（复用 unlockedCompanies 机制，与企业认证信息共享解锁状态） */}
                                 {(() => {
                                     const refCompanyName = job.company || companyInfo?.name || '';
-                                    const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName);
-                                    const renderLockedCard = (contact: ReferralContact, index: number, mode: 'guest' | 'free_available' | 'free_exhausted') => (
+                                    const isReferralUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName));
+                                    const renderLockedCard = (contact: ReferralContact, index: number, mode: 'guest' | 'free_available' | 'free_exhausted' | 'member_only') => (
                                         <div
                                             key={`ref-contact-${mode}-${index}`}
                                             className={`group overflow-hidden rounded-[26px] border shadow-[0_18px_40px_-32px_rgba(15,23,42,0.18)] ${
                                                 mode === 'free_available'
                                                     ? 'border-indigo-200 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(244,247,255,1))] shadow-[0_22px_46px_-34px_rgba(79,70,229,0.28)]'
+                                                    : mode === 'member_only'
+                                                        ? 'border-indigo-200 bg-white shadow-[0_22px_46px_-34px_rgba(79,70,229,0.18)]'
                                                     : 'border-slate-200 bg-white'
                                             }`}
                                         >
@@ -1615,6 +1632,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                 <Lock className="w-4 h-4" />
                                                                 登录查看
                                                             </button>
+                                                        ) : mode === 'member_only' ? (
+                                                            <button
+                                                                onClick={() => goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only_card')}
+                                                                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-indigo-200 bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-all hover:border-indigo-300 hover:bg-indigo-700 lg:min-w-[152px]"
+                                                            >
+                                                                <Crown className="w-4 h-4" />
+                                                                会员解锁
+                                                            </button>
                                                         ) : (
                                                             <button
                                                                 onClick={() => goToMembershipPayment('referral', 'job_detail_referral_exhausted')}
@@ -1630,12 +1655,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             <div className={`border-t px-4 py-3 ${
                                                 mode === 'free_available'
                                                     ? 'border-indigo-100 bg-indigo-50/50'
+                                                    : mode === 'member_only'
+                                                        ? 'border-indigo-100 bg-indigo-50/40'
                                                     : 'border-slate-200 bg-slate-50/70'
                                             }`}>
                                                 <div className="flex flex-wrap items-center gap-2">
                                                     <div className={`inline-flex max-w-[290px] items-center gap-2 rounded-xl border px-3 py-2 text-xs ${
                                                         mode === 'free_available'
                                                             ? 'border-indigo-100 bg-white text-indigo-700'
+                                                            : mode === 'member_only'
+                                                                ? 'border-indigo-100 bg-white text-indigo-700'
                                                             : 'border-slate-200 bg-white text-slate-500'
                                                     }`}>
                                                         <Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
@@ -1654,6 +1683,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         </div>
                                                     ) : null}
                                                 </div>
+                                                {mode === 'member_only' ? (
+                                                    <div className="mt-3 text-xs font-semibold text-indigo-700">
+                                                        该岗位支持邮箱直申，但申请权限仅对会员开放
+                                                    </div>
+                                                ) : null}
                                             </div>
                                         </div>
                                     )
@@ -1730,6 +1764,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     }
 
                                     // 已登录免费用户：未解锁 + 有剩余次数 → 显示解锁按钮
+                                    if (!isReferralUnlocked && isMemberRestrictedJob) {
+                                        return (
+                                            <div className="space-y-3">
+                                                {referralContacts.map((contact, index) => renderLockedCard(contact, index, 'member_only'))}
+                                            </div>
+                                        );
+                                    }
+
                                     if (!isReferralUnlocked && referralUsageCount < FREE_FEATURE_LIMIT) {
                                         return (
                                             <div className="space-y-3">
@@ -1844,8 +1886,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     <div className="flex-1 flex flex-col justify-end relative group/email">
                         {(() => {
                             const accessCompanyName = String(job.company || companyInfo?.name || '').trim();
-                            const isCompanyAccessUnlocked = isMember || unlockedCompanies.includes(accessCompanyName);
-                            const canEmailFree = !isMember && isAuthenticated && !isCompanyAccessUnlocked && emailApplyUsageCount < FREE_FEATURE_LIMIT;
+                            const isCompanyAccessUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(accessCompanyName));
+                            const canEmailFree = !isMember && !isMemberRestrictedJob && isAuthenticated && !isCompanyAccessUnlocked && emailApplyUsageCount < FREE_FEATURE_LIMIT;
                             const isEmailUnlocked = isMember || isCompanyAccessUnlocked || canEmailFree;
                             return (
                                 <button
@@ -1897,7 +1939,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             }
                                             executeApply('email');
                                         } else {
-                                            openUpgradeModal('email_apply');
+                                            openUpgradeModal(isMemberRestrictedJob ? 'member_only_job_apply' : 'email_apply');
                                         }
                                     }}
                                     className={`w-full h-full min-h-[52px] px-4 rounded-lg font-medium transition-all flex flex-col items-center justify-center relative overflow-hidden group/btn shadow-sm ${

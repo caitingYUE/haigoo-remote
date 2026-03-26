@@ -191,15 +191,15 @@ const ResumePreviewPane = memo(function ResumePreviewPane({
   resumeText: string
 }) {
   return (
-    <div className="h-full min-h-[760px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80 xl:min-h-0">
+    <div className="h-full min-h-0 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80">
       {previewUrl && fileType === 'application/pdf' ? (
-        <iframe src={previewUrl} className="h-full min-h-[760px] w-full bg-white xl:min-h-0" title="Resume Preview" />
+        <iframe src={previewUrl} className="h-full min-h-0 w-full bg-white" title="Resume Preview" />
       ) : previewUrl && fileType.startsWith('image/') ? (
         <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
           <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
         </div>
       ) : (
-        <div className="h-full min-h-[760px] overflow-auto bg-slate-100 p-4 md:p-8 xl:min-h-0">
+        <div className="h-full min-h-0 overflow-auto bg-slate-100 p-4 md:p-8">
           <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
             <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
           </div>
@@ -1630,7 +1630,7 @@ export default function ProfileCenterPage() {
         </section>
 
         <div className="grid gap-5 xl:grid-cols-[minmax(420px,0.84fr)_minmax(0,1.16fr)] xl:items-stretch">
-          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm xl:h-[min(760px,calc(100vh-270px))]">
+          <section className="overflow-hidden rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm md:h-[680px] xl:h-[calc(100vh-250px)] xl:max-h-[820px]">
             <div className="flex h-full min-h-0 flex-col">
               <div className="mb-4 flex items-center justify-between">
                 <div>
@@ -1656,7 +1656,7 @@ export default function ProfileCenterPage() {
                 )}
               </div>
 
-              <div className="relative h-[760px] flex-1 md:h-[820px] xl:min-h-0">
+              <div className="relative flex-1 min-h-0">
                 {resumePreviewContent}
                 {showUpgradeModal && latestResume ? (
                   <div className="pointer-events-none absolute inset-0 z-10 rounded-[24px] bg-slate-50/70 backdrop-blur-[1px]" />
@@ -1668,13 +1668,13 @@ export default function ProfileCenterPage() {
             </div>
           </section>
 
-          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm xl:h-[min(760px,calc(100vh-270px))]">
-            <div className="flex min-h-[760px] flex-col md:min-h-[820px] xl:h-full xl:min-h-0">
+          <section id="ai-analysis-section" className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm md:h-[680px] xl:h-[calc(100vh-250px)] xl:max-h-[820px]">
+            <div className="flex h-full min-h-0 flex-col">
               <div className="border-b border-slate-200 px-5 py-4">
                 <h3 className="text-[18px] font-black tracking-tight text-slate-950 md:text-[20px]">逐步拆解你的简历与面试准备</h3>
               </div>
 
-              <div ref={conversationScrollRef} className="min-h-[660px] flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4 md:min-h-[720px] xl:min-h-0">
+              <div ref={conversationScrollRef} className="flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4">
                 {isAnalyzing ? (
                   <div className="space-y-4">
                     <div className="flex justify-end">
@@ -2067,8 +2067,8 @@ export default function ProfileCenterPage() {
     const [isDeleting, setIsDeleting] = useState(false)
 
     const handleDeleteAccount = async () => {
-      if (!confirm('确定要永久删除账号吗？所有数据（简历、收藏、订阅等）将无法恢复。')) return
-      if (!confirm('再次确认：此操作不可撤销，确定要删除吗？')) return
+      if (!confirm('确定要永久删除账号吗？所有数据（简历、收藏、订阅等）将无法恢复，且该邮箱 30 天内无法重新注册。')) return
+      if (!confirm('再次确认：此操作不可撤销，且 30 天内无法用同邮箱重新注册，确定要删除吗？')) return
 
       try {
         setIsDeleting(true)

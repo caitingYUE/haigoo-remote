@@ -45,6 +45,45 @@ function setCorsHeaders(res, req) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
+
+async function getActiveDeletedAccountLock(email) {
+  if (!neonHelper?.isConfigured || !email) return null
+
+  try {
+    const rows = await neonHelper.query(
+      `SELECT email, blocked_until
+         FROM deleted_account_locks
+        WHERE LOWER(email) = LOWER($1)
+          AND blocked_until > NOW()
+        ORDER BY blocked_until DESC
+        LIMIT 1`,
+      [String(email).trim().toLowerCase()]
+    )
+    return rows?.[0] || null
+  } catch (error) {
+    console.error('[auth] Failed to check deleted account lock:', error)
+    return null
+  }
+}
+
+function buildDeletedAccountLockMessage(lockRow) {
+  if (!lockRow?.blocked_until) {
+    return '该邮箱近期已注销账号，30天内无法重新注册。如需帮助请联系 hi@haigooremote.com'
+  }
+
+  const blockedUntil = new Date(lockRow.blocked_until)
+  const label = Number.isNaN(blockedUntil.getTime())
+    ? '30天后'
+    : new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).format(blockedUntil)
+
+  return `该邮箱近期已注销账号，请在 ${label} 后重新注册。如需帮助请联系 hi@haigooremote.com`
+}
+
 async function verifyGoogleToken(token) {
   if (!GOOGLE_CONFIGURED || !googleClient) {
     return null
@@ -84,6 +123,11 @@ async function handleRegister(req, res) {
 
   if (!isValidPassword(password)) {
     return res.status(400).json({ success: false, error: '密码至少8位，且包含字母和数字' })
+  }
+
+  const deletedAccountLock = await getActiveDeletedAccountLock(email)
+  if (deletedAccountLock) {
+    return res.status(403).json({ success: false, error: buildDeletedAccountLockMessage(deletedAccountLock) })
   }
 
   const emailExists = await getUserByEmail(email.toLowerCase())
@@ -280,6 +324,11 @@ async function handleGoogleLogin(req, res) {
   const googleUser = await verifyGoogleToken(idToken)
   if (!googleUser) {
     return res.status(401).json({ success: false, error: 'Google 登录验证失败' })
+  }
+
+  const deletedAccountLock = await getActiveDeletedAccountLock(googleUser.email)
+  if (deletedAccountLock) {
+    return res.status(403).json({ success: false, error: buildDeletedAccountLockMessage(deletedAccountLock) })
   }
 
   let user = await getUserByEmail(googleUser.email)
