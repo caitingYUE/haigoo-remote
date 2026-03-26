@@ -1,6 +1,6 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { FileText, Upload, CheckCircle, Heart, ArrowLeft, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
+import { FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -104,6 +104,15 @@ interface AssistantConversationRenderableMessage extends AssistantConversationMe
   totalLines: number
 }
 
+interface AssistantProgressCard {
+  current: string
+  currentTone?: 'default' | 'active' | 'done'
+  next: Array<{
+    label: string
+    memberOnly?: boolean
+  }>
+}
+
 function parseJsonValue<T>(value: unknown, fallback: T): T {
   if (!value) return fallback
   if (typeof value === 'object') return value as T
@@ -135,6 +144,33 @@ const AssistantAvatar = memo(function AssistantAvatar() {
   )
 })
 
+const UserAvatar = memo(function UserAvatar({
+  avatar,
+  username,
+  isMember
+}: {
+  avatar?: string
+  username?: string
+  isMember?: boolean
+}) {
+  const fallback = (username || 'U').trim().charAt(0).toUpperCase()
+
+  return (
+    <div className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-indigo-100 bg-white shadow-sm">
+      {avatar ? (
+        <img src={avatar} alt={username || '用户头像'} className="h-full w-full object-cover" loading="eager" decoding="async" draggable={false} />
+      ) : (
+        <span className="text-sm font-black text-slate-700">{fallback}</span>
+      )}
+      {isMember ? (
+        <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full border border-white bg-indigo-600 text-white shadow-sm">
+          <Crown className="h-2.5 w-2.5" />
+        </span>
+      ) : null}
+    </div>
+  )
+})
+
 const ResumePreviewPane = memo(function ResumePreviewPane({
   previewUrl,
   fileType,
@@ -145,15 +181,15 @@ const ResumePreviewPane = memo(function ResumePreviewPane({
   resumeText: string
 }) {
   return (
-    <div className="flex-1 overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80">
+    <div className="h-full min-h-[760px] overflow-hidden rounded-[24px] border border-slate-200 bg-slate-50/80 xl:min-h-0">
       {previewUrl && fileType === 'application/pdf' ? (
-        <iframe src={previewUrl} className="h-[820px] w-full bg-white" title="Resume Preview" />
+        <iframe src={previewUrl} className="h-full min-h-[760px] w-full bg-white xl:min-h-0" title="Resume Preview" />
       ) : previewUrl && fileType.startsWith('image/') ? (
         <div className="flex h-full w-full justify-center overflow-auto bg-slate-100 p-4">
           <img src={previewUrl} alt="Resume" className="h-auto max-w-full rounded-xl shadow-md" />
         </div>
       ) : (
-        <div className="h-full min-h-[620px] overflow-auto bg-slate-100 p-4 md:p-8">
+        <div className="h-full min-h-[760px] overflow-auto bg-slate-100 p-4 md:p-8 xl:min-h-0">
           <div className="mx-auto min-h-[297mm] max-w-[210mm] bg-white p-8 shadow-md md:p-12">
             <pre className="max-w-none whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-700">{resumeText || '预览暂不可用'}</pre>
           </div>
@@ -170,6 +206,7 @@ export default function ProfileCenterPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const conversationScrollRef = useRef<HTMLDivElement>(null)
   const loadedPreviewResumeIdRef = useRef<string | null>(null)
+  const previousConversationTotalLinesRef = useRef(0)
 
   const initialTab: TabKey = (() => {
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
@@ -198,6 +235,7 @@ export default function ProfileCenterPage() {
   const [selectedInterviewQuestion, setSelectedInterviewQuestion] = useState<string>('')
   const [assistantConversationKey, setAssistantConversationKey] = useState<AssistantConversationKey>('overview')
   const [assistantConversationRevealLineCount, setAssistantConversationRevealLineCount] = useState(0)
+  const [assistantConversationHistory, setAssistantConversationHistory] = useState<AssistantConversationMessage[]>([])
   const [assistantStartChoice, setAssistantStartChoice] = useState<'pending' | 'deferred' | 'running'>('pending')
   const resumeAssistantUpgradeTracked = useRef(false)
 
@@ -383,6 +421,12 @@ export default function ProfileCenterPage() {
     }
   }, [latestResume?.id, hasAssistantFramework])
 
+  useEffect(() => {
+    setAssistantConversationHistory([])
+    setAssistantConversationRevealLineCount(0)
+    previousConversationTotalLinesRef.current = 0
+  }, [latestResume?.id])
+
   const assistantConversationMessages = useMemo<AssistantConversationMessage[]>(() => {
     if (!latestResume?.id) {
       return [
@@ -390,7 +434,7 @@ export default function ProfileCenterPage() {
           id: 'empty-assistant',
           role: 'assistant',
           title: '简历助手已就绪',
-          body: '上传简历后，我会先陪您看一遍整体状态，再一起把亮点、补强方向和面试准备理顺。',
+          body: '把简历交给我后，我会先陪您做一轮整体判断，再一步步带您看到亮点、补强方向和面试准备。',
           accent: 'neutral'
         }
       ]
@@ -402,7 +446,7 @@ export default function ProfileCenterPage() {
           id: 'upload-complete',
           role: 'assistant',
           title: '简历已经上传完成',
-          body: '让我先帮您整体看一遍，找出最值得继续放大的优势。',
+          body: '我先陪您做一轮整体判断，看看哪些优势最值得继续放大。',
           accent: 'neutral'
         }
       ]
@@ -412,13 +456,13 @@ export default function ProfileCenterPage() {
           {
             id: 'defer-user',
             role: 'user',
-            body: '暂时不用了',
+            body: '我先稍后再看',
             accent: 'indigo'
           },
           {
             id: 'defer-assistant',
             role: 'assistant',
-            body: '好的，您想开始时随时叫我。',
+            body: '没问题。您准备好了再回来，我会接着陪您往下看。',
             accent: 'neutral'
           }
         )
@@ -428,11 +472,11 @@ export default function ProfileCenterPage() {
     }
 
     const promptMap: Record<AssistantConversationKey, string> = {
-      overview: '我想先看整体判断',
-      strengths: '先告诉我最值得放大的亮点',
-      growth: '我想知道接下来该重点补强什么',
-      interview: '先帮我准备英文面试框架',
-      polish: isMember ? '继续做一轮深度打磨' : '我想看看还能继续升级什么'
+      overview: '我想先看看整体判断',
+      strengths: '想先看看我最突出的亮点',
+      growth: '请告诉我接下来该重点补强什么',
+      interview: '先帮我准备英文面试',
+      polish: isMember ? '继续陪我往下深度打磨' : '我想继续往下完善'
     }
 
     const messages: AssistantConversationMessage[] = [
@@ -479,7 +523,7 @@ export default function ProfileCenterPage() {
         {
           id: 'overview-headline',
           role: 'assistant',
-          title: '先看整体判断',
+          title: '我先说一个整体判断',
           body: confidenceHeadline,
           accent: 'emerald'
         },
@@ -495,8 +539,8 @@ export default function ProfileCenterPage() {
         messages.push({
           id: 'overview-strengths',
           role: 'assistant',
-          title: '最值得继续放大的优势',
-          body: '这些亮点已经出现了，只需要表达得更聚焦。',
+          title: '这里有几项优势已经很值得继续放大',
+          body: '它们不是重新编造出来的，而是你已经具备，只需要表达得更集中。',
           bullets: assistantFramework.strengths.slice(0, 3).map((item) => `${item.title}：${item.detail}`),
           accent: 'emerald'
         })
@@ -508,8 +552,8 @@ export default function ProfileCenterPage() {
       messages.push({
         id: 'strengths-message',
         role: 'assistant',
-        title: '你已经有这些可放大的亮点',
-        body: '这些已经是你简历里很有说服力的部分，后续投递和面试都可以围绕它们展开。',
+        title: '先和您确认几项已经很有说服力的亮点',
+        body: '这些内容后面不管是投递还是面试，都可以继续围绕它们展开。',
         bullets: (assistantFramework.strengths || []).map((item) => `${item.title}：${item.detail}`),
         accent: 'emerald'
       })
@@ -518,8 +562,8 @@ export default function ProfileCenterPage() {
         messages.push({
           id: 'strengths-direction',
           role: 'assistant',
-          title: '表达上再往前一步',
-          body: '下面这些表达方向能让你的优势更快被看到。',
+          title: '接下来只需要把表达再往前推一步',
+          body: '下面这些方向能让招聘方更快看见你的价值。',
           bullets: assistantFramework.rewriteDirections.slice(0, 3).map((item) => `${item.title}：${item.direction}`),
           accent: 'neutral'
         })
@@ -532,8 +576,8 @@ export default function ProfileCenterPage() {
         messages.push({
           id: 'growth-areas',
           role: 'assistant',
-          title: '建议优先补强的信息',
-          body: '先把这些位置补完整，会比从头重写更有效。',
+          title: '接下来最值得优先补强的是这些位置',
+          body: '先把这几处补完整，往往会比整份简历推倒重来更有效。',
           bullets: assistantFramework.growthAreas.map((item) => `${item.title}：${item.detail}`),
           accent: 'neutral'
         })
@@ -543,8 +587,8 @@ export default function ProfileCenterPage() {
         messages.push({
           id: 'growth-star',
           role: 'assistant',
-          title: 'STAR 法则可以重点补这些',
-          body: '如果把情境、动作和结果补完整，简历会更有说服力。',
+          title: '如果按 STAR 再补一层，说服力会更稳',
+          body: '尤其是情境、动作和结果补齐以后，面试官会更容易快速理解你的价值。',
           bullets: assistantFramework.starGaps.map((item) => {
             const missing = item.missing?.length ? `（可补：${item.missing.join(' / ')}）` : ''
             return `${item.title}：${item.detail}${missing}`
@@ -562,8 +606,8 @@ export default function ProfileCenterPage() {
       messages.push({
         id: 'interview-summary',
         role: 'assistant',
-        title: '英文面试框架',
-        body: assistantFramework.englishInterviewFramework?.summary || '我先帮你把英文面试的表达主线理出来，后面再继续往下展开。',
+        title: '我先帮您把英文面试的主线搭起来',
+        body: assistantFramework.englishInterviewFramework?.summary || '先把表达骨架搭清楚，后面再继续往下展开会轻松很多。',
         bullets: assistantFramework.englishInterviewFramework?.selfIntroOutline || [],
         accent: 'indigo'
       })
@@ -573,7 +617,7 @@ export default function ProfileCenterPage() {
           id: 'interview-selected',
           role: 'assistant',
           title: selectedQuestion.question,
-          body: selectedQuestion.hint || '先围绕目标、动作、结果来组织回答，再补充你与岗位的匹配点。',
+          body: selectedQuestion.hint || '可以先围绕目标、动作和结果来组织回答，再补上你与岗位的匹配点。',
           bullets: selectedQuestion.focus ? [`回答重点：${selectedQuestion.focus}`] : undefined,
           accent: 'neutral'
         })
@@ -587,7 +631,7 @@ export default function ProfileCenterPage() {
           id: 'polish-result',
           role: 'assistant',
           title: assistantPolishResult.title,
-          body: '我把刚才这轮深度打磨拆成了几个可直接使用的部分。',
+          body: '我把这一轮深度打磨拆成了几个可以直接拿去用的部分。',
           bullets: assistantPolishResult.sections.flatMap((section) => [
             `${section.heading}：${section.body}`,
             ...(section.bullets || [])
@@ -598,16 +642,16 @@ export default function ProfileCenterPage() {
         messages.push({
           id: 'polish-member-empty',
           role: 'assistant',
-          title: '准备开始深度打磨',
-          body: '你可以继续选择简历打磨、英文面试或模拟回答，我会基于当前内容继续往下展开。',
+          title: '我们可以继续往下深挖',
+          body: '您可以继续选择简历打磨、英文面试或模拟回答，我会基于当前内容接着展开。',
           accent: 'neutral'
         })
       } else {
         messages.push({
           id: 'polish-upgrade',
           role: 'assistant',
-          title: '下一步可以继续升级',
-          body: '继续解锁深度打磨后，就能把重点经历、英文面试和模拟回答串成一套更完整的求职准备。',
+          title: '下一步可以继续往下完善',
+          body: '继续解锁深度打磨后，就能把重点经历、英文面试和模拟回答串成更完整的一套准备。',
           accent: 'neutral'
         })
       }
@@ -617,9 +661,24 @@ export default function ProfileCenterPage() {
     return messages
   }, [assistantConversationKey, assistantFramework, assistantPolishResult, selectedInterviewQuestion, aiSuggestions, isMember, latestResume?.id, assistantStartChoice])
 
+  useEffect(() => {
+    setAssistantConversationHistory((prev) => {
+      if (!assistantConversationMessages.length) return prev
+      const existingIds = new Set(prev.map((message) => message.id))
+      const appended = assistantConversationMessages.filter((message) => !existingIds.has(message.id))
+      if (!appended.length) return prev
+      return [...prev, ...appended]
+    })
+  }, [assistantConversationMessages])
+
+  const renderedConversationMessages = useMemo(
+    () => (assistantConversationHistory.length ? assistantConversationHistory : assistantConversationMessages),
+    [assistantConversationHistory, assistantConversationMessages]
+  )
+
   const assistantConversationRenderableMessages = useMemo<AssistantConversationRenderableMessage[]>(
     () =>
-      assistantConversationMessages.map((message) => {
+      renderedConversationMessages.map((message) => {
         const bodyLines = splitConversationLines(message.body)
         const bulletLines = message.bullets || []
         const totalLines = (message.title ? 1 : 0) + bodyLines.length + bulletLines.length
@@ -630,19 +689,26 @@ export default function ProfileCenterPage() {
           totalLines
         }
       }),
-    [assistantConversationMessages]
+    [renderedConversationMessages]
   )
 
   useEffect(() => {
     const totalLines = assistantConversationRenderableMessages.reduce((sum, message) => sum + message.totalLines, 0)
+    const previousTotalLines = previousConversationTotalLinesRef.current
 
     if (!assistantConversationRenderableMessages.length || totalLines === 0) {
       setAssistantConversationRevealLineCount(0)
+      previousConversationTotalLinesRef.current = 0
       return
     }
 
-    setAssistantConversationRevealLineCount(1)
-    if (totalLines === 1) return
+    const startingLine = previousTotalLines === 0 ? 1 : Math.min(previousTotalLines, totalLines)
+    setAssistantConversationRevealLineCount(startingLine)
+
+    if (totalLines <= startingLine) {
+      previousConversationTotalLinesRef.current = totalLines
+      return
+    }
 
     const timer = window.setInterval(() => {
       setAssistantConversationRevealLineCount((prev) => {
@@ -653,6 +719,8 @@ export default function ProfileCenterPage() {
         return prev + 1
       })
     }, 150)
+
+    previousConversationTotalLinesRef.current = totalLines
 
     return () => window.clearInterval(timer)
   }, [assistantConversationRenderableMessages, assistantConversationKey, assistantUpdatedAt])
@@ -1341,11 +1409,53 @@ export default function ProfileCenterPage() {
         : latestResume
           ? '等待开始'
           : '等待上传'
-    const analysisStatusNote = !latestResume
-      ? '上传简历后，我会从整体判断、亮点和面试准备开始陪你往下拆。'
-      : hasAssistantFramework
-        ? '右侧对话会陪你继续往下看亮点、补强方向和英文面试准备。'
-        : '简历已经准备好，你可以直接在右侧开始第一轮整体分析。'
+    const assistantProgressCard: AssistantProgressCard = !latestResume
+      ? {
+          current: '还没开始，我们先把简历交给助手。',
+          currentTone: 'default',
+          next: [
+            { label: '整体判断' },
+            { label: '亮点梳理' },
+            { label: '英文面试准备' }
+          ]
+        }
+      : isAnalyzing
+        ? {
+            current: analysisStep || '正在分析简历',
+            currentTone: 'active',
+            next: [
+              { label: '强化表达' },
+              { label: '补足弱项' },
+              { label: '模拟面试', memberOnly: true }
+            ]
+          }
+        : hasAssistantFramework
+          ? {
+              current: assistantConversationKey === 'interview'
+                ? '当前正在看英文面试准备'
+                : assistantConversationKey === 'growth'
+                  ? '当前正在看补强方向'
+                  : assistantConversationKey === 'strengths'
+                    ? '当前正在看优势亮点'
+                    : assistantConversationKey === 'polish'
+                      ? '当前正在继续深度打磨'
+                      : '当前正在看整体判断',
+              currentTone: 'done',
+              next: [
+                { label: '强化简历表达', memberOnly: true },
+                { label: '补足弱项' },
+                { label: '模拟英文面试', memberOnly: true }
+              ]
+            }
+          : {
+              current: '简历已经准备好，随时可以开始第一轮分析。',
+              currentTone: 'default',
+              next: [
+                { label: '整体判断' },
+                { label: '亮点梳理' },
+                { label: '英文面试准备' }
+              ]
+            }
 
     const triggerMemberPolish = () => {
       handleRunResumeAssistant(selectedPolishMode, {
@@ -1439,15 +1549,30 @@ export default function ProfileCenterPage() {
                       style={{ width: `${analysisProgress}%` }}
                     />
                   </div>
-                  <p className="mt-4 text-sm leading-6 text-slate-600">{analysisStatusNote}</p>
+                  <p className="mt-4 text-sm leading-6 text-slate-700">{assistantProgressCard.current}</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {assistantProgressCard.next.map((item) => (
+                      <span
+                        key={item.label}
+                        className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                          item.memberOnly
+                            ? 'border-indigo-200 bg-white text-indigo-700'
+                            : 'border-slate-200 bg-white text-slate-600'
+                        }`}
+                      >
+                        {item.memberOnly ? <Crown className="h-3 w-3" /> : null}
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-5 xl:grid-cols-[minmax(340px,0.78fr)_minmax(0,1.22fr)] xl:items-start">
-          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-5 xl:grid-cols-[minmax(420px,0.84fr)_minmax(0,1.16fr)] xl:items-stretch">
+          <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm xl:min-h-[920px]">
             <div className="flex flex-col">
               <div className="mb-4 flex items-center justify-between">
                 <div>
@@ -1473,7 +1598,7 @@ export default function ProfileCenterPage() {
                 )}
               </div>
 
-              <div className="relative min-h-[760px]">
+              <div className="relative h-[760px] md:h-[860px]">
                 {resumePreviewContent}
                 {showUpgradeModal && latestResume ? (
                   <div className="pointer-events-none absolute inset-0 z-10 rounded-[24px] bg-slate-50/70 backdrop-blur-[1px]" />
@@ -1485,18 +1610,21 @@ export default function ProfileCenterPage() {
             </div>
           </section>
 
-          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm">
-            <div className="flex min-h-[760px] flex-col">
+          <section id="ai-analysis-section" className="rounded-[24px] border border-slate-200 bg-white shadow-sm xl:min-h-[920px]">
+            <div className="flex min-h-[760px] flex-col md:min-h-[860px] xl:h-full xl:min-h-[920px]">
               <div className="border-b border-slate-200 px-5 py-4">
-                <h3 className="text-[20px] font-black tracking-tight text-slate-950">逐步拆解你的简历与面试准备</h3>
+                <h3 className="text-[18px] font-black tracking-tight text-slate-950 md:text-[20px]">逐步拆解你的简历与面试准备</h3>
               </div>
 
-              <div ref={conversationScrollRef} className="min-h-[660px] max-h-[calc(100vh-260px)] flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4">
+              <div ref={conversationScrollRef} className="min-h-[660px] flex-1 overflow-y-auto bg-slate-50/70 px-5 py-4 md:min-h-[760px] xl:min-h-0">
                 {isAnalyzing ? (
                   <div className="space-y-4">
                     <div className="flex justify-end">
-                      <div className="max-w-[72%] rounded-[24px] rounded-br-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm">
-                        {assistantConversationKey === 'polish' ? '继续帮我往下打磨' : '好啊'}
+                      <div className="flex max-w-[72%] items-start gap-3">
+                        <div className="rounded-[24px] rounded-br-md bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm">
+                          {assistantConversationKey === 'polish' ? '继续陪我往下打磨' : '好啊，我们开始吧'}
+                        </div>
+                        <UserAvatar avatar={authUser?.avatar} username={authUser?.username || authUser?.profile?.fullName} isMember={isMember} />
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -1527,7 +1655,7 @@ export default function ProfileCenterPage() {
                     <div className="flex items-start gap-3">
                       <AssistantAvatar />
                       <div className="w-full max-w-[84%] rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-5 py-5 shadow-sm">
-                        <p className="text-base font-semibold leading-7 text-slate-900">把简历上传给我吧，我会陪您从整体判断一路拆到面试准备。</p>
+                        <p className="text-base font-semibold leading-7 text-slate-900">把简历交给我吧。我会先陪您看清整体判断，再一步步往面试准备推进。</p>
                         <div className="mt-4">
                           <button
                             onClick={openResumePicker}
@@ -1598,6 +1726,7 @@ export default function ProfileCenterPage() {
                                 </div>
                               ) : null}
                             </div>
+                            {isUser ? <UserAvatar avatar={authUser?.avatar} username={authUser?.username || authUser?.profile?.fullName} isMember={isMember} /> : null}
                           </div>
                         )
                       })
@@ -1607,7 +1736,7 @@ export default function ProfileCenterPage() {
                       <div className="flex items-start gap-3">
                         <AssistantAvatar />
                         <div className="w-full max-w-[82%] rounded-[24px] rounded-bl-md border border-slate-200 bg-white px-4 py-4 shadow-sm">
-                          <div className="text-sm font-semibold text-slate-900">要不要我现在开始？</div>
+                          <div className="text-sm font-semibold text-slate-900">简历已经准备好了。要不要先让我陪您看一遍整体状态？</div>
                           <div className="mt-3 flex flex-wrap gap-2">
                             <button
                               onClick={() => handleConversationChoice('start')}
@@ -1648,8 +1777,9 @@ export default function ProfileCenterPage() {
                             ))}
                             <button
                               onClick={() => handleConversationChoice('polish')}
-                              className="rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700"
+                              className="inline-flex items-center gap-1 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-indigo-700"
                             >
+                              <Crown className="h-3.5 w-3.5" />
                               {isMember ? '继续深度打磨' : '继续往下打磨'}
                             </button>
                             <button
@@ -1952,24 +2082,12 @@ export default function ProfileCenterPage() {
   }
 
   return (
-    <div className="mt-16 min-h-[calc(100vh-64px)] bg-slate-50">
-      <div className="mx-auto max-w-[1600px] px-2 py-4 sm:px-3 lg:px-4">
-        <div className="flex flex-col gap-5 lg:grid lg:grid-cols-[228px_minmax(0,1fr)] lg:items-start">
+    <div className="mt-16 h-[calc(100vh-64px)] overflow-hidden bg-slate-50">
+      <div className="mx-auto h-full max-w-[1600px] px-2 py-4 sm:px-3 lg:px-4">
+        <div className="flex h-full flex-col gap-5 lg:flex-row lg:overflow-hidden">
           {/* Sidebar */}
-          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[76px]' : 'w-full lg:w-[228px]'} lg:sticky lg:top-20 lg:self-start`}>
-            <div className="flex flex-col gap-4">
-              <button
-                className={`group flex items-center rounded-[20px] border border-slate-200 bg-white px-3 py-3 text-slate-500 shadow-sm transition-all hover:border-indigo-200 hover:text-slate-900 ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
-                onClick={() => navigate(-1)}
-                aria-label="返回上一页"
-                title={isSidebarCollapsed ? '返回上一页' : undefined}
-              >
-                <div className={`flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-slate-50 transition-all group-hover:border-indigo-200 group-hover:bg-indigo-50 ${isSidebarCollapsed ? '' : 'mr-2'}`}>
-                  <ArrowLeft className="h-4 w-4 text-slate-400 group-hover:text-indigo-600" />
-                </div>
-                {!isSidebarCollapsed ? <span className="text-sm font-medium">返回上一页</span> : null}
-              </button>
-
+          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[96px]' : 'w-full lg:w-[248px]'} lg:h-full`}>
+            <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
                 className="absolute -right-3 top-5 z-10 hidden h-7 w-7 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-md transition-transform hover:scale-110 hover:text-indigo-600 lg:flex"
@@ -1978,15 +2096,15 @@ export default function ProfileCenterPage() {
               </button>
 
               {!isSidebarCollapsed ? (
-                <div className="overflow-hidden rounded-[24px] border border-indigo-100 bg-white shadow-[0_20px_45px_-34px_rgba(79,70,229,0.22)]">
-                  <div className="border-b border-indigo-100 bg-[linear-gradient(180deg,#eef2ff_0%,#f8fbff_100%)] px-4 py-4">
+                <div className="overflow-hidden rounded-[24px] border border-slate-800 bg-[linear-gradient(180deg,#111827_0%,#1f2937_100%)] text-white shadow-[0_24px_60px_-40px_rgba(15,23,42,0.65)]">
+                  <div className="border-b border-white/10 bg-white/[0.04] px-4 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-[0_14px_30px_-20px_rgba(79,70,229,0.7)]">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-500 text-white shadow-[0_14px_30px_-20px_rgba(99,102,241,0.8)]">
                         <Crown className="h-5 w-5" />
                       </div>
                       <div>
-                        <div className="text-sm font-bold text-slate-900">会员中心</div>
-                        <div className="text-xs text-slate-500">{isMember ? '当前权益已开启' : '解锁更多求职能力'}</div>
+                        <div className="text-sm font-bold text-white">会员中心</div>
+                        <div className="text-xs text-slate-300">{isMember ? '当前权益已开启' : '解锁更多求职能力'}</div>
                       </div>
                     </div>
                   </div>
@@ -1994,26 +2112,26 @@ export default function ProfileCenterPage() {
                   <div className="space-y-4 px-4 py-4">
                     {isMember ? (
                       <>
-                        <div className="rounded-2xl border border-indigo-100 bg-[linear-gradient(180deg,#ffffff_0%,#f5f7ff_100%)] px-3.5 py-3 shadow-[0_12px_30px_-24px_rgba(79,70,229,0.35)]">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                           <div className="text-[11px] font-semibold tracking-[0.16em] text-slate-400">当前等级</div>
-                          <div className="mt-2 flex items-center gap-2 text-base font-black text-slate-900">
+                          <div className="mt-2 flex items-center gap-2 text-base font-black text-white">
                             <span>{isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}</span>
                             <CheckCircle className="h-4 w-4 text-emerald-500" />
                           </div>
-                          <div className="mt-2 text-xs text-slate-500">
+                          <div className="mt-2 text-xs text-slate-300">
                             有效期至 {authUser?.memberExpireAt ? new Date(authUser.memberExpireAt).toLocaleDateString() : '永久有效'}
                           </div>
                         </div>
                         <button
                           onClick={() => navigate('/membership')}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-400"
                         >
                           续费 / 升级权益
                           <ChevronRight className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setShowCertificateModal(true)}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 transition-all hover:border-indigo-200 hover:text-indigo-600"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border border-white/12 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-slate-100 transition-all hover:border-white/20 hover:bg-white/[0.08]"
                         >
                           下载会员证书
                           <Download className="h-4 w-4" />
@@ -2021,15 +2139,15 @@ export default function ProfileCenterPage() {
                       </>
                     ) : (
                       <>
-                        <div className="rounded-2xl border border-indigo-100 bg-[linear-gradient(180deg,#ffffff_0%,#f7f8ff_100%)] px-3.5 py-3 shadow-[0_12px_30px_-24px_rgba(79,70,229,0.24)]">
-                          <div className="text-base font-black text-slate-900">开通会员</div>
-                          <div className="mt-2 text-sm leading-6 text-slate-600">
+                        <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+                          <div className="text-base font-black text-white">开通会员</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-300">
                             解锁 AI 简历优化、关键人脉直达与更完整的求职陪伴。
                           </div>
                         </div>
                         <button
                           onClick={() => navigate('/membership')}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-600 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-700"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-indigo-500 px-4 py-3 text-sm font-bold text-white transition-all hover:bg-indigo-400"
                         >
                           立即开通
                           <Zap className="h-4 w-4" />
@@ -2039,14 +2157,16 @@ export default function ProfileCenterPage() {
                   </div>
                 </div>
               ) : (
-                <div className="flex justify-center">
-                  <button
-                    onClick={() => setIsSidebarCollapsed(false)}
-                    className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-slate-200 bg-white text-indigo-600 shadow-sm transition-all hover:border-indigo-200 hover:text-indigo-700"
-                    title="会员中心"
-                  >
-                    <Crown className="h-6 w-6" />
-                  </button>
+                <div className="rounded-[24px] border border-slate-800 bg-[linear-gradient(180deg,#111827_0%,#1f2937_100%)] px-3 py-4 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.65)]">
+                  <div className="flex justify-center">
+                    <button
+                      onClick={() => setIsSidebarCollapsed(false)}
+                      className="flex h-14 w-14 items-center justify-center rounded-[20px] border border-white/12 bg-white/[0.06] text-indigo-300 shadow-sm transition-all hover:border-white/20 hover:text-white"
+                      title="会员中心"
+                    >
+                      <Crown className="h-6 w-6" />
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -2098,8 +2218,8 @@ export default function ProfileCenterPage() {
           </aside>
 
           {/* Main Content Area */}
-          <main className="min-w-0">
-            <div className="pr-1 pb-10 transition-all duration-300">
+          <main className="min-w-0 flex-1 transition-all duration-300 lg:h-full lg:min-h-0 lg:overflow-y-auto">
+            <div className="pr-1 pb-10 transition-all duration-300 lg:min-h-full">
               {tab === 'custom-plan' && (
                 <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 min-h-[400px] relative overflow-hidden">
                   {loadingPlan ? (
