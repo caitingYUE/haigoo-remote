@@ -929,7 +929,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const handleCompanyClick = () => {
         // Navigate to company detail page using company name as identifier
         const companyName = encodeURIComponent(job.company || '')
-        navigate(membershipCapabilities.canAccessTrustedCompaniesPage ? `/companies/${companyName}` : '/membership')
+        navigate(`/companies/${companyName}`)
     }
 
     const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || '未分类'

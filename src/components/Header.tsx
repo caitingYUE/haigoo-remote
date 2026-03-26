@@ -218,7 +218,7 @@ export default function Header() {
             </Link>
 
             <Link
-              to={isTrialMember ? '/membership' : '/trusted-companies'}
+              to="/trusted-companies"
               className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
                   ? 'text-slate-900 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
@@ -504,7 +504,7 @@ export default function Header() {
                 远程岗位
               </Link>
               <Link
-                to={isTrialMember ? '/membership' : '/trusted-companies'}
+                to="/trusted-companies"
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'

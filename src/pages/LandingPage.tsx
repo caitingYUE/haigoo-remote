@@ -253,7 +253,7 @@ export default function LandingPage() {
               <p className="text-slate-500">尊重员工、开放多元、持续成长的远程企业</p>
             </div>
             <button
-              onClick={() => navigate(membershipCapabilities.canAccessTrustedCompaniesPage ? '/trusted-companies' : '/membership')}
+              onClick={() => navigate('/trusted-companies')}
               className="hidden md:flex px-6 py-2.5 bg-white text-slate-700 font-medium rounded-full border border-slate-200 hover:border-indigo-300 hover:text-indigo-600 transition-all duration-200 items-center gap-2 group"
             >
               浏览所有企业
@@ -280,9 +280,7 @@ export default function LandingPage() {
                   company={company}
                   jobStats={companyJobStats[company.name]}
                   onClick={() => navigate(
-                    membershipCapabilities.canAccessTrustedCompaniesPage
-                      ? `/companies/${encodeURIComponent(company.name)}`
-                      : '/membership'
+                    `/companies/${encodeURIComponent(company.name)}`
                   )}
                 />
               ))}

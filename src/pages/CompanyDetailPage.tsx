@@ -17,6 +17,7 @@ export default function CompanyDetailPage() {
     const navigate = useNavigate()
     const { user, isAuthenticated, isMember, membershipCapabilities } = useAuth()
     const canAccessTrustedCompaniesPage = membershipCapabilities.canAccessTrustedCompaniesPage
+    const canUseFreeCompanyInfoFlow = !canAccessTrustedCompaniesPage
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
     const FREE_FEATURE_LIMIT = 3
@@ -25,7 +26,7 @@ export default function CompanyDetailPage() {
 
     // Initialize usage stats for free users
     useEffect(() => {
-        if (isAuthenticated && !isMember) {
+        if (isAuthenticated && canUseFreeCompanyInfoFlow) {
             const token = localStorage.getItem('haigoo_auth_token')
             if (!token) return;
             fetch('/api/users?resource=free-usage&type=company-info', {
@@ -40,7 +41,7 @@ export default function CompanyDetailPage() {
             setCompanyInfoUsageCount(0);
             setUnlockedCompanies([]);
         }
-    }, [isAuthenticated, isMember, canAccessTrustedCompaniesPage]);
+    }, [canUseFreeCompanyInfoFlow, isAuthenticated]);
 
 
     // DEBUG: Log user and membership status (removed for privacy)
@@ -332,7 +333,7 @@ export default function CompanyDetailPage() {
                                     </div>
 
                                     {(() => {
-                                        const isUnlocked = canAccessTrustedCompaniesPage || (!isMember && companyInfo?.name && unlockedCompanies.includes(companyInfo.name));
+                                        const isUnlocked = canAccessTrustedCompaniesPage || (canUseFreeCompanyInfoFlow && companyInfo?.name && unlockedCompanies.includes(companyInfo.name));
                                         
                                         const handleUnlock = async (e: React.MouseEvent) => {
                                             e.stopPropagation();
@@ -583,7 +584,7 @@ export default function CompanyDetailPage() {
                                                                     登录免费体验
                                                                 </button>
                                                             </>
-                                                        ) : isMember ? (
+                                                        ) : !canUseFreeCompanyInfoFlow ? (
                                                             <>
                                                                 <div className="w-10 h-10 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-emerald-100">
                                                                     <Crown className="w-5 h-5 text-emerald-600" />
