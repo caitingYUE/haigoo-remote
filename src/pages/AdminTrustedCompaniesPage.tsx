@@ -36,7 +36,7 @@ export default function AdminTrustedCompaniesPage() {
     // New states for automation features
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [autoFilling, setAutoFilling] = useState(false)
-    const [filterCanRefer, setFilterCanRefer] = useState<'all' | 'yes' | 'no'>('all')
+    const [filterMemberOnly, setFilterMemberOnly] = useState<'all' | 'yes' | 'no'>('all')
 
     // Batch crawl state
     const [batchCrawling, setBatchCrawling] = useState(false)
@@ -139,7 +139,7 @@ export default function AdminTrustedCompaniesPage() {
 
     useEffect(() => {
         loadCompanies()
-    }, [page, sortBy, sortOrder, industryFilter, filterCanRefer, debouncedSearch])
+    }, [page, sortBy, sortOrder, industryFilter, filterMemberOnly, debouncedSearch])
 
     // Load companies ONLY from trusted_companies database table
     const loadCompanies = async () => {
@@ -152,7 +152,7 @@ export default function AdminTrustedCompaniesPage() {
                 sortOrder,
                 industry: industryFilter,
                 search: debouncedSearch,
-                canRefer: filterCanRefer,
+                memberOnly: filterMemberOnly,
                 isTrusted: 'yes' // Explicitly request trusted companies (manually added or verified)
             })
             if (Array.isArray(data)) {
@@ -239,7 +239,7 @@ export default function AdminTrustedCompaniesPage() {
         setEditingCompany(null)
         setFormData({
             isTrusted: true,
-            canRefer: false,
+            memberOnly: false,
             tags: [],
             referralContacts: []
         })
@@ -595,16 +595,16 @@ export default function AdminTrustedCompaniesPage() {
                     ))}
                 </select>
                 <select
-                    value={filterCanRefer}
+                    value={filterMemberOnly}
                     onChange={(e) => {
-                        setFilterCanRefer(e.target.value as 'all' | 'yes' | 'no')
+                        setFilterMemberOnly(e.target.value as 'all' | 'yes' | 'no')
                         setPage(1)
                     }}
                     className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
                 >
-                    <option value="all">全部内推状态</option>
-                    <option value="yes">可内推</option>
-                    <option value="no">不可内推</option>
+                    <option value="all">全部申请权限</option>
+                    <option value="yes">仅会员</option>
+                    <option value="no">全部用户</option>
                 </select>
             </div>
 
@@ -663,9 +663,9 @@ export default function AdminTrustedCompaniesPage() {
                                                 <div className="ml-3 max-w-xs">
                                                     <div className="font-medium text-gray-900 flex items-center gap-2 text-[13px]">
                                                         {company.name}
-                                                        {company.canRefer && (
-                                                            <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] rounded border border-green-200 whitespace-nowrap leading-none">
-                                                                内推
+                                                        {company.memberOnly && (
+                                                            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200 whitespace-nowrap leading-none">
+                                                                仅会员
                                                             </span>
                                                         )}
                                                     </div>
@@ -1182,11 +1182,11 @@ export default function AdminTrustedCompaniesPage() {
                                 <label className="flex items-center gap-2 cursor-pointer">
                                     <input
                                         type="checkbox"
-                                        checked={formData.canRefer ?? false}
-                                        onChange={e => setFormData({ ...formData, canRefer: e.target.checked })}
+                                        checked={formData.memberOnly ?? false}
+                                        onChange={e => setFormData({ ...formData, memberOnly: e.target.checked })}
                                         className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                                     />
-                                    <span className="text-sm font-medium text-gray-700">支持内推</span>
+                                    <span className="text-sm font-medium text-gray-700">仅会员</span>
                                 </label>
                             </div>
 

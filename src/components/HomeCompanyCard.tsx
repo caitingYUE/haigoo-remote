@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Building2, Briefcase, CheckCircle, Clock, Target } from 'lucide-react'
+import { Building2, Briefcase, Clock } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
 import { trustedCompaniesService } from '../services/trusted-companies-service'
-import { MemberBadge } from './MemberBadge'
 
 interface HomeCompanyCardProps {
     company: TrustedCompany
@@ -106,14 +105,6 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                     )
                 )}
 
-                {/* Badges Overlay */}
-                <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
-                    {company.canRefer ? (
-                        <div title="可内推">
-                            <MemberBadge variant="referral" size="sm" className="shadow-sm border-0" />
-                        </div>
-                    ) : null}
-                </div>
             </div>
 
             <div className="p-5 flex-1 flex flex-col">

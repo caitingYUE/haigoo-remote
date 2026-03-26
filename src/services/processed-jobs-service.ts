@@ -25,6 +25,7 @@ export interface ProcessedJobsFilters {
   region?: 'domestic' | 'overseas'
   isFeatured?: boolean
   canRefer?: boolean
+  memberOnly?: boolean
   sourceFilter?: string
   sortBy?: 'recent' | 'relevance'
   isApproved?: boolean
@@ -66,6 +67,7 @@ class ProcessedJobsService {
       if (filters.region) params.append('region', filters.region)
       if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
       if (filters.canRefer !== undefined) params.append('canRefer', filters.canRefer.toString())
+      if (filters.memberOnly !== undefined) params.append('memberOnly', filters.memberOnly.toString())
       if (filters.isApproved !== undefined) params.append('isApproved', filters.isApproved.toString())
       if (filters.skipAggregations) params.append('skipAggregations', 'true')
       if (filters.sortBy) params.append('sortBy', filters.sortBy)
@@ -183,6 +185,7 @@ class ProcessedJobsService {
         sourceType: job.sourceType ? job.sourceType.toLowerCase() : undefined,
         isTrusted: job.isTrusted,
         canRefer: job.canRefer,
+        memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
         companyIndustry: job.companyIndustry,
         companyTags: job.companyTags,
@@ -280,6 +283,7 @@ class ProcessedJobsService {
         experienceLevel: job.experienceLevel,
         isTrusted: job.isTrusted,
         canRefer: job.canRefer,
+        memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
         companyIndustry: job.companyIndustry,
         companyWebsite: job.companyWebsite || job.trusted_website, // Use trusted website if available

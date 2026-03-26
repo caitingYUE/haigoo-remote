@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, Sparkles } from 'lucide-react';
+import { Mail, Sparkles } from 'lucide-react';
 
 interface MemberBadgeProps {
     variant?: 'referral' | 'verified' | 'featured';
@@ -29,8 +29,8 @@ export const MemberBadge: React.FC<MemberBadgeProps> = ({
             <span
                 className={`inline-flex items-center gap-1 bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-300 text-yellow-800 font-bold rounded-full ${sizeClasses[size]} ${className}`}
             >
-                <Target className={iconSizes[size]} />
-                可内推
+                <Mail className={iconSizes[size]} />
+                邮箱直申
             </span>
         );
     }

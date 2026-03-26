@@ -122,12 +122,6 @@ export default function CompanyProfilePage() {
                         <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-3xl font-bold text-slate-900">{company.name}</h1>
-                            {/* Removed deprecated 'Verified' tag */}
-                            {company.canRefer && (
-                                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm font-medium border border-emerald-100">
-                                        可内推
-                                    </span>
-                                )}
                             </div>
 
                             <div className="flex flex-wrap gap-4 text-slate-600 mb-6">

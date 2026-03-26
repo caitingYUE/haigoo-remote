@@ -380,6 +380,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const [logoError, setLogoError] = useState(false);
+    const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
 
     useEffect(() => {
         setLogoError(false);
@@ -422,6 +423,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             if (window.confirm('申请职位需要登录\n\n是否前往登录？')) {
                 navigate('/login')
             }
+            return;
+        }
+
+        if (isMemberRestrictedJob && !isMember) {
+            setShowApplyInterceptModal(true);
             return;
         }
 
@@ -1486,10 +1492,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             <>
                                 <div className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs rounded-md border border-indigo-100">
                                     <Target className="w-3.5 h-3.5" />
-                                    邮箱申请 (会员专属)
+                                    邮箱直申
                                 </div>
                                 <p className="text-[10px] text-slate-500">
-                                    * 由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）
+                                    * 通过岗位相关联系人邮箱直接投递，提升简历到达关键招聘方的效率
                                 </p>
                             </>
                         ) : null}
@@ -1922,7 +1928,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 <span className="text-slate-600 font-semibold group-hover/btn:text-indigo-600 transition-colors">邮箱直申</span>
                                             </div>
                                             <div className="text-[10px] text-slate-400 font-normal group-hover/btn:text-indigo-400 transition-colors">
-                                                {isAuthenticated ? '体验次数已用完，升级会员' : '会员专属功能'}
+                                                {isMemberRestrictedJob ? '仅会员可申请' : isAuthenticated ? '体验次数已用完，升级会员' : '登录后可体验'}
                                             </div>
                                         </>
                                     )}

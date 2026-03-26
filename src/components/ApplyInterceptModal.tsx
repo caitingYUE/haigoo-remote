@@ -47,6 +47,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     onShowUpgrade,
 }) => {
     const navigate = useNavigate();
+    const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
 
     const baseTrackingProps = {
         page_key: 'job_detail',
@@ -88,6 +89,79 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     const canWebsiteApplyFree = isAuthenticated && (websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit);
     const websiteApplyRemaining = Math.max(0, websiteApplyLimit - websiteApplyUsageCount);
     const websiteApplyActionLabel = !isAuthenticated ? '前往申请（需登录）' : canWebsiteApplyFree ? '继续前往申请' : '前往申请次数已用完';
+
+    if (isMemberRestrictedJob && !isMember) {
+        return createPortal(
+            <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+                <div
+                    className="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity cursor-pointer"
+                    onClick={onClose}
+                />
+
+                <div className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)]">
+                    <button
+                        onClick={onClose}
+                        className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
+
+                    <div className="relative flex h-32 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)]">
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
+                        <div className="absolute -right-8 top-4 h-24 w-24 rounded-full bg-cyan-400/15 blur-3xl"></div>
+                        <div className="relative z-10 bg-white/10 p-3 rounded-full backdrop-blur-md shadow-2xl border border-white/20">
+                            <Crown className="w-8 h-8 text-white/90" />
+                        </div>
+                    </div>
+
+                    <div className="p-6 text-center">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">
+                            <Crown className="w-3.5 h-3.5" />
+                            仅会员可申请
+                        </div>
+
+                        <h3 className="text-xl font-bold text-slate-900 mb-2">
+                            这家公司当前仅向会员开放申请
+                        </h3>
+                        <p className="text-sm text-slate-500 leading-relaxed mb-6">
+                            免费用户仍可浏览岗位详情。升级后即可继续申请，体验会员同样可用。
+                        </p>
+
+                        <div className="grid grid-cols-3 gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 mb-6 text-left">
+                            <div className="rounded-2xl bg-white p-3 border border-slate-100">
+                                <div className="text-sm font-semibold text-slate-900 mb-1">会员申请</div>
+                                <div className="text-xs text-slate-500">解锁会员岗位申请资格</div>
+                            </div>
+                            <div className="rounded-2xl bg-white p-3 border border-slate-100">
+                                <div className="text-sm font-semibold text-slate-900 mb-1">邮箱直申</div>
+                                <div className="text-xs text-slate-500">继续使用高价值邮箱投递</div>
+                            </div>
+                            <div className="rounded-2xl bg-white p-3 border border-slate-100">
+                                <div className="text-sm font-semibold text-slate-900 mb-1">简历优化</div>
+                                <div className="text-xs text-slate-500">同步解锁 AI 打磨权益</div>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => {
+                                trackingService.track('upgrade_cta_click', {
+                                    ...baseTrackingProps,
+                                    feature_key: 'member_only_job_apply',
+                                    user_segment: isAuthenticated ? 'free' : 'guest'
+                                });
+                                onClose();
+                                onShowUpgrade?.('member_only_job_apply', 'job_detail');
+                            }}
+                            className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-600"
+                        >
+                            查看会员权益
+                        </button>
+                    </div>
+                </div>
+            </div>,
+            document.body
+        );
+    }
 
     // Member View for Trusted Company Jobs (Not Referral)
     if (isMember && (job.isTrusted || job.sourceType === 'trusted')) {

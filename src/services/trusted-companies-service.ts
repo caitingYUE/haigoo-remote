@@ -39,6 +39,7 @@ export interface TrustedCompany {
     industry?: CompanyIndustry;
     isTrusted: boolean;
     canRefer: boolean;
+    memberOnly: boolean;
     jobCount?: number;
     lastCrawledAt?: string; // New field
     translations?: { description?: string;[key: string]: any };
@@ -84,7 +85,7 @@ class TrustedCompaniesService {
         industry?: string;
         search?: string;
         name?: string;
-        canRefer?: 'all' | 'yes' | 'no';
+        memberOnly?: 'all' | 'yes' | 'no';
         isTrusted?: 'all' | 'yes' | 'no';
     }): Promise<PaginatedCompaniesResponse | TrustedCompany[]>;
     async getAllCompanies(params?: {
@@ -95,7 +96,7 @@ class TrustedCompaniesService {
         industry?: string;
         search?: string;
         name?: string;
-        canRefer?: 'all' | 'yes' | 'no';
+        memberOnly?: 'all' | 'yes' | 'no';
         isTrusted?: 'all' | 'yes' | 'no';
     }): Promise<any> {
         try {
@@ -112,7 +113,7 @@ class TrustedCompaniesService {
                 if (params.industry && params.industry !== 'all') queryParams.append('industry', params.industry);
                 if (params.search) queryParams.append('search', params.search);
                 if (params.name) queryParams.append('name', params.name);
-                if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
+                if (params.memberOnly && params.memberOnly !== 'all') queryParams.append('memberOnly', params.memberOnly);
                 if (params.isTrusted && params.isTrusted !== 'all') queryParams.append('isTrusted', params.isTrusted);
             }
 
@@ -199,7 +200,7 @@ class TrustedCompaniesService {
         sortOrder?: 'asc' | 'desc';
         industry?: string;
         search?: string;
-        canRefer?: 'all' | 'yes' | 'no';
+        memberOnly?: 'all' | 'yes' | 'no';
         region?: string;
         minJobs?: number;
         jobCategories?: string[]; // Added new filter
@@ -216,7 +217,7 @@ class TrustedCompaniesService {
             if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
             if (params.industry && params.industry !== 'all') queryParams.append('industry', params.industry);
             if (params.search) queryParams.append('search', params.search);
-            if (params.canRefer && params.canRefer !== 'all') queryParams.append('canRefer', params.canRefer);
+            if (params.memberOnly && params.memberOnly !== 'all') queryParams.append('memberOnly', params.memberOnly);
             if (params.region) queryParams.append('region', params.region);
             if (params.minJobs !== undefined) queryParams.append('minJobs', params.minJobs.toString());
             if (params.jobCategories && params.jobCategories.length > 0) {
@@ -270,7 +271,7 @@ class TrustedCompaniesService {
                 id: company.id,
                 // Ensure boolean flags are boolean
                 isTrusted: true, // Force trusted for manual saves
-                canRefer: !!company.canRefer,
+                memberOnly: !!company.memberOnly,
                 // Map frontend url to website if needed (though backend handles both)
                 url: company.website,
                 careersPage: company.careersPage,

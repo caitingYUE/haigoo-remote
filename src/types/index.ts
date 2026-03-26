@@ -51,6 +51,7 @@ export interface Job {
   sourceType?: 'trusted' | 'rss' | 'third-party' | 'club-referral' | 'official'
   isTrusted?: boolean
   canRefer?: boolean
+  memberOnly?: boolean
 
   // Enterprise Fields (Synced)
   companyIndustry?: string

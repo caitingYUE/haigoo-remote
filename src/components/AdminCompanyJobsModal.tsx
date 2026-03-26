@@ -188,6 +188,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             region: 'domestic',
             isTrusted: true,
             canRefer: false,
+            memberOnly: !!company.memberOnly,
             isFeatured: false,
             rawDataId: '',
             isRemote: false,

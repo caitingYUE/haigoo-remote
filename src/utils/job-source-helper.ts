@@ -15,7 +15,7 @@ export const getJobSourceType = (job: Job): JobSourceType => {
 
 export const getJobSourceLabel = (type: JobSourceType): string => {
     switch (type) {
-        case 'referral': return 'Haigoo 内推';
+        case 'referral': return '邮箱直申';
         case 'official': return '企业官网岗位';
         case 'trusted_platform': return '可信平台投递';
         default: return '';
@@ -24,7 +24,7 @@ export const getJobSourceLabel = (type: JobSourceType): string => {
 
 export const getJobSourceDescription = (type: JobSourceType): string => {
     switch (type) {
-        case 'referral': return '由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）';
+        case 'referral': return '通过岗位相关联系人邮箱直接投递，提高简历到达关键招聘方的效率';
         case 'official': return '通过公司官网直接投递，Haigoo 已人工核实企业真实性';
         case 'trusted_platform': return '来自成熟招聘平台，Haigoo 已确认中国候选人可申请';
         default: return '';

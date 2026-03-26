@@ -317,9 +317,9 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             {/* Source Badges - Modified: Only show Referral badge as requested */}
             <div className="flex items-center gap-2 flex-wrap">
               {sourceType === 'referral' && (
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="由 Haigoo 审核简历并转递给企业，提高有效曝光率（会员专属）">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="通过岗位相关联系人邮箱直接投递，提高简历到达关键招聘方的效率">
                   <Target className="w-3 h-3" />
-                  Haigoo 内推
+                  邮箱直申
                 </div>
               )}
               {/* Hidden as requested: Official & Trusted Platform badges
