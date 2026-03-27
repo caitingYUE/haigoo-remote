@@ -14,7 +14,7 @@ import { useAuth } from '../contexts/AuthContext'
 
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
-    const { membershipCapabilities } = useAuth()
+    const { membershipCapabilities, isTrialMember } = useAuth()
     const canAccessTrustedCompaniesPage = membershipCapabilities.canAccessTrustedCompaniesPage
 
 
@@ -271,6 +271,11 @@ export default function TrustedCompaniesPage() {
                                 <Crown className="w-5 h-5" />
                                 立即升级会员查看
                             </button>
+                            {isTrialMember ? (
+                                <p className="mt-3 text-sm font-medium text-indigo-600">
+                                    体验会员不开放，需升级季度/年度会员
+                                </p>
+                            ) : null}
                         </div>
                     </div>
                 ) : (

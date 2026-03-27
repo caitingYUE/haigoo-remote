@@ -2,7 +2,6 @@
 import React, { useMemo } from 'react';
 import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap, Crown } from 'lucide-react';
 import { Job } from '../types';
-import { useAuth } from '../contexts/AuthContext';
 import { DateFormatter } from '../utils/date-formatter';
 import { resolveMatchLevel } from '../utils/match-display';
 import { trackingService } from '../services/tracking-service';
@@ -117,17 +116,14 @@ const FreshBadge = () => (
 export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
-   const { isMember } = useAuth();
    const isTranslated = !!job.translations?.title;
 
    const isMemberOnlyJob = Boolean(job.memberOnly);
 
-   // Label text based on membership status
-   const memberLabel = isMember ? '会员专属' : '仅会员';
    const MemberBadge = () => (
-      <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-indigo-600/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-0.5 z-10 flex items-center justify-center gap-0.5`}>
-         {isMember && <Crown className="w-2 h-2" />}
-         {memberLabel}
+      <div className="absolute top-0 left-0 z-10 flex w-full items-center justify-center gap-0.5 bg-indigo-600/95 py-0.5 text-center text-[9px] font-bold text-white backdrop-blur-[2px]">
+         <Crown className="h-2 w-2" />
+         会员
       </div>
    );
    const isNew = useMemo(() => {
@@ -358,9 +354,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {/* Email Only Badge */}
             {isMemberOnlyJob && (
-               <div className={`absolute top-0 left-0 w-full ${isMember ? 'bg-indigo-600/95' : 'bg-indigo-600/95'} backdrop-blur-[2px] text-white text-[9px] font-bold text-center py-px tracking-wider z-10 scale-95 origin-top flex items-center justify-center gap-0.5`}>
-                  {isMember && <Crown className="w-2 h-2" />}
-                  {memberLabel}
+               <div className="absolute top-0 left-0 z-10 flex w-full origin-top scale-95 items-center justify-center gap-0.5 bg-indigo-600/95 py-px text-center text-[9px] font-bold tracking-wider text-white backdrop-blur-[2px]">
+                  <Crown className="h-2 w-2" />
+                  会员
                </div>
             )}
          </div>

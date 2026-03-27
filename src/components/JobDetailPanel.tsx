@@ -1568,15 +1568,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 }`}
                                             >
                                                 <span className="block text-sm font-black tracking-tight">
-                                                    {isMemberLocked ? '仅会员可申请' : '一键解锁企业人脉'}
+                                                    {isMemberLocked ? '会员解锁' : '一键解锁企业人脉'}
                                                 </span>
-                                                <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                                                    isMemberLocked
-                                                        ? 'border border-indigo-100 bg-indigo-50 text-indigo-700'
-                                                        : 'border border-white/20 bg-white/12 text-white'
-                                                }`}>
-                                                    {isMemberLocked ? '体验会员可用' : `${remainingReferralViews}/${FREE_FEATURE_LIMIT}`}
-                                                </span>
+                                                {isMemberLocked ? null : (
+                                                    <span className="rounded-full border border-white/20 bg-white/12 px-2.5 py-1 text-xs font-semibold text-white">
+                                                        {`${remainingReferralViews}/${FREE_FEATURE_LIMIT}`}
+                                                    </span>
+                                                )}
                                             </button>
                                         )
                                     })()}
@@ -1685,7 +1683,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 </div>
                                                 {mode === 'member_only' ? (
                                                     <div className="mt-3 text-xs font-semibold text-indigo-700">
-                                                        该岗位支持邮箱直申，但申请权限仅对会员开放
+                                                        该岗位仅限会员申请（体验会员可用）
                                                     </div>
                                                 ) : null}
                                             </div>
