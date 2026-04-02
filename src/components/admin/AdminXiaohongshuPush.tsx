@@ -5,7 +5,6 @@ import {
   Check,
   Copy,
   Download,
-  Image as ImageIcon,
   Loader2,
   RefreshCw,
   Search,
@@ -44,7 +43,77 @@ const INDUSTRY_OPTIONS = [
   '硬件/物联网', '消费生活', '其他'
 ];
 
-const TEMPLATE_VERSION = 'xhs-v1';
+const TEMPLATE_VERSION = 'xhs-v2';
+const EXPORT_WIDTH = 1080;
+const EXPORT_HEIGHT = 1440;
+const PREVIEW_SCALE = 1 / 3;
+
+const POSTER_THEMES = [
+  {
+    id: 'lavender',
+    name: '浅紫',
+    cardBorder: '#dccff7',
+    pageBg: 'linear-gradient(145deg, #f9f5ff 0%, #f2ebff 55%, #ece7ff 100%)',
+    haloOne: 'rgba(177, 155, 255, 0.26)',
+    haloTwo: 'rgba(255, 255, 255, 0.8)',
+    chipBorder: '#d8cbf4',
+    chipText: '#725ea8',
+    titleText: '#2f2547',
+    companyText: '#7c67b3',
+    labelText: '#8f79c6',
+    sectionBg: 'rgba(255,255,255,0.76)',
+    sectionBorder: 'rgba(220, 207, 247, 0.95)',
+    metaBg: 'rgba(255,255,255,0.82)'
+  },
+  {
+    id: 'sky',
+    name: '浅蓝',
+    cardBorder: '#cce3fb',
+    pageBg: 'linear-gradient(145deg, #f3faff 0%, #ebf6ff 56%, #e3f0ff 100%)',
+    haloOne: 'rgba(147, 203, 255, 0.28)',
+    haloTwo: 'rgba(255, 255, 255, 0.84)',
+    chipBorder: '#c6e0fb',
+    chipText: '#4f77a2',
+    titleText: '#22364a',
+    companyText: '#5d86b3',
+    labelText: '#6b95c3',
+    sectionBg: 'rgba(255,255,255,0.78)',
+    sectionBorder: 'rgba(204, 227, 251, 0.98)',
+    metaBg: 'rgba(255,255,255,0.85)'
+  },
+  {
+    id: 'butter',
+    name: '浅黄',
+    cardBorder: '#f0dfb5',
+    pageBg: 'linear-gradient(145deg, #fffaf0 0%, #fff6de 54%, #fff1ce 100%)',
+    haloOne: 'rgba(255, 221, 133, 0.28)',
+    haloTwo: 'rgba(255, 255, 255, 0.82)',
+    chipBorder: '#eeddb0',
+    chipText: '#8b7142',
+    titleText: '#3f3119',
+    companyText: '#a4864b',
+    labelText: '#b59556',
+    sectionBg: 'rgba(255,255,255,0.78)',
+    sectionBorder: 'rgba(240, 223, 181, 0.98)',
+    metaBg: 'rgba(255,255,255,0.84)'
+  },
+  {
+    id: 'blush',
+    name: '浅粉',
+    cardBorder: '#f4d0da',
+    pageBg: 'linear-gradient(145deg, #fff5f8 0%, #fff0f5 58%, #ffe8ef 100%)',
+    haloOne: 'rgba(255, 185, 205, 0.26)',
+    haloTwo: 'rgba(255, 255, 255, 0.84)',
+    chipBorder: '#f1cdd7',
+    chipText: '#9d6072',
+    titleText: '#412632',
+    companyText: '#bb748a',
+    labelText: '#ca8298',
+    sectionBg: 'rgba(255,255,255,0.78)',
+    sectionBorder: 'rgba(244, 208, 218, 0.98)',
+    metaBg: 'rgba(255,255,255,0.85)'
+  }
+] as const;
 
 interface ReferralContact {
   name?: string;
@@ -69,11 +138,13 @@ interface XhsPushJobListItem {
   foundedYear: string;
   companyRating: string;
   industry: string;
+  companyDescription: string;
   hiringEmail: string;
   emailType: string;
   referralContacts: ReferralContact[];
   companyInfoCompact: string;
   referralInfoCompact: string;
+  referralInfoBlock: string;
   completenessScore: number;
   missingFields: string[];
   hasReferralContact: boolean;
@@ -90,7 +161,8 @@ interface XhsJobsResponse {
 }
 
 interface XhsPosterDraft {
-  summary: string;
+  jobSummary: string;
+  companySummary: string;
   provider: 'local' | 'bailian';
   templateVersion: string;
   generatedAt: string;
@@ -113,7 +185,7 @@ function stripHtml(value: string) {
     .trim();
 }
 
-function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 110) {
+function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 140) {
   const source = stripHtml(job.description);
   if (!source) return '岗位亮点待补充，可结合 JD 核对后再生成配图。';
 
@@ -139,19 +211,44 @@ function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 110) {
     output = next;
   }
 
-  if (!output) {
-    output = (deduped[0] || source).slice(0, maxLength);
+  if (!output) output = (deduped[0] || source).slice(0, maxLength);
+  return output.slice(0, maxLength).trim();
+}
+
+function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 58) {
+  const source = stripHtml(job.companyDescription);
+  if (!source) return '企业简介待补充';
+
+  const sentences = source
+    .split(/(?<=[。！？!?.；;])/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  let output = '';
+  for (const sentence of sentences) {
+    const next = output ? `${output} ${sentence}` : sentence;
+    if (next.length > maxLength) break;
+    output = next;
   }
 
+  if (!output) output = source.slice(0, maxLength);
   return output.slice(0, maxLength).trim();
 }
 
 function shouldUseAiSummary(localSummary: string, description: string) {
   const cleanDescription = stripHtml(description);
   if (!cleanDescription) return false;
-  if (localSummary.length > 118) return true;
+  if (localSummary.length > 146) return true;
   if (cleanDescription.length >= 560) return true;
   if ((cleanDescription.match(/[•·▪●]/g) || []).length >= 6) return true;
+  return false;
+}
+
+function shouldUseAiCompanySummary(localSummary: string, description: string) {
+  const cleanDescription = stripHtml(description);
+  if (!cleanDescription) return false;
+  if (localSummary.length > 64) return true;
+  if (cleanDescription.length >= 220) return true;
   return false;
 }
 
@@ -171,19 +268,200 @@ function getCompletenessTone(score: number) {
   return 'bg-rose-50 text-rose-700 border-rose-200';
 }
 
-function buildPublishPack(job: XhsPushJobListItem, summary: string) {
+function formatReferralLine(contact?: ReferralContact) {
+  return `${contact?.name || '待补充'}｜${contact?.title || '待补充'}：${contact?.hiringEmail || '待补充'}`;
+}
+
+function getReferralLines(job: XhsPushJobListItem) {
+  if (job.referralContacts.length > 0) {
+    return job.referralContacts.map((contact) => formatReferralLine(contact));
+  }
+
+  if (job.hiringEmail) {
+    return [formatReferralLine({
+      name: '',
+      title: '',
+      hiringEmail: job.hiringEmail
+    })];
+  }
+
+  return ['待补充｜待补充：待补充'];
+}
+
+function buildPublishPack(job: XhsPushJobListItem) {
+  const referralLines = getReferralLines(job);
+
   return [
-    `【${job.title}】`,
-    `【${job.company}】`,
-    `地点：${job.location}｜角色：${job.category}｜类型：${formatJobTypeLabel(job.jobType)}｜级别：${formatExperienceLabel(job.experienceLevel)}`,
+    job.title,
+    job.company,
     `申请链接：${job.shareUrl}`,
-    `企业认证：${job.companyInfoCompact}`,
+    `${job.location}｜${job.category}｜${formatJobTypeLabel(job.jobType)}｜${formatExperienceLabel(job.experienceLevel)}`,
+    `企业信息：${job.employeeCount || '待补充'}｜${job.address || '待补充'}｜${job.foundedYear || '待补充'}｜评分${job.companyRating || '待补充'}`,
     `所属行业：${job.industry || '待补充'}`,
-    `内推信息：${job.referralInfoCompact}`,
-    '',
-    `岗位亮点：${summary || '待补充'}`
+    ...referralLines.map((line) => `内推邮箱：${line}`)
   ].join('\n');
 }
+
+function getThemeById(themeId: string) {
+  return POSTER_THEMES.find((theme) => theme.id === themeId) || POSTER_THEMES[0];
+}
+
+const PosterCard: React.FC<{
+  job: XhsPushJobListItem;
+  draft: XhsPosterDraft | null;
+  themeId: string;
+}> = ({ job, draft, themeId }) => {
+  const theme = getThemeById(themeId);
+  const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
+  const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
+
+  return (
+    <div
+      style={{
+        width: `${EXPORT_WIDTH}px`,
+        height: `${EXPORT_HEIGHT}px`,
+        background: theme.pageBg,
+        borderColor: theme.cardBorder
+      }}
+      className="relative overflow-hidden rounded-[72px] border-[3px] p-[64px] shadow-[0_24px_80px_rgba(63,46,35,0.14)]"
+    >
+      <div
+        className="absolute left-[-120px] top-[-80px] h-[420px] w-[420px] rounded-full blur-[90px]"
+        style={{ backgroundColor: theme.haloOne }}
+      />
+      <div
+        className="absolute bottom-[-100px] right-[-70px] h-[390px] w-[390px] rounded-full blur-[100px]"
+        style={{ backgroundColor: theme.haloTwo }}
+      />
+      <div
+        className="absolute right-[70px] top-[160px] h-[260px] w-[260px] rounded-full opacity-70"
+        style={{ backgroundColor: theme.haloOne }}
+      />
+
+      <div className="relative flex h-full flex-col">
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            <div
+              className="text-[30px] font-semibold uppercase tracking-[0.36em]"
+              style={{ color: theme.companyText }}
+            >
+              {job.company}
+            </div>
+            <h3
+              className="mt-5 line-clamp-2 text-[84px] font-black leading-[1.06]"
+              style={{ color: theme.titleText }}
+            >
+              {job.title}
+            </h3>
+          </div>
+
+          <div
+            className="shrink-0 rounded-full border px-8 py-3 text-[26px] font-semibold"
+            style={{
+              borderColor: theme.chipBorder,
+              color: theme.chipText,
+              background: theme.metaBg
+            }}
+          >
+            {job.industry || '待补充'}
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-wrap gap-3">
+          {[
+            job.location,
+            job.category,
+            formatJobTypeLabel(job.jobType),
+            formatExperienceLabel(job.experienceLevel)
+          ].map((item) => (
+            <span
+              key={item}
+              className="rounded-full border px-6 py-3 text-[28px] font-semibold"
+              style={{
+                borderColor: theme.chipBorder,
+                color: theme.chipText,
+                background: theme.metaBg
+              }}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+
+        <div
+          className="mt-8 rounded-[42px] border px-10 py-8"
+          style={{
+            background: theme.sectionBg,
+            borderColor: theme.sectionBorder
+          }}
+        >
+          <div
+            className="text-[24px] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: theme.labelText }}
+          >
+            企业简介
+          </div>
+          <p
+            className="mt-4 line-clamp-2 text-[34px] font-medium leading-[1.45]"
+            style={{ color: theme.titleText }}
+          >
+            {companySummary}
+          </p>
+        </div>
+
+        <div
+          className="mt-7 rounded-[42px] border px-10 py-8"
+          style={{
+            background: theme.sectionBg,
+            borderColor: theme.sectionBorder
+          }}
+        >
+          <div
+            className="text-[24px] font-semibold uppercase tracking-[0.16em]"
+            style={{ color: theme.labelText }}
+          >
+            岗位摘要
+          </div>
+          <p
+            className="mt-4 text-[34px] leading-[1.6]"
+            style={{ color: theme.titleText }}
+          >
+            {jobSummary}
+          </p>
+        </div>
+
+        <div className="mt-auto grid grid-cols-2 gap-4">
+          {[
+            { label: '企业信息', value: `${job.employeeCount}｜${job.address}` },
+            { label: '成立/评分', value: `${job.foundedYear}｜评分${job.companyRating}` }
+          ].map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[34px] border px-7 py-6"
+              style={{
+                background: theme.metaBg,
+                borderColor: theme.chipBorder
+              }}
+            >
+              <div
+                className="text-[22px] font-semibold uppercase tracking-[0.16em]"
+                style={{ color: theme.labelText }}
+              >
+                {item.label}
+              </div>
+              <div
+                className="mt-3 text-[28px] font-semibold leading-[1.4]"
+                style={{ color: theme.titleText }}
+              >
+                {item.value}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [searchInput, setSearchInput] = useState('');
@@ -205,7 +483,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [posterError, setPosterError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [posterDraft, setPosterDraft] = useState<XhsPosterDraft | null>(null);
-  const posterRef = useRef<HTMLDivElement>(null);
+  const [selectedThemeId, setSelectedThemeId] = useState<string>(POSTER_THEMES[0].id);
+  const exportPosterRef = useRef<HTMLDivElement>(null);
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
 
   useEffect(() => {
@@ -221,11 +500,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
   const fetchJobs = useCallback(async (nextPage = 1, append = false) => {
     try {
-      if (append) {
-        setLoadingMore(true);
-      } else {
-        setLoading(true);
-      }
+      if (append) setLoadingMore(true);
+      else setLoading(true);
       setError(null);
 
       const params = new URLSearchParams({
@@ -247,9 +523,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       });
 
       const data = await res.json() as XhsJobsResponse & { error?: string };
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || '加载小红书推送岗位失败');
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || '加载小红书推送岗位失败');
 
       const nextItems = append ? [...jobsRef.current, ...data.items] : data.items;
       setJobs(nextItems);
@@ -311,13 +585,18 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       setGeneratingPoster(true);
       setPosterError(null);
 
-      const localSummary = buildLocalPosterSummary(selectedJob);
-      let summary = localSummary;
+      const localJobSummary = buildLocalPosterSummary(selectedJob);
+      const localCompanySummary = buildLocalCompanySummary(selectedJob);
+      let jobSummary = localJobSummary;
+      let companySummary = localCompanySummary;
       let provider: 'local' | 'bailian' = 'local';
       let cacheHit = false;
       let usedFallback = false;
 
-      if (shouldUseAiSummary(localSummary, selectedJob.description)) {
+      if (
+        shouldUseAiSummary(localJobSummary, selectedJob.description) ||
+        shouldUseAiCompanySummary(localCompanySummary, selectedJob.companyDescription)
+      ) {
         const res = await fetch('/api/admin/content-push/xiaohongshu/summary', {
           method: 'POST',
           headers: {
@@ -333,32 +612,34 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
             jobType: selectedJob.jobType,
             experienceLevel: selectedJob.experienceLevel,
             description: selectedJob.description,
+            companyDescription: selectedJob.companyDescription,
             updatedAt: selectedJob.updatedAt,
-            summary: localSummary
+            summary: localJobSummary
           })
         });
 
         const data = await res.json() as {
           success: boolean;
-          summary?: string;
+          jobSummary?: string;
+          companySummary?: string;
           provider?: 'local' | 'bailian';
           cacheHit?: boolean;
           usedFallback?: boolean;
           error?: string;
         };
 
-        if (!res.ok || !data.success) {
-          throw new Error(data.error || '生成岗位摘要失败');
-        }
+        if (!res.ok || !data.success) throw new Error(data.error || '生成岗位摘要失败');
 
-        summary = data.summary || localSummary;
+        jobSummary = data.jobSummary || localJobSummary;
+        companySummary = data.companySummary || localCompanySummary;
         provider = data.provider || 'local';
         cacheHit = Boolean(data.cacheHit);
         usedFallback = Boolean(data.usedFallback);
       }
 
       setPosterDraft({
-        summary,
+        jobSummary,
+        companySummary,
         provider,
         templateVersion: TEMPLATE_VERSION,
         generatedAt: new Date().toISOString(),
@@ -373,17 +654,23 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   };
 
   const handleDownloadPoster = async () => {
-    if (!posterRef.current || !selectedJob || !posterDraft) return;
+    if (!exportPosterRef.current || !selectedJob || !posterDraft) return;
 
     try {
       setDownloadingPoster(true);
       await new Promise((resolve) => setTimeout(resolve, 120));
 
-      const canvas = await html2canvas(posterRef.current, {
+      const canvas = await html2canvas(exportPosterRef.current, {
         useCORS: true,
-        scale: 2,
-        backgroundColor: '#f8f1e7',
-        logging: false
+        scale: 1,
+        backgroundColor: null,
+        logging: false,
+        width: EXPORT_WIDTH,
+        height: EXPORT_HEIGHT,
+        windowWidth: EXPORT_WIDTH,
+        windowHeight: EXPORT_HEIGHT,
+        scrollX: 0,
+        scrollY: 0
       });
 
       const link = document.createElement('a');
@@ -399,6 +686,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       setDownloadingPoster(false);
     }
   };
+
+  const referralLines = selectedJob ? getReferralLines(selectedJob) : [];
 
   return (
     <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
@@ -586,7 +875,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
                 <button
                   type="button"
-                  onClick={() => handleCopy(`publish-pack-${selectedJob.id}`, buildPublishPack(selectedJob, posterDraft?.summary || buildLocalPosterSummary(selectedJob)))}
+                  onClick={() => handleCopy(`publish-pack-${selectedJob.id}`, buildPublishPack(selectedJob))}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
                 >
                   {copiedKey === `publish-pack-${selectedJob.id}` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -606,49 +895,111 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   </div>
 
                   <div className="mt-4 grid gap-3">
-                    {[
-                      { key: 'share', label: '岗位申请链接', value: selectedJob.shareUrl },
-                      { key: 'company', label: '企业认证信息', value: selectedJob.companyInfoCompact },
-                      { key: 'industry', label: '企业所属行业', value: selectedJob.industry || '待补充' },
-                      { key: 'referral', label: '岗位内推信息', value: selectedJob.referralInfoCompact }
-                    ].map((item) => (
-                      <div key={item.key} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{item.label}</div>
-                            <div className="mt-2 break-all text-sm leading-6 text-slate-800">{item.value}</div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(`${item.key}-${selectedJob.id}`, item.value)}
-                            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
-                          >
-                            {copiedKey === `${item.key}-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                            {copiedKey === `${item.key}-${selectedJob.id}` ? '已复制' : '复制'}
-                          </button>
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位申请链接</div>
+                          <div className="mt-2 break-all text-sm leading-6 text-slate-800">{selectedJob.shareUrl}</div>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`share-${selectedJob.id}`, selectedJob.shareUrl)}
+                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
+                        >
+                          {copiedKey === `share-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedKey === `share-${selectedJob.id}` ? '已复制' : '复制'}
+                        </button>
                       </div>
-                    ))}
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业认证信息</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-800">
+                            {`${selectedJob.employeeCount}｜${selectedJob.address}｜${selectedJob.foundedYear}｜评分${selectedJob.companyRating}`}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`company-${selectedJob.id}`, `${selectedJob.employeeCount}｜${selectedJob.address}｜${selectedJob.foundedYear}｜评分${selectedJob.companyRating}`)}
+                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
+                        >
+                          {copiedKey === `company-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedKey === `company-${selectedJob.id}` ? '已复制' : '复制'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业所属行业</div>
+                          <div className="mt-2 text-sm leading-6 text-slate-800">{selectedJob.industry || '待补充'}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`industry-${selectedJob.id}`, selectedJob.industry || '待补充')}
+                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
+                        >
+                          {copiedKey === `industry-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedKey === `industry-${selectedJob.id}` ? '已复制' : '复制'}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位内推信息</div>
+                          <div className="mt-2 space-y-2">
+                            {referralLines.map((line, index) => (
+                              <div key={`${selectedJob.id}-ref-${index}`} className="rounded-xl bg-white/70 px-3 py-2 text-sm leading-6 text-slate-800">
+                                {line}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleCopy(`referral-${selectedJob.id}`, referralLines.map((line) => `内推邮箱：${line}`).join('\n'))}
+                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
+                        >
+                          {copiedKey === `referral-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedKey === `referral-${selectedJob.id}` ? '已复制' : '复制'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
                   {selectedJob.missingFields.length > 0 ? (
                     <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                       <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                      <div>
-                        当前岗位仍有待补充字段：{selectedJob.missingFields.join('、')}。
-                      </div>
+                      <div>当前岗位仍有待补充字段：{selectedJob.missingFields.join('、')}。</div>
                     </div>
                   ) : null}
                 </div>
 
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h4 className="text-sm font-semibold text-slate-900">岗位详情摘要</h4>
+                  <h4 className="text-sm font-semibold text-slate-900">摘要内容</h4>
                   <p className="mt-2 text-sm leading-6 text-slate-500">
-                    海报摘要优先使用本地压缩，仅在内容过长时调用百炼做低成本重写。
+                    海报优先使用本地压缩；当岗位描述或企业简介过长时，再调用百炼做低成本提炼。
                   </p>
 
-                  <div className="mt-4 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-sm leading-7 text-slate-700">
-                    {posterDraft?.summary || buildLocalPosterSummary(selectedJob)}
+                  <div className="mt-4 grid gap-3">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业简介摘要</div>
+                      <div className="mt-2 text-sm leading-7 text-slate-700">
+                        {posterDraft?.companySummary || buildLocalCompanySummary(selectedJob)}
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位摘要</div>
+                      <div className="mt-2 text-sm leading-7 text-slate-700">
+                        {posterDraft?.jobSummary || buildLocalPosterSummary(selectedJob)}
+                      </div>
+                    </div>
                   </div>
 
                   {posterDraft ? (
@@ -676,7 +1027,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900">小红书 3:4 配图</h4>
                       <p className="mt-1 text-sm text-slate-500">
-                        手动点击生成海报后，可直接导出 PNG 用于社媒发布。
+                        提供四个浅色主题模板；导出时使用固定尺寸海报稿，避免预览与下载效果不一致。
                       </p>
                     </div>
 
@@ -702,6 +1053,23 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                     </div>
                   </div>
 
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {POSTER_THEMES.map((theme) => (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => setSelectedThemeId(theme.id)}
+                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                          selectedThemeId === theme.id
+                            ? 'border-slate-900 bg-slate-900 text-white'
+                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                        }`}
+                      >
+                        {theme.name}
+                      </button>
+                    ))}
+                  </div>
+
                   {posterError ? (
                     <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                       {posterError}
@@ -710,72 +1078,31 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
                   <div className="mt-5 flex justify-center">
                     <div
-                      ref={posterRef}
-                      className="relative aspect-[3/4] w-full max-w-[420px] overflow-hidden rounded-[32px] border border-[#f0d9c7] bg-[#f8f1e7] p-7 shadow-[0_18px_60px_rgba(100,63,35,0.14)]"
+                      className="relative h-[480px] w-full max-w-[360px] overflow-hidden rounded-[24px]"
+                      style={{ boxShadow: '0 18px 60px rgba(71, 52, 41, 0.12)' }}
                     >
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent_38%),linear-gradient(135deg,rgba(255,244,235,0.96),rgba(248,241,231,1)_55%,rgba(245,225,208,0.92))]" />
-                      <div className="absolute -right-10 top-10 h-40 w-40 rounded-full bg-[#f2c9ba]/40 blur-3xl" />
-                      <div className="absolute -left-8 bottom-20 h-32 w-32 rounded-full bg-white/50 blur-3xl" />
-
-                      <div className="relative flex h-full flex-col">
-                        <div className="flex items-center justify-between">
-                          <span className="rounded-full border border-[#f1d8c7] bg-white/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b45f45]">
-                            Haigoo Remote
-                          </span>
-                          <span className="rounded-full bg-[#c94f32] px-3 py-1 text-[11px] font-semibold text-white">
-                            小红书岗位卡
-                          </span>
-                        </div>
-
-                        <div className="mt-7">
-                          <div className="text-[13px] font-semibold uppercase tracking-[0.28em] text-[#b97358]">
-                            {selectedJob.company}
-                          </div>
-                          <h5 className="mt-3 line-clamp-2 text-[28px] font-black leading-[1.14] text-[#2e2622]">
-                            {selectedJob.title}
-                          </h5>
-                        </div>
-
-                        <div className="mt-6 flex flex-wrap gap-2.5">
-                          {[
-                            selectedJob.location,
-                            selectedJob.category,
-                            formatJobTypeLabel(selectedJob.jobType),
-                            formatExperienceLabel(selectedJob.experienceLevel)
-                          ].map((item) => (
-                            <span
-                              key={item}
-                              className="rounded-full border border-[#eed7c6] bg-white/80 px-3 py-1.5 text-xs font-semibold text-[#805847]"
-                            >
-                              {item}
-                            </span>
-                          ))}
-                        </div>
-
-                        <div className="mt-7 rounded-[28px] border border-white/70 bg-white/75 p-5 shadow-[0_14px_40px_rgba(113,72,43,0.08)] backdrop-blur-sm">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#b97358]">岗位详情摘要</div>
-                          <p className="mt-3 line-clamp-4 text-[15px] leading-7 text-[#493c34]">
-                            {posterDraft?.summary || '点击“生成配图”后生成适合社媒发布的岗位摘要。'}
-                          </p>
-                        </div>
-
-                        <div className="mt-auto rounded-[24px] border border-[#f1d8c7] bg-[#fffaf6]/90 p-4">
-                          <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b97358]">申请链接</div>
-                          <div className="mt-2 line-clamp-2 break-all text-[12px] leading-5 text-[#5a4a41]">
-                            {selectedJob.shareUrl}
-                          </div>
-                        </div>
+                      <div
+                        style={{
+                          width: `${EXPORT_WIDTH}px`,
+                          height: `${EXPORT_HEIGHT}px`,
+                          transform: `scale(${PREVIEW_SCALE})`,
+                          transformOrigin: 'top left'
+                        }}
+                      >
+                        <PosterCard job={selectedJob} draft={posterDraft} themeId={selectedThemeId} />
                       </div>
                     </div>
                   </div>
-
-                  {!posterDraft ? (
-                    <div className="mt-4 flex items-center gap-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
-                      <ImageIcon className="h-4 w-4" />
-                      选择岗位后点击“生成配图”，再导出发布图。
-                    </div>
-                  ) : null}
                 </div>
+              </div>
+            </div>
+
+            <div
+              className="pointer-events-none fixed left-[-99999px] top-0 opacity-0"
+              aria-hidden="true"
+            >
+              <div ref={exportPosterRef}>
+                <PosterCard job={selectedJob} draft={posterDraft} themeId={selectedThemeId} />
               </div>
             </div>
           </>
