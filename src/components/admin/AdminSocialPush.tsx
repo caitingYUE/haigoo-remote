@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, Crown, RefreshCw, Users } from 'lucide-react';
+import { Check, Copy, Crown, Mail, RefreshCw, Sparkles, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import AdminXiaohongshuPush from './AdminXiaohongshuPush';
 
 interface PreviewJob {
   id: string;
@@ -51,8 +52,9 @@ interface PreviewResponse {
   };
 }
 
-const AdminSocialPush: React.FC = () => {
-  const { token } = useAuth();
+type ContentPushTab = 'community' | 'xiaohongshu';
+
+const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }) => {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -149,7 +151,7 @@ const AdminSocialPush: React.FC = () => {
       return new Date(value).toLocaleString('zh-CN', {
         hour12: false
       });
-    } catch (_) {
+    } catch (_error) {
       return value;
     }
   };
@@ -170,8 +172,8 @@ const AdminSocialPush: React.FC = () => {
       key={audience.key}
       className={`rounded-3xl border bg-white shadow-sm ${accentClasses.border}`}
     >
-      <div className="flex flex-col gap-4 p-6 border-b border-slate-100">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div className="border-b border-slate-100 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${accentClasses.badge}`}>
@@ -196,7 +198,7 @@ const AdminSocialPush: React.FC = () => {
           </button>
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-4">
+        <div className="mt-4 grid gap-3 sm:grid-cols-4">
           <div className="rounded-2xl bg-slate-50 px-4 py-3">
             <div className="text-xs text-slate-500">岗位数</div>
             <div className="mt-1 text-lg font-bold text-slate-900">{audience.jobCount}</div>
@@ -352,6 +354,69 @@ const AdminSocialPush: React.FC = () => {
         button: 'bg-indigo-600 text-white hover:bg-indigo-700',
         icon: <Crown className="h-3.5 w-3.5" />
       })}
+    </div>
+  );
+};
+
+const AdminSocialPush: React.FC = () => {
+  const { token } = useAuth();
+  const [activeTab, setActiveTab] = useState<ContentPushTab>('community');
+
+  const tabs: Array<{ id: ContentPushTab; label: string; icon: React.ReactNode; description: string }> = [
+    {
+      id: 'community',
+      label: '社群推送',
+      icon: <Mail className="h-4 w-4" />,
+      description: '保留原有微信社群批量推送预览与复制能力。'
+    },
+    {
+      id: 'xiaohongshu',
+      label: '小红书推送',
+      icon: <Sparkles className="h-4 w-4" />,
+      description: '面向运营同学的单岗位筛选、复制与配图导出工作台。'
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Content Push</div>
+            <h1 className="mt-2 text-2xl font-bold text-slate-900">内容推送工作台</h1>
+            <p className="mt-2 text-sm text-slate-500">
+              同一入口下维护社群推送与社媒内容推送，便于营销运营统一处理岗位传播素材。
+            </p>
+          </div>
+
+          <div className="grid gap-2 sm:grid-cols-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveTab(tab.id)}
+                className={`rounded-2xl border px-4 py-3 text-left transition ${
+                  activeTab === tab.id
+                    ? 'border-rose-200 bg-rose-50 shadow-sm'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+                  <span className={activeTab === tab.id ? 'text-rose-600' : 'text-slate-500'}>{tab.icon}</span>
+                  {tab.label}
+                </div>
+                <div className="mt-1 text-xs leading-5 text-slate-500">{tab.description}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {activeTab === 'community' ? (
+        <SocialPushPreviewContent token={token} />
+      ) : (
+        <AdminXiaohongshuPush token={token} />
+      )}
     </div>
   );
 };

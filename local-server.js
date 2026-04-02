@@ -54,6 +54,10 @@ async function startServer() {
         console.log('Importing admin-ops handler...');
         const adminOpsHandler = (await import('./api/admin-ops.js')).default;
         app.all('/api/admin-ops', async (req, res) => { await adminOpsHandler(req, res); });
+        const adminContentPushXhsJobsHandler = (await import('./api/admin/content-push/xiaohongshu/jobs.js')).default;
+        const adminContentPushXhsSummaryHandler = (await import('./api/admin/content-push/xiaohongshu/summary.js')).default;
+        app.all('/api/admin/content-push/xiaohongshu/jobs', async (req, res) => { await adminContentPushXhsJobsHandler(req, res); });
+        app.all('/api/admin/content-push/xiaohongshu/summary', async (req, res) => { await adminContentPushXhsSummaryHandler(req, res); });
         // Map legacy admin routes
         app.all('/api/check-user-data', async (req, res) => { req.query.action = 'check-user'; await adminOpsHandler(req, res); });
         app.all('/api/diagnose-db', async (req, res) => { req.query.action = 'diagnose'; await adminOpsHandler(req, res); });

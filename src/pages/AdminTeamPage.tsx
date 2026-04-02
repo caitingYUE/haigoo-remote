@@ -1077,7 +1077,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'core-metrics', label: '核心看板', icon: Activity },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
-    { id: 'social-push', label: '社群推送', icon: Mail },
+    { id: 'social-push', label: '内容推送', icon: Mail },
     { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
@@ -1192,7 +1192,7 @@ const AdminTeamPage: React.FC = () => {
                 </Suspense>
               )}
               {activeTab === 'social-push' && (
-                <Suspense fallback={renderLazyFallback('正在加载社群推送...')}>
+                <Suspense fallback={renderLazyFallback('正在加载内容推送...')}>
                   <AdminSocialPush />
                 </Suspense>
               )}
