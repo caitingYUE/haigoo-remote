@@ -42,10 +42,11 @@ const INDUSTRY_OPTIONS = [
   '硬件/物联网', '消费生活', '其他'
 ];
 
-const TEMPLATE_VERSION = 'xhs-v3';
+const TEMPLATE_VERSION = 'xhs-v4';
 const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
 const PREVIEW_SCALE = 0.34;
+const POSTER_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
 
 const POSTER_THEMES = [
   {
@@ -97,6 +98,23 @@ const POSTER_THEMES = [
     sectionBg: 'rgba(255,255,255,0.82)',
     sectionBorder: 'rgba(239,223,180,0.96)',
     orbOne: 'rgba(255, 217, 120, 0.20)',
+    orbTwo: 'rgba(255,255,255,0.82)'
+  },
+  {
+    id: 'mint',
+    name: '浅绿',
+    border: '#cbead7',
+    backgroundStart: '#f4fff8',
+    backgroundEnd: '#e7f8ee',
+    title: '#1f4030',
+    company: '#4f9471',
+    label: '#68a883',
+    chipText: '#4b8d6b',
+    chipBorder: '#c7e6d2',
+    chipBg: 'rgba(255,255,255,0.86)',
+    sectionBg: 'rgba(255,255,255,0.84)',
+    sectionBorder: 'rgba(203,234,215,0.96)',
+    orbOne: 'rgba(148, 219, 175, 0.24)',
     orbTwo: 'rgba(255,255,255,0.82)'
   },
   {
@@ -188,38 +206,62 @@ function stripHtml(value: string) {
     .trim();
 }
 
-function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 168, minLength = 128) {
+function splitSummarySentences(value: string) {
+  return stripHtml(value)
+    .split(/[\n\r]+|(?<=[。！？!?.；;])/)
+    .map((item) => item.replace(/^[\s•·▪●\-–—\d.()]+/, '').trim())
+    .filter(Boolean);
+}
+
+function dedupeSentences(sentences: string[]) {
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const sentence of sentences) {
+    const key = sentence.replace(/[^\p{L}\p{N}]+/gu, '').toLowerCase();
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(sentence);
+  }
+  return deduped;
+}
+
+function clampSentence(sentence: string, maxLength: number) {
+  const clean = sentence.replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  if (clean.length <= maxLength) return clean;
+  return `${clean.slice(0, Math.max(0, maxLength - 1)).replace(/[，,；;、:：\s]+$/u, '')}…`;
+}
+
+function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 186, minLength = 146) {
   const source = stripHtml(job.description);
   if (!source) return '岗位亮点待补充，可结合 JD 核对后再生成配图。';
 
-  const sentences = source
-    .split(/(?<=[。！？!?.；;])/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const sentences = dedupeSentences(splitSummarySentences(source));
+  if (sentences.length === 0) return source.slice(0, maxLength);
 
-  let output = '';
+  const bullets: string[] = [];
   for (const sentence of sentences) {
-    const next = output ? `${output} ${sentence}` : sentence;
-    if (next.length > maxLength && output.length >= minLength) break;
+    const candidate = `${bullets.length + 1}. ${clampSentence(sentence, 42)}`;
+    const next = [...bullets, candidate].join('\n');
+    if (next.length > maxLength && bullets.join('\n').length >= minLength) break;
     if (next.length > maxLength) {
-      output = next.slice(0, maxLength);
+      bullets.push(`${bullets.length + 1}. ${clampSentence(sentence, 30)}`);
       break;
     }
-    output = next;
+    bullets.push(candidate);
+    if (bullets.length >= 4 && bullets.join('\n').length >= minLength) break;
   }
 
-  if (!output) output = source.slice(0, maxLength);
-  return output.slice(0, maxLength).trim();
+  if (bullets.length === 0) return source.slice(0, maxLength);
+  return bullets.join('\n').slice(0, maxLength).trim();
 }
 
-function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 60, minLength = 38) {
+function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 78, minLength = 52) {
   const source = stripHtml(job.companyDescription);
   if (!source) return '企业简介待补充';
 
-  const sentences = source
-    .split(/(?<=[。！？!?.；;])/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+  const sentences = dedupeSentences(splitSummarySentences(source));
+  if (sentences.length === 0) return source.slice(0, maxLength);
 
   let output = '';
   for (const sentence of sentences) {
@@ -288,32 +330,108 @@ function getThemeById(themeId: string) {
   return POSTER_THEMES.find((theme) => theme.id === themeId) || POSTER_THEMES[0];
 }
 
-function createWrappedLines(text: string, maxCharsPerLine: number, maxLines: number) {
-  const normalized = String(text || '').replace(/\s+/g, ' ').trim();
-  if (!normalized) return [];
+function wrapTextByWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
+  const paragraphs = String(text || '')
+    .split(/\n+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (paragraphs.length === 0) {
+    return { lines: [] as string[], truncated: false };
+  }
 
   const lines: string[] = [];
-  let current = '';
-  for (const char of normalized) {
-    const next = current + char;
-    if (next.length > maxCharsPerLine) {
+  let truncated = false;
+  let consumedChars = 0;
+  const totalChars = paragraphs.join('').length;
+
+  outer: for (let pIndex = 0; pIndex < paragraphs.length; pIndex += 1) {
+    const paragraph = paragraphs[pIndex];
+    let current = '';
+
+    for (const char of paragraph) {
+      const next = current + char;
+      if (ctx.measureText(next).width <= maxWidth || current.length === 0) {
+        current = next;
+      } else {
+        lines.push(current);
+        consumedChars += current.length;
+        if (lines.length >= maxLines) {
+          truncated = true;
+          break outer;
+        }
+        current = char;
+      }
+    }
+
+    if (current) {
       lines.push(current);
-      current = char;
-      if (lines.length === maxLines - 1) break;
-    } else {
-      current = next;
+      consumedChars += current.length;
+      if (lines.length >= maxLines && pIndex < paragraphs.length - 1) {
+        truncated = true;
+        break;
+      }
     }
   }
 
-  if (lines.length < maxLines && current) {
-    lines.push(current);
+  if (consumedChars < totalChars) {
+    truncated = true;
   }
 
-  if (normalized.length > lines.join('').length && lines.length > 0) {
-    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/…$/, '').slice(0, Math.max(0, maxCharsPerLine - 1))}…`;
+  if (truncated && lines.length > 0) {
+    let lastLine = lines[Math.min(lines.length, maxLines) - 1].replace(/…$/u, '');
+    while (lastLine && ctx.measureText(`${lastLine}…`).width > maxWidth) {
+      lastLine = lastLine.slice(0, -1);
+    }
+    lines[Math.min(lines.length, maxLines) - 1] = `${lastLine}…`;
   }
 
-  return lines;
+  return {
+    lines: lines.slice(0, maxLines),
+    truncated
+  };
+}
+
+function fitTextBlock(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  options: {
+    maxWidth: number;
+    maxLines: number;
+    startSize: number;
+    minSize: number;
+    weight?: number;
+    lineHeightRatio?: number;
+  }
+) {
+  const {
+    maxWidth,
+    maxLines,
+    startSize,
+    minSize,
+    weight = 500,
+    lineHeightRatio = 1.4
+  } = options;
+
+  for (let fontSize = startSize; fontSize >= minSize; fontSize -= 2) {
+    ctx.font = `${weight} ${fontSize}px ${POSTER_FONT_FAMILY}`;
+    const wrapped = wrapTextByWidth(ctx, text, maxWidth, maxLines);
+    if (!wrapped.truncated || fontSize === minSize) {
+      return {
+        font: `${weight} ${fontSize}px ${POSTER_FONT_FAMILY}`,
+        fontSize,
+        lineHeight: Math.round(fontSize * lineHeightRatio),
+        lines: wrapped.lines
+      };
+    }
+  }
+
+  return {
+    font: `${weight} ${minSize}px ${POSTER_FONT_FAMILY}`,
+    fontSize: minSize,
+    lineHeight: Math.round(minSize * lineHeightRatio),
+    lines: wrapTextByWidth(ctx, text, maxWidth, maxLines).lines
+  };
 }
 
 function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
@@ -365,6 +483,52 @@ function drawTextLines(
   ctx.restore();
 }
 
+function drawChip(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  theme: (typeof POSTER_THEMES)[number],
+  maxWidth = 228
+) {
+  ctx.save();
+  ctx.font = `600 28px ${POSTER_FONT_FAMILY}`;
+  const width = Math.min(maxWidth, Math.max(108, ctx.measureText(text).width + 40));
+  fillRoundRect(ctx, x, y, width, 60, 30, theme.chipBg);
+  strokeRoundRect(ctx, x, y, width, 60, 30, theme.chipBorder, 2);
+  drawTextLines(ctx, [text], x + 20, y + 14, 28, theme.chipText, `600 28px ${POSTER_FONT_FAMILY}`);
+  ctx.restore();
+  return width;
+}
+
+function layoutChips(
+  ctx: CanvasRenderingContext2D,
+  items: string[],
+  startX: number,
+  startY: number,
+  maxWidth: number,
+  theme: (typeof POSTER_THEMES)[number]
+) {
+  let x = startX;
+  let y = startY;
+  const rowHeight = 60;
+  const gap = 12;
+
+  for (const item of items) {
+    const text = item || '待补充';
+    ctx.font = `600 28px ${POSTER_FONT_FAMILY}`;
+    const width = Math.min(228, Math.max(108, ctx.measureText(text).width + 40));
+    if (x > startX && x + width > startX + maxWidth) {
+      x = startX;
+      y += rowHeight + gap;
+    }
+    drawChip(ctx, text, x, y, theme);
+    x += width + gap;
+  }
+
+  return y + rowHeight;
+}
+
 function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   const link = document.createElement('a');
   link.download = fileName;
@@ -382,7 +546,7 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas not supported');
 
-  const gradient = ctx.createLinearGradient(0, 0, 0, EXPORT_HEIGHT);
+  const gradient = ctx.createLinearGradient(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
   gradient.addColorStop(0, theme.backgroundStart);
   gradient.addColorStop(1, theme.backgroundEnd);
   fillRoundRect(ctx, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT, 56, gradient);
@@ -392,18 +556,18 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   ctx.globalAlpha = 1;
   ctx.fillStyle = theme.orbOne;
   ctx.beginPath();
-  ctx.arc(860, 250, 130, 0, Math.PI * 2);
+  ctx.arc(860, 258, 118, 0, Math.PI * 2);
   ctx.fill();
   ctx.beginPath();
-  ctx.arc(160, 120, 180, 0, Math.PI * 2);
+  ctx.arc(150, 120, 170, 0, Math.PI * 2);
   ctx.fill();
   ctx.fillStyle = theme.orbTwo;
   ctx.beginPath();
-  ctx.arc(930, 1220, 220, 0, Math.PI * 2);
+  ctx.arc(930, 1260, 205, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  const paddingX = 84;
+  const paddingX = 82;
   const contentWidth = EXPORT_WIDTH - (paddingX * 2);
   const title = job.title;
   const company = job.company;
@@ -418,99 +582,59 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
 
   ctx.textBaseline = 'top';
 
-  ctx.save();
-  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  ctx.fillStyle = theme.company;
-  ctx.fillText(company, paddingX, 90);
-  ctx.restore();
-
-  const titleLines = createWrappedLines(title, 13, 2);
-  drawTextLines(
-    ctx,
-    titleLines,
-    paddingX,
-    152,
-    92,
-    theme.title,
-    '900 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-  );
-
   const industryText = job.industry || '待补充';
-  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  const industryWidth = Math.min(280, Math.max(140, ctx.measureText(industryText).width + 48));
+  ctx.font = `600 28px ${POSTER_FONT_FAMILY}`;
+  const industryWidth = Math.min(260, Math.max(140, ctx.measureText(industryText).width + 50));
   fillRoundRect(ctx, EXPORT_WIDTH - paddingX - industryWidth, 80, industryWidth, 68, 34, theme.chipBg);
   strokeRoundRect(ctx, EXPORT_WIDTH - paddingX - industryWidth, 80, industryWidth, 68, 34, theme.chipBorder, 2);
-  drawTextLines(
-    ctx,
-    [industryText],
-    EXPORT_WIDTH - paddingX - industryWidth + 24,
-    98,
-    30,
-    theme.chipText,
-    '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-  );
+  drawTextLines(ctx, [industryText], EXPORT_WIDTH - paddingX - industryWidth + 24, 98, 30, theme.chipText, `600 28px ${POSTER_FONT_FAMILY}`);
 
-  let chipX = paddingX;
-  const chipY = 356;
-  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-  metaItems.forEach((item) => {
-    const text = item || '待补充';
-    const width = Math.min(220, Math.max(108, ctx.measureText(text).width + 42));
-    fillRoundRect(ctx, chipX, chipY, width, 64, 32, theme.chipBg);
-    strokeRoundRect(ctx, chipX, chipY, width, 64, 32, theme.chipBorder, 2);
-    drawTextLines(
-      ctx,
-      [text],
-      chipX + 22,
-      chipY + 16,
-      30,
-      theme.chipText,
-      '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-    );
-    chipX += width + 14;
+  drawTextLines(ctx, [company], paddingX, 92, 30, theme.company, `600 26px ${POSTER_FONT_FAMILY}`);
+
+  const titleBlock = fitTextBlock(ctx, title, {
+    maxWidth: contentWidth,
+    maxLines: 2,
+    startSize: 68,
+    minSize: 54,
+    weight: 900,
+    lineHeightRatio: 1.08
   });
+  const titleY = 140;
+  drawTextLines(ctx, titleBlock.lines, paddingX, titleY, titleBlock.lineHeight, theme.title, titleBlock.font);
+  const titleBottom = titleY + (titleBlock.lines.length * titleBlock.lineHeight);
 
-  fillRoundRect(ctx, paddingX, 458, contentWidth, 170, 34, theme.sectionBg);
-  strokeRoundRect(ctx, paddingX, 458, contentWidth, 170, 34, theme.sectionBorder, 2);
-  drawTextLines(
-    ctx,
-    ['企业简介'],
-    paddingX + 30,
-    488,
-    30,
-    theme.label,
-    '700 24px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-  );
-  drawTextLines(
-    ctx,
-    createWrappedLines(companySummary, 28, 2),
-    paddingX + 30,
-    536,
-    48,
-    theme.title,
-    '500 34px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-  );
+  const chipY = titleBottom + 24;
+  const chipsBottom = layoutChips(ctx, metaItems, paddingX, chipY, contentWidth, theme);
 
-  fillRoundRect(ctx, paddingX, 658, contentWidth, 430, 34, theme.sectionBg);
-  strokeRoundRect(ctx, paddingX, 658, contentWidth, 430, 34, theme.sectionBorder, 2);
-  drawTextLines(
-    ctx,
-    ['岗位摘要'],
-    paddingX + 30,
-    688,
-    30,
-    theme.label,
-    '700 24px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-  );
-  drawTextLines(
-    ctx,
-    createWrappedLines(jobSummary, 28, 6),
-    paddingX + 30,
-    736,
-    56,
-    theme.title,
-    '500 36px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
-  );
+  const companySectionY = chipsBottom + 24;
+  const companyTextBlock = fitTextBlock(ctx, companySummary, {
+    maxWidth: contentWidth - 60,
+    maxLines: 3,
+    startSize: 31,
+    minSize: 26,
+    weight: 500,
+    lineHeightRatio: 1.42
+  });
+  const companySectionHeight = Math.max(176, 82 + (companyTextBlock.lines.length * companyTextBlock.lineHeight));
+  fillRoundRect(ctx, paddingX, companySectionY, contentWidth, companySectionHeight, 34, theme.sectionBg);
+  strokeRoundRect(ctx, paddingX, companySectionY, contentWidth, companySectionHeight, 34, theme.sectionBorder, 2);
+  drawTextLines(ctx, ['企业简介'], paddingX + 30, companySectionY + 28, 28, theme.label, `700 24px ${POSTER_FONT_FAMILY}`);
+  drawTextLines(ctx, companyTextBlock.lines, paddingX + 30, companySectionY + 72, companyTextBlock.lineHeight, theme.title, companyTextBlock.font);
+
+  const summarySectionY = companySectionY + companySectionHeight + 24;
+  const summarySectionHeight = EXPORT_HEIGHT - summarySectionY - 84;
+  const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
+    maxWidth: contentWidth - 60,
+    maxLines: 8,
+    startSize: 34,
+    minSize: 28,
+    weight: 500,
+    lineHeightRatio: 1.45
+  });
+  fillRoundRect(ctx, paddingX, summarySectionY, contentWidth, summarySectionHeight, 34, theme.sectionBg);
+  strokeRoundRect(ctx, paddingX, summarySectionY, contentWidth, summarySectionHeight, 34, theme.sectionBorder, 2);
+  drawTextLines(ctx, ['岗位摘要'], paddingX + 30, summarySectionY + 28, 28, theme.label, `700 24px ${POSTER_FONT_FAMILY}`);
+  drawTextLines(ctx, summaryTextBlock.lines, paddingX + 30, summarySectionY + 74, summaryTextBlock.lineHeight, theme.title, summaryTextBlock.font);
 
   return canvas;
 }
@@ -958,11 +1082,11 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   <div className="mt-4 grid gap-3">
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业简介摘要</div>
-                      <div className="mt-2 text-sm leading-7 text-slate-700">{posterDraft?.companySummary || buildLocalCompanySummary(selectedJob)}</div>
+                      <div className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">{posterDraft?.companySummary || buildLocalCompanySummary(selectedJob)}</div>
                     </div>
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位摘要</div>
-                      <div className="mt-2 text-sm leading-7 text-slate-700">{posterDraft?.jobSummary || buildLocalPosterSummary(selectedJob)}</div>
+                      <div className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">{posterDraft?.jobSummary || buildLocalPosterSummary(selectedJob)}</div>
                     </div>
                   </div>
 
