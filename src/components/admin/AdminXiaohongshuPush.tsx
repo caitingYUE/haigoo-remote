@@ -1,5 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import html2canvas from 'html2canvas';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   Check,
@@ -43,75 +42,79 @@ const INDUSTRY_OPTIONS = [
   '硬件/物联网', '消费生活', '其他'
 ];
 
-const TEMPLATE_VERSION = 'xhs-v2';
+const TEMPLATE_VERSION = 'xhs-v3';
 const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
-const PREVIEW_SCALE = 1 / 3;
+const PREVIEW_SCALE = 0.34;
 
 const POSTER_THEMES = [
   {
     id: 'lavender',
     name: '浅紫',
-    cardBorder: '#dccff7',
-    pageBg: 'linear-gradient(145deg, #f9f5ff 0%, #f2ebff 55%, #ece7ff 100%)',
-    haloOne: 'rgba(177, 155, 255, 0.26)',
-    haloTwo: 'rgba(255, 255, 255, 0.8)',
-    chipBorder: '#d8cbf4',
-    chipText: '#725ea8',
-    titleText: '#2f2547',
-    companyText: '#7c67b3',
-    labelText: '#8f79c6',
-    sectionBg: 'rgba(255,255,255,0.76)',
-    sectionBorder: 'rgba(220, 207, 247, 0.95)',
-    metaBg: 'rgba(255,255,255,0.82)'
+    border: '#d9cdf8',
+    backgroundStart: '#faf7ff',
+    backgroundEnd: '#efe8ff',
+    title: '#302651',
+    company: '#7360b0',
+    label: '#8b78c8',
+    chipText: '#755ec3',
+    chipBorder: '#d8cdf6',
+    chipBg: 'rgba(255,255,255,0.84)',
+    sectionBg: 'rgba(255,255,255,0.82)',
+    sectionBorder: 'rgba(217,205,248,0.95)',
+    orbOne: 'rgba(182, 156, 255, 0.22)',
+    orbTwo: 'rgba(255,255,255,0.76)'
   },
   {
     id: 'sky',
     name: '浅蓝',
-    cardBorder: '#cce3fb',
-    pageBg: 'linear-gradient(145deg, #f3faff 0%, #ebf6ff 56%, #e3f0ff 100%)',
-    haloOne: 'rgba(147, 203, 255, 0.28)',
-    haloTwo: 'rgba(255, 255, 255, 0.84)',
-    chipBorder: '#c6e0fb',
-    chipText: '#4f77a2',
-    titleText: '#22364a',
-    companyText: '#5d86b3',
-    labelText: '#6b95c3',
-    sectionBg: 'rgba(255,255,255,0.78)',
-    sectionBorder: 'rgba(204, 227, 251, 0.98)',
-    metaBg: 'rgba(255,255,255,0.85)'
+    border: '#c7e0fb',
+    backgroundStart: '#f4faff',
+    backgroundEnd: '#e8f3ff',
+    title: '#21364f',
+    company: '#5e85b4',
+    label: '#7397c3',
+    chipText: '#4e77a5',
+    chipBorder: '#c6def8',
+    chipBg: 'rgba(255,255,255,0.86)',
+    sectionBg: 'rgba(255,255,255,0.84)',
+    sectionBorder: 'rgba(199,224,251,0.96)',
+    orbOne: 'rgba(129, 192, 255, 0.22)',
+    orbTwo: 'rgba(255,255,255,0.8)'
   },
   {
     id: 'butter',
     name: '浅黄',
-    cardBorder: '#f0dfb5',
-    pageBg: 'linear-gradient(145deg, #fffaf0 0%, #fff6de 54%, #fff1ce 100%)',
-    haloOne: 'rgba(255, 221, 133, 0.28)',
-    haloTwo: 'rgba(255, 255, 255, 0.82)',
+    border: '#efdfb4',
+    backgroundStart: '#fffbf1',
+    backgroundEnd: '#fff2d6',
+    title: '#43351c',
+    company: '#9f854f',
+    label: '#b59758',
+    chipText: '#8b7244',
     chipBorder: '#eeddb0',
-    chipText: '#8b7142',
-    titleText: '#3f3119',
-    companyText: '#a4864b',
-    labelText: '#b59556',
-    sectionBg: 'rgba(255,255,255,0.78)',
-    sectionBorder: 'rgba(240, 223, 181, 0.98)',
-    metaBg: 'rgba(255,255,255,0.84)'
+    chipBg: 'rgba(255,255,255,0.86)',
+    sectionBg: 'rgba(255,255,255,0.82)',
+    sectionBorder: 'rgba(239,223,180,0.96)',
+    orbOne: 'rgba(255, 217, 120, 0.20)',
+    orbTwo: 'rgba(255,255,255,0.82)'
   },
   {
     id: 'blush',
     name: '浅粉',
-    cardBorder: '#f4d0da',
-    pageBg: 'linear-gradient(145deg, #fff5f8 0%, #fff0f5 58%, #ffe8ef 100%)',
-    haloOne: 'rgba(255, 185, 205, 0.26)',
-    haloTwo: 'rgba(255, 255, 255, 0.84)',
-    chipBorder: '#f1cdd7',
-    chipText: '#9d6072',
-    titleText: '#412632',
-    companyText: '#bb748a',
-    labelText: '#ca8298',
-    sectionBg: 'rgba(255,255,255,0.78)',
-    sectionBorder: 'rgba(244, 208, 218, 0.98)',
-    metaBg: 'rgba(255,255,255,0.85)'
+    border: '#f0ced7',
+    backgroundStart: '#fff6f8',
+    backgroundEnd: '#ffeaf0',
+    title: '#452733',
+    company: '#bb768a',
+    label: '#d1879f',
+    chipText: '#9d6172',
+    chipBorder: '#efccd7',
+    chipBg: 'rgba(255,255,255,0.86)',
+    sectionBg: 'rgba(255,255,255,0.84)',
+    sectionBorder: 'rgba(240,206,215,0.96)',
+    orbOne: 'rgba(255, 181, 204, 0.22)',
+    orbTwo: 'rgba(255,255,255,0.82)'
   }
 ] as const;
 
@@ -185,7 +188,7 @@ function stripHtml(value: string) {
     .trim();
 }
 
-function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 140) {
+function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 168, minLength = 128) {
   const source = stripHtml(job.description);
   if (!source) return '岗位亮点待补充，可结合 JD 核对后再生成配图。';
 
@@ -194,28 +197,22 @@ function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 140) {
     .map((item) => item.trim())
     .filter(Boolean);
 
-  const deduped: string[] = [];
-  const seen = new Set<string>();
-
-  for (const sentence of sentences) {
-    const key = sentence.replace(/[^\p{L}\p{N}]+/gu, '').toLowerCase();
-    if (!key || seen.has(key)) continue;
-    seen.add(key);
-    deduped.push(sentence);
-  }
-
   let output = '';
-  for (const sentence of deduped) {
+  for (const sentence of sentences) {
     const next = output ? `${output} ${sentence}` : sentence;
-    if (next.length > maxLength) break;
+    if (next.length > maxLength && output.length >= minLength) break;
+    if (next.length > maxLength) {
+      output = next.slice(0, maxLength);
+      break;
+    }
     output = next;
   }
 
-  if (!output) output = (deduped[0] || source).slice(0, maxLength);
+  if (!output) output = source.slice(0, maxLength);
   return output.slice(0, maxLength).trim();
 }
 
-function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 58) {
+function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 60, minLength = 38) {
   const source = stripHtml(job.companyDescription);
   if (!source) return '企业简介待补充';
 
@@ -227,29 +224,16 @@ function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 58) {
   let output = '';
   for (const sentence of sentences) {
     const next = output ? `${output} ${sentence}` : sentence;
-    if (next.length > maxLength) break;
+    if (next.length > maxLength && output.length >= minLength) break;
+    if (next.length > maxLength) {
+      output = next.slice(0, maxLength);
+      break;
+    }
     output = next;
   }
 
   if (!output) output = source.slice(0, maxLength);
   return output.slice(0, maxLength).trim();
-}
-
-function shouldUseAiSummary(localSummary: string, description: string) {
-  const cleanDescription = stripHtml(description);
-  if (!cleanDescription) return false;
-  if (localSummary.length > 146) return true;
-  if (cleanDescription.length >= 560) return true;
-  if ((cleanDescription.match(/[•·▪●]/g) || []).length >= 6) return true;
-  return false;
-}
-
-function shouldUseAiCompanySummary(localSummary: string, description: string) {
-  const cleanDescription = stripHtml(description);
-  if (!cleanDescription) return false;
-  if (localSummary.length > 64) return true;
-  if (cleanDescription.length >= 220) return true;
-  return false;
 }
 
 function formatJobTypeLabel(value: string) {
@@ -289,16 +273,14 @@ function getReferralLines(job: XhsPushJobListItem) {
 }
 
 function buildPublishPack(job: XhsPushJobListItem) {
-  const referralLines = getReferralLines(job);
-
   return [
     job.title,
     job.company,
     `申请链接：${job.shareUrl}`,
-    `${job.location}｜${job.category}｜${formatJobTypeLabel(job.jobType)}｜${formatExperienceLabel(job.experienceLevel)}`,
-    `企业信息：${job.employeeCount || '待补充'}｜${job.address || '待补充'}｜${job.foundedYear || '待补充'}｜评分${job.companyRating || '待补充'}`,
+    `岗位信息：${job.location}｜${job.category}｜${formatJobTypeLabel(job.jobType)}｜${formatExperienceLabel(job.experienceLevel)}`,
+    `企业信息：${job.employeeCount || '待补充'}｜总部位于${job.address || '待补充'}｜成立于${job.foundedYear || '待补充'}｜评分${job.companyRating || '待补充'}`,
     `所属行业：${job.industry || '待补充'}`,
-    ...referralLines.map((line) => `内推邮箱：${line}`)
+    ...getReferralLines(job).map((line) => `内推邮箱：${line}`)
   ].join('\n');
 }
 
@@ -306,159 +288,267 @@ function getThemeById(themeId: string) {
   return POSTER_THEMES.find((theme) => theme.id === themeId) || POSTER_THEMES[0];
 }
 
-const PosterCard: React.FC<{
+function createWrappedLines(text: string, maxCharsPerLine: number, maxLines: number) {
+  const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!normalized) return [];
+
+  const lines: string[] = [];
+  let current = '';
+  for (const char of normalized) {
+    const next = current + char;
+    if (next.length > maxCharsPerLine) {
+      lines.push(current);
+      current = char;
+      if (lines.length === maxLines - 1) break;
+    } else {
+      current = next;
+    }
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current);
+  }
+
+  if (normalized.length > lines.join('').length && lines.length > 0) {
+    lines[lines.length - 1] = `${lines[lines.length - 1].replace(/…$/, '').slice(0, Math.max(0, maxCharsPerLine - 1))}…`;
+  }
+
+  return lines;
+}
+
+function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+}
+
+function fillRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, fillStyle: string | CanvasGradient) {
+  ctx.save();
+  drawRoundRect(ctx, x, y, width, height, radius);
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+  ctx.restore();
+}
+
+function strokeRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, strokeStyle: string, lineWidth = 2) {
+  ctx.save();
+  drawRoundRect(ctx, x, y, width, height, radius);
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawTextLines(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  x: number,
+  y: number,
+  lineHeight: number,
+  color: string,
+  font: string
+) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.font = font;
+  for (let index = 0; index < lines.length; index += 1) {
+    ctx.fillText(lines[index], x, y + (index * lineHeight));
+  }
+  ctx.restore();
+}
+
+function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
+  const link = document.createElement('a');
+  link.download = fileName;
+  link.href = canvas.toDataURL('image/png');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string) {
+  const theme = getThemeById(themeId);
+  const canvas = document.createElement('canvas');
+  canvas.width = EXPORT_WIDTH;
+  canvas.height = EXPORT_HEIGHT;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas not supported');
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, EXPORT_HEIGHT);
+  gradient.addColorStop(0, theme.backgroundStart);
+  gradient.addColorStop(1, theme.backgroundEnd);
+  fillRoundRect(ctx, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT, 56, gradient);
+  strokeRoundRect(ctx, 1.5, 1.5, EXPORT_WIDTH - 3, EXPORT_HEIGHT - 3, 56, theme.border, 3);
+
+  ctx.save();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = theme.orbOne;
+  ctx.beginPath();
+  ctx.arc(860, 250, 130, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(160, 120, 180, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = theme.orbTwo;
+  ctx.beginPath();
+  ctx.arc(930, 1220, 220, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  const paddingX = 84;
+  const contentWidth = EXPORT_WIDTH - (paddingX * 2);
+  const title = job.title;
+  const company = job.company;
+  const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
+  const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
+  const metaItems = [
+    job.location,
+    job.category,
+    formatJobTypeLabel(job.jobType),
+    formatExperienceLabel(job.experienceLevel)
+  ];
+
+  ctx.textBaseline = 'top';
+
+  ctx.save();
+  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  ctx.fillStyle = theme.company;
+  ctx.fillText(company, paddingX, 90);
+  ctx.restore();
+
+  const titleLines = createWrappedLines(title, 13, 2);
+  drawTextLines(
+    ctx,
+    titleLines,
+    paddingX,
+    152,
+    92,
+    theme.title,
+    '900 72px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+  );
+
+  const industryText = job.industry || '待补充';
+  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  const industryWidth = Math.min(280, Math.max(140, ctx.measureText(industryText).width + 48));
+  fillRoundRect(ctx, EXPORT_WIDTH - paddingX - industryWidth, 80, industryWidth, 68, 34, theme.chipBg);
+  strokeRoundRect(ctx, EXPORT_WIDTH - paddingX - industryWidth, 80, industryWidth, 68, 34, theme.chipBorder, 2);
+  drawTextLines(
+    ctx,
+    [industryText],
+    EXPORT_WIDTH - paddingX - industryWidth + 24,
+    98,
+    30,
+    theme.chipText,
+    '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+  );
+
+  let chipX = paddingX;
+  const chipY = 356;
+  ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+  metaItems.forEach((item) => {
+    const text = item || '待补充';
+    const width = Math.min(220, Math.max(108, ctx.measureText(text).width + 42));
+    fillRoundRect(ctx, chipX, chipY, width, 64, 32, theme.chipBg);
+    strokeRoundRect(ctx, chipX, chipY, width, 64, 32, theme.chipBorder, 2);
+    drawTextLines(
+      ctx,
+      [text],
+      chipX + 22,
+      chipY + 16,
+      30,
+      theme.chipText,
+      '600 28px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+    );
+    chipX += width + 14;
+  });
+
+  fillRoundRect(ctx, paddingX, 458, contentWidth, 170, 34, theme.sectionBg);
+  strokeRoundRect(ctx, paddingX, 458, contentWidth, 170, 34, theme.sectionBorder, 2);
+  drawTextLines(
+    ctx,
+    ['企业简介'],
+    paddingX + 30,
+    488,
+    30,
+    theme.label,
+    '700 24px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+  );
+  drawTextLines(
+    ctx,
+    createWrappedLines(companySummary, 28, 2),
+    paddingX + 30,
+    536,
+    48,
+    theme.title,
+    '500 34px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+  );
+
+  fillRoundRect(ctx, paddingX, 658, contentWidth, 430, 34, theme.sectionBg);
+  strokeRoundRect(ctx, paddingX, 658, contentWidth, 430, 34, theme.sectionBorder, 2);
+  drawTextLines(
+    ctx,
+    ['岗位摘要'],
+    paddingX + 30,
+    688,
+    30,
+    theme.label,
+    '700 24px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+  );
+  drawTextLines(
+    ctx,
+    createWrappedLines(jobSummary, 28, 6),
+    paddingX + 30,
+    736,
+    56,
+    theme.title,
+    '500 36px -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif'
+  );
+
+  return canvas;
+}
+
+const PosterPreview: React.FC<{
   job: XhsPushJobListItem;
   draft: XhsPosterDraft | null;
   themeId: string;
 }> = ({ job, draft, themeId }) => {
-  const theme = getThemeById(themeId);
-  const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
-  const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
+  const [previewUrl, setPreviewUrl] = useState<string>('');
+
+  useEffect(() => {
+    try {
+      const canvas = renderPosterCanvas(job, draft, themeId);
+      setPreviewUrl(canvas.toDataURL('image/png'));
+    } catch (_error) {
+      setPreviewUrl('');
+    }
+  }, [draft, job, themeId]);
 
   return (
-    <div
-      style={{
-        width: `${EXPORT_WIDTH}px`,
-        height: `${EXPORT_HEIGHT}px`,
-        background: theme.pageBg,
-        borderColor: theme.cardBorder
-      }}
-      className="relative overflow-hidden rounded-[72px] border-[3px] p-[64px] shadow-[0_24px_80px_rgba(63,46,35,0.14)]"
-    >
-      <div
-        className="absolute left-[-120px] top-[-80px] h-[420px] w-[420px] rounded-full blur-[90px]"
-        style={{ backgroundColor: theme.haloOne }}
-      />
-      <div
-        className="absolute bottom-[-100px] right-[-70px] h-[390px] w-[390px] rounded-full blur-[100px]"
-        style={{ backgroundColor: theme.haloTwo }}
-      />
-      <div
-        className="absolute right-[70px] top-[160px] h-[260px] w-[260px] rounded-full opacity-70"
-        style={{ backgroundColor: theme.haloOne }}
-      />
-
-      <div className="relative flex h-full flex-col">
-        <div className="flex items-start justify-between gap-6">
-          <div className="min-w-0">
-            <div
-              className="text-[30px] font-semibold uppercase tracking-[0.36em]"
-              style={{ color: theme.companyText }}
-            >
-              {job.company}
-            </div>
-            <h3
-              className="mt-5 line-clamp-2 text-[84px] font-black leading-[1.06]"
-              style={{ color: theme.titleText }}
-            >
-              {job.title}
-            </h3>
-          </div>
-
-          <div
-            className="shrink-0 rounded-full border px-8 py-3 text-[26px] font-semibold"
-            style={{
-              borderColor: theme.chipBorder,
-              color: theme.chipText,
-              background: theme.metaBg
-            }}
-          >
-            {job.industry || '待补充'}
-          </div>
-        </div>
-
-        <div className="mt-8 flex flex-wrap gap-3">
-          {[
-            job.location,
-            job.category,
-            formatJobTypeLabel(job.jobType),
-            formatExperienceLabel(job.experienceLevel)
-          ].map((item) => (
-            <span
-              key={item}
-              className="rounded-full border px-6 py-3 text-[28px] font-semibold"
-              style={{
-                borderColor: theme.chipBorder,
-                color: theme.chipText,
-                background: theme.metaBg
-              }}
-            >
-              {item}
-            </span>
-          ))}
-        </div>
-
+    <div className="overflow-hidden rounded-[32px] shadow-[0_18px_60px_rgba(71,52,41,0.12)]">
+      {previewUrl ? (
+        <img
+          src={previewUrl}
+          alt={`${job.title} 海报预览`}
+          width={EXPORT_WIDTH * PREVIEW_SCALE}
+          height={EXPORT_HEIGHT * PREVIEW_SCALE}
+          className="block h-auto w-full max-w-[367px]"
+        />
+      ) : (
         <div
-          className="mt-8 rounded-[42px] border px-10 py-8"
-          style={{
-            background: theme.sectionBg,
-            borderColor: theme.sectionBorder
-          }}
+          className="flex items-center justify-center rounded-[32px] border border-slate-200 bg-slate-50 text-sm text-slate-500"
+          style={{ width: EXPORT_WIDTH * PREVIEW_SCALE, height: EXPORT_HEIGHT * PREVIEW_SCALE }}
         >
-          <div
-            className="text-[24px] font-semibold uppercase tracking-[0.16em]"
-            style={{ color: theme.labelText }}
-          >
-            企业简介
-          </div>
-          <p
-            className="mt-4 line-clamp-2 text-[34px] font-medium leading-[1.45]"
-            style={{ color: theme.titleText }}
-          >
-            {companySummary}
-          </p>
+          正在生成预览...
         </div>
-
-        <div
-          className="mt-7 rounded-[42px] border px-10 py-8"
-          style={{
-            background: theme.sectionBg,
-            borderColor: theme.sectionBorder
-          }}
-        >
-          <div
-            className="text-[24px] font-semibold uppercase tracking-[0.16em]"
-            style={{ color: theme.labelText }}
-          >
-            岗位摘要
-          </div>
-          <p
-            className="mt-4 text-[34px] leading-[1.6]"
-            style={{ color: theme.titleText }}
-          >
-            {jobSummary}
-          </p>
-        </div>
-
-        <div className="mt-auto grid grid-cols-2 gap-4">
-          {[
-            { label: '企业信息', value: `${job.employeeCount}｜${job.address}` },
-            { label: '成立/评分', value: `${job.foundedYear}｜评分${job.companyRating}` }
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="rounded-[34px] border px-7 py-6"
-              style={{
-                background: theme.metaBg,
-                borderColor: theme.chipBorder
-              }}
-            >
-              <div
-                className="text-[22px] font-semibold uppercase tracking-[0.16em]"
-                style={{ color: theme.labelText }}
-              >
-                {item.label}
-              </div>
-              <div
-                className="mt-3 text-[28px] font-semibold leading-[1.4]"
-                style={{ color: theme.titleText }}
-              >
-                {item.value}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -484,7 +574,6 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [posterDraft, setPosterDraft] = useState<XhsPosterDraft | null>(null);
   const [selectedThemeId, setSelectedThemeId] = useState<string>(POSTER_THEMES[0].id);
-  const exportPosterRef = useRef<HTMLDivElement>(null);
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
 
   useEffect(() => {
@@ -496,7 +585,10 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     jobsRef.current = jobs;
   }, [jobs]);
 
-  const selectedJob = jobs.find((item) => item.id === selectedJobId) || null;
+  const selectedJob = useMemo(
+    () => jobs.find((item) => item.id === selectedJobId) || null,
+    [jobs, selectedJobId]
+  );
 
   const fetchJobs = useCallback(async (nextPage = 1, append = false) => {
     try {
@@ -585,66 +677,47 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       setGeneratingPoster(true);
       setPosterError(null);
 
-      const localJobSummary = buildLocalPosterSummary(selectedJob);
-      const localCompanySummary = buildLocalCompanySummary(selectedJob);
-      let jobSummary = localJobSummary;
-      let companySummary = localCompanySummary;
-      let provider: 'local' | 'bailian' = 'local';
-      let cacheHit = false;
-      let usedFallback = false;
+      const res = await fetch('/api/admin/content-push/xiaohongshu/summary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          id: selectedJob.id,
+          title: selectedJob.title,
+          company: selectedJob.company,
+          location: selectedJob.location,
+          category: selectedJob.category,
+          jobType: selectedJob.jobType,
+          experienceLevel: selectedJob.experienceLevel,
+          description: selectedJob.description,
+          companyDescription: selectedJob.companyDescription,
+          updatedAt: selectedJob.updatedAt,
+          summary: buildLocalPosterSummary(selectedJob)
+        })
+      });
 
-      if (
-        shouldUseAiSummary(localJobSummary, selectedJob.description) ||
-        shouldUseAiCompanySummary(localCompanySummary, selectedJob.companyDescription)
-      ) {
-        const res = await fetch('/api/admin/content-push/xiaohongshu/summary', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {})
-          },
-          body: JSON.stringify({
-            id: selectedJob.id,
-            title: selectedJob.title,
-            company: selectedJob.company,
-            location: selectedJob.location,
-            category: selectedJob.category,
-            jobType: selectedJob.jobType,
-            experienceLevel: selectedJob.experienceLevel,
-            description: selectedJob.description,
-            companyDescription: selectedJob.companyDescription,
-            updatedAt: selectedJob.updatedAt,
-            summary: localJobSummary
-          })
-        });
+      const data = await res.json() as {
+        success: boolean;
+        jobSummary?: string;
+        companySummary?: string;
+        provider?: 'local' | 'bailian';
+        cacheHit?: boolean;
+        usedFallback?: boolean;
+        error?: string;
+      };
 
-        const data = await res.json() as {
-          success: boolean;
-          jobSummary?: string;
-          companySummary?: string;
-          provider?: 'local' | 'bailian';
-          cacheHit?: boolean;
-          usedFallback?: boolean;
-          error?: string;
-        };
-
-        if (!res.ok || !data.success) throw new Error(data.error || '生成岗位摘要失败');
-
-        jobSummary = data.jobSummary || localJobSummary;
-        companySummary = data.companySummary || localCompanySummary;
-        provider = data.provider || 'local';
-        cacheHit = Boolean(data.cacheHit);
-        usedFallback = Boolean(data.usedFallback);
-      }
+      if (!res.ok || !data.success) throw new Error(data.error || '生成岗位摘要失败');
 
       setPosterDraft({
-        jobSummary,
-        companySummary,
-        provider,
+        jobSummary: data.jobSummary || buildLocalPosterSummary(selectedJob),
+        companySummary: data.companySummary || buildLocalCompanySummary(selectedJob),
+        provider: data.provider || 'local',
         templateVersion: TEMPLATE_VERSION,
         generatedAt: new Date().toISOString(),
-        cacheHit,
-        usedFallback
+        cacheHit: Boolean(data.cacheHit),
+        usedFallback: Boolean(data.usedFallback)
       });
     } catch (err) {
       setPosterError(err instanceof Error ? err.message : '生成海报失败');
@@ -654,31 +727,12 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   };
 
   const handleDownloadPoster = async () => {
-    if (!exportPosterRef.current || !selectedJob || !posterDraft) return;
+    if (!selectedJob) return;
 
     try {
       setDownloadingPoster(true);
-      await new Promise((resolve) => setTimeout(resolve, 120));
-
-      const canvas = await html2canvas(exportPosterRef.current, {
-        useCORS: true,
-        scale: 1,
-        backgroundColor: null,
-        logging: false,
-        width: EXPORT_WIDTH,
-        height: EXPORT_HEIGHT,
-        windowWidth: EXPORT_WIDTH,
-        windowHeight: EXPORT_HEIGHT,
-        scrollX: 0,
-        scrollY: 0
-      });
-
-      const link = document.createElement('a');
-      link.download = `${selectedJob.company}-${selectedJob.title}-xiaohongshu.png`;
-      link.href = canvas.toDataURL('image/png');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const canvas = renderPosterCanvas(selectedJob, posterDraft, selectedThemeId);
+      downloadCanvas(canvas, `${selectedJob.company}-${selectedJob.title}-xiaohongshu.png`);
     } catch (err) {
       console.error('Failed to export xiaohongshu poster:', err);
       alert('导出图片失败，请重试');
@@ -713,65 +767,33 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
           </div>
 
           <div className="mt-3 grid gap-3">
-            <select
-              value={category}
-              onChange={(event) => setCategory(event.target.value)}
-              className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-            >
+            <select value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
               <option value="">全部岗位角色</option>
-              {CATEGORY_OPTIONS.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {CATEGORY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
 
-            <select
-              value={jobType}
-              onChange={(event) => setJobType(event.target.value)}
-              className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-            >
+            <select value={jobType} onChange={(event) => setJobType(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
               <option value="">全部岗位类型</option>
-              {JOB_TYPE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
+              {JOB_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
 
-            <select
-              value={experienceLevel}
-              onChange={(event) => setExperienceLevel(event.target.value)}
-              className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-            >
+            <select value={experienceLevel} onChange={(event) => setExperienceLevel(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
               <option value="">全部岗位级别</option>
-              {EXPERIENCE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
+              {EXPERIENCE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
 
-            <select
-              value={industry}
-              onChange={(event) => setIndustry(event.target.value)}
-              className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
-            >
+            <select value={industry} onChange={(event) => setIndustry(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
               <option value="">全部企业行业</option>
-              {INDUSTRY_OPTIONS.map((option) => (
-                <option key={option} value={option}>{option}</option>
-              ))}
+              {INDUSTRY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </div>
 
           <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => fetchJobs(1, false)}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700"
-            >
+            <button type="button" onClick={() => fetchJobs(1, false)} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700">
               <RefreshCw className="h-4 w-4" />
               立即筛选
             </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
+            <button type="button" onClick={handleReset} className="inline-flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50">
               重置
             </button>
           </div>
@@ -783,23 +805,9 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
         </div>
 
         <div className="space-y-3">
-          {loading ? (
-            <div className="rounded-2xl border border-dashed border-rose-100 bg-rose-50/40 px-4 py-8 text-center text-sm text-slate-500">
-              正在加载岗位结果...
-            </div>
-          ) : null}
-
-          {!loading && error ? (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-5 text-sm text-rose-700">
-              {error}
-            </div>
-          ) : null}
-
-          {!loading && !error && jobs.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-              当前没有符合条件的岗位。
-            </div>
-          ) : null}
+          {loading ? <div className="rounded-2xl border border-dashed border-rose-100 bg-rose-50/40 px-4 py-8 text-center text-sm text-slate-500">正在加载岗位结果...</div> : null}
+          {!loading && error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-5 text-sm text-rose-700">{error}</div> : null}
+          {!loading && !error && jobs.length === 0 ? <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">当前没有符合条件的岗位。</div> : null}
 
           {!loading && !error && jobs.map((job) => (
             <button
@@ -807,9 +815,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
               type="button"
               onClick={() => setSelectedJobId(job.id)}
               className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
-                selectedJobId === job.id
-                  ? 'border-rose-300 bg-rose-50/70 shadow-sm'
-                  : 'border-slate-200 bg-white hover:border-rose-200 hover:bg-rose-50/30'
+                selectedJobId === job.id ? 'border-rose-300 bg-rose-50/70 shadow-sm' : 'border-slate-200 bg-white hover:border-rose-200 hover:bg-rose-50/30'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -817,29 +823,16 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   <div className="line-clamp-2 text-sm font-semibold text-slate-900">{job.title}</div>
                   <div className="mt-1 text-sm text-slate-600">{job.company}</div>
                 </div>
-                <span className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getCompletenessTone(job.completenessScore)}`}>
-                  {job.completenessScore}分
-                </span>
+                <span className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${getCompletenessTone(job.completenessScore)}`}>{job.completenessScore}分</span>
               </div>
-
-              <div className="mt-3 text-xs leading-5 text-slate-500">
-                {job.location}｜{job.category}｜{formatExperienceLabel(job.experienceLevel)}
-              </div>
-
-              <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
-                企业信息：{job.companyInfoCompact}
-              </div>
+              <div className="mt-3 text-xs leading-5 text-slate-500">{job.location}｜{job.category}｜{formatExperienceLabel(job.experienceLevel)}</div>
+              <div className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">企业信息：{job.companyInfoCompact}</div>
             </button>
           ))}
         </div>
 
         {!loading && !error && hasMore ? (
-          <button
-            type="button"
-            onClick={() => fetchJobs(page + 1, true)}
-            disabled={loadingMore}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
+          <button type="button" onClick={() => fetchJobs(page + 1, true)} disabled={loadingMore} className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60">
             {loadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             {loadingMore ? '加载中...' : '加载更多岗位'}
           </button>
@@ -853,9 +846,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
               <Search className="h-5 w-5" />
             </div>
             <h3 className="mt-4 text-lg font-semibold text-slate-900">选择一个岗位查看发布信息</h3>
-            <p className="mt-2 text-sm text-slate-500">
-              在左侧筛选出目标岗位后，点击岗位卡片即可切换右侧内容。
-            </p>
+            <p className="mt-2 text-sm text-slate-500">在左侧筛选出目标岗位后，点击岗位卡片即可切换右侧内容。</p>
           </div>
         ) : (
           <>
@@ -873,11 +864,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleCopy(`publish-pack-${selectedJob.id}`, buildPublishPack(selectedJob))}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700"
-                >
+                <button type="button" onClick={() => handleCopy(`publish-pack-${selectedJob.id}`, buildPublishPack(selectedJob))} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-rose-700">
                   {copiedKey === `publish-pack-${selectedJob.id}` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   {copiedKey === `publish-pack-${selectedJob.id}` ? '已复制发布包' : '一键复制发布包'}
                 </button>
@@ -901,11 +888,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位申请链接</div>
                           <div className="mt-2 break-all text-sm leading-6 text-slate-800">{selectedJob.shareUrl}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(`share-${selectedJob.id}`, selectedJob.shareUrl)}
-                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
-                        >
+                        <button type="button" onClick={() => handleCopy(`share-${selectedJob.id}`, selectedJob.shareUrl)} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700">
                           {copiedKey === `share-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                           {copiedKey === `share-${selectedJob.id}` ? '已复制' : '复制'}
                         </button>
@@ -917,14 +900,10 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         <div className="min-w-0">
                           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业认证信息</div>
                           <div className="mt-2 text-sm leading-6 text-slate-800">
-                            {`${selectedJob.employeeCount}｜${selectedJob.address}｜${selectedJob.foundedYear}｜评分${selectedJob.companyRating}`}
+                            {`${selectedJob.employeeCount || '待补充'}｜总部位于${selectedJob.address || '待补充'}｜成立于${selectedJob.foundedYear || '待补充'}｜评分${selectedJob.companyRating || '待补充'}`}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(`company-${selectedJob.id}`, `${selectedJob.employeeCount}｜${selectedJob.address}｜${selectedJob.foundedYear}｜评分${selectedJob.companyRating}`)}
-                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
-                        >
+                        <button type="button" onClick={() => handleCopy(`company-${selectedJob.id}`, `${selectedJob.employeeCount || '待补充'}｜总部位于${selectedJob.address || '待补充'}｜成立于${selectedJob.foundedYear || '待补充'}｜评分${selectedJob.companyRating || '待补充'}`)} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700">
                           {copiedKey === `company-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                           {copiedKey === `company-${selectedJob.id}` ? '已复制' : '复制'}
                         </button>
@@ -937,11 +916,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业所属行业</div>
                           <div className="mt-2 text-sm leading-6 text-slate-800">{selectedJob.industry || '待补充'}</div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(`industry-${selectedJob.id}`, selectedJob.industry || '待补充')}
-                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
-                        >
+                        <button type="button" onClick={() => handleCopy(`industry-${selectedJob.id}`, selectedJob.industry || '待补充')} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700">
                           {copiedKey === `industry-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                           {copiedKey === `industry-${selectedJob.id}` ? '已复制' : '复制'}
                         </button>
@@ -960,11 +935,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                             ))}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(`referral-${selectedJob.id}`, referralLines.map((line) => `内推邮箱：${line}`).join('\n'))}
-                          className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
-                        >
+                        <button type="button" onClick={() => handleCopy(`referral-${selectedJob.id}`, getReferralLines(selectedJob).map((line) => `内推邮箱：${line}`).join('\n'))} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700">
                           {copiedKey === `referral-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                           {copiedKey === `referral-${selectedJob.id}` ? '已复制' : '复制'}
                         </button>
@@ -982,40 +953,25 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <h4 className="text-sm font-semibold text-slate-900">摘要内容</h4>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">
-                    海报优先使用本地压缩；当岗位描述或企业简介过长时，再调用百炼做低成本提炼。
-                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">海报文案优先走中文内容，岗位摘要会尽量控制在较满版的长度区间里。</p>
 
                   <div className="mt-4 grid gap-3">
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业简介摘要</div>
-                      <div className="mt-2 text-sm leading-7 text-slate-700">
-                        {posterDraft?.companySummary || buildLocalCompanySummary(selectedJob)}
-                      </div>
+                      <div className="mt-2 text-sm leading-7 text-slate-700">{posterDraft?.companySummary || buildLocalCompanySummary(selectedJob)}</div>
                     </div>
-
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位摘要</div>
-                      <div className="mt-2 text-sm leading-7 text-slate-700">
-                        {posterDraft?.jobSummary || buildLocalPosterSummary(selectedJob)}
-                      </div>
+                      <div className="mt-2 text-sm leading-7 text-slate-700">{posterDraft?.jobSummary || buildLocalPosterSummary(selectedJob)}</div>
                     </div>
                   </div>
 
                   {posterDraft ? (
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">
-                        模板 {posterDraft.templateVersion}
-                      </span>
-                      <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">
-                        {posterDraft.provider === 'bailian' ? '百炼摘要' : '本地摘要'}
-                      </span>
-                      {posterDraft.cacheHit ? (
-                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">命中缓存</span>
-                      ) : null}
-                      {posterDraft.usedFallback ? (
-                        <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">使用本地兜底</span>
-                      ) : null}
+                      <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">模板 {posterDraft.templateVersion}</span>
+                      <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">{posterDraft.provider === 'bailian' ? '百炼摘要' : '本地摘要'}</span>
+                      {posterDraft.cacheHit ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">命中缓存</span> : null}
+                      {posterDraft.usedFallback ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">使用本地兜底</span> : null}
                     </div>
                   ) : null}
                 </div>
@@ -1026,27 +982,15 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900">小红书 3:4 配图</h4>
-                      <p className="mt-1 text-sm text-slate-500">
-                        提供四个浅色主题模板；导出时使用固定尺寸海报稿，避免预览与下载效果不一致。
-                      </p>
+                      <p className="mt-1 text-sm text-slate-500">下载时使用 Canvas 直出，避免 DOM 导出造成的挤压、颜色偏差和圆角失真。</p>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <button
-                        type="button"
-                        onClick={handleGeneratePoster}
-                        disabled={generatingPoster}
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
+                      <button type="button" onClick={handleGeneratePoster} disabled={generatingPoster} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
                         {generatingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                         {generatingPoster ? '生成中...' : '生成配图'}
                       </button>
-                      <button
-                        type="button"
-                        onClick={handleDownloadPoster}
-                        disabled={!posterDraft || downloadingPoster}
-                        className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
+                      <button type="button" onClick={handleDownloadPoster} disabled={downloadingPoster} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
                         {downloadingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                         {downloadingPoster ? '导出中...' : '下载 PNG'}
                       </button>
@@ -1060,9 +1004,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         type="button"
                         onClick={() => setSelectedThemeId(theme.id)}
                         className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                          selectedThemeId === theme.id
-                            ? 'border-slate-900 bg-slate-900 text-white'
-                            : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                          selectedThemeId === theme.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                         }`}
                       >
                         {theme.name}
@@ -1070,39 +1012,12 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                     ))}
                   </div>
 
-                  {posterError ? (
-                    <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
-                      {posterError}
-                    </div>
-                  ) : null}
+                  {posterError ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{posterError}</div> : null}
 
                   <div className="mt-5 flex justify-center">
-                    <div
-                      className="relative h-[480px] w-full max-w-[360px] overflow-hidden rounded-[24px]"
-                      style={{ boxShadow: '0 18px 60px rgba(71, 52, 41, 0.12)' }}
-                    >
-                      <div
-                        style={{
-                          width: `${EXPORT_WIDTH}px`,
-                          height: `${EXPORT_HEIGHT}px`,
-                          transform: `scale(${PREVIEW_SCALE})`,
-                          transformOrigin: 'top left'
-                        }}
-                      >
-                        <PosterCard job={selectedJob} draft={posterDraft} themeId={selectedThemeId} />
-                      </div>
-                    </div>
+                    <PosterPreview job={selectedJob} draft={posterDraft} themeId={selectedThemeId} />
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div
-              className="pointer-events-none fixed left-[-99999px] top-0 opacity-0"
-              aria-hidden="true"
-            >
-              <div ref={exportPosterRef}>
-                <PosterCard job={selectedJob} draft={posterDraft} themeId={selectedThemeId} />
               </div>
             </div>
           </>
