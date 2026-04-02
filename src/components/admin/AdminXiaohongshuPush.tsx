@@ -143,6 +143,19 @@ interface ReferralContact {
   emailType?: string;
 }
 
+interface XhsDraftRecord {
+  companySummary: string;
+  jobSummary: string;
+  companySummarySource?: string;
+  jobSummarySource?: string;
+  themeId?: string;
+  templateVersion?: string;
+  updatedAt?: string | null;
+  updatedBy?: string;
+  provider?: 'saved' | 'local' | 'bailian';
+  saved?: boolean;
+}
+
 interface XhsPushJobListItem {
   id: string;
   title: string;
@@ -160,6 +173,8 @@ interface XhsPushJobListItem {
   companyRating: string;
   industry: string;
   companyDescription: string;
+  canonicalCompanyDescription?: string;
+  companyDescriptionSource?: string;
   hiringEmail: string;
   emailType: string;
   referralContacts: ReferralContact[];
@@ -170,6 +185,7 @@ interface XhsPushJobListItem {
   missingFields: string[];
   hasReferralContact: boolean;
   hasCompanyMeta: boolean;
+  draft?: XhsDraftRecord | null;
 }
 
 interface XhsJobsResponse {
@@ -184,11 +200,17 @@ interface XhsJobsResponse {
 interface XhsPosterDraft {
   jobSummary: string;
   companySummary: string;
-  provider: 'local' | 'bailian';
+  provider: 'local' | 'bailian' | 'saved';
   templateVersion: string;
   generatedAt: string;
+  companySummarySource?: string;
+  jobSummarySource?: string;
+  themeId?: string;
   cacheHit?: boolean;
   usedFallback?: boolean;
+  saved?: boolean;
+  updatedAt?: string | null;
+  updatedBy?: string;
 }
 
 interface Props {
@@ -283,6 +305,21 @@ function formatJobTypeLabel(value: string) {
   return matched?.label || value || '待补充';
 }
 
+function normalizeEmailTypeLabel(value?: string) {
+  const map: Record<string, string> = {
+    '招聘专用邮箱': '招聘邮箱',
+    '通用支持邮箱': '通用邮箱',
+    '内部员工邮箱': '员工邮箱',
+    '企业领导邮箱': '高管邮箱',
+    '招聘邮箱': '招聘邮箱',
+    '通用邮箱': '通用邮箱',
+    '员工邮箱': '员工邮箱',
+    '高管邮箱': '高管邮箱',
+    'HR邮箱': 'HR邮箱'
+  };
+  return map[String(value || '').trim()] || String(value || '').trim() || '通用邮箱';
+}
+
 function formatExperienceLabel(value: string) {
   const matched = EXPERIENCE_OPTIONS.find((item) => item.value === value);
   return matched?.label || value || '待补充';
@@ -294,24 +331,27 @@ function getCompletenessTone(score: number) {
   return 'bg-rose-50 text-rose-700 border-rose-200';
 }
 
-function formatReferralLine(contact?: ReferralContact) {
-  return `${contact?.name || '待补充'}｜${contact?.title || '待补充'}：${contact?.hiringEmail || '待补充'}`;
+function formatReferralLine(contact?: ReferralContact, includeType = false) {
+  const payload = `${contact?.name || '待补充'}｜${contact?.title || '待补充'}：${contact?.hiringEmail || '待补充'}`;
+  if (!includeType) return payload;
+  return `${normalizeEmailTypeLabel(contact?.emailType)}：${payload}`;
 }
 
-function getReferralLines(job: XhsPushJobListItem) {
+function getReferralLines(job: XhsPushJobListItem, includeType = false) {
   if (job.referralContacts.length > 0) {
-    return job.referralContacts.map((contact) => formatReferralLine(contact));
+    return job.referralContacts.map((contact) => formatReferralLine(contact, includeType));
   }
 
   if (job.hiringEmail) {
     return [formatReferralLine({
       name: '',
       title: '',
-      hiringEmail: job.hiringEmail
-    })];
+      hiringEmail: job.hiringEmail,
+      emailType: job.emailType
+    }, includeType)];
   }
 
-  return ['待补充｜待补充：待补充'];
+  return [includeType ? '通用邮箱：待补充｜待补充：待补充' : '待补充｜待补充：待补充'];
 }
 
 function buildPublishPack(job: XhsPushJobListItem) {
@@ -322,8 +362,14 @@ function buildPublishPack(job: XhsPushJobListItem) {
     `岗位信息：${job.location}｜${job.category}｜${formatJobTypeLabel(job.jobType)}｜${formatExperienceLabel(job.experienceLevel)}`,
     `企业信息：${job.employeeCount || '待补充'}｜总部位于${job.address || '待补充'}｜成立于${job.foundedYear || '待补充'}｜评分${job.companyRating || '待补充'}`,
     `所属行业：${job.industry || '待补充'}`,
-    ...getReferralLines(job).map((line) => `内推邮箱：${line}`)
+    ...getReferralLines(job, true)
   ].join('\n');
+}
+
+function getRangeHint(length: number, min: number, max: number) {
+  if (length < min) return '内容偏短';
+  if (length > max) return '内容偏长';
+  return '长度合适';
 }
 
 function getThemeById(themeId: string) {
@@ -402,6 +448,7 @@ function fitTextBlock(
     minSize: number;
     weight?: number;
     lineHeightRatio?: number;
+    maxHeight?: number;
   }
 ) {
   const {
@@ -410,17 +457,20 @@ function fitTextBlock(
     startSize,
     minSize,
     weight = 500,
-    lineHeightRatio = 1.4
+    lineHeightRatio = 1.4,
+    maxHeight
   } = options;
 
   for (let fontSize = startSize; fontSize >= minSize; fontSize -= 2) {
     ctx.font = `${weight} ${fontSize}px ${POSTER_FONT_FAMILY}`;
     const wrapped = wrapTextByWidth(ctx, text, maxWidth, maxLines);
-    if (!wrapped.truncated || fontSize === minSize) {
+    const lineHeight = Math.round(fontSize * lineHeightRatio);
+    const fitsHeight = !maxHeight || (wrapped.lines.length * lineHeight) <= maxHeight;
+    if ((!wrapped.truncated && fitsHeight) || fontSize === minSize) {
       return {
         font: `${weight} ${fontSize}px ${POSTER_FONT_FAMILY}`,
         fontSize,
-        lineHeight: Math.round(fontSize * lineHeightRatio),
+        lineHeight,
         lines: wrapped.lines
       };
     }
@@ -609,28 +659,34 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   const companySectionY = chipsBottom + 24;
   const companyTextBlock = fitTextBlock(ctx, companySummary, {
     maxWidth: contentWidth - 60,
-    maxLines: 3,
+    maxLines: 4,
     startSize: 31,
-    minSize: 26,
+    minSize: 24,
     weight: 500,
-    lineHeightRatio: 1.42
+    lineHeightRatio: 1.42,
+    maxHeight: 180
   });
-  const companySectionHeight = Math.max(176, 82 + (companyTextBlock.lines.length * companyTextBlock.lineHeight));
+  const companySectionHeight = Math.max(148, 84 + (companyTextBlock.lines.length * companyTextBlock.lineHeight));
   fillRoundRect(ctx, paddingX, companySectionY, contentWidth, companySectionHeight, 34, theme.sectionBg);
   strokeRoundRect(ctx, paddingX, companySectionY, contentWidth, companySectionHeight, 34, theme.sectionBorder, 2);
   drawTextLines(ctx, ['企业简介'], paddingX + 30, companySectionY + 28, 28, theme.label, `700 24px ${POSTER_FONT_FAMILY}`);
   drawTextLines(ctx, companyTextBlock.lines, paddingX + 30, companySectionY + 72, companyTextBlock.lineHeight, theme.title, companyTextBlock.font);
 
   const summarySectionY = companySectionY + companySectionHeight + 24;
-  const summarySectionHeight = EXPORT_HEIGHT - summarySectionY - 84;
+  const summaryAvailableHeight = EXPORT_HEIGHT - summarySectionY - 92;
   const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
     maxWidth: contentWidth - 60,
-    maxLines: 8,
+    maxLines: 9,
     startSize: 34,
-    minSize: 28,
+    minSize: 24,
     weight: 500,
-    lineHeightRatio: 1.45
+    lineHeightRatio: 1.4,
+    maxHeight: Math.max(220, summaryAvailableHeight - 92)
   });
+  const summarySectionHeight = Math.min(
+    summaryAvailableHeight,
+    Math.max(220, 92 + (summaryTextBlock.lines.length * summaryTextBlock.lineHeight))
+  );
   fillRoundRect(ctx, paddingX, summarySectionY, contentWidth, summarySectionHeight, 34, theme.sectionBg);
   strokeRoundRect(ctx, paddingX, summarySectionY, contentWidth, summarySectionHeight, 34, theme.sectionBorder, 2);
   drawTextLines(ctx, ['岗位摘要'], paddingX + 30, summarySectionY + 28, 28, theme.label, `700 24px ${POSTER_FONT_FAMILY}`);
@@ -697,6 +753,13 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [posterError, setPosterError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [posterDraft, setPosterDraft] = useState<XhsPosterDraft | null>(null);
+  const [companySummaryText, setCompanySummaryText] = useState('');
+  const [jobSummaryText, setJobSummaryText] = useState('');
+  const [companySummarySource, setCompanySummarySource] = useState('canonical');
+  const [jobSummarySource, setJobSummarySource] = useState('local');
+  const [savingDraft, setSavingDraft] = useState(false);
+  const [draftDirty, setDraftDirty] = useState(false);
+  const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [selectedThemeId, setSelectedThemeId] = useState<string>(POSTER_THEMES[0].id);
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
 
@@ -769,9 +832,74 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   }, [fetchJobs]);
 
   useEffect(() => {
-    setPosterDraft(null);
+    if (!selectedJob) {
+      setPosterDraft(null);
+      setCompanySummaryText('');
+      setJobSummaryText('');
+      setCompanySummarySource('canonical');
+      setJobSummarySource('local');
+      setDraftDirty(false);
+      setDraftNotice(null);
+      return;
+    }
+
+    const savedDraft = selectedJob.draft || null;
+    const nextCompanySummary = savedDraft?.companySummary || buildLocalCompanySummary(selectedJob);
+    const nextJobSummary = savedDraft?.jobSummary || buildLocalPosterSummary(selectedJob);
+    setCompanySummaryText(nextCompanySummary);
+    setJobSummaryText(nextJobSummary);
+    setCompanySummarySource(savedDraft?.companySummarySource || 'canonical');
+    setJobSummarySource(savedDraft?.jobSummarySource || 'local');
+    setPosterDraft(savedDraft ? {
+      jobSummary: nextJobSummary,
+      companySummary: nextCompanySummary,
+      provider: savedDraft.provider || 'saved',
+      templateVersion: savedDraft.templateVersion || TEMPLATE_VERSION,
+      generatedAt: savedDraft.updatedAt || new Date().toISOString(),
+      companySummarySource: savedDraft.companySummarySource,
+      jobSummarySource: savedDraft.jobSummarySource,
+      themeId: savedDraft.themeId,
+      saved: true,
+      updatedAt: savedDraft.updatedAt || null,
+      updatedBy: savedDraft.updatedBy
+    } : {
+      jobSummary: nextJobSummary,
+      companySummary: nextCompanySummary,
+      provider: 'local',
+      templateVersion: TEMPLATE_VERSION,
+      generatedAt: new Date().toISOString(),
+      companySummarySource: 'canonical',
+      jobSummarySource: 'local',
+      saved: false
+    });
+    if (savedDraft?.themeId) {
+      setSelectedThemeId(savedDraft.themeId);
+    }
+    setDraftDirty(false);
+    setDraftNotice(null);
     setPosterError(null);
-  }, [selectedJobId]);
+  }, [selectedJob]);
+
+  useEffect(() => {
+    setPosterDraft((current) => {
+      if (!selectedJob) return current;
+      return {
+        jobSummary: jobSummaryText || buildLocalPosterSummary(selectedJob),
+        companySummary: companySummaryText || buildLocalCompanySummary(selectedJob),
+        provider: current?.provider || 'local',
+        templateVersion: current?.templateVersion || TEMPLATE_VERSION,
+        generatedAt: current?.generatedAt || new Date().toISOString(),
+        companySummarySource,
+        jobSummarySource,
+        themeId: selectedThemeId,
+        cacheHit: current?.cacheHit,
+        usedFallback: current?.usedFallback,
+        saved: current?.saved,
+        updatedAt: current?.updatedAt || null,
+        updatedBy: current?.updatedBy
+      };
+    });
+  }, [companySummarySource, companySummaryText, jobSummarySource, jobSummaryText, selectedJob, selectedThemeId]);
 
   const handleCopy = async (key: string, text: string) => {
     try {
@@ -792,6 +920,20 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     setJobType('');
     setExperienceLevel('');
     setIndustry('');
+  };
+
+  const handleCompanySummaryChange = (value: string) => {
+    setCompanySummaryText(value);
+    setCompanySummarySource('manual');
+    setDraftDirty(true);
+    setDraftNotice(null);
+  };
+
+  const handleJobSummaryChange = (value: string) => {
+    setJobSummaryText(value);
+    setJobSummarySource('manual');
+    setDraftDirty(true);
+    setDraftNotice(null);
   };
 
   const handleGeneratePoster = async () => {
@@ -816,7 +958,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
           jobType: selectedJob.jobType,
           experienceLevel: selectedJob.experienceLevel,
           description: selectedJob.description,
-          companyDescription: selectedJob.companyDescription,
+          companyDescription: selectedJob.canonicalCompanyDescription || selectedJob.companyDescription,
           updatedAt: selectedJob.updatedAt,
           summary: buildLocalPosterSummary(selectedJob)
         })
@@ -827,6 +969,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
         jobSummary?: string;
         companySummary?: string;
         provider?: 'local' | 'bailian';
+        jobSummarySource?: string;
+        companySummarySource?: string;
         cacheHit?: boolean;
         usedFallback?: boolean;
         error?: string;
@@ -834,19 +978,90 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
       if (!res.ok || !data.success) throw new Error(data.error || '生成岗位摘要失败');
 
+      const nextJobSummary = data.jobSummary || buildLocalPosterSummary(selectedJob);
+      const nextCompanySummary = data.companySummary || buildLocalCompanySummary(selectedJob);
+      setJobSummaryText(nextJobSummary);
+      setCompanySummaryText(nextCompanySummary);
+      setJobSummarySource(data.jobSummarySource || (data.provider === 'bailian' ? 'ai' : 'local'));
+      setCompanySummarySource(data.companySummarySource || (data.provider === 'bailian' ? 'ai' : 'canonical'));
       setPosterDraft({
-        jobSummary: data.jobSummary || buildLocalPosterSummary(selectedJob),
-        companySummary: data.companySummary || buildLocalCompanySummary(selectedJob),
+        jobSummary: nextJobSummary,
+        companySummary: nextCompanySummary,
         provider: data.provider || 'local',
         templateVersion: TEMPLATE_VERSION,
         generatedAt: new Date().toISOString(),
+        companySummarySource: data.companySummarySource || (data.provider === 'bailian' ? 'ai' : 'canonical'),
+        jobSummarySource: data.jobSummarySource || (data.provider === 'bailian' ? 'ai' : 'local'),
         cacheHit: Boolean(data.cacheHit),
-        usedFallback: Boolean(data.usedFallback)
+        usedFallback: Boolean(data.usedFallback),
+        themeId: selectedThemeId,
+        saved: false
       });
+      setDraftDirty(true);
+      setDraftNotice('已生成推荐摘要，可继续人工修改后保存。');
     } catch (err) {
       setPosterError(err instanceof Error ? err.message : '生成海报失败');
     } finally {
       setGeneratingPoster(false);
+    }
+  };
+
+  const handleSaveDraft = async () => {
+    if (!selectedJob) return;
+
+    try {
+      setSavingDraft(true);
+      setPosterError(null);
+      setDraftNotice(null);
+
+      const res = await fetch('/api/admin/content-push/xiaohongshu/draft', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          jobId: selectedJob.id,
+          companySummary: companySummaryText,
+          jobSummary: jobSummaryText,
+          companySummarySource,
+          jobSummarySource,
+          templateVersion: TEMPLATE_VERSION,
+          themeId: selectedThemeId
+        })
+      });
+
+      const data = await res.json() as { success: boolean; draft?: XhsDraftRecord; error?: string };
+      if (!res.ok || !data.success || !data.draft) {
+        throw new Error(data.error || '保存摘要草稿失败');
+      }
+
+      setJobs((current) => current.map((item) => (
+        item.id === selectedJob.id
+          ? { ...item, draft: data.draft, companyDescription: item.canonicalCompanyDescription || item.companyDescription }
+          : item
+      )));
+      setPosterDraft((current) => ({
+        jobSummary: jobSummaryText,
+        companySummary: companySummaryText,
+        provider: 'saved',
+        templateVersion: data.draft?.templateVersion || current?.templateVersion || TEMPLATE_VERSION,
+        generatedAt: data.draft?.updatedAt || current?.generatedAt || new Date().toISOString(),
+        companySummarySource,
+        jobSummarySource,
+        themeId: data.draft?.themeId || selectedThemeId,
+        saved: true,
+        updatedAt: data.draft?.updatedAt || null,
+        updatedBy: data.draft?.updatedBy,
+        cacheHit: current?.cacheHit,
+        usedFallback: current?.usedFallback
+      }));
+      setDraftDirty(false);
+      setDraftNotice('摘要草稿已保存，海报将沿用当前内容。');
+    } catch (err) {
+      setPosterError(err instanceof Error ? err.message : '保存摘要草稿失败');
+    } finally {
+      setSavingDraft(false);
     }
   };
 
@@ -855,7 +1070,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
     try {
       setDownloadingPoster(true);
-      const canvas = renderPosterCanvas(selectedJob, posterDraft, selectedThemeId);
+      const canvas = renderPosterCanvas(selectedJob, effectivePosterDraft, selectedThemeId);
       downloadCanvas(canvas, `${selectedJob.company}-${selectedJob.title}-xiaohongshu.png`);
     } catch (err) {
       console.error('Failed to export xiaohongshu poster:', err);
@@ -865,7 +1080,22 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     }
   };
 
-  const referralLines = selectedJob ? getReferralLines(selectedJob) : [];
+  const referralLines = selectedJob ? getReferralLines(selectedJob, true) : [];
+  const effectivePosterDraft = selectedJob ? {
+    jobSummary: jobSummaryText || buildLocalPosterSummary(selectedJob),
+    companySummary: companySummaryText || buildLocalCompanySummary(selectedJob),
+    provider: posterDraft?.provider || 'local',
+    templateVersion: posterDraft?.templateVersion || TEMPLATE_VERSION,
+    generatedAt: posterDraft?.generatedAt || new Date().toISOString(),
+    companySummarySource,
+    jobSummarySource,
+    themeId: selectedThemeId,
+    cacheHit: posterDraft?.cacheHit,
+    usedFallback: posterDraft?.usedFallback,
+    saved: posterDraft?.saved,
+    updatedAt: posterDraft?.updatedAt,
+    updatedBy: posterDraft?.updatedBy
+  } : null;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
@@ -1059,7 +1289,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                             ))}
                           </div>
                         </div>
-                        <button type="button" onClick={() => handleCopy(`referral-${selectedJob.id}`, getReferralLines(selectedJob).map((line) => `内推邮箱：${line}`).join('\n'))} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700">
+                        <button type="button" onClick={() => handleCopy(`referral-${selectedJob.id}`, getReferralLines(selectedJob, true).join('\n'))} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700">
                           {copiedKey === `referral-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                           {copiedKey === `referral-${selectedJob.id}` ? '已复制' : '复制'}
                         </button>
@@ -1076,28 +1306,66 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                 </div>
 
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <h4 className="text-sm font-semibold text-slate-900">摘要内容</h4>
-                  <p className="mt-2 text-sm leading-6 text-slate-500">海报文案优先走中文内容，岗位摘要会尽量控制在较满版的长度区间里。</p>
-
-                  <div className="mt-4 grid gap-3">
-                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业简介摘要</div>
-                      <div className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">{posterDraft?.companySummary || buildLocalCompanySummary(selectedJob)}</div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-sm font-semibold text-slate-900">摘要编辑</h4>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">支持智能生成后人工修改并保存草稿，海报会根据当前字数即时调整摘要背景框高度。</p>
                     </div>
+                    <button type="button" onClick={handleSaveDraft} disabled={savingDraft || !companySummaryText.trim() || !jobSummaryText.trim()} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60">
+                      {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                      {savingDraft ? '保存中...' : '保存草稿'}
+                    </button>
+                  </div>
+
+                  <div className="mt-4 grid gap-4">
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
-                      <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位摘要</div>
-                      <div className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-700">{posterDraft?.jobSummary || buildLocalPosterSummary(selectedJob)}</div>
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业简介摘要</div>
+                        <div className="text-xs text-slate-500">{companySummaryText.length} 字，建议 55-95 字，{getRangeHint(companySummaryText.length, 55, 95)}</div>
+                      </div>
+                      <textarea
+                        value={companySummaryText}
+                        maxLength={120}
+                        onChange={(event) => handleCompanySummaryChange(event.target.value)}
+                        className="mt-3 min-h-[110px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+                      />
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => { setCompanySummaryText(buildLocalCompanySummary(selectedJob)); setCompanySummarySource('canonical'); setDraftDirty(true); }} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                          恢复可信企业简介提炼
+                        </button>
+                      </div>
+                      <div className="mt-3 text-xs text-slate-500">当前来源：{selectedJob.companyDescriptionSource === 'trusted' ? '可信企业主简介' : '翻译兜底简介'}。</div>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位摘要</div>
+                        <div className="text-xs text-slate-500">{jobSummaryText.length} 字，建议 150-230 字，{getRangeHint(jobSummaryText.length, 150, 230)}</div>
+                      </div>
+                      <textarea
+                        value={jobSummaryText}
+                        maxLength={320}
+                        onChange={(event) => handleJobSummaryChange(event.target.value)}
+                        className="mt-3 min-h-[180px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+                      />
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <button type="button" onClick={() => { setJobSummaryText(buildLocalPosterSummary(selectedJob)); setJobSummarySource('local'); setDraftDirty(true); }} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                          恢复本地提炼
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  {posterDraft ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                      <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">模板 {posterDraft.templateVersion}</span>
-                      <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">{posterDraft.provider === 'bailian' ? '百炼摘要' : '本地摘要'}</span>
-                      {posterDraft.cacheHit ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">命中缓存</span> : null}
-                      {posterDraft.usedFallback ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">使用本地兜底</span> : null}
-                    </div>
-                  ) : null}
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">模板 {effectivePosterDraft?.templateVersion || TEMPLATE_VERSION}</span>
+                    <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">
+                      {effectivePosterDraft?.provider === 'bailian' ? '百炼摘要' : effectivePosterDraft?.provider === 'saved' ? '已保存草稿' : '本地摘要'}
+                    </span>
+                    {effectivePosterDraft?.cacheHit ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">命中缓存</span> : null}
+                    {effectivePosterDraft?.usedFallback ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">使用本地兜底</span> : null}
+                    {draftDirty ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">当前有未保存修改</span> : null}
+                    {draftNotice ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">{draftNotice}</span> : null}
+                  </div>
                 </div>
               </div>
 
@@ -1126,7 +1394,11 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                       <button
                         key={theme.id}
                         type="button"
-                        onClick={() => setSelectedThemeId(theme.id)}
+                        onClick={() => {
+                          setSelectedThemeId(theme.id);
+                          setDraftDirty(true);
+                          setDraftNotice(null);
+                        }}
                         className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
                           selectedThemeId === theme.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                         }`}
@@ -1139,7 +1411,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   {posterError ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{posterError}</div> : null}
 
                   <div className="mt-5 flex justify-center">
-                    <PosterPreview job={selectedJob} draft={posterDraft} themeId={selectedThemeId} />
+                    <PosterPreview job={selectedJob} draft={effectivePosterDraft} themeId={selectedThemeId} />
                   </div>
                 </div>
               </div>
