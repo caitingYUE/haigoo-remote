@@ -48,95 +48,15 @@ const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
 const PREVIEW_SCALE = 0.34;
 const POSTER_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
-const POSTER_LOGO_CACHE = new Map<string, Promise<HTMLImageElement | null>>();
-
-const POSTER_THEMES = [
-  {
-    id: 'lavender',
-    name: '浅紫',
-    border: '#d4cddb',
-    backgroundStart: '#ededed',
-    backgroundEnd: '#e8e8e8',
-    title: '#2d2738',
-    company: '#6e6878',
-    label: '#878191',
-    chipText: '#5f5969',
-    chipBorder: '#d4cddb',
-    chipBg: 'rgba(255,255,255,0.24)',
-    sectionBg: 'rgba(255,255,255,0.12)',
-    sectionBorder: 'rgba(212,205,219,0.9)',
-    orbOne: 'rgba(0,0,0,0)',
-    orbTwo: 'rgba(0,0,0,0)'
-  },
-  {
-    id: 'sky',
-    name: '浅蓝',
-    border: '#cad5df',
-    backgroundStart: '#ededed',
-    backgroundEnd: '#e8e8e8',
-    title: '#263341',
-    company: '#728191',
-    label: '#8896a1',
-    chipText: '#60707d',
-    chipBorder: '#cad5df',
-    chipBg: 'rgba(255,255,255,0.24)',
-    sectionBg: 'rgba(255,255,255,0.12)',
-    sectionBorder: 'rgba(202,213,223,0.9)',
-    orbOne: 'rgba(0,0,0,0)',
-    orbTwo: 'rgba(0,0,0,0)'
-  },
-  {
-    id: 'butter',
-    name: '浅黄',
-    border: '#ddd5c9',
-    backgroundStart: '#ededed',
-    backgroundEnd: '#e8e8e8',
-    title: '#3c3427',
-    company: '#8a7e6a',
-    label: '#a19382',
-    chipText: '#726757',
-    chipBorder: '#ddd5c9',
-    chipBg: 'rgba(255,255,255,0.24)',
-    sectionBg: 'rgba(255,255,255,0.12)',
-    sectionBorder: 'rgba(221,213,201,0.9)',
-    orbOne: 'rgba(0,0,0,0)',
-    orbTwo: 'rgba(0,0,0,0)'
-  },
-  {
-    id: 'mint',
-    name: '浅绿',
-    border: '#cfd9d4',
-    backgroundStart: '#ededed',
-    backgroundEnd: '#e8e8e8',
-    title: '#274036',
-    company: '#70887b',
-    label: '#8ca196',
-    chipText: '#60766b',
-    chipBorder: '#cfd9d4',
-    chipBg: 'rgba(255,255,255,0.24)',
-    sectionBg: 'rgba(255,255,255,0.12)',
-    sectionBorder: 'rgba(207,217,212,0.9)',
-    orbOne: 'rgba(0,0,0,0)',
-    orbTwo: 'rgba(0,0,0,0)'
-  },
-  {
-    id: 'blush',
-    name: '浅粉',
-    border: '#ddd0d4',
-    backgroundStart: '#ededed',
-    backgroundEnd: '#e8e8e8',
-    title: '#3d2d32',
-    company: '#8b7479',
-    label: '#a08a8f',
-    chipText: '#725c61',
-    chipBorder: '#ddd0d4',
-    chipBg: 'rgba(255,255,255,0.24)',
-    sectionBg: 'rgba(255,255,255,0.12)',
-    sectionBorder: 'rgba(221,208,212,0.9)',
-    orbOne: 'rgba(0,0,0,0)',
-    orbTwo: 'rgba(0,0,0,0)'
-  }
-] as const;
+const POSTER_THEME = {
+  id: 'editorial-grey',
+  name: '编辑灰',
+  title: '#111111',
+  company: '#555555',
+  label: '#6d6d6d',
+  divider: '#8a8a8a',
+  subtle: '#c8c8c8'
+} as const;
 
 interface ReferralContact {
   name?: string;
@@ -436,10 +356,6 @@ function getRangeHint(length: number, min: number, max: number) {
   return '长度合适';
 }
 
-function getThemeById(themeId: string) {
-  return POSTER_THEMES.find((theme) => theme.id === themeId) || POSTER_THEMES[0];
-}
-
 function wrapTextByWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
   const paragraphs = String(text || '')
     .split(/\n+/)
@@ -548,37 +464,6 @@ function fitTextBlock(
   };
 }
 
-function drawRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-  ctx.closePath();
-}
-
-function fillRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, fillStyle: string | CanvasGradient) {
-  ctx.save();
-  drawRoundRect(ctx, x, y, width, height, radius);
-  ctx.fillStyle = fillStyle;
-  ctx.fill();
-  ctx.restore();
-}
-
-function strokeRoundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number, strokeStyle: string, lineWidth = 2) {
-  ctx.save();
-  drawRoundRect(ctx, x, y, width, height, radius);
-  ctx.strokeStyle = strokeStyle;
-  ctx.lineWidth = lineWidth;
-  ctx.stroke();
-  ctx.restore();
-}
-
 function drawTextLines(
   ctx: CanvasRenderingContext2D,
   lines: string[],
@@ -606,25 +491,9 @@ function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   document.body.removeChild(link);
 }
 
-async function loadPosterLogo(url?: string) {
-  const src = String(url || '').trim();
-  if (!src) return null;
-
-  if (!POSTER_LOGO_CACHE.has(src)) {
-    POSTER_LOGO_CACHE.set(src, new Promise<HTMLImageElement | null>((resolve) => {
-      const image = new Image();
-      image.crossOrigin = 'anonymous';
-      image.onload = () => resolve(image);
-      image.onerror = () => resolve(null);
-      image.src = src;
-    }));
-  }
-
-  return await POSTER_LOGO_CACHE.get(src)!;
-}
-
 async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string) {
-  const theme = getThemeById(themeId);
+  void themeId;
+  const theme = POSTER_THEME;
   const canvas = document.createElement('canvas');
   canvas.width = EXPORT_WIDTH;
   canvas.height = EXPORT_HEIGHT;
@@ -642,7 +511,6 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   const company = job.company;
   const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
   const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
-  const logoImage = await loadPosterLogo(job.logo);
   const metaItems = [
     job.location,
     job.category,
@@ -653,34 +521,18 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   ctx.textBaseline = 'top';
   const headerX = paddingX;
   const industryText = job.industry || '待补充';
-  const logoSize = 124;
-  const logoX = EXPORT_WIDTH - paddingX - logoSize;
-  const logoY = 68;
-
-  drawTextLines(ctx, [company], headerX, 72, 40, '#171717', `700 34px ${POSTER_FONT_FAMILY}`);
+  drawTextLines(ctx, [company], headerX, 72, 40, theme.title, `700 34px ${POSTER_FONT_FAMILY}`);
   ctx.save();
-  ctx.fillStyle = '#7c7c7c';
-  ctx.fillRect(headerX + 226, 88, 2, 34);
+  ctx.font = `400 24px ${POSTER_FONT_FAMILY}`;
+  const industryWidth = Math.min(260, ctx.measureText(industryText).width);
+  ctx.fillStyle = theme.label;
+  ctx.fillRect(EXPORT_WIDTH - paddingX - industryWidth - 26, 88, 2, 34);
   ctx.restore();
-  drawTextLines(ctx, [industryText], headerX + 250, 76, 34, '#666666', `400 24px ${POSTER_FONT_FAMILY}`);
+  drawTextLines(ctx, [industryText], EXPORT_WIDTH - paddingX - industryWidth, 76, 34, theme.company, `400 24px ${POSTER_FONT_FAMILY}`);
 
-  if (logoImage) {
-    fillRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20, 'rgba(255,255,255,0.18)');
-    ctx.save();
-    drawRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20);
-    ctx.clip();
-    ctx.drawImage(logoImage, logoX + 14, logoY + 14, logoSize - 28, logoSize - 28);
-    ctx.restore();
-  } else {
-    fillRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20, 'rgba(255,255,255,0.14)');
-    strokeRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20, '#d6d6d6', 2);
-    drawTextLines(ctx, [company.slice(0, 1).toUpperCase() || 'H'], logoX + 38, logoY + 26, 58, '#171717', `700 54px ${POSTER_FONT_FAMILY}`);
-  }
-
-  const companyIntroLabelY = 188;
-  drawTextLines(ctx, ['企业简介'], headerX, companyIntroLabelY, 28, '#6d6d6d', `400 22px ${POSTER_FONT_FAMILY}`);
+  const companyIntroLabelY = 168;
   const companyIntroBlock = fitTextBlock(ctx, companySummary, {
-    maxWidth: contentWidth - 120,
+    maxWidth: contentWidth,
     maxLines: 2,
     startSize: 26,
     minSize: 22,
@@ -688,18 +540,8 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
     lineHeightRatio: 1.48,
     maxHeight: 96
   });
-  drawTextLines(ctx, companyIntroBlock.lines, headerX + 124, companyIntroLabelY - 2, companyIntroBlock.lineHeight, '#4f4f4f', companyIntroBlock.font);
-  const introBottom = companyIntroLabelY + Math.max(28, companyIntroBlock.lines.length * companyIntroBlock.lineHeight);
-
-  ctx.save();
-  ctx.setLineDash([3, 5]);
-  ctx.strokeStyle = '#787878';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(headerX, introBottom + 28);
-  ctx.lineTo(EXPORT_WIDTH - paddingX, introBottom + 28);
-  ctx.stroke();
-  ctx.restore();
+  drawTextLines(ctx, companyIntroBlock.lines, headerX, companyIntroLabelY, companyIntroBlock.lineHeight, '#4f4f4f', companyIntroBlock.font);
+  const introBottom = companyIntroLabelY + (companyIntroBlock.lines.length * companyIntroBlock.lineHeight);
 
   const titleBlock = fitTextBlock(ctx, title, {
     maxWidth: contentWidth,
@@ -709,8 +551,8 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
     weight: 800,
     lineHeightRatio: 1.02
   });
-  const titleY = introBottom + 58;
-  drawTextLines(ctx, titleBlock.lines, headerX, titleY, titleBlock.lineHeight, '#111111', titleBlock.font);
+  const titleY = introBottom + 46;
+  drawTextLines(ctx, titleBlock.lines, headerX, titleY, titleBlock.lineHeight, theme.title, titleBlock.font);
   const titleBottom = titleY + (titleBlock.lines.length * titleBlock.lineHeight);
 
   const metaText = metaItems.filter(Boolean).join(' ｜ ');
@@ -722,21 +564,11 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
     weight: 400,
     lineHeightRatio: 1.5
   });
-  const metaY = titleBottom + 34;
-  drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, '#555555', metaBlock.font);
+  const metaY = titleBottom + 36;
+  drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, theme.company, metaBlock.font);
   const metaBottom = metaY + (metaBlock.lines.length * metaBlock.lineHeight);
 
-  const summaryLabelY = metaBottom + 52;
-  fillRoundRect(ctx, headerX, summaryLabelY - 6, 166, 56, 28, 'rgba(255,255,255,0.12)');
-  strokeRoundRect(ctx, headerX, summaryLabelY - 6, 166, 56, 28, '#171717', 2);
-  drawTextLines(ctx, ['岗位说明'], headerX + 24, summaryLabelY + 5, 28, '#171717', `600 24px ${POSTER_FONT_FAMILY}`);
-
-  ctx.save();
-  ctx.fillStyle = '#9a9a9a';
-  ctx.fillRect(headerX + 194, summaryLabelY + 18, contentWidth - 194, 2);
-  ctx.restore();
-
-  const summaryTextY = summaryLabelY + 62;
+  const summaryTextY = metaBottom + 74;
   const summaryAvailableHeight = EXPORT_HEIGHT - summaryTextY - 120;
   const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
     maxWidth: contentWidth,
@@ -747,11 +579,11 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
     lineHeightRatio: 1.62,
     maxHeight: summaryAvailableHeight
   });
-  drawTextLines(ctx, summaryTextBlock.lines, headerX + 10, summaryTextY, summaryTextBlock.lineHeight, '#4a4a4a', summaryTextBlock.font);
+  drawTextLines(ctx, summaryTextBlock.lines, headerX, summaryTextY, summaryTextBlock.lineHeight, '#4a4a4a', summaryTextBlock.font);
 
   const footerY = EXPORT_HEIGHT - 106;
   ctx.save();
-  ctx.fillStyle = '#c8c8c8';
+  ctx.fillStyle = theme.subtle;
   ctx.fillRect(headerX, footerY, contentWidth, 2);
   ctx.restore();
 
@@ -889,7 +721,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [savingDraft, setSavingDraft] = useState(false);
   const [draftDirty, setDraftDirty] = useState(false);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
-  const [selectedThemeId, setSelectedThemeId] = useState<string>(POSTER_THEMES[0].id);
+  const selectedThemeId = POSTER_THEME.id;
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
 
   useEffect(() => {
@@ -1011,9 +843,6 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       jobSummarySource: 'local',
       saved: false
     });
-    if (savedDraft?.themeId) {
-      setSelectedThemeId(savedDraft.themeId);
-    }
     setDraftDirty(false);
     setDraftNotice(null);
     setPosterError(null);
@@ -1552,7 +1381,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900">海报预览</h4>
-                      <p className="mt-1 text-sm text-slate-500">当前摘要与配色会实时同步到海报，确认后直接下载即可。</p>
+                      <p className="mt-1 text-sm text-slate-500">当前摘要会实时同步到海报，确认后直接下载即可。</p>
                     </div>
 
                     <div className="flex items-center gap-3">
@@ -1561,25 +1390,6 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         {downloadingPoster ? '导出中...' : '下载图片'}
                       </button>
                     </div>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {POSTER_THEMES.map((theme) => (
-                      <button
-                        key={theme.id}
-                        type="button"
-                        onClick={() => {
-                          setSelectedThemeId(theme.id);
-                          setDraftDirty(true);
-                          setDraftNotice(null);
-                        }}
-                        className={`rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                          selectedThemeId === theme.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
-                        }`}
-                      >
-                        {theme.name}
-                      </button>
-                    ))}
                   </div>
 
                   <div className="mt-5 flex justify-center">
