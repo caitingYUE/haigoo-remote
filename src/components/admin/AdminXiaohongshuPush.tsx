@@ -521,14 +521,13 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   ctx.textBaseline = 'top';
   const headerX = paddingX;
   const industryText = job.industry || '待补充';
-  drawTextLines(ctx, [company], headerX, 72, 40, theme.title, `700 34px ${POSTER_FONT_FAMILY}`);
+  const headerY = 72;
+  drawTextLines(ctx, [company], headerX, headerY, 40, theme.title, `700 34px ${POSTER_FONT_FAMILY}`);
   ctx.save();
   ctx.font = `400 24px ${POSTER_FONT_FAMILY}`;
   const industryWidth = Math.min(260, ctx.measureText(industryText).width);
-  ctx.fillStyle = theme.label;
-  ctx.fillRect(EXPORT_WIDTH - paddingX - industryWidth - 26, 88, 2, 34);
   ctx.restore();
-  drawTextLines(ctx, [industryText], EXPORT_WIDTH - paddingX - industryWidth, 76, 34, theme.company, `400 24px ${POSTER_FONT_FAMILY}`);
+  drawTextLines(ctx, [industryText], EXPORT_WIDTH - paddingX - industryWidth, headerY + 2, 34, theme.company, `400 24px ${POSTER_FONT_FAMILY}`);
 
   const companyIntroLabelY = 168;
   const companyIntroBlock = fitTextBlock(ctx, companySummary, {
