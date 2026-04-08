@@ -9,6 +9,7 @@ const getAuthToken = () => {
 import { CompanyIndustry, CompanyTag } from '../types/rss-types';
 
 export interface ReferralContact {
+    id?: string;
     hiringEmail?: string;
     emailType?: string;
     name?: string;
@@ -241,12 +242,13 @@ class TrustedCompaniesService {
         }
     }
 
-    async getCompanyById(id: string): Promise<TrustedCompany | null> {
+    async getCompanyById(id: string, jobId?: string): Promise<TrustedCompany | null> {
         try {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies'); // Match api/data.js routing
             queryParams.append('target', 'companies'); // Specific handler action (optional but safe)
             queryParams.append('id', id);
+            if (jobId) queryParams.append('jobId', jobId);
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch company');

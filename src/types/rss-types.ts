@@ -47,6 +47,9 @@ export interface Job {
 
   // Approval status
   isApproved?: boolean;
+  referralContactMode?: 'inherit_all' | 'custom';
+  selectedReferralContactIds?: string[];
+  effectiveReferralContactCount?: number;
 
   // Haigoo Member Fields
   riskRating?: {

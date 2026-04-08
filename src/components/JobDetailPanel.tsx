@@ -242,11 +242,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     useEffect(() => {
         if (job?.companyId) {
-            trustedCompaniesService.getCompanyById(job.companyId).then(setCompanyInfo).catch(() => setCompanyInfo(null))
+            trustedCompaniesService.getCompanyById(job.companyId, job.id).then(setCompanyInfo).catch(() => setCompanyInfo(null))
         } else {
             setCompanyInfo(null)
         }
-    }, [job?.companyId])
+    }, [job?.companyId, job?.id])
 
     useEffect(() => {
         let cancelled = false

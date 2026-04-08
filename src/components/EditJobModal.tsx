@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown, Loader2, Sparkles } from 'lucide-react';
 import { ProcessedJobData } from '../services/data-management-service';
 import { JobCategory } from '../types/rss-types';
+import { ReferralContact } from '../services/trusted-companies-service';
 
 interface EditJobModalProps {
   job: ProcessedJobData;
@@ -10,6 +11,7 @@ interface EditJobModalProps {
   onNavigate?: (direction: 'prev' | 'next') => void;
   hasPrev?: boolean;
   hasNext?: boolean;
+  availableReferralContacts?: ReferralContact[];
   availableCategories?: string[];
   availableTags?: string[];
 }
@@ -21,6 +23,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   onNavigate,
   hasPrev,
   hasNext,
+  availableReferralContacts = [],
   availableCategories = [],
   availableTags = []
 }) => {
@@ -56,7 +59,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
     isFeatured: job.isFeatured || false,
     isApproved: (job as any).isApproved || false,
-    url: job.url || ''
+    url: job.url || '',
+    referralContactMode: ((job as any).referralContactMode === 'custom' ? 'custom' : 'inherit_all') as 'inherit_all' | 'custom',
+    selectedReferralContactIds: Array.isArray((job as any).selectedReferralContactIds) ? [...(job as any).selectedReferralContactIds] : []
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -81,7 +86,9 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
       isFeatured: job.isFeatured || false,
       isApproved: (job as any).isApproved || false,
-      url: job.url || ''
+      url: job.url || '',
+      referralContactMode: ((job as any).referralContactMode === 'custom' ? 'custom' : 'inherit_all') as 'inherit_all' | 'custom',
+      selectedReferralContactIds: Array.isArray((job as any).selectedReferralContactIds) ? [...(job as any).selectedReferralContactIds] : []
     });
   }, [job]);
 
@@ -110,11 +117,34 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : undefined,
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         requirements: formData.requirements.split('\n').filter(Boolean),
-        benefits: formData.benefits.split('\n').filter(Boolean)
+        benefits: formData.benefits.split('\n').filter(Boolean),
+        referralContactMode: formData.referralContactMode,
+        selectedReferralContactIds: formData.referralContactMode === 'custom' ? formData.selectedReferralContactIds : []
       }, false); // Keep modal open for bulk editing
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const toggleReferralContact = (contactId: string) => {
+    setFormData(prev => {
+      const selected = Array.isArray(prev.selectedReferralContactIds) ? [...prev.selectedReferralContactIds] : [];
+      const exists = selected.includes(contactId);
+      return {
+        ...prev,
+        selectedReferralContactIds: exists
+          ? selected.filter(id => id !== contactId)
+          : [...selected, contactId]
+      };
+    });
+  };
+
+  const formatReferralContactLabel = (contact: ReferralContact) => {
+    const name = String(contact?.name || '').trim() || '未命名联系人';
+    const title = String(contact?.title || '').trim() || '未填写 title';
+    const emailType = String(contact?.emailType || '').trim() || '通用邮箱';
+    const email = String(contact?.hiringEmail || '').trim() || '未填写邮箱';
+    return `${name}｜${title}｜${emailType}｜${email}`;
   };
 
   // Tag suggestions based on category
@@ -236,6 +266,102 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             >
               {formData.isApproved ? '撤销审核' : '通过审核'}
             </button>
+          </div>
+
+          <div className="border border-slate-200 rounded-xl p-4 bg-white">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div>
+                <h3 className="text-[14px] font-semibold text-slate-900">内推联系人关联</h3>
+                <p className="text-[12px] text-slate-500 mt-1">
+                  默认不指定时，该企业下全部联系人都对当前岗位生效；切换到自定义后可多选 0-N 个联系人。
+                </p>
+              </div>
+              <span className="text-[11px] text-slate-400 whitespace-nowrap">
+                企业联系人 {availableReferralContacts.length} 个
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className={`rounded-lg border px-3 py-3 cursor-pointer transition-colors ${formData.referralContactMode === 'inherit_all' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="referralContactMode"
+                    checked={formData.referralContactMode === 'inherit_all'}
+                    onChange={() => setFormData(prev => ({ ...prev, referralContactMode: 'inherit_all' }))}
+                    className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <div className="text-[13px] font-medium text-slate-900">默认全部通用</div>
+                    <div className="text-[12px] text-slate-500 mt-1">不额外指定时，企业当前所有联系人都可用于该岗位。</div>
+                  </div>
+                </div>
+              </label>
+
+              <label className={`rounded-lg border px-3 py-3 cursor-pointer transition-colors ${formData.referralContactMode === 'custom' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
+                <div className="flex items-start gap-3">
+                  <input
+                    type="radio"
+                    name="referralContactMode"
+                    checked={formData.referralContactMode === 'custom'}
+                    onChange={() => setFormData(prev => ({ ...prev, referralContactMode: 'custom' }))}
+                    className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                  />
+                  <div>
+                    <div className="text-[13px] font-medium text-slate-900">自定义关联</div>
+                    <div className="text-[12px] text-slate-500 mt-1">仅让当前岗位使用选中的联系人，可多选，也可显式设置为 0 个。</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {formData.referralContactMode === 'custom' && (
+              <div className="mt-4">
+                {availableReferralContacts.length === 0 ? (
+                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-4 text-[12px] text-slate-500">
+                    当前企业还没有录入联系人，可以先回到企业编辑页补录；当前岗位保持自定义 0 个联系人也可直接保存。
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[12px] font-medium text-slate-700">选择当前岗位可用联系人</span>
+                      <span className="text-[11px] text-slate-400">
+                        已选 {formData.selectedReferralContactIds.length} 个
+                      </span>
+                    </div>
+                    <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                      {availableReferralContacts.map((contact) => {
+                        const contactId = String(contact?.id || '').trim();
+                        if (!contactId) return null;
+
+                        return (
+                          <label
+                            key={contactId}
+                            className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${formData.selectedReferralContactIds.includes(contactId) ? 'border-indigo-300 bg-indigo-50/70' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={formData.selectedReferralContactIds.includes(contactId)}
+                              onChange={() => toggleReferralContact(contactId)}
+                              className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                            />
+                            <div className="min-w-0">
+                              <div className="text-[13px] text-slate-800 break-words">{formatReferralContactLabel(contact)}</div>
+                              {contact.linkedin && (
+                                <div className="text-[11px] text-slate-400 mt-1 break-all">{contact.linkedin}</div>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-3 text-[11px] text-slate-400">
+                      保持 0 个勾选并保存，表示当前岗位显式不使用任何企业联系人。
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

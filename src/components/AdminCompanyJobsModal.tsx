@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Plus, ExternalLink, Trash2, Loader2, Search, Edit2, Languages } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { TrustedCompany } from '../services/trusted-companies-service';
+import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
 import { DateFormatter } from '../utils/date-formatter';
 import { EditJobModal } from './EditJobModal';
 import { dataManagementService, ProcessedJobData } from '../services/data-management-service';
@@ -22,6 +22,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     const [editingJob, setEditingJob] = useState<ProcessedJobData | null>(null);
     const [currentJobIndex, setCurrentJobIndex] = useState(-1);
     const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+    const [companyDetails, setCompanyDetails] = useState<TrustedCompany | null>(company);
     
     // Pagination
     const [page, setPage] = useState(1);
@@ -47,6 +48,34 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         };
         fetchTagConfig();
     }, [token]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadCompanyDetails = async () => {
+            if (!company.id) {
+                setCompanyDetails(company);
+                return;
+            }
+
+            try {
+                const latestCompany = await trustedCompaniesService.getCompanyById(company.id);
+                if (!cancelled) {
+                    setCompanyDetails(latestCompany || company);
+                }
+            } catch (error) {
+                console.error('Failed to fetch latest company details:', error);
+                if (!cancelled) {
+                    setCompanyDetails(company);
+                }
+            }
+        };
+
+        loadCompanyDetails();
+        return () => {
+            cancelled = true;
+        };
+    }, [company]);
 
     // Handle search debounce
     useEffect(() => {
@@ -330,6 +359,11 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                             <td className="px-6 py-4">
                                                 <div className="font-medium text-slate-900">{job.title}</div>
                                                 <div className="text-xs text-slate-500 mt-0.5">{job.jobType}</div>
+                                                <div className="text-[11px] text-slate-400 mt-1">
+                                                    {job.referralContactMode === 'custom'
+                                                        ? `联系人：已自定义 ${job.effectiveReferralContactCount ?? job.selectedReferralContactIds?.length ?? 0} 个`
+                                                        : '联系人：默认全部通用'}
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4">
                                                 {job.isApproved ? (
@@ -428,6 +462,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                     onNavigate={handleNavigateJob}
                     hasPrev={currentJobIndex > 0}
                     hasNext={currentJobIndex < jobs.length - 1}
+                    availableReferralContacts={companyDetails?.referralContacts || []}
                     availableCategories={availableCategories.length > 0 ? availableCategories : ['前端开发', '后端开发', '全栈开发', '移动开发', 'UI/UX设计', '产品经理', '数据分析', '运维/SRE', '市场营销', '人工智能', 'Web3/区块链']}
                 />
             )}

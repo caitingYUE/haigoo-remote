@@ -58,6 +58,9 @@ export interface Job {
   companyTags?: string[]
   hiringEmail?: string
   emailType?: string
+  referralContactMode?: 'inherit_all' | 'custom'
+  selectedReferralContactIds?: string[]
+  effectiveReferralContactCount?: number
   companyWebsite?: string
   companyDescription?: string
 

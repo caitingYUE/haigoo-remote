@@ -192,7 +192,10 @@ class ProcessedJobsService {
         companyWebsite: job.companyWebsite,
         companyDescription: job.companyDescription,
         hiringEmail: job.hiringEmail || job.trusted_hiring_email,
-        emailType: job.emailType || job.trusted_email_type
+        emailType: job.emailType || job.trusted_email_type,
+        referralContactMode: job.referralContactMode,
+        selectedReferralContactIds: job.selectedReferralContactIds,
+        effectiveReferralContactCount: job.effectiveReferralContactCount
       }))
 
       return {
