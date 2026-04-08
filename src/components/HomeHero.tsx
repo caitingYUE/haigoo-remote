@@ -1397,8 +1397,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                         const timezone = job?.timezone || job?.remote_timezone || ''
                                         const salary = getHeroDisplaySalary(job?.salary || job?.salary_range)
                                         const translatedDetail = cleanHeroRichText(job?.translations?.description || '')
+                                        const canonicalCompanyIntro = cleanHeroRichText(job?.companyDescription || job?.company_intro || '')
                                         const translatedCompanyIntro = cleanHeroRichText(job?.companyTranslations?.description || '')
-                                        const companyIntro = translatedCompanyIntro || cleanHeroRichText(job?.companyDescription || job?.company_intro || job?.description || '')
+                                        const companyIntro = canonicalCompanyIntro || translatedCompanyIntro || cleanHeroRichText(job?.description || '')
                                         const detail = translatedDetail || cleanHeroRichText(job?.description || '') || companyIntro || '点击查看完整岗位详情'
                                         const openJobDetail = () => openHeroJobDetail({ ...job, source: 'hero_copilot' })
                                         return (

@@ -42,7 +42,7 @@ const INDUSTRY_OPTIONS = [
   '硬件/物联网', '消费生活', '其他'
 ];
 
-const TEMPLATE_VERSION = 'xhs-v4';
+const TEMPLATE_VERSION = 'xhs-v5';
 const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
 const PREVIEW_SCALE = 0.34;
@@ -52,87 +52,87 @@ const POSTER_THEMES = [
   {
     id: 'lavender',
     name: '浅紫',
-    border: '#d9cdf8',
-    backgroundStart: '#faf7ff',
-    backgroundEnd: '#efe8ff',
-    title: '#302651',
-    company: '#7360b0',
-    label: '#8b78c8',
-    chipText: '#755ec3',
-    chipBorder: '#d8cdf6',
-    chipBg: 'rgba(255,255,255,0.84)',
-    sectionBg: 'rgba(255,255,255,0.82)',
-    sectionBorder: 'rgba(217,205,248,0.95)',
-    orbOne: 'rgba(182, 156, 255, 0.22)',
-    orbTwo: 'rgba(255,255,255,0.76)'
+    border: '#d9d4e5',
+    backgroundStart: '#f7f4f8',
+    backgroundEnd: '#f1edf3',
+    title: '#2d2738',
+    company: '#6f6a7c',
+    label: '#8d8799',
+    chipText: '#585365',
+    chipBorder: '#d9d4e5',
+    chipBg: 'rgba(255,255,255,0.42)',
+    sectionBg: 'rgba(255,255,255,0.76)',
+    sectionBorder: 'rgba(217,212,229,0.88)',
+    orbOne: 'rgba(0,0,0,0)',
+    orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'sky',
     name: '浅蓝',
-    border: '#c7e0fb',
-    backgroundStart: '#f4faff',
-    backgroundEnd: '#e8f3ff',
-    title: '#21364f',
-    company: '#5e85b4',
-    label: '#7397c3',
-    chipText: '#4e77a5',
-    chipBorder: '#c6def8',
-    chipBg: 'rgba(255,255,255,0.86)',
-    sectionBg: 'rgba(255,255,255,0.84)',
-    sectionBorder: 'rgba(199,224,251,0.96)',
-    orbOne: 'rgba(129, 192, 255, 0.22)',
-    orbTwo: 'rgba(255,255,255,0.8)'
+    border: '#d3dde5',
+    backgroundStart: '#f4f7f8',
+    backgroundEnd: '#edf3f5',
+    title: '#263341',
+    company: '#6c8192',
+    label: '#8a9aa6',
+    chipText: '#5b7282',
+    chipBorder: '#d3dde5',
+    chipBg: 'rgba(255,255,255,0.45)',
+    sectionBg: 'rgba(255,255,255,0.78)',
+    sectionBorder: 'rgba(211,221,229,0.9)',
+    orbOne: 'rgba(0,0,0,0)',
+    orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'butter',
     name: '浅黄',
-    border: '#efdfb4',
-    backgroundStart: '#fffbf1',
-    backgroundEnd: '#fff2d6',
-    title: '#43351c',
-    company: '#9f854f',
-    label: '#b59758',
-    chipText: '#8b7244',
-    chipBorder: '#eeddb0',
-    chipBg: 'rgba(255,255,255,0.86)',
-    sectionBg: 'rgba(255,255,255,0.82)',
-    sectionBorder: 'rgba(239,223,180,0.96)',
-    orbOne: 'rgba(255, 217, 120, 0.20)',
-    orbTwo: 'rgba(255,255,255,0.82)'
+    border: '#e4dccf',
+    backgroundStart: '#f8f5ef',
+    backgroundEnd: '#f3eee5',
+    title: '#3c3427',
+    company: '#8d7d63',
+    label: '#a3947c',
+    chipText: '#746650',
+    chipBorder: '#e4dccf',
+    chipBg: 'rgba(255,255,255,0.46)',
+    sectionBg: 'rgba(255,255,255,0.8)',
+    sectionBorder: 'rgba(228,220,207,0.9)',
+    orbOne: 'rgba(0,0,0,0)',
+    orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'mint',
     name: '浅绿',
-    border: '#cbead7',
-    backgroundStart: '#f4fff8',
-    backgroundEnd: '#e7f8ee',
-    title: '#1f4030',
-    company: '#4f9471',
-    label: '#68a883',
-    chipText: '#4b8d6b',
-    chipBorder: '#c7e6d2',
-    chipBg: 'rgba(255,255,255,0.86)',
-    sectionBg: 'rgba(255,255,255,0.84)',
-    sectionBorder: 'rgba(203,234,215,0.96)',
-    orbOne: 'rgba(148, 219, 175, 0.24)',
-    orbTwo: 'rgba(255,255,255,0.82)'
+    border: '#d5e2db',
+    backgroundStart: '#f3f7f4',
+    backgroundEnd: '#ebf1ee',
+    title: '#274036',
+    company: '#6d8b7c',
+    label: '#88a092',
+    chipText: '#5f7b6d',
+    chipBorder: '#d5e2db',
+    chipBg: 'rgba(255,255,255,0.45)',
+    sectionBg: 'rgba(255,255,255,0.78)',
+    sectionBorder: 'rgba(213,226,219,0.9)',
+    orbOne: 'rgba(0,0,0,0)',
+    orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'blush',
     name: '浅粉',
-    border: '#f0ced7',
-    backgroundStart: '#fff6f8',
-    backgroundEnd: '#ffeaf0',
-    title: '#452733',
-    company: '#bb768a',
-    label: '#d1879f',
-    chipText: '#9d6172',
-    chipBorder: '#efccd7',
-    chipBg: 'rgba(255,255,255,0.86)',
-    sectionBg: 'rgba(255,255,255,0.84)',
-    sectionBorder: 'rgba(240,206,215,0.96)',
-    orbOne: 'rgba(255, 181, 204, 0.22)',
-    orbTwo: 'rgba(255,255,255,0.82)'
+    border: '#e6d7da',
+    backgroundStart: '#f9f4f4',
+    backgroundEnd: '#f2eaeb',
+    title: '#3d2d32',
+    company: '#8f7379',
+    label: '#a68a91',
+    chipText: '#735c62',
+    chipBorder: '#e6d7da',
+    chipBg: 'rgba(255,255,255,0.44)',
+    sectionBg: 'rgba(255,255,255,0.8)',
+    sectionBorder: 'rgba(230,215,218,0.9)',
+    orbOne: 'rgba(0,0,0,0)',
+    orbTwo: 'rgba(0,0,0,0)'
   }
 ] as const;
 
@@ -298,6 +298,14 @@ function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 78, minLe
 
   if (!output) output = source.slice(0, maxLength);
   return output.slice(0, maxLength).trim();
+}
+
+function getCompanyReferenceText(job: XhsPushJobListItem) {
+  return stripHtml(job.canonicalCompanyDescription || job.companyDescription || '') || '暂无企业简介原文';
+}
+
+function getJobReferenceText(job: XhsPushJobListItem) {
+  return stripHtml(job.description || '') || '暂无岗位原文';
 }
 
 function formatJobTypeLabel(value: string) {
@@ -533,52 +541,6 @@ function drawTextLines(
   ctx.restore();
 }
 
-function drawChip(
-  ctx: CanvasRenderingContext2D,
-  text: string,
-  x: number,
-  y: number,
-  theme: (typeof POSTER_THEMES)[number],
-  maxWidth = 228
-) {
-  ctx.save();
-  ctx.font = `600 28px ${POSTER_FONT_FAMILY}`;
-  const width = Math.min(maxWidth, Math.max(108, ctx.measureText(text).width + 40));
-  fillRoundRect(ctx, x, y, width, 60, 30, theme.chipBg);
-  strokeRoundRect(ctx, x, y, width, 60, 30, theme.chipBorder, 2);
-  drawTextLines(ctx, [text], x + 20, y + 14, 28, theme.chipText, `600 28px ${POSTER_FONT_FAMILY}`);
-  ctx.restore();
-  return width;
-}
-
-function layoutChips(
-  ctx: CanvasRenderingContext2D,
-  items: string[],
-  startX: number,
-  startY: number,
-  maxWidth: number,
-  theme: (typeof POSTER_THEMES)[number]
-) {
-  let x = startX;
-  let y = startY;
-  const rowHeight = 60;
-  const gap = 12;
-
-  for (const item of items) {
-    const text = item || '待补充';
-    ctx.font = `600 28px ${POSTER_FONT_FAMILY}`;
-    const width = Math.min(228, Math.max(108, ctx.measureText(text).width + 40));
-    if (x > startX && x + width > startX + maxWidth) {
-      x = startX;
-      y += rowHeight + gap;
-    }
-    drawChip(ctx, text, x, y, theme);
-    x += width + gap;
-  }
-
-  return y + rowHeight;
-}
-
 function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   const link = document.createElement('a');
   link.download = fileName;
@@ -602,21 +564,6 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   fillRoundRect(ctx, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT, 56, gradient);
   strokeRoundRect(ctx, 1.5, 1.5, EXPORT_WIDTH - 3, EXPORT_HEIGHT - 3, 56, theme.border, 3);
 
-  ctx.save();
-  ctx.globalAlpha = 1;
-  ctx.fillStyle = theme.orbOne;
-  ctx.beginPath();
-  ctx.arc(860, 258, 118, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.arc(150, 120, 170, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = theme.orbTwo;
-  ctx.beginPath();
-  ctx.arc(930, 1260, 205, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-
   const paddingX = 82;
   const contentWidth = EXPORT_WIDTH - (paddingX * 2);
   const title = job.title;
@@ -632,65 +579,98 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
 
   ctx.textBaseline = 'top';
 
-  const industryText = job.industry || '待补充';
-  ctx.font = `600 28px ${POSTER_FONT_FAMILY}`;
-  const industryWidth = Math.min(260, Math.max(140, ctx.measureText(industryText).width + 50));
-  fillRoundRect(ctx, EXPORT_WIDTH - paddingX - industryWidth, 80, industryWidth, 68, 34, theme.chipBg);
-  strokeRoundRect(ctx, EXPORT_WIDTH - paddingX - industryWidth, 80, industryWidth, 68, 34, theme.chipBorder, 2);
-  drawTextLines(ctx, [industryText], EXPORT_WIDTH - paddingX - industryWidth + 24, 98, 30, theme.chipText, `600 28px ${POSTER_FONT_FAMILY}`);
+  ctx.save();
+  ctx.fillStyle = theme.border;
+  ctx.fillRect(paddingX, 96, 4, EXPORT_HEIGHT - 192);
+  ctx.restore();
 
-  drawTextLines(ctx, [company], paddingX, 92, 30, theme.company, `600 26px ${POSTER_FONT_FAMILY}`);
+  const headerX = paddingX + 24;
+  const industryText = job.industry || '待补充';
+  ctx.font = `500 24px ${POSTER_FONT_FAMILY}`;
+  const industryWidth = Math.min(280, ctx.measureText(industryText).width + 2);
+  const industryX = EXPORT_WIDTH - paddingX - industryWidth;
+  drawTextLines(ctx, [company], headerX, 90, 34, theme.company, `600 28px ${POSTER_FONT_FAMILY}`);
+  drawTextLines(ctx, [industryText], industryX, 92, 30, theme.label, `500 24px ${POSTER_FONT_FAMILY}`);
+
+  ctx.save();
+  ctx.fillStyle = theme.sectionBorder;
+  ctx.fillRect(headerX, 150, contentWidth - 24, 2);
+  ctx.restore();
 
   const titleBlock = fitTextBlock(ctx, title, {
-    maxWidth: contentWidth,
+    maxWidth: contentWidth - 24,
     maxLines: 2,
-    startSize: 68,
-    minSize: 54,
+    startSize: 84,
+    minSize: 56,
     weight: 900,
-    lineHeightRatio: 1.08
+    lineHeightRatio: 1.02
   });
-  const titleY = 140;
-  drawTextLines(ctx, titleBlock.lines, paddingX, titleY, titleBlock.lineHeight, theme.title, titleBlock.font);
+  const titleY = 188;
+  drawTextLines(ctx, titleBlock.lines, headerX, titleY, titleBlock.lineHeight, theme.title, titleBlock.font);
   const titleBottom = titleY + (titleBlock.lines.length * titleBlock.lineHeight);
 
-  const chipY = titleBottom + 24;
-  const chipsBottom = layoutChips(ctx, metaItems, paddingX, chipY, contentWidth, theme);
+  const metaText = metaItems.filter(Boolean).join(' ｜ ');
+  const metaBlock = fitTextBlock(ctx, metaText, {
+    maxWidth: contentWidth - 24,
+    maxLines: 2,
+    startSize: 28,
+    minSize: 22,
+    weight: 500,
+    lineHeightRatio: 1.5
+  });
+  const metaY = titleBottom + 30;
+  drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, theme.company, metaBlock.font);
+  const metaBottom = metaY + (metaBlock.lines.length * metaBlock.lineHeight);
 
-  const companySectionY = chipsBottom + 24;
+  const sectionLabelFont = `600 24px ${POSTER_FONT_FAMILY}`;
+  const companyLabelY = metaBottom + 42;
+  drawTextLines(ctx, ['企业简介'], headerX, companyLabelY, 28, theme.label, sectionLabelFont);
+  ctx.save();
+  ctx.fillStyle = theme.sectionBorder;
+  ctx.fillRect(headerX + 110, companyLabelY + 12, contentWidth - 134, 2);
+  ctx.restore();
+
   const companyTextBlock = fitTextBlock(ctx, companySummary, {
-    maxWidth: contentWidth - 60,
-    maxLines: 4,
-    startSize: 31,
-    minSize: 24,
+    maxWidth: contentWidth - 24,
+    maxLines: 3,
+    startSize: 34,
+    minSize: 26,
+    weight: 500,
+    lineHeightRatio: 1.5,
+    maxHeight: 166
+  });
+  const companyTextY = companyLabelY + 42;
+  drawTextLines(ctx, companyTextBlock.lines, headerX, companyTextY, companyTextBlock.lineHeight, theme.title, companyTextBlock.font);
+  const companyBottom = companyTextY + (companyTextBlock.lines.length * companyTextBlock.lineHeight);
+
+  const summaryLabelY = companyBottom + 54;
+  fillRoundRect(ctx, headerX, summaryLabelY - 8, 156, 54, 27, theme.chipBg);
+  strokeRoundRect(ctx, headerX, summaryLabelY - 8, 156, 54, 27, theme.chipBorder, 2);
+  drawTextLines(ctx, ['岗位摘要'], headerX + 22, summaryLabelY + 4, 28, theme.chipText, `600 24px ${POSTER_FONT_FAMILY}`);
+
+  ctx.save();
+  ctx.fillStyle = theme.sectionBorder;
+  ctx.fillRect(headerX + 184, summaryLabelY + 16, contentWidth - 208, 2);
+  ctx.restore();
+
+  const summaryTextY = summaryLabelY + 62;
+  const summaryAvailableHeight = EXPORT_HEIGHT - summaryTextY - 120;
+  const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
+    maxWidth: contentWidth - 24,
+    maxLines: 14,
+    startSize: 40,
+    minSize: 28,
     weight: 500,
     lineHeightRatio: 1.42,
-    maxHeight: 180
+    maxHeight: summaryAvailableHeight
   });
-  const companySectionHeight = Math.max(148, 84 + (companyTextBlock.lines.length * companyTextBlock.lineHeight));
-  fillRoundRect(ctx, paddingX, companySectionY, contentWidth, companySectionHeight, 34, theme.sectionBg);
-  strokeRoundRect(ctx, paddingX, companySectionY, contentWidth, companySectionHeight, 34, theme.sectionBorder, 2);
-  drawTextLines(ctx, ['企业简介'], paddingX + 30, companySectionY + 28, 28, theme.label, `700 24px ${POSTER_FONT_FAMILY}`);
-  drawTextLines(ctx, companyTextBlock.lines, paddingX + 30, companySectionY + 72, companyTextBlock.lineHeight, theme.title, companyTextBlock.font);
+  drawTextLines(ctx, summaryTextBlock.lines, headerX, summaryTextY, summaryTextBlock.lineHeight, theme.title, summaryTextBlock.font);
 
-  const summarySectionY = companySectionY + companySectionHeight + 24;
-  const summaryAvailableHeight = EXPORT_HEIGHT - summarySectionY - 92;
-  const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
-    maxWidth: contentWidth - 60,
-    maxLines: 9,
-    startSize: 34,
-    minSize: 24,
-    weight: 500,
-    lineHeightRatio: 1.4,
-    maxHeight: Math.max(220, summaryAvailableHeight - 92)
-  });
-  const summarySectionHeight = Math.min(
-    summaryAvailableHeight,
-    Math.max(220, 92 + (summaryTextBlock.lines.length * summaryTextBlock.lineHeight))
-  );
-  fillRoundRect(ctx, paddingX, summarySectionY, contentWidth, summarySectionHeight, 34, theme.sectionBg);
-  strokeRoundRect(ctx, paddingX, summarySectionY, contentWidth, summarySectionHeight, 34, theme.sectionBorder, 2);
-  drawTextLines(ctx, ['岗位摘要'], paddingX + 30, summarySectionY + 28, 28, theme.label, `700 24px ${POSTER_FONT_FAMILY}`);
-  drawTextLines(ctx, summaryTextBlock.lines, paddingX + 30, summarySectionY + 74, summaryTextBlock.lineHeight, theme.title, summaryTextBlock.font);
+  const footerY = EXPORT_HEIGHT - 106;
+  ctx.save();
+  ctx.fillStyle = theme.sectionBorder;
+  ctx.fillRect(headerX, footerY, contentWidth - 24, 2);
+  ctx.restore();
 
   return canvas;
 }
@@ -712,7 +692,7 @@ const PosterPreview: React.FC<{
   }, [draft, job, themeId]);
 
   return (
-    <div className="overflow-hidden rounded-[32px] shadow-[0_18px_60px_rgba(71,52,41,0.12)]">
+    <div className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
       {previewUrl ? (
         <img
           src={previewUrl}
@@ -936,6 +916,22 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     setDraftNotice(null);
   };
 
+  const handleRestoreCompanySummary = () => {
+    if (!selectedJob) return;
+    setCompanySummaryText(buildLocalCompanySummary(selectedJob));
+    setCompanySummarySource('canonical');
+    setDraftDirty(true);
+    setDraftNotice(null);
+  };
+
+  const handleRestoreJobSummary = () => {
+    if (!selectedJob) return;
+    setJobSummaryText(buildLocalPosterSummary(selectedJob));
+    setJobSummarySource('local');
+    setDraftDirty(true);
+    setDraftNotice(null);
+  };
+
   const handleGeneratePoster = async () => {
     if (!selectedJob) return;
 
@@ -998,7 +994,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
         saved: false
       });
       setDraftDirty(true);
-      setDraftNotice('已生成推荐摘要，可继续人工修改后保存。');
+      setDraftNotice('已完成智能提炼，可继续修改后保存。');
     } catch (err) {
       setPosterError(err instanceof Error ? err.message : '生成海报失败');
     } finally {
@@ -1101,11 +1097,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
       <aside className="space-y-4 rounded-3xl border border-rose-100 bg-white p-5 shadow-sm">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-400">Xiaohongshu Push</div>
-          <h2 className="mt-2 text-xl font-bold text-slate-900">小红书单岗位内容推送</h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            左侧筛选岗位，右侧快速复制发布信息并按需生成 3:4 海报。
-          </p>
+          <h2 className="text-xl font-bold text-slate-900">小红书推送</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">筛选岗位后，右侧直接整理发布信息、编辑摘要并导出海报。</p>
         </div>
 
         <div className="rounded-2xl border border-rose-100 bg-rose-50/60 p-4">
@@ -1207,8 +1200,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
             <div className="rounded-3xl border border-rose-100 bg-gradient-to-r from-[#fff5f0] via-[#fff9f4] to-[#fffaf6] p-6 shadow-sm">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.24em] text-rose-400">Publishing Pack</div>
-                  <h3 className="mt-2 text-2xl font-bold text-slate-900">{selectedJob.title}</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">{selectedJob.title}</h3>
                   <div className="mt-2 text-base font-medium text-slate-700">{selectedJob.company}</div>
                   <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-500">
                     <span>{selectedJob.location}</span>
@@ -1308,13 +1300,19 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div>
-                      <h4 className="text-sm font-semibold text-slate-900">摘要编辑</h4>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">支持智能生成后人工修改并保存草稿，海报会根据当前字数即时调整摘要背景框高度。</p>
+                      <h4 className="text-sm font-semibold text-slate-900">摘要草稿</h4>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">先智能提炼，再人工微调。右侧海报会实时同步当前内容。</p>
                     </div>
-                    <button type="button" onClick={handleSaveDraft} disabled={savingDraft || !companySummaryText.trim() || !jobSummaryText.trim()} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60">
-                      {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                      {savingDraft ? '保存中...' : '保存草稿'}
-                    </button>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <button type="button" onClick={handleGeneratePoster} disabled={generatingPoster} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
+                        {generatingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                        {generatingPoster ? '提炼中...' : '智能提炼'}
+                      </button>
+                      <button type="button" onClick={handleSaveDraft} disabled={savingDraft || !companySummaryText.trim() || !jobSummaryText.trim()} className="inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60">
+                        {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                        {savingDraft ? '保存中...' : '保存草稿'}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-4">
@@ -1330,11 +1328,19 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         className="mt-3 min-h-[110px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
                       />
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => { setCompanySummaryText(buildLocalCompanySummary(selectedJob)); setCompanySummarySource('canonical'); setDraftDirty(true); }} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
-                          恢复可信企业简介提炼
+                        <button type="button" onClick={handleRestoreCompanySummary} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                          恢复默认
                         </button>
                       </div>
-                      <div className="mt-3 text-xs text-slate-500">当前来源：{selectedJob.companyDescriptionSource === 'trusted' ? '可信企业主简介' : '翻译兜底简介'}。</div>
+                      <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">查看企业原文参考</summary>
+                        <div className="mt-3 border-t border-slate-100 pt-3 text-xs leading-6 text-slate-600">
+                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                            {selectedJob.companyDescriptionSource === 'trusted' ? '可信企业主简介' : '翻译兜底简介'}
+                          </div>
+                          <div className="max-h-40 overflow-y-auto whitespace-pre-wrap">{getCompanyReferenceText(selectedJob)}</div>
+                        </div>
+                      </details>
                     </div>
 
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
@@ -1349,23 +1355,27 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         className="mt-3 min-h-[180px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
                       />
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => { setJobSummaryText(buildLocalPosterSummary(selectedJob)); setJobSummarySource('local'); setDraftDirty(true); }} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
-                          恢复本地提炼
+                        <button type="button" onClick={handleRestoreJobSummary} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                          恢复默认
                         </button>
                       </div>
+                      <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">查看岗位原文参考</summary>
+                        <div className="mt-3 border-t border-slate-100 pt-3 text-xs leading-6 text-slate-600">
+                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">岗位原文</div>
+                          <div className="max-h-56 overflow-y-auto whitespace-pre-wrap">{getJobReferenceText(selectedJob)}</div>
+                        </div>
+                      </details>
                     </div>
                   </div>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 font-semibold text-slate-600">模板 {effectivePosterDraft?.templateVersion || TEMPLATE_VERSION}</span>
-                    <span className="rounded-full bg-rose-50 px-2.5 py-1 font-semibold text-rose-700">
-                      {effectivePosterDraft?.provider === 'bailian' ? '百炼摘要' : effectivePosterDraft?.provider === 'saved' ? '已保存草稿' : '本地摘要'}
-                    </span>
-                    {effectivePosterDraft?.cacheHit ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">命中缓存</span> : null}
-                    {effectivePosterDraft?.usedFallback ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">使用本地兜底</span> : null}
-                    {draftDirty ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-semibold text-amber-700">当前有未保存修改</span> : null}
-                    {draftNotice ? <span className="rounded-full bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-700">{draftNotice}</span> : null}
-                  </div>
+                  {(draftDirty || draftNotice || posterError) ? (
+                    <div className="mt-4 space-y-2 text-sm">
+                      {draftDirty ? <div className="text-amber-700">当前有未保存修改。</div> : null}
+                      {draftNotice ? <div className="text-emerald-700">{draftNotice}</div> : null}
+                      {posterError ? <div className="text-rose-700">{posterError}</div> : null}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -1373,18 +1383,14 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                 <div className="rounded-3xl border border-rose-100 bg-white p-6 shadow-sm">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <h4 className="text-sm font-semibold text-slate-900">小红书 3:4 配图</h4>
-                      <p className="mt-1 text-sm text-slate-500">下载时使用 Canvas 直出，避免 DOM 导出造成的挤压、颜色偏差和圆角失真。</p>
+                      <h4 className="text-sm font-semibold text-slate-900">海报预览</h4>
+                      <p className="mt-1 text-sm text-slate-500">当前摘要与配色会实时同步到海报，确认后直接下载即可。</p>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <button type="button" onClick={handleGeneratePoster} disabled={generatingPoster} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
-                        {generatingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                        {generatingPoster ? '生成中...' : '生成配图'}
-                      </button>
                       <button type="button" onClick={handleDownloadPoster} disabled={downloadingPoster} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
                         {downloadingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                        {downloadingPoster ? '导出中...' : '下载 PNG'}
+                        {downloadingPoster ? '导出中...' : '下载图片'}
                       </button>
                     </div>
                   </div>
@@ -1407,8 +1413,6 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                       </button>
                     ))}
                   </div>
-
-                  {posterError ? <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{posterError}</div> : null}
 
                   <div className="mt-5 flex justify-center">
                     <PosterPreview job={selectedJob} draft={effectivePosterDraft} themeId={selectedThemeId} />

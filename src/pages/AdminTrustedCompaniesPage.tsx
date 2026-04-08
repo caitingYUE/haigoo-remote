@@ -67,6 +67,24 @@ export default function AdminTrustedCompaniesPage() {
         return map[String(emailType || '').trim()] || '通用邮箱'
     }
 
+    const sanitizeTranslationsForSave = (
+        description?: string,
+        translations?: TrustedCompany['translations']
+    ): TrustedCompany['translations'] | undefined => {
+        if (!translations || typeof translations !== 'object') return undefined
+        const nextTranslations = { ...translations }
+        const canonicalDescription = String(description || '').trim()
+        const translatedDescription = String(nextTranslations.description || '').trim()
+
+        // Treat the manually maintained company description as canonical.
+        // If it diverges from a previously auto-generated translation, drop the stale copy.
+        if (canonicalDescription && translatedDescription && canonicalDescription !== translatedDescription) {
+            delete nextTranslations.description
+        }
+
+        return Object.keys(nextTranslations).length > 0 ? nextTranslations : undefined
+    }
+
     const buildEmptyReferralContact = (override: Partial<ReferralContact> = {}): ReferralContact => ({
         hiringEmail: '',
         emailType: '通用邮箱',
@@ -285,6 +303,10 @@ export default function AdminTrustedCompaniesPage() {
             optimizedFormData.referralContacts = normalizedReferralContacts
             optimizedFormData.hiringEmail = primaryContact?.hiringEmail || undefined
             optimizedFormData.emailType = normalizeEmailType(primaryContact?.emailType || optimizedFormData.emailType)
+            optimizedFormData.translations = sanitizeTranslationsForSave(
+                optimizedFormData.description,
+                optimizedFormData.translations
+            )
 
             const result = await trustedCompaniesService.saveCompany(optimizedFormData)
 
