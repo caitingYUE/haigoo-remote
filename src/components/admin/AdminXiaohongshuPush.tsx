@@ -9,6 +9,7 @@ import {
   Search,
   Sparkles
 } from 'lucide-react';
+import { buildJobDetailSections, type JobDetailBlock } from '../../utils/job-detail-content';
 
 const CATEGORY_OPTIONS = [
   '后端开发', '前端开发', '全栈开发', '移动开发', '数据开发', '服务器开发',
@@ -47,90 +48,91 @@ const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
 const PREVIEW_SCALE = 0.34;
 const POSTER_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+const POSTER_LOGO_CACHE = new Map<string, Promise<HTMLImageElement | null>>();
 
 const POSTER_THEMES = [
   {
     id: 'lavender',
     name: '浅紫',
-    border: '#d9d4e5',
-    backgroundStart: '#f7f4f8',
-    backgroundEnd: '#f1edf3',
+    border: '#d4cddb',
+    backgroundStart: '#ededed',
+    backgroundEnd: '#e8e8e8',
     title: '#2d2738',
-    company: '#6f6a7c',
-    label: '#8d8799',
-    chipText: '#585365',
-    chipBorder: '#d9d4e5',
-    chipBg: 'rgba(255,255,255,0.42)',
-    sectionBg: 'rgba(255,255,255,0.76)',
-    sectionBorder: 'rgba(217,212,229,0.88)',
+    company: '#6e6878',
+    label: '#878191',
+    chipText: '#5f5969',
+    chipBorder: '#d4cddb',
+    chipBg: 'rgba(255,255,255,0.24)',
+    sectionBg: 'rgba(255,255,255,0.12)',
+    sectionBorder: 'rgba(212,205,219,0.9)',
     orbOne: 'rgba(0,0,0,0)',
     orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'sky',
     name: '浅蓝',
-    border: '#d3dde5',
-    backgroundStart: '#f4f7f8',
-    backgroundEnd: '#edf3f5',
+    border: '#cad5df',
+    backgroundStart: '#ededed',
+    backgroundEnd: '#e8e8e8',
     title: '#263341',
-    company: '#6c8192',
-    label: '#8a9aa6',
-    chipText: '#5b7282',
-    chipBorder: '#d3dde5',
-    chipBg: 'rgba(255,255,255,0.45)',
-    sectionBg: 'rgba(255,255,255,0.78)',
-    sectionBorder: 'rgba(211,221,229,0.9)',
+    company: '#728191',
+    label: '#8896a1',
+    chipText: '#60707d',
+    chipBorder: '#cad5df',
+    chipBg: 'rgba(255,255,255,0.24)',
+    sectionBg: 'rgba(255,255,255,0.12)',
+    sectionBorder: 'rgba(202,213,223,0.9)',
     orbOne: 'rgba(0,0,0,0)',
     orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'butter',
     name: '浅黄',
-    border: '#e4dccf',
-    backgroundStart: '#f8f5ef',
-    backgroundEnd: '#f3eee5',
+    border: '#ddd5c9',
+    backgroundStart: '#ededed',
+    backgroundEnd: '#e8e8e8',
     title: '#3c3427',
-    company: '#8d7d63',
-    label: '#a3947c',
-    chipText: '#746650',
-    chipBorder: '#e4dccf',
-    chipBg: 'rgba(255,255,255,0.46)',
-    sectionBg: 'rgba(255,255,255,0.8)',
-    sectionBorder: 'rgba(228,220,207,0.9)',
+    company: '#8a7e6a',
+    label: '#a19382',
+    chipText: '#726757',
+    chipBorder: '#ddd5c9',
+    chipBg: 'rgba(255,255,255,0.24)',
+    sectionBg: 'rgba(255,255,255,0.12)',
+    sectionBorder: 'rgba(221,213,201,0.9)',
     orbOne: 'rgba(0,0,0,0)',
     orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'mint',
     name: '浅绿',
-    border: '#d5e2db',
-    backgroundStart: '#f3f7f4',
-    backgroundEnd: '#ebf1ee',
+    border: '#cfd9d4',
+    backgroundStart: '#ededed',
+    backgroundEnd: '#e8e8e8',
     title: '#274036',
-    company: '#6d8b7c',
-    label: '#88a092',
-    chipText: '#5f7b6d',
-    chipBorder: '#d5e2db',
-    chipBg: 'rgba(255,255,255,0.45)',
-    sectionBg: 'rgba(255,255,255,0.78)',
-    sectionBorder: 'rgba(213,226,219,0.9)',
+    company: '#70887b',
+    label: '#8ca196',
+    chipText: '#60766b',
+    chipBorder: '#cfd9d4',
+    chipBg: 'rgba(255,255,255,0.24)',
+    sectionBg: 'rgba(255,255,255,0.12)',
+    sectionBorder: 'rgba(207,217,212,0.9)',
     orbOne: 'rgba(0,0,0,0)',
     orbTwo: 'rgba(0,0,0,0)'
   },
   {
     id: 'blush',
     name: '浅粉',
-    border: '#e6d7da',
-    backgroundStart: '#f9f4f4',
-    backgroundEnd: '#f2eaeb',
+    border: '#ddd0d4',
+    backgroundStart: '#ededed',
+    backgroundEnd: '#e8e8e8',
     title: '#3d2d32',
-    company: '#8f7379',
-    label: '#a68a91',
-    chipText: '#735c62',
-    chipBorder: '#e6d7da',
-    chipBg: 'rgba(255,255,255,0.44)',
-    sectionBg: 'rgba(255,255,255,0.8)',
-    sectionBorder: 'rgba(230,215,218,0.9)',
+    company: '#8b7479',
+    label: '#a08a8f',
+    chipText: '#725c61',
+    chipBorder: '#ddd0d4',
+    chipBg: 'rgba(255,255,255,0.24)',
+    sectionBg: 'rgba(255,255,255,0.12)',
+    sectionBorder: 'rgba(221,208,212,0.9)',
     orbOne: 'rgba(0,0,0,0)',
     orbTwo: 'rgba(0,0,0,0)'
   }
@@ -160,6 +162,7 @@ interface XhsPushJobListItem {
   id: string;
   title: string;
   company: string;
+  logo?: string;
   location: string;
   category: string;
   jobType: string;
@@ -225,6 +228,27 @@ function stripHtml(value: string) {
     .replace(/&nbsp;/gi, ' ')
     .replace(/&amp;/gi, '&')
     .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function toFormattedReferenceText(value: string) {
+  return String(value || '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<\/h[1-6]>/gi, '\n')
+    .replace(/<li>/gi, '• ')
+    .replace(/<\/li>/gi, '\n')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, '\'')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\r/g, '')
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
@@ -301,11 +325,43 @@ function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 78, minLe
 }
 
 function getCompanyReferenceText(job: XhsPushJobListItem) {
-  return stripHtml(job.canonicalCompanyDescription || job.companyDescription || '') || '暂无企业简介原文';
+  return toFormattedReferenceText(job.canonicalCompanyDescription || job.companyDescription || '') || '暂无企业简介原文';
 }
 
 function getJobReferenceText(job: XhsPushJobListItem) {
-  return stripHtml(job.description || '') || '暂无岗位原文';
+  return toFormattedReferenceText(job.description || '') || '暂无岗位原文';
+}
+
+function buildCompanyReferenceBlocks(text: string): JobDetailBlock[] {
+  const normalized = String(text || '').trim();
+  if (!normalized) return [{ type: 'paragraph', text: '暂无企业简介原文' }];
+
+  const parts = normalized.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean);
+  const blocks: JobDetailBlock[] = [];
+
+  for (const part of parts) {
+    const lines = part.split('\n').map((line) => line.trim()).filter(Boolean);
+    if (!lines.length) continue;
+
+    const bulletItems = lines
+      .filter((line) => /^[•\-*]\s*/.test(line) || /^\d+[.)、]\s*/.test(line))
+      .map((line) => line.replace(/^[•\-*]\s*|^\d+[.)、]\s*/u, '').trim())
+      .filter(Boolean);
+
+    if (bulletItems.length >= 2 && bulletItems.length === lines.length) {
+      blocks.push({ type: 'list', items: bulletItems, ordered: /^\d/.test(lines[0]) });
+      continue;
+    }
+
+    if (lines.length === 1 && lines[0].length <= 18 && !/[。！？.!?]/.test(lines[0])) {
+      blocks.push({ type: 'subheading', text: lines[0] });
+      continue;
+    }
+
+    blocks.push({ type: 'paragraph', text: lines.join(' ') });
+  }
+
+  return blocks.length ? blocks : [{ type: 'paragraph', text: normalized }];
 }
 
 function formatJobTypeLabel(value: string) {
@@ -550,7 +606,24 @@ function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   document.body.removeChild(link);
 }
 
-function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string) {
+async function loadPosterLogo(url?: string) {
+  const src = String(url || '').trim();
+  if (!src) return null;
+
+  if (!POSTER_LOGO_CACHE.has(src)) {
+    POSTER_LOGO_CACHE.set(src, new Promise<HTMLImageElement | null>((resolve) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      image.src = src;
+    }));
+  }
+
+  return await POSTER_LOGO_CACHE.get(src)!;
+}
+
+async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string) {
   const theme = getThemeById(themeId);
   const canvas = document.createElement('canvas');
   canvas.width = EXPORT_WIDTH;
@@ -558,11 +631,10 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Canvas not supported');
 
-  const gradient = ctx.createLinearGradient(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
-  gradient.addColorStop(0, theme.backgroundStart);
-  gradient.addColorStop(1, theme.backgroundEnd);
-  fillRoundRect(ctx, 0, 0, EXPORT_WIDTH, EXPORT_HEIGHT, 56, gradient);
-  strokeRoundRect(ctx, 1.5, 1.5, EXPORT_WIDTH - 3, EXPORT_HEIGHT - 3, 56, theme.border, 3);
+  ctx.save();
+  ctx.fillStyle = '#ebebeb';
+  ctx.fillRect(0, 0, EXPORT_WIDTH, EXPORT_HEIGHT);
+  ctx.restore();
 
   const paddingX = 82;
   const contentWidth = EXPORT_WIDTH - (paddingX * 2);
@@ -570,6 +642,7 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   const company = job.company;
   const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
   const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
+  const logoImage = await loadPosterLogo(job.logo);
   const metaItems = [
     job.location,
     job.category,
@@ -578,102 +651,172 @@ function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | nul
   ];
 
   ctx.textBaseline = 'top';
-
-  ctx.save();
-  ctx.fillStyle = theme.border;
-  ctx.fillRect(paddingX, 96, 4, EXPORT_HEIGHT - 192);
-  ctx.restore();
-
-  const headerX = paddingX + 24;
+  const headerX = paddingX;
   const industryText = job.industry || '待补充';
-  ctx.font = `500 24px ${POSTER_FONT_FAMILY}`;
-  const industryWidth = Math.min(280, ctx.measureText(industryText).width + 2);
-  const industryX = EXPORT_WIDTH - paddingX - industryWidth;
-  drawTextLines(ctx, [company], headerX, 90, 34, theme.company, `600 28px ${POSTER_FONT_FAMILY}`);
-  drawTextLines(ctx, [industryText], industryX, 92, 30, theme.label, `500 24px ${POSTER_FONT_FAMILY}`);
+  const logoSize = 124;
+  const logoX = EXPORT_WIDTH - paddingX - logoSize;
+  const logoY = 68;
+
+  drawTextLines(ctx, [company], headerX, 72, 40, '#171717', `700 34px ${POSTER_FONT_FAMILY}`);
+  ctx.save();
+  ctx.fillStyle = '#7c7c7c';
+  ctx.fillRect(headerX + 226, 88, 2, 34);
+  ctx.restore();
+  drawTextLines(ctx, [industryText], headerX + 250, 76, 34, '#666666', `400 24px ${POSTER_FONT_FAMILY}`);
+
+  if (logoImage) {
+    fillRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20, 'rgba(255,255,255,0.18)');
+    ctx.save();
+    drawRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20);
+    ctx.clip();
+    ctx.drawImage(logoImage, logoX + 14, logoY + 14, logoSize - 28, logoSize - 28);
+    ctx.restore();
+  } else {
+    fillRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20, 'rgba(255,255,255,0.14)');
+    strokeRoundRect(ctx, logoX, logoY, logoSize, logoSize, 20, '#d6d6d6', 2);
+    drawTextLines(ctx, [company.slice(0, 1).toUpperCase() || 'H'], logoX + 38, logoY + 26, 58, '#171717', `700 54px ${POSTER_FONT_FAMILY}`);
+  }
+
+  const companyIntroLabelY = 188;
+  drawTextLines(ctx, ['企业简介'], headerX, companyIntroLabelY, 28, '#6d6d6d', `400 22px ${POSTER_FONT_FAMILY}`);
+  const companyIntroBlock = fitTextBlock(ctx, companySummary, {
+    maxWidth: contentWidth - 120,
+    maxLines: 2,
+    startSize: 26,
+    minSize: 22,
+    weight: 400,
+    lineHeightRatio: 1.48,
+    maxHeight: 96
+  });
+  drawTextLines(ctx, companyIntroBlock.lines, headerX + 124, companyIntroLabelY - 2, companyIntroBlock.lineHeight, '#4f4f4f', companyIntroBlock.font);
+  const introBottom = companyIntroLabelY + Math.max(28, companyIntroBlock.lines.length * companyIntroBlock.lineHeight);
 
   ctx.save();
-  ctx.fillStyle = theme.sectionBorder;
-  ctx.fillRect(headerX, 150, contentWidth - 24, 2);
+  ctx.setLineDash([3, 5]);
+  ctx.strokeStyle = '#787878';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(headerX, introBottom + 28);
+  ctx.lineTo(EXPORT_WIDTH - paddingX, introBottom + 28);
+  ctx.stroke();
   ctx.restore();
 
   const titleBlock = fitTextBlock(ctx, title, {
-    maxWidth: contentWidth - 24,
+    maxWidth: contentWidth,
     maxLines: 2,
-    startSize: 84,
-    minSize: 56,
-    weight: 900,
+    startSize: 80,
+    minSize: 54,
+    weight: 800,
     lineHeightRatio: 1.02
   });
-  const titleY = 188;
-  drawTextLines(ctx, titleBlock.lines, headerX, titleY, titleBlock.lineHeight, theme.title, titleBlock.font);
+  const titleY = introBottom + 58;
+  drawTextLines(ctx, titleBlock.lines, headerX, titleY, titleBlock.lineHeight, '#111111', titleBlock.font);
   const titleBottom = titleY + (titleBlock.lines.length * titleBlock.lineHeight);
 
   const metaText = metaItems.filter(Boolean).join(' ｜ ');
   const metaBlock = fitTextBlock(ctx, metaText, {
-    maxWidth: contentWidth - 24,
+    maxWidth: contentWidth,
     maxLines: 2,
-    startSize: 28,
+    startSize: 26,
     minSize: 22,
-    weight: 500,
+    weight: 400,
     lineHeightRatio: 1.5
   });
-  const metaY = titleBottom + 30;
-  drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, theme.company, metaBlock.font);
+  const metaY = titleBottom + 34;
+  drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, '#555555', metaBlock.font);
   const metaBottom = metaY + (metaBlock.lines.length * metaBlock.lineHeight);
 
-  const sectionLabelFont = `600 24px ${POSTER_FONT_FAMILY}`;
-  const companyLabelY = metaBottom + 42;
-  drawTextLines(ctx, ['企业简介'], headerX, companyLabelY, 28, theme.label, sectionLabelFont);
-  ctx.save();
-  ctx.fillStyle = theme.sectionBorder;
-  ctx.fillRect(headerX + 110, companyLabelY + 12, contentWidth - 134, 2);
-  ctx.restore();
-
-  const companyTextBlock = fitTextBlock(ctx, companySummary, {
-    maxWidth: contentWidth - 24,
-    maxLines: 3,
-    startSize: 34,
-    minSize: 26,
-    weight: 500,
-    lineHeightRatio: 1.5,
-    maxHeight: 166
-  });
-  const companyTextY = companyLabelY + 42;
-  drawTextLines(ctx, companyTextBlock.lines, headerX, companyTextY, companyTextBlock.lineHeight, theme.title, companyTextBlock.font);
-  const companyBottom = companyTextY + (companyTextBlock.lines.length * companyTextBlock.lineHeight);
-
-  const summaryLabelY = companyBottom + 54;
-  fillRoundRect(ctx, headerX, summaryLabelY - 8, 156, 54, 27, theme.chipBg);
-  strokeRoundRect(ctx, headerX, summaryLabelY - 8, 156, 54, 27, theme.chipBorder, 2);
-  drawTextLines(ctx, ['岗位摘要'], headerX + 22, summaryLabelY + 4, 28, theme.chipText, `600 24px ${POSTER_FONT_FAMILY}`);
+  const summaryLabelY = metaBottom + 52;
+  fillRoundRect(ctx, headerX, summaryLabelY - 6, 166, 56, 28, 'rgba(255,255,255,0.12)');
+  strokeRoundRect(ctx, headerX, summaryLabelY - 6, 166, 56, 28, '#171717', 2);
+  drawTextLines(ctx, ['岗位说明'], headerX + 24, summaryLabelY + 5, 28, '#171717', `600 24px ${POSTER_FONT_FAMILY}`);
 
   ctx.save();
-  ctx.fillStyle = theme.sectionBorder;
-  ctx.fillRect(headerX + 184, summaryLabelY + 16, contentWidth - 208, 2);
+  ctx.fillStyle = '#9a9a9a';
+  ctx.fillRect(headerX + 194, summaryLabelY + 18, contentWidth - 194, 2);
   ctx.restore();
 
   const summaryTextY = summaryLabelY + 62;
   const summaryAvailableHeight = EXPORT_HEIGHT - summaryTextY - 120;
   const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
-    maxWidth: contentWidth - 24,
-    maxLines: 14,
-    startSize: 40,
-    minSize: 28,
-    weight: 500,
-    lineHeightRatio: 1.42,
+    maxWidth: contentWidth,
+    maxLines: 12,
+    startSize: 32,
+    minSize: 24,
+    weight: 400,
+    lineHeightRatio: 1.62,
     maxHeight: summaryAvailableHeight
   });
-  drawTextLines(ctx, summaryTextBlock.lines, headerX, summaryTextY, summaryTextBlock.lineHeight, theme.title, summaryTextBlock.font);
+  drawTextLines(ctx, summaryTextBlock.lines, headerX + 10, summaryTextY, summaryTextBlock.lineHeight, '#4a4a4a', summaryTextBlock.font);
 
   const footerY = EXPORT_HEIGHT - 106;
   ctx.save();
-  ctx.fillStyle = theme.sectionBorder;
-  ctx.fillRect(headerX, footerY, contentWidth - 24, 2);
+  ctx.fillStyle = '#c8c8c8';
+  ctx.fillRect(headerX, footerY, contentWidth, 2);
   ctx.restore();
 
   return canvas;
 }
+
+function renderInlineFormatting(text: string) {
+  const boldRegex = /\*\*(.*?)\*\*/g;
+  const parts = String(text || '').split(boldRegex);
+  return parts.map((part, index) => (
+    index % 2 === 1
+      ? <strong key={index} className="font-semibold text-slate-900">{part}</strong>
+      : <React.Fragment key={index}>{part}</React.Fragment>
+  ));
+}
+
+const ReferenceBlocks: React.FC<{ blocks: JobDetailBlock[] }> = ({ blocks }) => {
+  if (!Array.isArray(blocks) || blocks.length === 0) {
+    return <p className="text-xs leading-6 text-slate-500">暂无原文内容。</p>;
+  }
+
+  return (
+    <div className="space-y-3">
+      {blocks.map((block, index) => {
+        if (block.type === 'list') {
+          const ListTag = block.ordered ? 'ol' : 'ul';
+          return (
+            <ListTag
+              key={`ref-list-${index}`}
+              className={`space-y-1.5 pl-5 text-xs leading-6 text-slate-600 ${block.ordered ? 'list-decimal' : 'list-disc'}`}
+            >
+              {block.items.map((item, itemIndex) => (
+                <li key={`ref-item-${index}-${itemIndex}`} className="pl-1 marker:text-slate-400">
+                  {renderInlineFormatting(item)}
+                </li>
+              ))}
+            </ListTag>
+          );
+        }
+
+        if (block.type === 'subheading') {
+          return (
+            <h5 key={`ref-heading-${index}`} className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+              {renderInlineFormatting(block.text)}
+            </h5>
+          );
+        }
+
+        if (block.type === 'note') {
+          return (
+            <div key={`ref-note-${index}`} className="rounded-xl border border-amber-100 bg-amber-50/70 px-3 py-2 text-xs leading-6 text-amber-900">
+              {renderInlineFormatting(block.text)}
+            </div>
+          );
+        }
+
+        return (
+          <p key={`ref-paragraph-${index}`} className="text-xs leading-6 text-slate-600">
+            {renderInlineFormatting(block.text)}
+          </p>
+        );
+      })}
+    </div>
+  );
+};
 
 const PosterPreview: React.FC<{
   job: XhsPushJobListItem;
@@ -683,12 +826,18 @@ const PosterPreview: React.FC<{
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
   useEffect(() => {
-    try {
-      const canvas = renderPosterCanvas(job, draft, themeId);
-      setPreviewUrl(canvas.toDataURL('image/png'));
-    } catch (_error) {
-      setPreviewUrl('');
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const canvas = await renderPosterCanvas(job, draft, themeId);
+        if (!cancelled) setPreviewUrl(canvas.toDataURL('image/png'));
+      } catch (_error) {
+        if (!cancelled) setPreviewUrl('');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [draft, job, themeId]);
 
   return (
@@ -755,6 +904,16 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const selectedJob = useMemo(
     () => jobs.find((item) => item.id === selectedJobId) || null,
     [jobs, selectedJobId]
+  );
+
+  const companyReferenceBlocks = useMemo(
+    () => selectedJob ? buildCompanyReferenceBlocks(getCompanyReferenceText(selectedJob)) : [],
+    [selectedJob]
+  );
+
+  const jobReferenceSections = useMemo(
+    () => selectedJob ? buildJobDetailSections({ description: getJobReferenceText(selectedJob) }) : [],
+    [selectedJob]
   );
 
   const fetchJobs = useCallback(async (nextPage = 1, append = false) => {
@@ -1066,7 +1225,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
     try {
       setDownloadingPoster(true);
-      const canvas = renderPosterCanvas(selectedJob, effectivePosterDraft, selectedThemeId);
+      const canvas = await renderPosterCanvas(selectedJob, effectivePosterDraft, selectedThemeId);
       downloadCanvas(canvas, `${selectedJob.company}-${selectedJob.title}-xiaohongshu.png`);
     } catch (err) {
       console.error('Failed to export xiaohongshu poster:', err);
@@ -1334,11 +1493,13 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                       </div>
                       <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">查看企业原文参考</summary>
-                        <div className="mt-3 border-t border-slate-100 pt-3 text-xs leading-6 text-slate-600">
+                        <div className="mt-3 border-t border-slate-100 pt-3">
                           <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                             {selectedJob.companyDescriptionSource === 'trusted' ? '可信企业主简介' : '翻译兜底简介'}
                           </div>
-                          <div className="max-h-40 overflow-y-auto whitespace-pre-wrap">{getCompanyReferenceText(selectedJob)}</div>
+                          <div className="max-h-48 overflow-y-auto pr-1">
+                            <ReferenceBlocks blocks={companyReferenceBlocks} />
+                          </div>
                         </div>
                       </details>
                     </div>
@@ -1361,9 +1522,16 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                       </div>
                       <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">查看岗位原文参考</summary>
-                        <div className="mt-3 border-t border-slate-100 pt-3 text-xs leading-6 text-slate-600">
+                        <div className="mt-3 border-t border-slate-100 pt-3">
                           <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">岗位原文</div>
-                          <div className="max-h-56 overflow-y-auto whitespace-pre-wrap">{getJobReferenceText(selectedJob)}</div>
+                          <div className="max-h-64 space-y-4 overflow-y-auto pr-1">
+                            {jobReferenceSections.map((section) => (
+                              <div key={section.id} className="space-y-2">
+                                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{section.displayTitle}</div>
+                                <ReferenceBlocks blocks={section.activeBlocks} />
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </details>
                     </div>
