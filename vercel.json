@@ -20,6 +20,10 @@
     {
       "path": "/api/cron/stream-verify-links",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/membership-lifecycle",
+      "schedule": "0 * * * *"
     }
   ],
   "rewrites": [

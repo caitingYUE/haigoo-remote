@@ -50,6 +50,10 @@ export default async function handler(req, res) {
         const { default: adminDailyFeaturedEmailHandler } = await import('../../lib/cron-handlers/admin-daily-featured-email.js');
         return await adminDailyFeaturedEmailHandler(req, res);
       }
+      case 'membership-lifecycle': {
+        const { default: membershipLifecycleHandler } = await import('../../lib/cron-handlers/membership-lifecycle.js');
+        return await membershipLifecycleHandler(req, res);
+      }
 
       case 'test-smtp': {
         const { sendTestEmail } = await import('../../server-utils/email-service.js');
@@ -87,6 +91,7 @@ export default async function handler(req, res) {
             'stream-crawl-trusted-jobs',
             'stream-verify-links',
             'admin-daily-featured-email',
+            'membership-lifecycle',
             'daily-ingest',
             'daily-enrich'
           ]

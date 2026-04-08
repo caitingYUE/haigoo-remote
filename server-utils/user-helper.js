@@ -13,6 +13,7 @@ import {
     getPlanConfigByType,
     normalizeMemberType
 } from '../lib/shared/membership.js'
+import { notifyMembershipExpired } from '../lib/services/membership-notification-service.js'
 
 // 超级管理员邮箱
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
@@ -100,6 +101,64 @@ function enrichUserFields(user) {
     return u
 }
 
+function hydrateUserRecord(user) {
+    if (!user) return null
+    const hydrated = { ...user }
+    if (hydrated?.roles && typeof hydrated.roles === 'string') {
+        try { hydrated.roles = JSON.parse(hydrated.roles) } catch (e) { hydrated.roles = {} }
+    }
+    if (hydrated?.profile && typeof hydrated.profile === 'string') {
+        try { hydrated.profile = JSON.parse(hydrated.profile) } catch (e) { hydrated.profile = {} }
+    }
+    return hydrated
+}
+
+function shouldFinalizeExpiredMembership(user) {
+    if (!user || user?.roles?.admin) return false
+
+    const status = String(user.member_status || user.memberStatus || '').trim().toLowerCase()
+    if (!['active', 'pro', 'lifetime'].includes(status)) return false
+
+    const expireAt = user.member_expire_at || user.memberExpireAt
+    if (!expireAt) return false
+
+    const expireDate = new Date(expireAt)
+    return !Number.isNaN(expireDate.getTime()) && expireDate <= new Date()
+}
+
+async function finalizeExpiredMembershipIfNeeded(user) {
+    if (!neonHelper.isConfigured || !shouldFinalizeExpiredMembership(user)) {
+        return user
+    }
+
+    try {
+        await neonHelper.query(
+            `UPDATE users
+             SET member_status = 'expired',
+                 updated_at = NOW()
+             WHERE user_id = $1
+               AND member_status IN ('active', 'pro', 'lifetime')
+               AND member_expire_at IS NOT NULL
+               AND member_expire_at <= NOW()`,
+            [user.user_id]
+        )
+
+        const latestRows = await neonHelper.select('users', { user_id: user.user_id })
+        const latestUser = hydrateUserRecord(latestRows?.[0] || user)
+
+        try {
+            await notifyMembershipExpired(enrichUserFields(latestUser))
+        } catch (notificationError) {
+            console.error('[user-helper] Failed to send membership expired notification:', notificationError?.message || notificationError)
+        }
+
+        return latestUser
+    } catch (error) {
+        console.error('[user-helper] Failed to finalize expired membership:', error?.message || error)
+        return user
+    }
+}
+
 async function getMembershipPlanConfig() {
     const config = await systemSettingsService.getSetting('membership_plan_config')
     return config || getDefaultMembershipPlanConfig()
@@ -138,19 +197,14 @@ const userHelper = {
             }
 
             const result = await neonHelper.query('SELECT * FROM users WHERE email ILIKE $1', [email])
-            const user = result?.[0] || null
+            const user = hydrateUserRecord(result?.[0] || null)
             if (!user) {
                 const localFallback = LOCAL_USERS.get(String(email || '').toLowerCase())
                 return enrichUserFields(localFallback || null)
             }
 
-            if (user?.roles && typeof user.roles === 'string') {
-                try { user.roles = JSON.parse(user.roles) } catch (e) { user.roles = {} }
-            }
-            if (user?.profile && typeof user.profile === 'string') {
-                try { user.profile = JSON.parse(user.profile) } catch (e) { user.profile = {} }
-            }
-            return enrichUserFields(user)
+            const finalizedUser = await finalizeExpiredMembershipIfNeeded(user)
+            return enrichUserFields(finalizedUser)
         } catch (error) {
             console.error('[user-helper] Error getting user by email:', error.message)
             return null
@@ -170,19 +224,14 @@ const userHelper = {
             }
 
             const result = await neonHelper.select('users', { user_id: userId })
-            const user = result?.[0] || null
+            const user = hydrateUserRecord(result?.[0] || null)
             if (!user) {
                 const localFallback = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
                 return enrichUserFields(localFallback || null)
             }
 
-            if (user?.roles && typeof user.roles === 'string') {
-                try { user.roles = JSON.parse(user.roles) } catch (e) { user.roles = {} }
-            }
-            if (user?.profile && typeof user.profile === 'string') {
-                try { user.profile = JSON.parse(user.profile) } catch (e) { user.profile = {} }
-            }
-            return enrichUserFields(user)
+            const finalizedUser = await finalizeExpiredMembershipIfNeeded(user)
+            return enrichUserFields(finalizedUser)
         } catch (error) {
             console.error('[user-helper] Error getting user by ID:', error.message)
             return null

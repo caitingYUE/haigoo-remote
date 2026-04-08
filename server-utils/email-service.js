@@ -286,6 +286,108 @@ export async function sendMembershipActivatedEmail({
 }
 
 /**
+ * 发送会员失效通知邮件
+ */
+export async function sendMembershipExpiredEmail({
+  to,
+  username,
+  accountEmail,
+  memberType,
+  memberExpireAt
+}) {
+  const normalizedType = normalizeMemberType(memberType)
+  const plan = getPlanConfigByType(normalizedType)
+  const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
+  const displayName = escapeHtml(username || '你好')
+  const displayEmail = escapeHtml(accountEmail || to)
+  const displayMemberType = escapeHtml(plan?.name || '海狗远程俱乐部会员')
+  const expireAt = formatEmailDate(memberExpireAt)
+  const fallbackBenefits = [
+    '账户原有免费体验额度不会重置',
+    '仍可继续浏览和使用免费范围内的功能',
+    '重新开通后可恢复全部会员权益'
+  ]
+
+  const subject = `你的 ${plan?.shortLabel || 'Haigoo'} 会员已到期`
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { margin: 0; padding: 0; background: #f6f8fc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; }
+    .wrapper { max-width: 640px; margin: 0 auto; padding: 28px 16px; }
+    .shell { overflow: hidden; border-radius: 24px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 20px 60px -42px rgba(15, 23, 42, 0.2); }
+    .hero { padding: 28px 28px 24px; background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%); border-bottom: 1px solid #e2e8f0; }
+    .brand { font-size: 12px; font-weight: 800; letter-spacing: 0.18em; color: #ea580c; text-transform: uppercase; }
+    .title { margin: 12px 0 8px; font-size: 28px; line-height: 1.2; font-weight: 800; color: #0f172a; }
+    .subtitle { margin: 0; font-size: 15px; line-height: 1.8; color: #475569; }
+    .content { padding: 28px; }
+    .panel { border: 1px solid #fed7aa; border-radius: 20px; background: #fff7ed; padding: 18px 18px 14px; }
+    .row { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid #fdba74; }
+    .row:last-child { border-bottom: none; padding-bottom: 0; }
+    .label { font-size: 13px; color: #9a3412; }
+    .value { font-size: 14px; font-weight: 700; color: #7c2d12; text-align: right; }
+    .section-title { margin: 24px 0 12px; font-size: 16px; font-weight: 800; color: #0f172a; }
+    .benefit { padding: 11px 0; border-bottom: 1px solid #ffedd5; font-size: 14px; line-height: 1.7; color: #7c2d12; }
+    .benefit:last-child { border-bottom: none; }
+    .cta { display: inline-block; margin-top: 24px; padding: 13px 24px; border-radius: 999px; background: #ea580c; color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .foot { margin-top: 24px; font-size: 13px; line-height: 1.8; color: #64748b; }
+    .support { color: #ea580c; text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="shell">
+      <div class="hero">
+        <div class="brand">Haigoo Remote Club</div>
+        <h1 class="title">会员权益已失效</h1>
+        <p class="subtitle">Hi，${displayName}。您的会员已到期，会员专属求职能力已暂停，但账号原有的免费体验额度不会被重置。</p>
+      </div>
+      <div class="content">
+        <div class="panel">
+          <div class="row">
+            <div class="label">会员类型</div>
+            <div class="value">${displayMemberType}</div>
+          </div>
+          <div class="row">
+            <div class="label">失效时间</div>
+            <div class="value">${escapeHtml(expireAt)}</div>
+          </div>
+          <div class="row">
+            <div class="label">昵称</div>
+            <div class="value">${displayName}</div>
+          </div>
+          <div class="row">
+            <div class="label">注册账户</div>
+            <div class="value">${displayEmail}</div>
+          </div>
+        </div>
+
+        <div class="section-title">当前说明</div>
+        <div class="panel" style="background:#ffffff;border-color:#e2e8f0;">
+          ${fallbackBenefits.map((item) => `<div class="benefit">${escapeHtml(item)}</div>`).join('')}
+        </div>
+
+        <a class="cta" href="${siteUrl}/membership">前往会员中心重新开通</a>
+
+        <div class="foot">
+          如需恢复全部会员权益，可随时重新开通会员。若有疑问，欢迎联系：
+          <a class="support" href="mailto:hi@haigooremote.com">hi@haigooremote.com</a><br />
+          海狗网站：<a class="support" href="${siteUrl}">${siteUrl}</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim()
+
+  return sendEmail(to, subject, html)
+}
+
+/**
  * 发送订阅欢迎邮件
  */
 export async function sendSubscriptionWelcomeEmail(to, topic) {
