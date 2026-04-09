@@ -43,11 +43,16 @@ const INDUSTRY_OPTIONS = [
   '硬件/物联网', '消费生活', '其他'
 ];
 
-const TEMPLATE_VERSION = 'xhs-v5';
+const TEMPLATE_VERSION = 'xhs-v6';
 const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
 const PREVIEW_SCALE = 0.34;
 const POSTER_FONT_FAMILY = '-apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif';
+const JOB_SUMMARY_MIN_LENGTH = 280;
+const JOB_SUMMARY_MAX_LENGTH = 460;
+const JOB_SUMMARY_INPUT_LIMIT = 560;
+const COMPANY_SUMMARY_MIN_LENGTH = 60;
+const COMPANY_SUMMARY_MAX_LENGTH = 110;
 const POSTER_THEME = {
   id: 'editorial-grey',
   name: '编辑灰',
@@ -198,31 +203,99 @@ function clampSentence(sentence: string, maxLength: number) {
   return `${clean.slice(0, Math.max(0, maxLength - 1)).replace(/[，,；;、:：\s]+$/u, '')}…`;
 }
 
-function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = 186, minLength = 146) {
+function sentenceMatches(sentence: string, patterns: RegExp[]) {
+  return patterns.some((pattern) => pattern.test(sentence));
+}
+
+function buildSectionLine(label: string, body: string) {
+  const clean = body.replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  return `${label}｜${clean}`;
+}
+
+function buildSectionBody(sentences: string[], maxLength: number, minLength: number) {
+  let output = '';
+
+  for (const sentence of sentences) {
+    const candidate = output ? `${output}；${sentence}` : sentence;
+    if (candidate.length > maxLength && output.length >= minLength) break;
+    if (candidate.length > maxLength) {
+      output = output ? `${output}；${clampSentence(sentence, Math.max(24, maxLength - output.length - 1))}` : clampSentence(sentence, maxLength);
+      break;
+    }
+    output = candidate;
+  }
+
+  return output.trim();
+}
+
+function buildLocalPosterSummary(job: XhsPushJobListItem, maxLength = JOB_SUMMARY_MAX_LENGTH, minLength = JOB_SUMMARY_MIN_LENGTH) {
   const source = stripHtml(job.description);
   if (!source) return '岗位亮点待补充，可结合 JD 核对后再生成配图。';
 
   const sentences = dedupeSentences(splitSummarySentences(source));
   if (sentences.length === 0) return source.slice(0, maxLength);
 
-  const bullets: string[] = [];
-  for (const sentence of sentences) {
-    const candidate = `${bullets.length + 1}. ${clampSentence(sentence, 42)}`;
-    const next = [...bullets, candidate].join('\n');
-    if (next.length > maxLength && bullets.join('\n').length >= minLength) break;
-    if (next.length > maxLength) {
-      bullets.push(`${bullets.length + 1}. ${clampSentence(sentence, 30)}`);
-      break;
+  const responsibilityPatterns = [
+    /负责|参与|主导|推动|设计|开发|搭建|优化|管理|协作|支持|制定|落地|交付|lead|build|develop|drive|manage|deliver|partner/iu
+  ];
+  const requirementPatterns = [
+    /要求|熟悉|经验|能力|背景|学历|技能|掌握|精通|理解|资格|擅长|need|require|qualification|proficient|experience|years?/iu
+  ];
+  const benefitPatterns = [
+    /福利|待遇|薪资|奖金|期权|补贴|假期|年假|保险|津贴|远程|弹性|benefit|salary|bonus|equity|perk|pto|remote|flexible/iu
+  ];
+
+  const summarySentences = sentences.map((sentence) => clampSentence(sentence, 78));
+  const used = new Set<string>();
+  const remaining = [...summarySentences];
+  const take = (patterns: RegExp[], count: number, fallback = false) => {
+    const picked: string[] = [];
+    for (const sentence of remaining) {
+      if (used.has(sentence)) continue;
+      if (!fallback && !sentenceMatches(sentence, patterns)) continue;
+      picked.push(sentence);
+      used.add(sentence);
+      if (picked.length >= count) break;
     }
-    bullets.push(candidate);
-    if (bullets.length >= 4 && bullets.join('\n').length >= minLength) break;
+    return picked;
+  };
+
+  const overview = take(responsibilityPatterns, 2).concat(take([], 1, true)).slice(0, 3);
+  const requirements = take(requirementPatterns, 2);
+  const benefits = take(benefitPatterns, 2);
+  const fallback = take([], 6, true);
+
+  const sectionPairs: Array<[string, string]> = [];
+  const summaryBody = buildSectionBody(overview.length ? overview : fallback.slice(0, 2), 176, 88);
+  const requirementBody = buildSectionBody(requirements.length ? requirements : fallback.slice(2, 4), 168, 72);
+  const benefitBody = buildSectionBody(benefits.length ? benefits : fallback.slice(4, 6), 136, 40);
+  if (summaryBody) sectionPairs.push(['岗位摘要', summaryBody]);
+  if (requirementBody) sectionPairs.push(['岗位要求', requirementBody]);
+  if (benefitBody) sectionPairs.push(['福利待遇', benefitBody]);
+
+  let output = sectionPairs.map(([label, body]) => buildSectionLine(label, body)).join('\n');
+  if (output.length < minLength) {
+    const extraPool = fallback.filter((sentence) => !output.includes(sentence));
+    if (extraPool.length > 0 && sectionPairs.length > 0) {
+      const lastIndex = sectionPairs.length - 1;
+      sectionPairs[lastIndex] = [
+        sectionPairs[lastIndex][0],
+        buildSectionBody(
+          [...sectionPairs[lastIndex][1].split('；').filter(Boolean), ...extraPool.slice(0, 2)],
+          176,
+          72
+        )
+      ];
+      output = sectionPairs.map(([label, body]) => buildSectionLine(label, body)).join('\n');
+    }
   }
 
-  if (bullets.length === 0) return source.slice(0, maxLength);
-  return bullets.join('\n').slice(0, maxLength).trim();
+  if (!output) return source.slice(0, maxLength);
+  return output.slice(0, maxLength).trim();
 }
 
-function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = 78, minLength = 52) {
+function buildLocalCompanySummary(job: XhsPushJobListItem, maxLength = COMPANY_SUMMARY_MAX_LENGTH, minLength = COMPANY_SUMMARY_MIN_LENGTH) {
   const source = stripHtml(job.companyDescription);
   if (!source) return '企业简介待补充';
 
@@ -356,6 +429,57 @@ function getRangeHint(length: number, min: number, max: number) {
   return '长度合适';
 }
 
+interface PosterSummarySection {
+  label: string;
+  body: string;
+}
+
+function normalizePosterSummarySections(text: string) {
+  const aliases: Record<string, string> = {
+    岗位摘要: '岗位摘要',
+    岗位亮点: '岗位摘要',
+    岗位要求: '岗位要求',
+    任职要求: '岗位要求',
+    岗位职责: '岗位摘要',
+    工作内容: '岗位摘要',
+    福利待遇: '福利待遇',
+    团队亮点: '团队亮点',
+    公司亮点: '团队亮点'
+  };
+  const fallbackLabels = ['岗位摘要', '岗位要求', '福利待遇'];
+  const sections: PosterSummarySection[] = [];
+  let fallbackIndex = 0;
+
+  const lines = String(text || '')
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  for (const line of lines) {
+    const normalized = line.replace(/^\d+[.)、]\s*/u, '').trim();
+    const matched = normalized.match(/^([^：:｜|]{2,12})\s*[：:｜|]\s*(.+)$/u);
+    if (matched) {
+      const label = aliases[matched[1].trim()] || matched[1].trim();
+      const body = matched[2].trim();
+      if (body) sections.push({ label, body });
+      continue;
+    }
+
+    if (sections.length === 0 || sections[sections.length - 1].body.length >= 86) {
+      sections.push({
+        label: fallbackLabels[Math.min(fallbackIndex, fallbackLabels.length - 1)],
+        body: normalized
+      });
+      fallbackIndex += 1;
+    } else {
+      sections[sections.length - 1].body = `${sections[sections.length - 1].body} ${normalized}`.trim();
+    }
+  }
+
+  return sections.slice(0, 3);
+}
+
 function wrapTextByWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number) {
   const paragraphs = String(text || '')
     .split(/\n+/)
@@ -415,6 +539,127 @@ function wrapTextByWidth(ctx: CanvasRenderingContext2D, text: string, maxWidth: 
   return {
     lines: lines.slice(0, maxLines),
     truncated
+  };
+}
+
+function wrapTextWithVariableFirstLine(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  firstLineWidth: number,
+  otherLineWidth: number,
+  maxLines: number
+) {
+  const clean = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!clean) {
+    return { lines: [] as string[], truncated: false };
+  }
+
+  const lines: string[] = [];
+  let current = '';
+  let currentWidth = Math.max(64, firstLineWidth);
+  let truncated = false;
+
+  for (const char of clean) {
+    const next = current + char;
+    if (ctx.measureText(next).width <= currentWidth || current.length === 0) {
+      current = next;
+      continue;
+    }
+
+    lines.push(current);
+    if (lines.length >= maxLines) {
+      truncated = true;
+      break;
+    }
+    current = char;
+    currentWidth = otherLineWidth;
+  }
+
+  if (!truncated && current) {
+    lines.push(current);
+  }
+
+  if (truncated && lines.length > 0) {
+    const lastWidth = lines.length === 1 ? Math.max(64, firstLineWidth) : otherLineWidth;
+    let lastLine = lines[lines.length - 1].replace(/…$/u, '');
+    while (lastLine && ctx.measureText(`${lastLine}…`).width > lastWidth) {
+      lastLine = lastLine.slice(0, -1);
+    }
+    lines[lines.length - 1] = `${lastLine}…`;
+  }
+
+  return { lines, truncated };
+}
+
+function fitSummarySections(
+  ctx: CanvasRenderingContext2D,
+  sections: PosterSummarySection[],
+  maxWidth: number,
+  maxHeight: number
+) {
+  const normalizedSections = sections.length > 0 ? sections : [{ label: '岗位摘要', body: '岗位亮点待补充。' }];
+
+  for (let fontSize = 30; fontSize >= 22; fontSize -= 2) {
+    const lineHeight = Math.round(fontSize * 1.55);
+    const labelFont = `650 ${fontSize}px ${POSTER_FONT_FAMILY}`;
+    const bodyFont = `400 ${fontSize}px ${POSTER_FONT_FAMILY}`;
+    const labelGap = Math.round(fontSize * 0.42);
+    const sectionGap = Math.round(fontSize * 0.76);
+    let totalHeight = 0;
+    let truncated = false;
+
+    const layouts = normalizedSections.map((section) => {
+      ctx.font = labelFont;
+      const labelWidth = ctx.measureText(`${section.label}｜`).width;
+      ctx.font = bodyFont;
+      const wrapped = wrapTextWithVariableFirstLine(
+        ctx,
+        section.body,
+        Math.max(96, maxWidth - labelWidth - labelGap),
+        maxWidth,
+        8
+      );
+      if (wrapped.truncated) truncated = true;
+      const sectionHeight = wrapped.lines.length * lineHeight;
+      totalHeight += sectionHeight;
+      return {
+        ...section,
+        labelWidth,
+        lines: wrapped.lines,
+        lineHeight
+      };
+    });
+
+    totalHeight += Math.max(0, normalizedSections.length - 1) * sectionGap;
+    if ((totalHeight <= maxHeight && !truncated) || fontSize === 22) {
+      return {
+        fontSize,
+        lineHeight,
+        labelFont,
+        bodyFont,
+        labelGap,
+        sectionGap,
+        layouts
+      };
+    }
+  }
+
+  return {
+    fontSize: 22,
+    lineHeight: Math.round(22 * 1.55),
+    labelFont: `650 22px ${POSTER_FONT_FAMILY}`,
+    bodyFont: `400 22px ${POSTER_FONT_FAMILY}`,
+    labelGap: 10,
+    sectionGap: 16,
+    layouts: normalizedSections.map((section) => {
+      ctx.font = `650 22px ${POSTER_FONT_FAMILY}`;
+      return {
+        ...section,
+        labelWidth: ctx.measureText(`${section.label}｜`).width,
+        lines: [section.body],
+        lineHeight: Math.round(22 * 1.55)
+      };
+    })
   };
 }
 
@@ -511,6 +756,7 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   const company = job.company;
   const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
   const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
+  const summarySections = normalizePosterSummarySections(jobSummary);
   const metaItems = [
     job.location,
     job.category,
@@ -567,24 +813,37 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, theme.company, metaBlock.font);
   const metaBottom = metaY + (metaBlock.lines.length * metaBlock.lineHeight);
 
-  const summaryTextY = metaBottom + 74;
+  const summaryTextY = metaBottom + 84;
   const summaryAvailableHeight = EXPORT_HEIGHT - summaryTextY - 120;
-  const summaryTextBlock = fitTextBlock(ctx, jobSummary, {
-    maxWidth: contentWidth,
-    maxLines: 12,
-    startSize: 32,
-    minSize: 24,
-    weight: 400,
-    lineHeightRatio: 1.62,
-    maxHeight: summaryAvailableHeight
-  });
-  drawTextLines(ctx, summaryTextBlock.lines, headerX, summaryTextY, summaryTextBlock.lineHeight, '#4a4a4a', summaryTextBlock.font);
+  const summaryLayout = fitSummarySections(ctx, summarySections, contentWidth, summaryAvailableHeight);
+  let cursorY = summaryTextY;
 
-  const footerY = EXPORT_HEIGHT - 106;
-  ctx.save();
-  ctx.fillStyle = theme.subtle;
-  ctx.fillRect(headerX, footerY, contentWidth, 2);
-  ctx.restore();
+  summaryLayout.layouts.forEach((section, index) => {
+    const bodyLines = section.lines.length > 0 ? section.lines : [''];
+    const firstLine = bodyLines[0] || '';
+
+    ctx.save();
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = theme.title;
+    ctx.font = summaryLayout.labelFont;
+    ctx.fillText(`${section.label}｜`, headerX, cursorY);
+    ctx.restore();
+
+    ctx.save();
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#4f4f4f';
+    ctx.font = summaryLayout.bodyFont;
+    ctx.fillText(firstLine, headerX + section.labelWidth + summaryLayout.labelGap, cursorY);
+    for (let lineIndex = 1; lineIndex < bodyLines.length; lineIndex += 1) {
+      ctx.fillText(bodyLines[lineIndex], headerX, cursorY + (lineIndex * summaryLayout.lineHeight));
+    }
+    ctx.restore();
+
+    cursorY += bodyLines.length * summaryLayout.lineHeight;
+    if (index < summaryLayout.layouts.length - 1) {
+      cursorY += summaryLayout.sectionGap;
+    }
+  });
 
   return canvas;
 }
@@ -1306,11 +1565,11 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">企业简介摘要</div>
-                        <div className="text-xs text-slate-500">{companySummaryText.length} 字，建议 55-95 字，{getRangeHint(companySummaryText.length, 55, 95)}</div>
+                        <div className="text-xs text-slate-500">{companySummaryText.length} 字，建议 {COMPANY_SUMMARY_MIN_LENGTH}-{COMPANY_SUMMARY_MAX_LENGTH} 字，{getRangeHint(companySummaryText.length, COMPANY_SUMMARY_MIN_LENGTH, COMPANY_SUMMARY_MAX_LENGTH)}</div>
                       </div>
                       <textarea
                         value={companySummaryText}
-                        maxLength={120}
+                        maxLength={180}
                         onChange={(event) => handleCompanySummaryChange(event.target.value)}
                         className="mt-3 min-h-[110px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
                       />
@@ -1335,11 +1594,11 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">岗位摘要</div>
-                        <div className="text-xs text-slate-500">{jobSummaryText.length} 字，建议 150-230 字，{getRangeHint(jobSummaryText.length, 150, 230)}</div>
+                        <div className="text-xs text-slate-500">{jobSummaryText.length} 字，建议 {JOB_SUMMARY_MIN_LENGTH}-{JOB_SUMMARY_MAX_LENGTH} 字，{getRangeHint(jobSummaryText.length, JOB_SUMMARY_MIN_LENGTH, JOB_SUMMARY_MAX_LENGTH)}</div>
                       </div>
                       <textarea
                         value={jobSummaryText}
-                        maxLength={320}
+                        maxLength={JOB_SUMMARY_INPUT_LIMIT}
                         onChange={(event) => handleJobSummaryChange(event.target.value)}
                         className="mt-3 min-h-[180px] w-full resize-y rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 text-slate-800 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
                       />
