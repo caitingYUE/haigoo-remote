@@ -94,6 +94,7 @@ interface XhsPushJobListItem {
   experienceLevel: string;
   description: string;
   updatedAt: string | null;
+  shareUrl: string;
   applicationUrl: string;
   employeeCount: string;
   address: string;
@@ -415,7 +416,8 @@ function buildPublishPack(job: XhsPushJobListItem) {
   return [
     job.title,
     job.company,
-    `申请链接：${job.applicationUrl || '待补充'}`,
+    `海狗岗位分享链接：${job.shareUrl || '待补充'}`,
+    `企业直申链接：${job.applicationUrl || '待补充'}`,
     `岗位信息：${job.location}｜${job.category}｜${formatJobTypeLabel(job.jobType)}｜${formatExperienceLabel(job.experienceLevel)}`,
     `企业信息：${job.employeeCount || '待补充'}｜总部位于${job.address || '待补充'}｜成立于${job.foundedYear || '待补充'}｜评分${job.companyRating || '待补充'}`,
     `所属行业：${job.industry || '待补充'}`,
@@ -995,6 +997,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     () => jobs.find((item) => item.id === selectedJobId) || null,
     [jobs, selectedJobId]
   );
+  const selectedJobShareUrl = selectedJob?.shareUrl || '';
+  const hasSelectedJobShareUrl = Boolean(selectedJobShareUrl);
   const selectedJobApplicationUrl = selectedJob?.applicationUrl || '';
   const hasSelectedJobApplicationUrl = Boolean(selectedJobApplicationUrl);
 
@@ -1476,6 +1480,19 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   </div>
 
                   <div className="mt-4 grid gap-3">
+                    <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">海狗岗位分享链接</div>
+                          <div className="mt-2 break-all text-sm leading-6 text-slate-800">{selectedJobShareUrl || '待补充'}</div>
+                        </div>
+                        <button type="button" onClick={() => hasSelectedJobShareUrl ? handleCopy(`share-${selectedJob.id}`, selectedJobShareUrl) : undefined} disabled={!hasSelectedJobShareUrl} className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700 disabled:cursor-not-allowed disabled:border-slate-100 disabled:text-slate-300">
+                          {copiedKey === `share-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                          {copiedKey === `share-${selectedJob.id}` ? '已复制' : '复制'}
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                       <div className="flex items-center justify-between gap-3">
                         <div className="min-w-0">
