@@ -13,7 +13,6 @@ import {
     getPlanConfigByType,
     normalizeMemberType
 } from '../lib/shared/membership.js'
-import { notifyMembershipExpired } from '../lib/services/membership-notification-service.js'
 
 // 超级管理员邮箱
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
@@ -145,13 +144,6 @@ async function finalizeExpiredMembershipIfNeeded(user) {
 
         const latestRows = await neonHelper.select('users', { user_id: user.user_id })
         const latestUser = hydrateUserRecord(latestRows?.[0] || user)
-
-        try {
-            await notifyMembershipExpired(enrichUserFields(latestUser))
-        } catch (notificationError) {
-            console.error('[user-helper] Failed to send membership expired notification:', notificationError?.message || notificationError)
-        }
-
         return latestUser
     } catch (error) {
         console.error('[user-helper] Failed to finalize expired membership:', error?.message || error)

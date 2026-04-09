@@ -303,9 +303,9 @@ export async function sendMembershipExpiredEmail({
   const displayMemberType = escapeHtml(plan?.name || '海狗远程俱乐部会员')
   const expireAt = formatEmailDate(memberExpireAt)
   const fallbackBenefits = [
-    '账户原有免费体验额度不会重置',
-    '仍可继续浏览和使用免费范围内的功能',
-    '重新开通后可恢复全部会员权益'
+    '您的账号权益已退回免费用户版本',
+    '仍可继续浏览和使用免费用户可用功能',
+    '如需恢复会员权益，可前往会员中心重新开通'
   ]
 
   const subject = `你的 ${plan?.shortLabel || 'Haigoo'} 会员已到期`
@@ -343,7 +343,7 @@ export async function sendMembershipExpiredEmail({
       <div class="hero">
         <div class="brand">Haigoo Remote Club</div>
         <h1 class="title">会员权益已失效</h1>
-        <p class="subtitle">Hi，${displayName}。您的会员已到期，会员专属求职能力已暂停，但账号原有的免费体验额度不会被重置。</p>
+        <p class="subtitle">Hi，${displayName}。您的会员已到期，账号权益已退回免费用户版本，如需恢复会员权益，可前往会员中心重新开通。</p>
       </div>
       <div class="content">
         <div class="panel">
