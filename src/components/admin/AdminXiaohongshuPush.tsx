@@ -6,8 +6,7 @@ import {
   Download,
   Loader2,
   RefreshCw,
-  Search,
-  Sparkles
+  Search
 } from 'lucide-react';
 import { buildJobDetailSections, type JobDetailBlock } from '../../utils/job-detail-content';
 
@@ -64,6 +63,7 @@ const POSTER_THEME = {
 } as const;
 
 interface ReferralContact {
+  id?: string;
   name?: string;
   title?: string;
   hiringEmail?: string;
@@ -140,6 +140,13 @@ interface XhsPosterDraft {
   saved?: boolean;
   updatedAt?: string | null;
   updatedBy?: string;
+}
+
+interface PosterAvailabilityTag {
+  label: string;
+  fill: string;
+  stroke: string;
+  text: string;
 }
 
 interface Props {
@@ -410,6 +417,38 @@ function getReferralLines(job: XhsPushJobListItem, includeType = false) {
   }
 
   return [includeType ? '通用邮箱：待补充｜待补充：待补充' : '待补充｜待补充：待补充'];
+}
+
+function hasXhsDirectApply(job: XhsPushJobListItem) {
+  return Boolean(String(job.applicationUrl || '').trim());
+}
+
+function hasXhsReferralApply(job: XhsPushJobListItem) {
+  return Array.isArray(job.referralContacts) && job.referralContacts.length > 0;
+}
+
+function getPosterAvailabilityTags(job: XhsPushJobListItem): PosterAvailabilityTag[] {
+  const tags: PosterAvailabilityTag[] = [];
+
+  if (hasXhsDirectApply(job)) {
+    tags.push({
+      label: '可网申',
+      fill: '#eef5ff',
+      stroke: '#c7dbff',
+      text: '#355c9b'
+    });
+  }
+
+  if (hasXhsReferralApply(job)) {
+    tags.push({
+      label: '可内推',
+      fill: '#eef7ef',
+      stroke: '#c8dfcb',
+      text: '#41654a'
+    });
+  }
+
+  return tags;
 }
 
 function buildPublishPack(job: XhsPushJobListItem) {
@@ -729,6 +768,63 @@ function drawTextLines(
   ctx.restore();
 }
 
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: string,
+  stroke: string
+) {
+  const safeRadius = Math.min(radius, width / 2, height / 2);
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(x + safeRadius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, safeRadius);
+  ctx.arcTo(x + width, y + height, x, y + height, safeRadius);
+  ctx.arcTo(x, y + height, x, y, safeRadius);
+  ctx.arcTo(x, y, x + width, y, safeRadius);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  ctx.restore();
+}
+
+function drawPosterAvailabilityTags(
+  ctx: CanvasRenderingContext2D,
+  tags: PosterAvailabilityTag[],
+  x: number,
+  y: number
+) {
+  if (!tags.length) return;
+
+  ctx.save();
+  ctx.font = `600 20px ${POSTER_FONT_FAMILY}`;
+  ctx.textBaseline = 'middle';
+  let cursorX = x;
+
+  for (const tag of tags) {
+    const horizontalPadding = 16;
+    const height = 36;
+    const width = Math.ceil(ctx.measureText(tag.label).width) + (horizontalPadding * 2);
+    drawRoundedRect(ctx, cursorX, y, width, height, 14, tag.fill, tag.stroke);
+
+    ctx.save();
+    ctx.fillStyle = tag.text;
+    ctx.fillText(tag.label, cursorX + horizontalPadding, y + (height / 2) + 1);
+    ctx.restore();
+
+    cursorX += width + 14;
+  }
+
+  ctx.restore();
+}
+
 function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   const link = document.createElement('a');
   link.download = fileName;
@@ -738,7 +834,7 @@ function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   document.body.removeChild(link);
 }
 
-async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string) {
+async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string, options?: { showAvailabilityTags?: boolean }) {
   void themeId;
   const theme = POSTER_THEME;
   const canvas = document.createElement('canvas');
@@ -759,6 +855,7 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   const companySummary = draft?.companySummary || buildLocalCompanySummary(job);
   const jobSummary = draft?.jobSummary || buildLocalPosterSummary(job);
   const summarySections = normalizePosterSummarySections(jobSummary);
+  const footerTags = options?.showAvailabilityTags === false ? [] : getPosterAvailabilityTags(job);
   const metaItems = [
     job.location,
     job.category,
@@ -815,8 +912,9 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   drawTextLines(ctx, metaBlock.lines, headerX, metaY, metaBlock.lineHeight, theme.company, metaBlock.font);
   const metaBottom = metaY + (metaBlock.lines.length * metaBlock.lineHeight);
 
-  const summaryTextY = metaBottom + 84;
-  const summaryAvailableHeight = EXPORT_HEIGHT - summaryTextY - 120;
+  const summaryTextY = metaBottom + 72;
+  const footerTopY = footerTags.length > 0 ? EXPORT_HEIGHT - 96 : EXPORT_HEIGHT - 64;
+  const summaryAvailableHeight = Math.max(240, footerTopY - 44 - summaryTextY);
   const summaryLayout = fitSummarySections(ctx, summarySections, contentWidth, summaryAvailableHeight);
   let cursorY = summaryTextY;
 
@@ -846,6 +944,10 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
       cursorY += summaryLayout.sectionGap;
     }
   });
+
+  if (footerTags.length > 0) {
+    drawPosterAvailabilityTags(ctx, footerTags, headerX, footerTopY);
+  }
 
   return canvas;
 }
@@ -914,14 +1016,15 @@ const PosterPreview: React.FC<{
   job: XhsPushJobListItem;
   draft: XhsPosterDraft | null;
   themeId: string;
-}> = ({ job, draft, themeId }) => {
+  showAvailabilityTags: boolean;
+}> = ({ job, draft, themeId, showAvailabilityTags }) => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const canvas = await renderPosterCanvas(job, draft, themeId);
+        const canvas = await renderPosterCanvas(job, draft, themeId, { showAvailabilityTags });
         if (!cancelled) setPreviewUrl(canvas.toDataURL('image/png'));
       } catch (_error) {
         if (!cancelled) setPreviewUrl('');
@@ -930,7 +1033,7 @@ const PosterPreview: React.FC<{
     return () => {
       cancelled = true;
     };
-  }, [draft, job, themeId]);
+  }, [draft, job, showAvailabilityTags, themeId]);
 
   return (
     <div className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
@@ -968,7 +1071,6 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [generatingPoster, setGeneratingPoster] = useState(false);
   const [downloadingPoster, setDownloadingPoster] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [posterError, setPosterError] = useState<string | null>(null);
@@ -981,6 +1083,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [savingDraft, setSavingDraft] = useState(false);
   const [draftDirty, setDraftDirty] = useState(false);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
+  const [showAvailabilityTags, setShowAvailabilityTags] = useState(true);
   const selectedThemeId = POSTER_THEME.id;
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
 
@@ -1184,76 +1287,6 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     setDraftNotice(null);
   };
 
-  const handleGeneratePoster = async () => {
-    if (!selectedJob) return;
-
-    try {
-      setGeneratingPoster(true);
-      setPosterError(null);
-
-      const res = await fetch('/api/admin/content-push/xiaohongshu/summary', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          id: selectedJob.id,
-          title: selectedJob.title,
-          company: selectedJob.company,
-          location: selectedJob.location,
-          category: selectedJob.category,
-          jobType: selectedJob.jobType,
-          experienceLevel: selectedJob.experienceLevel,
-          description: selectedJob.description,
-          companyDescription: selectedJob.canonicalCompanyDescription || selectedJob.companyDescription,
-          updatedAt: selectedJob.updatedAt,
-          summary: buildLocalPosterSummary(selectedJob)
-        })
-      });
-
-      const data = await res.json() as {
-        success: boolean;
-        jobSummary?: string;
-        companySummary?: string;
-        provider?: 'local' | 'bailian';
-        jobSummarySource?: string;
-        companySummarySource?: string;
-        cacheHit?: boolean;
-        usedFallback?: boolean;
-        error?: string;
-      };
-
-      if (!res.ok || !data.success) throw new Error(data.error || '生成岗位摘要失败');
-
-      const nextJobSummary = data.jobSummary || buildLocalPosterSummary(selectedJob);
-      const nextCompanySummary = data.companySummary || buildLocalCompanySummary(selectedJob);
-      setJobSummaryText(nextJobSummary);
-      setCompanySummaryText(nextCompanySummary);
-      setJobSummarySource(data.jobSummarySource || (data.provider === 'bailian' ? 'ai' : 'local'));
-      setCompanySummarySource(data.companySummarySource || (data.provider === 'bailian' ? 'ai' : 'canonical'));
-      setPosterDraft({
-        jobSummary: nextJobSummary,
-        companySummary: nextCompanySummary,
-        provider: data.provider || 'local',
-        templateVersion: TEMPLATE_VERSION,
-        generatedAt: new Date().toISOString(),
-        companySummarySource: data.companySummarySource || (data.provider === 'bailian' ? 'ai' : 'canonical'),
-        jobSummarySource: data.jobSummarySource || (data.provider === 'bailian' ? 'ai' : 'local'),
-        cacheHit: Boolean(data.cacheHit),
-        usedFallback: Boolean(data.usedFallback),
-        themeId: selectedThemeId,
-        saved: false
-      });
-      setDraftDirty(true);
-      setDraftNotice('已完成智能提炼，可继续修改后保存。');
-    } catch (err) {
-      setPosterError(err instanceof Error ? err.message : '生成海报失败');
-    } finally {
-      setGeneratingPoster(false);
-    }
-  };
-
   const handleSaveDraft = async () => {
     if (!selectedJob) return;
 
@@ -1318,7 +1351,9 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
     try {
       setDownloadingPoster(true);
-      const canvas = await renderPosterCanvas(selectedJob, effectivePosterDraft, selectedThemeId);
+      const canvas = await renderPosterCanvas(selectedJob, effectivePosterDraft, selectedThemeId, {
+        showAvailabilityTags
+      });
       downloadCanvas(canvas, `${selectedJob.company}-${selectedJob.title}-xiaohongshu.png`);
     } catch (err) {
       console.error('Failed to export xiaohongshu poster:', err);
@@ -1563,21 +1598,9 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                 </div>
 
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h4 className="text-sm font-semibold text-slate-900">摘要草稿</h4>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">先智能提炼，再人工微调。右侧海报会实时同步当前内容。</p>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <button type="button" onClick={handleGeneratePoster} disabled={generatingPoster} className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60">
-                        {generatingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                        {generatingPoster ? '提炼中...' : '智能提炼'}
-                      </button>
-                      <button type="button" onClick={handleSaveDraft} disabled={savingDraft || !companySummaryText.trim() || !jobSummaryText.trim()} className="inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60">
-                        {savingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-                        {savingDraft ? '保存中...' : '保存草稿'}
-                      </button>
-                    </div>
+                  <div>
+                    <h4 className="text-sm font-semibold text-slate-900">摘要草稿</h4>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">可直接人工微调，右侧海报会实时同步当前内容。</p>
                   </div>
 
                   <div className="mt-4 grid gap-4">
@@ -1625,6 +1648,15 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         <button type="button" onClick={handleRestoreJobSummary} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
                           恢复默认
                         </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveDraft}
+                          disabled={savingDraft || !companySummaryText.trim() || !jobSummaryText.trim()}
+                          className="inline-flex items-center justify-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {savingDraft ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                          {savingDraft ? '保存中...' : '保存草稿'}
+                        </button>
                       </div>
                       <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
                         <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">查看岗位原文参考</summary>
@@ -1662,6 +1694,15 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                     </div>
 
                     <div className="flex items-center gap-3">
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={showAvailabilityTags}
+                          onChange={(event) => setShowAvailabilityTags(event.target.checked)}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
+                        />
+                        <span>显示可网申/可内推标签</span>
+                      </label>
                       <button type="button" onClick={handleDownloadPoster} disabled={downloadingPoster} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
                         {downloadingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
                         {downloadingPoster ? '导出中...' : '下载图片'}
@@ -1670,7 +1711,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   </div>
 
                   <div className="mt-5 flex justify-center">
-                    <PosterPreview job={selectedJob} draft={effectivePosterDraft} themeId={selectedThemeId} />
+                    <PosterPreview job={selectedJob} draft={effectivePosterDraft} themeId={selectedThemeId} showAvailabilityTags={showAvailabilityTags} />
                   </div>
                 </div>
               </div>

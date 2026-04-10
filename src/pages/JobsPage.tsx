@@ -831,6 +831,7 @@ export default function JobsPage() {
                         isActive={selectedJob?.id === job.id}
                         onClick={() => handleJobSelect(job, index)}
                         matchScore={job.matchScore}
+                        showApplicationMethodIcons
                       />
                     ))}
 
