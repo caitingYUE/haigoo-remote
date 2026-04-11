@@ -1151,16 +1151,17 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 {/* ── Hero Text ── */}
                 <div className="text-center mb-10 max-w-5xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm">
-                        理想生活，
+                        帮你找到并判断
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
-                            从远程工作开始
+                            值得投的远程岗位
                         </span>
                     </h1>
                     <p className="text-base md:text-lg text-slate-600 max-w-3xl mx-auto font-medium">
-                        不只是找工作 — Haigoo 陪你走好从规划准备、投递面试到适应远程生活的每一步。
+                        Haigoo 帮你先筛掉低质量信息，
+                        更快看到靠谱、适合投的远程机会。
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-                        {['✓ 仅收录国内可申的全球远程工作', '✓ 所有岗位均经过人工审核', '✓ 限时免费直申中'].map((chip) => (
+                        {['✓ 更适合国内用户申请', '✓ 岗位优先经过人工筛选', '✓ 可上传简历获取推荐'].map((chip) => (
                             <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}
                             </span>
@@ -1207,7 +1208,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             {/* Shared title area with logo */}
                             <div className="mb-1">
                                 <div>
-                                    <h2 className="text-[34px] md:text-[38px] font-bold text-slate-900 leading-[1.1] tracking-tight">每天为你推荐一组<br/>最匹配的岗位</h2>
+                                    <h2 className="text-[34px] md:text-[38px] font-bold text-slate-900 leading-[1.1] tracking-tight">先看看今天<br/>更适合你的岗位</h2>
                                     {hasResults && (
                                         <p className="text-xs text-slate-500 mt-1.5">今日推荐岗位已于 {formattedUpdatedAt} 更新</p>
                                     )}
@@ -1294,7 +1295,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                     <button onClick={() => { void handleGetRecommendations() }} disabled={loading || !jobDirection}
                                         className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm shadow-[0_8px_20px_rgba(79,70,229,0.30)] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto">
                                         {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                                        {loading ? '获取中...' : '获取专属推荐'}
+                                        {loading ? '获取中...' : '查看今日推荐'}
                                     </button>
                                 </div>
                             ) : (
@@ -1827,8 +1828,8 @@ function CopilotPlanModal({
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-white">Copilot 求职助手</h2>
-                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '你的专属求职规划' : '先看预览，登录解锁完整方案'}</p>
+                            <h2 className="text-lg font-bold text-white">远程求职助手</h2>
+                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '你的求职方案' : '先看预览，登录解锁完整方案'}</p>
                         </div>
                     </div>
                     <button onClick={handleModalClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
@@ -1841,7 +1842,7 @@ function CopilotPlanModal({
                         <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
                                 <div className="text-sm font-bold text-indigo-900">登录获取完整方案</div>
-                                <div className="text-xs text-indigo-700 mt-0.5">完整方案 + 更多推荐</div>
+                                <div className="text-xs text-indigo-700 mt-0.5">完整方案 + 更多推荐 + 更具体的建议</div>
                             </div>
                             <Link to="/login" onClick={onClose} className="px-4 py-2 bg-white text-indigo-700 border border-indigo-200 rounded-xl text-sm font-semibold hover:bg-indigo-50 transition-colors text-center">登录解锁</Link>
                         </div>
@@ -1904,8 +1905,8 @@ function CopilotPlanModal({
                             <div className="bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-100 rounded-2xl p-4">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
-                                        <div className="text-sm font-bold text-slate-900">会员专属能力已解锁</div>
-                                        <div className="text-xs text-slate-600 mt-1">可继续深度打磨</div>
+                                        <div className="text-sm font-bold text-slate-900">会员能力已解锁</div>
+                                        <div className="text-xs text-slate-600 mt-1">可继续完善方案和行动建议</div>
                                     </div>
                                     <Link to="/profile?tab=custom-plan" onClick={handleModalClose} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors no-underline hover:no-underline">去个人中心继续打磨</Link>
                                 </div>
@@ -1913,10 +1914,10 @@ function CopilotPlanModal({
                         ) : (
                             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
-                                    <div className="text-sm font-bold text-slate-900">升级会员可继续深化方案</div>
-                                    <div className="text-xs text-slate-600 mt-1">会员可改默认项并深化方案</div>
+                                    <div className="text-sm font-bold text-slate-900">开通会员可继续完善方案</div>
+                                    <div className="text-xs text-slate-600 mt-1">会员可修改默认项，并获得更完整的建议</div>
                                 </div>
-                                <Link to="/membership" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员权益</Link>
+                                <Link to="/membership" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员方案</Link>
                             </div>
                         )
                     ) : null}

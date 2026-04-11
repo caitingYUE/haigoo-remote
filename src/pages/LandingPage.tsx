@@ -288,16 +288,16 @@ export default function LandingPage() {
           )}
         </div>
 
-        {/* Brand Promise Section - "Why Haigoo?" */}
+        {/* Brand Promise Section */}
         <div className="py-24 border-t border-slate-100">
           <div className="text-center mb-16 max-w-3xl mx-auto">
-            <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-3 block">Why Choose Us</span>
+            <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-3 block">为什么选择 Haigoo</span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">
-              不仅仅是找工作，<br />
-              更是开启一种全新的 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">自由生活方式</span>
+              不是只给你更多岗位，<br />
+              而是帮你更快筛到 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">靠谱机会</span>
             </h2>
             <p className="text-lg text-slate-500 leading-relaxed">
-              Haigoo 严选全球远程机会，不仅注重薪资回报，更看重企业文化与 Work-Life Balance。
+              我们希望你少花时间反复筛选，多把精力放在真正值得投的岗位上。
             </p>
           </div>
 
@@ -305,27 +305,27 @@ export default function LandingPage() {
             {[
               {
                 icon: <Globe className="w-6 h-6 text-white" />,
-                title: "中国可申",
-                desc: "严选全球范围内对中国人才友好的远程企业，无需出海，也可享有全球薪资。",
+                title: "靠谱岗位",
+                desc: "优先筛掉不值得花时间的岗位，帮你更快看到适合国内用户申请的远程机会。",
                 color: "bg-blue-500"
               },
               {
                 icon: <Target className="w-6 h-6 text-white" />,
-                title: "优质文化",
-                desc: "深入了解企业背景和招聘需求，选择开放有远见的企业，在远程中也能收获自我价值和成长。",
+                title: "信息更完整",
+                desc: "不只给职位链接，还尽量补充企业背景、申请方式和关键信息，降低盲投成本。",
+                color: "bg-indigo-500"
+              },
+              {
+                icon: <Zap className="w-6 h-6 text-white" />,
+                title: "求职更省时间",
+                desc: "用推荐、收藏、投递记录和提醒功能，把求职从信息焦虑变成具体行动。",
                 color: "bg-indigo-500"
               },
               {
                 icon: <Users className="w-6 h-6 text-white" />,
-                title: "社群链接",
-                desc: "加入高质量远程工作者社区，与优秀的人同行，分享经验，拓展人脉。",
+                title: "社群交流",
+                desc: "群里会同步精选岗位、投递经验和真实反馈，帮助你少走弯路。",
                 color: "bg-purple-500"
-              },
-              {
-                icon: <Sparkles className="w-6 h-6 text-white" />,
-                title: "AI 工作助手",
-                desc: "AI 驱动的远程求职 Copilot，为你定制专属求职方案，从简历优化到面试思路，全程智能辅助。",
-                color: "bg-indigo-500"
               }
             ].map((item, index) => (
               <div key={index} className="group p-8 rounded-3xl bg-slate-50 hover:bg-white border border-slate-100 hover:border-indigo-100 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300">
@@ -339,7 +339,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Membership CTA Section - Premium Light Blue-Purple Card */}
+        {/* Membership CTA Section */}
         <div className="mt-12 relative rounded-[2.5rem] bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 overflow-hidden shadow-2xl shadow-indigo-900/5 border border-white/50">
           {/* Background Effects */}
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay"></div>
@@ -351,19 +351,19 @@ export default function LandingPage() {
           <div className="relative z-10 px-8 py-16 md:px-20 text-center flex flex-col items-center">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/60 border border-indigo-100 text-indigo-900/80 text-sm font-bold tracking-widest uppercase mb-8 shadow-sm backdrop-blur-md">
               <Crown className="w-4 h-4 fill-indigo-900/60" />
-              Upgrade to Premium
+              会员方案
             </div>
 
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-[1.1]">
-              <span className="block text-slate-500 text-2xl md:text-3xl font-medium mb-3 tracking-normal">Join the Elite</span>
+              <span className="block text-slate-500 text-2xl md:text-3xl font-medium mb-3 tracking-normal">少走弯路</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 drop-shadow-sm">
-                Haigoo Member
+                而是更快拿到有效结果
               </span>
             </h2>
 
             <p className="text-lg text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              解锁企业背景信息、内推直达通道、AI 工作助手、职业咨询等专属特权，<br className="hidden md:block" />
-              让你的远程求职之路更加顺畅。
+              会员版会提供更完整的岗位信息、更多求职工具和持续更新的推荐。<br className="hidden md:block" />
+              如果后续开放 1 对 1 服务，也会单独说明，不会和会员方案混在一起。
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -376,7 +376,7 @@ export default function LandingPage() {
                         className="px-8 py-4 bg-white hover:bg-slate-50 border border-indigo-100 text-indigo-900 font-bold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                       >
                         <CheckCircle2 className="w-5 h-5 text-indigo-600" />
-                        {isTrialMember ? '体验会员已生效 - 去探索岗位' : '您已是尊贵会员 - 去探索岗位'}
+                        {isTrialMember ? '体验会员已生效 - 去看岗位' : '会员已生效 - 去看岗位'}
                       </button>
                       <button
                         onClick={() => setShowCertificateModal(true)}
@@ -399,7 +399,7 @@ export default function LandingPage() {
                       onClick={() => navigate('/membership')}
                       className="px-10 py-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold rounded-xl transition-all shadow-xl hover:shadow-2xl shadow-indigo-500/30 hover:-translate-y-0.5 w-full sm:w-auto flex items-center justify-center gap-2"
                     >
-                      升级会员，解锁权益
+                      查看会员方案
                       <ArrowRight className="w-5 h-5" />
                     </button>
                   )

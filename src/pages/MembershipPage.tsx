@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase, Users, CircleOff } from 'lucide-react';
+import { Check, Star, Crown, Zap, ShieldCheck, ArrowRight, ChevronRight, Loader2, CheckCircle2, Calendar, Download, Copy, Sparkles, Landmark, Building, GraduationCap, HardDrive, CircuitBoard, Target, Quote, Briefcase, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -24,6 +24,7 @@ interface Plan {
    features: string[];
    duration_days: number;
    description?: string;
+   ctaHint?: string;
    isPlus?: boolean;
    tier?: 'trial' | 'full';
    wechat_qr?: string;
@@ -106,6 +107,59 @@ const STATIC_PLANS: Plan[] = [
    }
 ];
 
+const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
+   name: string;
+   shortLabel: string;
+   discountLabel: string;
+   description: string;
+   features: string[];
+   ctaHint: string;
+   comingSoon?: boolean;
+   isPlus?: boolean;
+}> = {
+   trial_week: {
+      name: '体验会员（7天）',
+      shortLabel: '体验会员',
+      discountLabel: '先验证价值 · 7 天体验',
+      description: '适合先体验 Haigoo 是否能帮你更快筛到靠谱岗位，并减少无效投递。',
+      features: [
+         '查看更完整的岗位和企业信息',
+         '获得更完整的求职助手建议',
+         '使用投递管理、收藏与翻译能力',
+         '加入会员群，接收更聚焦的交流'
+      ],
+      ctaHint: '适合先体验这些功能是否真的对你有帮助'
+   },
+   quarter: {
+      name: '季度会员',
+      shortLabel: '季度会员',
+      discountLabel: '主推方案 · 适合 1-3 个月冲刺',
+      description: '适合正在认真找工作的用户，在一个完整周期里持续获得更完整的信息、工具和推荐。',
+      features: [
+         '持续查看更完整的岗位与企业信息',
+         '持续获得个性化推荐与阶段性提醒',
+         '更完整的求职助手与简历打磨能力',
+         '投递管理 + 会员群支持'
+      ],
+      ctaHint: '适合未来 1-3 个月认真找远程工作的用户',
+      isPlus: true
+   },
+   year: {
+      name: '1 对 1 服务（筹备中）',
+      shortLabel: '1 对 1 服务',
+      discountLabel: '单独开放 · 另行说明',
+      description: '简历精修、策略诊断、模拟面试等服务会单独开放，不和会员方案混在一起。',
+      features: [
+         '1 次 1V1 求职策略诊断',
+         '简历精修或模拟面试 1 次',
+         '重点机会跟进建议',
+         '适合有明确求职窗口的高意向用户'
+      ],
+      ctaHint: '当前还在筹备中，后续开放时会单独说明',
+      comingSoon: true
+   }
+};
+
 const MembershipPage: React.FC = () => {
    const { user, isAuthenticated } = useAuth();
    const navigate = useNavigate();
@@ -128,37 +182,17 @@ const MembershipPage: React.FC = () => {
    const isTrialMember = activeMemberType === 'trial_week';
    const displayPlans = ['trial_week', 'quarter', 'year'].map((memberType) => {
       const basePlan = plans.find((plan) => plan.memberType === memberType) || STATIC_PLANS.find((plan) => plan.memberType === memberType)!
-      if (memberType === 'trial_week') {
-         return {
-            ...basePlan,
-            features: [
-               '解锁全部高薪远程职位（含内推）',
-               '解锁全部企业认证信息及联系方式',
-               'AI 远程工作助手（无限次）',
-               'AI 简历优化（无限次）',
-               '岗位收藏、直接翻译等功能（无限次）',
-               '加入精英远程工作者社区',
-               '解锁精选企业名单'
-            ]
-         }
-      }
-      if (memberType === 'quarter') {
-         return {
-            ...basePlan,
-            features: [
-               '解锁全部高薪远程职位（含内推）',
-               '解锁全部企业认证信息及联系方式',
-               'AI 远程工作助手（无限次）',
-               'AI 简历优化（无限次）',
-               '岗位收藏、直接翻译等功能（无限次）',
-               '加入精英远程工作者社区',
-               '解锁精选企业名单'
-            ]
-         }
-      }
+      const marketingCopy = PLAN_MARKETING_COPY[memberType as Plan['memberType']]
       return {
          ...basePlan,
-         comingSoon: true
+         name: marketingCopy.name,
+         shortLabel: marketingCopy.shortLabel,
+         discountLabel: marketingCopy.discountLabel,
+         description: marketingCopy.description,
+         features: marketingCopy.features,
+         ctaHint: marketingCopy.ctaHint,
+         comingSoon: marketingCopy.comingSoon ?? basePlan.comingSoon,
+         isPlus: marketingCopy.isPlus ?? basePlan.isPlus
       }
    });
 
@@ -364,15 +398,15 @@ const MembershipPage: React.FC = () => {
 
             <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
                <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
-                  <span className="block mb-2">解锁全球远程机遇</span>
+                  <span className="block mb-2">让远程求职更清楚</span>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600">
-                     开启无界职业生涯
+                     也更省时间
                   </span>
                </h1>
 
                <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                  AI 驱动的求职工具、经人工核验的优质机会、互助成长的精英社区。<br className="hidden md:block" />
-                  打破地域限制，您的全球职业生涯从这里起航。
+                  我们不想只给你更多岗位，而是帮你更快看清哪些岗位更值得花时间。<br className="hidden md:block" />
+                  当前开放的是体验会员和季度会员；如果后续开放 1 对 1 服务，也会单独说明。
                </p>
 
                {!(isAuthenticated && isMember) && (
@@ -383,7 +417,7 @@ const MembershipPage: React.FC = () => {
                      }}
                      className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
                   >
-                     探索会员方案
+                     查看会员方案
                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                )}
@@ -407,8 +441,8 @@ const MembershipPage: React.FC = () => {
                                  <Crown className="w-6 h-6 text-white" />
                               </div>
                               <div>
-                                 <div className="text-xl font-bold text-slate-900">{isTrialMember ? '体验会员' : '尊贵会员'}</div>
-                                 <div className="text-sm text-slate-400">{isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member'}</div>
+                                 <div className="text-xl font-bold text-slate-900">{isTrialMember ? '体验会员' : '会员用户'}</div>
+                                 <div className="text-sm text-slate-400">{isTrialMember ? '7 天体验中' : '会员有效期内'}</div>
                               </div>
                            </div>
 
@@ -418,7 +452,7 @@ const MembershipPage: React.FC = () => {
                                  <div className="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                                  </div>
-                                 {isTrialMember ? '体验会员权益已生效' : '申请已通过，会员权益已生效'}
+                                 {isTrialMember ? '体验会员权益已生效' : '会员权益已生效'}
                               </div>
                               <div className="flex items-center gap-3 text-sm text-slate-700">
                                  <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
@@ -442,7 +476,7 @@ const MembershipPage: React.FC = () => {
                                  onClick={() => navigate('/jobs')}
                                  className="px-6 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-full hover:bg-slate-800 transition-all inline-flex items-center gap-2 shadow-sm"
                               >
-                                 直通全站岗位 <ArrowRight className="w-3.5 h-3.5" />
+                                 去看今日岗位 <ArrowRight className="w-3.5 h-3.5" />
                               </button>
                               <button
                                  onClick={() => setShowCertificateModal(true)}
@@ -469,7 +503,7 @@ const MembershipPage: React.FC = () => {
                      <div className="flex items-center justify-between mb-5">
                         <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                            <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                           会员专属推荐
+                           会员推荐
                         </h3>
                         <button
                            onClick={() => navigate('/jobs')}
@@ -503,31 +537,31 @@ const MembershipPage: React.FC = () => {
          )}
 
 
-         {/* Benefits Section */}
+         {/* Product Layers Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
             <div className="text-center mb-12">
-               <h2 className="text-3xl font-bold text-slate-900 mb-3">会员权益 & 职业加速</h2>
-               <p className="text-slate-500 text-lg">专享俱乐部核心权益，为您铺展成功之路</p>
+               <h2 className="text-3xl font-bold text-slate-900 mb-3">你可以按自己的节奏选择</h2>
+               <p className="text-slate-500 text-lg">先免费使用，再按需要开通会员；后续如果开放 1 对 1 服务，也会单独说明</p>
             </div>
             <div className="grid md:grid-cols-3 gap-8">
                {/* Benefit 1 */}
                <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
                   <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
-                     <Sparkles className="w-7 h-7" />
+                     <ShieldCheck className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">AI 远程工作助手<br /><span className="text-base text-slate-700 font-semibold mt-1 block">智能求职 Copilot</span></h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">免费版<br /><span className="text-base text-slate-700 font-semibold mt-1 block">浏览岗位、基础申请</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     您的专属 AI 求职 Copilot。智能生成个性化求职方案与行动计划，提供简历优化建议及面试回答思路。全天 24 小时智能辅助，让您在每个环节都准备充分。
+                     面向所有用户开放。先浏览岗位、使用基础筛选、查看申请方式，并进入交流群获得基础信息与反馈。
                   </p>
                </div>
                {/* Benefit 2 */}
                <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
                   <div className="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
-                     <Briefcase className="w-7 h-7" />
+                     <Sparkles className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">精选高薪岗位直达<br /><span className="text-base text-slate-700 font-semibold mt-1 block">高薪岗位直达通道</span></h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">会员版<br /><span className="text-base text-slate-700 font-semibold mt-1 block">信息更完整，求职更省时间</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     独家获取经人工严选的高薪远程机会。我们为您过滤低质量信息，直达经过验证的优质海外企业，让每一次申请都值得。
+                     适合正在认真找远程工作的用户，用更完整的信息、求职工具、推荐和会员群支持来加快进展。
                   </p>
                </div>
                {/* Benefit 3 */}
@@ -535,9 +569,9 @@ const MembershipPage: React.FC = () => {
                   <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
                      <Target className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">个性化职业规划<br /><span className="text-base text-slate-700 font-semibold mt-1 block">专家级 1V1 职业规划</span></h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">1 对 1 服务<br /><span className="text-base text-slate-700 font-semibold mt-1 block">后续单独开放</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     专家级 1V1 职业咨询，为您量身定制远程职业发展路径。从个人优势挖掘到全球品牌建设，助您在国际职场中脱颖而出。
+                     如果后续开放简历精修、策略诊断、模拟面试等服务，我们会单独说明，不和会员方案混在一起。
                   </p>
                </div>
             </div>
@@ -546,15 +580,19 @@ const MembershipPage: React.FC = () => {
          {/* Pricing Plans Section */}
          <div id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-20">
             <div className="text-center mb-16">
-               <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">选择您的全球成功之路</h2>
-               <p className="text-slate-500 text-lg">选择最适合您的探索方案，即刻启程</p>
+               <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">当前可开通的方案</h2>
+               <p className="text-slate-500 text-lg">建议先用 7 天体验，确认适合你，再决定是否开通季度会员</p>
             </div>
             <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-6 max-w-7xl mx-auto items-stretch">
                {displayPlans.map((plan) => {
                   const isTrialPlan = plan.memberType === 'trial_week';
                   const isCurrentPlan = isMember && activeMemberType === plan.memberType;
                   const isComingSoon = Boolean(plan.comingSoon);
-                  const cycleLabel = plan.memberType === 'trial_week' ? '周' : (plan.duration_days > 90 ? '年' : '季度');
+                  const cycleLabel = plan.memberType === 'trial_week'
+                     ? '7天'
+                     : plan.memberType === 'quarter'
+                        ? '季度'
+                        : '期';
                   return (
                      <div
                         key={plan.id}
@@ -568,7 +606,7 @@ const MembershipPage: React.FC = () => {
                         {isTrialPlan && (
                            <div className="absolute -top-3 right-6 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-emerald-500/20 tracking-wider uppercase flex items-center gap-1.5">
                               <Zap className="w-3.5 h-3.5" />
-                              {plan.liteLabel || 'Lite'}
+                              推荐体验
                            </div>
                         )}
 
@@ -599,7 +637,7 @@ const MembershipPage: React.FC = () => {
                            </div>
 
                            <p className="text-sm text-slate-500 font-medium px-4">
-                              {isTrialPlan ? '适合先体验海狗核心岗位权益' : plan.isPlus ? '适合致力于长期职业发展与个人品牌建设' : '适合专注短期成长与快速求职'}
+                              {plan.ctaHint}
                            </p>
                            <p className="text-xs text-slate-400 mt-2 px-4 line-clamp-2 min-h-8">
                               {plan.description}
@@ -608,17 +646,12 @@ const MembershipPage: React.FC = () => {
 
                         <ul className="space-y-3.5 mb-8 flex-1 px-1">
                            {plan.features.map((feature, idx) => {
-                              const isLockedFeature = isTrialPlan && feature === '解锁精选企业名单';
                               return (
                               <li key={idx} className="flex items-start gap-4">
                                  <div className="mt-0.5 w-6 h-6 flex items-center justify-center flex-shrink-0">
-                                    {isLockedFeature ? (
-                                       <CircleOff className="w-5 h-5 text-slate-300" strokeWidth={2.5} />
-                                    ) : (
-                                       <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
-                                    )}
+                                    <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
                                  </div>
-                                 <span className={`text-[14px] font-medium leading-relaxed ${isLockedFeature ? 'text-slate-400' : 'text-slate-700'}`}>
+                                 <span className="text-[14px] font-medium leading-relaxed text-slate-700">
                                     {feature}
                                  </span>
                               </li>
@@ -642,20 +675,20 @@ const MembershipPage: React.FC = () => {
                            {isCurrentPlan ? (
                               <>
                                  <CheckCircle2 className="w-5 h-5" />
-                                 当前会员 (生效中)
+                                 当前会员方案
                               </>
                            ) : isComingSoon ? (
                               <>
-                                 待上线
+                                 筹备中
                               </>
                            ) : plan.isPlus ? (
                               <>
-                                 解锁高级权益
+                                 开通会员
                                  <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                               </>
                            ) : (
                               <>
-                                 {isTrialPlan ? '立即体验' : '立即加入'}
+                                 {isTrialPlan ? '立即体验' : '立即开通'}
                                  <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
                               </>
                            )}
@@ -669,8 +702,8 @@ const MembershipPage: React.FC = () => {
          {/* Social Proof: Success Stories */}
          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center mb-12">
-               <h2 className="text-3xl font-extrabold text-slate-900 mb-3">来自社区的成功故事</h2>
-               <p className="text-slate-500 text-lg">来自海狗远程俱乐部的一线反馈</p>
+               <h2 className="text-3xl font-extrabold text-slate-900 mb-3">来自用户的真实反馈</h2>
+               <p className="text-slate-500 text-lg">看看大家为什么愿意继续用下去</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -706,7 +739,7 @@ const MembershipPage: React.FC = () => {
 
          {/* Trusted Partners */}
          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center mt-8 mb-16">
-            <h3 className="text-base font-bold text-slate-400 uppercase tracking-widest mb-10">全球合作伙伴信赖</h3>
+            <h3 className="text-base font-bold text-slate-400 uppercase tracking-widest mb-10">我们持续关注的企业与方向</h3>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
                <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><HardDrive className="w-6 h-6" /> Red Mountain</div>
                <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><Building className="w-6 h-6" /> Bodhitree Group</div>
@@ -720,15 +753,15 @@ const MembershipPage: React.FC = () => {
          <div className="max-w-4xl mx-auto pb-32 px-4">
             <div className="text-center mb-16">
                <h2 className="text-3xl font-bold text-slate-900 mb-4">常见问题解答</h2>
-               <p className="text-slate-500 text-lg">了解更多关于会员权益的细节</p>
+               <p className="text-slate-500 text-lg">了解更多关于会员方案和后续服务的细节</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
                {[
-                  { q: "这里的岗位可靠吗？", a: "当前所有岗位都经过了人工审核，对于会员用户还会通过历史申请记录的追踪来增强岗位可信度的判断。" },
-                  { q: "加入会员后如有疑问联系谁？", a: "支付后24小时内权益会生效。会员生效后页面有会员社群可以加入，以提供会员服务和答疑支持。" },
-                  { q: "什么是内推直达？", a: "您可以在岗位申请页面选择邮箱直申，包括招聘邮箱、高管邮箱等（已经过认证的企业内部邮箱），让您的简历超过90%+候选人更快一步到达企业。" },
-                  { q: "会员方案是否可以变更或退款？", a: "会员支付后48小时内可以申请变更方案或退款，可以发邮件到「hi@haigooremote.com」写明原因并发送申请。我们将在审核后3个工作日内联系您退款或变更方案。建议在邮件里留下微信ID或联系方式便于交流。" }
+                  { q: "这里的岗位可靠吗？", a: "Haigoo 当前主打的是可信过滤。岗位会优先经过人工审核与筛选，重点减少不值得投入时间的无效岗位。" },
+                  { q: "会员版主要多了什么？", a: "会员版会提供更完整的岗位与企业信息、更多求职工具、持续更新的推荐，以及更聚焦的会员群交流，帮助你更快推进求职。" },
+                  { q: "1 对 1 服务也包含在会员里吗？", a: "不包含。如果后续开放简历精修、策略诊断、模拟面试等 1 对 1 服务，我们会单独说明，不和会员方案混在一起。" },
+                  { q: "方案是否可以变更或退款？", a: "支付后 48 小时内可以申请变更方案或退款。你可以发邮件到「hi@haigooremote.com」写明原因，我们会在 3 个工作日内联系处理。" }
                ].map((faq, i) => (
                   <div key={i} className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
                      <h3 className="font-bold text-slate-900 mb-4 flex items-start gap-3 text-lg">

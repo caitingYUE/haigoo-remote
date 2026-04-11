@@ -14,32 +14,32 @@ interface WeChatCommunityPanelProps {
 function getCommunityConfig(isMember = false) {
   if (isMember) {
     return {
-      badge: '会员专属企业微信群',
-      title: '加入 Haigoo 会员企业微信群',
-      subtitle: '会员群会同步更高价值的精选岗位、实战求职讨论和优先答疑，适合正在积极冲刺远程机会的用户。',
+      badge: '会员交流群',
+      title: '加入 Haigoo 会员交流群',
+      subtitle: '会员群会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。',
       qrSrc: '/Wechat_group_vip.png',
-      qrAlt: 'Haigoo 会员企业微信群二维码',
-      hint: '使用企业微信或微信扫码加入会员专属群。若二维码失效，请联系管理员更新。',
+      qrAlt: 'Haigoo 会员交流群二维码',
+      hint: '使用企业微信或微信扫码加入会员群。若二维码失效，请联系管理员更新。',
       bullets: [
         '会员优先岗位讨论与经验复盘',
         '高频求职问题优先答疑',
-        '远程工作信息差交流与内推线索',
-        '和正在上岸的会员保持同步'
+        '远程工作信息交流与重点线索',
+        '和正在上岸的用户保持同步'
       ]
     }
   }
 
   return {
-    badge: '企业微信群',
-    title: '加入 Haigoo 企业微信群',
-    subtitle: '每天看精选岗位推送，和正在找远程工作的同行一起交流信息、经验和踩坑总结。',
+    badge: '求职交流群',
+    title: '加入 Haigoo 求职交流群',
+    subtitle: '群里会同步精选岗位、求职经验、投递反馈和产品更新，适合正在找远程工作的用户。',
     qrSrc: '/Wechat_group.png',
-    qrAlt: 'Haigoo 企业微信群二维码',
-    hint: '使用企业微信或微信扫码加入公开群。群内会同步每日精选岗位和远程工作交流内容。',
+    qrAlt: 'Haigoo 求职交流群二维码',
+    hint: '使用企业微信或微信扫码加入交流群。群内会同步精选岗位、经验分享和产品更新。',
     bullets: [
-      '每日精选岗位汇总推送',
-      '远程求职经验与行业信息交流',
+      '每周精选岗位与经验分享',
       '岗位筛选、投递、面试问题互助',
+      '真实投递反馈与踩坑总结',
       '第一时间知道网站上的重点更新'
     ]
   }
@@ -78,10 +78,10 @@ export default function WeChatCommunityPanel({
                 {config.badge}
               </div>
               <h3 className="mt-3 text-lg font-bold tracking-tight text-slate-950">
-                {isMember ? '会员微信群入口' : '企业微信群入口'}
+                {isMember ? '会员群入口' : '交流群入口'}
               </h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                {isMember ? '扫码入群，直接接收精选岗位和会员交流。' : '扫码入群，接收每日精选岗位推送。'}
+                {isMember ? '扫码入群，直接接收精选岗位和会员交流。' : '扫码入群，和大家一起交流远程求职信息。'}
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {compactHighlights.map((item) => (
@@ -134,7 +134,7 @@ export default function WeChatCommunityPanel({
               { icon: Briefcase, title: '每日精选岗位', desc: '固定同步重点岗位，不需要反复刷新站点。' },
               { icon: MessageSquare, title: '同行交流', desc: '和正在找远程工作的用户讨论投递、面试和工作方式。' },
               { icon: Sparkles, title: '重点信息提醒', desc: '岗位更新、运营活动和重要通知会集中在群里同步。' },
-              { icon: isMember ? Crown : ShieldCheck, title: isMember ? '会员专属价值' : '更适合国内用户', desc: isMember ? '会员群交流密度更高，信息更聚焦。' : '相比邮件订阅，群消息更符合国内用户使用习惯。' }
+              { icon: isMember ? Crown : ShieldCheck, title: isMember ? '会员专属交流' : '交流更直接', desc: isMember ? '会员群交流更聚焦，适合正在积极投递的用户。' : '相比只看邮件或站内通知，群里更容易获得真实反馈。' }
             ].map((item) => (
               <div key={item.title} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                 <div className="flex items-start gap-3">
@@ -176,7 +176,7 @@ export default function WeChatCommunityPanel({
                   to="/membership"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
                 >
-                  了解会员专属群
+                  了解会员交流群
                   <Crown className="h-4 w-4 text-amber-500" />
                 </Link>
               )}
@@ -187,11 +187,11 @@ export default function WeChatCommunityPanel({
         <div className="flex min-w-0 items-center justify-center">
           <div className="w-full rounded-[28px] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-6 sm:p-7">
             <div className="text-center">
-              <div className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">
-                Scan To Join
+              <div className="text-xs font-semibold tracking-[0.24em] text-emerald-700">
+                扫码入群
               </div>
               <div className="mt-2 text-xl font-bold text-slate-900">
-                {isMember ? '会员社群入口' : '公开社群入口'}
+                {isMember ? '会员群入口' : '交流群入口'}
               </div>
               <div className="mt-2 text-sm leading-6 text-slate-600">
                 {config.hint}

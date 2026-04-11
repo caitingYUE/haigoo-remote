@@ -11,13 +11,14 @@ export default function CommunityPage() {
         <div className="mx-auto max-w-3xl text-center">
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-white/90 px-4 py-1.5 text-xs font-semibold text-emerald-700 shadow-sm">
             <Users className="h-3.5 w-3.5" />
-            Haigoo 社群入口
+            Haigoo 求职交流群
           </div>
           <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-950 sm:text-5xl">
-            每日精选岗位，不再靠邮箱提醒
+            加入 Haigoo 求职交流群
           </h1>
           <p className="mt-5 text-lg leading-8 text-slate-600">
-            Haigoo 已将用户侧岗位提醒统一切换到企业微信群。你可以在群里同步查看每日精选岗位，也可以和大家一起交流远程工作经验、投递反馈和行业信息。
+            群里会同步精选岗位、投递经验、真实反馈和产品更新。
+            如果你正在认真找远程工作，这里会比单纯刷岗位更有帮助。
           </p>
         </div>
 
@@ -29,8 +30,8 @@ export default function CommunityPage() {
           {[
             {
               icon: Sparkles,
-              title: '推送更即时',
-              desc: '每天在群里集中同步精选岗位，比邮件更容易被看到，也更符合国内用户的使用习惯。'
+              title: '不只发岗位',
+              desc: '除了同步精选岗位，群里也会分享投递思路、踩坑总结和阶段性产品更新。'
             },
             {
               icon: MessageSquare,
@@ -40,7 +41,7 @@ export default function CommunityPage() {
             {
               icon: Crown,
               title: '会员群更聚焦',
-              desc: '会员用户会看到单独的会员企业微信群二维码，交流密度和内容会更垂直。'
+              desc: '会员用户会看到单独的会员群入口，交流内容更集中，更适合求职冲刺阶段。'
             }
           ].map((item) => (
             <div key={item.title} className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">
