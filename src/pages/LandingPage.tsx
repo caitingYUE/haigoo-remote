@@ -293,8 +293,8 @@ export default function LandingPage() {
           <div className="text-center mb-16 max-w-3xl mx-auto">
             <span className="text-indigo-600 font-bold tracking-wider uppercase text-sm mb-3 block">为什么选择 Haigoo</span>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight mb-6">
-              不是只给你更多岗位，<br />
-              而是帮你更快筛到 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">靠谱机会</span>
+              不只帮你筛出国内可申的岗位，<br />
+              更帮你筛出 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">靠谱的好机会</span>
             </h2>
             <p className="text-lg text-slate-500 leading-relaxed">
               我们希望你少花时间反复筛选，多把精力放在真正值得投的岗位上。
@@ -311,8 +311,8 @@ export default function LandingPage() {
               },
               {
                 icon: <Target className="w-6 h-6 text-white" />,
-                title: "信息更完整",
-                desc: "不只给职位链接，还尽量补充企业背景、申请方式和关键信息，降低盲投成本。",
+                title: "可直连招聘方",
+                desc: "我们拿到了不少岗位的直招 HR、负责人等联系方式。你可以直接沟通，也可以通过他们的领英主页进一步了解团队和岗位。",
                 color: "bg-indigo-500"
               },
               {
@@ -357,13 +357,16 @@ export default function LandingPage() {
             <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight leading-[1.1]">
               <span className="block text-slate-500 text-2xl md:text-3xl font-medium mb-3 tracking-normal">少走弯路</span>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 drop-shadow-sm">
-                而是更快拿到有效结果
+                更快拿到有效结果
               </span>
             </h2>
 
             <p className="text-lg text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed font-light">
-              会员版会提供更完整的岗位信息、更多求职工具和持续更新的推荐。<br className="hidden md:block" />
-              如果后续开放 1 对 1 服务，也会单独说明，不会和会员方案混在一起。
+              会员版可以查看更完整的岗位信息、部分岗位的直招联系方式，并使用更多求职工具和持续更新的岗位推荐。<br className="hidden md:block" />
+              如需 1 对 1 指导或咨询服务，可以通过
+              {' '}<a href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">小红书私信我们</a>
+              {' '}或发送邮件到
+              {' '}<a href="mailto:hi@haigooremote.com" className="font-medium text-indigo-600 hover:underline">hi@haigooremote.com</a>。
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">

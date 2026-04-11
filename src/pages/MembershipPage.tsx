@@ -124,7 +124,8 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
       description: '适合先体验 Haigoo 是否能帮你更快筛到靠谱岗位，并减少无效投递。',
       features: [
          '查看更完整的岗位和企业信息',
-         '获得更完整的求职助手建议',
+         '部分岗位可查看直招 HR 或负责人联系方式',
+         '获得更完整的岗位匹配建议',
          '使用投递管理、收藏与翻译能力',
          '加入会员群，接收更聚焦的交流'
       ],
@@ -133,11 +134,12 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
    quarter: {
       name: '季度会员',
       shortLabel: '季度会员',
-      discountLabel: '主推方案 · 适合 1-3 个月冲刺',
+      discountLabel: '适合 1-3 个月认真找工作',
       description: '适合正在认真找工作的用户，在一个完整周期里持续获得更完整的信息、工具和推荐。',
       features: [
          '持续查看更完整的岗位与企业信息',
-         '持续获得个性化推荐与阶段性提醒',
+         '部分岗位可查看直招 HR 或负责人联系方式',
+         '持续收到更贴合你的岗位推荐和提醒',
          '更完整的求职助手与简历打磨能力',
          '投递管理 + 会员群支持'
       ],
@@ -398,15 +400,18 @@ const MembershipPage: React.FC = () => {
 
             <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
                <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
-                  <span className="block mb-2">让远程求职更清楚</span>
+                  <span className="block mb-2">少走弯路</span>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600">
-                     也更省时间
+                     更快拿到有效结果
                   </span>
                </h1>
 
                <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                  我们不想只给你更多岗位，而是帮你更快看清哪些岗位更值得花时间。<br className="hidden md:block" />
-                  当前开放的是体验会员和季度会员；如果后续开放 1 对 1 服务，也会单独说明。
+                  会员版可以查看更完整的岗位信息、部分岗位的直招联系方式，并使用更多求职工具和持续更新的岗位推荐。<br className="hidden md:block" />
+                  如需 1 对 1 指导或咨询服务，可以通过
+                  {' '}<a href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">小红书私信我们</a>
+                  {' '}或发送邮件到
+                  {' '}<a href="mailto:hi@haigooremote.com" className="font-medium text-indigo-600 hover:underline">hi@haigooremote.com</a>。
                </p>
 
                {!(isAuthenticated && isMember) && (
@@ -540,8 +545,8 @@ const MembershipPage: React.FC = () => {
          {/* Product Layers Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
             <div className="text-center mb-12">
-               <h2 className="text-3xl font-bold text-slate-900 mb-3">你可以按自己的节奏选择</h2>
-               <p className="text-slate-500 text-lg">先免费使用，再按需要开通会员；后续如果开放 1 对 1 服务，也会单独说明</p>
+               <h2 className="text-3xl font-bold text-slate-900 mb-3">先免费体验，再按需要开通</h2>
+               <p className="text-slate-500 text-lg">先免费使用，确认适合你，再决定是否开通会员；如需 1 对 1 指导或咨询服务，也可以单独联系我们</p>
             </div>
             <div className="grid md:grid-cols-3 gap-8">
                {/* Benefit 1 */}
@@ -561,7 +566,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">会员版<br /><span className="text-base text-slate-700 font-semibold mt-1 block">信息更完整，求职更省时间</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     适合正在认真找远程工作的用户，用更完整的信息、求职工具、推荐和会员群支持来加快进展。
+                     适合正在认真找远程工作的用户。除了更完整的信息和求职工具，一些岗位还会提供直招 HR、负责人等联系方式，帮助你更快推进申请。
                   </p>
                </div>
                {/* Benefit 3 */}
@@ -569,9 +574,9 @@ const MembershipPage: React.FC = () => {
                   <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
                      <Target className="w-7 h-7" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-900 mb-2">1 对 1 服务<br /><span className="text-base text-slate-700 font-semibold mt-1 block">后续单独开放</span></h3>
+                  <h3 className="text-xl font-bold text-slate-900 mb-2">1 对 1 服务<br /><span className="text-base text-slate-700 font-semibold mt-1 block">可单独咨询</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     如果后续开放简历精修、策略诊断、模拟面试等服务，我们会单独说明，不和会员方案混在一起。
+                     如果你需要简历精修、策略诊断、模拟面试等服务，可以通过小红书私信或邮件联系我们，我们会单独和你沟通。
                   </p>
                </div>
             </div>
@@ -753,14 +758,14 @@ const MembershipPage: React.FC = () => {
          <div className="max-w-4xl mx-auto pb-32 px-4">
             <div className="text-center mb-16">
                <h2 className="text-3xl font-bold text-slate-900 mb-4">常见问题解答</h2>
-               <p className="text-slate-500 text-lg">了解更多关于会员方案和后续服务的细节</p>
+               <p className="text-slate-500 text-lg">了解更多关于会员方案、联系方式和 1 对 1 服务的细节</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
                {[
-                  { q: "这里的岗位可靠吗？", a: "Haigoo 当前主打的是可信过滤。岗位会优先经过人工审核与筛选，重点减少不值得投入时间的无效岗位。" },
-                  { q: "会员版主要多了什么？", a: "会员版会提供更完整的岗位与企业信息、更多求职工具、持续更新的推荐，以及更聚焦的会员群交流，帮助你更快推进求职。" },
-                  { q: "1 对 1 服务也包含在会员里吗？", a: "不包含。如果后续开放简历精修、策略诊断、模拟面试等 1 对 1 服务，我们会单独说明，不和会员方案混在一起。" },
+                  { q: "这里的岗位可靠吗？", a: "岗位会优先经过人工审核与筛选，重点帮你减少不值得投入时间的无效岗位。" },
+                  { q: "会员版主要多了什么？", a: "会员版可以查看更完整的岗位与企业信息、使用更多求职工具、持续收到岗位推荐，也能进入更聚焦的会员群交流。一些岗位还会提供直招 HR 或负责人联系方式，帮助你更快推进申请。" },
+                  { q: "1 对 1 服务也包含在会员里吗？", a: "不包含。如果你需要简历精修、策略诊断、模拟面试等 1 对 1 服务，可以通过小红书私信我们，或发送邮件到 hi@haigooremote.com 单独咨询。" },
                   { q: "方案是否可以变更或退款？", a: "支付后 48 小时内可以申请变更方案或退款。你可以发邮件到「hi@haigooremote.com」写明原因，我们会在 3 个工作日内联系处理。" }
                ].map((faq, i) => (
                   <div key={i} className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">

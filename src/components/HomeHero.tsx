@@ -1151,17 +1151,17 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 {/* ── Hero Text ── */}
                 <div className="text-center mb-10 max-w-5xl mx-auto">
                     <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm">
-                        帮你找到并判断
+                        Haigoo 帮你获得
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
-                            值得投的远程岗位
+                            理想的远程工作
                         </span>
                     </h1>
                     <p className="text-base md:text-lg text-slate-600 max-w-3xl mx-auto font-medium">
-                        Haigoo 帮你先筛掉低质量信息，
-                        更快看到靠谱、适合投的远程机会。
+                        我们优先帮你筛出适合国内用户申请的靠谱岗位，
+                        也会补充部分岗位的直招 HR、负责人等联系方式，让申请更高效、更安心。
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-                        {['✓ 更适合国内用户申请', '✓ 岗位优先经过人工筛选', '✓ 可上传简历获取推荐'].map((chip) => (
+                        {['✓ 更适合国内用户申请', '✓ 岗位优先经过人工筛选', '✓ 部分岗位可直连招聘方', '✓ 可上传简历获取推荐'].map((chip) => (
                             <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}
                             </span>
@@ -1208,7 +1208,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                             {/* Shared title area with logo */}
                             <div className="mb-1">
                                 <div>
-                                    <h2 className="text-[34px] md:text-[38px] font-bold text-slate-900 leading-[1.1] tracking-tight">先看看今天<br/>更适合你的岗位</h2>
+                                    <h2 className="text-[34px] md:text-[38px] font-bold text-slate-900 leading-[1.1] tracking-tight">看看今天有哪些<br/>适合你的岗位</h2>
                                     {hasResults && (
                                         <p className="text-xs text-slate-500 mt-1.5">今日推荐岗位已于 {formattedUpdatedAt} 更新</p>
                                     )}
