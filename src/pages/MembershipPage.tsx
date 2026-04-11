@@ -129,7 +129,7 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
          '使用投递管理、收藏与翻译能力',
          '加入会员群，接收更聚焦的交流'
       ],
-      ctaHint: '适合先体验这些功能是否真的对你有帮助'
+      ctaHint: '可以先体验看看是否能够帮到你'
    },
    quarter: {
       name: '季度会员',
@@ -143,7 +143,7 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
          '更完整的求职助手与简历打磨能力',
          '投递管理 + 会员群支持'
       ],
-      ctaHint: '适合未来 1-3 个月认真找远程工作的用户',
+      ctaHint: '适合 1-3 个月认真找远程工作的用户',
       isPlus: true
    },
    year: {
@@ -157,7 +157,7 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
          '重点机会跟进建议',
          '适合有明确求职窗口的高意向用户'
       ],
-      ctaHint: '当前还在筹备中，后续开放时会单独说明',
+      ctaHint: '当前正在筹备中',
       comingSoon: true
    }
 };
@@ -407,11 +407,7 @@ const MembershipPage: React.FC = () => {
                </h1>
 
                <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                  会员版可以查看更完整的岗位信息、部分岗位的直招联系方式，并使用更多求职工具和持续更新的岗位推荐。<br className="hidden md:block" />
-                  如需 1 对 1 指导或咨询服务，可以通过
-                  {' '}<a href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">小红书私信我们</a>
-                  {' '}或发送邮件到
-                  {' '}<a href="mailto:hi@haigooremote.com" className="font-medium text-indigo-600 hover:underline">hi@haigooremote.com</a>。
+                  会员版可以查看更完整的岗位信息、部分岗位的直招联系方式，并使用更多求职工具和持续更新的岗位推荐。
                </p>
 
                {!(isAuthenticated && isMember) && (
@@ -546,7 +542,7 @@ const MembershipPage: React.FC = () => {
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
             <div className="text-center mb-12">
                <h2 className="text-3xl font-bold text-slate-900 mb-3">先免费体验，再按需要开通</h2>
-               <p className="text-slate-500 text-lg">先免费使用，确认适合你，再决定是否开通会员；如需 1 对 1 指导或咨询服务，也可以单独联系我们</p>
+               <p className="text-slate-500 text-lg">先免费使用，确认适合你，再决定是否开通会员</p>
             </div>
             <div className="grid md:grid-cols-3 gap-8">
                {/* Benefit 1 */}
@@ -556,7 +552,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">免费版<br /><span className="text-base text-slate-700 font-semibold mt-1 block">浏览岗位、基础申请</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     面向所有用户开放。先浏览岗位、使用基础筛选、查看申请方式，并进入交流群获得基础信息与反馈。
+                     面向所有用户开放。可浏览岗位、使用基础筛选，并提供 20 次企业网申和 3 次查看企业信息（含联系人）的机会。
                   </p>
                </div>
                {/* Benefit 2 */}
@@ -576,7 +572,10 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">1 对 1 服务<br /><span className="text-base text-slate-700 font-semibold mt-1 block">可单独咨询</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     如果你需要简历精修、策略诊断、模拟面试等服务，可以通过小红书私信或邮件联系我们，我们会单独和你沟通。
+                     如果你需要简历精修、策略诊断、模拟面试等服务，可以通过
+                     {' '}<a href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9" target="_blank" rel="noreferrer" className="font-medium text-indigo-600 hover:underline">小红书私信我们</a>
+                     {' '}或发送邮件到
+                     {' '}<a href="mailto:hi@haigooremote.com" className="font-medium text-indigo-600 hover:underline">hi@haigooremote.com</a>。
                   </p>
                </div>
             </div>
@@ -644,9 +643,6 @@ const MembershipPage: React.FC = () => {
                            <p className="text-sm text-slate-500 font-medium px-4">
                               {plan.ctaHint}
                            </p>
-                           <p className="text-xs text-slate-400 mt-2 px-4 line-clamp-2 min-h-8">
-                              {plan.description}
-                           </p>
                         </div>
 
                         <ul className="space-y-3.5 mb-8 flex-1 px-1">
@@ -708,7 +704,7 @@ const MembershipPage: React.FC = () => {
          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
             <div className="text-center mb-12">
                <h2 className="text-3xl font-extrabold text-slate-900 mb-3">来自用户的真实反馈</h2>
-               <p className="text-slate-500 text-lg">看看大家为什么愿意继续用下去</p>
+               <p className="text-slate-500 text-lg">看看其他用户怎么说</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -744,7 +740,7 @@ const MembershipPage: React.FC = () => {
 
          {/* Trusted Partners */}
          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center mt-8 mb-16">
-            <h3 className="text-base font-bold text-slate-400 uppercase tracking-widest mb-10">我们持续关注的企业与方向</h3>
+            <h3 className="text-base font-bold text-slate-400 uppercase tracking-widest mb-10">我们合作过的企业/社区</h3>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
                <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><HardDrive className="w-6 h-6" /> Red Mountain</div>
                <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><Building className="w-6 h-6" /> Bodhitree Group</div>

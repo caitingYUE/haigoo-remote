@@ -1157,11 +1157,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                         </span>
                     </h1>
                     <p className="text-base md:text-lg text-slate-600 max-w-3xl mx-auto font-medium">
-                        我们优先帮你筛出适合国内用户申请的靠谱岗位，
-                        也会补充部分岗位的直招 HR、负责人等联系方式，让申请更高效、更安心。
+                        我们帮你筛出适合国内用户申请的靠谱岗位，
+                        更为你找到了岗位 HR / 负责人等联系方式，让申请更高效和安心。
                     </p>
                     <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
-                        {['✓ 更适合国内用户申请', '✓ 岗位优先经过人工筛选', '✓ 部分岗位可直连招聘方', '✓ 可上传简历获取推荐'].map((chip) => (
+                        {['✓ 更适合国内用户申请', '✓ 所有岗位均经过人工筛选', '✓ 部分岗位可直连招聘方', '✓ 上传简历可获取每日推荐'].map((chip) => (
                             <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
                                 {chip}
                             </span>
