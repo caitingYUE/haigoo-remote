@@ -102,6 +102,7 @@ class TrustedCompaniesService {
     }): Promise<any> {
         try {
             const queryParams = new URLSearchParams();
+            const token = getAuthToken();
             queryParams.append('resource', 'companies'); // Match api/data.js logic
             // queryParams.append('target', 'companies'); // Remove target param as api/data.js handles routing via resource
             queryParams.append('_t', Date.now().toString());
@@ -118,7 +119,9 @@ class TrustedCompaniesService {
                 if (params.isTrusted && params.isTrusted !== 'all') queryParams.append('isTrusted', params.isTrusted);
             }
 
-            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined
+            });
             if (!response.ok) throw new Error('Failed to fetch companies');
             const data = await response.json();
 
@@ -208,6 +211,7 @@ class TrustedCompaniesService {
     }): Promise<PaginatedCompaniesResponse> {
         try {
             const queryParams = new URLSearchParams();
+            const token = getAuthToken();
             queryParams.append('resource', 'companies'); // Match api/data.js routing
             queryParams.append('target', 'trusted_companies_with_jobs_info'); // Specific handler action
             queryParams.append('_t', Date.now().toString());
@@ -231,7 +235,9 @@ class TrustedCompaniesService {
                 queryParams.append('jobCategories', params.jobCategories.join(','));
             }
 
-            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined
+            });
             if (!response.ok) throw new Error('Failed to fetch companies with job stats');
             const data = await response.json();
 
@@ -245,12 +251,15 @@ class TrustedCompaniesService {
     async getCompanyById(id: string, jobId?: string): Promise<TrustedCompany | null> {
         try {
             const queryParams = new URLSearchParams();
+            const token = getAuthToken();
             queryParams.append('resource', 'companies'); // Match api/data.js routing
             queryParams.append('target', 'companies'); // Specific handler action (optional but safe)
             queryParams.append('id', id);
             if (jobId) queryParams.append('jobId', jobId);
 
-            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined
+            });
             if (!response.ok) throw new Error('Failed to fetch company');
             const data = await response.json();
             return data.company || null;

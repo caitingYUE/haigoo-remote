@@ -77,8 +77,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return source.filter(contact => {
             const name = String(contact?.name || '').trim()
             const title = String(contact?.title || '').trim()
-            const hiringEmail = String(contact?.hiringEmail || '').trim()
-            return !!(name && title && hiringEmail)
+            return !!(name && title)
         })
     }, [companyInfo])
 
@@ -1357,6 +1356,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             const companyName = job.company || companyInfo?.name || '';
                                             const isUnlocked = isMember || unlockedCompanies.includes(companyName);
                                             const showInfo = isUnlocked;
+                                            const companyEmailValue = showInfo
+                                                ? (companyInfo?.hiringEmail || (isMemberRestrictedJob ? '会员可见' : (companyInfo?.emailType || '通用邮箱')))
+                                                : 'HR直招邮箱';
+                                            const companyEmailClassName = showInfo && companyInfo?.hiringEmail
+                                                ? 'text-indigo-600 font-bold'
+                                                : 'text-slate-500 font-semibold';
 
                                             const handleUnlock = async (e: React.MouseEvent) => {
                                                 e.stopPropagation();
@@ -1463,8 +1468,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         <div className="w-6 h-6 rounded-full bg-indigo-50 border border-indigo-100 flex items-center justify-center flex-shrink-0">
                                                             <Mail className="w-3 h-3 text-indigo-600" />
                                                         </div>
-                                                        <span className="text-indigo-600 font-bold">
-                                                            {showInfo ? (companyInfo?.hiringEmail || companyInfo?.emailType || '通用邮箱') : 'HR直招邮箱'}
+                                                        <span className={companyEmailClassName}>
+                                                            {companyEmailValue}
                                                         </span>
                                                     </div>
                                                 </div>
