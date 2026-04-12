@@ -395,7 +395,7 @@ function writeStoredPlanStatus(status: 'idle' | 'pending' | 'ready') {
 
 export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { user, isAuthenticated, token, isMember, updateProfile } = useAuth()
+    const { user, isAuthenticated, token, isMember, updateProfile, isLoading: authLoading } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
     const userId = user?.user_id || null
     const storedTargetRole = String(user?.profile?.targetRole || '').trim()
@@ -604,38 +604,60 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
     // Load saved form data from local storage for guest/returning users
     useEffect(() => {
-        const cached = localStorage.getItem(getHeroCacheKey())
-        if (cached) {
+        if (hasHydrated || authLoading) return
+
+        const primaryCacheKey = isAuthenticated && userId ? getHeroCacheKey(userId) : getHeroCacheKey()
+        const guestHeroCacheKey = getHeroCacheKey()
+        const applyHeroCache = (raw: string | null) => {
+            if (!raw) return false
             try {
-                const data = JSON.parse(cached)
+                const data = JSON.parse(raw)
                 const cacheTimestamp = data.lastUpdatedAt || data.timestamp
-                if (cacheTimestamp && Date.now() - cacheTimestamp < HERO_CACHE_TTL) {
-                    setLastUpdatedAt(cacheTimestamp)
-                    if (data.jobDirection) setJobDirection(data.jobDirection)
-                    if (data.positionType) setPositionType(data.positionType)
-                    if (Array.isArray(data.recommendations)) {
-                        setRecommendations(data.recommendations)
-                        setHasResults(Boolean(data.hasResults || data.recommendations.length > 0))
-                    } else if (data.hasResults) {
-                        setHasResults(true)
+                if (!cacheTimestamp || Date.now() - cacheTimestamp >= HERO_CACHE_TTL) {
+                    return false
+                }
+
+                setLastUpdatedAt(cacheTimestamp)
+                if (data.jobDirection) setJobDirection(data.jobDirection)
+                if (data.positionType) setPositionType(data.positionType)
+                if (Array.isArray(data.recommendations)) {
+                    setRecommendations(data.recommendations)
+                    setHasResults(Boolean(data.hasResults || data.recommendations.length > 0))
+                } else if (data.hasResults) {
+                    setHasResults(true)
+                }
+                return true
+            } catch {
+                return false
+            }
+        }
+
+        const cached = localStorage.getItem(primaryCacheKey)
+        let hydratedFromCache = applyHeroCache(cached)
+
+        if (!hydratedFromCache && isAuthenticated && userId && primaryCacheKey !== guestHeroCacheKey) {
+            const guestCached = localStorage.getItem(guestHeroCacheKey)
+            hydratedFromCache = applyHeroCache(guestCached)
+            if (hydratedFromCache && guestCached) {
+                localStorage.setItem(primaryCacheKey, guestCached)
+            }
+        }
+
+        if (!isAuthenticated || !hydratedFromCache) {
+            const saved = localStorage.getItem('copilot_guest_cache')
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved)
+                    if (Date.now() - data.timestamp < 10 * 60 * 1000) {
+                        if (data.jobDirection) setJobDirection(data.jobDirection)
+                        if (data.positionType) setPositionType(data.positionType)
                     }
+                } catch {
+                    // ignore
                 }
-            } catch (e) {
-                // ignore
             }
         }
-        const saved = localStorage.getItem('copilot_guest_cache')
-        if (saved) {
-            try {
-                const data = JSON.parse(saved)
-                if (Date.now() - data.timestamp < 10 * 60 * 1000) {
-                    if (data.jobDirection) setJobDirection(data.jobDirection)
-                    if (data.positionType) setPositionType(data.positionType)
-                }
-            } catch (e) {
-                // ignore
-            }
-        }
+
         const pendingGuestResume = readPendingGuestResume()
         if (pendingGuestResume) {
             setResumeId('guest-temp-id')
@@ -657,7 +679,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             }
         }
         setHasHydrated(true)
-    }, [])
+    }, [authLoading, hasHydrated, isAuthenticated, userId])
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || !userId) return
@@ -746,10 +768,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }, [hasHydrated, isAuthenticated, token, resumeName, resumeId])
 
     useEffect(() => {
-        if (!hasHydrated) return
+        if (!hasHydrated || authLoading) return
+        if (isAuthenticated && userId && accountHeroHydratedForUser.current !== userId) return
         const payload = { jobDirection, positionType, recommendations, hasResults, lastUpdatedAt, timestamp: Date.now() }
         localStorage.setItem(getHeroCacheKey(userId), JSON.stringify(payload))
-    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated, lastUpdatedAt, userId])
+    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated, lastUpdatedAt, userId, authLoading, isAuthenticated])
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || !token) return
