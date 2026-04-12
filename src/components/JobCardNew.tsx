@@ -122,7 +122,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const isMemberOnlyJob = Boolean(job.memberOnly);
 
    const MemberBadge = () => (
-      <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 inline-flex -translate-x-1/2 translate-y-1/3 items-center justify-center gap-1 rounded-full bg-indigo-600/95 px-2 py-0.5 text-center text-[9px] font-bold text-white shadow-lg shadow-indigo-500/20 backdrop-blur-[2px]">
+      <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 inline-flex -translate-x-1/2 items-center justify-center gap-1 rounded-full bg-indigo-600/95 px-2.5 py-[3px] text-center text-[10px] font-bold leading-none text-white shadow-lg shadow-indigo-500/15 backdrop-blur-[2px]">
          <Crown className="h-2.5 w-2.5" />
          <span className="whitespace-nowrap">会员</span>
       </div>
@@ -400,7 +400,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {/* Email Only Badge */}
             {isMemberOnlyJob && (
-               <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 inline-flex -translate-x-1/2 translate-y-1/3 items-center justify-center gap-1 rounded-full bg-indigo-600/95 px-1.5 py-0.5 text-center text-[8px] font-bold text-white shadow-md shadow-indigo-500/20 backdrop-blur-[2px]">
+               <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 inline-flex -translate-x-1/2 items-center justify-center gap-1 rounded-full bg-indigo-600/95 px-1.5 py-[2px] text-center text-[8px] font-bold leading-none text-white shadow-md shadow-indigo-500/15 backdrop-blur-[2px]">
                   <Crown className="h-2 w-2" />
                   <span className="whitespace-nowrap">会员</span>
                </div>

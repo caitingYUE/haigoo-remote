@@ -214,7 +214,7 @@ export default function Header() {
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
             >
-              远程岗位
+              全部岗位
             </Link>
 
             <Link
@@ -501,7 +501,7 @@ export default function Header() {
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                远程岗位
+                全部岗位
               </Link>
               <Link
                 to="/trusted-companies"

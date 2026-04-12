@@ -17,7 +17,7 @@ interface SuggestionItem {
   hot?: boolean
 }
 
-const FALLBACK_ROLE_SUGGESTIONS = ['产品经理', '前端开发', '后端开发', '市场营销', '客户经理', '运营']
+const FALLBACK_ROLE_SUGGESTIONS = ['产品经理', '前端开发', '后端开发', '全栈开发', '市场营销', '客户经理', '运营', 'UI 设计']
 
 export default function HomeQuickSearch({
   featuredJobs = [],
@@ -44,7 +44,7 @@ export default function HomeQuickSearch({
         const categories = Array.isArray(data?.aggregations?.category) ? data.aggregations.category : []
         const nextSuggestions = categories
           .filter((item: any) => item?.value)
-          .slice(0, 6)
+          .slice(0, 8)
           .map((item: any, index: number) => ({
             label: String(item.value).trim(),
             kind: 'role' as const,
@@ -111,7 +111,7 @@ export default function HomeQuickSearch({
         key={`${item.kind}-${item.label}`}
         type="button"
         onClick={() => jumpBySuggestion(item.label)}
-        className={`group inline-flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm font-medium transition-all ${
+        className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-all ${
           isHot
             ? 'border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100'
             : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700'
@@ -164,8 +164,8 @@ export default function HomeQuickSearch({
 
             <div className={`space-y-3 ${isEmbedded ? 'border-t border-slate-100 pt-4' : ''}`}>
               <div className="flex flex-col gap-2 md:flex-row md:items-start">
-                <div className="w-[76px] flex-shrink-0 pt-1 text-sm font-semibold text-slate-500">热门岗位</div>
-                <div className="flex flex-wrap gap-2">
+                <div className="w-[72px] flex-shrink-0 pt-1 text-[13px] font-semibold text-slate-500">热门岗位</div>
+                <div className="flex flex-wrap gap-1.5">
                   {(roleSuggestions.length > 0 ? roleSuggestions : FALLBACK_ROLE_SUGGESTIONS.map((label, index) => ({
                     label,
                     kind: 'role' as const,
@@ -176,8 +176,8 @@ export default function HomeQuickSearch({
 
               {companySuggestions.length > 0 ? (
                 <div className="flex flex-col gap-2 md:flex-row md:items-start">
-                  <div className="w-[76px] flex-shrink-0 pt-1 text-sm font-semibold text-slate-500">常搜企业</div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="w-[72px] flex-shrink-0 pt-1 text-[13px] font-semibold text-slate-500">常搜企业</div>
+                  <div className="flex flex-wrap gap-1.5">
                     {companySuggestions.map(renderSuggestionChip)}
                   </div>
                 </div>
