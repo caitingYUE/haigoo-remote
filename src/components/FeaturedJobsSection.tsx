@@ -5,22 +5,31 @@ import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import JobCardNew from './JobCardNew'
 import { JobCardSkeleton } from './skeletons/JobCardSkeleton'
+import HomeQuickSearch from './HomeQuickSearch'
+import { TrustedCompany } from '../services/trusted-companies-service'
 
 interface FeaturedJobsSectionProps {
   initialJobs?: Job[]
   onJobClick: (job: Job) => void
+  trustedCompanies?: TrustedCompany[]
+  companyJobStats?: Record<string, { total: number; categories: Record<string, number> }>
 }
 
 const CATEGORIES = [
-  { id: 'all', label: '全部精选', icon: Sparkles },
-  { id: 'Customer Service,Sales,Operations,Technical Support,AI Trainer,Writer,Admin,Virtual Assistant,Marketing,客服,客户服务,销售,运营,技术支持,AI训练师,作家,文案,行政,助理,虚拟助理,市场营销,远程入门', label: '远程入门', icon: PenTool },
-  { id: 'Product Manager,Product Owner,Product Marketing,Head of Product,产品经理,产品', label: '产品经理', icon: Layers },
-  { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm,Developer,研发,前端,后端,全栈,算法,工程师', label: '技术研发', icon: Code2 },
-  { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '营销运营', icon: TrendingUp },
-  { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '客户经理', icon: Megaphone },
+  { id: 'all', label: '综合推荐', icon: Sparkles },
+  { id: 'Customer Service,Sales,Operations,Technical Support,AI Trainer,Writer,Admin,Virtual Assistant,Marketing,客服,客户服务,销售,运营,技术支持,AI训练师,作家,文案,行政,助理,虚拟助理,市场营销,远程入门', label: '入门机会', icon: PenTool },
+  { id: 'Product Manager,Product Owner,Product Marketing,Head of Product,产品经理,产品', label: '产品岗位', icon: Layers },
+  { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm,Developer,研发,前端,后端,全栈,算法,工程师', label: '技术岗位', icon: Code2 },
+  { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '运营营销', icon: TrendingUp },
+  { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '销售商务', icon: Megaphone },
 ]
 
-export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: FeaturedJobsSectionProps) {
+export default function FeaturedJobsSection({
+  initialJobs = [],
+  onJobClick,
+  trustedCompanies = [],
+  companyJobStats = {}
+}: FeaturedJobsSectionProps) {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('all')
   const [jobs, setJobs] = useState<Job[]>(initialJobs)
@@ -158,6 +167,21 @@ export default function FeaturedJobsSection({ initialJobs = [], onJobClick }: Fe
   return (
     <div id="featured-jobs" className="py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-10">
+          <div className="mx-auto mb-8 max-w-5xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              搜索你想找的岗位，也可以直接浏览精选机会
+            </h2>
+          </div>
+
+          <HomeQuickSearch
+            variant="embedded"
+            featuredJobs={jobs}
+            trustedCompanies={trustedCompanies}
+            companyJobStats={companyJobStats}
+          />
+        </div>
+
         {/* Tabs */}
         <div className="flex flex-col items-center mb-10">
           <div className="flex flex-wrap items-center justify-center gap-x-8 gap-y-4 border-b border-slate-200 pb-1 w-full max-w-3xl">

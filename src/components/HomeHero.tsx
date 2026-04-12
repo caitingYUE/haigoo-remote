@@ -1149,8 +1149,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
                 
                 {/* ── Hero Text ── */}
-                <div className="text-center mb-10 max-w-5xl mx-auto">
-                    <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm">
+                <div className="text-center mb-10 w-full max-w-[1500px] mx-auto">
+                    <h1 className="text-5xl md:text-[68px] xl:text-[76px] font-extrabold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm lg:whitespace-nowrap">
                         Haigoo 帮你获得
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
                             理想的远程工作
