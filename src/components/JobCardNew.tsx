@@ -156,12 +156,20 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const directApplyEmail = useMemo(() => String(job.hiringEmail || '').trim(), [job.hiringEmail]);
    const hasDirectApplyUrl = Boolean(directApplyUrl);
    const hasDirectApplyEmail = Boolean(directApplyEmail);
+   const resolvedDisplayScore = Number(
+      matchScore
+      ?? (job as any).displayMatchScore
+      ?? (job as any).display_match_score
+      ?? job.matchScore
+      ?? job.recommendationScore
+      ?? 0
+   );
    const resolvedMatchLevel = useMemo(() => {
-      const raw = Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0);
+      const raw = resolvedDisplayScore;
       return resolveMatchLevel(raw, job.matchLevel);
-   }, [job, matchScore]);
+   }, [job, resolvedDisplayScore]);
 
-   const rawScoreNum = Math.round(Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0));
+   const rawScoreNum = Math.round(resolvedDisplayScore);
    const showMatchScore = resolvedMatchLevel !== 'none' && rawScoreNum > 0;
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
    const isCompactFeaturedCard = variant === 'list' && compactFeatured;
@@ -246,9 +254,60 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       return tags.slice(0, 5); // Reduce max tags for cleaner look
    }, [job.skills, job.tags, job.companyTags]);
+   const compactSkillTags = isCompactFeaturedCard ? displayTags.slice(0, 4) : displayTags.slice(0, 4);
+   const compactSkillTagOverflow = isCompactFeaturedCard ? Math.max(displayTags.length - compactSkillTags.length, 0) : 0;
 
    const salaryText = formatSalary(job.salary);
    const isSalaryOpen = salaryText === '薪资Open' || salaryText === '薪资 Open';
+   const topMetaBadges = [
+      job.type ? {
+         key: 'jobType',
+         label: JOB_TYPE_MAP[job.type] || job.type,
+         options: {
+            icon: Calendar,
+            tone: 'bg-amber-50 text-amber-700 border border-amber-100/50',
+            maxWidthClass: 'max-w-[8ch]'
+         }
+      } : null,
+      job.experienceLevel ? {
+         key: 'experienceLevel',
+         label: EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel,
+         options: {
+            icon: TrendingUp,
+            tone: 'bg-emerald-50 text-emerald-700 border border-emerald-100/50',
+            maxWidthClass: 'max-w-[8ch]'
+         }
+      } : null,
+      job.companyIndustry ? {
+         key: 'companyIndustry',
+         label: job.companyIndustry,
+         options: {
+            icon: Building2,
+            tone: 'bg-purple-50 text-purple-700 border border-purple-100/50',
+            maxWidthClass: isCompactFeaturedCard ? undefined : 'max-w-[10ch] lg:max-w-[14ch]'
+         }
+      } : null,
+      job.category ? {
+         key: 'category',
+         label: job.category,
+         options: {
+            icon: Briefcase,
+            tone: 'bg-indigo-50 text-indigo-700 border border-indigo-100/50',
+            maxWidthClass: isCompactFeaturedCard ? 'max-w-[10ch] lg:max-w-[12ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
+         }
+      } : null
+   ].filter(Boolean) as Array<{
+      key: string;
+      label: string;
+      options: {
+         icon: React.ComponentType<{ className?: string }>;
+         tone: string;
+         maxWidthClass?: string;
+      };
+   }>;
+
+   const compactPinnedBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 3) : topMetaBadges;
+   const compactTrailingBadges = isCompactFeaturedCard ? topMetaBadges.slice(3) : [];
    const renderTopMetaBadge = (
       label: string,
       options: {
@@ -442,44 +501,36 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-start gap-2 min-h-[24px]">
-                     <div className={`flex min-w-0 items-center gap-2 pt-1 ${isCompactFeaturedCard ? 'overflow-hidden whitespace-nowrap flex-nowrap' : 'flex-wrap'}`}>
-                        {/* Job Type (Amber) */}
-                        {job.type && (
-                           renderTopMetaBadge(JOB_TYPE_MAP[job.type] || job.type, {
-                              icon: Calendar,
-                              tone: 'bg-amber-50 text-amber-700 border border-amber-100/50',
-                              maxWidthClass: 'max-w-[8ch]'
-                           })
+                     <div className={`flex min-w-0 items-center gap-2 pt-1 ${isCompactFeaturedCard ? 'flex-nowrap' : 'flex-wrap'}`}>
+                        {isCompactFeaturedCard ? (
+                           <>
+                              <div className="flex min-w-0 shrink-0 items-center gap-2">
+                                 {compactPinnedBadges.map((badge) => (
+                                    <div key={badge.key} className="shrink-0">
+                                       {renderTopMetaBadge(badge.label, badge.options)}
+                                    </div>
+                                 ))}
+                              </div>
+                              {compactTrailingBadges.length > 0 ? (
+                                 <div className="min-w-0 flex-1 overflow-hidden">
+                                    {compactTrailingBadges.map((badge) => (
+                                       <div key={badge.key} className="min-w-0">
+                                          {renderTopMetaBadge(badge.label, badge.options)}
+                                       </div>
+                                    ))}
+                                 </div>
+                              ) : null}
+                           </>
+                        ) : (
+                           <>
+                              {topMetaBadges.map((badge) => (
+                                 <React.Fragment key={badge.key}>
+                                    {renderTopMetaBadge(badge.label, badge.options)}
+                                 </React.Fragment>
+                              ))}
+                           </>
                         )}
 
-                        {/* Experience Level (Emerald - New) */}
-                        {job.experienceLevel && (
-                           renderTopMetaBadge(EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel, {
-                              icon: TrendingUp,
-                              tone: 'bg-emerald-50 text-emerald-700 border border-emerald-100/50',
-                              maxWidthClass: 'max-w-[8ch]'
-                           })
-                        )}
-
-                        {/* Industry (Purple - Differentiated from Category) */}
-                        {job.companyIndustry && (
-                           renderTopMetaBadge(job.companyIndustry, {
-                              icon: Building2,
-                              tone: 'bg-purple-50 text-purple-700 border border-purple-100/50',
-                              maxWidthClass: 'max-w-[10ch] lg:max-w-[14ch]'
-                           })
-                        )}
-
-                        {/* Category (Blue/Indigo - Role related) */}
-                        {job.category && (
-                           renderTopMetaBadge(job.category, {
-                              icon: Briefcase,
-                              tone: 'bg-indigo-50 text-indigo-700 border border-indigo-100/50',
-                              maxWidthClass: 'max-w-[10ch] lg:max-w-[14ch]'
-                           })
-                        )}
-
-                        {/* Deactivated Badge */}
                         {(job.status === '已失效' || job.status === '已结束') && (
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
                               已下架
@@ -541,16 +592,24 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 4: Tags & Mobile Actions */}
                   <div className="mt-auto flex flex-col gap-3 pt-2 md:flex-row md:items-end md:justify-between">
-                     <div className={`flex min-w-0 items-center gap-2 ${isCompactFeaturedCard ? 'overflow-hidden whitespace-nowrap flex-nowrap' : 'flex-wrap content-start md:max-h-[60px]'}`}>
-                        {displayTags.slice(0, isCompactFeaturedCard ? 5 : 4).map((tag, i) => (
+                     <div className={`flex min-w-0 items-center gap-2 ${isCompactFeaturedCard ? 'flex-nowrap' : 'flex-wrap content-start md:max-h-[60px]'}`}>
+                        {(isCompactFeaturedCard ? compactSkillTags : displayTags.slice(0, 4)).map((tag, i) => (
                            <span
                               key={i}
-                              className={`inline-flex items-center rounded-md bg-slate-100/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-200 ${isCompactFeaturedCard ? 'max-w-[110px] shrink-0' : 'max-w-full'}`}
+                              className={`inline-flex items-center rounded-md bg-slate-100/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-200 ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : 'max-w-full'}`}
                               title={tag.text}
                            >
                               <span className="truncate">{tag.text}</span>
                            </span>
                         ))}
+                        {isCompactFeaturedCard && compactSkillTagOverflow > 0 ? (
+                           <span
+                              className="inline-flex shrink-0 items-center rounded-md bg-slate-100/80 px-2 py-1 text-[11px] font-medium text-slate-500"
+                              title={`还有 ${compactSkillTagOverflow} 个标签`}
+                           >
+                              +{compactSkillTagOverflow}
+                           </span>
+                        ) : null}
                      </div>
 
                      <div className="flex items-center gap-2 md:hidden">
@@ -580,8 +639,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
                </div>
 
-               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'md:max-w-[148px]' : 'md:max-w-[220px]'}`}>
-                  <div className={`${isCompactFeaturedCard ? 'max-w-[148px]' : 'max-w-[220px]'} truncate text-[15px] leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
+               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'md:max-w-[124px]' : 'md:max-w-[220px]'}`}>
+                  <div className={`${isCompactFeaturedCard ? 'max-w-[124px] text-[14px]' : 'max-w-[220px] text-[15px]'} truncate leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
                      {salaryText}
                   </div>
 

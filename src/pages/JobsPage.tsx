@@ -277,11 +277,20 @@ export default function JobsPage() {
         signal // P0 Fix: Pass abort signal
       })
 
-      // 自动降级处理：如果带分数的接口返回 401 (Unauthorized) 或 500 (Server Error)，尝试降级为普通接口
+      // 自动降级处理：仅在认证失败时回退到普通列表，避免服务端异常被静默吞掉后看起来像“匹配度消失”
       if (!response.ok && shouldUseMatchScore) {
-        console.warn(`[JobsPage] Failed to fetch matched jobs (status ${response.status}), falling back to standard list`)
-        queryParams.delete('action') // 移除 action 参数，回退到默认列表
-        response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, { signal })
+        if (response.status === 401 || response.status === 403) {
+          console.warn(`[JobsPage] Failed to fetch matched jobs (status ${response.status}), falling back to standard list`)
+          queryParams.delete('action') // 移除 action 参数，回退到默认列表
+          response = await fetch(`/api/data/processed-jobs?${queryParams.toString()}`, {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            signal
+          })
+        } else {
+          const errorText = await response.text().catch(() => '')
+          console.error(`[JobsPage] Matched jobs request failed: ${response.status}`, errorText)
+          throw new Error(`匹配岗位列表加载失败（${response.status}）`)
+        }
       }
 
       if (!response.ok) {
