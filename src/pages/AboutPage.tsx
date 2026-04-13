@@ -307,8 +307,8 @@ export default function AboutPage() {
                 name: 'Suzy',
                 title: '产品经理，社群共建者',
                 image: '/contributors/5.webp',
-                social: null,
-                socialType: null
+                social: 'https://www.linkedin.com/in/suzy-guo-285351384/',
+                socialType: 'linkedin'
               },
               {
                 name: 'Kia',

@@ -46,6 +46,7 @@ interface JobCardNewProps {
    isActive?: boolean;
    applicationStatusNode?: React.ReactNode;
    showApplicationMethodIcons?: boolean;
+   compactFeatured?: boolean;
 }
 
 // Simple hash function to generate a stable pastel color from string
@@ -114,7 +115,7 @@ const FreshBadge = () => (
    </span>
 );
 
-export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode, showApplicationMethodIcons = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const isTranslated = !!job.translations?.title;
@@ -163,6 +164,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const rawScoreNum = Math.round(Number(matchScore ?? job.matchScore ?? job.recommendationScore ?? 0));
    const showMatchScore = resolvedMatchLevel !== 'none' && rawScoreNum > 0;
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
+   const isCompactFeaturedCard = variant === 'list' && compactFeatured;
 
    const formatSalary = (salary: Job['salary']) => {
       // Handle missing/zero cases
@@ -440,7 +442,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-start gap-2 min-h-[24px]">
-                     <div className="flex min-w-0 flex-wrap items-center gap-2 pt-1">
+                     <div className={`flex min-w-0 items-center gap-2 pt-1 ${isCompactFeaturedCard ? 'overflow-hidden whitespace-nowrap flex-nowrap' : 'flex-wrap'}`}>
                         {/* Job Type (Amber) */}
                         {job.type && (
                            renderTopMetaBadge(JOB_TYPE_MAP[job.type] || job.type, {
@@ -539,11 +541,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 4: Tags & Mobile Actions */}
                   <div className="mt-auto flex flex-col gap-3 pt-2 md:flex-row md:items-end md:justify-between">
-                     <div className="flex min-w-0 flex-wrap content-start items-center gap-2 md:max-h-[60px]">
-                        {displayTags.slice(0, 4).map((tag, i) => (
+                     <div className={`flex min-w-0 items-center gap-2 ${isCompactFeaturedCard ? 'overflow-hidden whitespace-nowrap flex-nowrap' : 'flex-wrap content-start md:max-h-[60px]'}`}>
+                        {displayTags.slice(0, isCompactFeaturedCard ? 5 : 4).map((tag, i) => (
                            <span
                               key={i}
-                              className="inline-flex max-w-full items-center rounded-md bg-slate-100/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-200"
+                              className={`inline-flex items-center rounded-md bg-slate-100/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-200 ${isCompactFeaturedCard ? 'max-w-[110px] shrink-0' : 'max-w-full'}`}
                               title={tag.text}
                            >
                               <span className="truncate">{tag.text}</span>
@@ -578,8 +580,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
                </div>
 
-               <div className="hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:max-w-[220px] md:flex-col md:items-end md:justify-between md:gap-3 md:text-right">
-                  <div className={`max-w-[220px] truncate text-[15px] leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
+               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'md:max-w-[148px]' : 'md:max-w-[220px]'}`}>
+                  <div className={`${isCompactFeaturedCard ? 'max-w-[148px]' : 'max-w-[220px]'} truncate text-[15px] leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
                      {salaryText}
                   </div>
 

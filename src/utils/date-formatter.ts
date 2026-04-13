@@ -1,6 +1,10 @@
 /**
  * 时间格式化工具
- * 近2天内发布的改用今天、昨天表示，3天以前的用日期
+ * 岗位卡片统一时间展示规则：
+ * - 今天 / 昨天
+ * - 7天以上显示“一周前”
+ * - 30天以上显示“一月前”
+ * - 其余显示日期（MM-DD）
  */
 
 export class DateFormatter {
@@ -24,20 +28,23 @@ export class DateFormatter {
       }
 
       const now = new Date();
+      const diffDays = this.getCalendarDayDiff(date, now);
 
       // 按“日历日”判断今天/昨天，避免仅按小时差导致跨午夜显示错误
       if (this.isToday(dateString)) {
-        const diffMs = now.getTime() - date.getTime();
-        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-        if (diffHours === 0) {
-          const diffMinutes = Math.floor(diffMs / (1000 * 60));
-          return diffMinutes <= 0 ? '刚刚' : `${diffMinutes}分钟前`;
-        }
         return '今天';
       }
 
       if (this.isYesterday(dateString)) {
         return '昨天';
+      }
+
+      if (diffDays >= 30) {
+        return '一月前';
+      }
+
+      if (diffDays >= 7) {
+        return '一周前';
       }
 
       // 其余情况用具体日期（MM-DD）
@@ -120,6 +127,13 @@ export class DateFormatter {
     } catch (error) {
       return false;
     }
+  }
+
+  private static getCalendarDayDiff(date: Date, now: Date): number {
+    const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const current = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const diffMs = current.getTime() - target.getTime();
+    return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
   }
 
   /**

@@ -22,10 +22,10 @@ import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { trackingService } from '../services/tracking-service'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
-const HERO_REFRESH_INTERVAL = 24 * 60 * 60 * 1000
-const HERO_CACHE_TTL = HERO_REFRESH_INTERVAL
+const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
 const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
+const LOGIN_EVENT_KEY = 'haigoo_login_event_at'
 
 // Sample data from public remote job listings for local preview.
 const SAMPLE_RECOMMENDATIONS = [
@@ -138,6 +138,21 @@ function getHeroCacheKey(userId?: string | null) {
     return userId ? `${HERO_CACHE_KEY}_${userId}` : HERO_CACHE_KEY
 }
 
+function getLocalDateKey(input: number | string | Date = Date.now()) {
+    const date = input instanceof Date ? input : new Date(input)
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+}
+
+type HeroRecommendationHistoryEntry = {
+    contextKey: string
+    dateKey: string
+    jobIds: string[]
+    updatedAt: number
+}
+
 function spreadByCompany<T extends { company_name?: string; company?: string }>(items: T[], bucketSize = 6) {
     const source = [...items]
     const result: T[] = []
@@ -191,6 +206,59 @@ function normalizePlanCompareText(value?: string) {
         .replace(/\s+/g, ' ')
         .trim()
         .toLowerCase()
+}
+
+function buildHeroRecommendationContextKey(direction?: string, positionType?: string) {
+    return `${normalizePlanCompareText(direction) || 'default'}::${String(positionType || 'full-time').trim().toLowerCase() || 'full-time'}`
+}
+
+function normalizeHeroRecommendationHistory(raw: any): HeroRecommendationHistoryEntry[] {
+    if (!Array.isArray(raw)) return []
+    return raw
+        .map((item) => {
+            const contextKey = String(item?.contextKey || '').trim()
+            const dateKey = String(item?.dateKey || '').trim()
+            const jobIds = Array.isArray(item?.jobIds)
+                ? Array.from(new Set(item.jobIds.map((jobId: any) => String(jobId || '').trim()).filter(Boolean)))
+                : []
+            const updatedAt = Number(item?.updatedAt) || 0
+            if (!contextKey || !dateKey || jobIds.length === 0 || !updatedAt) return null
+            return { contextKey, dateKey, jobIds, updatedAt }
+        })
+        .filter(Boolean) as HeroRecommendationHistoryEntry[]
+}
+
+function mergeHeroRecommendationHistory(
+    history: HeroRecommendationHistoryEntry[],
+    entry: HeroRecommendationHistoryEntry
+) {
+    const merged = [entry, ...normalizeHeroRecommendationHistory(history).filter((item) => !(item.contextKey === entry.contextKey && item.dateKey === entry.dateKey))]
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+
+    const perContextCount = new Map<string, number>()
+    const trimmed: HeroRecommendationHistoryEntry[] = []
+
+    for (const item of merged) {
+        const currentCount = perContextCount.get(item.contextKey) || 0
+        if (currentCount >= 3) continue
+        trimmed.push(item)
+        perContextCount.set(item.contextKey, currentCount + 1)
+        if (trimmed.length >= 12) break
+    }
+
+    return trimmed
+}
+
+function getRecentRecommendationIds(
+    history: HeroRecommendationHistoryEntry[],
+    contextKey: string
+) {
+    const scoped = normalizeHeroRecommendationHistory(history)
+        .filter((item) => item.contextKey === contextKey)
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, 3)
+
+    return Array.from(new Set(scoped.flatMap((item) => item.jobIds)))
 }
 
 function isStoredPlanReusable(
@@ -430,8 +498,9 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const resumeHydratedFromAccount = useRef(false)
     const [selectedJobDetail, setSelectedJobDetail] = useState<any | null>(null)
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
+    const [recommendationHistory, setRecommendationHistory] = useState<HeroRecommendationHistoryEntry[]>([])
     const [previewJobs, setPreviewJobs] = useState<any[]>([])
-    const autoRefreshedAfterLogin = useRef(false)
+    const autoRefreshAttemptedForLoginEvent = useRef('')
     const pendingResumeSyncAttempted = useRef(false)
     const accountHeroHydratedForUser = useRef<string | null>(null)
     const displayRecommendations = hasResults && recommendations.length > 0
@@ -618,6 +687,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 }
 
                 setLastUpdatedAt(cacheTimestamp)
+                setRecommendationHistory(normalizeHeroRecommendationHistory(data.recommendationHistory))
                 if (data.jobDirection) setJobDirection(data.jobDirection)
                 if (data.positionType) setPositionType(data.positionType)
                 if (Array.isArray(data.recommendations)) {
@@ -693,6 +763,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 const cacheTimestamp = data.lastUpdatedAt || data.timestamp
                 if (cacheTimestamp && Date.now() - cacheTimestamp < HERO_CACHE_TTL) {
                     setLastUpdatedAt(cacheTimestamp)
+                    setRecommendationHistory(normalizeHeroRecommendationHistory(data.recommendationHistory))
                     if (data.jobDirection) setJobDirection(data.jobDirection)
                     if (data.positionType) setPositionType(data.positionType)
                     if (Array.isArray(data.recommendations)) {
@@ -770,9 +841,17 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     useEffect(() => {
         if (!hasHydrated || authLoading) return
         if (isAuthenticated && userId && accountHeroHydratedForUser.current !== userId) return
-        const payload = { jobDirection, positionType, recommendations, hasResults, lastUpdatedAt, timestamp: Date.now() }
+        const payload = {
+            jobDirection,
+            positionType,
+            recommendations,
+            recommendationHistory,
+            hasResults,
+            lastUpdatedAt,
+            timestamp: Date.now()
+        }
         localStorage.setItem(getHeroCacheKey(userId), JSON.stringify(payload))
-    }, [jobDirection, positionType, recommendations, hasResults, hasHydrated, lastUpdatedAt, userId, authLoading, isAuthenticated])
+    }, [jobDirection, positionType, recommendations, recommendationHistory, hasResults, hasHydrated, lastUpdatedAt, userId, authLoading, isAuthenticated])
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || !token) return
@@ -811,12 +890,12 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             pendingResumeSyncAttempted.current = false
             resumeHydratedFromAccount.current = false
             accountHeroHydratedForUser.current = null
-            autoRefreshedAfterLogin.current = false
+            autoRefreshAttemptedForLoginEvent.current = ''
         }
     }, [isAuthenticated])
 
     useEffect(() => {
-        autoRefreshedAfterLogin.current = false
+        autoRefreshAttemptedForLoginEvent.current = ''
     }, [userId])
 
     useEffect(() => {
@@ -1011,6 +1090,8 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }) => {
         const nextJobDirection = String(options?.direction ?? jobDirection).trim()
         const nextPositionType = String(options?.position ?? positionType).trim() || 'full-time'
+        const nextContextKey = buildHeroRecommendationContextKey(nextJobDirection, nextPositionType)
+        const recentRecommendationIds = getRecentRecommendationIds(recommendationHistory, nextContextKey)
 
         if (!nextJobDirection) {
             showWarning('信息不足', '请填写职业方向')
@@ -1049,6 +1130,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                     positionType: nextPositionType,
                     resumeId,
                     resumeHints: authToken ? undefined : parsedResumeHints,
+                    recentRecommendationIds,
                     limit: dailyLimit
                 })
             })
@@ -1064,6 +1146,14 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (capped.length === 0) {
                 throw new Error('当前未检索到匹配岗位')
             }
+            const updatedAt = data?.generatedAt ? new Date(data.generatedAt).getTime() : Date.now()
+            const todayDateKey = getLocalDateKey(updatedAt)
+            const nextHistoryEntry: HeroRecommendationHistoryEntry = {
+                contextKey: nextContextKey,
+                dateKey: todayDateKey,
+                jobIds: Array.from(new Set(capped.map((job: any) => String(job?.id || '')).filter(Boolean))),
+                updatedAt,
+            }
             trackingService.track('copilot_hero_success', {
                 page_key: 'home',
                 module: 'copilot_hero',
@@ -1076,10 +1166,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             if (jobDirection !== nextJobDirection) setJobDirection(nextJobDirection)
             if (positionType !== nextPositionType) setPositionType(nextPositionType)
             setRecommendations(capped)
+            setRecommendationHistory((prev) => mergeHeroRecommendationHistory(prev, nextHistoryEntry))
             setActiveCard(0)
             setHasResults(true)
             setIsEditingPreferences(false)
-            setLastUpdatedAt(Date.now())
+            setLastUpdatedAt(updatedAt)
+            const loginEventStamp = String(localStorage.getItem(LOGIN_EVENT_KEY) || '')
+            autoRefreshAttemptedForLoginEvent.current = loginEventStamp
             if (isAuthenticated && nextJobDirection && !options?.skipProfileSync) {
                 const normalizedCurrentTargetRole = normalizePlanCompareText(storedTargetRole)
                 const normalizedNextTargetRole = normalizePlanCompareText(nextJobDirection)
@@ -1106,27 +1199,38 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }
 
     useEffect(() => {
-        if (!hasHydrated || !isAuthenticated || autoRefreshedAfterLogin.current) return
+        if (!hasHydrated || !isAuthenticated) return
         if (loading) return
         if (isEditingPreferences) return
+
+        const loginEventStamp = String(localStorage.getItem(LOGIN_EVENT_KEY) || '').trim()
+        const loginEventAt = Number.parseInt(loginEventStamp, 10) || 0
+        if (!loginEventAt || autoRefreshAttemptedForLoginEvent.current === loginEventStamp) return
 
         const effectiveDirection = String(jobDirection || storedTargetRole || '').trim()
         if (!effectiveDirection) return
 
         const directionMatchesProfile = !storedTargetRole || normalizePlanCompareText(jobDirection || storedTargetRole) === normalizePlanCompareText(storedTargetRole)
-        const cacheIsFresh = Boolean(lastUpdatedAt) && (Date.now() - lastUpdatedAt) < HERO_REFRESH_INTERVAL
-        const shouldRefresh = directionMatchesProfile && (!hasResults || recommendations.length === 0 || recommendations.length < dailyLimit || !cacheIsFresh)
+        const shouldRefresh = directionMatchesProfile && (
+            !hasResults ||
+            recommendations.length === 0 ||
+            recommendations.length < dailyLimit ||
+            loginEventAt > lastUpdatedAt
+        )
 
-        if (!shouldRefresh) return
+        if (!shouldRefresh) {
+            autoRefreshAttemptedForLoginEvent.current = loginEventStamp
+            return
+        }
 
-        autoRefreshedAfterLogin.current = true
+        autoRefreshAttemptedForLoginEvent.current = loginEventStamp
         void handleGetRecommendations({
             direction: effectiveDirection,
             position: positionType,
             silent: true,
             skipProfileSync: true
         })
-    }, [hasHydrated, isAuthenticated, loading, isEditingPreferences, jobDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit])
+    }, [hasHydrated, isAuthenticated, loading, isEditingPreferences, jobDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit, recommendationHistory])
 
     useEffect(() => {
         if (!highlightPrivacyConsent) return

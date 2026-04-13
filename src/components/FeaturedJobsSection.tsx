@@ -235,7 +235,8 @@ export default function FeaturedJobsSection({
                 job={job}
                 variant="list"
                 onClick={() => onJobClick(job)}
-              // Pass a prop to indicate this is a featured list context if needed
+                showApplicationMethodIcons
+                compactFeatured
               />
             ))}
           </div>

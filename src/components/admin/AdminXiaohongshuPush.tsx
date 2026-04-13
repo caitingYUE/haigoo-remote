@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
+  ChevronDown,
   Check,
   Copy,
   Download,
@@ -368,6 +369,13 @@ function buildCompanyReferenceBlocks(text: string): JobDetailBlock[] {
 function formatJobTypeLabel(value: string) {
   const matched = JOB_TYPE_OPTIONS.find((item) => item.value === value);
   return matched?.label || value || '待补充';
+}
+
+function getSelectedCategoryLabel(values: string[]) {
+  if (!Array.isArray(values) || values.length === 0) return '全部岗位角色';
+  if (values.length === 1) return values[0];
+  if (values.length === 2) return `${values[0]}、${values[1]}`;
+  return `已选 ${values.length} 个岗位角色`;
 }
 
 function normalizeEmailTypeLabel(value?: string) {
@@ -834,7 +842,12 @@ function downloadCanvas(canvas: HTMLCanvasElement, fileName: string) {
   document.body.removeChild(link);
 }
 
-async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft | null, themeId: string, options?: { showAvailabilityTags?: boolean }) {
+async function renderPosterCanvas(
+  job: XhsPushJobListItem,
+  draft: XhsPosterDraft | null,
+  themeId: string,
+  options?: { showAvailabilityTags?: boolean; showLocation?: boolean }
+) {
   void themeId;
   const theme = POSTER_THEME;
   const canvas = document.createElement('canvas');
@@ -857,7 +870,7 @@ async function renderPosterCanvas(job: XhsPushJobListItem, draft: XhsPosterDraft
   const summarySections = normalizePosterSummarySections(jobSummary);
   const footerTags = options?.showAvailabilityTags === false ? [] : getPosterAvailabilityTags(job);
   const metaItems = [
-    job.location,
+    ...(options?.showLocation === false ? [] : [job.location]),
     job.category,
     formatJobTypeLabel(job.jobType),
     formatExperienceLabel(job.experienceLevel)
@@ -1017,14 +1030,15 @@ const PosterPreview: React.FC<{
   draft: XhsPosterDraft | null;
   themeId: string;
   showAvailabilityTags: boolean;
-}> = ({ job, draft, themeId, showAvailabilityTags }) => {
+  showLocation: boolean;
+}> = ({ job, draft, themeId, showAvailabilityTags, showLocation }) => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const canvas = await renderPosterCanvas(job, draft, themeId, { showAvailabilityTags });
+        const canvas = await renderPosterCanvas(job, draft, themeId, { showAvailabilityTags, showLocation });
         if (!cancelled) setPreviewUrl(canvas.toDataURL('image/png'));
       } catch (_error) {
         if (!cancelled) setPreviewUrl('');
@@ -1033,7 +1047,7 @@ const PosterPreview: React.FC<{
     return () => {
       cancelled = true;
     };
-  }, [draft, job, showAvailabilityTags, themeId]);
+  }, [draft, job, showAvailabilityTags, showLocation, themeId]);
 
   return (
     <div className="overflow-hidden rounded-[32px] border border-slate-200/80 bg-white shadow-[0_14px_38px_rgba(15,23,42,0.08)]">
@@ -1060,7 +1074,8 @@ const PosterPreview: React.FC<{
 const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [searchInput, setSearchInput] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
   const [jobType, setJobType] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [industry, setIndustry] = useState('');
@@ -1084,8 +1099,10 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [draftDirty, setDraftDirty] = useState(false);
   const [draftNotice, setDraftNotice] = useState<string | null>(null);
   const [showAvailabilityTags, setShowAvailabilityTags] = useState(true);
+  const [showLocation, setShowLocation] = useState(true);
   const selectedThemeId = POSTER_THEME.id;
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
+  const categoryMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchKeyword(searchInput.trim()), 300);
@@ -1095,6 +1112,22 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   useEffect(() => {
     jobsRef.current = jobs;
   }, [jobs]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!categoryMenuRef.current) return;
+      if (categoryMenuRef.current.contains(event.target as Node)) return;
+      setCategoryMenuOpen(false);
+    };
+
+    if (categoryMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [categoryMenuOpen]);
 
   const selectedJob = useMemo(
     () => jobs.find((item) => item.id === selectedJobId) || null,
@@ -1128,7 +1161,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       });
 
       if (searchKeyword) params.append('search', searchKeyword);
-      if (category) params.append('category', category);
+      if (selectedCategories.length > 0) params.append('category', selectedCategories.join(','));
       if (jobType) params.append('jobType', jobType);
       if (experienceLevel) params.append('experienceLevel', experienceLevel);
       if (industry) params.append('industry', industry);
@@ -1163,7 +1196,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [category, experienceLevel, industry, jobType, searchKeyword, token]);
+  }, [experienceLevel, industry, jobType, searchKeyword, selectedCategories, token]);
 
   useEffect(() => {
     fetchJobs(1, false);
@@ -1251,7 +1284,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const handleReset = () => {
     setSearchInput('');
     setSearchKeyword('');
-    setCategory('');
+    setSelectedCategories([]);
+    setCategoryMenuOpen(false);
     setJobType('');
     setExperienceLevel('');
     setIndustry('');
@@ -1352,7 +1386,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     try {
       setDownloadingPoster(true);
       const canvas = await renderPosterCanvas(selectedJob, effectivePosterDraft, selectedThemeId, {
-        showAvailabilityTags
+        showAvailabilityTags,
+        showLocation
       });
       downloadCanvas(canvas, `${selectedJob.company}-${selectedJob.title}-xiaohongshu.png`);
     } catch (err) {
@@ -1401,10 +1436,58 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
           </div>
 
           <div className="mt-3 grid gap-3">
-            <select value={category} onChange={(event) => setCategory(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
-              <option value="">全部岗位角色</option>
-              {CATEGORY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
-            </select>
+            <div ref={categoryMenuRef} className="relative">
+              <button
+                type="button"
+                onClick={() => setCategoryMenuOpen((current) => !current)}
+                className="flex w-full items-center justify-between rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-left text-sm text-slate-700 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+              >
+                <span className="truncate">{getSelectedCategoryLabel(selectedCategories)}</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${categoryMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {categoryMenuOpen ? (
+                <div className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-rose-100 bg-white p-2 shadow-lg shadow-rose-100/40">
+                  <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
+                    {CATEGORY_OPTIONS.map((option) => {
+                      const checked = selectedCategories.includes(option);
+                      return (
+                        <label
+                          key={option}
+                          className={`flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition ${checked ? 'bg-rose-50 text-rose-700' : 'text-slate-700 hover:bg-slate-50'}`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => {
+                              setSelectedCategories((current) => (
+                                current.includes(option)
+                                  ? current.filter((item) => item !== option)
+                                  : [...current, option]
+                              ));
+                            }}
+                            className="h-4 w-4 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
+                          />
+                          <span className="truncate">{option}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+
+                  {selectedCategories.length > 0 ? (
+                    <div className="mt-2 border-t border-slate-100 pt-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCategories([])}
+                        className="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
+                      >
+                        清空已选
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
 
             <select value={jobType} onChange={(event) => setJobType(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
               <option value="">全部岗位类型</option>
@@ -1697,6 +1780,15 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                       <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
                         <input
                           type="checkbox"
+                          checked={showLocation}
+                          onChange={(event) => setShowLocation(event.target.checked)}
+                          className="h-3.5 w-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
+                        />
+                        <span>显示地点</span>
+                      </label>
+                      <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
+                        <input
+                          type="checkbox"
                           checked={showAvailabilityTags}
                           onChange={(event) => setShowAvailabilityTags(event.target.checked)}
                           className="h-3.5 w-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
@@ -1711,7 +1803,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   </div>
 
                   <div className="mt-5 flex justify-center">
-                    <PosterPreview job={selectedJob} draft={effectivePosterDraft} themeId={selectedThemeId} showAvailabilityTags={showAvailabilityTags} />
+                    <PosterPreview job={selectedJob} draft={effectivePosterDraft} themeId={selectedThemeId} showAvailabilityTags={showAvailabilityTags} showLocation={showLocation} />
                   </div>
                 </div>
               </div>

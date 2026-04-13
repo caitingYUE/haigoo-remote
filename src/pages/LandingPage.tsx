@@ -17,6 +17,31 @@ import { Job } from '../types'
 import { CompanyCardSkeleton } from '../components/skeletons/CompanyCardSkeleton'
 import { trackingService } from '../services/tracking-service'
 
+const FEATURED_JOBS_CACHE_KEY = 'haigoo_home_featured_jobs'
+const TRUSTED_COMPANIES_CACHE_KEY = 'haigoo_home_trusted_companies'
+const FEATURED_JOBS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+
+const getFreshFeaturedJobsCache = (): Job[] => {
+  try {
+    const cached = localStorage.getItem(FEATURED_JOBS_CACHE_KEY)
+    if (!cached) return []
+
+    const parsed = JSON.parse(cached)
+    if (Array.isArray(parsed)) {
+      return parsed
+    }
+
+    const jobs = Array.isArray(parsed?.jobs) ? parsed.jobs : []
+    const fetchedAt = Number(parsed?.fetchedAt || 0)
+    if (!jobs.length || !fetchedAt) return []
+    if (Date.now() - fetchedAt > FEATURED_JOBS_CACHE_TTL_MS) return []
+
+    return jobs
+  } catch {
+    return []
+  }
+}
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const { user, token, isAuthenticated, isMember, isTrialMember, membershipCapabilities } = useAuth()
@@ -26,30 +51,27 @@ export default function LandingPage() {
   
   // Cache busting and version check
   useEffect(() => {
-    const CURRENT_VERSION = '2026.02.14.01' // Increment this to force cache clear
+    const CURRENT_VERSION = '2026.04.13.01' // Increment this to force cache clear
     const lastVersion = localStorage.getItem('haigoo_version')
     
     if (lastVersion !== CURRENT_VERSION) {
       console.log('Detecting new version, clearing critical caches...')
-      localStorage.removeItem('haigoo_home_featured_jobs')
-      localStorage.removeItem('haigoo_home_trusted_companies')
+      localStorage.removeItem(FEATURED_JOBS_CACHE_KEY)
+      localStorage.removeItem(TRUSTED_COMPANIES_CACHE_KEY)
       localStorage.setItem('haigoo_version', CURRENT_VERSION)
       // Force reload if we suspect strict caching issues, but let's try just clearing data first
     }
   }, [])
 
   const [featuredJobs, setFeaturedJobs] = useState<Job[]>(() => {
-    try {
-      const cached = localStorage.getItem('haigoo_home_featured_jobs')
-      return cached ? JSON.parse(cached) : []
-    } catch { return [] }
+    return getFreshFeaturedJobsCache()
   })
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>(() => {
     try {
-      const cached = localStorage.getItem('haigoo_home_trusted_companies')
+      const cached = localStorage.getItem(TRUSTED_COMPANIES_CACHE_KEY)
       return cached ? JSON.parse(cached) : []
     } catch { return [] }
   })
@@ -65,7 +87,7 @@ export default function LandingPage() {
   // })
   const [companiesLoading, setCompaniesLoading] = useState(() => {
     try {
-      return !localStorage.getItem('haigoo_home_trusted_companies')
+      return !localStorage.getItem(TRUSTED_COMPANIES_CACHE_KEY)
     } catch { return true }
   })
 
@@ -199,7 +221,10 @@ export default function LandingPage() {
             setFeaturedJobs(featuredJobsData)
             // setJobsLoading(false)
             // Cache the result
-            localStorage.setItem('haigoo_home_featured_jobs', JSON.stringify(featuredJobsData))
+            localStorage.setItem(FEATURED_JOBS_CACHE_KEY, JSON.stringify({
+              jobs: featuredJobsData,
+              fetchedAt: Date.now()
+            }))
           })
           .catch(error => {
             console.error('Failed to load featured jobs:', error)
@@ -213,7 +238,7 @@ export default function LandingPage() {
             setCompanyJobStats(featuredCompaniesData.stats)
             setCompaniesLoading(false)
             // Cache the result
-            localStorage.setItem('haigoo_home_trusted_companies', JSON.stringify(featuredCompaniesData.companies))
+            localStorage.setItem(TRUSTED_COMPANIES_CACHE_KEY, JSON.stringify(featuredCompaniesData.companies))
           })
           .catch(error => {
             console.error('Failed to load featured companies:', error)

@@ -38,6 +38,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 const API_BASE = '/api/auth'
 const TOKEN_KEY = 'haigoo_auth_token'
 const USER_KEY = 'haigoo_user'
+const LOGIN_EVENT_KEY = 'haigoo_login_event_at'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -49,8 +50,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null)
     localStorage.removeItem(TOKEN_KEY)
     localStorage.removeItem(USER_KEY)
+    localStorage.removeItem(LOGIN_EVENT_KEY)
     trackingService.reset()
     console.log('[AuthContext] User logged out')
+  }, [])
+
+  const markLoginEvent = useCallback(() => {
+    localStorage.setItem(LOGIN_EVENT_KEY, String(Date.now()))
   }, [])
 
   const refreshUserSilently = useCallback(async (authToken: string) => {
@@ -138,6 +144,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
         localStorage.setItem(TOKEN_KEY, data.token)
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+        markLoginEvent()
         
         // Tracking
         trackingService.identify(data.user.user_id || data.user.id)
@@ -155,7 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('[AuthContext] Login failed:', error)
       return { success: false, error: '网络错误，请稍后重试' }
     }
-  }, [])
+  }, [markLoginEvent])
 
   // Google 登录
   const loginWithGoogle = useCallback(async (idToken: string): Promise<AuthResponse> => {
@@ -172,6 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
         localStorage.setItem(TOKEN_KEY, data.token)
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+        markLoginEvent()
 
         // Tracking
         trackingService.identify(data.user.user_id || data.user.id)
@@ -197,7 +205,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('[AuthContext] Google login failed:', error)
       return { success: false, error: '网络错误，请稍后重试' }
     }
-  }, [])
+  }, [markLoginEvent])
 
   // 注册
   const register = useCallback(async (email: string, password: string, username?: string): Promise<AuthResponse> => {
@@ -214,6 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(data.user)
         localStorage.setItem(TOKEN_KEY, data.token)
         localStorage.setItem(USER_KEY, JSON.stringify(data.user))
+        markLoginEvent()
 
         // Tracking
         trackingService.identify(data.user.user_id || data.user.id)
@@ -232,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error('[AuthContext] Register failed:', error)
       return { success: false, error: '网络错误，请稍后重试' }
     }
-  }, [])
+  }, [markLoginEvent])
 
 
   // 验证邮箱
