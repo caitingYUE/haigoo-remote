@@ -1142,10 +1142,14 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     () => selectedJob ? buildCompanyReferenceBlocks(getCompanyReferenceText(selectedJob)) : [],
     [selectedJob]
   );
+  const jobReferenceText = useMemo(
+    () => selectedJob ? getJobReferenceText(selectedJob) : '',
+    [selectedJob]
+  );
 
   const jobReferenceSections = useMemo(
-    () => selectedJob ? buildJobDetailSections({ description: getJobReferenceText(selectedJob) }) : [],
-    [selectedJob]
+    () => selectedJob ? buildJobDetailSections({ description: jobReferenceText }) : [],
+    [jobReferenceText, selectedJob]
   );
 
   const fetchJobs = useCallback(async (nextPage = 1, append = false) => {
@@ -1416,8 +1420,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   } : null;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[340px,minmax(0,1fr)]">
-      <aside className="space-y-4 rounded-3xl border border-rose-100 bg-white p-5 shadow-sm">
+    <div className="grid gap-6 lg:h-[calc(100vh-220px)] lg:grid-cols-[340px,minmax(0,1fr)] lg:overflow-hidden">
+      <aside className="space-y-4 rounded-3xl border border-rose-100 bg-white p-5 shadow-sm lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-4 custom-scrollbar">
         <div>
           <h2 className="text-xl font-bold text-slate-900">小红书推送</h2>
           <p className="mt-2 text-sm leading-6 text-slate-600">筛选岗位后，右侧直接整理发布信息、编辑摘要并导出海报。</p>
@@ -1556,7 +1560,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
         ) : null}
       </aside>
 
-      <section className="space-y-5">
+      <section className="space-y-5 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-2 custom-scrollbar">
         {!selectedJob ? (
           <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-50 text-rose-500">
@@ -1741,20 +1745,33 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                           {savingDraft ? '保存中...' : '保存草稿'}
                         </button>
                       </div>
-                      <details className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                        <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">查看岗位原文参考</summary>
-                        <div className="mt-3 border-t border-slate-100 pt-3">
-                          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">岗位原文</div>
-                          <div className="max-h-64 space-y-4 overflow-y-auto pr-1">
-                            {jobReferenceSections.map((section) => (
-                              <div key={section.id} className="space-y-2">
-                                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{section.displayTitle}</div>
-                                <ReferenceBlocks blocks={section.activeBlocks} />
-                              </div>
-                            ))}
-                          </div>
+                      <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="text-xs font-semibold text-slate-600">岗位原文参考</div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy(`job-reference-${selectedJob.id}`, jobReferenceText || '暂无岗位原文')}
+                            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-700"
+                          >
+                            {copiedKey === `job-reference-${selectedJob.id}` ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                            {copiedKey === `job-reference-${selectedJob.id}` ? '已复制 JD' : '复制 JD'}
+                          </button>
                         </div>
-                      </details>
+                        <details className="mt-3">
+                          <summary className="cursor-pointer list-none text-xs font-semibold text-slate-600">展开查看岗位原文</summary>
+                          <div className="mt-3 border-t border-slate-100 pt-3">
+                            <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">岗位原文</div>
+                            <div className="max-h-64 space-y-4 overflow-y-auto pr-1">
+                              {jobReferenceSections.map((section) => (
+                                <div key={section.id} className="space-y-2">
+                                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{section.displayTitle}</div>
+                                  <ReferenceBlocks blocks={section.activeBlocks} />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </details>
+                      </div>
                     </div>
                   </div>
 
