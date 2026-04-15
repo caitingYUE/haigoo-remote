@@ -20,6 +20,7 @@ import { trackingService } from '../services/tracking-service'
 const FEATURED_JOBS_CACHE_KEY = 'haigoo_home_featured_jobs'
 const TRUSTED_COMPANIES_CACHE_KEY = 'haigoo_home_trusted_companies'
 const FEATURED_JOBS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const TRUSTED_COMPANIES_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 const getFreshFeaturedJobsCache = (): Job[] => {
   try {
@@ -27,9 +28,7 @@ const getFreshFeaturedJobsCache = (): Job[] => {
     if (!cached) return []
 
     const parsed = JSON.parse(cached)
-    if (Array.isArray(parsed)) {
-      return parsed
-    }
+    if (Array.isArray(parsed)) return []
 
     const jobs = Array.isArray(parsed?.jobs) ? parsed.jobs : []
     const fetchedAt = Number(parsed?.fetchedAt || 0)
@@ -42,6 +41,30 @@ const getFreshFeaturedJobsCache = (): Job[] => {
   }
 }
 
+const getFreshTrustedCompaniesCache = (): {
+  companies: TrustedCompany[]
+  stats: Record<string, { total: number; categories: Record<string, number> }>
+} => {
+  try {
+    const cached = localStorage.getItem(TRUSTED_COMPANIES_CACHE_KEY)
+    if (!cached) return { companies: [], stats: {} }
+
+    const parsed = JSON.parse(cached)
+    if (Array.isArray(parsed)) return { companies: [], stats: {} }
+
+    const companies = Array.isArray(parsed?.companies) ? parsed.companies : []
+    const stats = parsed?.stats && typeof parsed.stats === 'object' ? parsed.stats : {}
+    const fetchedAt = Number(parsed?.fetchedAt || 0)
+
+    if (!companies.length || !fetchedAt) return { companies: [], stats: {} }
+    if (Date.now() - fetchedAt > TRUSTED_COMPANIES_CACHE_TTL_MS) return { companies: [], stats: {} }
+
+    return { companies, stats }
+  } catch {
+    return { companies: [], stats: {} }
+  }
+}
+
 export default function LandingPage() {
   const navigate = useNavigate()
   const { user, token, isAuthenticated, isMember, isTrialMember, membershipCapabilities } = useAuth()
@@ -51,7 +74,7 @@ export default function LandingPage() {
   
   // Cache busting and version check
   useEffect(() => {
-    const CURRENT_VERSION = '2026.04.13.01' // Increment this to force cache clear
+    const CURRENT_VERSION = '2026.04.15.02' // Increment this to force cache clear
     const lastVersion = localStorage.getItem('haigoo_version')
     
     if (lastVersion !== CURRENT_VERSION) {
@@ -69,13 +92,9 @@ export default function LandingPage() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
-  const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>(() => {
-    try {
-      const cached = localStorage.getItem(TRUSTED_COMPANIES_CACHE_KEY)
-      return cached ? JSON.parse(cached) : []
-    } catch { return [] }
-  })
-  const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
+  const cachedCompaniesPayload = getFreshTrustedCompaniesCache()
+  const [trustedCompanies, setTrustedCompanies] = useState<TrustedCompany[]>(cachedCompaniesPayload.companies)
+  const [companyJobStats, setCompanyJobStats] = useState<Record<string, { total: number, categories: Record<string, number> }>>(cachedCompaniesPayload.stats)
   // const [loading, setLoading] = useState(true)
   // const [stats, setStats] = useState<{ totalJobs: number | null, companiesCount: number | null, dailyJobs: number | null }>({ totalJobs: null, companiesCount: null, dailyJobs: null })
   
@@ -86,9 +105,7 @@ export default function LandingPage() {
   //   } catch { return true }
   // })
   const [companiesLoading, setCompaniesLoading] = useState(() => {
-    try {
-      return !localStorage.getItem(TRUSTED_COMPANIES_CACHE_KEY)
-    } catch { return true }
+    return cachedCompaniesPayload.companies.length === 0
   })
 
   const toggleSaveJob = async (job: Job) => {
@@ -238,7 +255,11 @@ export default function LandingPage() {
             setCompanyJobStats(featuredCompaniesData.stats)
             setCompaniesLoading(false)
             // Cache the result
-            localStorage.setItem(TRUSTED_COMPANIES_CACHE_KEY, JSON.stringify(featuredCompaniesData.companies))
+            localStorage.setItem(TRUSTED_COMPANIES_CACHE_KEY, JSON.stringify({
+              companies: featuredCompaniesData.companies,
+              stats: featuredCompaniesData.stats,
+              fetchedAt: Date.now()
+            }))
           })
           .catch(error => {
             console.error('Failed to load featured companies:', error)
