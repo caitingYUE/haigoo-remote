@@ -49,7 +49,7 @@ interface StepResult {
 const PIPELINE_STEPS: PipelineStep[] = [
   { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss', mode: 'sse' },
   { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss', mode: 'sse' },
-  { name: 'Crawl Trusted Jobs', endpoint: '/api/cron/stream-crawl-trusted-jobs', mode: 'sse' },
+  { name: '手动爬取可信企业岗位', endpoint: '/api/cron/stream-crawl-trusted-jobs', mode: 'sse' },
   { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs', mode: 'sse' },
 ];
 
@@ -200,7 +200,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
       case 'no_updates':
         return '没有需要更新的岗位数据';
 
-      // Crawl Trusted Jobs 特有
+      // 手动爬取可信企业岗位 特有
       case 'no_companies':
         return '没有找到需要爬取的公司';
       case 'target_selected':
@@ -324,28 +324,28 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
           noUpdates: data.stats?.noUpdates
         };
 
-      // Crawl Trusted Jobs 进度信息
-      case 'Crawl Trusted Jobs:scan_complete':
+      // 手动爬取可信企业岗位 进度信息
+      case '手动爬取可信企业岗位:scan_complete':
         return { totalCompanies: data.totalCompanies };
-      case 'Crawl Trusted Jobs:target_selected':
+      case '手动爬取可信企业岗位:target_selected':
         return { targetCount: data.targetCount, totalCompanies: data.totalCompanies };
-      case 'Crawl Trusted Jobs:crawl_start':
+      case '手动爬取可信企业岗位:crawl_start':
         return { targetCount: data.targetCount };
-      case 'Crawl Trusted Jobs:company_crawl_start':
+      case '手动爬取可信企业岗位:company_crawl_start':
         return { currentCompany: data.companyIndex, totalCompanies: data.totalCompanies };
-      case 'Crawl Trusted Jobs:company_crawl_complete':
+      case '手动爬取可信企业岗位:company_crawl_complete':
         return { jobsFound: data.jobsFound, companyUpdated: data.companyUpdated };
-      case 'Crawl Trusted Jobs:crawl_complete':
+      case '手动爬取可信企业岗位:crawl_complete':
         return {
           processedCompanies: data.processedCompanies,
           updatedCompanies: data.updatedCompanies,
           newJobsFound: data.newJobsFound
         };
-      case 'Crawl Trusted Jobs:save_jobs_complete':
+      case '手动爬取可信企业岗位:save_jobs_complete':
         return { savedCount: data.savedCount, newJobs: data.newJobs };
-      case 'Crawl Trusted Jobs:save_companies_complete':
+      case '手动爬取可信企业岗位:save_companies_complete':
         return { savedCount: data.savedCount, updatedCount: data.updatedCount };
-      case 'Crawl Trusted Jobs:complete':
+      case '手动爬取可信企业岗位:complete':
         return {
           processedCompanies: data.stats?.processedCompanies,
           updatedCompanies: data.stats?.updatedCompanies,
@@ -515,7 +515,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
       const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' :
         stepName === 'Fetch RSS' ? 'RSS抓取任务完成' :
           stepName === 'Process RSS' ? 'RSS数据处理完成' :
-            stepName === 'Crawl Trusted Jobs' ? '可信公司爬取完成' :
+            stepName === '手动爬取可信企业岗位' ? '可信企业手动爬取完成' :
               '任务完成';
 
       // 更新成功状态

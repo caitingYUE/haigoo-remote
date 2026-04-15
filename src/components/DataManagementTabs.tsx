@@ -306,15 +306,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
   const handleRefreshProcessedOnly = async () => {
     try {
       setSyncing(true);
-      // 强制处理，因为这是在"处理后数据"页签
       const syncResult = await dataManagementService.syncAllRSSData(false);
       await loadProcessedData();
       await loadJobStats();
-
-      const aiCount = syncResult.aiUpdatedJobs || 0;
-      const regexCount = syncResult.regexUpdatedJobs || 0;
-
-      showSuccess('刷新完成', `数据已更新。正则优化: ${regexCount}条, AI深度优化: ${aiCount}条`);
+      showSuccess('刷新完成', `数据已更新，本次新增/更新 ${syncResult.newJobsAdded || 0} 条草稿岗位`);
       // 广播全局事件，通知前台页面刷新处理后数据
       try {
         window.dispatchEvent(new Event('processed-jobs-updated'));
@@ -1322,15 +1317,15 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             <Tooltip content={
               <div className="text-left space-y-2">
-                <p className="font-semibold text-indigo-200">全量数据清洗逻辑：</p>
+                <p className="font-semibold text-indigo-200">当前后台数据流程：</p>
                 <ol className="list-decimal list-inside space-y-1 text-xs">
-                  <li><span className="font-medium text-white">同步数据：</span>拉取最新的 RSS 订阅源数据。</li>
-                  <li><span className="font-medium text-white">正则清洗：</span>对全库（含爬虫）最近 200 条职位进行快速正则处理（提取地点、薪资、分类）。</li>
-                  <li><span className="font-medium text-white">AI 深度优化：</span>筛选出 20 个“疑难杂症”职位（优先处理地点/薪资缺失），调用 DeepSeek/Bailian 大模型进行深度解析和 JD 格式化。</li>
-                  <li><span className="font-medium text-white">数据清理：</span>自动移除过期的历史数据。</li>
+                  <li><span className="font-medium text-white">抓取 RSS：</span>拉取最近 7 天的 RSS 原始数据，写入后台参考池。</li>
+                  <li><span className="font-medium text-white">处理草稿：</span>把原始 RSS 转成待审核岗位草稿，不会直接上前台。</li>
+                  <li><span className="font-medium text-white">补翻译：</span>每日仅为最近 7 天的 RSS 草稿补翻译，方便后台编辑审核。</li>
+                  <li><span className="font-medium text-white">可信企业爬取：</span>仅保留后台手动触发，用于人工补录和核查。</li>
                 </ol>
                 <p className="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">
-                  💡 建议每天点击一次，持续优化数据库质量。AI 处理成本较高，每次仅处理少量高价值数据。
+                  💡 当前自动任务以“后台参考与补数”为主，公开前台仍只展示人工审核通过的岗位。
                 </p>
               </div>
             } maxLines={20} clampChildren={false} forceShow>

@@ -19,7 +19,7 @@
     },
     {
       "path": "/api/cron/stream-verify-links",
-      "schedule": "0 */6 * * *"
+      "schedule": "10 4 * * *"
     },
     {
       "path": "/api/cron/membership-lifecycle",

@@ -192,10 +192,12 @@
 ### 7.1 任务调度表 (Schedule)
 | 任务名称 | API 路径 | 触发时间 (UTC) | 功能描述 |
 | :--- | :--- | :--- | :--- |
-| **Daily Ingest** | `/api/cron/daily-ingest` | 01:30 | **RSS抓取与入库**。串行执行 `stream-fetch-rss` (抓取) 和 `stream-process-rss` (处理)。 |
-| **Daily Enrich** | `/api/cron/daily-enrich` | 02:00 | **数据翻译与补全**。串行执行 `stream-translate-jobs` (翻译) 和 `stream-enrich-companies` (补全企业信息)。 |
-| **Trusted Crawl** | `/api/cron/stream-crawl-trusted-jobs` | 每4小时 | **可信企业官网爬取**。独立运行，高频更新可信源数据。 |
+| **Daily Ingest** | `/api/cron/daily-ingest` | 01:30 | **RSS 参考池更新**。串行执行 `stream-fetch-rss` (抓取最近 7 天原始 RSS) 和 `stream-process-rss` (轻量处理为待审核草稿)。这些岗位默认 `is_approved = false`，仅供后台编辑筛选。 |
+| **Daily Enrich** | `/api/cron/daily-enrich` | 01:50 | **RSS 草稿补翻译**。仅处理最近 7 天、`source_type = rss`、尚未审核且尚未翻译的草稿岗位。 |
 | **Rotate Featured** | `/api/cron/rotate-featured` | 03:00 | **精选职位轮换**。更新首页推荐位。 |
+| **Verify Links** | `/api/cron/stream-verify-links` | 04:10 | **公开岗位链接巡检**。仅检查 `is_approved = true` 的在线岗位，更新链接可用状态。 |
+| **Membership Lifecycle** | `/api/cron/membership-lifecycle` | 每小时 | **会员生命周期处理**。负责会员到期、状态同步与通知。 |
+| **Trusted Crawl (Manual)** | `/api/cron/stream-crawl-trusted-jobs` | 手动触发 | **可信企业官网爬取工具**。仅后台管理员手动执行，作为人工审核和补录辅助，不再参与自动调度。 |
 
 ### 7.2 核心机制与优化 (Core Mechanisms)
 
@@ -211,4 +213,4 @@
 
 #### C. 安全熔断 (Safety Circuit Breaker)
 *   **RSS 处理**: 设置了 `MAX_BATCHES` (如 20批次/1000条)，防止因数据积压导致的无限循环和资源耗尽。
-*   **可信爬虫**: 单个企业爬取设置独立超时限制，防止卡死。
+*   **可信爬虫**: 单个企业爬取设置独立超时限制，防止卡死；当前仅保留后台手动触发，不再自动运行。

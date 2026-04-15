@@ -86,10 +86,16 @@ export class DataManagementService {
     if (onStatusUpdate) onStatusUpdate('正在连接服务器启动同步任务...');
 
     return new Promise((resolve, reject) => {
-      // Use daily-ingest task which runs fetch and process in sequence
-      // Note: skipProcessing param is currently ignored by the backend daily-ingest task, 
-      // which always runs both. We can enhance backend later if needed.
-      const eventSource = new EventSource('/api/cron/index?task=daily-ingest');
+      const task = skipProcessing ? 'stream-fetch-rss' : 'daily-ingest';
+      const eventSource = new EventSource(`/api/cron/index?task=${task}`);
+      let finished = false;
+
+      const finish = (resolver: () => void) => {
+        if (finished) return;
+        finished = true;
+        eventSource.close();
+        resolver();
+      };
 
       eventSource.onopen = () => {
         console.log('[Sync] SSE connection opened');
@@ -111,15 +117,14 @@ export class DataManagementService {
       eventSource.addEventListener('task_start', (e: any) => {
         try {
           const data = JSON.parse(e.data);
-          if (onStatusUpdate) onStatusUpdate(`正在执行: ${data.task === 'stream-fetch-rss' ? '抓取RSS' : '处理数据'}`);
+          if (onStatusUpdate) onStatusUpdate(`正在执行: ${data.task === 'stream-fetch-rss' ? '抓取 RSS' : '处理 RSS 草稿'}`);
           console.log('[Sync] Task Start:', data);
         } catch (err) { }
       });
 
-      eventSource.addEventListener('fetch_complete', (e: any) => {
+      eventSource.addEventListener('chunk_complete', (e: any) => {
         try {
           const data = JSON.parse(e.data);
-          syncStatus.totalSources = data.fetchedCount || 0; // Approx
           if (onStatusUpdate) onStatusUpdate(data.message);
         } catch (err) { }
       });
@@ -128,7 +133,7 @@ export class DataManagementService {
         try {
           const data = JSON.parse(e.data);
           if (data.savedCount) {
-            syncStatus.newJobsAdded += data.savedCount; // Use this for new jobs or raw items depending on context
+            syncStatus.newJobsAdded += data.savedCount;
           }
           if (onStatusUpdate) onStatusUpdate(data.message);
         } catch (err) { }
@@ -159,15 +164,25 @@ export class DataManagementService {
 
       eventSource.addEventListener('sequence_complete', (e: any) => {
         try {
-          const data = JSON.parse(e.data);
-          console.log('[Sync] Sequence Complete:', data);
+          console.log('[Sync] Sequence Complete:', JSON.parse(e.data));
           if (onStatusUpdate) onStatusUpdate('同步任务全部完成');
           syncStatus.isRunning = false;
-          eventSource.close();
-          resolve(syncStatus);
+          finish(() => resolve(syncStatus));
         } catch (err) {
-          eventSource.close();
-          resolve(syncStatus);
+          finish(() => resolve(syncStatus));
+        }
+      });
+
+      eventSource.addEventListener('complete', (e: any) => {
+        try {
+          const data = JSON.parse(e.data);
+          syncStatus.totalSources = data.stats?.fetched ?? data.fetched ?? 0;
+          if (onStatusUpdate) onStatusUpdate(skipProcessing ? 'RSS 原始数据抓取完成' : data.message || '同步任务完成');
+        } catch (err) { }
+
+        if (skipProcessing) {
+          syncStatus.isRunning = false;
+          finish(() => resolve(syncStatus));
         }
       });
 
@@ -177,7 +192,6 @@ export class DataManagementService {
         if (eventSource.readyState === EventSource.CLOSED) {
           // Already handled
         } else {
-          eventSource.close();
           // If we haven't resolved yet
           if (syncStatus.isRunning) {
             syncStatus.isRunning = false;
@@ -187,7 +201,7 @@ export class DataManagementService {
               error: '连接中断',
               timestamp: new Date()
             });
-            reject(new Error('SSE Connection Error'));
+            finish(() => reject(new Error('SSE Connection Error')));
           }
         }
       };

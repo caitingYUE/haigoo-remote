@@ -75,7 +75,8 @@ export default async function handler(req, res) {
 
       case 'daily-enrich': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
-        // stream-crawl-trusted-jobs runs separately every 4 hours, no need to duplicate here
+        // Daily enrich is now limited to translating recent RSS drafts only.
+        // Trusted-company crawl remains a manual/admin-only tool.
         return await runSequence(req, res, [
           { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler }
         ]);
@@ -90,11 +91,15 @@ export default async function handler(req, res) {
             'stream-translate-jobs',
             'stream-crawl-trusted-jobs',
             'stream-verify-links',
+            'rotate-featured',
             'admin-daily-featured-email',
             'membership-lifecycle',
             'daily-ingest',
             'daily-enrich'
-          ]
+          ],
+          taskNotes: {
+            'stream-crawl-trusted-jobs': 'manual/admin-only'
+          }
         });
     }
   } catch (error) {
@@ -174,7 +179,7 @@ async function runSequence(req, mainRes, tasks) {
       await task.handler(req, passThroughRes);
 
       // Send task completion event
-      mainRes.write(`event: task_complete data: ${JSON.stringify({
+      mainRes.write(`event: task_complete\ndata: ${JSON.stringify({
         type: 'task_complete',
         task: task.name,
         index: i + 1,
@@ -189,7 +194,7 @@ async function runSequence(req, mainRes, tasks) {
       console.error(`[CronSequence] Error in task ${task.name}:`, err);
 
       // Send task error event
-      mainRes.write(`event: task_error data: ${JSON.stringify({
+      mainRes.write(`event: task_error\ndata: ${JSON.stringify({
         type: 'task_error',
         task: task.name,
         index: i + 1,
