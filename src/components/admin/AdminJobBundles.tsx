@@ -112,7 +112,7 @@ const AdminJobBundles: React.FC = () => {
       // setSelectedJobs(ids.map(id => ({ id: id, title: 'Loading...', company: '...' })));
 
       // Real fetch
-      const res = await fetch(`/api/data/processed-jobs?ids=${encodeURIComponent(ids.join('|'))}`);
+      const res = await fetch(`/api/data/processed-jobs?ids=${encodeURIComponent(JSON.stringify(ids))}`);
       const data = await res.json();
       if (data.jobs) {
         // Reorder according to ids
