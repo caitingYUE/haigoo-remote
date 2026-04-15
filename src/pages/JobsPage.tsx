@@ -65,6 +65,16 @@ import { MobileRestricted } from '../components/MobileRestricted'
 
 import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
 
+interface JobBundle {
+  id: number
+  title: string
+  subtitle: string
+  job_ids: string[]
+  visibility?: string
+  priority?: number
+  is_public?: boolean
+}
+
 export default function JobsPage() {
   console.log('[JobsPage] Version: Preview Fix Applied 2026-02-21 v3 - Layout & Auth Fixes');
   const navigate = useNavigate()
@@ -157,18 +167,18 @@ export default function JobsPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
   const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance')
-  const [activeBundle, setActiveBundle] = useState<any>(null);
+  const [activeBundles, setActiveBundles] = useState<JobBundle[]>([]);
 
   useEffect(() => {
-    // Fetch active bundle
-    const fetchActiveBundle = async () => {
+    // Fetch active bundles
+    const fetchActiveBundles = async () => {
       try {
         const res = await fetch('/api/data/job-bundles?is_active=true');
         const data = await res.json();
         if (data.success && data.data && data.data.length > 0) {
           // Time filtering is now handled by the backend API.
           // Only filter by visibility based on current user state.
-          const validBundles = data.data.filter((b: any) => {
+          const validBundles = data.data.filter((b: JobBundle) => {
             const vis = b.visibility || (b.is_public !== false ? 'public' : 'admin');
             if (vis === 'admin') return false; // Admin hidden on C-side
             // members-only bundles are deliberately kept here to serve as marketing hooks for unauthorized users
@@ -176,21 +186,25 @@ export default function JobsPage() {
           });
 
           if (validBundles.length > 0) {
-            // Sort by priority (asc) and pick first
-            validBundles.sort((a: any, b: any) => (a.priority || 10) - (b.priority || 10));
-            setActiveBundle(validBundles[0]);
+            // Sort by priority (asc) and render all active bundles
+            validBundles.sort((a: JobBundle, b: JobBundle) => {
+              const priorityDiff = (a.priority || 10) - (b.priority || 10)
+              if (priorityDiff !== 0) return priorityDiff
+              return a.id - b.id
+            });
+            setActiveBundles(validBundles);
           } else {
-            setActiveBundle(null);
+            setActiveBundles([]);
           }
         } else {
-          setActiveBundle(null);
+          setActiveBundles([]);
         }
       } catch (e) {
-        console.error('Failed to fetch active bundle', e);
-        setActiveBundle(null);
+        console.error('Failed to fetch active bundles', e);
+        setActiveBundles([]);
       }
     };
-    fetchActiveBundle();
+    fetchActiveBundles();
   }, [isAuthenticated]);
 
   // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
@@ -826,9 +840,11 @@ export default function JobsPage() {
                   </div>
                 ) : (
                   <div>
-                    {activeBundle && !loadingMore && currentPage === 1 && (
-                      <div className="mb-4">
-                        <JobBundleBanner bundle={activeBundle} />
+                    {activeBundles.length > 0 && !loadingMore && currentPage === 1 && (
+                      <div className="mb-5 space-y-3">
+                        {activeBundles.map((bundle) => (
+                          <JobBundleBanner key={bundle.id} bundle={bundle} />
+                        ))}
                       </div>
                     )}
 
