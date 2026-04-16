@@ -162,6 +162,23 @@ export default function JobBundleDetailPage() {
 
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
+  const assistantSupportPanel = (
+    <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex items-start gap-3">
+        <img
+          src="/series_assistant.png"
+          alt="海狗小助手二维码"
+          className="h-20 w-20 rounded-2xl border border-slate-200 bg-white object-contain p-1"
+        />
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-slate-900">海狗小助手</div>
+          <p className="mt-1 text-xs leading-5 text-slate-500">
+            扫码添加微信，咨询岗位、加入交流群、获取帮助。
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   // ── Member lock screen ────────────────────────────────────────────────────
   if (isLocked) {
@@ -220,50 +237,69 @@ export default function JobBundleDetailPage() {
               className="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">
               <ArrowLeft className="w-4 h-4" />返回职位列表
             </button>
-            <button onClick={handleShare}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${copied
-                ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                : 'bg-white border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
-                }`}>
-              {copied ? <><Check className="w-3.5 h-3.5" />已复制！</> : <><Share2 className="w-3.5 h-3.5" />分享合集</>}
-            </button>
           </div>
 
-          {/* Meta badges */}
-          <div className="flex flex-wrap items-center gap-2 mb-5">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
-              <Package className="w-3 h-3" />
-              精选合集
-            </span>
-            {isMemberBundle && (
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                <Crown className="w-3 h-3" />会员专属
-              </span>
-            )}
-            <span className="text-slate-400 text-xs flex items-center gap-1">
-              <Briefcase className="w-3 h-3" />
-              {jobs.length} 个职位
-            </span>
-            {bundle.start_time && (
-              <span className="text-slate-400 text-xs flex items-center gap-1">
-                <Calendar className="w-3 h-3" />
-                {new Date(bundle.start_time).toLocaleDateString('zh-CN')}
-              </span>
-            )}
-          </div>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr),260px] lg:items-start">
+            <div className="min-w-0">
+              {/* Meta badges */}
+              <div className="flex flex-wrap items-center gap-2 mb-5">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                  <Package className="w-3 h-3" />
+                  精选合集
+                </span>
+                {isMemberBundle && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                    <Crown className="w-3 h-3" />会员专属
+                  </span>
+                )}
+                <span className="text-slate-400 text-xs flex items-center gap-1">
+                  <Briefcase className="w-3 h-3" />
+                  {jobs.length} 个职位
+                </span>
+                {bundle.start_time && (
+                  <span className="text-slate-400 text-xs flex items-center gap-1">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(bundle.start_time).toLocaleDateString('zh-CN')}
+                  </span>
+                )}
+              </div>
 
-          {/* Title + subtitle */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-3">
-            {bundle.title}
-          </h1>
-          <p className="text-lg text-slate-500 mb-6">{bundle.subtitle}</p>
+              {/* Title + subtitle */}
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-3">
+                {bundle.title}
+              </h1>
+              <p className="text-lg text-slate-500 mb-6">{bundle.subtitle}</p>
 
-          {/* Content description — full width */}
-          {bundle.content && (
-            <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 px-5 py-4 rounded-xl whitespace-pre-wrap leading-relaxed">
-              {bundle.content}
+              <div className="mb-6 lg:hidden space-y-3">
+                <button onClick={handleShare}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${copied
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                    : 'bg-white border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
+                    }`}>
+                  {copied ? <><Check className="w-3.5 h-3.5" />已复制！</> : <><Share2 className="w-3.5 h-3.5" />分享合集</>}
+                </button>
+                {assistantSupportPanel}
+              </div>
+
+              {/* Content description — full width */}
+              {bundle.content && (
+                <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 px-5 py-4 rounded-xl whitespace-pre-wrap leading-relaxed">
+                  {bundle.content}
+                </div>
+              )}
             </div>
-          )}
+
+            <div className="hidden lg:block space-y-3">
+              <button onClick={handleShare}
+                className={`w-full inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${copied
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
+                  }`}>
+                {copied ? <><Check className="w-3.5 h-3.5" />已复制！</> : <><Share2 className="w-3.5 h-3.5" />分享合集</>}
+              </button>
+              {assistantSupportPanel}
+            </div>
+          </div>
         </div>
       </div>
 

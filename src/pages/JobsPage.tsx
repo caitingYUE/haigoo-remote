@@ -15,6 +15,7 @@ import { trustedCompaniesService } from '../services/trusted-companies-service'
 import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
 import { readMatchScoreRefreshMarker } from '../utils/match-score-refresh'
+import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
 
 // Industry Options - aligned with DB canonical values (trusted-companies.js DEFAULT_CONFIG)
 const INDUSTRY_OPTIONS = [
@@ -33,27 +34,7 @@ const JOB_TYPE_OPTIONS = [
 ];
 
 // Top Categories (Based on classification-service.js JOB_KEYWORDS)
-const CATEGORY_OPTIONS = [
-  // 开发
-  '后端开发', '前端开发', '全栈开发', '移动开发', '数据开发', '服务器开发',
-  '算法工程师', '测试/QA', '运维/SRE', '网络安全', '操作系统/内核',
-  '技术支持', '硬件开发', '架构师', 'CTO/技术管理',
-
-  // 产品 & 设计
-  '产品经理', '产品设计', 'UI/UX设计', '视觉设计', '平面设计', '用户研究',
-
-  // 业务 & 运营
-  '市场营销', '销售', '客户经理', '客户服务', '运营', '增长黑客', '内容创作',
-
-  // 职能
-  '人力资源', '招聘', '财务', '法务', '行政', '管理',
-
-  // 数据
-  '数据分析', '商业分析', '数据科学',
-
-  // 其他
-  '教育培训', '咨询', '投资', '其他'
-].map(v => ({ label: v, value: v }));
+const CATEGORY_OPTIONS = JOB_CATEGORY_OPTIONS.map((v: string) => ({ label: v, value: v }));
 
 // Location Options
 // const LOCATION_OPTIONS = [

@@ -1,5 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Copy, Crown, Mail, RefreshCw, Sparkles, Users } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  Check,
+  Copy,
+  Crown,
+  Mail,
+  Plus,
+  RefreshCw,
+  Settings,
+  Sparkles,
+  Trash2,
+  Users,
+  X
+} from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import AdminXiaohongshuPush from './AdminXiaohongshuPush';
 
@@ -8,34 +20,47 @@ interface PreviewJob {
   title: string;
   company: string;
   metaLine: string;
-  applyLine: string;
   shareUrl?: string;
-  sourceBucketLabel: string;
+  applicationUrl?: string;
+  companyInfoLine?: string;
+  referralInfoLines?: string[];
+  recommendationScore?: number;
 }
 
-interface AudiencePreview {
+interface AudienceCardPreview {
   key: 'public' | 'member';
-  groupLabel: string;
+  audienceLabel: string;
   title: string;
-  repeatWindowDays: number;
   ruleSummary: string;
-  recentExcludedCount: number;
-  preferredCount: number;
-  fallbackCount: number;
+  repeatWindowDays: number;
   jobCount: number;
   copyText: string;
   jobs: PreviewJob[];
+  generatedAt: string | null;
+  batchDate: string;
+  groupMeta: {
+    id: number;
+    internalName: string;
+    selectedRoles: string[];
+  };
+}
+
+interface PreviewGroup {
+  id: number;
+  internalName: string;
+  sortOrder: number;
+  selectedRoles: string[];
+  generatedAt: string | null;
+  publicCard: AudienceCardPreview;
+  memberCard: AudienceCardPreview;
 }
 
 interface PreviewResponse {
   success: boolean;
-  source: 'cache' | 'generated';
   timeZone: string;
   batchDate: string;
   batchLabel: string;
-  subject: string;
-  generatedAt: string | null;
-  updatedAt: string | null;
+  generatedAt: number | null;
   schedule: {
     timeZone: string;
     refreshHour: number;
@@ -46,28 +71,68 @@ interface PreviewResponse {
     displayBatchLabel: string;
     hasReachedRefreshTime: boolean;
   };
-  audiences: {
-    public: AudiencePreview;
-    member: AudiencePreview;
-  };
+  groups: PreviewGroup[];
+}
+
+interface GroupSettingItem {
+  id: number;
+  internalName: string;
+  sortOrder: number;
+  isActive: boolean;
+  currentRoles: string[];
+  currentInternalName: string;
+  currentSortOrder: number;
+  currentIsActive: boolean;
+  currentEffectiveDate: string;
+  pendingRoles: string[];
+  pendingInternalName: string;
+  pendingSortOrder: number;
+  pendingIsActive: boolean;
+  pendingEffectiveDate: string;
+}
+
+interface GroupSettingsResponse {
+  success: boolean;
+  roleOptions: string[];
+  today: string;
+  tomorrow: string;
+  groups: GroupSettingItem[];
 }
 
 type ContentPushTab = 'community' | 'xiaohongshu';
 
+interface GroupFormState {
+  id?: number;
+  internalName: string;
+  sortOrder: number;
+  isActive: boolean;
+  selectedRoles: string[];
+}
+
+const EMPTY_GROUP_FORM: GroupFormState = {
+  internalName: '',
+  sortOrder: 100,
+  isActive: true,
+  selectedRoles: []
+};
+
 const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }) => {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
+  const [settings, setSettings] = useState<GroupSettingsResponse | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [replacingKey, setReplacingKey] = useState<string | null>(null);
+  const [groupForm, setGroupForm] = useState<GroupFormState>(EMPTY_GROUP_FORM);
 
   const fetchPreview = useCallback(async (silent = false) => {
     try {
-      if (silent) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+      if (silent) setRefreshing(true);
+      else setLoading(true);
       setError(null);
 
       const res = await fetch('/api/cron/admin-daily-featured-email?action=preview', {
@@ -78,46 +143,104 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
 
       const data = await res.json();
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error || '加载社群推送预览失败');
+        throw new Error(data?.error || '加载社群推送失败');
       }
 
       setPreview(data);
+      setSelectedGroupId((current) => {
+        if (data.groups.some((group: PreviewGroup) => group.id === current)) return current;
+        return data.groups[0]?.id ?? null;
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '加载社群推送预览失败');
+      setError(err instanceof Error ? err.message : '加载社群推送失败');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [token]);
 
-  useEffect(() => {
-    fetchPreview();
-  }, [fetchPreview]);
-
-  useEffect(() => {
-    if (!preview) return undefined;
-
-    const getMsUntilNextRefresh = () => {
-      const now = new Date();
-      const utcNowMs = now.getTime();
-      const shanghaiNowMs = utcNowMs + (8 * 60 * 60 * 1000);
-      const shanghaiNow = new Date(shanghaiNowMs);
-      const target = new Date(shanghaiNowMs);
-      target.setUTCHours(preview.schedule.refreshHour, preview.schedule.refreshMinute, 0, 0);
-
-      if (target.getTime() <= shanghaiNow.getTime()) {
-        target.setUTCDate(target.getUTCDate() + 1);
+  const fetchSettings = useCallback(async () => {
+    const res = await fetch('/api/admin/content-push/social-push/groups', {
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       }
+    });
 
-      return Math.max((target.getTime() - shanghaiNow.getTime()) + 1000, 1000);
-    };
+    const data = await res.json();
+    if (!res.ok || !data?.success) {
+      throw new Error(data?.error || '加载分组设置失败');
+    }
 
-    const timer = window.setTimeout(() => {
-      fetchPreview(true);
-    }, getMsUntilNextRefresh());
+    setSettings(data);
+    return data as GroupSettingsResponse;
+  }, [token]);
 
-    return () => window.clearTimeout(timer);
-  }, [preview, fetchPreview]);
+  const fetchAll = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await Promise.all([fetchPreview(false), fetchSettings()]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '加载社群推送失败');
+      setLoading(false);
+    }
+  }, [fetchPreview, fetchSettings]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  const selectedGroup = useMemo(
+    () => preview?.groups.find((group) => group.id === selectedGroupId) || preview?.groups[0] || null,
+    [preview, selectedGroupId]
+  );
+
+  const latestGeneratedAt = useMemo(() => {
+    const timestamps = (preview?.groups || [])
+      .map((group) => new Date(group.generatedAt || group.publicCard.generatedAt || group.memberCard.generatedAt || 0).getTime())
+      .filter((value) => Number.isFinite(value) && value > 0);
+
+    if (timestamps.length === 0) return null;
+    return new Date(Math.max(...timestamps)).toLocaleString('zh-CN', { hour12: false });
+  }, [preview]);
+
+  const openCreateGroup = () => {
+    setGroupForm(EMPTY_GROUP_FORM);
+    setSettingsOpen(true);
+  };
+
+  const openEditGroup = (group: GroupSettingItem) => {
+    setGroupForm({
+      id: group.id,
+      internalName: group.pendingInternalName || group.currentInternalName || group.internalName,
+      sortOrder: group.pendingInternalName ? group.pendingSortOrder : group.currentSortOrder,
+      isActive: group.pendingInternalName ? group.pendingIsActive : group.currentIsActive,
+      selectedRoles: group.pendingRoles.length > 0 ? group.pendingRoles : group.currentRoles
+    });
+    setSettingsOpen(true);
+  };
+
+  const formatDateTime = (value: string | null | undefined) => {
+    if (!value) return '暂无';
+    try {
+      return new Date(value).toLocaleString('zh-CN', { hour12: false });
+    } catch (_error) {
+      return value;
+    }
+  };
+
+  const handleCopy = async (copyKey: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedKey(copyKey);
+      window.setTimeout(() => {
+        setCopiedKey((current) => (current === copyKey ? null : current));
+      }, 1800);
+    } catch (err) {
+      console.error('Failed to copy social push text:', err);
+      alert('复制失败，请检查浏览器权限');
+    }
+  };
 
   const handleRefreshToday = async () => {
     try {
@@ -134,226 +257,485 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
 
       const data = await res.json();
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error || '手动刷新失败');
+        throw new Error(data?.error || '刷新当天结果失败');
       }
 
       setPreview(data);
+      setSelectedGroupId((current) => {
+        if (data.groups.some((group: PreviewGroup) => group.id === current)) return current;
+        return data.groups[0]?.id ?? null;
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '手动刷新失败');
+      setError(err instanceof Error ? err.message : '刷新当天结果失败');
     } finally {
       setRefreshing(false);
     }
   };
 
-  const formatDateTime = (value: string | null) => {
-    if (!value) return '暂无';
+  const handleToggleRole = (role: string) => {
+    setGroupForm((current) => ({
+      ...current,
+      selectedRoles: current.selectedRoles.includes(role)
+        ? current.selectedRoles.filter((item) => item !== role)
+        : current.selectedRoles.concat(role)
+    }));
+  };
+
+  const handleSaveGroup = async () => {
     try {
-      return new Date(value).toLocaleString('zh-CN', {
-        hour12: false
+      setSaving(true);
+      setError(null);
+
+      const method = groupForm.id ? 'PUT' : 'POST';
+      const res = await fetch('/api/admin/content-push/social-push/groups', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(groupForm)
       });
-    } catch (_error) {
-      return value;
-    }
-  };
 
-  const handleCopy = async (key: string, text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedKey(key);
-      window.setTimeout(() => setCopiedKey((current) => current === key ? null : current), 2000);
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || '保存分组失败');
+      }
+
+      setSettings(data);
+      setSettingsOpen(false);
+      setGroupForm(EMPTY_GROUP_FORM);
     } catch (err) {
-      console.error('Failed to copy social push text:', err);
-      alert('复制失败，请检查浏览器权限');
+      setError(err instanceof Error ? err.message : '保存分组失败');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const renderAudienceCard = (audience: AudiencePreview, accentClasses: { border: string; badge: string; button: string; icon: React.ReactNode }) => (
-    <section
-      key={audience.key}
-      className={`rounded-3xl border bg-white shadow-sm ${accentClasses.border}`}
-    >
-      <div className="border-b border-slate-100 p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${accentClasses.badge}`}>
-                {accentClasses.icon}
-                {audience.groupLabel}
-              </span>
-              <span className="text-xs text-slate-500">近 {audience.repeatWindowDays} 天不重复</span>
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">{audience.title}</h2>
-              <p className="mt-1 text-sm text-slate-600">{audience.ruleSummary}</p>
-            </div>
-          </div>
+  const handleReplaceJob = async (groupId: number, audienceKey: 'public' | 'member', jobId: string) => {
+    const replaceKey = `${groupId}-${audienceKey}-${jobId}`;
+    try {
+      setReplacingKey(replaceKey);
+      setError(null);
 
-          <button
-            type="button"
-            onClick={() => handleCopy(audience.key, audience.copyText)}
-            className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${accentClasses.button}`}
-          >
-            {copiedKey === audience.key ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copiedKey === audience.key ? '已复制' : '一键复制'}
-          </button>
-        </div>
+      const res = await fetch('/api/admin/content-push/social-push/replace', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          groupId,
+          audienceKey,
+          jobId,
+          batchDate: preview?.batchDate
+        })
+      });
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-4">
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">岗位数</div>
-            <div className="mt-1 text-lg font-bold text-slate-900">{audience.jobCount}</div>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">优先池命中</div>
-            <div className="mt-1 text-lg font-bold text-slate-900">{audience.preferredCount}</div>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">补位数</div>
-            <div className="mt-1 text-lg font-bold text-slate-900">{audience.fallbackCount}</div>
-          </div>
-          <div className="rounded-2xl bg-slate-50 px-4 py-3">
-            <div className="text-xs text-slate-500">避开重复</div>
-            <div className="mt-1 text-lg font-bold text-slate-900">{audience.recentExcludedCount}</div>
-          </div>
-        </div>
-      </div>
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || '移除并补位失败');
+      }
 
-      <div className="grid gap-6 p-6 xl:grid-cols-[1.15fr,0.85fr]">
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">可直接复制的群发文案</h3>
-            <span className="text-xs text-slate-400">后台缓存结果，可直接复制</span>
-          </div>
-          <textarea
-            readOnly
-            value={audience.copyText}
-            className="min-h-[360px] w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm leading-7 text-slate-800 outline-none"
-          />
-        </div>
+      setPreview((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          groups: current.groups.map((group) => {
+            if (group.id !== groupId) return group;
+            return {
+              ...group,
+              generatedAt: data.card.generatedAt || group.generatedAt,
+              [audienceKey === 'public' ? 'publicCard' : 'memberCard']: data.card
+            };
+          })
+        };
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '移除并补位失败');
+    } finally {
+      setReplacingKey(null);
+    }
+  };
 
-        <div>
-          <h3 className="mb-2 text-sm font-semibold text-slate-900">本次入选岗位</h3>
-          <div className="space-y-3">
-            {audience.jobs.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                当前没有符合条件的岗位。
-              </div>
-            ) : audience.jobs.map((job) => (
-              <article key={`${audience.key}-${job.id}`} className="rounded-2xl border border-slate-200 bg-white px-4 py-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{job.title}</h4>
-                    <p className="mt-1 text-sm font-medium text-slate-700">{job.company}</p>
-                  </div>
-                  <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-600">
-                    {job.sourceBucketLabel}
+  const renderAudienceCard = (
+    groupId: number,
+    audience: AudienceCardPreview,
+    accent: {
+      badge: string;
+      border: string;
+      button: string;
+      icon: React.ReactNode;
+    }
+  ) => {
+    const copyKey = `${groupId}-${audience.key}`;
+    const jobsShortage = audience.jobCount < 3;
+
+    return (
+      <section className={`rounded-3xl border bg-white p-5 shadow-sm ${accent.border}`}>
+        <div className="flex flex-col gap-4 border-b border-slate-100 pb-4">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <div className="space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold ${accent.badge}`}>
+                  {accent.icon}
+                  {audience.audienceLabel}
+                </span>
+                <span className="text-xs text-slate-500">近 {audience.repeatWindowDays} 天不重复</span>
+                {jobsShortage ? (
+                  <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                    岗位不足
                   </span>
-                </div>
-                <p className="mt-3 text-xs leading-6 text-slate-500">{job.metaLine}</p>
-                <p className="mt-2 text-xs leading-6 text-slate-600">{job.applyLine}</p>
-                {job.shareUrl ? (
-                  <a
-                    href={job.shareUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-flex items-center text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
-                  >
-                    打开申请链接
-                  </a>
                 ) : null}
-              </article>
-            ))}
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-900">{audience.title}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{audience.ruleSummary}</p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => handleCopy(copyKey, audience.copyText)}
+              className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${accent.button}`}
+            >
+              {copiedKey === copyKey ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copiedKey === copyKey ? '已复制' : '一键复制'}
+            </button>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+            <span>当前推荐 {audience.jobCount} 个岗位</span>
+            <span>最近生成 {formatDateTime(audience.generatedAt)}</span>
           </div>
         </div>
-      </div>
-    </section>
-  );
+
+        <div className="mt-5 space-y-4">
+          {audience.jobs.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
+              当前没有符合条件的岗位。
+            </div>
+          ) : audience.jobs.map((job) => {
+            const replaceKey = `${groupId}-${audience.key}-${job.id}`;
+            return (
+              <article key={replaceKey} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 space-y-2">
+                    <div>
+                      <h4 className="truncate text-base font-semibold text-slate-900">{job.title}</h4>
+                      <p className="mt-1 text-sm font-medium text-slate-700">{job.company}</p>
+                    </div>
+                    <p className="text-xs leading-6 text-slate-500">{job.metaLine}</p>
+                    <div className="space-y-1 text-xs leading-6 text-slate-600">
+                      {job.applicationUrl ? (
+                        <div className="truncate">原始申请链接：{job.applicationUrl}</div>
+                      ) : (
+                        <div>原始申请链接：待补充</div>
+                      )}
+                      {job.shareUrl ? (
+                        <div className="truncate">海狗分享链接：{job.shareUrl}</div>
+                      ) : null}
+                      {audience.key === 'member' ? (
+                        <>
+                          <div>企业信息：{job.companyInfoLine || '待补充'}</div>
+                          {(job.referralInfoLines || []).length > 0 ? (
+                            job.referralInfoLines?.map((line) => (
+                              <div key={`${replaceKey}-${line}`}>内推信息：{line}</div>
+                            ))
+                          ) : (
+                            <div>内推信息：待补充</div>
+                          )}
+                        </>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-start gap-2 lg:items-end">
+                    <span className="rounded-full bg-slate-200/80 px-3 py-1 text-xs font-semibold text-slate-700">
+                      推荐分 {Number(job.recommendationScore || 0).toFixed(1)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleReplaceJob(groupId, audience.key, job.id)}
+                      disabled={replacingKey === replaceKey}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {replacingKey === replaceKey ? '补位中...' : '移除并补位'}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+    );
+  };
 
   if (loading) {
     return (
       <div className="rounded-3xl border border-slate-200 bg-white p-8 text-sm text-slate-500">
-        正在加载社群推送预览...
+        正在加载社群推送...
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="rounded-3xl border border-rose-200 bg-rose-50 p-8">
-        <div className="text-sm font-semibold text-rose-700">社群推送预览加载失败</div>
-        <div className="mt-2 text-sm text-rose-600">{error}</div>
-        <button
-          type="button"
-          onClick={() => fetchPreview()}
-          className="mt-4 inline-flex items-center gap-2 rounded-full bg-rose-600 px-4 py-2 text-sm font-semibold text-white"
-        >
-          <RefreshCw className="h-4 w-4" />
-          重试
-        </button>
-      </div>
-    );
-  }
-
-  if (!preview) return null;
 
   return (
     <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 p-6 text-white shadow-sm">
+      {error ? (
+        <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-600">
+          {error}
+        </div>
+      ) : null}
+
+      <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/70">Social Push Preview</div>
-            <h1 className="mt-2 text-2xl font-bold">{preview.schedule.displayBatchLabel} 社群推送</h1>
-            <p className="mt-2 text-sm leading-6 text-white/80">
-              社群推送内容每天上午 10:00（UTC+8）切换到当天批次。当前页面只使用后台缓存，不再发送每日精选邮件。
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-white/70">
-              <span>当前展示：{preview.schedule.displayBatchLabel}</span>
-              <span>当前自然日：{preview.schedule.currentBatchLabel}</span>
-              <span>生成状态：{preview.source === 'generated' ? '本次新生成' : '已命中缓存'}</span>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2 text-xs text-white/60">
-              <span>最近生成：{formatDateTime(preview.generatedAt)}</span>
-              <span>时区：{preview.timeZone}</span>
-              <span>手动刷新只会确保当天批次存在，不会在同一天重复重算</span>
+          <div className="space-y-2">
+            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Social Push</div>
+            <h2 className="text-2xl font-bold text-slate-900">{preview?.schedule.displayBatchLabel} 社群推送</h2>
+              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                <span>当前批次：{preview?.schedule.displayBatchLabel}</span>
+                <span>最近生成：{latestGeneratedAt || '暂无'}</span>
+                <span>组合设置次日生效</span>
             </div>
           </div>
 
-          <div className="flex flex-col items-stretch gap-3 sm:flex-row">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => fetchPreview(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/16"
-              disabled={refreshing}
+              onClick={() => setSettingsOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              刷新展示
+              <Settings className="h-4 w-4" />
+              分组设置
             </button>
             <button
               type="button"
               onClick={handleRefreshToday}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
               disabled={refreshing}
+              className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-70"
             >
               <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              {refreshing ? '处理中...' : '手动刷新当天'}
+              {refreshing ? '刷新中...' : '手动刷新当天'}
             </button>
           </div>
         </div>
       </div>
 
-      {renderAudienceCard(preview.audiences.public, {
-        border: 'border-emerald-200',
-        badge: 'bg-emerald-50 text-emerald-700',
-        button: 'bg-emerald-600 text-white hover:bg-emerald-700',
-        icon: <Users className="h-3.5 w-3.5" />
-      })}
+      <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          {(preview?.groups || []).map((group) => {
+            const active = (selectedGroup?.id || preview?.groups[0]?.id) === group.id;
+            return (
+              <button
+                key={group.id}
+                type="button"
+                onClick={() => setSelectedGroupId(group.id)}
+                className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+                  active
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {group.internalName}
+              </button>
+            );
+          })}
+        </div>
 
-      {renderAudienceCard(preview.audiences.member, {
-        border: 'border-indigo-200',
-        badge: 'bg-indigo-50 text-indigo-700',
-        button: 'bg-indigo-600 text-white hover:bg-indigo-700',
-        icon: <Crown className="h-3.5 w-3.5" />
-      })}
+        {selectedGroup ? (
+          <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-500">
+            当前角色组合：{selectedGroup.selectedRoles.join('、')}
+          </div>
+        ) : null}
+      </div>
+
+      {selectedGroup ? (
+        <div className="grid gap-6 xl:grid-cols-2">
+          {renderAudienceCard(selectedGroup.id, selectedGroup.publicCard, {
+            badge: 'bg-emerald-50 text-emerald-700',
+            border: 'border-emerald-200',
+            button: 'bg-emerald-600 text-white hover:bg-emerald-700',
+            icon: <Users className="h-3.5 w-3.5" />
+          })}
+          {renderAudienceCard(selectedGroup.id, selectedGroup.memberCard, {
+            badge: 'bg-indigo-50 text-indigo-700',
+            border: 'border-indigo-200',
+            button: 'bg-indigo-600 text-white hover:bg-indigo-700',
+            icon: <Crown className="h-3.5 w-3.5" />
+          })}
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-dashed border-slate-200 bg-white p-8 text-sm text-slate-500 shadow-sm">
+          当前没有可用的社群推荐分组。
+        </div>
+      )}
+
+      {settingsOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
+          <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">社群推荐分组设置</h3>
+                <p className="mt-1 text-sm text-slate-500">保存后次日生效，今天推荐不变。</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSettingsOpen(false)}
+                className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="grid max-h-[calc(90vh-88px)] gap-0 overflow-hidden lg:grid-cols-[0.95fr,1.35fr]">
+              <div className="overflow-y-auto border-r border-slate-100 p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-900">当前分组</div>
+                    <div className="mt-1 text-xs text-slate-400">今天：{settings?.today} ｜ 次日：{settings?.tomorrow}</div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={openCreateGroup}
+                    className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    新建分组
+                  </button>
+                </div>
+
+                <div className="space-y-3">
+                  {(settings?.groups || []).map((group) => (
+                    <button
+                      key={group.id}
+                      type="button"
+                      onClick={() => openEditGroup(group)}
+                      className={`w-full rounded-2xl border p-4 text-left transition ${
+                        groupForm.id === group.id
+                          ? 'border-indigo-200 bg-indigo-50'
+                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-900">{group.internalName}</div>
+                          <div className="mt-1 text-xs text-slate-500">排序 {group.sortOrder}</div>
+                        </div>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          group.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {group.isActive ? '启用' : '停用'}
+                        </span>
+                      </div>
+                      <div className="mt-3 space-y-2 text-xs leading-5 text-slate-500">
+                        <div>今日名称：{group.currentInternalName || group.internalName || '未配置'}</div>
+                        <div>今日状态：{group.currentIsActive ? '启用' : '停用'} ｜ 排序 {group.currentSortOrder}</div>
+                        <div>今日角色：{group.currentRoles.join('、') || '未配置'}</div>
+                        <div>次日名称：{group.pendingInternalName || group.currentInternalName || group.internalName || '未配置'}</div>
+                        <div>次日状态：{group.pendingIsActive ? '启用' : '停用'} ｜ 排序 {group.pendingSortOrder}</div>
+                        <div>次日角色：{(group.pendingRoles.length > 0 ? group.pendingRoles : group.currentRoles).join('、') || '未配置'}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="overflow-y-auto p-6">
+                <div className="space-y-5">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-900">内部名称</span>
+                      <input
+                        value={groupForm.internalName}
+                        onChange={(event) => setGroupForm((current) => ({ ...current, internalName: event.target.value }))}
+                        placeholder="例如：产品运营类"
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-300"
+                      />
+                    </label>
+
+                    <label className="space-y-2">
+                      <span className="text-sm font-semibold text-slate-900">排序</span>
+                      <input
+                        type="number"
+                        value={groupForm.sortOrder}
+                        onChange={(event) => setGroupForm((current) => ({ ...current, sortOrder: Number.parseInt(event.target.value || '100', 10) }))}
+                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-300"
+                      />
+                    </label>
+                  </div>
+
+                  <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                    <input
+                      type="checkbox"
+                      checked={groupForm.isActive}
+                      onChange={(event) => setGroupForm((current) => ({ ...current, isActive: event.target.checked }))}
+                      className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    启用该分组
+                  </label>
+
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-900">岗位角色</div>
+                        <div className="mt-1 text-xs text-slate-500">可多选，保存后次日生效。</div>
+                      </div>
+                      <div className="text-xs text-slate-400">已选 {groupForm.selectedRoles.length} 项</div>
+                    </div>
+
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {(settings?.roleOptions || []).map((role) => {
+                        const active = groupForm.selectedRoles.includes(role);
+                        return (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => handleToggleRole(role)}
+                            className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
+                              active
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            }`}
+                          >
+                            {role}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
+                    当前修改会写入次日版本，今天推荐不变。
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveGroup}
+                      disabled={saving}
+                      className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    >
+                      <Check className="h-4 w-4" />
+                      {saving ? '保存中...' : '保存分组'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGroupForm(EMPTY_GROUP_FORM);
+                        setSettingsOpen(false);
+                      }}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
@@ -367,7 +749,7 @@ const AdminSocialPush: React.FC = () => {
       id: 'community',
       label: '社群推送',
       icon: <Mail className="h-4 w-4" />,
-      description: '保留原有微信社群批量推送预览与复制能力。'
+      description: '按自定义分组查看非会员群和会员群推荐结果。'
     },
     {
       id: 'xiaohongshu',

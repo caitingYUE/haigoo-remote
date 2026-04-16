@@ -10,16 +10,7 @@ import {
   Search
 } from 'lucide-react';
 import { buildJobDetailSections, type JobDetailBlock } from '../../utils/job-detail-content';
-
-const CATEGORY_OPTIONS = [
-  '后端开发', '前端开发', '全栈开发', '移动开发', '数据开发', '服务器开发',
-  '算法工程师', '测试/QA', '运维/SRE', '网络安全', '操作系统/内核',
-  '技术支持', '硬件开发', '架构师', 'CTO/技术管理',
-  '产品经理', '产品设计', 'UI/UX设计', '视觉设计', '平面设计', '用户研究',
-  '市场营销', '销售', '客户经理', '客户服务', '运营', '增长黑客', '内容创作',
-  '人力资源', '招聘', '财务', '法务', '行政', '管理',
-  '数据分析', '商业分析', '数据科学', '教育培训', '咨询', '投资', '其他'
-];
+import { JOB_CATEGORY_OPTIONS as CATEGORY_OPTIONS } from '../../../lib/shared/job-categories.js';
 
 const JOB_TYPE_OPTIONS = [
   { label: '全职', value: 'full-time' },
@@ -1453,7 +1444,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
               {categoryMenuOpen ? (
                 <div className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-rose-100 bg-white p-2 shadow-lg shadow-rose-100/40">
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
-                    {CATEGORY_OPTIONS.map((option) => {
+                    {CATEGORY_OPTIONS.map((option: string) => {
                       const checked = selectedCategories.includes(option);
                       return (
                         <label
