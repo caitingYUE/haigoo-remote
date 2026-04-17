@@ -306,8 +306,13 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       };
    }>;
 
-   const compactPinnedBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 3) : topMetaBadges;
-   const compactTrailingBadges = isCompactFeaturedCard ? topMetaBadges.slice(3) : [];
+   const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 3) : topMetaBadges;
+   const compactTopBadgeOverflow = isCompactFeaturedCard ? Math.max(topMetaBadges.length - compactTopBadges.length, 0) : 0;
+   const compactSalaryDesktopWidthClass = isCompactFeaturedCard
+      ? salaryText.length > 18 ? 'md:max-w-[168px]' : 'md:max-w-[148px]'
+      : 'md:max-w-[220px]';
+   const compactSalaryMobileWidthClass = isCompactFeaturedCard ? 'max-w-[180px]' : 'max-w-[150px]';
+   const compactSalaryTextClass = salaryText.length > 18 ? 'text-[13px]' : 'text-[15px]';
    const renderTopMetaBadge = (
       label: string,
       options: {
@@ -501,35 +506,20 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
                   {/* Row 1: Badges & Salary (Desktop) */}
                   <div className="flex items-start gap-2 min-h-[24px]">
-                     <div className={`flex min-w-0 items-center gap-2 pt-1 ${isCompactFeaturedCard ? 'flex-nowrap' : 'flex-wrap'}`}>
-                        {isCompactFeaturedCard ? (
-                           <>
-                              <div className="flex min-w-0 shrink-0 items-center gap-2">
-                                 {compactPinnedBadges.map((badge) => (
-                                    <div key={badge.key} className="shrink-0">
-                                       {renderTopMetaBadge(badge.label, badge.options)}
-                                    </div>
-                                 ))}
-                              </div>
-                              {compactTrailingBadges.length > 0 ? (
-                                 <div className="min-w-0 flex-1 overflow-hidden">
-                                    {compactTrailingBadges.map((badge) => (
-                                       <div key={badge.key} className="min-w-0">
-                                          {renderTopMetaBadge(badge.label, badge.options)}
-                                       </div>
-                                    ))}
-                                 </div>
-                              ) : null}
-                           </>
-                        ) : (
-                           <>
-                              {topMetaBadges.map((badge) => (
-                                 <React.Fragment key={badge.key}>
-                                    {renderTopMetaBadge(badge.label, badge.options)}
-                                 </React.Fragment>
-                              ))}
-                           </>
-                        )}
+                     <div className={`flex min-w-0 items-center gap-2 pt-1 ${isCompactFeaturedCard ? 'flex-nowrap overflow-hidden' : 'flex-wrap'}`}>
+                        {(isCompactFeaturedCard ? compactTopBadges : topMetaBadges).map((badge) => (
+                           <div key={badge.key} className="shrink-0">
+                              {renderTopMetaBadge(badge.label, badge.options)}
+                           </div>
+                        ))}
+                        {isCompactFeaturedCard && compactTopBadgeOverflow > 0 ? (
+                           <span
+                              className="inline-flex shrink-0 items-center rounded px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-200 bg-slate-50"
+                              title={`还有 ${compactTopBadgeOverflow} 个属性标签`}
+                           >
+                              +{compactTopBadgeOverflow}
+                           </span>
+                        ) : null}
 
                         {(job.status === '已失效' || job.status === '已结束') && (
                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
@@ -542,7 +532,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   {/* Row 2: Title */}
                   <div className="flex items-center gap-2 mt-0.5 w-full min-w-0">
                      <h3
-                        className="min-w-0 truncate text-xl font-bold text-slate-900 group-hover:text-indigo-600 transition-colors"
+                        className={`min-w-0 truncate font-bold text-slate-900 group-hover:text-indigo-600 transition-colors ${isCompactFeaturedCard ? 'text-[1.05rem] lg:text-[1.12rem]' : 'text-xl'}`}
                         style={{ maxWidth: `calc(100% - ${titleAccessoryWidth}px)` }}
                         title={job.translations?.title || job.title}
                      >
@@ -561,18 +551,18 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Row 3: Meta Info */}
-                  <div className="flex flex-wrap items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1">
+                  <div className={`flex items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1 ${isCompactFeaturedCard ? 'flex-nowrap overflow-hidden' : 'flex-wrap'}`}>
                      {/* Company Name (Mobile Only - since desktop has it in the card) */}
                      <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
 
-                     <div className="flex items-center gap-1.5">
+                     <div className={`flex items-center gap-1.5 ${isCompactFeaturedCard ? 'min-w-0 shrink overflow-hidden' : ''}`}>
                         <MapPin className="w-4 h-4 text-slate-400" />
-                        <span className="truncate max-w-[200px]">{job.translations?.location || job.location}</span>
+                        <span className={`truncate ${isCompactFeaturedCard ? 'max-w-[180px] lg:max-w-[220px]' : 'max-w-[200px]'}`}>{job.translations?.location || job.location}</span>
                      </div>
 
-                     <div className="flex items-center gap-1.5">
+                     <div className="flex shrink-0 items-center gap-1.5">
                         <Clock className="w-4 h-4 text-slate-400" />
                         <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
                      </div>
@@ -619,7 +609,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                            </div>
                         )}
 
-                        <div className={`max-w-[150px] truncate text-sm ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
+                        <div className={`${compactSalaryMobileWidthClass} truncate text-sm ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
                            {salaryText}
                         </div>
 
@@ -639,8 +629,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
                </div>
 
-               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'md:max-w-[124px]' : 'md:max-w-[220px]'}`}>
-                  <div className={`${isCompactFeaturedCard ? 'max-w-[124px] text-[14px]' : 'max-w-[220px] text-[15px]'} truncate leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
+               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${compactSalaryDesktopWidthClass}`}>
+                  <div className={`${compactSalaryDesktopWidthClass.replace('md:', '')} truncate leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'} ${isCompactFeaturedCard ? compactSalaryTextClass : 'text-[15px]'}`} title={salaryText}>
                      {salaryText}
                   </div>
 

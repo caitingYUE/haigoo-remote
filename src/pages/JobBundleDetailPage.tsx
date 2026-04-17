@@ -225,7 +225,7 @@ export default function JobBundleDetailPage() {
 
   // ── Main page ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f8fafc]">
+    <div className="min-h-screen bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_18%,#f4f7fb_100%)]">
 
       {/* ── Hero Header ─────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-100">
@@ -283,7 +283,7 @@ export default function JobBundleDetailPage() {
 
               {/* Content description — full width */}
               {bundle.content && (
-                <div className="text-sm text-slate-600 bg-slate-50 border border-slate-200 px-5 py-4 rounded-xl whitespace-pre-wrap leading-relaxed">
+                <div className="rounded-2xl border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.06),transparent_40%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-5 py-4 text-sm leading-relaxed text-slate-600 whitespace-pre-wrap shadow-sm">
                   {bundle.content}
                 </div>
               )}
@@ -305,12 +305,26 @@ export default function JobBundleDetailPage() {
 
       {/* ── Jobs Grid ──────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <p className="text-sm font-semibold text-slate-400 uppercase tracking-widest mb-5">
-          包含职位 ({jobs.length})
-        </p>
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
+              Bundle Jobs
+            </p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900">
+              包含职位
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              点击卡片查看详情，合集页沿用首页精选区的紧凑双栏卡片规则。
+            </p>
+          </div>
+          <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm shadow-slate-200/40">
+            <Briefcase className="h-4 w-4 text-slate-400" />
+            {jobs.length} 个职位
+          </div>
+        </div>
 
         {/* 2-column grid — matches homepage card style */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:gap-7">
           {jobs.map((job) => (
             <JobCardNew
               key={job.id}
@@ -318,6 +332,8 @@ export default function JobBundleDetailPage() {
               variant="list"
               onClick={() => handleJobClick(job)}
               isActive={selectedJob?.id === job.id}
+              showApplicationMethodIcons
+              compactFeatured
             />
           ))}
         </div>
