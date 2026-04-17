@@ -104,17 +104,17 @@ type ContentPushTab = 'community' | 'xiaohongshu';
 interface GroupFormState {
   id?: number;
   internalName: string;
-  sortOrder: number;
   isActive: boolean;
   selectedRoles: string[];
 }
 
 const EMPTY_GROUP_FORM: GroupFormState = {
   internalName: '',
-  sortOrder: 100,
   isActive: true,
   selectedRoles: []
 };
+
+const DEFAULT_GROUP_NAME = '默认分组';
 
 const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }) => {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
@@ -190,10 +190,29 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
     fetchAll();
   }, [fetchAll]);
 
+  useEffect(() => {
+    if (!settingsOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [settingsOpen]);
+
   const selectedGroup = useMemo(
     () => preview?.groups.find((group) => group.id === selectedGroupId) || preview?.groups[0] || null,
     [preview, selectedGroupId]
   );
+
+  const visibleSettingsGroups = useMemo(() => {
+    return (settings?.groups || []).filter((group) => {
+      const groupName = group.pendingInternalName || group.currentInternalName || group.internalName;
+      if (groupName === DEFAULT_GROUP_NAME) return false;
+      return group.pendingIsActive || (!group.pendingEffectiveDate && group.currentIsActive);
+    });
+  }, [settings]);
 
   const latestGeneratedAt = useMemo(() => {
     const timestamps = (preview?.groups || [])
@@ -213,11 +232,15 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
     setGroupForm({
       id: group.id,
       internalName: group.pendingInternalName || group.currentInternalName || group.internalName,
-      sortOrder: group.pendingInternalName ? group.pendingSortOrder : group.currentSortOrder,
       isActive: group.pendingInternalName ? group.pendingIsActive : group.currentIsActive,
       selectedRoles: group.pendingRoles.length > 0 ? group.pendingRoles : group.currentRoles
     });
     setSettingsOpen(true);
+  };
+
+  const closeSettingsModal = () => {
+    setGroupForm(EMPTY_GROUP_FORM);
+    setSettingsOpen(false);
   };
 
   const formatDateTime = (value: string | null | undefined) => {
@@ -311,6 +334,38 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
     }
   };
 
+  const handleDeleteGroup = async (group: GroupSettingItem) => {
+    const groupName = group.pendingInternalName || group.currentInternalName || group.internalName;
+    if (!group.id || groupName === DEFAULT_GROUP_NAME) return;
+
+    const confirmed = window.confirm(`删除分组“${groupName}”后，将从次日推荐中移除。是否继续？`);
+    if (!confirmed) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+
+      const res = await fetch(`/api/admin/content-push/social-push/groups?id=${group.id}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data?.success) {
+        throw new Error(data?.error || '删除分组失败');
+      }
+
+      setSettings(data);
+      setGroupForm(EMPTY_GROUP_FORM);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '删除分组失败');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleReplaceJob = async (groupId: number, audienceKey: 'public' | 'member', jobId: string) => {
     const replaceKey = `${groupId}-${audienceKey}-${jobId}`;
     try {
@@ -333,7 +388,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
 
       const data = await res.json();
       if (!res.ok || !data?.success) {
-        throw new Error(data?.error || '移除并补位失败');
+        throw new Error(data?.error || '更换岗位失败');
       }
 
       setPreview((current) => {
@@ -351,7 +406,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
         };
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '移除并补位失败');
+      setError(err instanceof Error ? err.message : '更换岗位失败');
     } finally {
       setReplacingKey(null);
     }
@@ -407,6 +462,11 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
             <span>当前推荐 {audience.jobCount} 个岗位</span>
             <span>最近生成 {formatDateTime(audience.generatedAt)}</span>
           </div>
+          {jobsShortage ? (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-700">
+              当前仅推荐 {audience.jobCount} 个岗位，请补充该类型岗位数据。
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-5 space-y-4">
@@ -459,8 +519,8 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                       disabled={replacingKey === replaceKey}
                       className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      {replacingKey === replaceKey ? '补位中...' : '移除并补位'}
+                      <RefreshCw className={`h-3.5 w-3.5 ${replacingKey === replaceKey ? 'animate-spin' : ''}`} />
+                      {replacingKey === replaceKey ? '更换中...' : '更换'}
                     </button>
                   </div>
                 </div>
@@ -493,17 +553,23 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
           <div className="space-y-2">
             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Social Push</div>
             <h2 className="text-2xl font-bold text-slate-900">{preview?.schedule.displayBatchLabel} 社群推送</h2>
-              <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                <span>当前批次：{preview?.schedule.displayBatchLabel}</span>
-                <span>最近生成：{latestGeneratedAt || '暂无'}</span>
-                <span>组合设置次日生效</span>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
+              <span>当前批次：{preview?.schedule.displayBatchLabel}</span>
+              <span>最近生成：{latestGeneratedAt || '暂无'}</span>
+              <span>组合设置次日生效</span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => setSettingsOpen(true)}
+              onClick={() => {
+                if (visibleSettingsGroups.length > 0) {
+                  openEditGroup(visibleSettingsGroups[0]);
+                  return;
+                }
+                openCreateGroup();
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               <Settings className="h-4 w-4" />
@@ -572,27 +638,28 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
       )}
 
       {settingsOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4 py-6">
-          <div className="max-h-[90vh] w-full max-w-6xl overflow-hidden rounded-3xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-              <div>
-                <h3 className="text-xl font-bold text-slate-900">社群推荐分组设置</h3>
-                <p className="mt-1 text-sm text-slate-500">保存后次日生效，今天推荐不变。</p>
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/40 px-4 py-6">
+          <div className="flex min-h-full items-start justify-center">
+            <div className="flex max-h-[calc(100vh-3rem)] w-full max-w-6xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+              <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">社群推荐分组设置</h3>
+                  <p className="mt-1 text-sm text-slate-500">保存后次日生效，今天推荐不变。</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={closeSettingsModal}
+                  className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setSettingsOpen(false)}
-                className="rounded-full border border-slate-200 p-2 text-slate-500 transition hover:bg-slate-50"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
-            <div className="grid max-h-[calc(90vh-88px)] gap-0 overflow-hidden lg:grid-cols-[0.95fr,1.35fr]">
-              <div className="overflow-y-auto border-r border-slate-100 p-6">
+            <div className="grid min-h-0 flex-1 gap-0 overflow-hidden lg:grid-cols-[0.9fr,1.35fr]">
+              <div className="min-h-0 overflow-y-auto border-r border-slate-100 p-6">
                 <div className="mb-4 flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-semibold text-slate-900">当前分组</div>
+                    <div className="text-sm font-semibold text-slate-900">次日生效分组</div>
                     <div className="mt-1 text-xs text-slate-400">今天：{settings?.today} ｜ 次日：{settings?.tomorrow}</div>
                   </div>
                   <button
@@ -605,65 +672,58 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                   </button>
                 </div>
 
-                <div className="space-y-3">
-                  {(settings?.groups || []).map((group) => (
-                    <button
-                      key={group.id}
-                      type="button"
-                      onClick={() => openEditGroup(group)}
-                      className={`w-full rounded-2xl border p-4 text-left transition ${
-                        groupForm.id === group.id
-                          ? 'border-indigo-200 bg-indigo-50'
-                          : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <div className="text-sm font-semibold text-slate-900">{group.internalName}</div>
-                          <div className="mt-1 text-xs text-slate-500">排序 {group.sortOrder}</div>
-                        </div>
-                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                          group.isActive ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'
-                        }`}>
-                          {group.isActive ? '启用' : '停用'}
-                        </span>
-                      </div>
-                      <div className="mt-3 space-y-2 text-xs leading-5 text-slate-500">
-                        <div>今日名称：{group.currentInternalName || group.internalName || '未配置'}</div>
-                        <div>今日状态：{group.currentIsActive ? '启用' : '停用'} ｜ 排序 {group.currentSortOrder}</div>
-                        <div>今日角色：{group.currentRoles.join('、') || '未配置'}</div>
-                        <div>次日名称：{group.pendingInternalName || group.currentInternalName || group.internalName || '未配置'}</div>
-                        <div>次日状态：{group.pendingIsActive ? '启用' : '停用'} ｜ 排序 {group.pendingSortOrder}</div>
-                        <div>次日角色：{(group.pendingRoles.length > 0 ? group.pendingRoles : group.currentRoles).join('、') || '未配置'}</div>
-                      </div>
-                    </button>
-                  ))}
-                </div>
+                {visibleSettingsGroups.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm leading-6 text-slate-500">
+                    还没有自定义分组。当前会按全部岗位角色推荐，创建分组后会在次日生效。
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {visibleSettingsGroups.map((group) => {
+                      const nextRoles = group.pendingRoles.length > 0 ? group.pendingRoles : group.currentRoles;
+                      const groupName = group.pendingInternalName || group.currentInternalName || group.internalName;
+                      const active = groupForm.id === group.id;
+
+                      return (
+                        <button
+                          key={group.id}
+                          type="button"
+                          onClick={() => openEditGroup(group)}
+                          className={`w-full rounded-2xl border p-4 text-left transition ${
+                            active
+                              ? 'border-indigo-200 bg-indigo-50'
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="text-sm font-semibold text-slate-900">{groupName}</div>
+                              <div className="mt-1 text-xs text-slate-500">已选 {nextRoles.length} 个岗位角色</div>
+                            </div>
+                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700">
+                              次日生效
+                            </span>
+                          </div>
+                          <div className="mt-3 line-clamp-3 text-xs leading-6 text-slate-500">
+                            {nextRoles.join('、') || '未配置'}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
-              <div className="overflow-y-auto p-6">
+              <div className="min-h-0 overflow-y-auto p-6">
                 <div className="space-y-5">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">内部名称</span>
-                      <input
-                        value={groupForm.internalName}
-                        onChange={(event) => setGroupForm((current) => ({ ...current, internalName: event.target.value }))}
-                        placeholder="例如：产品运营类"
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-300"
-                      />
-                    </label>
-
-                    <label className="space-y-2">
-                      <span className="text-sm font-semibold text-slate-900">排序</span>
-                      <input
-                        type="number"
-                        value={groupForm.sortOrder}
-                        onChange={(event) => setGroupForm((current) => ({ ...current, sortOrder: Number.parseInt(event.target.value || '100', 10) }))}
-                        className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-300"
-                      />
-                    </label>
-                  </div>
+                  <label className="block space-y-2">
+                    <span className="text-sm font-semibold text-slate-900">内部名称</span>
+                    <input
+                      value={groupForm.internalName}
+                      onChange={(event) => setGroupForm((current) => ({ ...current, internalName: event.target.value }))}
+                      placeholder="例如：产品/运营组"
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-300"
+                    />
+                  </label>
 
                   <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
                     <input
@@ -706,31 +766,48 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                   </div>
 
                   <div className="rounded-2xl bg-slate-50 px-4 py-3 text-xs leading-6 text-slate-500">
-                    当前修改会写入次日版本，今天推荐不变。
+                    当前修改只影响次日推荐。若该分组可推荐岗位不足 3 个，页面会提示补充对应类型数据。
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={handleSaveGroup}
-                      disabled={saving}
-                      className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
-                    >
-                      <Check className="h-4 w-4" />
-                      {saving ? '保存中...' : '保存分组'}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setGroupForm(EMPTY_GROUP_FORM);
-                        setSettingsOpen(false);
-                      }}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
-                    >
-                      取消
-                    </button>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      {groupForm.id ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const target = visibleSettingsGroups.find((group) => group.id === groupForm.id);
+                            if (target) handleDeleteGroup(target);
+                          }}
+                          disabled={saving}
+                          className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-600 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          删除分组
+                        </button>
+                      ) : null}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveGroup}
+                        disabled={saving}
+                        className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+                      >
+                        <Check className="h-4 w-4" />
+                        {saving ? '保存中...' : '保存分组'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={closeSettingsModal}
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                      >
+                        取消
+                      </button>
+                    </div>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
           </div>
