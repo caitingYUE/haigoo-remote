@@ -59,6 +59,12 @@ function getStoredUser() {
   }
 }
 
+function resolveStoredUserId(user: any) {
+  const resolved = user?.userId || user?.user_id || user?.id || null;
+  const text = String(resolved ?? '').trim();
+  return text || null;
+}
+
 function getMembershipContext(user: any) {
   if (!user) {
     return { userSegment: 'guest', membershipState: 'none' };
@@ -83,7 +89,7 @@ class TrackingService {
     this.anonymousId = this.getAnonymousId();
     this.sessionId = this.getSessionId();
     const storedUser = getStoredUser();
-    this.userId = storedUser?.user_id || storedUser?.id || null;
+    this.userId = resolveStoredUserId(storedUser);
     setInterval(() => this.flush(), 5000);
     window.addEventListener('beforeunload', () => {
       void this.flush(true);
@@ -110,7 +116,7 @@ class TrackingService {
   public track(eventName: string, properties: EventProperties = {}) {
     const pathname = normalizeText(properties.path, window.location.pathname) || '/';
     const storedUser = getStoredUser();
-    const resolvedUserId = this.userId || storedUser?.user_id || storedUser?.id || null;
+    const resolvedUserId = this.userId || resolveStoredUserId(storedUser);
     const membershipContext = getMembershipContext(storedUser);
     const event: TrackingEvent = {
       event: eventName,

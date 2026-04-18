@@ -40,6 +40,10 @@ const TOKEN_KEY = 'haigoo_auth_token'
 const USER_KEY = 'haigoo_user'
 const LOGIN_EVENT_KEY = 'haigoo_login_event_at'
 
+function resolveTrackingUserId(user: any) {
+  return user?.userId || user?.user_id || user?.id || null
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
@@ -89,8 +93,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(storedToken)
         setUser(parsedUser)
         // Identify user for tracking
-        if (parsedUser.id || parsedUser.user_id) {
-          trackingService.identify(parsedUser.user_id || parsedUser.id)
+        const trackingUserId = resolveTrackingUserId(parsedUser)
+        if (trackingUserId) {
+          trackingService.identify(trackingUserId)
         }
         // 验证 token 并刷新用户信息
         refreshUserSilently(storedToken)
@@ -147,7 +152,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         markLoginEvent()
         
         // Tracking
-        trackingService.identify(data.user.user_id || data.user.id)
+        trackingService.identify(resolveTrackingUserId(data.user))
         trackingService.track('login_success', { method: 'email' })
 
         try {
@@ -182,7 +187,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         markLoginEvent()
 
         // Tracking
-        trackingService.identify(data.user.user_id || data.user.id)
+        trackingService.identify(resolveTrackingUserId(data.user))
 
         // Check if new user (created within last 30 seconds)
         const createdAt = new Date(data.user.created_at).getTime()
@@ -225,7 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         markLoginEvent()
 
         // Tracking
-        trackingService.identify(data.user.user_id || data.user.id)
+        trackingService.identify(resolveTrackingUserId(data.user))
         trackingService.track('signup_success', { method: 'email' })
         trackingService.track('login_success', { method: 'email' })
 

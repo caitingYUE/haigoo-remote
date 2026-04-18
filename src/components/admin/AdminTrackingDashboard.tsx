@@ -172,9 +172,9 @@ const FUNNEL_DEFINITIONS: Record<string, string> = {
     free_feature_exposure: '免费体验功能入口曝光 UV。',
     free_feature_click: '免费体验功能点击 UV。',
     consume_or_limit: '成功消耗免费额度，或触达免费上限的 UV。',
-    upgrade_modal_view: '升级弹窗曝光 UV。',
-    membership_page_view: '进入会员中心页 UV。',
-    membership_plan_click: '点击任一会员卡 CTA 的 UV。',
+    upgrade_modal_view: '在免费体验链路中触发升级弹窗的 UV。',
+    membership_page_view: '沿升级链路进入会员中心页的 UV，不等于会员页总访问 UV；总访问请看会员体验里的“会员中心”。',
+    membership_plan_click: '沿升级链路点击任一会员卡 CTA 的 UV。',
     membership_payment_success: '支付完成真值，以 payment_records.completed 对账。',
 };
 
@@ -397,7 +397,7 @@ export default function AdminTrackingDashboard() {
                         </button>
                         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
                             <HelpCircle className="h-4 w-4 text-slate-400" />
-                            漏斗展示 UV，转化率按上一步 UV 计算，会员支付以后端 completed 为准
+                            漏斗卡片的 UV / PV 均按同一链路口径统计，会员支付以后端 completed 为准
                         </div>
                     </div>
                 </div>
@@ -480,7 +480,7 @@ export default function AdminTrackingDashboard() {
 
                         <Panel
                             title="免费转会员漏斗"
-                            subtitle="固定统计免费用户，查看免费体验到支付完成的流转"
+                            subtitle="固定统计免费用户；会员页总访问请看会员体验里的“会员中心”"
                             icon={<Crown className="h-5 w-5 text-amber-600" />}
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
