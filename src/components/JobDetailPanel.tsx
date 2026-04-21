@@ -106,6 +106,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(FREE_FEATURE_LIMIT)
     const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
     const [unlockingMatchAnalysis, setUnlockingMatchAnalysis] = useState(false)
+    const [sharedFreeUsageReady, setSharedFreeUsageReady] = useState(false)
+    const [websiteApplyUsageReady, setWebsiteApplyUsageReady] = useState(false)
     const exposureKeysRef = React.useRef<Set<string>>(new Set())
 
     const openUpgradeModal = (featureKey: string, sourceKey = 'job_detail') => {
@@ -200,9 +202,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             ]).then(([ciData, waData, maData]) => {
                 if (ciData.success) {
                     syncSharedFreeAccessState(ciData.usage, ciData.unlocked_companies || []);
+                    setSharedFreeUsageReady(true)
                 }
                 if (waData.success) {
                     syncWebsiteApplyState(waData.usage, waData.unlocked_job_ids || [])
+                    setWebsiteApplyUsageReady(true)
                 }
                 if (maData.success) {
                     setMatchAnalysisUsageCount(maData.usage);
@@ -215,6 +219,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             syncWebsiteApplyState(0, [])
             setMatchAnalysisUsageCount(0);
             setUnlockedMatchAnalysisJobIds([]);
+            setSharedFreeUsageReady(true)
+            setWebsiteApplyUsageReady(true)
+        } else {
+            setSharedFreeUsageReady(false)
+            setWebsiteApplyUsageReady(false)
         }
     }, [isAuthenticated, isMember]);
 
@@ -469,7 +478,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             });
 
-            window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title}`)}`;
+            window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || job.translations?.title || ''}`)}`;
             trackingService.track('email_apply_success', {
                 page_key: 'job_detail',
                 module: 'job_detail_footer',
@@ -917,6 +926,21 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const trustedCompanyJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : null
     const companyOpenJobCount = companyOpenJobsCount ?? trustedCompanyJobCount
     const companyDescription = String(companyInfo?.description || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
+    const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
+    const websiteApplyFreeRemaining = Math.max(0, WEBSITE_APPLY_FREE_LIMIT - websiteApplyUsageCount)
+    const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
+    const shouldShowWebsiteApplyTrialStatus = Boolean(job.url || job.sourceUrl) && isAuthenticated && !isMember && !isMemberRestrictedJob && websiteApplyUsageReady
+    const refCompanyName = String(job.company || companyInfo?.name || '').trim()
+    const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
+    const referralFreeRemaining = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
+    const referralTrialState = !isAuthenticated || isMember || isMemberRestrictedJob || !sharedFreeUsageReady
+        ? null
+        : isReferralCompanyUnlocked
+            ? { label: '本企业联系人已解锁', tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' }
+            : referralUsageCount < FREE_FEATURE_LIMIT
+                ? { label: `免费体验剩余 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`, tone: 'border-indigo-200 bg-indigo-50 text-indigo-700' }
+                : { label: '免费体验已用完', tone: 'border-amber-200 bg-amber-50 text-amber-700' }
+
     return (
         <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.6),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
             <header className="relative z-20 flex-shrink-0 border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-6 py-6 backdrop-blur-md">
@@ -980,39 +1004,56 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </button>
 
                         {(job.url || job.sourceUrl || companyInfo?.hiringEmail || onApply) && (() => {
-                            const waUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
-                            const canWaFree = !isMember && isAuthenticated && !waUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
-                            const isWaAvailable = isMember || waUnlocked || canWaFree || (!job.url && !job.sourceUrl)
+                            const isWaAvailable = isMember || websiteApplyUnlocked || canWebsiteApplyFree || (!job.url && !job.sourceUrl)
                             return (
-                                <button
-                                    onClick={() => {
-                                        trackingService.featureClick('website_apply', {
-                                            page_key: 'job_detail',
-                                            module: 'job_detail_header',
-                                            source_key: 'job_detail_top',
-                                            entity_type: 'job',
-                                            entity_id: job.id
-                                        })
-                                        if (!isAuthenticated) {
-                                            navigate('/login')
-                                            return
-                                        }
-                                        if ((job.url || job.sourceUrl) && !isWaAvailable) {
-                                            openUpgradeModal('website_apply')
-                                            return
-                                        }
-                                        handleApply()
-                                    }}
-                                    className={`group relative inline-flex min-w-[126px] items-center justify-center rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${
-                                        isWaAvailable || !isAuthenticated
-                                            ? 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
-                                            : 'border border-slate-200 bg-slate-100 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
-                                    }`}
-                                    title="前往申请"
-                                >
-                                    <div className="absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
-                                    <span className="relative z-10">前往申请</span>
-                                </button>
+                                <div className="flex flex-col items-end gap-1.5">
+                                    <button
+                                        onClick={() => {
+                                            trackingService.featureClick('website_apply', {
+                                                page_key: 'job_detail',
+                                                module: 'job_detail_header',
+                                                source_key: 'job_detail_top',
+                                                entity_type: 'job',
+                                                entity_id: job.id
+                                            })
+                                            if (!isAuthenticated) {
+                                                navigate('/login')
+                                                return
+                                            }
+                                            if ((job.url || job.sourceUrl) && !isWaAvailable) {
+                                                openUpgradeModal('website_apply')
+                                                return
+                                            }
+                                            handleApply()
+                                        }}
+                                        className={`group relative inline-flex min-w-[126px] items-center justify-center rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${
+                                            isWaAvailable || !isAuthenticated
+                                                ? 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
+                                                : 'border border-slate-200 bg-slate-100 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
+                                        }`}
+                                        title="前往申请"
+                                    >
+                                        <div className="absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
+                                        <span className="relative z-10">前往申请</span>
+                                    </button>
+                                    {shouldShowWebsiteApplyTrialStatus ? (
+                                        <span
+                                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                                                websiteApplyUnlocked
+                                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                                    : canWebsiteApplyFree
+                                                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                                                        : 'border-amber-200 bg-amber-50 text-amber-700'
+                                            }`}
+                                        >
+                                            {websiteApplyUnlocked
+                                                ? '本岗位已解锁'
+                                                : canWebsiteApplyFree
+                                                    ? `免费体验剩余 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
+                                                    : '免费体验已用完'}
+                                        </span>
+                                    ) : null}
+                                </div>
                             )
                         })()}
 
@@ -1113,11 +1154,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'truncate' : ''}`}>
                                         Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍
                                     </p>
+                                    {referralTrialState ? (
+                                        <div className="mt-3">
+                                            <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[12px] font-semibold ${referralTrialState.tone}`}>
+                                                {referralTrialState.label}
+                                            </span>
+                                        </div>
+                                    ) : null}
                                 </div>
 
                                 {(() => {
-                                    const refCompanyName = String(job.company || companyInfo?.name || '').trim()
-                                    const isReferralUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
+                                    const isReferralUnlocked = isReferralCompanyUnlocked
 
                                     const contactThemes = [
                                         {

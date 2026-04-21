@@ -99,15 +99,15 @@ function extractResumeHighlights(text: string) {
 }
 
 function buildEmailSubject(job: Job) {
-  const title = String(job.translations?.title || job.title || 'the role').trim()
-  const company = String(job.translations?.company || job.company || 'your company').trim()
+  const title = String(job.title || job.translations?.title || 'the role').trim()
+  const company = String(job.company || job.translations?.company || 'your company').trim()
   return `Application for ${title} at ${company}`
 }
 
 function buildEmailBody(job: Job, contact: ReferralContact | null, userName?: string | null, resumeText?: string) {
   const recipient = getRecipientName(contact)
-  const title = String(job.translations?.title || job.title || 'the role').trim()
-  const company = String(job.translations?.company || job.company || 'your company').trim()
+  const title = String(job.title || job.translations?.title || 'the role').trim()
+  const company = String(job.company || job.translations?.company || 'your company').trim()
   const sender = String(userName || '').trim() || '[Your Name]'
   const highlights = extractResumeHighlights(resumeText || '')
   const experienceLine = highlights.length > 0

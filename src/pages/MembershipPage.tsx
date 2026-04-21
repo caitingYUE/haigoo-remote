@@ -878,34 +878,44 @@ const MembershipPage: React.FC = () => {
                <p className="text-slate-500 text-lg">看看其他用户怎么说</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-               <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative">
-                  <Quote className="absolute top-6 left-6 w-10 h-10 text-indigo-100 fill-indigo-50" />
-                  <p className="text-slate-700 leading-relaxed font-medium mb-8 relative z-10 pl-6 pt-2">
-                     "在这里遇到了自己非常喜欢的工作，跟专业背景对口，薪资很满意，还帮我拓展了海外客户。非常感谢海狗远程俱乐部。"
-                  </p>
-                  <div className="flex items-center gap-4">
-                     <img src="/flora.jpg" alt="Flora" className="w-12 h-12 rounded-full object-cover bg-slate-100" />
-                     <div>
-                        <div className="font-bold text-slate-900">Flora</div>
-                        <div className="text-sm text-slate-500">心理咨询师</div>
+            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 max-w-6xl mx-auto">
+               {[
+                  {
+                     quote: '“在这里遇到了自己非常喜欢的工作，跟专业背景对口，薪资很满意，还帮我拓展了海外客户。非常感谢海狗远程俱乐部。”',
+                     name: 'Flora',
+                     title: '心理咨询师',
+                     avatar: '/flora.jpg',
+                     tone: 'text-indigo-100 fill-indigo-50'
+                  },
+                  {
+                     quote: '“很满意通过这个找到了工作，也顺利入职了。如果遇到和自己匹配的岗位，各位不妨试一试及时出手。”',
+                     name: '福多多',
+                     title: '粤语客服',
+                     avatar: '/fuduoduo.jpg',
+                     tone: 'text-blue-100 fill-blue-50'
+                  },
+                  {
+                     quote: '“从海狗远程俱乐部刚发起时我就关注了，算是早期粉丝了，终于等到了中国人自己的远程工作网站，太棒了！”',
+                     name: 'JoJo',
+                     title: '产品经理',
+                     avatar: '/jojo.jpg',
+                     tone: 'text-violet-100 fill-violet-50'
+                  }
+               ].map((item) => (
+                  <div key={item.name} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative">
+                     <Quote className={`absolute top-6 left-6 w-10 h-10 ${item.tone}`} />
+                     <p className="text-slate-700 leading-relaxed font-medium mb-8 relative z-10 pl-6 pt-2">
+                        {item.quote}
+                     </p>
+                     <div className="flex items-center gap-4">
+                        <img src={item.avatar} alt={item.name} className="w-12 h-12 rounded-full object-cover bg-slate-100" />
+                        <div>
+                           <div className="font-bold text-slate-900">{item.name}</div>
+                           <div className="text-sm text-slate-500">{item.title}</div>
+                        </div>
                      </div>
                   </div>
-               </div>
-
-               <div className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative">
-                  <Quote className="absolute top-6 left-6 w-10 h-10 text-blue-100 fill-blue-50" />
-                  <p className="text-slate-700 leading-relaxed font-medium mb-8 relative z-10 pl-6 pt-2">
-                     "很满意通过这个找到了工作，也顺利入职了。如果遇到和自己匹配的岗位，各位不妨试一试及时出手。"
-                  </p>
-                  <div className="flex items-center gap-4">
-                     <img src="/fuduoduo.jpg" alt="福多多" className="w-12 h-12 rounded-full object-cover bg-slate-100" />
-                     <div>
-                        <div className="font-bold text-slate-900">福多多</div>
-                        <div className="text-sm text-slate-500">粤语客服</div>
-                     </div>
-                  </div>
-               </div>
+               ))}
             </div>
          </div>
 

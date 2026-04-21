@@ -180,7 +180,7 @@ export default function TrustedCompaniesPage() {
                     </p>
 
                     {/* Search & Filter Container */}
-                    <div className="max-w-4xl mx-auto rounded-[28px] border border-white/80 bg-white/90 p-2 shadow-[0_22px_60px_-42px_rgba(79,70,229,0.36)] backdrop-blur">
+                    <div className="relative z-30 max-w-4xl mx-auto rounded-[28px] border border-white/80 bg-white/90 p-2 shadow-[0_22px_60px_-42px_rgba(79,70,229,0.36)] backdrop-blur">
                         <div className="flex flex-col md:flex-row gap-2">
                             <div className="flex-1">
                                 <SearchBar
@@ -219,7 +219,7 @@ export default function TrustedCompaniesPage() {
                         </div>
                     </div>
                     {/* Banners Grid */}
-                    <div className="mt-4 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative z-10 mt-4 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
                         <TrustedStandardsBanner
                             context="company"
                         />
