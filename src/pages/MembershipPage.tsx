@@ -11,6 +11,133 @@ import { MembershipCertificateModal } from '../components/MembershipCertificateM
 import WeChatCommunityPanel from '../components/WeChatCommunityPanel';
 import { deriveMembershipCapabilities } from '../utils/membership';
 
+const MEMBERSHIP_VALUE_PILLS = [
+   '无限申请次数',
+   '无限内推次数',
+   '岗位匹配分析',
+   '全站岗位解锁',
+   '精选企业解锁'
+];
+
+const MEMBERSHIP_COMPARISON_ROWS = [
+   {
+      label: '获得全站所有岗位信息',
+      free: '有限开放',
+      trial_week: true,
+      quarter: true,
+      year: true
+   },
+   {
+      label: '获得企业关键联系人、邮箱直申机会',
+      free: '有限体验',
+      trial_week: true,
+      quarter: true,
+      year: true
+   },
+   {
+      label: '获得更完整的岗位匹配建议',
+      free: '有限体验',
+      trial_week: true,
+      quarter: true,
+      year: true
+   },
+   {
+      label: '获得优先的需求响应和人工支持',
+      free: false,
+      trial_week: false,
+      quarter: true,
+      year: true
+   },
+   {
+      label: '获得会员群的人工精选岗位推荐',
+      free: false,
+      trial_week: true,
+      quarter: true,
+      year: true
+   },
+   {
+      label: '开放精选企业完整名单',
+      free: false,
+      trial_week: false,
+      quarter: true,
+      year: true
+   },
+   {
+      label: '1 次 1 对 1 求职策略诊断',
+      free: false,
+      trial_week: false,
+      quarter: false,
+      year: '筹备中'
+   },
+   {
+      label: '简历精修或模拟面试 1 次',
+      free: false,
+      trial_week: false,
+      quarter: false,
+      year: '筹备中'
+   },
+   {
+      label: '重点机会跟进建议',
+      free: false,
+      trial_week: false,
+      quarter: false,
+      year: '筹备中'
+   }
+] as const;
+
+const PLAN_CARD_SUMMARIES: Record<'free' | 'trial_week' | 'quarter' | 'year', {
+   title: string;
+   price: string;
+   unit: string;
+   tagline: string;
+   highlights: string[];
+}> = {
+   free: {
+      title: '免费版',
+      price: '¥0',
+      unit: '/ 当前',
+      tagline: '先看看岗位，体验基础能力',
+      highlights: [
+         '浏览岗位与基础申请',
+         '20 次申请机会',
+         '3 次内推/联系人体验'
+      ]
+   },
+   trial_week: {
+      title: '7 天会员',
+      price: '¥29.9',
+      unit: '/ 7 天',
+      tagline: '适合短期集中投递',
+      highlights: [
+         '无限申请次数',
+         '无限内推次数',
+         '邮箱直申 + 关键联系人'
+      ]
+   },
+   quarter: {
+      title: '季度会员',
+      price: '¥199',
+      unit: '/ 季度',
+      tagline: '适合持续推进远程求职',
+      highlights: [
+         '全站岗位解锁',
+         '精选企业完整名单',
+         '优先人工支持'
+      ]
+   },
+   year: {
+      title: '1 对 1 服务',
+      price: '筹备中',
+      unit: '',
+      tagline: '更深一层的人工求职支持',
+      highlights: [
+         '策略诊断',
+         '简历精修或模拟面试',
+         '重点机会跟进建议'
+      ]
+   }
+};
+
 interface Plan {
    id: string;
    memberType: 'trial_week' | 'quarter' | 'year';
@@ -39,6 +166,8 @@ interface PaymentInfo {
    instruction: string;
 }
 
+type MembershipPlanColumnKey = 'free' | 'trial_week' | 'quarter' | 'year';
+
 const STATIC_PLANS: Plan[] = [
    {
       id: 'trial_week_lite',
@@ -49,20 +178,21 @@ const STATIC_PLANS: Plan[] = [
       price: 29.9,
       currency: 'CNY',
       duration_days: 7,
-      discountLabel: '轻量试用 · 7天体验',
+      discountLabel: '7 天体验',
       tier: 'trial',
       alipay_qr: '/alipay_mini.jpg',
       wechat_qr: '/Wechatpay_mini.png',
       features: [
          '解锁全部高薪远程职位（含内推）',
-         '解锁全部企业认证信息及联系方式',
+         '无限申请次数与高价值投递入口',
+         '无限内推次数',
+         '查看岗位相关 HR / 负责人联系方式',
          'AI 远程工作助手（无限次）',
          'AI 简历优化（无限次）',
-         '岗位收藏、直接翻译等功能（无限次）',
-         '加入精英远程工作者社区',
-         '解锁精选企业名单'
+         '高价值邮箱直申与内推通道',
+         '加入精英远程工作者社区'
       ],
-      description: '适合先体验海狗核心岗位权益，快速验证匹配度与使用价值。'
+      description: '适合短期集中推进申请，快速打开岗位、联系人和邮箱直申能力。'
    },
    {
       id: 'club_go_quarterly',
@@ -72,18 +202,21 @@ const STATIC_PLANS: Plan[] = [
       price: 199,
       currency: 'CNY',
       duration_days: 90,
-      discountLabel: '灵活订阅 · 适合短期冲刺',
+      discountLabel: '适合 1-3 个月认真找工作',
       tier: 'full',
       features: [
          '解锁全部高薪远程职位（含内推）',
-         '解锁全部企业认证信息及联系方式',
+         '无限申请次数与高价值投递入口',
+         '无限内推次数',
+         '查看岗位相关 HR / 负责人联系方式',
          'AI 远程工作助手 (无限次)',
          'AI 简历优化（无限次）',
-         '岗位收藏、直接翻译等功能（无限次）',
+         '高价值邮箱直申与内推通道',
          '加入精英远程工作者社区',
-         '解锁精选企业名单'
+         '解锁精选企业完整名单',
+         '人工 1 对 1 咨询优先服务'
       ],
-      description: '适合短期冲刺的求职者，快速获得内推机会'
+      description: '适合持续推进远程求职，在一个完整周期里系统提升申请效率。'
    },
    {
       id: 'goo_plus_yearly',
@@ -120,30 +253,31 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
    trial_week: {
       name: '体验会员（7天）',
       shortLabel: '体验会员',
-      discountLabel: '先验证价值 · 7 天体验',
-      description: '适合先体验 Haigoo 是否能帮你更快筛到靠谱岗位，并减少无效投递。',
+      discountLabel: '7 天体验',
+      description: '适合短期集中推进申请，快速打开岗位、联系人和邮箱直申能力。',
       features: [
-         '查看更完整的岗位和企业信息',
-         '部分岗位可查看直招 HR 或负责人联系方式',
+         '获得全站所有岗位信息',
+         '获得企业关键联系人、邮箱直申机会',
          '获得更完整的岗位匹配建议',
-         '使用投递管理、收藏与翻译能力',
-         '加入会员群，接收更聚焦的交流'
+         '获得会员群的人工精选岗位推荐'
       ],
-      ctaHint: '可以先体验看看是否能够帮到你'
+      ctaHint: '适合先集中推进一轮申请'
    },
    quarter: {
       name: '季度会员',
       shortLabel: '季度会员',
       discountLabel: '适合 1-3 个月认真找工作',
-      description: '适合正在认真找工作的用户，在一个完整周期里持续获得更完整的信息、工具和推荐。',
+      description: '适合正在持续推进远程求职的用户，把申请效率、企业线索和人工支持一起拉满。',
       features: [
-         '持续查看更完整的岗位与企业信息',
-         '部分岗位可查看直招 HR 或负责人联系方式',
-         '持续收到更贴合你的岗位推荐和提醒',
-         '更完整的求职助手与简历打磨能力',
-         '投递管理 + 会员群支持'
+         '获得全站所有岗位信息',
+         '获得企业关键联系人、邮箱直申机会',
+         '获得更完整的岗位匹配建议',
+         '获得优先的需求响应和人工支持',
+         '获得会员群的人工精选岗位推荐',
+         '开放精选企业完整名单',
+         '人工 1 对 1 咨询优先服务'
       ],
-      ctaHint: '适合 1-3 个月认真找远程工作的用户',
+      ctaHint: '适合持续推进远程求职',
       isPlus: true
    },
    year: {
@@ -152,10 +286,10 @@ const PLAN_MARKETING_COPY: Record<Plan['memberType'], {
       discountLabel: '单独开放 · 另行说明',
       description: '简历精修、策略诊断、模拟面试等服务会单独开放，不和会员方案混在一起。',
       features: [
-         '1 次 1V1 求职策略诊断',
+         '包含季度会员全部权益',
+         '1 次 1 对 1 求职策略诊断',
          '简历精修或模拟面试 1 次',
-         '重点机会跟进建议',
-         '适合有明确求职窗口的高意向用户'
+         '重点机会跟进建议'
       ],
       ctaHint: '当前正在筹备中',
       comingSoon: true
@@ -406,10 +540,6 @@ const MembershipPage: React.FC = () => {
                   </span>
                </h1>
 
-               <p className="text-lg sm:text-xl text-slate-600 max-w-2xl mx-auto mb-10 leading-relaxed font-medium">
-                  会员版可以查看更完整的岗位信息、部分岗位的直招联系方式，并使用更多求职工具和持续更新的岗位推荐。
-               </p>
-
                {!(isAuthenticated && isMember) && (
                   <button
                      onClick={() => {
@@ -422,6 +552,17 @@ const MembershipPage: React.FC = () => {
                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                )}
+
+               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+                  {MEMBERSHIP_VALUE_PILLS.map((pill) => (
+                     <span
+                        key={pill}
+                        className="inline-flex items-center rounded-full border border-white/80 bg-white/85 px-4 py-2 text-sm font-semibold text-slate-700 shadow-[0_14px_30px_-24px_rgba(15,23,42,0.35)] backdrop-blur"
+                     >
+                        {pill}
+                     </span>
+                  ))}
+               </div>
             </div>
          </div>
 
@@ -541,8 +682,8 @@ const MembershipPage: React.FC = () => {
          {/* Product Layers Section */}
          <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
             <div className="text-center mb-12">
-               <h2 className="text-3xl font-bold text-slate-900 mb-3">先免费体验，再按需要开通</h2>
-               <p className="text-slate-500 text-lg">先免费使用，确认适合你，再决定是否开通会员</p>
+               <h2 className="text-3xl font-bold text-slate-900 mb-3">加入会员是什么体验</h2>
+               <p className="text-slate-500 text-lg">无限申请、无限内推，全站畅通的尊享服务</p>
             </div>
             <div className="grid md:grid-cols-3 gap-8">
                {/* Benefit 1 */}
@@ -552,7 +693,7 @@ const MembershipPage: React.FC = () => {
                   </div>
                   <h3 className="text-xl font-bold text-slate-900 mb-2">免费版<br /><span className="text-base text-slate-700 font-semibold mt-1 block">浏览岗位、基础申请</span></h3>
                   <p className="text-slate-500 leading-relaxed text-sm">
-                     面向所有用户开放。可浏览岗位、使用基础筛选，并提供 20 次企业网申和 3 次查看企业信息（含联系人）的机会。
+                     面向所有用户开放。可浏览岗位，使用基础筛选，并提供 20 次企业网申和 3 次查看企业信息（含联系人）的机会。
                   </p>
                </div>
                {/* Benefit 2 */}
@@ -581,122 +722,152 @@ const MembershipPage: React.FC = () => {
             </div>
          </div>
 
-         {/* Pricing Plans Section */}
+         {/* Plan Cards */}
          <div id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-20">
-            <div className="text-center mb-16">
-               <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">当前可开通的方案</h2>
-               <p className="text-slate-500 text-lg">建议先用 7 天体验，确认适合你，再决定是否开通季度会员</p>
+            <div className="text-center mb-14">
+               <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">按你的求职节奏选择方案</h2>
+               <p className="text-slate-500 text-lg">先选择适合你的开通方式，下方再看完整权益对比</p>
             </div>
-            <div className="grid xl:grid-cols-3 md:grid-cols-2 gap-6 max-w-7xl mx-auto items-stretch">
-               {displayPlans.map((plan) => {
-                  const isTrialPlan = plan.memberType === 'trial_week';
-                  const isCurrentPlan = isMember && activeMemberType === plan.memberType;
-                  const isComingSoon = Boolean(plan.comingSoon);
-                  const cycleLabel = plan.memberType === 'trial_week'
-                     ? '7天'
-                     : plan.memberType === 'quarter'
-                        ? '季度'
-                        : '期';
+
+            <div className="grid xl:grid-cols-4 md:grid-cols-2 gap-6">
+               {([
+                  { key: 'free', accent: 'slate' as const, featured: false },
+                  { key: 'trial_week', accent: 'emerald' as const, featured: false },
+                  { key: 'quarter', accent: 'indigo' as const, featured: true },
+                  { key: 'year', accent: 'amber' as const, featured: false }
+               ] as const).map((column: { key: MembershipPlanColumnKey; accent: 'slate' | 'emerald' | 'indigo' | 'amber'; featured: boolean }) => {
+                  const summary = PLAN_CARD_SUMMARIES[column.key]
+                  const plan = displayPlans.find((item) => item.memberType === column.key)
+                  const isCurrentPlan = column.key !== 'free' && isMember && activeMemberType === column.key
+                  const isDisabled = column.key === 'year'
+                  const cardTone = column.featured
+                     ? 'border-indigo-300 bg-[linear-gradient(180deg,rgba(241,244,255,0.96),rgba(255,255,255,0.98))] shadow-[0_28px_70px_-42px_rgba(79,70,229,0.28)]'
+                     : column.accent === 'emerald'
+                        ? 'border-emerald-200 bg-[linear-gradient(180deg,rgba(240,253,248,0.92),rgba(255,255,255,0.98))] shadow-[0_22px_56px_-44px_rgba(5,150,105,0.2)]'
+                        : column.accent === 'amber'
+                           ? 'border-amber-200 bg-[linear-gradient(180deg,rgba(255,251,235,0.92),rgba(255,255,255,0.98))] shadow-[0_22px_56px_-44px_rgba(245,158,11,0.18)]'
+                           : 'border-slate-200 bg-white/96 shadow-[0_18px_48px_-42px_rgba(15,23,42,0.12)]'
+                  const ctaLabel = isCurrentPlan
+                     ? '当前方案'
+                     : column.key === 'free'
+                        ? '继续浏览岗位'
+                        : isDisabled
+                           ? '筹备中'
+                           : column.featured
+                              ? '立即开通'
+                              : '立即体验'
+
                   return (
                      <div
-                        key={plan.id}
-                        className={`relative rounded-[2rem] p-7 lg:p-8 transition-all duration-500 group flex flex-col bg-white ${plan.isPlus && plan.id !== 'goo_plus_yearly'
-                           ? 'border-2 border-indigo-200 shadow-2xl shadow-indigo-200/50 hover:-translate-y-2 z-10'
-                           : isTrialPlan
-                              ? 'border border-emerald-200 shadow-xl shadow-emerald-100/50 hover:-translate-y-1'
-                           : 'border shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-slate-200/80 hover:-translate-y-1 border-slate-200'
-                           }`}
+                        key={column.key}
+                        className={`relative flex h-full flex-col rounded-[2rem] border p-8 transition-all hover:-translate-y-1 ${cardTone}`}
                      >
-                        {isTrialPlan && (
-                           <div className="absolute -top-3 right-6 bg-emerald-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg shadow-emerald-500/20 tracking-wider uppercase flex items-center gap-1.5">
-                              <Zap className="w-3.5 h-3.5" />
-                              推荐体验
+                        <div className="mb-6">
+                           <div className="text-[2rem] font-extrabold leading-none text-slate-900">{summary.title}</div>
+                           <div className="mt-6 flex items-end gap-2">
+                              <span className="text-5xl font-extrabold tracking-tight text-slate-900">{summary.price}</span>
+                              {summary.unit ? <span className="pb-1 text-base font-semibold text-slate-500">{summary.unit}</span> : null}
                            </div>
-                        )}
-
-                        {plan.isPlus && plan.id !== 'goo_plus_yearly' && (
-                           <div className="absolute -top-4 right-8 bg-gradient-to-r from-indigo-600 to-blue-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg shadow-indigo-500/30 tracking-widest uppercase flex items-center gap-1.5">
-                              <Star className="w-3.5 h-3.5 fill-white" />
-                              最受欢迎
-                           </div>
-                        )}
-
-                        <div className="mb-8 text-center border-b border-slate-100 pb-8">
-                           <h3 className={`text-[1.75rem] font-extrabold mb-3 text-slate-900 leading-tight`}>
-                              {plan.name}
-                           </h3>
-                           <div className="flex justify-center items-baseline gap-1 mb-2">
-                              <span className="text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900">¥{plan.price}</span>
-                              <span className="text-sm font-bold text-slate-500">
-                                 /{cycleLabel}
-                              </span>
-                           </div>
-
-                           <div className="mb-4 flex flex-col items-center gap-2 min-h-[3rem]">
-                              {plan.discountLabel && (
-                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${isTrialPlan ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
-                                    {plan.discountLabel}
-                                 </span>
-                              )}
-                           </div>
-
-                           <p className="text-sm text-slate-500 font-medium px-4">
-                              {plan.ctaHint}
-                           </p>
+                           <p className="mt-5 text-base leading-relaxed text-slate-600">{summary.tagline}</p>
                         </div>
 
-                        <ul className="space-y-3.5 mb-8 flex-1 px-1">
-                           {plan.features.map((feature, idx) => {
-                              return (
-                              <li key={idx} className="flex items-start gap-4">
-                                 <div className="mt-0.5 w-6 h-6 flex items-center justify-center flex-shrink-0">
-                                    <Check className="w-5 h-5 text-indigo-500" strokeWidth={3} />
-                                 </div>
-                                 <span className="text-[14px] font-medium leading-relaxed text-slate-700">
-                                    {feature}
-                                 </span>
-                              </li>
-                           )})}
-                        </ul>
+                        <div className="space-y-3.5 flex-1">
+                           {summary.highlights.map((item: string) => (
+                              <div key={item} className="flex items-start gap-3 text-sm leading-relaxed text-slate-700">
+                                 <Check className={`mt-0.5 h-4.5 w-4.5 shrink-0 ${column.featured ? 'text-indigo-600' : column.accent === 'emerald' ? 'text-emerald-600' : column.accent === 'amber' ? 'text-amber-600' : 'text-slate-700'}`} strokeWidth={3} />
+                                 <span>{item}</span>
+                              </div>
+                           ))}
+                        </div>
 
                         <button
-                           onClick={() => handleSubscribe(plan)}
-                           disabled={isCurrentPlan || isComingSoon}
-                           className={`w-full py-4 rounded-xl font-bold text-base transition-all flex items-center justify-center gap-2 relative overflow-hidden group/btn ${isCurrentPlan
-                              ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                              : isComingSoon
-                                 ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
-                              : plan.isPlus
-                                 ? 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white shadow-xl shadow-indigo-500/30'
-                                 : isTrialPlan
-                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                                 : 'bg-[#0F172A] hover:bg-slate-800 text-white shadow-lg shadow-slate-900/20'
-                              }`}
+                           onClick={() => {
+                              if (column.key === 'free') {
+                                 navigate('/jobs')
+                                 return
+                              }
+                              if (plan && !isDisabled) handleSubscribe(plan)
+                           }}
+                           disabled={isCurrentPlan || isDisabled}
+                           className={`mt-8 inline-flex w-full items-center justify-center rounded-full px-5 py-3.5 text-base font-bold transition-all ${
+                              isCurrentPlan
+                                 ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400'
+                                 : isDisabled
+                                    ? 'cursor-default border border-slate-200 bg-slate-50 text-slate-400'
+                                    : column.featured
+                                       ? 'bg-indigo-600 text-white shadow-[0_18px_38px_-24px_rgba(79,70,229,0.42)] hover:bg-indigo-700'
+                                       : column.accent === 'emerald'
+                                          ? 'bg-emerald-600 text-white shadow-[0_18px_38px_-24px_rgba(5,150,105,0.36)] hover:bg-emerald-500'
+                                          : 'bg-slate-900 text-white hover:bg-slate-800'
+                           }`}
                         >
-                           {isCurrentPlan ? (
-                              <>
-                                 <CheckCircle2 className="w-5 h-5" />
-                                 当前会员方案
-                              </>
-                           ) : isComingSoon ? (
-                              <>
-                                 筹备中
-                              </>
-                           ) : plan.isPlus ? (
-                              <>
-                                 开通会员
-                                 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-                              </>
-                           ) : (
-                              <>
-                                 {isTrialPlan ? '立即体验' : '立即开通'}
-                                 <ArrowRight className="w-5 h-5 group-hover/btn:translate-x-1 transition-transform" />
-                              </>
-                           )}
+                           {ctaLabel}
                         </button>
                      </div>
-                  );
+                  )
                })}
+            </div>
+
+            {/* Comparison Section */}
+            <div className="mb-6 mt-14 text-center">
+               <h3 className="text-2xl font-bold text-slate-900">完整权益对比</h3>
+            </div>
+            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_-46px_rgba(15,23,42,0.22)]">
+               <div className="grid grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] border-b border-slate-200 bg-[linear-gradient(180deg,rgba(247,248,255,0.98),rgba(255,255,255,0.96))]">
+                  <div className="px-6 py-6 text-left">
+                     <div className="text-sm font-semibold text-slate-400">价值点</div>
+                     <div className="mt-2 text-xl font-bold text-slate-900">会员方案对比</div>
+                  </div>
+                     {[
+                        { key: 'free', title: '免费版', meta: '浏览岗位、有限尝试' },
+                        { key: 'trial_week', title: '7 天会员', meta: '¥29.9 / 7 天' },
+                        { key: 'quarter', title: '季度会员', meta: '¥199 / 季度', featured: true },
+                        { key: 'year', title: '1 对 1 服务', meta: '筹备中' }
+                      ].map((column) => {
+                     return (
+                        <div
+                           key={column.key}
+                           className={`border-l border-slate-200 px-4 py-6 text-center ${column.featured ? 'bg-[linear-gradient(180deg,rgba(238,242,255,0.85),rgba(255,255,255,0.98))]' : ''}`}
+                        >
+                           <div className={`text-base font-bold ${column.featured ? 'text-indigo-700' : 'text-slate-900'}`}>{column.title}</div>
+                           <div className="mt-2 text-sm text-slate-500">{column.meta}</div>
+                        </div>
+                     )
+                  })}
+               </div>
+
+               <div className="divide-y divide-slate-100">
+                  {MEMBERSHIP_COMPARISON_ROWS.map((row) => (
+                     <div key={row.label} className="grid grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] items-center">
+                        <div className="px-6 py-4 text-sm font-medium text-slate-700">{row.label}</div>
+                        {(['free', 'trial_week', 'quarter', 'year'] as const).map((columnKey) => {
+                           const value = row[columnKey]
+                           const renderCell = () => {
+                              if (value === true) {
+                                 return <Check className="h-5 w-5 text-indigo-600" strokeWidth={3} />
+                              }
+                              if (value === false) {
+                                 return <span className="text-slate-300">—</span>
+                              }
+                              return (
+                                 <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                                    value === '筹备中'
+                                       ? 'bg-amber-50 text-amber-700'
+                                       : 'bg-slate-100 text-slate-600'
+                                 }`}>
+                                    {value}
+                                 </span>
+                              )
+                           }
+                           return (
+                              <div key={columnKey} className="flex items-center justify-center border-l border-slate-100 px-4 py-4">
+                                 {renderCell()}
+                              </div>
+                           )
+                        })}
+                     </div>
+                  ))}
+               </div>
             </div>
          </div>
 
@@ -760,8 +931,8 @@ const MembershipPage: React.FC = () => {
             <div className="grid md:grid-cols-2 gap-6">
                {[
                   { q: "这里的岗位可靠吗？", a: "岗位会优先经过人工审核与筛选，重点帮你减少不值得投入时间的无效岗位。" },
-                  { q: "会员版主要多了什么？", a: "会员版可以查看更完整的岗位与企业信息、使用更多求职工具、持续收到岗位推荐，也能进入更聚焦的会员群交流。一些岗位还会提供直招 HR 或负责人联系方式，帮助你更快推进申请。" },
-                  { q: "1 对 1 服务也包含在会员里吗？", a: "不包含。如果你需要简历精修、策略诊断、模拟面试等 1 对 1 服务，可以通过小红书私信我们，或发送邮件到 hi@haigooremote.com 单独咨询。" },
+                  { q: "会员版主要多了什么？", a: "会员版核心是无限申请次数、无限内推次数，并解锁全部岗位、邮箱直申、关键联系人信息和更完整的岗位匹配建议。季度会员还开放精选企业完整名单。" },
+                  { q: "1 对 1 服务也包含在会员里吗？", a: "1 对 1 服务正在筹备中，方向包含求职策略诊断、简历精修或模拟面试，以及重点机会跟进建议。当前如需人工支持，可通过小红书私信我们，或发送邮件到 hi@haigooremote.com 咨询。" },
                   { q: "方案是否可以变更或退款？", a: "支付后 48 小时内可以申请变更方案或退款。你可以发邮件到「hi@haigooremote.com」写明原因，我们会在 3 个工作日内联系处理。" }
                ].map((faq, i) => (
                   <div key={i} className="bg-white rounded-2xl p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all hover:-translate-y-1">

@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useRef } from 'react'
-import { ChevronDown, Crown, Lock, Sparkles, CheckCircle2, Lightbulb, Target } from 'lucide-react'
+import { ChevronDown, Crown, Lock, CheckCircle2, Lightbulb, Target } from 'lucide-react'
 
 interface MatchDetailsPanelProps {
   matchLevel?: string
@@ -61,52 +61,37 @@ export function MatchDetailsPanel({
   ] : []
 
   return (
-    <div className={`relative bg-gradient-to-br from-indigo-50/50 via-white to-sky-50/30 border border-indigo-100 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow duration-300 ${className}`}>
-      {/* Decorative background blur */}
-      <div className="absolute top-0 right-0 -mr-16 -mt-16 w-48 h-48 bg-indigo-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-sky-400/10 rounded-full blur-2xl" />
-
-      <div className="p-5 relative z-10">
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 shrink-0 rotate-3 transition-transform hover:rotate-0">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
-          <div className="flex-1 min-w-0">
+    <div className={`relative overflow-hidden rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] shadow-[0_22px_48px_-40px_rgba(15,23,42,0.18)] ${className}`}>
+      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-indigo-100/35 blur-3xl" />
+      <div className="relative z-10 p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="font-bold text-slate-900 text-[15px] tracking-wide">AI 匹配分析</h4>
-              {matchDetailsLocked ? (
-                <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full border border-amber-200 flex items-center gap-1 shadow-sm">
-                  <Crown className="w-3 h-3 text-amber-500" />
-                  会员专属解析
-                </span>
-              ) : (
-                <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-full border border-indigo-200 flex items-center gap-1">
-                  <Target className="w-3 h-3" />
-                  高匹配推荐
-                </span>
-              )}
-              {!matchDetailsLocked && parsed?.confidence?.label && (
-                <span className="px-2 py-0.5 bg-white text-slate-600 text-[10px] font-bold rounded-full border border-slate-200">
-                  可信度 {parsed.confidence.label}
+              <h4 className="text-base font-bold tracking-tight text-slate-900">岗位匹配分析</h4>
+              <span className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                高匹配
+              </span>
+              {matchDetailsLocked && (
+                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                  <Crown className="h-3 w-3 text-amber-500" />
+                  VIP
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-500 mt-0.5">基于您的求职目标与履历深度解析</p>
           </div>
         </div>
 
         {/* Content */}
         {matchDetailsLocked ? (
-          <div className="bg-white/80 backdrop-blur-sm border border-indigo-100/60 rounded-xl p-4 mt-2">
-            <div className="flex items-start gap-3 text-slate-600 text-sm mb-3">
-              <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
+          <div className="rounded-2xl border border-slate-200 bg-white/88 p-4">
+            <div className="mb-3 flex items-start gap-3 text-sm text-slate-600">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
                 <Lock className="w-4 h-4 text-slate-400" />
               </div>
-              <p className="mt-1 leading-relaxed">
+              <p className="mt-0.5 leading-relaxed">
                 {canUseFreeTrial
-                  ? `该岗位为高匹配岗位。当前账号还可免费体验 ${freeTrialRemaining} 次完整 AI 匹配分析，会员可无限查看全部高匹配解析。`
-                  : '该岗位为高匹配岗位，开通会员后可查看极具指导意义的完整 AI 匹配分析报告（含匹配亮点及竞争力补齐建议）。'}
+                  ? `该岗位支持完整匹配分析。当前账号还可免费体验 ${freeTrialRemaining} 次，VIP 可不限次数查看全部高匹配解析。`
+                  : '该岗位支持完整匹配分析，开通 VIP 后可查看完整匹配依据、风险判断和优化建议。'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -114,40 +99,33 @@ export function MatchDetailsPanel({
                 <button
                   onClick={() => onUnlockFreeTrial?.()}
                   disabled={isUnlocking}
-                  className="w-full sm:w-auto px-5 py-2.5 bg-white hover:bg-indigo-50 text-indigo-600 text-sm font-semibold rounded-xl border border-indigo-200 shadow-sm transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full sm:w-auto rounded-xl border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isUnlocking ? '解锁中...' : `免费体验本次分析（剩 ${freeTrialRemaining} 次）`}
                 </button>
               )}
               <button
                 onClick={() => onShowUpgrade?.()}
-                className="w-full sm:w-auto px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-all hover:shadow-indigo-500/20 active:scale-[0.98]"
+                className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(79,70,229,0.5)] transition-all hover:bg-indigo-700 active:scale-[0.98]"
               >
-                {isMember ? '查看完整分析' : '会员无限查看'}
+                {isMember ? '查看完整分析' : 'VIP 无限查看'}
               </button>
             </div>
           </div>
         ) : (
-          <div className="mt-4">
+          <div>
             {parsed ? (
               <div className="space-y-4">
-                {parsed.verdict && (
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-indigo-50/70 text-indigo-700 rounded-full text-xs font-bold border border-indigo-100">
-                    <Target className="w-3.5 h-3.5" />
-                    {parsed.verdict}
-                  </div>
-                )}
-
                 {/* Summary (Always partially visible) */}
-                <div className={`text-sm text-slate-700 leading-relaxed ${!expanded && isExpandable ? 'line-clamp-3' : ''}`}>
+                <div className={`text-sm leading-7 text-slate-700 ${!expanded && isExpandable ? 'line-clamp-3' : ''}`}>
                   {parsed.summary}
                 </div>
 
                 {scoreItems.length > 0 && (
-                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                     {scoreItems.map(item => (
-                      <div key={item.label} className="rounded-xl border border-slate-200 bg-white/80 px-2.5 py-2 text-center">
-                        <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">{item.label}</div>
+                      <div key={item.label} className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-center shadow-[0_10px_20px_-18px_rgba(15,23,42,0.22)]">
+                        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{item.label}</div>
                         <div className="mt-1 text-sm font-bold text-slate-800">{item.value}</div>
                       </div>
                     ))}
@@ -161,10 +139,10 @@ export function MatchDetailsPanel({
                   style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
                 >
                   <div className="overflow-hidden">
-                    <div className="pt-3 space-y-4 border-t border-indigo-100/50 mt-1">
+                    <div className="mt-1 space-y-4 border-t border-slate-100 pt-3">
                       {parsed.evidence.length > 0 && (
                         <div>
-                          <h5 className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                             <Target className="w-3.5 h-3.5 text-indigo-500" />
                             核心依据
                           </h5>
@@ -182,7 +160,7 @@ export function MatchDetailsPanel({
                       {/* Strengths */}
                       {parsed.strengths.length > 0 && (
                         <div>
-                          <h5 className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                             核心优势
                           </h5>
@@ -199,7 +177,7 @@ export function MatchDetailsPanel({
 
                       {parsed.risks.length > 0 && (
                         <div>
-                          <h5 className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                             <Lightbulb className="w-3.5 h-3.5 text-rose-500" />
                             主要风险
                           </h5>
@@ -217,7 +195,7 @@ export function MatchDetailsPanel({
                       {/* Suggestions */}
                       {parsed.suggestions.length > 0 && (
                         <div>
-                          <h5 className="text-xs font-bold text-indigo-900 mb-2 flex items-center gap-1.5 opacity-80 uppercase tracking-wider">
+                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
                             <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
                             优化建议
                           </h5>
@@ -246,7 +224,7 @@ export function MatchDetailsPanel({
             {isExpandable && (
               <button
                 onClick={() => setExpanded(v => !v)}
-                className="mt-3 group flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors w-full justify-center sm:justify-start"
+                className="group mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-bold text-indigo-600 transition-colors hover:text-indigo-700 sm:justify-start"
               >
                 {expanded ? '收起详情' : '展开完整分析'}
                 <div className={`w-4 h-4 rounded-full bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors ${expanded ? 'rotate-180' : ''}`}>

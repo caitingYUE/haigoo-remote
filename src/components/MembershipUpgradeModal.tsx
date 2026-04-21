@@ -29,12 +29,12 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
     benefits: ModalBenefit[]
   } = {
     referral: {
-      title: '解锁完整企业人脉',
-      description: '把岗位相关联系人、邮箱直申和关键投递入口一起解锁。',
+      title: '解锁关键申请入口',
+      description: '把岗位相关联系人、邮箱直申和更多申请能力一起打开。',
       benefits: [
-        { title: '关键联系人', detail: '完整查看岗位相关 HR 与业务负责人' },
+        { title: '关键联系人', detail: '查看岗位相关 HR 与业务负责人' },
         { title: '邮箱直申', detail: '打开更高价值的直达投递入口' },
-        { title: '不限次数', detail: '会员期内持续使用人脉能力' }
+        { title: '持续推进', detail: '在会员期内继续推进更多申请' }
       ]
     },
     ai_resume: {
@@ -48,11 +48,11 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
     },
     general: {
       title: '解锁更多求职权益',
-      description: '把简历优化、关键人脉和投递入口一起解锁，让求职推进更顺畅。',
+      description: '把更多申请次数、关键人脉和邮箱直申一起解锁，让投递推进更顺畅。',
       benefits: [
-        { title: '核心岗位权益', detail: '解锁更完整的求职工具箱' },
-        { title: 'AI 助手', detail: '继续使用简历与求职辅助能力' },
-        { title: '关键人脉', detail: '查看联系人并打开更高价值入口' }
+        { title: '申请次数', detail: '持续获得更高价值的申请与投递机会' },
+        { title: '邮箱直申', detail: '打开更高价值的邮箱申请入口' },
+        { title: '关键人脉', detail: '查看联系人并继续推进申请' }
       ]
     }
   }[triggerSource]

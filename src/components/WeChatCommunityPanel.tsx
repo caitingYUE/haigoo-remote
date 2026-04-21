@@ -1,4 +1,4 @@
-import { ArrowRight, Briefcase, CheckCircle2, Crown, MessageSquare, ShieldCheck, Sparkles, Users } from 'lucide-react'
+import { ArrowRight, Briefcase, MessageSquare, ShieldCheck, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 type Variant = 'page' | 'embedded' | 'compact'
@@ -14,34 +14,20 @@ interface WeChatCommunityPanelProps {
 function getCommunityConfig(isMember = false) {
   if (isMember) {
     return {
-      badge: '会员交流群',
-      title: '加入 Haigoo 会员交流群',
-      subtitle: '会员群会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。',
+      title: '加入 Haigoo 远程交流群',
+      subtitle: '群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。',
       qrSrc: '/Wechat_group_vip.png',
       qrAlt: 'Haigoo 会员交流群二维码',
-      hint: '使用企业微信或微信扫码加入会员群。若二维码失效，请联系管理员更新。',
-      bullets: [
-        '会员优先岗位讨论与经验复盘',
-        '高频求职问题优先答疑',
-        '远程工作信息交流与重点线索',
-        '和正在上岸的用户保持同步'
-      ]
+      qrTitle: '交流入口',
     }
   }
 
   return {
-    badge: '求职交流群',
-    title: '加入 Haigoo 求职交流群',
+    title: '加入 Haigoo 远程交流群',
     subtitle: '群里会同步精选岗位、求职经验、投递反馈和产品更新，适合正在找远程工作的用户。',
     qrSrc: '/Wechat_group.png',
     qrAlt: 'Haigoo 求职交流群二维码',
-    hint: '使用企业微信或微信扫码加入交流群。群内会同步精选岗位、经验分享和产品更新。',
-    bullets: [
-      '每周精选岗位与经验分享',
-      '岗位筛选、投递、面试问题互助',
-      '真实投递反馈与踩坑总结',
-      '第一时间知道网站上的重点更新'
-    ]
+      qrTitle: '交流入口',
   }
 }
 
@@ -64,32 +50,22 @@ export default function WeChatCommunityPanel({
     : 'grid gap-8 lg:grid-cols-[1.15fr_0.85fr] p-6 sm:p-8 lg:p-10'
 
   if (variant === 'compact') {
-    const compactHighlights = isMember
-      ? ['每日精选', '会员答疑', '同行交流']
-      : ['每日精选', '岗位提醒', '经验交流']
-
     return (
       <section className={`${baseClass} ${className}`}>
         <div className="grid gap-4 p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700">
-                <Users className="h-3.5 w-3.5" />
-                {config.badge}
-              </div>
-              <h3 className="mt-3 text-lg font-bold tracking-tight text-slate-950">
-                {isMember ? '会员群入口' : '交流群入口'}
+              <h3 className="text-lg font-bold tracking-tight text-slate-950">
+                {config.title}
               </h3>
-              <p className="mt-2 text-sm leading-6 text-slate-500">
-                {isMember ? '扫码入群，直接接收精选岗位和会员交流。' : '扫码入群，和大家一起交流远程求职信息。'}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {compactHighlights.map((item) => (
-                  <span key={item} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">
-                    {item}
-                  </span>
-                ))}
-              </div>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{config.subtitle}</p>
+              <Link
+                to="/jobs"
+                className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-slate-800 hover:text-white visited:text-white active:text-white focus:text-white"
+              >
+                先看看今日岗位
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
 
             <div className="shrink-0 rounded-3xl border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-3 shadow-sm">
@@ -99,10 +75,6 @@ export default function WeChatCommunityPanel({
                 className="h-28 w-28 rounded-2xl object-contain"
               />
             </div>
-          </div>
-
-          <div className="rounded-2xl border border-dashed border-emerald-200 bg-emerald-50/60 px-3 py-2 text-xs leading-5 text-slate-600">
-            微信扫码即可加入。二维码失效时联系管理员更新。
           </div>
         </div>
       </section>
@@ -115,12 +87,8 @@ export default function WeChatCommunityPanel({
       <div className={gridClass}>
         <div className="min-w-0">
           {showHeader && (
-            <div className="mb-6">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-100 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-                <Users className="h-3.5 w-3.5" />
-                {config.badge}
-              </div>
-              <h2 className="mt-4 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
+            <div className="mb-5">
+              <h2 className="text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">
                 {config.title}
               </h2>
               <p className="mt-3 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">
@@ -134,7 +102,7 @@ export default function WeChatCommunityPanel({
               { icon: Briefcase, title: '每日精选岗位', desc: '固定同步重点岗位，不需要反复刷新站点。' },
               { icon: MessageSquare, title: '同行交流', desc: '和正在找远程工作的用户讨论投递、面试和工作方式。' },
               { icon: Sparkles, title: '重点信息提醒', desc: '岗位更新、运营活动和重要通知会集中在群里同步。' },
-              { icon: isMember ? Crown : ShieldCheck, title: isMember ? '会员专属交流' : '交流更直接', desc: isMember ? '会员群交流更聚焦，适合正在积极投递的用户。' : '相比只看邮件或站内通知，群里更容易获得真实反馈。' }
+              { icon: ShieldCheck, title: '交流更直接', desc: '相比只看邮件或站内通知，群里更容易获得真实反馈。' }
             ].map((item) => (
               <div key={item.title} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                 <div className="flex items-start gap-3">
@@ -150,20 +118,8 @@ export default function WeChatCommunityPanel({
             ))}
           </div>
 
-          <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-950 px-5 py-4 text-white">
-            <div className="text-sm font-semibold">入群后你能获得</div>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              {config.bullets.map((bullet) => (
-                <div key={bullet} className="flex items-start gap-2 text-sm text-slate-200">
-                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
-                  <span>{bullet}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           {showActions && (
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <Link
                 to="/jobs"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-slate-800 hover:text-white visited:text-white active:text-white focus:text-white"
@@ -171,15 +127,6 @@ export default function WeChatCommunityPanel({
                 先看看今日岗位
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              {!isMember && (
-                <Link
-                  to="/membership"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
-                >
-                  了解会员交流群
-                  <Crown className="h-4 w-4 text-amber-500" />
-                </Link>
-              )}
             </div>
           )}
         </div>
@@ -187,27 +134,20 @@ export default function WeChatCommunityPanel({
         <div className="flex min-w-0 items-center justify-center">
           <div className="w-full rounded-[28px] border border-slate-200 bg-gradient-to-br from-emerald-50 via-white to-sky-50 p-6 sm:p-7">
             <div className="text-center">
-              <div className="text-xs font-semibold tracking-[0.24em] text-emerald-700">
-                扫码入群
+              <div className="text-xl font-bold text-slate-900">
+                {config.qrTitle}
               </div>
-              <div className="mt-2 text-xl font-bold text-slate-900">
-                {isMember ? '会员群入口' : '交流群入口'}
-              </div>
-              <div className="mt-2 text-sm leading-6 text-slate-600">
-                {config.hint}
+              <div className="mt-1.5 text-sm leading-6 text-slate-600">
+                微信扫一扫入群
               </div>
             </div>
 
-            <div className="mx-auto mt-6 flex w-full max-w-[320px] justify-center rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
+            <div className="mx-auto mt-4 flex w-full max-w-[320px] justify-center rounded-[28px] bg-white p-5 shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
               <img
                 src={config.qrSrc}
                 alt={config.qrAlt}
                 className="aspect-square w-full max-w-[220px] rounded-2xl object-contain"
               />
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-dashed border-emerald-200 bg-white/80 px-4 py-3 text-center text-sm leading-6 text-slate-600">
-              扫码后如果未自动入群，请保留截图并联系 Haigoo 管理员处理。
             </div>
           </div>
         </div>

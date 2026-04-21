@@ -4,7 +4,7 @@ import { Search, Sparkles, Briefcase, Zap, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
-import JobBundleBanner from '../components/JobBundleBanner'
+import JobBundleBanner, { JobBundleCard } from '../components/JobBundleBanner'
 import JobDetailModal from '../components/JobDetailModal'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterBar from '../components/JobFilterBar'
@@ -149,6 +149,32 @@ export default function JobsPage() {
   const [pageSize, setPageSize] = useState(20)
   const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance')
   const [activeBundles, setActiveBundles] = useState<JobBundle[]>([]);
+  const localPreviewBundles: JobBundle[] = useMemo(() => ([
+    {
+      id: 101,
+      title: '技术研发类远程岗位精选合集（4/13-4/19）',
+      subtitle: '全栈/后端开发、移动开发、数据算法等方向',
+      job_ids: ['preview-backend-engineer-ai', 'preview-ai-product-manager'],
+      visibility: 'public',
+      priority: 1
+    },
+    {
+      id: 102,
+      title: '产品/运营/设计类远程岗位精选合集（4/13-4/19）',
+      subtitle: '产品经理、运营、设计、项目经理等方向',
+      job_ids: ['preview-ai-product-manager', 'preview-growth-pm-mentor', 'preview-product-designer', 'preview-new-horizon-pm'],
+      visibility: 'public',
+      priority: 2
+    },
+    {
+      id: 103,
+      title: '非技术/入门/综合类远程岗位精选合集（4/13-4/19）',
+      subtitle: '市场营销、客户经理、销售、内容创作等方向',
+      job_ids: ['preview-growth-pm-mentor', 'preview-ua-product-manager'],
+      visibility: 'public',
+      priority: 3
+    }
+  ]), [])
 
   useEffect(() => {
     // Fetch active bundles
@@ -168,25 +194,34 @@ export default function JobsPage() {
 
           if (validBundles.length > 0) {
             // Sort by priority (asc) and render all active bundles
-            validBundles.sort((a: JobBundle, b: JobBundle) => {
+            const nextBundles = [...validBundles]
+            if (import.meta.env.DEV && nextBundles.length < 3) {
+              localPreviewBundles.forEach((bundle) => {
+                if (!nextBundles.some((item: JobBundle) => item.id === bundle.id)) {
+                  nextBundles.push(bundle)
+                }
+              })
+            }
+
+            nextBundles.sort((a: JobBundle, b: JobBundle) => {
               const priorityDiff = (a.priority || 10) - (b.priority || 10)
               if (priorityDiff !== 0) return priorityDiff
               return a.id - b.id
             });
-            setActiveBundles(validBundles);
+            setActiveBundles(nextBundles);
           } else {
-            setActiveBundles([]);
+            setActiveBundles(import.meta.env.DEV ? localPreviewBundles : []);
           }
         } else {
-          setActiveBundles([]);
+          setActiveBundles(import.meta.env.DEV ? localPreviewBundles : []);
         }
       } catch (e) {
         console.error('Failed to fetch active bundles', e);
-        setActiveBundles([]);
+        setActiveBundles(import.meta.env.DEV ? localPreviewBundles : []);
       }
     };
     fetchActiveBundles();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, localPreviewBundles]);
 
   // 匹配分数缓存（不再需要单独管理，因为后端已经返回匹配分数）
   const [matchScores, setMatchScores] = useState<Record<string, number>>({})
@@ -543,13 +578,7 @@ export default function JobsPage() {
 
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}))
-        if (resp.status === 403 && data.upgradeRequired) {
-          if (window.confirm('普通用户最多收藏5个职位，升级会员解锁无限收藏。\n\n是否前往升级？')) {
-            navigate('/membership')
-          }
-          throw new Error('Upgrade required') // Throw to trigger rollback
-        }
-        throw new Error('收藏接口失败')
+        throw new Error(data.error || '收藏接口失败')
       }
 
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
@@ -709,7 +738,7 @@ export default function JobsPage() {
   return (
     <MobileRestricted allowContinue={true}>
       <div
-        className="h-full bg-transparent flex flex-col pt-20"
+        className="h-full bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.55),transparent_36%),linear-gradient(180deg,#f8fafc_0%,#f8fafc_100%)] flex flex-col pt-20"
         role="main"
         aria-label="职位搜索页面"
       >
@@ -725,10 +754,10 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-        <div className="flex-1 flex flex-col overflow-hidden max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-6 h-full pt-0 mt-0">
+        <div className="flex-1 flex flex-col overflow-hidden max-w-[1620px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-3 h-full pt-0 mt-0">
 
           {/* Top Section: Search & Filters */}
-          <div className="flex-shrink-0 z-50 relative pt-1">
+          <div className="relative z-50 flex-shrink-0">
             <JobFilterBar
               filters={filters}
               onFilterChange={(newFilters: any) => {
@@ -753,9 +782,9 @@ export default function JobsPage() {
           </div>
 
           {/* Main Content Area: Split View */}
-          <div className="flex-1 flex overflow-hidden gap-6 min-h-0 mt-0">
+          <div className="flex-1 flex overflow-hidden gap-3 min-h-0 mt-0">
             {/* Middle Column: Job List */}
-            <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[55%] xl:w-[55%]' : 'lg:w-[800px] mx-auto'} bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden flex-shrink-0`}>
+            <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[56%] xl:w-[56%]' : 'lg:w-[820px] mx-auto'} rounded-[30px] border border-slate-200/80 bg-white/92 shadow-[0_32px_80px_-56px_rgba(15,23,42,0.28)] backdrop-blur-sm overflow-hidden flex-shrink-0`}>
               {/* List Header Info - Only show if there's a specific filter info to display like isTrusted */}
               {filters.isTrusted && (
                 <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-end items-center text-xs text-slate-500 font-medium">
@@ -767,7 +796,7 @@ export default function JobsPage() {
               )}
 
               {/* List Content */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-white overscroll-y-contain">
+              <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)] overscroll-y-contain">
                 {showLoading ? (
                   <div className="p-0">
                     {[...Array(5)].map((_, i) => (
@@ -820,30 +849,49 @@ export default function JobsPage() {
                     </div>
                   </div>
                 ) : (
-                  <div>
+                  <div className="pb-4">
                     {activeBundles.length > 0 && !loadingMore && currentPage === 1 && (
-                      <div className="mb-5 space-y-3">
-                        {activeBundles.map((bundle) => (
-                          <JobBundleBanner key={bundle.id} bundle={bundle} />
-                        ))}
+                      <div className="border-b border-slate-100/90 bg-[linear-gradient(180deg,rgba(248,250,252,0.72),rgba(255,255,255,0))] px-4 pb-4 pt-4">
+                        {/* Adaptive-width carousel:
+                            • 1 bundle  → fills the full width
+                            • 2 bundles → each card ~50%
+                            • 3+        → fixed 220px, scrollable with right-peek */}
+                        <div className="relative">
+                          <div
+                            className={`flex gap-3 ${activeBundles.length > 3 ? 'overflow-x-auto pb-1' : ''} scroll-smooth`}
+                            style={activeBundles.length > 3 ? { scrollbarWidth: 'none', msOverflowStyle: 'none' } : undefined}
+                          >
+                            {activeBundles.map((bundle) => (
+                              <JobBundleCard key={bundle.id} bundle={bundle} totalCount={activeBundles.length} />
+                            ))}
+                            {/* Trailing spacer only needed for scroll mode */}
+                            {activeBundles.length > 3 && <div className="flex-shrink-0 w-2" />}
+                          </div>
+                          {/* Right fade hint for scrollable state */}
+                          {activeBundles.length > 3 && (
+                            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/85 to-transparent pointer-events-none" />
+                          )}
+                        </div>
                       </div>
                     )}
 
-                    {distributedJobs.map((job, index) => (
-                      <JobCardNew
-                        key={job.id}
-                        job={job}
-                        variant="list"
-                        isActive={selectedJob?.id === job.id}
-                        onClick={() => handleJobSelect(job, index)}
-                        matchScore={job.matchScore}
-                        showApplicationMethodIcons
-                      />
-                    ))}
+                    <div className="space-y-3 px-4 pt-4">
+                      {distributedJobs.map((job, index) => (
+                        <JobCardNew
+                          key={job.id}
+                          job={job}
+                          variant="list"
+                          isActive={selectedJob?.id === job.id}
+                          onClick={() => handleJobSelect(job, index)}
+                          matchScore={job.matchScore}
+                          showApplicationMethodIcons
+                        />
+                      ))}
+                    </div>
 
                     {/* Low Result Count Promo */}
                     {distributedJobs.length < 5 && (
-                      <div className="mx-4 my-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 border border-indigo-100 flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="mx-4 my-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-100/90 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_20px_40px_-32px_rgba(79,70,229,0.4)]">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-indigo-600 flex-shrink-0">
                             <Sparkles className="w-5 h-5" />
@@ -863,7 +911,7 @@ export default function JobsPage() {
                     )}
 
                     {/* Load More Trigger */}
-                    <div className="p-4 text-center border-t border-slate-50">
+                    <div className="p-4 text-center border-t border-slate-100">
                       {loadingMore ? (
                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
                           <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
@@ -883,7 +931,7 @@ export default function JobsPage() {
             </div>
 
             {/* Right Column: Detail Panel (Desktop Only) */}
-            <div className="hidden lg:flex flex-1 bg-white rounded-2xl border border-slate-200/60 shadow-xl shadow-slate-200/40 overflow-hidden h-full flex-col relative">
+            <div className="hidden lg:flex flex-1 rounded-[30px] border border-slate-200/80 bg-white/95 shadow-[0_32px_90px_-58px_rgba(15,23,42,0.32)] backdrop-blur-sm overflow-hidden h-full flex-col relative">
               {selectedJob ? (
                 <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
                   <JobDetailPanel
@@ -901,12 +949,12 @@ export default function JobsPage() {
                   />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-slate-50/30">
-                  <div className="w-20 h-20 bg-white rounded-full shadow-sm border border-slate-100 flex items-center justify-center mb-4">
+                <div className="flex flex-col items-center justify-center h-full text-slate-400 bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.85),transparent_36%),linear-gradient(180deg,rgba(248,250,252,0.7),rgba(255,255,255,0.95))]">
+                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-100 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)]">
                     <Briefcase className="w-10 h-10 text-slate-300" />
                   </div>
-                  <p className="text-lg font-medium text-slate-500">选择一个职位查看详情</p>
-                  <p className="text-sm text-slate-400 mt-2">点击左侧列表中的职位卡片</p>
+                  <p className="text-lg font-semibold text-slate-600">选择一个职位查看详情</p>
+                  <p className="mt-2 max-w-[260px] text-center text-sm text-slate-400">左侧列表适合快速筛选，右侧详情用于集中判断与申请。</p>
                 </div>
               )}
             </div>

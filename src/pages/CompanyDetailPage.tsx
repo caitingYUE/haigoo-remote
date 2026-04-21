@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Shield, Crown, Info, Mail } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Shield, Info, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -15,33 +15,8 @@ import { LocationTooltip } from '../components/LocationTooltip'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
-    const { isAuthenticated, isMember } = useAuth()
-    const hasCompanyDetailAccess = isMember
-    const canUseFreeCompanyInfoFlow = !hasCompanyDetailAccess
+    const { isMember } = useAuth()
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
-
-    const FREE_FEATURE_LIMIT = 3
-    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(0)
-    const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
-
-    // Initialize usage stats for free users
-    useEffect(() => {
-        if (isAuthenticated && canUseFreeCompanyInfoFlow) {
-            const token = localStorage.getItem('haigoo_auth_token')
-            if (!token) return;
-            fetch('/api/users?resource=free-usage&type=company-info', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            }).then(r => r.json()).then(data => {
-                if (data.success) {
-                    setCompanyInfoUsageCount(data.usage);
-                    setUnlockedCompanies(data.unlocked_companies || []);
-                }
-            }).catch(err => console.error('[free-usage] Failed to load company info quota:', err));
-        } else {
-            setCompanyInfoUsageCount(0);
-            setUnlockedCompanies([]);
-        }
-    }, [canUseFreeCompanyInfoFlow, isAuthenticated]);
 
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
@@ -306,73 +281,13 @@ export default function CompanyDetailPage() {
                             {/* Always render Certified Info for trusted companies */}
                             {companyInfo?.isTrusted && (
                                 <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 relative">
-                                    {hasCompanyDetailAccess && (
-                                        <div className="absolute top-0 right-0 z-10">
-                                            <div className="bg-indigo-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg rounded-tr-xl shadow-sm flex items-center gap-1">
-                                                <Crown className="w-3 h-3" />
-                                                会员专属权益已生效
-                                            </div>
-                                        </div>
-                                    )}
                                     <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
                                         <Shield className="w-4 h-4 text-indigo-600" />
                                         <h2 className="text-sm font-bold text-slate-900">企业认证信息</h2>
-                                        {!hasCompanyDetailAccess && (
-                                            <span className="text-[10px] px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded font-medium border border-amber-200 ml-1">
-                                                会员专属
-                                            </span>
-                                        )}
                                     </div>
 
-                                    {(() => {
-                                        const isUnlocked = hasCompanyDetailAccess || (canUseFreeCompanyInfoFlow && companyInfo?.name && unlockedCompanies.includes(companyInfo.name));
-                                        
-                                        const handleUnlock = async (e: React.MouseEvent) => {
-                                            e.stopPropagation();
-                                            trackingService.featureClick('company_info', {
-                                                page_key: 'company_detail',
-                                                module: 'company_detail',
-                                                source_key: 'company_detail',
-                                                entity_type: 'company',
-                                                entity_id: companyInfo?.name,
-                                                company_name: companyInfo?.name,
-                                            });
-                                            const token = localStorage.getItem('haigoo_auth_token');
-                                            if (!token) {
-                                                navigate('/login');
-                                                return;
-                                            }
-                                            try {
-                                                const res = await fetch('/api/users?resource=free-usage&type=company-info', {
-                                                    method: 'POST',
-                                                    headers: {
-                                                        'Content-Type': 'application/json',
-                                                        'Authorization': `Bearer ${token}`
-                                                    },
-                                                    body: JSON.stringify({
-                                                        companyName: companyInfo?.name,
-                                                        page_key: 'company_detail',
-                                                        source_key: 'company_detail',
-                                                        entity_type: 'company',
-                                                        entity_id: companyInfo?.name,
-                                                        flow_id: `company_info_${companyInfo?.name || decodedCompanyName}`
-                                                    })
-                                                });
-                                                const data = await res.json();
-                                                if (data.success) {
-                                                    setUnlockedCompanies(data.unlocked_companies || []);
-                                                    setCompanyInfoUsageCount(data.usage);
-                                                } else {
-                                                    alert(data.error || '解锁失败');
-                                                }
-                                            } catch (err) {
-                                                console.error('解锁失败', err);
-                                            }
-                                        };
-
-                                        return isUnlocked ? (
-                                            <div className="p-4 relative">
-                                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+                                    <div className="relative p-4">
+                                                <div className="grid grid-cols-2 gap-4 items-stretch lg:grid-cols-4">
                                                     {/* Website - Row 1 */}
                                                     {companyInfo.website && (
                                                         <a
@@ -485,7 +400,7 @@ export default function CompanyDetailPage() {
                                                     )}
 
                                                     {/* Hiring Email - Row 2 - Flexible Width */}
-                                                    {companyInfo.hiringEmail && (
+                                                    {isMember && companyInfo.hiringEmail && (
                                                         <div
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText(companyInfo.hiringEmail || '');
@@ -534,97 +449,7 @@ export default function CompanyDetailPage() {
                                                         </div>
                                                     )}
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            /* Locked State - Synchronized with JobDetailPanel */
-                                            <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-slate-50/30 min-h-[160px] mx-4 mb-4">
-                                                {/* Simulated Content Layer (Blurred) */}
-                                                <div className="p-4 grid grid-cols-2 lg:grid-cols-4 gap-4 filter blur-[6px] opacity-40 select-none pointer-events-none">
-                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
-                                                    <div className="h-14 bg-white rounded-lg border border-slate-100"></div>
-                                                </div>
-
-                                                {/* Unlock Modal Overlay */}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-slate-50/90 via-slate-50/40 to-transparent flex flex-col items-center justify-center">
-                                                    <div className="text-center transform transition-transform hover:scale-[1.02] p-4 bg-white/60 backdrop-blur-md rounded-2xl border border-white shadow-sm max-w-sm">
-                                                        {!isAuthenticated ? (
-                                                            <>
-                                                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-slate-100">
-                                                                    <Shield className="w-5 h-5 text-slate-400" />
-                                                                </div>
-                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">企业认证信息仅会员可见</h4>
-                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
-                                                                    登录后可免费体验，包含认证招聘邮箱、评分及总部地址。
-                                                                </p>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        trackingService.track('feature_click', {
-                                                                            page_key: 'company_detail',
-                                                                            module: 'company_detail',
-                                                                            feature_key: 'company_info',
-                                                                            source_key: 'company_detail_login_gate',
-                                                                            entity_type: 'company',
-                                                                            entity_id: companyInfo?.name || decodedCompanyName,
-                                                                            action: 'login_gate'
-                                                                        })
-                                                                        navigate('/login')
-                                                                    }}
-                                                                    className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
-                                                                >
-                                                                    登录免费体验
-                                                                </button>
-                                                            </>
-                                                        ) : companyInfoUsageCount < FREE_FEATURE_LIMIT ? (
-                                                            <>
-                                                                <div className="w-10 h-10 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-indigo-100">
-                                                                    <Crown className="w-5 h-5 text-indigo-600" />
-                                                                </div>
-                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">解锁企业认证深度信息</h4>
-                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
-                                                                    包含认证招聘邮箱、评分详情及准确总部地址，助您精准触达。
-                                                                </p>
-                                                                <button
-                                                                    onClick={handleUnlock}
-                                                                    className="py-2 px-6 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-full shadow-sm transition-all flex items-center justify-center gap-1.5 mx-auto"
-                                                                >
-                                                                    <Crown className="w-3.5 h-3.5" />
-                                                                    免费解锁 (剩 {FREE_FEATURE_LIMIT - companyInfoUsageCount} 次)
-                                                                </button>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <div className="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-2 border border-slate-100">
-                                                                    <Shield className="w-5 h-5 text-slate-400" />
-                                                                </div>
-                                                                <h4 className="text-sm font-bold text-slate-900 mb-1">体验次数已达上限</h4>
-                                                                <p className="text-[11px] text-slate-500 mb-3 leading-tight px-4">
-                                                                    升级会员即可无限次查看所有企业的深度核验信息。
-                                                                </p>
-                                                                <button
-                                                                    onClick={() => {
-                                                                        trackingService.track('upgrade_cta_click', {
-                                                                            page_key: 'company_detail',
-                                                                            module: 'company_detail',
-                                                                            feature_key: 'company_info',
-                                                                            source_key: 'company_detail_limit_reached',
-                                                                            entity_type: 'company',
-                                                                            entity_id: companyInfo?.name || decodedCompanyName,
-                                                                        })
-                                                                        navigate('/membership')
-                                                                    }}
-                                                                    className="py-2 px-6 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-full shadow-sm transition-all mx-auto"
-                                                                >
-                                                                    查看会员权益
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })()}
+                                    </div>
                                 </div>
                             )}
                         </div>

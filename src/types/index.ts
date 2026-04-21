@@ -9,6 +9,9 @@ export interface Job {
     min: number
     max: number
     currency: string
+    period?: 'hourly' | 'monthly' | 'yearly' | 'package'
+    valueMode?: 'fixed' | 'range'
+    display?: string
   } | string
   description?: string  // 可选，避免显示"暂无描述"
   requirements: string[]

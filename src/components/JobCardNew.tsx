@@ -1,10 +1,11 @@
 
 import React, { useMemo } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Sparkles, Zap, Crown, Link2, Mail } from 'lucide-react';
+import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Star, Crown, Link2, Mail, Zap } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { resolveMatchLevel } from '../utils/match-display';
 import { trackingService } from '../services/tracking-service';
+import { formatSalaryForDisplay } from '../utils/salary-display';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -49,33 +50,26 @@ interface JobCardNewProps {
    compactFeatured?: boolean;
 }
 
-// Simple hash function to generate a stable pastel color from string
-const getPastelColor = (str: string) => {
+const BRAND_PASTEL_TOKENS = [
+   { bg: '#DCF8F0', text: '#1E8D7E', hover: '#16695D' },
+   { bg: '#E5EEFF', text: '#4365D8', hover: '#2B49A8' },
+   { bg: '#FFF0D8', text: '#B47319', hover: '#874F0E' },
+   { bg: '#F1E7FF', text: '#7A55D1', hover: '#5A38AC' },
+   { bg: '#E5F7E4', text: '#43925A', hover: '#2E6D40' },
+   { bg: '#FDE6EE', text: '#BA567C', hover: '#933C60' }
+];
+
+const getBrandPalette = (str: string) => {
    let hash = 0;
    for (let i = 0; i < str.length; i++) {
       hash = str.charCodeAt(i) + ((hash << 5) - hash);
    }
-
-   // Generate HSL color with high lightness and low saturation for pastel look
-   // Use hash to pick Hue (0-360)
-   const h = Math.abs(hash) % 360;
-   // Saturation 60-80%
-   const s = 70 + (Math.abs(hash) % 20);
-   // Lightness 90-96% (Very light background)
-   const l = 93 + (Math.abs(hash) % 5);
-
-   return `hsl(${h}, ${s}%, ${l}%)`;
+   return BRAND_PASTEL_TOKENS[Math.abs(hash) % BRAND_PASTEL_TOKENS.length];
 };
 
-// Generate matching text color (darker version of the same hue)
-const getDarkerColor = (str: string) => {
-   let hash = 0;
-   for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-   }
-   const h = Math.abs(hash) % 360;
-   return `hsl(${h}, 70%, 30%)`;
-};
+const getPastelColor = (str: string) => getBrandPalette(str).bg;
+const getDarkerColor = (str: string) => getBrandPalette(str).text;
+const getHoverColor = (str: string) => getBrandPalette(str).hover;
 
 // Match Score Badge
 const MatchScoreBadge = ({ score, level, compact = false }: { score: number, level: string, compact?: boolean }) => {
@@ -139,15 +133,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          return false;
       }
    }, [job.publishedAt]);
-   const titleAccessoryWidth = (isTranslated ? 22 : 0) + (isNew ? 48 : 0) + ((isTranslated || isNew) ? 12 : 0);
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
 
    // Dynamic Background Color Logic
    const bgColor = useMemo(() => getPastelColor(job.company || 'default'), [job.company]);
    const textColor = useMemo(() => getDarkerColor(job.company || 'default'), [job.company]);
+   const hoverColor = useMemo(() => getHoverColor(job.company || 'default'), [job.company]);
 
    const isFeatured = job.isFeatured;
+   const titleAccessoryWidth = (isTranslated ? 22 : 0) + (isNew ? 48 : 0) + (isFeatured ? 24 : 0) + (((isTranslated || isNew || isFeatured) ? 12 : 0));
    const directApplyUrl = useMemo(() => {
       const value = String(job.url || job.sourceUrl || '').trim();
       if (!value || /^mailto:/i.test(value)) return '';
@@ -173,54 +168,6 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const showMatchScore = resolvedMatchLevel !== 'none' && rawScoreNum > 0;
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
    const isCompactFeaturedCard = variant === 'list' && compactFeatured;
-
-   const formatSalary = (salary: Job['salary']) => {
-      // Handle missing/zero cases
-      if (!salary) return '薪资Open';
-
-      // Handle string type (New format or legacy string)
-      if (typeof salary === 'string') {
-         if (salary === '0' || salary === 'null' || salary === 'Open' || salary === '0-0') return '薪资Open';
-         // Try parsing JSON string if it looks like one
-         if (salary.trim().startsWith('{')) {
-            try {
-               const parsed = JSON.parse(salary);
-               if (typeof parsed === 'object') return formatSalary(parsed);
-            } catch (e) {
-               // ignore
-            }
-         }
-         return salary;
-      }
-
-      // Handle object type (Legacy format)
-      if (salary.min === 0 && salary.max === 0) {
-         // Check if there is a display string (from legacy service mapping)
-         const display = (salary as any).display;
-         if (display && typeof display === 'string' && display !== '0') return display;
-         return '薪资Open';
-      }
-
-      const formatAmount = (amount: number) => {
-         // Safety check: if amount is null/undefined/NaN, return '0' or empty string
-         if (amount === null || amount === undefined || isNaN(amount)) return '0';
-
-         if (amount >= 1000) return `${(amount / 1000).toFixed(0)}k`;
-         return amount.toString();
-      };
-      const currencySymbol = salary.currency === 'CNY' ? '¥' :
-         salary.currency === 'USD' ? '$' :
-            salary.currency === 'EUR' ? '€' :
-               salary.currency === 'GBP' ? '£' :
-                  (salary.currency || '');
-
-      // Safety checks for min/max
-      const min = salary.min || 0;
-      const max = salary.max || 0;
-
-      if (min === max) return `${currencySymbol}${formatAmount(min)}`;
-      return `${currencySymbol}${formatAmount(min)} - ${currencySymbol}${formatAmount(max)}`;
-   };
 
    // 1. Merge and deduplicate tags for display (Common for both variants)
    const displayTags = useMemo(() => {
@@ -252,12 +199,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          });
       }
 
-      return tags.slice(0, 5); // Reduce max tags for cleaner look
+      return tags.filter((tag) => tag.text !== '精选').slice(0, 5); // Reduce max tags for cleaner look
    }, [job.skills, job.tags, job.companyTags]);
    const compactSkillTags = isCompactFeaturedCard ? displayTags.slice(0, 4) : displayTags.slice(0, 4);
    const compactSkillTagOverflow = isCompactFeaturedCard ? Math.max(displayTags.length - compactSkillTags.length, 0) : 0;
 
-   const salaryText = formatSalary(job.salary);
+   const salaryText = formatSalaryForDisplay(job.salary, '薪资Open');
    const isSalaryOpen = salaryText === '薪资Open' || salaryText === '薪资 Open';
    const topMetaBadges = [
       job.type ? {
@@ -265,7 +212,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          label: JOB_TYPE_MAP[job.type] || job.type,
          options: {
             icon: Calendar,
-            tone: 'bg-amber-50 text-amber-700 border border-amber-100/50',
+            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
             maxWidthClass: 'max-w-[8ch]'
          }
       } : null,
@@ -274,7 +221,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          label: EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel,
          options: {
             icon: TrendingUp,
-            tone: 'bg-emerald-50 text-emerald-700 border border-emerald-100/50',
+            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
             maxWidthClass: 'max-w-[8ch]'
          }
       } : null,
@@ -283,7 +230,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          label: job.companyIndustry,
          options: {
             icon: Building2,
-            tone: 'bg-purple-50 text-purple-700 border border-purple-100/50',
+            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
             maxWidthClass: isCompactFeaturedCard ? undefined : 'max-w-[10ch] lg:max-w-[14ch]'
          }
       } : null,
@@ -292,7 +239,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          label: job.category,
          options: {
             icon: Briefcase,
-            tone: 'bg-indigo-50 text-indigo-700 border border-indigo-100/50',
+            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
             maxWidthClass: isCompactFeaturedCard ? 'max-w-[10ch] lg:max-w-[12ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
          }
       } : null
@@ -308,9 +255,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 3) : topMetaBadges;
    const compactTopBadgeOverflow = isCompactFeaturedCard ? Math.max(topMetaBadges.length - compactTopBadges.length, 0) : 0;
-   const compactSalaryDesktopWidthClass = isCompactFeaturedCard
-      ? salaryText.length > 18 ? 'md:max-w-[168px]' : 'md:max-w-[148px]'
-      : 'md:max-w-[220px]';
+   const compactSalaryDesktopWidthClass = isCompactFeaturedCard ? 'md:w-[154px]' : 'md:w-[154px]';
    const compactSalaryMobileWidthClass = isCompactFeaturedCard ? 'max-w-[180px]' : 'max-w-[150px]';
    const compactSalaryTextClass = salaryText.length > 18 ? 'text-[13px]' : 'text-[15px]';
    const renderTopMetaBadge = (
@@ -324,7 +269,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       const Icon = options.icon;
       return (
          <span
-            className={`inline-flex min-w-0 max-w-full shrink items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold ${options.tone}`}
+            className={`inline-flex min-w-0 max-w-full shrink items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${options.tone}`}
             title={label}
          >
             <Icon className="h-3 w-3 shrink-0" />
@@ -379,15 +324,17 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       return (
          <div
-            className="flex-shrink-0 flex h-full w-full flex-col items-center justify-center rounded-xl px-2 py-3 transition-colors relative overflow-hidden"
+            className="relative flex h-full w-full flex-shrink-0 flex-col items-center justify-center overflow-hidden rounded-[22px] border border-white/70 px-2 py-3 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
             style={{ backgroundColor: bgColor }}
          >
-            {/* Featured Badge for Grid View */}
+            {/* Featured Badge for Grid View (Hidden per user request) */}
+            {/*
             {isFeatured && variant === 'grid' && (
                <div className="absolute top-0 right-0 bg-gradient-to-bl from-amber-400 to-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg z-10 shadow-sm flex items-center gap-1">
                   <Sparkles className="w-2.5 h-2.5" />
                </div>
             )}
+            */}
 
             {/* Company Name (Top) */}
             <div
@@ -399,7 +346,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Logo (Centered) */}
-            <div className="relative flex-shrink-0 w-16 h-16 bg-white rounded-xl shadow-sm flex items-center justify-center p-2 overflow-hidden">
+            <div className="relative flex-shrink-0 w-16 h-16 bg-white rounded-[18px] shadow-[0_16px_32px_-24px_rgba(15,23,42,0.45)] flex items-center justify-center p-2 overflow-hidden">
                {job.logo ? (
                   <img
                      src={job.logo}
@@ -449,17 +396,18 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      const target = e.target as HTMLImageElement;
                      target.style.display = 'none';
                      if (target.parentElement && !target.dataset.errorHandled) {
-                        target.parentElement.classList.add('bg-indigo-50');
+                        target.parentElement.style.backgroundColor = bgColor;
                         target.dataset.errorHandled = 'true';
                         const initialSpan = document.createElement('span');
-                        initialSpan.className = "text-indigo-500 font-bold text-xl";
+                        initialSpan.className = "font-bold text-xl";
+                        initialSpan.style.color = textColor;
                         initialSpan.textContent = companyInitial;
                         target.parentElement.appendChild(initialSpan);
                      }
                   }}
                />
             ) : (
-               <div className="w-full h-full flex items-center justify-center bg-indigo-50 text-indigo-500 font-bold text-xl">
+               <div className="w-full h-full flex items-center justify-center font-bold text-xl" style={{ backgroundColor: bgColor, color: textColor }}>
                   {companyInitial}
                </div>
             )}
@@ -488,9 +436,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                onClick && onClick(job);
             }}
             className={`
-               group relative bg-white rounded-2xl p-4 border transition-all duration-300 hover:shadow-lg cursor-pointer flex gap-4 items-stretch min-h-[140px]
-               ${isActive ? 'border-indigo-500 ring-1 ring-indigo-500 shadow-md bg-indigo-50/10' : 'border-slate-100 hover:border-indigo-200'}
-               ${isFeatured ? 'bg-gradient-to-r from-white via-indigo-50/20 to-white border-indigo-100 ring-1 ring-indigo-500/10' : ''}
+               group relative flex min-h-[148px] cursor-pointer items-stretch gap-4 rounded-[26px] border p-4 transition-all duration-300
+               ${isActive ? 'border-indigo-300 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(244,247,255,0.92))] shadow-[0_24px_54px_-36px_rgba(79,70,229,0.38)] ring-1 ring-indigo-200/80' : 'border-slate-200/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,252,255,0.98))] shadow-[0_18px_38px_-32px_rgba(15,23,42,0.2)] hover:border-indigo-200 hover:shadow-[0_26px_52px_-34px_rgba(79,70,229,0.18)]'}
+               ${isFeatured ? 'before:absolute before:inset-y-5 before:left-0 before:w-[3px] before:rounded-r-full before:bg-indigo-500' : ''}
                ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
                ${className}
             `}
@@ -530,10 +478,10 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Row 2: Title */}
-                  <div className="flex items-center gap-2 mt-0.5 w-full min-w-0">
+                  <div className="mt-0.5 flex w-full min-w-0 items-center gap-2">
                      <h3
-                        className={`min-w-0 truncate font-bold text-slate-900 group-hover:text-indigo-600 transition-colors ${isCompactFeaturedCard ? 'text-[1.05rem] lg:text-[1.12rem]' : 'text-xl'}`}
-                        style={{ maxWidth: `calc(100% - ${titleAccessoryWidth}px)` }}
+                        className={`min-w-0 truncate font-bold tracking-tight text-[color:var(--job-title-color)] transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1.05rem] lg:text-[1.12rem]' : 'text-[22px]'}`}
+                        style={{ maxWidth: `calc(100% - ${titleAccessoryWidth}px)`, ['--job-title-color' as any]: '#0f172a', ['--job-title-hover-color' as any]: hoverColor }}
                         title={job.translations?.title || job.title}
                      >
                         {job.translations?.title || job.title}
@@ -547,6 +495,11 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         <div className="flex-shrink-0">
                            <FreshBadge />
                         </div>
+                     )}
+                     {isFeatured && (
+                        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500" title="精选岗位">
+                           <Star className="h-3 w-3 fill-current" />
+                        </span>
                      )}
                   </div>
 
@@ -586,7 +539,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         {(isCompactFeaturedCard ? compactSkillTags : displayTags.slice(0, 4)).map((tag, i) => (
                            <span
                               key={i}
-                              className={`inline-flex items-center rounded-md bg-slate-100/80 px-2.5 py-1 text-[11px] font-medium text-slate-600 transition-colors hover:bg-slate-200 ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : 'max-w-full'}`}
+                              className={`inline-flex items-center rounded-full border border-slate-200/80 bg-slate-50/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : 'max-w-full'}`}
                               title={tag.text}
                            >
                               <span className="truncate">{tag.text}</span>
@@ -594,7 +547,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         ))}
                         {isCompactFeaturedCard && compactSkillTagOverflow > 0 ? (
                            <span
-                              className="inline-flex shrink-0 items-center rounded-md bg-slate-100/80 px-2 py-1 text-[11px] font-medium text-slate-500"
+                              className="inline-flex shrink-0 items-center rounded-full border border-slate-200/80 bg-slate-50/95 px-2 py-1 text-[11px] font-medium text-slate-500"
                               title={`还有 ${compactSkillTagOverflow} 个标签`}
                            >
                               +{compactSkillTagOverflow}
@@ -613,12 +566,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                            {salaryText}
                         </div>
 
+                        {/* Hidden per user request 
                         {isFeatured && (
                            <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
                               <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
                               <span>精选</span>
                            </div>
                         )}
+                        */}
 
                         {hasActionControls && (
                            <div className="ml-auto flex items-center gap-2">
@@ -629,12 +584,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
                </div>
 
-               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${compactSalaryDesktopWidthClass}`}>
-                  <div className={`${compactSalaryDesktopWidthClass.replace('md:', '')} truncate leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'} ${isCompactFeaturedCard ? compactSalaryTextClass : 'text-[15px]'}`} title={salaryText}>
+               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'pl-0' : 'pl-4 border-l border-slate-100/90'} ${compactSalaryDesktopWidthClass}`}>
+                  <div className={`${compactSalaryDesktopWidthClass.replace('md:', '')} truncate leading-tight ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'} ${isCompactFeaturedCard ? compactSalaryTextClass : 'text-[16px]'}`} title={salaryText}>
                      {salaryText}
                   </div>
 
-                  <div className="flex w-full flex-1 items-center justify-end">
+                  <div className="flex w-full flex-1 items-end justify-end pb-2">
                      {showMatchScore ? (
                         <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
                      ) : (
@@ -642,7 +597,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      )}
                   </div>
 
-                  <div className="flex min-h-[38px] items-end justify-end gap-2">
+                  <div className="flex items-end justify-end gap-2 shrink-0">
+                     {/* Hidden per user request 
                      {isFeatured ? (
                         <div className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-bold border border-indigo-100 whitespace-nowrap shadow-sm">
                            <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
@@ -651,6 +607,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      ) : !hasActionControls ? (
                         <div className="h-[32px]" />
                      ) : null}
+                     */}
 
                      {hasActionControls ? (
                         <div className="flex items-center gap-2">
@@ -686,17 +643,24 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                <CompanyLogoSmall size="md" />
                <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
-                     <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors line-clamp-2 leading-snug" title={job.translations?.title || job.title}>
-                        {job.translations?.title || job.title}
-                     </h3>
-                     {isNew && (
-                        <div className="flex-shrink-0">
-                           <FreshBadge />
-                        </div>
-                     )}
+                     <div className="min-w-0 flex items-start gap-2">
+                        <h3 className="text-lg font-bold text-slate-900 line-clamp-2 leading-snug" title={job.translations?.title || job.title}>
+                           {job.translations?.title || job.title}
+                        </h3>
+                        {isNew && (
+                           <div className="flex-shrink-0">
+                              <FreshBadge />
+                           </div>
+                        )}
+               {isFeatured && (
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500" title="精选岗位">
+                     <Star className="h-3 w-3 fill-current" />
+                  </span>
+               )}
+                     </div>
                   </div>
                   <div className="flex items-center text-sm text-slate-500 font-medium">
-                     <span className="text-slate-700 truncate mr-2 max-w-[140px]">{job.translations?.company || job.company}</span>
+                     <span className="truncate mr-2 max-w-[140px]" style={{ color: textColor }}>{job.translations?.company || job.company}</span>
                      <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" />
                      <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
                   </div>
@@ -707,35 +671,35 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             <div className="flex flex-wrap gap-2 mb-4 content-start">
                {/* Job Type (Amber) */}
                {job.type && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap">
                      <Briefcase className="w-3 h-3 mr-1" />
                      {job.type === 'full-time' ? '全职' : job.type}
                   </span>
                )}
                {/* Experience Level (Emerald) */}
                {job.experienceLevel && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-100 whitespace-nowrap">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap">
                      <TrendingUp className="w-3 h-3 mr-1" />
                      {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
                   </span>
                )}
                {/* Industry (Purple) */}
                {job.companyIndustry && job.companyIndustry.length < 15 && !job.companyIndustry.includes('年以上') && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-100 whitespace-nowrap max-w-[140px] truncate">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap max-w-[140px] truncate">
                      <Building2 className="w-3 h-3 mr-1" />
                      {job.companyIndustry}
                   </span>
                )}
                {/* Category (Blue/Indigo - Role related) */}
                {job.category && job.category.length < 15 && !job.category.includes('年以上') && (
-                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap max-w-[140px] truncate">
+                  <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap max-w-[140px] truncate">
                      <Zap className="w-3 h-3 mr-1" />
                      {job.category}
                   </span>
                )}
                {/* Skill Tags (Restored - First 3) */}
                {displayTags.slice(0, 3).map((tag, i) => (
-                  <span key={i} className="inline-flex items-center px-2.5 py-1 rounded text-xs text-slate-600 bg-slate-100 border border-slate-200 whitespace-nowrap max-w-[180px] truncate" title={tag.text}>
+                  <span key={i} className="inline-flex items-center px-2.5 py-1 rounded text-xs text-slate-700 bg-slate-100 border border-slate-200 whitespace-nowrap max-w-[180px] truncate" title={tag.text}>
                      {tag.text}
                   </span>
                ))}
@@ -744,8 +708,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             {/* Footer */}
             <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                <div className="flex items-center gap-2">
-                  <div className={`text-[15px] ${formatSalary(job.salary) === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
-                     {formatSalary(job.salary)}
+                  <div className={`text-[15px] ${formatSalaryForDisplay(job.salary, '薪资Open') === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
+                     {formatSalaryForDisplay(job.salary, '薪资Open')}
                   </div>
                </div>
                {resolvedMatchLevel !== 'none' && rawScoreNum > 0 ? (

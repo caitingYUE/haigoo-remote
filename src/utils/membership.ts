@@ -87,13 +87,13 @@ export function deriveMembershipCapabilities(user?: any): MembershipCapabilities
     isFullMember,
     canAccessRemotePremiumJobs: isActive,
     canAccessReferral: isActive,
-    canAccessTrustedInfo: isActive,
+    canAccessTrustedInfo: true,
     canAccessCompanyContacts: isActive,
     canUseTranslationUnlimited: isActive,
     canUseCopilotUnlimited: isActive,
     canUseResumeAiUnlimited: isActive,
     canAccessCommunity: isActive,
-    canUseMemberFavoritesBenefits: isActive,
+    canUseMemberFavoritesBenefits: true,
     canAccessTrustedCompaniesPage
   }
 }

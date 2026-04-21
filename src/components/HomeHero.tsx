@@ -1314,20 +1314,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
                 
                 {/* ── Hero Text ── */}
-                <div className="text-center mb-10 w-full max-w-[1500px] mx-auto">
-                    <h1 className="text-5xl md:text-[68px] xl:text-[76px] font-extrabold text-slate-900 mb-5 leading-tight tracking-tight drop-shadow-sm lg:whitespace-nowrap">
+                <div className="text-center mb-4 w-full max-w-[1500px] mx-auto">
+                    <h1 className="text-5xl md:text-[68px] xl:text-[76px] font-extrabold text-slate-900 mb-6 leading-tight tracking-tight drop-shadow-sm lg:whitespace-nowrap">
                         Haigoo 帮你获得
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
                             理想的远程工作
                         </span>
                     </h1>
-                    <p className="text-base md:text-lg text-slate-600 max-w-3xl mx-auto font-medium">
-                        我们帮你筛出适合国内用户申请的靠谱岗位，
-                        更为你找到了岗位 HR / 负责人等联系方式，让申请更高效和安心。
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center gap-2 mt-5">
+                    <div className="mt-3 flex flex-wrap items-center justify-center gap-4">
                         {['✓ 更适合国内用户申请', '✓ 所有岗位均经过人工筛选', '✓ 部分岗位可直连招聘方', '✓ 上传简历可获取每日推荐'].map((chip) => (
-                            <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/80 backdrop-blur-md border border-white/50 rounded-full shadow-sm">
+                            <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/82 backdrop-blur-md border border-white/55 rounded-full shadow-sm">
                                 {chip}
                             </span>
                         ))}
@@ -1336,7 +1332,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                 {/* ── Marquee ── */}
                 {tickerJobs.length > 0 && (
-                    <div className="w-full max-w-5xl mx-auto mt-4 mb-4 overflow-hidden rounded-full opacity-90 hover:opacity-100 transition-opacity [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)] relative h-[56px]">
+                    <div className="relative mx-auto mt-3 mb-4 h-[60px] w-full max-w-5xl overflow-hidden rounded-full opacity-90 transition-opacity hover:opacity-100 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
                         <div 
                             className="hero-marquee-track absolute top-0 left-0 pointer-events-none"
                             style={{
@@ -1358,7 +1354,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 )}
 
                 {/* ── Copilot Card ── */}
-                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-4 relative lg:h-[640px]">
+                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative lg:h-[640px]">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
                     <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
 
@@ -1537,9 +1533,6 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                             <div className="text-sm text-indigo-600 font-semibold mt-1">{job.salary}</div>
                                                         </div>
                                                     </div>
-                                                    {idx < arr.length - 1 && (
-                                                        <div className="mt-3 border-t border-slate-100" />
-                                                    )}
                                                 </div>
                                             ))}
                                         </div>

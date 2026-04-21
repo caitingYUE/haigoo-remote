@@ -123,7 +123,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 {/* Updated At */}
                 <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-3">
                     <Clock className="w-3 h-3" />
-                    <span>更新于 {formatDate(company.updatedAt || new Date().toISOString())}</span>
+                    <span>企业信息更新于 {formatDate(company.updatedAt || new Date().toISOString())}</span>
                 </div>
 
                 {/* Description */}

@@ -111,26 +111,62 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       }}
     >
       <div
-        ref={modalRef}
-        className={`bg-white dark:bg-zinc-900 shadow-xl flex flex-col relative transform transition-all duration-300 overflow-y-auto ${
+        className={`relative ${
           variant === 'center'
-            ? `rounded-2xl w-full max-w-[1000px] h-auto max-h-[90vh] ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
-            : `h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`
+            ? 'w-full max-w-[1000px] h-auto max-h-[90vh]'
+            : 'h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw]'
         }`}
-        onClick={(e) => e.stopPropagation()}
       >
-
-        <JobDetailPanel
-          job={job}
-          onSave={onSave}
-          isSaved={isSaved}
-          onApply={onApply}
-          onClose={onClose}
-          showCloseButton={true}
-          onNavigateJob={onNavigateJob}
-          canNavigatePrev={canNavigatePrev}
-          canNavigateNext={canNavigateNext}
-        />
+        <div
+          ref={modalRef}
+          className={`bg-white dark:bg-zinc-900 shadow-xl flex flex-col relative transform transition-all duration-300 overflow-hidden ${
+            variant === 'center'
+              ? `rounded-2xl w-full max-w-[1000px] h-auto max-h-[90vh] ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
+              : `h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <JobDetailPanel
+              job={job}
+              onSave={onSave}
+              isSaved={isSaved}
+              onApply={onApply}
+              onClose={onClose}
+              showCloseButton={true}
+              onNavigateJob={onNavigateJob}
+              canNavigatePrev={canNavigatePrev}
+              canNavigateNext={canNavigateNext}
+              showInlineNavigation={variant !== 'center'}
+            />
+          </div>
+        </div>
+        {variant === 'center' && jobs.length > 1 && (
+          <>
+            <div className="pointer-events-none absolute left-3 top-1/2 z-30 -translate-y-1/2">
+              <button
+                type="button"
+                onClick={() => handleNavigate('prev')}
+                disabled={!canNavigatePrev}
+                className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/55 bg-white/42 text-slate-700 shadow-[0_12px_22px_-22px_rgba(15,23,42,0.24)] backdrop-blur-[6px] transition-all hover:bg-white/68 disabled:cursor-not-allowed disabled:opacity-30"
+                aria-label="上一个岗位"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="pointer-events-none absolute right-3 top-1/2 z-30 -translate-y-1/2">
+              <button
+                type="button"
+                onClick={() => handleNavigate('next')}
+                disabled={!canNavigateNext}
+                className="pointer-events-auto inline-flex h-9 w-9 items-center justify-center rounded-full border border-white/55 bg-white/42 text-slate-700 shadow-[0_12px_22px_-22px_rgba(15,23,42,0.24)] backdrop-blur-[6px] transition-all hover:bg-white/68 disabled:cursor-not-allowed disabled:opacity-30"
+                aria-label="下一个岗位"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>,
     document.body

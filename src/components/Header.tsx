@@ -7,7 +7,11 @@ import brandLogoPng from '../assets/brandlogo.png'
 const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || brandLogoPng
 const BETA_END_DATE = new Date('2025-01-24').getTime()
 
-export default function Header() {
+interface HeaderProps {
+  showUpgradeNotice?: boolean
+}
+
+export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
@@ -173,7 +177,7 @@ export default function Header() {
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none"
+      className={`fixed left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${showUpgradeNotice ? 'top-10' : 'top-0'}`}
       role="banner"
     >
       <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto transition-all duration-300 bg-white/70 backdrop-blur-2xl border-b border-white/20 shadow-sm shadow-white/10">
@@ -262,7 +266,7 @@ export default function Header() {
                 </Link>
                 <Link
                   to="/register"
-                  className="px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700"
+                  className="px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700 hover:text-white"
                 >
                   注册
                 </Link>
@@ -613,7 +617,7 @@ export default function Header() {
                   </Link>
                   <Link
                     to="/register"
-                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-slate-900 rounded-lg hover:bg-indigo-600 transition-all"
+                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-slate-900 rounded-lg hover:bg-indigo-600 hover:text-white transition-all"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     注册
