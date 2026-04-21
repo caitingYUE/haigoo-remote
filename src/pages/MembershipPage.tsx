@@ -902,12 +902,12 @@ const MembershipPage: React.FC = () => {
                      tone: 'text-violet-100 fill-violet-50'
                   }
                ].map((item) => (
-                  <div key={item.name} className="bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40 relative">
+                  <div key={item.name} className="relative flex h-full flex-col bg-white p-8 rounded-[2rem] border border-slate-100 shadow-xl shadow-slate-200/40">
                      <Quote className={`absolute top-6 left-6 w-10 h-10 ${item.tone}`} />
-                     <p className="text-slate-700 leading-relaxed font-medium mb-8 relative z-10 pl-6 pt-2">
+                     <p className="relative z-10 flex-1 pl-6 pt-2 text-slate-700 leading-relaxed font-medium">
                         {item.quote}
                      </p>
-                     <div className="flex items-center gap-4">
+                     <div className="mt-8 flex items-center gap-4">
                         <img src={item.avatar} alt={item.name} className="w-12 h-12 rounded-full object-cover bg-slate-100" />
                         <div>
                            <div className="font-bold text-slate-900">{item.name}</div>

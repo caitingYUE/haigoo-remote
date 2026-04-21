@@ -933,14 +933,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const refCompanyName = String(job.company || companyInfo?.name || '').trim()
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const referralFreeRemaining = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
-    const referralTrialState = !isAuthenticated || isMember || isMemberRestrictedJob || !sharedFreeUsageReady
-        ? null
-        : isReferralCompanyUnlocked
-            ? { label: '本企业联系人已解锁', tone: 'border-emerald-200 bg-emerald-50 text-emerald-700' }
-            : referralUsageCount < FREE_FEATURE_LIMIT
-                ? { label: `免费体验剩余 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`, tone: 'border-indigo-200 bg-indigo-50 text-indigo-700' }
-                : { label: '免费体验已用完', tone: 'border-amber-200 bg-amber-50 text-amber-700' }
-
     return (
         <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.6),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
             <header className="relative z-20 flex-shrink-0 border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-6 py-6 backdrop-blur-md">
@@ -1006,7 +998,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         {(job.url || job.sourceUrl || companyInfo?.hiringEmail || onApply) && (() => {
                             const isWaAvailable = isMember || websiteApplyUnlocked || canWebsiteApplyFree || (!job.url && !job.sourceUrl)
                             return (
-                                <div className="flex flex-col items-end gap-1.5">
+                                <div className="flex flex-col items-end">
                                     <button
                                         onClick={() => {
                                             trackingService.featureClick('website_apply', {
@@ -1034,25 +1026,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         title="前往申请"
                                     >
                                         <div className="absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
-                                        <span className="relative z-10">前往申请</span>
-                                    </button>
-                                    {shouldShowWebsiteApplyTrialStatus ? (
-                                        <span
-                                            className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                                                websiteApplyUnlocked
-                                                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                                    : canWebsiteApplyFree
-                                                        ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-                                                        : 'border-amber-200 bg-amber-50 text-amber-700'
-                                            }`}
-                                        >
-                                            {websiteApplyUnlocked
-                                                ? '本岗位已解锁'
-                                                : canWebsiteApplyFree
-                                                    ? `免费体验剩余 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
-                                                    : '免费体验已用完'}
+                                        <span className="relative z-10 inline-flex items-center gap-2 whitespace-nowrap">
+                                            <span>前往申请</span>
+                                            {shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked ? (
+                                                <span className={`text-[12px] font-semibold ${
+                                                    canWebsiteApplyFree ? 'text-white/90' : 'text-slate-500'
+                                                }`}>
+                                                    {websiteApplyFreeRemaining}/{WEBSITE_APPLY_FREE_LIMIT}
+                                                </span>
+                                            ) : null}
                                         </span>
-                                    ) : null}
+                                    </button>
                                 </div>
                             )
                         })()}
@@ -1079,13 +1063,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         )}
 
                         {showCloseButton && onClose && (
-                            <button
-                                onClick={onClose}
-                                className="ml-1 rounded-lg bg-slate-100 p-1.5 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800"
-                                title="关闭"
-                            >
-                                <X className="w-4 h-4" />
-                            </button>
+                            <div className="ml-3 border-l border-slate-200/80 pl-3">
+                                <button
+                                    onClick={onClose}
+                                    className="rounded-xl bg-slate-100 p-2 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800"
+                                    title="关闭"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -1154,13 +1140,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'truncate' : ''}`}>
                                         Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍
                                     </p>
-                                    {referralTrialState ? (
-                                        <div className="mt-3">
-                                            <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-[12px] font-semibold ${referralTrialState.tone}`}>
-                                                {referralTrialState.label}
-                                            </span>
-                                        </div>
-                                    ) : null}
                                 </div>
 
                                 {(() => {
@@ -1307,7 +1286,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                         }`}
                                                                     >
                                                                         <Mail className="h-4 w-4 shrink-0" />
-                                                                        <span className="truncate">{getReferralEmailActionLabel(contact)}</span>
+                                                                        <span className="truncate">
+                                                                            {getReferralEmailActionLabel(contact)}
+                                                                            {!isUnlockedCard && isAuthenticated && !isMember && !isMemberRestrictedJob && sharedFreeUsageReady ? ` ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}` : ''}
+                                                                        </span>
                                                                     </button>
                                                                 </div>
                                                             </div>

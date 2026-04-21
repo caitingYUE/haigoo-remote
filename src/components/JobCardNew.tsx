@@ -255,9 +255,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 3) : topMetaBadges;
    const compactTopBadgeOverflow = isCompactFeaturedCard ? Math.max(topMetaBadges.length - compactTopBadges.length, 0) : 0;
-   const compactSalaryDesktopWidthClass = isCompactFeaturedCard ? 'md:w-[176px]' : 'md:w-[214px]';
+   const compactSalaryDesktopWidthClass = isCompactFeaturedCard ? 'md:w-[168px] md:max-w-[22%]' : 'md:w-[196px] md:max-w-[23%]';
    const compactSalaryMobileWidthClass = isCompactFeaturedCard ? 'max-w-[188px]' : 'max-w-[168px]';
-   const compactSalaryTextClass = salaryText.length > 18 ? 'text-[13px]' : 'text-[15px]';
+   const compactSalaryTextClass = salaryText.length > 24 ? 'text-[12px]' : salaryText.length > 18 ? 'text-[13px]' : 'text-[15px]';
    const renderTopMetaBadge = (
       label: string,
       options: {
@@ -585,7 +585,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                </div>
 
                <div className={`hidden shrink-0 self-stretch py-1 md:flex md:w-auto md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'pl-0' : 'pl-4 border-l border-slate-100/90'} ${compactSalaryDesktopWidthClass}`}>
-                  <div className={`${compactSalaryDesktopWidthClass.replace('md:', '')} whitespace-normal break-words leading-[1.3] ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'} ${isCompactFeaturedCard ? `${compactSalaryTextClass} line-clamp-2` : 'text-[16px] line-clamp-2'}`} title={salaryText}>
+                  <div className={`${compactSalaryDesktopWidthClass.replace(/md:/g, '')} whitespace-normal break-words leading-[1.3] ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'} ${isCompactFeaturedCard ? `${compactSalaryTextClass} line-clamp-2` : `${salaryText.length > 24 ? 'text-[15px]' : 'text-[16px]'} line-clamp-2`}`} title={salaryText}>
                      {salaryText}
                   </div>
 
