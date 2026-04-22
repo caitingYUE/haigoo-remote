@@ -34,6 +34,20 @@ interface JobDetailPanelProps {
 
 type PendingApplyWindow = Window | null
 
+type WebsiteApplyState =
+    | 'login_required'
+    | 'website_available'
+    | 'website_locked_member'
+    | 'email_only'
+    | 'unavailable'
+
+type ReferralAccessMode =
+    | 'unlocked'
+    | 'guest'
+    | 'member_only'
+    | 'free_available'
+    | 'free_exhausted'
+
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     job,
     onSave,
@@ -420,7 +434,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         const hasEmailApply = Boolean(companyInfo?.hiringEmail)
         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
         const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
-        const canUseWebsiteApply = !hasWebsiteApply || isMember || websiteApplyUnlocked || canWebsiteApplyFree
+        const canUseWebsiteApply = isMember || websiteApplyUnlocked || canWebsiteApplyFree
 
         if (hasWebsiteApply) {
             if (!canUseWebsiteApply) {
@@ -446,7 +460,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         if (showReferralModule) {
-            showInfo('请使用上方内推入口', '该岗位的联系人入口已放在顶部，建议直接选择合适联系人发起申请。')
+            showInfo('仅支持邮箱申请', '该岗位不支持官网网申，请使用上方联系人入口继续申请。')
             return
         }
 
@@ -478,7 +492,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             });
 
-            window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || job.translations?.title || ''}`)}`;
+            window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || ''}`)}`;
             trackingService.track('email_apply_success', {
                 page_key: 'job_detail',
                 module: 'job_detail_footer',
@@ -933,6 +947,125 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const refCompanyName = String(job.company || companyInfo?.name || '').trim()
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const referralFreeRemaining = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
+    const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
+    const hasEmailApply = Boolean(companyInfo?.hiringEmail)
+    const hasAnyEmailPath = hasEmailApply || showReferralModule
+    const canUseWebsiteApply = hasWebsiteApply && (isMember || websiteApplyUnlocked || canWebsiteApplyFree)
+    const resolveWebsiteApplyState = (): WebsiteApplyState => {
+        if (hasWebsiteApply) {
+            if (!isAuthenticated) return 'login_required'
+            if (canUseWebsiteApply) return 'website_available'
+            return 'website_locked_member'
+        }
+        if (hasAnyEmailPath) return 'email_only'
+        return 'unavailable'
+    }
+    const websiteApplyState = resolveWebsiteApplyState()
+    const getReferralAccessMode = (): ReferralAccessMode => {
+        if (isReferralCompanyUnlocked) return 'unlocked'
+        if (!isAuthenticated) return 'guest'
+        if (isMemberRestrictedJob) return 'member_only'
+        if (referralUsageCount < FREE_FEATURE_LIMIT) return 'free_available'
+        return 'free_exhausted'
+    }
+    const referralAccessMode = getReferralAccessMode()
+    const hasMultipleReferralContacts = displayReferralContacts.length > 1
+    const shouldShowUnifiedReferralUnlock = hasMultipleReferralContacts && referralAccessMode !== 'unlocked'
+    const getUnifiedReferralUnlockLabel = () => {
+        if (referralAccessMode === 'guest') return '登录查看'
+        if (referralAccessMode === 'member_only') return 'VIP 解锁'
+        if (referralAccessMode === 'free_available') return `一键解锁 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+        if (referralAccessMode === 'free_exhausted') return `一键解锁 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+        return ''
+    }
+    const handleUnifiedReferralUnlock = (event?: React.MouseEvent) => {
+        event?.preventDefault()
+        event?.stopPropagation()
+        if (referralAccessMode === 'guest') {
+            promptLogin('登录后可查看联系人并继续申请\n\n是否前往登录？')
+            return
+        }
+        if (referralAccessMode === 'member_only') {
+            goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only_group')
+            return
+        }
+        if (referralAccessMode === 'free_available') {
+            handleUnlockReferralPreview()
+            return
+        }
+        if (referralAccessMode === 'free_exhausted') {
+            goToMembershipPayment('referral', 'job_detail_referral_group_exhausted')
+        }
+    }
+    const getApplyButtonLabel = () => {
+        switch (websiteApplyState) {
+            case 'login_required':
+                return '前往申请（需登录）'
+            case 'website_available':
+                return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
+                    ? `前往申请 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
+                    : '前往申请'
+            case 'website_locked_member':
+                if (isMemberRestrictedJob) return '前往申请 · VIP'
+                return `前往申请 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
+            case 'email_only':
+                if (!isAuthenticated) return '仅支持邮箱申请（需登录）'
+                return isMemberRestrictedJob ? '仅支持邮箱申请 · VIP' : '仅支持邮箱申请'
+            default:
+                return '暂无申请入口'
+        }
+    }
+    const getApplyButtonClassName = () => {
+        switch (websiteApplyState) {
+            case 'login_required':
+            case 'website_available':
+            case 'website_locked_member':
+                return 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
+            case 'email_only':
+                return 'border border-slate-200 bg-slate-100 text-slate-500 hover:border-slate-300 hover:text-slate-700'
+            default:
+                return 'border border-slate-200 bg-slate-50 text-slate-400'
+        }
+    }
+    const handleApplyButtonClick = () => {
+        trackingService.featureClick('website_apply', {
+            page_key: 'job_detail',
+            module: 'job_detail_header',
+            source_key: 'job_detail_top',
+            entity_type: 'job',
+            entity_id: job.id
+        })
+
+        if (websiteApplyState === 'login_required') {
+            promptLogin()
+            return
+        }
+
+        if (websiteApplyState === 'website_locked_member') {
+            openUpgradeModal(isMemberRestrictedJob ? 'member_only_job_apply' : 'website_apply')
+            return
+        }
+
+        if (websiteApplyState === 'email_only') {
+            if (!isAuthenticated) {
+                promptLogin('邮箱申请需要登录\n\n是否前往登录？')
+                return
+            }
+            if (!showReferralModule && hasEmailApply) {
+                handleApply()
+                return
+            }
+            showInfo('仅支持邮箱申请', '该岗位不支持官网网申，请使用下方联系人入口继续申请。')
+            return
+        }
+
+        if (websiteApplyState === 'unavailable') {
+            showInfo('暂无申请入口', '该岗位暂未配置官网申请或邮箱直申入口。')
+            return
+        }
+
+        handleApply()
+    }
     return (
         <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.6),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
             <header className="relative z-20 flex-shrink-0 border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-6 py-6 backdrop-blur-md">
@@ -974,75 +1107,46 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex flex-shrink-0 items-center gap-2">
-                        <button
-                            onClick={handleSave}
-                            className={`inline-flex h-11 w-11 items-center justify-center rounded-2xl border transition-all ${
-                                isSaved
-                                    ? 'border-indigo-200 bg-indigo-50 text-indigo-600 shadow-[0_14px_26px_-20px_rgba(79,70,229,0.45)]'
-                                    : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]'
-                            }`}
-                            title={isSaved ? '取消收藏' : '收藏'}
-                        >
-                            <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
-                        </button>
+                    <div className="flex flex-shrink-0 items-center gap-0">
+                        <div className="flex flex-shrink-0 items-center gap-2">
+                            <button
+                                onClick={handleSave}
+                                className={`relative z-10 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-all ${
+                                    isSaved
+                                        ? 'border-indigo-200 bg-indigo-50 text-indigo-600 shadow-[0_14px_26px_-20px_rgba(79,70,229,0.45)]'
+                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]'
+                                }`}
+                                title={isSaved ? '取消收藏' : '收藏'}
+                            >
+                                <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
+                            </button>
 
-                        <button
-                            onClick={handleShare}
-                            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]"
-                            title="分享"
-                        >
-                            <Share2 className="h-4 w-4" />
-                        </button>
+                            <button
+                                onClick={handleShare}
+                                className="relative z-10 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]"
+                                title="分享"
+                            >
+                                <Share2 className="h-4 w-4" />
+                            </button>
+                        </div>
 
-                        {(job.url || job.sourceUrl || companyInfo?.hiringEmail || onApply) && (() => {
-                            const isWaAvailable = isMember || websiteApplyUnlocked || canWebsiteApplyFree || (!job.url && !job.sourceUrl)
-                            return (
-                                <div className="flex flex-col items-end">
-                                    <button
-                                        onClick={() => {
-                                            trackingService.featureClick('website_apply', {
-                                                page_key: 'job_detail',
-                                                module: 'job_detail_header',
-                                                source_key: 'job_detail_top',
-                                                entity_type: 'job',
-                                                entity_id: job.id
-                                            })
-                                            if (!isAuthenticated) {
-                                                navigate('/login')
-                                                return
-                                            }
-                                            if ((job.url || job.sourceUrl) && !isWaAvailable) {
-                                                openUpgradeModal('website_apply')
-                                                return
-                                            }
-                                            handleApply()
-                                        }}
-                                        className={`group relative inline-flex min-w-[126px] items-center justify-center rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${
-                                            isWaAvailable || !isAuthenticated
-                                                ? 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
-                                                : 'border border-slate-200 bg-slate-100 text-slate-500 hover:border-indigo-300 hover:text-indigo-600'
-                                        }`}
-                                        title="前往申请"
-                                    >
-                                        <div className="absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
-                                        <span className="relative z-10 inline-flex items-center gap-2 whitespace-nowrap">
-                                            <span>前往申请</span>
-                                            {shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked ? (
-                                                <span className={`text-[12px] font-semibold ${
-                                                    canWebsiteApplyFree ? 'text-white/90' : 'text-slate-500'
-                                                }`}>
-                                                    {websiteApplyFreeRemaining}/{WEBSITE_APPLY_FREE_LIMIT}
-                                                </span>
-                                            ) : null}
-                                        </span>
-                                    </button>
-                                </div>
-                            )
-                        })()}
+                        {(hasWebsiteApply || hasAnyEmailPath || onApply) && (
+                            <div className="ml-3 flex flex-shrink-0 items-center border-l border-slate-200/80 pl-3">
+                                <button
+                                    onClick={handleApplyButtonClick}
+                                    className={`group relative isolate inline-flex min-w-[132px] flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${getApplyButtonClassName()}`}
+                                    title={getApplyButtonLabel()}
+                                >
+                                    <div className="pointer-events-none absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
+                                    <span className="relative z-10 inline-flex items-center gap-2 whitespace-nowrap">
+                                        <span>{getApplyButtonLabel()}</span>
+                                    </span>
+                                </button>
+                            </div>
+                        )}
 
                         {showCloseButton && showInlineNavigation && (
-                            <div className="ml-1 mr-1 flex items-center gap-1 border-l border-slate-200 pl-2">
+                            <div className="ml-4 mr-1 flex items-center gap-1 border-l border-slate-200 pl-4">
                                 <button
                                     onClick={() => onNavigateJob?.('prev')}
                                     disabled={!canNavigatePrev}
@@ -1063,10 +1167,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         )}
 
                         {showCloseButton && onClose && (
-                            <div className="ml-3 border-l border-slate-200/80 pl-3">
+                            <div className="ml-4 border-l border-slate-200/80 pl-4">
                                 <button
                                     onClick={onClose}
-                                    className="rounded-xl bg-slate-100 p-2 text-slate-500 transition-colors hover:bg-slate-200 hover:text-slate-800"
+                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
                                     title="关闭"
                                 >
                                     <X className="w-4 h-4" />
@@ -1134,9 +1238,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <section>
                             <div className="rounded-[28px] border border-slate-200/90 bg-[radial-gradient(circle_at_top_right,rgba(219,234,254,0.55),transparent_30%),linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-5 md:p-6 shadow-[0_28px_72px_-46px_rgba(15,23,42,0.2)]">
                                 <div className="min-w-0">
-                                    <h3 className="text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <h3 className="text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
                                         帮我内推 <span className="font-black text-indigo-600">@{job.company || companyInfo?.name || '该企业'}</span>
-                                    </h3>
+                                        </h3>
+                                        {isMemberRestrictedJob ? (
+                                            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
+                                                VIP
+                                            </span>
+                                        ) : null}
+                                        {shouldShowUnifiedReferralUnlock ? (
+                                            <button
+                                                type="button"
+                                                onClick={handleUnifiedReferralUnlock}
+                                                className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-[12px] font-semibold text-white shadow-[0_18px_32px_-24px_rgba(15,23,42,0.48)] transition-colors hover:bg-slate-800"
+                                            >
+                                                {getUnifiedReferralUnlockLabel()}
+                                            </button>
+                                        ) : null}
+                                    </div>
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'truncate' : ''}`}>
                                         Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍
                                     </p>
@@ -1194,16 +1314,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         goToMembershipPayment('referral', 'job_detail_referral_exhausted')
                                     }
 
-                                    const getContactMode = (): 'unlocked' | 'guest' | 'member_only' | 'free_available' | 'free_exhausted' => {
-                                        if (isReferralUnlocked) return 'unlocked'
-                                        if (!isAuthenticated) return 'guest'
-                                        if (isMemberRestrictedJob) return 'member_only'
-                                        if (referralUsageCount < FREE_FEATURE_LIMIT) return 'free_available'
-                                        return 'free_exhausted'
-                                    }
-
-                                    const contactMode = getContactMode()
-
                                     const shouldUseReferralCarousel = displayReferralContacts.length > 1 || (showCloseButton && !showInlineNavigation)
                                     const referralListClass = shouldUseReferralCarousel
                                         ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
@@ -1213,17 +1323,31 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <div className={`mt-4 ${referralListClass}`}>
                                             {displayReferralContacts.map((contact, index) => {
                                                 const theme = contactThemes[index % contactThemes.length]
-                                                const isUnlockedCard = contactMode === 'unlocked'
+                                                const isUnlockedCard = referralAccessMode === 'unlocked'
                                                 const displayName = isUnlockedCard ? (contact.name || '-') : `${formatMaskedName(contact.name)}*`
                                                 const displayTitle = contact.title || 'Hiring Contact'
                                                 const avatarLabel = getReferralAvatarLabel(contact)
+                                                const shouldShowReferralTrialCount = !isUnlockedCard && isAuthenticated && !isMember && !isMemberRestrictedJob && sharedFreeUsageReady
+                                                const emailButtonLabel = isUnlockedCard
+                                                    ? getReferralEmailActionLabel(contact)
+                                                    : shouldShowUnifiedReferralUnlock
+                                                        ? getUnifiedReferralUnlockLabel()
+                                                        : referralAccessMode === 'guest'
+                                                            ? '登录查看'
+                                                            : referralAccessMode === 'member_only'
+                                                                ? 'VIP 解锁'
+                                                                : referralAccessMode === 'free_exhausted'
+                                                                    ? `一键解锁 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+                                                                    : shouldShowReferralTrialCount
+                                                                        ? `${getReferralEmailActionLabel(contact)} ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+                                                                        : getReferralEmailActionLabel(contact)
 
                                                 return (
                                                     <div
                                                         key={`ref-contact-${index}`}
-                                                        onClick={contactMode === 'guest' ? (event) => handleLockedContactClick(event, 'guest') : undefined}
+                                                        onClick={referralAccessMode === 'guest' ? (event) => handleLockedContactClick(event, 'guest') : undefined}
                                                         className={`relative overflow-hidden rounded-[24px] border ${theme.shell} shadow-[0_24px_50px_-36px_rgba(79,70,229,0.2)] ${
-                                                            contactMode === 'guest' ? 'cursor-pointer' : ''
+                                                            referralAccessMode === 'guest' ? 'cursor-pointer' : ''
                                                         } ${shouldUseReferralCarousel ? 'min-w-[308px] max-w-[328px] flex-shrink-0 snap-start md:min-w-[320px] md:max-w-[336px]' : ''}`}
                                                     >
                                                         <div className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${theme.glow}`} />
@@ -1252,7 +1376,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                             type="button"
                                                                             onClick={(event) => {
                                                                                 if (!isUnlockedCard) {
-                                                                                    handleLockedContactClick(event, contactMode)
+                                                                                    handleLockedContactClick(event, referralAccessMode)
                                                                                     return
                                                                                 }
                                                                                 event.stopPropagation()
@@ -1270,25 +1394,28 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                     ) : null}
 
                                                                     <button
-                                                                        type="button"
-                                                                        onClick={(event) => {
-                                                                            if (!isUnlockedCard) {
-                                                                                handleLockedContactClick(event, contactMode)
-                                                                                return
-                                                                            }
-                                                                            event.stopPropagation()
-                                                                            openReferralEmailAssistant(contact)
-                                                                        }}
+                                                                            type="button"
+                                                                            onClick={(event) => {
+                                                                                if (!isUnlockedCard) {
+                                                                                    if (shouldShowUnifiedReferralUnlock) {
+                                                                                        handleUnifiedReferralUnlock(event)
+                                                                                        return
+                                                                                    }
+                                                                                    handleLockedContactClick(event, referralAccessMode)
+                                                                                    return
+                                                                                }
+                                                                                event.stopPropagation()
+                                                                                openReferralEmailAssistant(contact)
+                                                                            }}
                                                                         className={`inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
                                                                             isUnlockedCard
                                                                                 ? 'border-slate-900 bg-slate-900 text-white shadow-[0_18px_32px_-24px_rgba(15,23,42,0.5)] hover:bg-slate-800 hover:border-slate-800'
-                                                                                : 'border-slate-200 bg-slate-200/85 text-slate-500'
+                                                                                : 'border-slate-900 bg-slate-900 text-white shadow-[0_18px_32px_-24px_rgba(15,23,42,0.4)] hover:bg-slate-800 hover:border-slate-800'
                                                                         }`}
                                                                     >
                                                                         <Mail className="h-4 w-4 shrink-0" />
                                                                         <span className="truncate">
-                                                                            {getReferralEmailActionLabel(contact)}
-                                                                            {!isUnlockedCard && isAuthenticated && !isMember && !isMemberRestrictedJob && sharedFreeUsageReady ? ` ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}` : ''}
+                                                                            {emailButtonLabel}
                                                                         </span>
                                                                     </button>
                                                                 </div>
