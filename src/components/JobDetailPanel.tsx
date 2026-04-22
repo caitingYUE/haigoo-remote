@@ -1006,6 +1006,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             case 'login_required':
                 return '前往申请（需登录）'
             case 'website_available':
+                if (isMemberRestrictedJob) return '前往申请 · VIP'
+                if (websiteApplyUnlocked && !isMember) return '前往申请（已解锁）'
                 return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
                     ? `前往申请 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
                     : '前往申请'
@@ -1014,6 +1016,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 return `前往申请 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
             case 'email_only':
                 if (!isAuthenticated) return '仅支持邮箱申请（需登录）'
+                if (isReferralCompanyUnlocked && !isMember) return '仅支持邮箱申请（已解锁）'
                 return isMemberRestrictedJob ? '仅支持邮箱申请 · VIP' : '仅支持邮箱申请'
             default:
                 return '暂无申请入口'
@@ -1111,8 +1114,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex flex-shrink-0 items-center gap-0">
-                        <div className="flex flex-shrink-0 items-center gap-2">
+                    <div className="relative z-20 flex flex-shrink-0 items-center gap-3">
+                        <div className="relative z-20 flex flex-shrink-0 items-center gap-2">
                             <button
                                 onClick={handleSave}
                                 className={`relative z-10 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-all ${
@@ -1135,10 +1138,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
 
                         {(hasWebsiteApply || hasAnyEmailPath || onApply) && (
-                            <div className="ml-3 flex flex-shrink-0 items-center border-l border-slate-200/80 pl-3">
+                            <>
+                                <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
                                 <button
                                     onClick={handleApplyButtonClick}
-                                    className={`group relative isolate inline-flex min-w-[132px] flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${getApplyButtonClassName()}`}
+                                    className={`group relative z-10 isolate inline-flex min-w-[132px] flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${getApplyButtonClassName()}`}
                                     title={getApplyButtonLabel()}
                                 >
                                     <div className="pointer-events-none absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
@@ -1146,40 +1150,44 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <span>{getApplyButtonLabel()}</span>
                                     </span>
                                 </button>
-                            </div>
+                            </>
                         )}
 
                         {showCloseButton && showInlineNavigation && (
-                            <div className="ml-4 mr-1 flex items-center gap-1 border-l border-slate-200 pl-4">
-                                <button
-                                    onClick={() => onNavigateJob?.('prev')}
-                                    disabled={!canNavigatePrev}
-                                    className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                                    title="上一个岗位"
-                                >
-                                    <ChevronLeft className="w-5 h-5" />
-                                </button>
-                                <button
-                                    onClick={() => onNavigateJob?.('next')}
-                                    disabled={!canNavigateNext}
-                                    className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                                    title="下一个岗位"
-                                >
-                                    <ChevronRight className="w-5 h-5" />
-                                </button>
-                            </div>
+                            <>
+                                <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
+                                <div className="relative z-20 mr-1 flex flex-shrink-0 items-center gap-1">
+                                    <button
+                                        onClick={() => onNavigateJob?.('prev')}
+                                        disabled={!canNavigatePrev}
+                                        className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                                        title="上一个岗位"
+                                    >
+                                        <ChevronLeft className="w-5 h-5" />
+                                    </button>
+                                    <button
+                                        onClick={() => onNavigateJob?.('next')}
+                                        disabled={!canNavigateNext}
+                                        className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                                        title="下一个岗位"
+                                    >
+                                        <ChevronRight className="w-5 h-5" />
+                                    </button>
+                                </div>
+                            </>
                         )}
 
                         {showCloseButton && onClose && (
-                            <div className="ml-4 border-l border-slate-200/80 pl-4">
+                            <>
+                                <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
                                 <button
                                     onClick={onClose}
-                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                                    className="relative z-20 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
                                     title="关闭"
                                 >
                                     <X className="w-4 h-4" />
                                 </button>
-                            </div>
+                            </>
                         )}
                     </div>
                 </div>
@@ -1246,11 +1254,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <h3 className="text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
                                         帮我内推 <span className="font-black text-indigo-600">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
-                                        {isMemberRestrictedJob ? (
-                                            <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-amber-700">
-                                                VIP
-                                            </span>
-                                        ) : null}
                                         {shouldShowUnifiedReferralUnlock ? (
                                             <button
                                                 type="button"
@@ -1333,7 +1336,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 const avatarLabel = getReferralAvatarLabel(contact)
                                                 const shouldShowReferralTrialCount = !isUnlockedCard && isAuthenticated && !isMember && !isMemberRestrictedJob && sharedFreeUsageReady
                                                 const emailButtonLabel = isUnlockedCard
-                                                    ? getReferralEmailActionLabel(contact)
+                                                    ? !isMember
+                                                        ? `${getReferralEmailActionLabel(contact)}（已解锁）`
+                                                        : getReferralEmailActionLabel(contact)
                                                     : shouldShowUnifiedReferralUnlock
                                                         ? getUnifiedReferralUnlockLabel()
                                                         : referralAccessMode === 'guest'

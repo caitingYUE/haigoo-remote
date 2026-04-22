@@ -213,7 +213,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          options: {
             icon: Calendar,
             tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: 'max-w-[8ch]'
+            maxWidthClass: isCompactFeaturedCard ? 'max-w-[7ch]' : 'max-w-[8ch]'
          }
       } : null,
       job.experienceLevel ? {
@@ -222,16 +222,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          options: {
             icon: TrendingUp,
             tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: 'max-w-[8ch]'
-         }
-      } : null,
-      job.companyIndustry ? {
-         key: 'companyIndustry',
-         label: job.companyIndustry,
-         options: {
-            icon: Building2,
-            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: isCompactFeaturedCard ? undefined : 'max-w-[10ch] lg:max-w-[14ch]'
+            maxWidthClass: isCompactFeaturedCard ? 'max-w-[7ch]' : 'max-w-[8ch]'
          }
       } : null,
       job.category ? {
@@ -240,7 +231,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
          options: {
             icon: Briefcase,
             tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: isCompactFeaturedCard ? 'max-w-[10ch] lg:max-w-[12ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
+            maxWidthClass: isCompactFeaturedCard ? 'max-w-[9ch] lg:max-w-[10ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
+         }
+      } : null,
+      job.companyIndustry ? {
+         key: 'companyIndustry',
+         label: job.companyIndustry,
+         options: {
+            icon: Building2,
+            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
+            maxWidthClass: isCompactFeaturedCard ? 'max-w-[8ch] lg:max-w-[9ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
          }
       } : null
    ].filter(Boolean) as Array<{
@@ -253,7 +253,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       };
    }>;
 
-   const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 3) : topMetaBadges;
+   const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 4) : topMetaBadges;
    const compactTopBadgeOverflow = isCompactFeaturedCard ? Math.max(topMetaBadges.length - compactTopBadges.length, 0) : 0;
    const compactSalaryDesktopWidthClass = isCompactFeaturedCard ? 'md:basis-[21%] md:max-w-[21%]' : 'md:basis-[24%] md:max-w-[24%]';
    const compactSalaryMobileWidthClass = isCompactFeaturedCard ? 'max-w-[180px]' : 'max-w-[156px]';
