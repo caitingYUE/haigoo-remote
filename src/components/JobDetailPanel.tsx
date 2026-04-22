@@ -84,6 +84,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
     const usesCustomReferralContacts = job?.referralContactMode === 'custom'
+    const hasExplicitSelectedReferralIds = Object.prototype.hasOwnProperty.call(job || {}, 'selectedReferralContactIds')
+    const hasExplicitEffectiveReferralCount = Object.prototype.hasOwnProperty.call(job || {}, 'effectiveReferralContactCount')
+    const selectedReferralContactIds = Array.isArray(job?.selectedReferralContactIds) ? job.selectedReferralContactIds : []
+    const effectiveReferralContactCount = typeof job?.effectiveReferralContactCount === 'number'
+        ? job.effectiveReferralContactCount
+        : null
+    const shouldForceHideCustomReferralModule = usesCustomReferralContacts && (
+        (hasExplicitSelectedReferralIds && selectedReferralContactIds.length === 0) ||
+        (hasExplicitEffectiveReferralCount && effectiveReferralContactCount === 0)
+    )
 
     const referralContacts = useMemo(() => {
         const source = Array.isArray(companyInfo?.referralContacts) ? companyInfo!.referralContacts : []
@@ -95,6 +105,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [companyInfo])
 
     const displayReferralContacts = useMemo(() => {
+        if (shouldForceHideCustomReferralModule) return []
         if (referralContacts.length > 0) return referralContacts
         if (usesCustomReferralContacts) return []
         const fallbackEmail = String(companyInfo?.hiringEmail || '').trim()
@@ -107,7 +118,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             hiringEmail: fallbackEmail,
             linkedin: '',
         }]
-    }, [referralContacts, usesCustomReferralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
+    }, [shouldForceHideCustomReferralModule, referralContacts, usesCustomReferralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
 
     const showReferralModule = displayReferralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
