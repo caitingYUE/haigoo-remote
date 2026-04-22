@@ -83,6 +83,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
 
+    const usesCustomReferralContacts = job?.referralContactMode === 'custom'
+
     const referralContacts = useMemo(() => {
         const source = Array.isArray(companyInfo?.referralContacts) ? companyInfo!.referralContacts : []
         return source.filter(contact => {
@@ -94,6 +96,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const displayReferralContacts = useMemo(() => {
         if (referralContacts.length > 0) return referralContacts
+        if (usesCustomReferralContacts) return []
         const fallbackEmail = String(companyInfo?.hiringEmail || '').trim()
         if (!fallbackEmail) return []
         return [{
@@ -104,7 +107,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             hiringEmail: fallbackEmail,
             linkedin: '',
         }]
-    }, [referralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
+    }, [referralContacts, usesCustomReferralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
 
     const showReferralModule = displayReferralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
@@ -188,12 +191,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         expose('favorite')
         if (hasTranslation) expose('translation')
-        if (job.url || job.sourceUrl || !companyInfo?.hiringEmail) expose('website_apply')
+        const hasJobScopedEmailPath = !usesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+        if (job.url || job.sourceUrl || !hasJobScopedEmailPath) expose('website_apply')
         if (job.company || companyInfo?.name) expose('company_info', {
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
-        if (!showReferralModule && companyInfo?.hiringEmail) expose('email_apply', {
+        if (!showReferralModule && hasJobScopedEmailPath) expose('email_apply', {
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
@@ -201,7 +205,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
-    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer])
+    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts])
 
     // Load free feature usage counts from server (company info + email apply + referral)
     useEffect(() => {
@@ -431,7 +435,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-        const hasEmailApply = Boolean(companyInfo?.hiringEmail)
+        const hasEmailApply = !usesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
         const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
         const canUseWebsiteApply = isMember || websiteApplyUnlocked || canWebsiteApplyFree
@@ -948,7 +952,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const referralFreeRemaining = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
     const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-    const hasEmailApply = Boolean(companyInfo?.hiringEmail)
+    const hasEmailApply = !usesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
     const hasAnyEmailPath = hasEmailApply || showReferralModule
     const canUseWebsiteApply = hasWebsiteApply && (isMember || websiteApplyUnlocked || canWebsiteApplyFree)
     const resolveWebsiteApplyState = (): WebsiteApplyState => {
