@@ -1,9 +1,11 @@
 import React from 'react';
+import { formatSalaryForDisplay } from '../utils/salary-display';
 
 export default function JobTickerItem({ job, onOpen }: { job: any, onOpen?: (job: any) => void }) {
     const logos = Array.isArray(job.logo_candidates) ? job.logo_candidates.filter(Boolean) : []
     const [logoIndex, setLogoIndex] = React.useState(0)
     const currentLogo = logos[logoIndex] || job.company_logo || ''
+    const salaryText = formatSalaryForDisplay(job.salary ?? job.salary_range, '薪资Open')
 
     const handleOpen = () => {
         if (onOpen) {
@@ -48,7 +50,7 @@ export default function JobTickerItem({ job, onOpen }: { job: any, onOpen?: (job
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
                     <span className="truncate max-w-[80px]">{job.company_name}</span>
                     <span className="w-0.5 h-0.5 rounded-full bg-slate-300" />
-                    <span>{job.salary || '薪资Open'}</span>
+                    <span>{salaryText}</span>
                 </div>
             </div>
 

@@ -141,9 +141,14 @@ export function JobBundleCard({ bundle, totalCount }: JobBundleCardProps) {
   };
 
   // width strategy:
-  // ≤3 bundles → flex-1 (fill the row equally like the job cards)
-  // ≥4 → fixed 220px so card 3.5 peeks out on the right
-  const widthClass = totalCount <= 3 ? 'flex-1' : 'flex-shrink-0 w-[236px]';
+  // 1 bundle  → fill width
+  // 2-3 bundles → mobile uses peekable horizontal cards, desktop returns to equal-width layout
+  // 4+ bundles → fixed-width carousel across breakpoints
+  const widthClass = totalCount === 1
+    ? 'w-full'
+    : totalCount <= 3
+      ? 'w-[82vw] max-w-[320px] flex-shrink-0 lg:w-auto lg:max-w-none lg:flex-1'
+      : 'w-[82vw] max-w-[320px] flex-shrink-0 sm:w-[320px] lg:w-[236px]';
 
   return (
     <div

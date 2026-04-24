@@ -7,6 +7,7 @@ const getAuthToken = () => {
 }
 
 import { CompanyIndustry, CompanyTag } from '../types/rss-types';
+import { splitTagInput } from '../utils/tag-input';
 
 export interface ReferralContact {
     id?: string;
@@ -31,6 +32,8 @@ export interface TrustedCompany {
     hiringEmail?: string;
     emailType?: string;
     referralContacts?: ReferralContact[];
+    jobReferralContactMode?: 'inherit_all' | 'custom' | null;
+    jobEffectiveReferralContactCount?: number | null;
     foundedYear?: string;
     specialties?: string[];
     companyRating?: string;
@@ -283,6 +286,8 @@ class TrustedCompaniesService {
                 // Ensure boolean flags are boolean
                 isTrusted: true, // Force trusted for manual saves
                 memberOnly: !!company.memberOnly,
+                tags: splitTagInput(company.tags),
+                specialties: splitTagInput(company.specialties),
                 // Map frontend url to website if needed (though backend handles both)
                 url: company.website,
                 careersPage: company.careersPage,

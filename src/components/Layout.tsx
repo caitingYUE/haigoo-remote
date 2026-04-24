@@ -25,6 +25,7 @@ export default function Layout({ children }: LayoutProps) {
   const [resendMsg, setResendMsg] = useState('')
   const [showHappinessCard, setShowHappinessCard] = useState(false)
   const [showUpgradeNotice, setShowUpgradeNotice] = useState(shouldShowSiteUpgradeNotice)
+  const [isDesktopViewport, setIsDesktopViewport] = useState(false)
 
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
@@ -34,9 +35,22 @@ export default function Layout({ children }: LayoutProps) {
   const isBundle = pathname.startsWith('/job-bundles/')
   const isProfile = pathname.startsWith('/profile')
   const hideFooter = pathname.startsWith('/resume') || isJobsPage || isProfile
-  const lockViewport = isJobsPage
+  const lockViewport = isJobsPage && isDesktopViewport
 
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
+
+  useEffect(() => {
+    const syncViewport = () => {
+      setIsDesktopViewport(window.innerWidth >= 1024)
+    }
+
+    syncViewport()
+    window.addEventListener('resize', syncViewport)
+
+    return () => {
+      window.removeEventListener('resize', syncViewport)
+    }
+  }, [])
 
   useEffect(() => {
     // Listen for custom event from Header to open Happiness Card
@@ -89,7 +103,7 @@ export default function Layout({ children }: LayoutProps) {
       <Header showUpgradeNotice={showUpgradeNotice} />
 
       <main className={`flex-1 relative ${lockViewport ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
-        <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isAbout || isBundle || isProfile) ? '' : 'pt-20'}`}`}>
+        <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isAbout || isBundle || isProfile || isJobsPage) ? '' : 'pt-20'}`}`}>
           {children}
         </div>
       </main>

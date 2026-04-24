@@ -4,6 +4,7 @@ import { ProcessedJobData } from '../services/data-management-service';
 import { JobCategory } from '../types/rss-types';
 import { ReferralContact } from '../services/trusted-companies-service';
 import {
+  formatSalaryForDisplay,
   normalizeSalary,
   serializeSalaryForStorage,
   SALARY_CURRENCY_OPTIONS,
@@ -12,6 +13,8 @@ import {
   type SupportedSalaryPeriod,
   type SupportedSalaryValueMode
 } from '../utils/salary-display';
+import { extractJobSkillKeywords } from '../utils/job-skill-extractor';
+import { appendTagInput, joinTagInput, splitTagInput } from '../utils/tag-input';
 
 interface EditJobModalProps {
   job: ProcessedJobData;
@@ -100,6 +103,18 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const salaryPreview = formData.salaryEditorMode === 'structured'
+    ? formatSalaryForDisplay({
+      min: formData.salaryMin ? Number(formData.salaryMin) : undefined,
+      max: formData.salaryValueMode === 'fixed'
+        ? (formData.salaryMin ? Number(formData.salaryMin) : undefined)
+        : (formData.salaryMax ? Number(formData.salaryMax) : undefined),
+      currency: formData.salaryCurrency,
+      period: formData.salaryPeriod,
+      valueMode: formData.salaryValueMode
+    }, '薪资Open')
+    : formatSalaryForDisplay(formData.salary, '薪资Open');
+
   // 监听job变化，更新表单数据 (当导航切换时)
   useEffect(() => {
     setFormData({
@@ -179,7 +194,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
         ...restFormData,
         salary: normalizedSalary,
         publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : undefined,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(Boolean),
+        tags: splitTagInput(formData.tags),
         requirements: formData.requirements.split('\n').filter(Boolean),
         benefits: formData.benefits.split('\n').filter(Boolean),
         referralContactMode: formData.referralContactMode,
@@ -514,127 +529,152 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
             <div>
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">薪资</label>
-              <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3 space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, salaryEditorMode: 'structured' }))}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                      formData.salaryEditorMode === 'structured'
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-white text-slate-600 border border-slate-200'
-                    }`}
-                  >
-                    规范格式
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, salaryEditorMode: 'legacy' }))}
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                      formData.salaryEditorMode === 'legacy'
-                        ? 'bg-slate-900 text-white'
-                        : 'bg-white text-slate-600 border border-slate-200'
-                    }`}
-                  >
-                    保留旧样式
-                  </button>
+              <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2.5">
+                  <div>
+                    <div className="text-[12px] font-semibold text-slate-800">薪资编辑模式</div>
+                    <div className="text-[11px] text-slate-500">优先使用规范格式，前台展示会更稳定。</div>
+                  </div>
+                  <div className="inline-flex rounded-full bg-white p-1 shadow-sm border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, salaryEditorMode: 'structured' }))}
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                        formData.salaryEditorMode === 'structured'
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      规范格式
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, salaryEditorMode: 'legacy' }))}
+                      className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-colors ${
+                        formData.salaryEditorMode === 'legacy'
+                          ? 'bg-slate-900 text-white'
+                          : 'text-slate-600'
+                      }`}
+                    >
+                      原文保留
+                    </button>
+                  </div>
                 </div>
 
-                {formData.salaryEditorMode === 'structured' ? (
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-1 block text-[11px] font-medium text-slate-500">计薪方式</label>
-                        <select
-                          value={formData.salaryPeriod}
-                          onChange={(e) => setFormData({ ...formData, salaryPeriod: e.target.value as SupportedSalaryPeriod })}
-                          className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        >
-                          {SALARY_PERIOD_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-medium text-slate-500">货币单位</label>
-                        <select
-                          value={formData.salaryCurrency}
-                          onChange={(e) => setFormData({ ...formData, salaryCurrency: e.target.value as SupportedSalaryCurrency })}
-                          className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                        >
-                          {SALARY_CURRENCY_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                      </div>
+                <div className="p-3 space-y-3">
+                  <div className="rounded-lg border border-indigo-100 bg-[linear-gradient(135deg,rgba(238,242,255,0.72),rgba(248,250,252,0.92))] px-3 py-2.5 flex items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[11px] font-medium text-slate-500">前台展示预览</div>
+                      <div className="mt-0.5 text-[16px] font-semibold text-slate-900">{salaryPreview}</div>
                     </div>
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      formData.salaryEditorMode === 'structured'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-100 text-slate-600'
+                    }`}>
+                      {formData.salaryEditorMode === 'structured' ? '规范存储' : '原文直存'}
+                    </span>
+                  </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {[
-                        { value: 'fixed', label: '固定值' },
-                        { value: 'range', label: '范围值' }
-                      ].map((option) => (
-                        <button
-                          key={option.value}
-                          type="button"
-                          onClick={() => setFormData({ ...formData, salaryValueMode: option.value as SupportedSalaryValueMode })}
-                          className={`px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors ${
-                            formData.salaryValueMode === option.value
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-white text-slate-600 border border-slate-200'
-                          }`}
-                        >
-                          {option.label}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className={`grid ${formData.salaryValueMode === 'fixed' ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
-                      <div>
-                        <label className="mb-1 block text-[11px] font-medium text-slate-500">
-                          {formData.salaryValueMode === 'fixed' ? '金额' : '最低值'}
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          value={formData.salaryMin}
-                          onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
-                          className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                          placeholder="例如 45000"
-                        />
-                      </div>
-                      {formData.salaryValueMode === 'range' && (
+                  {formData.salaryEditorMode === 'structured' ? (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <label className="mb-1 block text-[11px] font-medium text-slate-500">最高值</label>
+                          <label className="mb-1 block text-[11px] font-medium text-slate-500">货币单位</label>
+                          <select
+                            value={formData.salaryCurrency}
+                            onChange={(e) => setFormData({ ...formData, salaryCurrency: e.target.value as SupportedSalaryCurrency })}
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                          >
+                            {SALARY_CURRENCY_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-medium text-slate-500">计薪方式</label>
+                          <select
+                            value={formData.salaryPeriod}
+                            onChange={(e) => setFormData({ ...formData, salaryPeriod: e.target.value as SupportedSalaryPeriod })}
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                          >
+                            {SALARY_PERIOD_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>{option.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-medium text-slate-500">数值类型</label>
+                          <div className="grid grid-cols-2 gap-2">
+                            {[
+                              { value: 'fixed', label: '固定值' },
+                              { value: 'range', label: '范围值' }
+                            ].map((option) => (
+                              <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => setFormData({ ...formData, salaryValueMode: option.value as SupportedSalaryValueMode })}
+                                className={`rounded-md border px-2.5 py-2 text-[12px] font-semibold transition-colors ${
+                                  formData.salaryValueMode === option.value
+                                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                                    : 'border-slate-200 bg-white text-slate-600'
+                                }`}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`grid ${formData.salaryValueMode === 'fixed' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
+                        <div>
+                          <label className="mb-1 block text-[11px] font-medium text-slate-500">
+                            {formData.salaryValueMode === 'fixed' ? '金额' : '最低值'}
+                          </label>
                           <input
                             type="number"
                             min="0"
-                            value={formData.salaryMax}
-                            onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                            placeholder="例如 65000"
+                            value={formData.salaryMin}
+                            onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            placeholder="例如 45000"
                           />
                         </div>
-                      )}
+                        {formData.salaryValueMode === 'range' && (
+                          <div>
+                            <label className="mb-1 block text-[11px] font-medium text-slate-500">最高值</label>
+                            <input
+                              type="number"
+                              min="0"
+                              value={formData.salaryMax}
+                              onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
+                              className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                              placeholder="例如 65000"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <p className="text-[11px] leading-5 text-slate-500">
+                        推荐用于新录入和人工修正。前台会自动展示为紧凑格式，例如 <span className="font-semibold text-slate-700">$45k–$65k/yr</span>。
+                      </p>
                     </div>
-                    <p className="text-[11px] leading-5 text-slate-500">
-                      前台会自动按简写形式展示，例如 <span className="font-semibold text-slate-700">$45k–$65k/yr</span>、<span className="font-semibold text-slate-700">€40/h</span>。
-                    </p>
-                  </div>
-                ) : (
-                  <div>
-                    <input
-                      type="text"
-                      value={formData.salary}
-                      onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                      className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
-                      placeholder="例如: $80,000 - $120,000 / year"
-                    />
-                    <p className="mt-2 text-[11px] leading-5 text-slate-500">
-                      适用于暂时无法自动识别的旧薪资格式。建议逐步迁移到左侧规范格式。
-                    </p>
-                  </div>
-                )}
+                  ) : (
+                    <div className="space-y-2">
+                      <input
+                        type="text"
+                        value={formData.salary}
+                        onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
+                        className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                        placeholder="例如: $80,000 - $120,000 / year"
+                      />
+                      <p className="text-[11px] leading-5 text-slate-500">
+                        仅用于暂时无法识别的历史薪资文本，系统会尽量按原文展示。
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -738,44 +778,19 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    // Extract text source
-                    const sourceText = String((formData as any).translations?.description || formData.description || '').toLowerCase();
-                    if (!sourceText) return;
+                    const extractedTags = extractJobSkillKeywords({
+                      title: formData.title,
+                      category: formData.category,
+                      description: formData.description,
+                      requirements: formData.requirements,
+                      translations: (formData as any).translations
+                    });
+                    if (extractedTags.length === 0) return;
 
-                    // Simple local dictionary
-                    const dictionary = [
-                      'React', 'Vue', 'Angular', 'Node.js', 'Python', 'Java', 'Go', 'Golang', 'Rust',
-                      'AWS', 'Docker', 'Kubernetes', 'CI/CD', 'SQL', 'MongoDB', 'Redis', 'API', 'REST', 'GraphQL',
-                      'DevOps', 'Agile', 'Scrum', 'Jira', 'Git', 'Linux', 'Windows', 'MacOS', 'iOS', 'Android',
-                      'Flutter', 'React Native', 'TypeScript', 'JavaScript', 'HTML', 'CSS', 'SASS', 'TailwindCSS',
-                      'Webpack', 'Next.js', 'Nuxt.js', 'Nest.js', 'Express', 'Spring Boot', 'Django', 'Flask', 'FastAPI',
-                      'C#', 'C++', 'PHP', 'Ruby', 'Swift', 'Kotlin', 'Scala', 'TensorFlow', 'PyTorch', 'Machine Learning', 'AI', 'NLP',
-                      'Data Analysis', 'Tableau', 'Excel', 'Figma', 'Sketch', 'UI/UX', 'Product Management', 'SEO',
-                      'Solidity', 'Smart Contracts', 'Web3', 'Ethereum', 'DeFi',
-                      '双语', '英语', 'English', '沟通', 'Communication', '远程', 'Remote', '独立', 'Proactive'
-                    ];
-
-                    const currentTags = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
-                    const newTags = new Set(currentTags);
-                    let addedCount = 0;
-
-                    for (const dictWord of dictionary) {
-                      const lowerDict = dictWord.toLowerCase();
-                      if (sourceText.includes(lowerDict)) {
-                        // Avoid duplicates case-insensitively before adding true case version
-                        if (!currentTags.some(t => t.toLowerCase() === lowerDict)) {
-                          newTags.add(dictWord);
-                          addedCount++;
-                        }
-                      }
-                    }
-
-                    if (addedCount > 0) {
-                      setFormData({ ...formData, tags: Array.from(newTags).join(', ') });
-                    }
+                    setFormData({ ...formData, tags: joinTagInput([...splitTagInput(formData.tags), ...extractedTags]) });
                   }}
                   className="flex items-center gap-1 text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors font-medium border border-indigo-50"
-                  title="自动扫描职位描述并提取常见关键词"
+                  title="自动扫描职位描述并提取岗位关键词"
                 >
                   <Sparkles className="w-2.5 h-2.5" />
                   从详情智能提取
@@ -785,7 +800,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 <input
                   type="text"
                   value={formData.tags}
-                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  onChange={(e) => setFormData({ ...formData, tags: joinTagInput(e.target.value) })}
                   className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="例如: React, TypeScript, Node.js"
                 />
@@ -798,11 +813,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         key={tag}
                         type="button"
                         onClick={() => {
-                          const currentTags = formData.tags.split(',').map(t => t.trim()).filter(Boolean);
-                          if (!currentTags.includes(tag)) {
-                            const newTags = [...currentTags, tag].join(', ');
-                            setFormData({ ...formData, tags: newTags });
-                          }
+                          setFormData({ ...formData, tags: appendTagInput(formData.tags, tag) });
                         }}
                         className="px-1.5 py-0.5 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 text-[10px] rounded transition-colors border border-slate-100 hover:border-indigo-100 shadow-sm"
                       >

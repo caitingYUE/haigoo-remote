@@ -25,6 +25,10 @@ export const MobileRestricted: React.FC<MobileRestrictedProps> = ({ children, al
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  if (allowContinue && isMobile) {
+    return <>{children}</>;
+  }
+
   if (isMobile && !bypassed) {
     return (
       <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col items-center justify-center p-6 text-center">

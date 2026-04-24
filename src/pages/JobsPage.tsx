@@ -738,7 +738,7 @@ export default function JobsPage() {
   return (
     <MobileRestricted allowContinue={true}>
       <div
-        className="h-full bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.55),transparent_36%),linear-gradient(180deg,#f8fafc_0%,#f8fafc_100%)] flex flex-col pt-20"
+        className="min-h-screen bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.55),transparent_36%),linear-gradient(180deg,#f8fafc_0%,#f8fafc_100%)] flex flex-col pt-20 lg:h-full"
         role="main"
         aria-label="职位搜索页面"
       >
@@ -754,7 +754,7 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-        <div className="flex-1 flex flex-col overflow-hidden max-w-[1620px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-3 h-full pt-0 mt-0">
+        <div className="flex-1 flex flex-col max-w-[1620px] mx-auto w-full px-4 sm:px-6 lg:px-8 gap-3 lg:overflow-hidden lg:h-full pt-0 mt-0">
 
           {/* Top Section: Search & Filters */}
           <div className="relative z-50 flex-shrink-0">
@@ -782,9 +782,9 @@ export default function JobsPage() {
           </div>
 
           {/* Main Content Area: Split View */}
-          <div className="flex-1 flex overflow-hidden gap-3 min-h-0 mt-0">
+          <div className="flex flex-col gap-3 min-h-0 mt-0 lg:flex-1 lg:flex-row lg:overflow-hidden">
             {/* Middle Column: Job List */}
-            <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[56%] xl:w-[56%]' : 'lg:w-[820px] mx-auto'} rounded-[30px] border border-slate-200/80 bg-white/92 shadow-[0_32px_80px_-56px_rgba(15,23,42,0.28)] backdrop-blur-sm overflow-hidden flex-shrink-0`}>
+            <div className={`flex flex-col w-full ${selectedJob ? 'lg:w-[56%] xl:w-[56%]' : 'lg:w-[820px] lg:mx-auto'} rounded-[24px] lg:rounded-[30px] border border-slate-200/80 bg-white/92 shadow-[0_24px_56px_-44px_rgba(15,23,42,0.2)] lg:shadow-[0_32px_80px_-56px_rgba(15,23,42,0.28)] backdrop-blur-sm overflow-hidden flex-shrink-0`}>
               {/* List Header Info - Only show if there's a specific filter info to display like isTrusted */}
               {filters.isTrusted && (
                 <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-end items-center text-xs text-slate-500 font-medium">
@@ -796,7 +796,7 @@ export default function JobsPage() {
               )}
 
               {/* List Content */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar p-0 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)] overscroll-y-contain">
+              <div className="flex-1 overflow-visible lg:overflow-y-auto custom-scrollbar p-0 bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)] lg:overscroll-y-contain">
                 {showLoading ? (
                   <div className="p-0">
                     {[...Array(5)].map((_, i) => (
@@ -858,18 +858,19 @@ export default function JobsPage() {
                             • 3+        → fixed 220px, scrollable with right-peek */}
                         <div className="relative">
                           <div
-                            className={`flex gap-3 ${activeBundles.length > 3 ? 'overflow-x-auto pb-1' : ''} scroll-smooth`}
-                            style={activeBundles.length > 3 ? { scrollbarWidth: 'none', msOverflowStyle: 'none' } : undefined}
+                            className={`flex gap-3 overflow-x-auto pb-1 scroll-smooth ${activeBundles.length > 3 ? 'lg:overflow-x-auto' : 'lg:overflow-visible lg:pb-0'}`}
+                            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                           >
                             {activeBundles.map((bundle) => (
                               <JobBundleCard key={bundle.id} bundle={bundle} totalCount={activeBundles.length} />
                             ))}
-                            {/* Trailing spacer only needed for scroll mode */}
-                            {activeBundles.length > 3 && <div className="flex-shrink-0 w-2" />}
+                            {/* Trailing spacer preserves right-side peek in scroll mode */}
+                            {activeBundles.length > 1 && <div className="flex-shrink-0 w-2 lg:hidden" />}
+                            {activeBundles.length > 3 && <div className="hidden flex-shrink-0 w-2 lg:block" />}
                           </div>
                           {/* Right fade hint for scrollable state */}
-                          {activeBundles.length > 3 && (
-                            <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/85 to-transparent pointer-events-none" />
+                          {activeBundles.length > 1 && (
+                            <div className={`absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white via-white/85 to-transparent pointer-events-none ${activeBundles.length > 3 ? '' : 'lg:hidden'}`} />
                           )}
                         </div>
                       </div>
@@ -971,6 +972,7 @@ export default function JobsPage() {
             isSaved={savedJobs.has(selectedJob.id)}
             jobs={distributedJobs}
             currentJobIndex={currentJobIndex}
+            variant="center"
             onNavigateJob={(direction: 'prev' | 'next') => {
               const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(distributedJobs.length - 1, currentJobIndex + 1)
               handleJobSelect(distributedJobs[nextIndex], nextIndex)

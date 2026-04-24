@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react'
+import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, X, ChevronRight, ChevronLeft, CheckCircle2, Clock, Mail, Linkedin, Users, Calendar } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
@@ -82,6 +82,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [isEmailConnectOpen, setIsEmailConnectOpen] = useState(false)
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
+    const companyInfoRequestRef = useRef(0)
 
     const usesCustomReferralContacts = job?.referralContactMode === 'custom'
     const hasExplicitSelectedReferralIds = Object.prototype.hasOwnProperty.call(job || {}, 'selectedReferralContactIds')
@@ -90,9 +91,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const effectiveReferralContactCount = typeof job?.effectiveReferralContactCount === 'number'
         ? job.effectiveReferralContactCount
         : null
-    const shouldForceHideCustomReferralModule = usesCustomReferralContacts && (
+    const companyUsesCustomReferralContacts = companyInfo?.jobReferralContactMode === 'custom'
+    const companyEffectiveReferralContactCount = typeof companyInfo?.jobEffectiveReferralContactCount === 'number'
+        ? companyInfo.jobEffectiveReferralContactCount
+        : null
+    const shouldForceHideCustomReferralModule = (
+        usesCustomReferralContacts && (
         (hasExplicitSelectedReferralIds && selectedReferralContactIds.length === 0) ||
         (hasExplicitEffectiveReferralCount && effectiveReferralContactCount === 0)
+        )
+    ) || (
+        companyUsesCustomReferralContacts && companyEffectiveReferralContactCount === 0
     )
 
     const referralContacts = useMemo(() => {
@@ -107,7 +116,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const displayReferralContacts = useMemo(() => {
         if (shouldForceHideCustomReferralModule) return []
         if (referralContacts.length > 0) return referralContacts
-        if (usesCustomReferralContacts) return []
+        if (usesCustomReferralContacts || companyUsesCustomReferralContacts) return []
         const fallbackEmail = String(companyInfo?.hiringEmail || '').trim()
         if (!fallbackEmail) return []
         return [{
@@ -118,7 +127,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             hiringEmail: fallbackEmail,
             linkedin: '',
         }]
-    }, [shouldForceHideCustomReferralModule, referralContacts, usesCustomReferralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
+    }, [shouldForceHideCustomReferralModule, referralContacts, usesCustomReferralContacts, companyUsesCustomReferralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
 
     const showReferralModule = displayReferralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
@@ -202,7 +211,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         expose('favorite')
         if (hasTranslation) expose('translation')
-        const hasJobScopedEmailPath = !usesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+        const hasJobScopedEmailPath = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
         if (job.url || job.sourceUrl || !hasJobScopedEmailPath) expose('website_apply')
         if (job.company || companyInfo?.name) expose('company_info', {
             entity_type: 'company',
@@ -216,7 +225,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
-    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts])
+    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts, companyUsesCustomReferralContacts])
 
     // Load free feature usage counts from server (company info + email apply + referral)
     useEffect(() => {
@@ -257,10 +266,31 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [isAuthenticated, isMember]);
 
     useEffect(() => {
-        if (job?.companyId) {
-            trustedCompaniesService.getCompanyById(job.companyId, job.id).then(setCompanyInfo).catch(() => setCompanyInfo(null))
-        } else {
-            setCompanyInfo(null)
+        const requestId = companyInfoRequestRef.current + 1
+        companyInfoRequestRef.current = requestId
+        setCompanyInfo(null)
+
+        if (!job?.companyId) {
+            return () => {
+                companyInfoRequestRef.current = requestId
+            }
+        }
+
+        let cancelled = false
+        trustedCompaniesService.getCompanyById(job.companyId, job.id)
+            .then((nextCompanyInfo) => {
+                if (cancelled) return
+                if (companyInfoRequestRef.current !== requestId) return
+                setCompanyInfo(nextCompanyInfo)
+            })
+            .catch(() => {
+                if (cancelled) return
+                if (companyInfoRequestRef.current !== requestId) return
+                setCompanyInfo(null)
+            })
+
+        return () => {
+            cancelled = true
         }
     }, [job?.companyId, job?.id])
 
@@ -446,7 +476,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-        const hasEmailApply = !usesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+        const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
         const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
         const canUseWebsiteApply = isMember || websiteApplyUnlocked || canWebsiteApplyFree
@@ -963,7 +993,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const referralFreeRemaining = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
     const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-    const hasEmailApply = !usesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+    const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
     const hasAnyEmailPath = hasEmailApply || showReferralModule
     const canUseWebsiteApply = hasWebsiteApply && (isMember || websiteApplyUnlocked || canWebsiteApplyFree)
     const resolveWebsiteApplyState = (): WebsiteApplyState => {
@@ -1125,7 +1155,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     </div>
 
-                    <div className="relative z-20 flex flex-shrink-0 items-center gap-3">
+                    <div className="relative z-20 flex flex-shrink-0 items-center gap-3.5">
                         <div className="relative z-20 flex flex-shrink-0 items-center gap-2">
                             <button
                                 onClick={handleSave}
@@ -1153,11 +1183,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
                                 <button
                                     onClick={handleApplyButtonClick}
-                                    className={`group relative z-10 isolate inline-flex min-w-[132px] flex-shrink-0 items-center justify-center overflow-hidden rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${getApplyButtonClassName()}`}
+                                    className={`relative z-10 inline-flex min-w-[132px] flex-shrink-0 items-center justify-center rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${getApplyButtonClassName()}`}
                                     title={getApplyButtonLabel()}
                                 >
-                                    <div className="pointer-events-none absolute inset-0 -translate-x-[100%] skew-x-12 bg-white/10 transition-transform duration-500 group-hover:translate-x-[100%]" />
-                                    <span className="relative z-10 inline-flex items-center gap-2 whitespace-nowrap">
+                                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
                                         <span>{getApplyButtonLabel()}</span>
                                     </span>
                                 </button>
@@ -1190,10 +1219,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                         {showCloseButton && onClose && (
                             <>
-                                <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
+                                <div className="ml-1 h-9 w-px flex-shrink-0 bg-slate-200/80" />
                                 <button
                                     onClick={onClose}
-                                    className="relative z-20 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                                    className="relative z-20 ml-1.5 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
                                     title="关闭"
                                 >
                                     <X className="w-4 h-4" />
@@ -1265,15 +1294,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <h3 className="text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
                                         帮我内推 <span className="font-black text-indigo-600">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
-                                        {shouldShowUnifiedReferralUnlock ? (
-                                            <button
-                                                type="button"
-                                                onClick={handleUnifiedReferralUnlock}
-                                                className="inline-flex items-center rounded-full bg-slate-900 px-3 py-1.5 text-[12px] font-semibold text-white shadow-[0_18px_32px_-24px_rgba(15,23,42,0.48)] transition-colors hover:bg-slate-800"
-                                            >
-                                                {getUnifiedReferralUnlockLabel()}
-                                            </button>
-                                        ) : null}
                                     </div>
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'truncate' : ''}`}>
                                         Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍

@@ -314,7 +314,7 @@ export default function JobBundleDetailPage() {
               包含职位
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              点击卡片查看详情，合集页沿用首页精选区的紧凑双栏卡片规则。
+              点击卡片查看岗位详情，可根据需要选择“前往申请”或“帮我内推”。
             </p>
           </div>
           <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm shadow-slate-200/40">

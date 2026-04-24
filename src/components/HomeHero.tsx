@@ -11,6 +11,7 @@ import GeneratedPlanView from './GeneratedPlanView'
 import JobDetailModal from './JobDetailModal'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { stripMarkdown } from '../utils/text-formatter'
+import { formatSalaryForDisplay } from '../utils/salary-display'
 import {
     readPendingGuestResume,
     savePendingGuestResume,
@@ -173,20 +174,7 @@ function spreadByCompany<T extends { company_name?: string; company?: string }>(
 }
 
 function getHeroDisplaySalary(rawSalary: any) {
-    if (!rawSalary) return '薪资Open'
-    if (typeof rawSalary === 'string') {
-        const normalized = rawSalary.trim()
-        if (!normalized || normalized === '0' || normalized === 'null' || normalized === 'Open' || normalized === '0-0' || normalized === 'Competitive' || normalized === 'Unspecified') {
-            return '薪资Open'
-        }
-        return normalized
-    }
-    if (typeof rawSalary === 'object' && rawSalary) {
-        const min = Number(rawSalary.min || 0)
-        const max = Number(rawSalary.max || 0)
-        if (!min && !max) return '薪资Open'
-    }
-    return rawSalary
+    return formatSalaryForDisplay(rawSalary, '薪资Open')
 }
 
 function cleanHeroRichText(text?: string) {
@@ -1294,7 +1282,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }
 
     return (
-        <div className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden bg-slate-50 pt-32 pb-20">
+        <div className="relative flex min-h-[auto] flex-col items-center justify-center overflow-hidden bg-slate-50 pt-24 pb-12 sm:pt-28 sm:pb-14 md:min-h-screen md:pt-32 md:pb-20">
             {/* ── Background ── */}
             <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50">
                 <div className="absolute inset-0 w-full h-full overflow-hidden">
@@ -1314,16 +1302,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
                 
                 {/* ── Hero Text ── */}
-                <div className="text-center mb-4 w-full max-w-[1500px] mx-auto">
-                    <h1 className="text-5xl md:text-[68px] xl:text-[76px] font-extrabold text-slate-900 mb-6 leading-tight tracking-tight drop-shadow-sm lg:whitespace-nowrap">
+                <div className="text-center mb-3 sm:mb-4 w-full max-w-[1500px] mx-auto">
+                    <h1 className="text-[2.6rem] sm:text-5xl md:text-[68px] xl:text-[76px] font-extrabold text-slate-900 mb-5 sm:mb-6 leading-[1.05] tracking-tight drop-shadow-sm lg:whitespace-nowrap">
                         Haigoo 帮你获得
                         <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
                             理想的远程工作
                         </span>
                     </h1>
-                    <div className="mt-3 flex flex-wrap items-center justify-center gap-4">
+                    <div className="mt-2 sm:mt-3 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4">
                         {['✓ 更适合国内用户申请', '✓ 所有岗位均经过人工筛选', '✓ 部分岗位可直连招聘方', '✓ 上传简历可获取每日推荐'].map((chip) => (
-                            <span key={chip} className="px-4 py-1.5 text-xs font-medium text-slate-700 bg-white/82 backdrop-blur-md border border-white/55 rounded-full shadow-sm">
+                            <span key={chip} className="px-3.5 sm:px-4 py-1.5 text-[11px] sm:text-xs font-medium text-slate-700 bg-white/82 backdrop-blur-md border border-white/55 rounded-full shadow-sm">
                                 {chip}
                             </span>
                         ))}
@@ -1332,7 +1320,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
                 {/* ── Marquee ── */}
                 {tickerJobs.length > 0 && (
-                    <div className="relative mx-auto mt-3 mb-4 h-[60px] w-full max-w-5xl overflow-hidden rounded-full opacity-90 transition-opacity hover:opacity-100 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+                    <div className="relative mx-auto mt-2 sm:mt-3 mb-3 sm:mb-4 h-[52px] sm:h-[60px] w-full max-w-5xl overflow-hidden rounded-full opacity-90 transition-opacity hover:opacity-100 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
                         <div 
                             className="hero-marquee-track absolute top-0 left-0 pointer-events-none"
                             style={{
@@ -1354,7 +1342,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 )}
 
                 {/* ── Copilot Card ── */}
-                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[32px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-2 relative lg:h-[640px]">
+                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[28px] md:rounded-[32px] shadow-[0_24px_56px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-1 sm:mt-2 relative lg:h-[640px]">
                     <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
                     <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
 

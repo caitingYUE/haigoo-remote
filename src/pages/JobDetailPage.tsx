@@ -200,7 +200,12 @@ export default function JobDetailPage() {
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
         <div className="font-semibold text-slate-900 truncate max-w-[200px]">{job.title}</div>
-        <button className="p-2 -mr-2 hover:bg-slate-50 rounded-full">
+        <button
+          type="button"
+          onClick={handleShare}
+          className="p-2 -mr-2 hover:bg-slate-50 rounded-full"
+          aria-label="分享岗位"
+        >
           <Share2 className="w-5 h-5 text-slate-600" />
         </button>
       </div>

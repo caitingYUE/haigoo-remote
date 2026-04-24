@@ -11,6 +11,7 @@ import Cropper, { Area } from 'react-easy-crop'
 import getCroppedImg, { compressImage } from '../utils/cropImage'
 import { ClassificationService } from '../services/classification-service'
 import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
+import { joinTagInput, splitTagInput } from '../utils/tag-input'
 
 export default function AdminTrustedCompaniesPage() {
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
@@ -296,6 +297,8 @@ export default function AdminTrustedCompaniesPage() {
                 const compressedCover = await compressImage(formData.coverImage, 1200, 0.8);
                 optimizedFormData.coverImage = compressedCover;
             }
+            optimizedFormData.tags = splitTagInput(optimizedFormData.tags)
+            optimizedFormData.specialties = splitTagInput(optimizedFormData.specialties)
             const normalizedReferralContacts = normalizeReferralContacts(
                 Array.isArray(optimizedFormData.referralContacts) ? optimizedFormData.referralContacts as ReferralContact[] : []
             )
@@ -1167,24 +1170,24 @@ export default function AdminTrustedCompaniesPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (逗号分隔)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (支持 、 / ， / ; 自动识别)</label>
                                 <input
                                     type="text"
-                                    value={Array.isArray(formData.specialties) ? formData.specialties.join(', ') : (formData.specialties || '')}
-                                    onChange={e => setFormData({ ...formData, specialties: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean) })}
+                                    value={joinTagInput(formData.specialties)}
+                                    onChange={e => setFormData({ ...formData, specialties: splitTagInput(e.target.value) })}
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     placeholder="e.g. SaaS, AI, Cloud Computing"
                                 />
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">标签 (支持 、 / ， / ; 自动识别)</label>
                                 <input
                                     type="text"
-                                    value={Array.isArray(formData.tags) ? formData.tags.join(', ') : (formData.tags || '')}
+                                    value={joinTagInput(formData.tags)}
                                     onChange={e => setFormData({
                                         ...formData,
-                                        tags: e.target.value.split(/[,，]/).map(t => t.trim()).filter(Boolean)
+                                        tags: splitTagInput(e.target.value)
                                     })}
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     placeholder="例如: 远程, 弹性工作, 外企"

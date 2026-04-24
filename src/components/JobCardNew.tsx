@@ -253,7 +253,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       };
    }>;
 
-   const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 4) : topMetaBadges;
+   const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 5) : topMetaBadges;
    const compactTopBadgeOverflow = isCompactFeaturedCard ? Math.max(topMetaBadges.length - compactTopBadges.length, 0) : 0;
    const compactSalaryDesktopWidthClass = isCompactFeaturedCard ? 'md:basis-[21%] md:max-w-[21%]' : 'md:basis-[24%] md:max-w-[24%]';
    const compactSalaryMobileWidthClass = isCompactFeaturedCard ? 'max-w-[180px]' : 'max-w-[156px]';

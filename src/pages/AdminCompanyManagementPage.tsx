@@ -8,6 +8,7 @@ import { CompanyService } from '../services/company-service';
 import { ClassificationService } from '../services/classification-service';
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
 import { Job } from '../types';
+import { appendTagInput, joinTagInput, splitTagInput } from '../utils/tag-input';
 
 interface Company {
     id: string;
@@ -416,7 +417,8 @@ export default function AdminCompanyManagementPage() {
             const updatedCompany = {
                 ...selectedCompany,
                 ...editForm,
-                tags: typeof editForm.tags === 'string' ? (editForm.tags as string).split(',').map(t => t.trim()).filter(Boolean) : (editForm.tags || selectedCompany.tags)
+                tags: splitTagInput(editForm.tags || selectedCompany.tags),
+                specialties: splitTagInput(editForm.specialties || selectedCompany.specialties)
             };
 
             const token = localStorage.getItem('haigoo_auth_token');
@@ -756,11 +758,11 @@ export default function AdminCompanyManagementPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (JSON数组或逗号分隔)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">领域/专长 (支持 、 / ， / ; 自动识别)</label>
                                 <input
                                     type="text"
-                                    value={Array.isArray(editForm.specialties) ? editForm.specialties.join(', ') : (editForm.specialties || '')}
-                                    onChange={e => setEditForm({ ...editForm, specialties: e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean) })}
+                                    value={joinTagInput(editForm.specialties)}
+                                    onChange={e => setEditForm({ ...editForm, specialties: splitTagInput(e.target.value) })}
                                     className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                     placeholder="e.g. SaaS, AI, Cloud Computing"
                                 />
@@ -790,12 +792,12 @@ export default function AdminCompanyManagementPage() {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">标签 (逗号分隔)</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">标签 (支持 、 / ， / ; 自动识别)</label>
                                 <div className="space-y-2">
                                     <input
                                         type="text"
-                                        value={typeof editForm.tags === 'string' ? editForm.tags : (editForm.tags || []).join(', ')}
-                                        onChange={e => setEditForm({ ...editForm, tags: e.target.value as any })}
+                                        value={joinTagInput(editForm.tags)}
+                                        onChange={e => setEditForm({ ...editForm, tags: joinTagInput(e.target.value) as any })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
                                         placeholder="例如: SaaS, AI, B2B"
                                     />
@@ -813,11 +815,11 @@ export default function AdminCompanyManagementPage() {
                                                         if (Array.isArray(rawTags)) {
                                                             currentTags = rawTags;
                                                         } else if (typeof rawTags === 'string') {
-                                                            currentTags = rawTags.split(',').map((t: string) => t.trim()).filter(Boolean);
+                                                            currentTags = splitTagInput(rawTags);
                                                         }
 
                                                         if (!currentTags.includes(tag)) {
-                                                            const newTags = [...currentTags, tag].join(', ');
+                                                            const newTags = appendTagInput(currentTags, tag);
                                                             setEditForm({ ...editForm, tags: newTags as any });
                                                         }
                                                     }}

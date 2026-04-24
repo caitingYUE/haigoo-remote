@@ -521,7 +521,7 @@ const MembershipPage: React.FC = () => {
    return (
       <div className="min-h-screen bg-[#F8F9FC] font-sans selection:bg-indigo-500/30">
          {/* Hero Section (Visible to EVERYONE) */}
-         <div className="relative overflow-hidden pt-24 md:pt-32 pb-0 px-4 sm:px-6 lg:px-8">
+         <div className="relative overflow-hidden pt-20 sm:pt-24 md:pt-32 pb-0 px-4 sm:px-6 lg:px-8">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
                <img
@@ -533,7 +533,7 @@ const MembershipPage: React.FC = () => {
             </div>
 
             <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center">
-               <h1 className="text-5xl sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-6 leading-[1.1] text-slate-900 drop-shadow-sm">
+               <h1 className="text-[2.6rem] sm:text-6xl md:text-[72px] font-extrabold tracking-tight mb-5 sm:mb-6 leading-[1.05] text-slate-900 drop-shadow-sm">
                   <span className="block mb-2">少走弯路</span>
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600">
                      更快拿到有效结果
@@ -546,14 +546,14 @@ const MembershipPage: React.FC = () => {
                         const el = document.getElementById('pricing-plans');
                         el?.scrollIntoView({ behavior: 'smooth' });
                      }}
-                     className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-indigo-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-base flex items-center gap-2 group"
+                     className="px-8 sm:px-10 py-3.5 sm:py-4 bg-gradient-to-r from-indigo-600 to-indigo-600 text-white font-bold rounded-full shadow-xl shadow-indigo-500/20 hover:shadow-2xl hover:shadow-indigo-500/40 hover:-translate-y-1 transition-all text-sm sm:text-base flex items-center gap-2 group"
                   >
                      查看会员方案
                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                )}
 
-               <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+               <div className="mt-6 sm:mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
                   {MEMBERSHIP_VALUE_PILLS.map((pill) => (
                      <span
                         key={pill}
@@ -680,12 +680,12 @@ const MembershipPage: React.FC = () => {
 
 
          {/* Product Layers Section */}
-         <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-24 mt-12">
-            <div className="text-center mb-12">
+         <div className="relative z-20 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-18 sm:pb-24 mt-10 sm:mt-12">
+            <div className="text-center mb-10 sm:mb-12">
                <h2 className="text-3xl font-bold text-slate-900 mb-3">加入会员是什么体验</h2>
-               <p className="text-slate-500 text-lg">无限申请、无限内推，全站畅通的尊享服务</p>
+               <p className="text-slate-500 text-base sm:text-lg">无限申请、无限内推，全站畅通的尊享服务</p>
             </div>
-            <div className="grid md:grid-cols-3 gap-8">
+            <div className="grid md:grid-cols-3 gap-5 sm:gap-8">
                {/* Benefit 1 */}
                <div className="bg-white/80 backdrop-blur-xl p-8 rounded-[2rem] border border-white shadow-xl shadow-slate-200/40 hover:-translate-y-1 transition-transform">
                   <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-6">
@@ -723,10 +723,10 @@ const MembershipPage: React.FC = () => {
          </div>
 
          {/* Plan Cards */}
-         <div id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 relative z-20">
-            <div className="text-center mb-14">
+         <div id="pricing-plans" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 relative z-20">
+            <div className="text-center mb-10 sm:mb-14">
                <h2 className="text-4xl font-extrabold text-slate-900 mb-4 tracking-tight">按你的求职节奏选择方案</h2>
-               <p className="text-slate-500 text-lg">先选择适合你的开通方式，下方再看完整权益对比</p>
+               <p className="text-slate-500 text-base sm:text-lg">先选择适合你的开通方式，下方再看完整权益对比</p>
             </div>
 
             <div className="grid xl:grid-cols-4 md:grid-cols-2 gap-6">
@@ -809,10 +809,11 @@ const MembershipPage: React.FC = () => {
             </div>
 
             {/* Comparison Section */}
-            <div className="mb-6 mt-14 text-center">
+            <div className="mb-6 mt-12 sm:mt-14 text-center">
                <h3 className="text-2xl font-bold text-slate-900">完整权益对比</h3>
             </div>
-            <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_-46px_rgba(15,23,42,0.22)]">
+            <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+               <div className="min-w-[860px] overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-[0_30px_80px_-46px_rgba(15,23,42,0.22)]">
                <div className="grid grid-cols-[1.35fr_repeat(4,minmax(0,1fr))] border-b border-slate-200 bg-[linear-gradient(180deg,rgba(247,248,255,0.98),rgba(255,255,255,0.96))]">
                   <div className="px-6 py-6 text-left">
                      <div className="text-sm font-semibold text-slate-400">价值点</div>
@@ -868,17 +869,18 @@ const MembershipPage: React.FC = () => {
                      </div>
                   ))}
                </div>
+               </div>
             </div>
          </div>
 
          {/* Social Proof: Success Stories */}
-         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-            <div className="text-center mb-12">
+         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+            <div className="text-center mb-10 sm:mb-12">
                <h2 className="text-3xl font-extrabold text-slate-900 mb-3">来自用户的真实反馈</h2>
-               <p className="text-slate-500 text-lg">看看其他用户怎么说</p>
+               <p className="text-slate-500 text-base sm:text-lg">看看其他用户怎么说</p>
             </div>
 
-            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3 max-w-6xl mx-auto">
+            <div className="grid gap-5 sm:gap-8 md:grid-cols-2 xl:grid-cols-3 max-w-6xl mx-auto">
                {[
                   {
                      quote: '“在这里遇到了自己非常喜欢的工作，跟专业背景对口，薪资很满意，还帮我拓展了海外客户。非常感谢海狗远程俱乐部。”',
@@ -920,7 +922,7 @@ const MembershipPage: React.FC = () => {
          </div>
 
          {/* Trusted Partners */}
-         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center mt-8 mb-16">
+         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-16 text-center mt-6 sm:mt-8 mb-12 sm:mb-16">
             <h3 className="text-base font-bold text-slate-400 uppercase tracking-widest mb-10">我们合作过的企业/社区</h3>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
                <div className="flex items-center gap-2 font-bold text-xl text-slate-600"><HardDrive className="w-6 h-6" /> Red Mountain</div>
@@ -932,13 +934,13 @@ const MembershipPage: React.FC = () => {
          </div>
 
          {/* FAQ Section */}
-         <div className="max-w-4xl mx-auto pb-32 px-4">
-            <div className="text-center mb-16">
+         <div className="max-w-4xl mx-auto pb-24 sm:pb-32 px-4">
+            <div className="text-center mb-12 sm:mb-16">
                <h2 className="text-3xl font-bold text-slate-900 mb-4">常见问题解答</h2>
-               <p className="text-slate-500 text-lg">了解更多关于会员方案、联系方式和 1 对 1 服务的细节</p>
+               <p className="text-slate-500 text-base sm:text-lg">了解更多关于会员方案、联系方式和 1 对 1 服务的细节</p>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid md:grid-cols-2 gap-5 sm:gap-6">
                {[
                   { q: "这里的岗位可靠吗？", a: "岗位会优先经过人工审核与筛选，重点帮你减少不值得投入时间的无效岗位。" },
                   { q: "会员版主要多了什么？", a: "会员版核心是无限申请次数、无限内推次数，并解锁全部岗位、邮箱直申、关键联系人信息和更完整的岗位匹配建议。季度会员还开放精选企业完整名单。" },
