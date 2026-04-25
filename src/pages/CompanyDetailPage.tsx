@@ -207,7 +207,7 @@ export default function CompanyDetailPage() {
             {/* Header */}
             <div className="bg-white border-b border-slate-200 shadow-sm pt-20 lg:pt-24">
                 {/* Back Button Section */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-4">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-3 sm:pb-4">
                     <button
                         onClick={() => navigate(-1)}
                         className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
@@ -217,14 +217,14 @@ export default function CompanyDetailPage() {
                     </button>
                 </div>
 
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
-                    <div className="flex flex-col lg:flex-row gap-6 items-start">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-5 sm:pb-6">
+                    <div className="flex flex-col lg:flex-row gap-5 sm:gap-6 items-start">
                         {/* Left Column: Identity + Certified Info (Main) */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-start gap-4 mb-4">
+                            <div className="mb-4 flex items-start gap-3 sm:gap-4">
                                 {/* Company Logo */}
                                 {companyInfo?.logo ? (
-                                    <div className="w-20 h-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
+                                    <div className="h-16 w-16 sm:h-20 sm:w-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
                                         <img
                                             src={companyInfo.logo}
                                             alt={decodedCompanyName}
@@ -238,8 +238,8 @@ export default function CompanyDetailPage() {
                                         />
                                     </div>
                                 ) : (
-                                    <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                                        <span className="text-white font-bold text-2xl">
+                                    <div className="h-16 w-16 sm:h-20 sm:w-20 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                                        <span className="text-white font-bold text-xl sm:text-2xl">
                                             {decodedCompanyName.charAt(0)}
                                         </span>
                                     </div>
@@ -247,7 +247,7 @@ export default function CompanyDetailPage() {
 
                                 {/* Company Info Header */}
                                 <div className="flex-1 min-w-0">
-                                    <h1 className="text-2xl font-bold text-slate-900 mb-2 flex items-center gap-2 flex-wrap">
+                                    <h1 className="mb-2 flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-bold text-slate-900">
                                         {companyInfo?.name || decodedCompanyName}
                                         {companyInfo?.isTrusted && (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold align-middle">
@@ -257,7 +257,7 @@ export default function CompanyDetailPage() {
                                         )}
                                     </h1>
 
-                                    <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600 mb-2">
+                                    <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-slate-600">
                                         {companyInfo?.industry && (
                                             <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
                                                 <Building2 className="w-3.5 h-3.5" />
@@ -287,7 +287,7 @@ export default function CompanyDetailPage() {
                                     </div>
 
                                     <div className="relative p-4">
-                                                <div className="grid grid-cols-2 gap-4 items-stretch lg:grid-cols-4">
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 items-stretch lg:grid-cols-4">
                                                     {/* Website - Row 1 */}
                                                     {companyInfo.website && (
                                                         <a
@@ -455,13 +455,13 @@ export default function CompanyDetailPage() {
                         </div>
 
                         {/* Right Column: Description (Sidebar) */}
-                        <div className="lg:w-80 flex-shrink-0">
-                            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-6">
+                        <div className="w-full lg:w-80 flex-shrink-0">
+                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:sticky lg:top-6">
                                 <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
                                     <Info className="w-4 h-4 text-slate-500" />
                                     <h2 className="font-bold text-slate-900 text-sm">关于我们</h2>
                                 </div>
-                                <div className="p-4 max-h-[400px] overflow-y-auto custom-scrollbar">
+                                <div className="p-4 lg:max-h-[400px] lg:overflow-y-auto custom-scrollbar">
                                     <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
                                         {companyInfo?.description || '暂无简介'}
                                     </div>
@@ -472,7 +472,7 @@ export default function CompanyDetailPage() {
 
                     {/* Job Listings - Full Width */}
                     <div className="mt-6 pt-6 border-t border-slate-200/60">
-                        <div className="flex items-center justify-between mb-6">
+                        <div className="mb-5 sm:mb-6 flex items-center justify-between">
                             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                                 在招岗位
                                 <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-xs font-medium">
@@ -487,13 +487,13 @@ export default function CompanyDetailPage() {
                                 <p className="text-slate-500">该公司目前没有开放的职位</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                 {jobs.map((job) => (
                                     <JobCardNew
                                         key={job.id}
                                         job={job}
                                         onClick={handleJobClick}
-                                        className="h-[397px] w-full"
+                                        className="h-[336px] sm:h-[360px] lg:h-[397px] w-full"
                                     />
                                 ))}
                             </div>

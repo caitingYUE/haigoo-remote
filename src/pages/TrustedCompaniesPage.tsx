@@ -163,7 +163,7 @@ export default function TrustedCompaniesPage() {
     return (
         <div className="min-h-screen bg-[#F7F9FD]">
             {/* Hero Section */}
-            <div className="relative overflow-hidden bg-white pt-24 md:pt-32 pb-14 md:pb-16">
+            <div className="relative overflow-hidden bg-white pt-20 sm:pt-24 md:pt-32 pb-12 sm:pb-14 md:pb-16">
                 {/* Background Decoration - contained to avoid overflow issues affecting dropdowns */}
                 <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
                     <div className="absolute inset-x-0 top-0 h-[420px] bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.14),_transparent_42%),radial-gradient(circle_at_top_right,_rgba(56,189,248,0.12),_transparent_32%),radial-gradient(circle_at_top_left,_rgba(16,185,129,0.10),_transparent_28%)]" />
@@ -171,16 +171,16 @@ export default function TrustedCompaniesPage() {
                 </div>
 
                 <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-                    <h1 className="text-[42px] md:text-[68px] font-extrabold text-slate-900 mb-4 leading-[1.06] tracking-tight">
+                    <h1 className="mb-4 text-[2.35rem] sm:text-[42px] md:text-[68px] font-extrabold text-slate-900 leading-[1.06] tracking-tight">
                         发现全球顶尖<br className="sm:hidden" />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600"> 远程友好企业</span>
                     </h1>
-                    <p className="text-slate-500 max-w-[920px] mx-auto mb-7 text-[18px] md:text-[20px] leading-[1.8]">
+                    <p className="mx-auto mb-6 sm:mb-7 max-w-[920px] text-[15px] sm:text-[18px] md:text-[20px] leading-[1.75] text-slate-500">
                         Haigoo 严选全球远程工作机会，所有企业均经过人工审核，确保真实可靠。<br className="hidden md:block" />聚焦更适合中国用户申请的远程友好公司。
                     </p>
 
                     {/* Search & Filter Container */}
-                    <div className="relative z-30 max-w-4xl mx-auto rounded-[28px] border border-white/80 bg-white/90 p-2 shadow-[0_22px_60px_-42px_rgba(79,70,229,0.36)] backdrop-blur">
+                    <div className="relative z-30 mx-auto max-w-4xl rounded-[24px] sm:rounded-[28px] border border-white/80 bg-white/90 p-2 shadow-[0_22px_60px_-42px_rgba(79,70,229,0.36)] backdrop-blur">
                         <div className="flex flex-col md:flex-row gap-2">
                             <div className="flex-1">
                                 <SearchBar
@@ -191,7 +191,7 @@ export default function TrustedCompaniesPage() {
                                     className="w-full bg-slate-50 border-transparent focus:bg-white focus:border-indigo-500 rounded-xl h-11 text-slate-900 placeholder-slate-400"
                                 />
                             </div>
-                            <div className="flex gap-2 overflow-visible pb-2 md:pb-0 px-1 md:px-0 relative z-20">
+                            <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 md:mx-0 md:overflow-visible md:pb-0 md:px-0 relative z-20">
                                 <MultiSelectDropdown
                                     label="行业"
                                     options={industryOptions}
@@ -219,7 +219,7 @@ export default function TrustedCompaniesPage() {
                         </div>
                     </div>
                     {/* Banners Grid */}
-                    <div className="relative z-10 mt-4 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative z-10 mt-4 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                         <TrustedStandardsBanner
                             context="company"
                         />
@@ -229,7 +229,7 @@ export default function TrustedCompaniesPage() {
             </div>
 
             {/* Company Grid */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
                 <>
                     {/* Active Jobs Hint */}
                     <div className="mb-8 text-left">
@@ -265,7 +265,7 @@ export default function TrustedCompaniesPage() {
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                                 {visibleCompanies.map(company => (
                                     <HomeCompanyCard
                                         key={company.id}

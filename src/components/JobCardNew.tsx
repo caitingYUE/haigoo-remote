@@ -436,7 +436,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                onClick && onClick(job);
             }}
             className={`
-               group relative flex min-h-[148px] cursor-pointer items-stretch gap-4 rounded-[26px] border p-4 transition-all duration-300
+               group relative flex min-h-[132px] md:min-h-[148px] cursor-pointer items-stretch gap-3 md:gap-4 rounded-[22px] md:rounded-[26px] border p-3.5 md:p-4 transition-all duration-300
                ${isActive ? 'border-indigo-300 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(244,247,255,0.92))] shadow-[0_24px_54px_-36px_rgba(79,70,229,0.38)] ring-1 ring-indigo-200/80' : 'border-slate-200/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,252,255,0.98))] shadow-[0_18px_38px_-32px_rgba(15,23,42,0.2)] hover:border-indigo-200 hover:shadow-[0_26px_52px_-34px_rgba(79,70,229,0.18)]'}
                ${isFeatured ? 'before:absolute before:inset-y-5 before:left-0 before:w-[3px] before:rounded-r-full before:bg-indigo-500' : ''}
                ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
@@ -444,12 +444,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             `}
          >
             {/* Left: Company Logo Card */}
-            <div className="flex-shrink-0 w-[110px] self-stretch flex">
+            <div className="hidden w-[110px] flex-shrink-0 self-stretch md:flex">
                <CompanyCard size="sm" />
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 min-w-0 flex gap-4 py-0.5">
+            <div className="flex min-w-0 flex-1 gap-3 md:gap-4 py-0.5">
                <div className="min-w-0 flex-1 flex flex-col gap-1.5">
 
                   {/* Row 1: Badges & Salary (Desktop) */}
@@ -480,7 +480,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   {/* Row 2: Title */}
                   <div className="mt-0.5 flex w-full min-w-0 items-center gap-2">
                      <h3
-                        className={`min-w-0 truncate font-bold tracking-tight text-[color:var(--job-title-color)] transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1.05rem] lg:text-[1.12rem]' : 'text-[22px]'}`}
+                        className={`min-w-0 truncate font-bold tracking-tight text-[color:var(--job-title-color)] transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.12rem]' : 'text-[18px] md:text-[22px]'}`}
                         style={{ maxWidth: `calc(100% - ${titleAccessoryWidth}px)`, ['--job-title-color' as any]: '#0f172a', ['--job-title-hover-color' as any]: hoverColor }}
                         title={job.translations?.title || job.title}
                      >
@@ -504,8 +504,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Row 3: Meta Info */}
-                  <div className={`flex items-center text-sm text-slate-500 gap-x-6 gap-y-1 mt-1 ${isCompactFeaturedCard ? 'flex-nowrap overflow-hidden' : 'flex-wrap'}`}>
-                     {/* Company Name (Mobile Only - since desktop has it in the card) */}
+                  <div className={`flex items-center text-[13px] md:text-sm text-slate-500 gap-x-4 md:gap-x-6 gap-y-1 mt-1 ${isCompactFeaturedCard ? 'flex-nowrap overflow-hidden' : 'flex-wrap'}`}>
+                     {/* Company Name (Mobile / Tablet - since desktop has it in the card) */}
                      <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
@@ -534,7 +534,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   {/* Row 4: Tags & Mobile Actions */}
-                  <div className="mt-auto flex flex-col gap-3 pt-2 md:flex-row md:items-end md:justify-between">
+                  <div className="mt-auto flex flex-col gap-2.5 pt-2 md:flex-row md:items-end md:justify-between">
                      <div className={`flex min-w-0 items-center gap-2 ${isCompactFeaturedCard ? 'flex-nowrap' : 'flex-wrap content-start md:max-h-[60px]'}`}>
                         {(isCompactFeaturedCard ? compactSkillTags : displayTags.slice(0, 4)).map((tag, i) => (
                            <span
@@ -562,7 +562,10 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                            </div>
                         )}
 
-                        <div className={`${compactSalaryMobileWidthClass} line-clamp-2 text-right text-sm leading-5 ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`} title={salaryText}>
+                        <div
+                           className={`ml-auto line-clamp-2 text-right text-[13px] leading-5 ${isCompactFeaturedCard ? 'max-w-[148px] sm:max-w-[180px]' : 'max-w-[128px] sm:max-w-[156px]'} ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}
+                           title={salaryText}
+                        >
                            {salaryText}
                         </div>
 

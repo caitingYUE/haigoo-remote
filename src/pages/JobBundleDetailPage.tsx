@@ -229,10 +229,10 @@ export default function JobBundleDetailPage() {
 
       {/* ── Hero Header ─────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8 sm:pb-10">
 
           {/* Top action row */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="mb-6 sm:mb-8 flex items-center justify-between">
             <button onClick={() => navigate('/jobs')}
               className="flex items-center gap-1.5 text-slate-500 hover:text-blue-600 transition-colors text-sm font-medium">
               <ArrowLeft className="w-4 h-4" />返回职位列表
@@ -265,10 +265,10 @@ export default function JobBundleDetailPage() {
               </div>
 
               {/* Title + subtitle */}
-              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight mb-3">
+              <h1 className="mb-3 text-[2rem] sm:text-4xl font-bold leading-tight text-slate-900">
                 {bundle.title}
               </h1>
-              <p className="text-lg text-slate-500 mb-6">{bundle.subtitle}</p>
+              <p className="mb-5 sm:mb-6 text-base sm:text-lg text-slate-500">{bundle.subtitle}</p>
 
               <div className="mb-6 lg:hidden space-y-3">
                 <button onClick={handleShare}
@@ -283,7 +283,7 @@ export default function JobBundleDetailPage() {
 
               {/* Content description — full width */}
               {bundle.content && (
-                <div className="rounded-2xl border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.06),transparent_40%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-5 py-4 text-sm leading-relaxed text-slate-600 whitespace-pre-wrap shadow-sm">
+                <div className="rounded-2xl border border-slate-200/80 bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.06),transparent_40%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-4 sm:px-5 py-4 text-[13px] sm:text-sm leading-relaxed text-slate-600 whitespace-pre-wrap shadow-sm">
                   {bundle.content}
                 </div>
               )}
@@ -304,8 +304,8 @@ export default function JobBundleDetailPage() {
       </div>
 
       {/* ── Jobs Grid ──────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7 sm:py-8">
+        <div className="mb-5 sm:mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
               Bundle Jobs
@@ -324,7 +324,7 @@ export default function JobBundleDetailPage() {
         </div>
 
         {/* 2-column grid — matches homepage card style */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:gap-7">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:gap-7">
           {jobs.map((job) => (
             <JobCardNew
               key={job.id}

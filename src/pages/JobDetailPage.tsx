@@ -195,11 +195,11 @@ export default function JobDetailPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Mobile Header */}
-      <div className="lg:hidden sticky top-0 z-10 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+      <div className="lg:hidden sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 bg-white border-b border-slate-200 px-3 py-2.5">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-slate-50 rounded-full">
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
-        <div className="font-semibold text-slate-900 truncate max-w-[200px]">{job.title}</div>
+        <div className="px-1 text-center text-sm font-semibold leading-5 text-slate-900 line-clamp-2">{job.title}</div>
         <button
           type="button"
           onClick={handleShare}

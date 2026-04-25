@@ -1116,12 +1116,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
     return (
         <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.6),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
-            <header className="relative z-20 flex-shrink-0 border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-6 py-6 backdrop-blur-md">
+            <header className="relative z-20 flex-shrink-0 border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-4 py-4 sm:px-6 sm:py-6 backdrop-blur-md">
                 <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-indigo-100/35 blur-3xl" />
-                <div className="mb-4 flex items-start justify-between gap-4">
+                <div className="mb-3 sm:mb-4 flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0 flex-[1_1_56%]">
                         <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug tracking-tight">
+                            <h1 className="text-[1.1rem] sm:text-2xl font-bold text-slate-900 leading-snug tracking-tight">
                                 {displayText(job.title, job.translations?.title)}
                             </h1>
                             {hasTranslation && (
@@ -1155,11 +1155,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     </div>
 
-                    <div className="relative z-20 flex flex-shrink-0 items-center gap-3.5">
+                    <div className="relative z-20 flex w-full flex-wrap items-center justify-between gap-2.5 sm:w-auto sm:flex-shrink-0 sm:flex-nowrap sm:justify-end sm:gap-3.5">
                         <div className="relative z-20 flex flex-shrink-0 items-center gap-2">
                             <button
                                 onClick={handleSave}
-                                className={`relative z-10 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-all ${
+                                className={`relative z-10 inline-flex h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-all ${
                                     isSaved
                                         ? 'border-indigo-200 bg-indigo-50 text-indigo-600 shadow-[0_14px_26px_-20px_rgba(79,70,229,0.45)]'
                                         : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]'
@@ -1171,7 +1171,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                             <button
                                 onClick={handleShare}
-                                className="relative z-10 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]"
+                                className="relative z-10 inline-flex h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]"
                                 title="分享"
                             >
                                 <Share2 className="h-4 w-4" />
@@ -1180,13 +1180,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                         {(hasWebsiteApply || hasAnyEmailPath || onApply) && (
                             <>
-                                <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
+                                <div className="hidden h-9 w-px flex-shrink-0 bg-slate-200/80 sm:block" />
                                 <button
                                     onClick={handleApplyButtonClick}
-                                    className={`relative z-10 inline-flex min-w-[132px] flex-shrink-0 items-center justify-center rounded-2xl px-5 py-3 text-[15px] font-bold transition-all duration-200 ${getApplyButtonClassName()}`}
+                                    className={`order-3 inline-flex min-h-[42px] w-full flex-1 items-center justify-center rounded-2xl px-4 py-2.5 text-[14px] font-bold transition-all duration-200 sm:order-none sm:w-auto sm:min-w-[132px] sm:flex-none sm:px-5 sm:py-3 sm:text-[15px] ${getApplyButtonClassName()}`}
                                     title={getApplyButtonLabel()}
                                 >
-                                    <span className="inline-flex items-center gap-2 whitespace-nowrap">
+                                    <span className="inline-flex max-w-full items-center justify-center gap-2 whitespace-normal text-center sm:whitespace-nowrap">
                                         <span>{getApplyButtonLabel()}</span>
                                     </span>
                                 </button>
@@ -1195,7 +1195,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                         {showCloseButton && showInlineNavigation && (
                             <>
-                                <div className="h-9 w-px flex-shrink-0 bg-slate-200/80" />
+                                <div className="hidden h-9 w-px flex-shrink-0 bg-slate-200/80 sm:block" />
                                 <div className="relative z-20 mr-1 flex flex-shrink-0 items-center gap-1">
                                     <button
                                         onClick={() => onNavigateJob?.('prev')}
@@ -1219,10 +1219,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                         {showCloseButton && onClose && (
                             <>
-                                <div className="ml-1 h-9 w-px flex-shrink-0 bg-slate-200/80" />
+                                <div className="ml-1 hidden h-9 w-px flex-shrink-0 bg-slate-200/80 sm:block" />
                                 <button
                                     onClick={onClose}
-                                    className="relative z-20 ml-1.5 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+                                    className="relative z-20 inline-flex h-10 w-10 sm:ml-1.5 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
                                     title="关闭"
                                 >
                                     <X className="w-4 h-4" />

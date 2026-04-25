@@ -73,7 +73,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
     return (
         <div
             onClick={onClick}
-            className="group bg-white rounded-xl border border-slate-100 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
+            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-100 bg-white transition-all duration-300 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50"
         >
             {/* Cover Area - 16:9 Aspect Ratio */}
             <div className="relative w-full pt-[56.25%] overflow-hidden bg-slate-50">
@@ -107,35 +107,35 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
 
             </div>
 
-            <div className="p-5 flex-1 flex flex-col">
+            <div className="flex flex-1 flex-col p-4 sm:p-5">
                 {/* Header: Name & Industry */}
-                <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-bold text-slate-900 text-lg line-clamp-1 group-hover:text-indigo-600 transition-colors">
+                <div className="mb-2 flex items-start justify-between gap-2">
+                    <h3 className="line-clamp-1 text-base sm:text-lg font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
                         {company.name}
                     </h3>
                     {company.industry && (
-                        <span className="flex-shrink-0 px-2 py-0.5 bg-indigo-50 text-indigo-600 text-xs rounded-full whitespace-nowrap">
+                        <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] sm:text-xs text-indigo-600">
                             {company.industry}
                         </span>
                     )}
                 </div>
 
                 {/* Updated At */}
-                <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-3">
+                <div className="mb-3 flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-400">
                     <Clock className="w-3 h-3" />
                     <span>企业信息更新于 {formatDate(company.updatedAt || new Date().toISOString())}</span>
                 </div>
 
                 {/* Description */}
-                <p className="text-sm text-slate-500 line-clamp-2 mb-4 flex-1">
+                <p className="mb-4 flex-1 line-clamp-2 text-[13px] sm:text-sm text-slate-500">
                     {company.description || '暂无简介'}
                 </p>
 
                 {/* Footer: Hiring Info */}
-                <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-sm">
-                    <div className="flex-1 min-w-0 flex items-center gap-2 text-slate-600">
+                <div className="flex items-center justify-between border-t border-slate-50 pt-3.5 text-sm sm:pt-4">
+                    <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-600">
                         <Briefcase className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                        <span className="font-medium text-xs truncate">
+                        <span className="truncate text-[11px] sm:text-xs font-medium">
                             {company.jobCount || 0} 个在招职位
                             {topCategories.length > 0 && (
                                 <span className="text-slate-400 font-normal ml-1">
@@ -144,7 +144,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                             )}
                         </span>
                     </div>
-                    <span className="text-xs text-indigo-600 font-medium group-hover:translate-x-1 transition-transform whitespace-nowrap flex-shrink-0 ml-2">
+                    <span className="ml-2 flex-shrink-0 whitespace-nowrap text-[11px] sm:text-xs font-medium text-indigo-600 transition-transform group-hover:translate-x-1">
                         查看岗位 &rarr;
                     </span>
                 </div>

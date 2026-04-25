@@ -1476,27 +1476,27 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                         </div>
 
                         {/* ── Right Column ── */}
-                        <div className={`lg:col-span-7 backdrop-blur-2xl rounded-[24px] border border-white/50 flex flex-col shadow-sm overflow-hidden h-full ${
+                        <div className={`lg:col-span-7 backdrop-blur-2xl rounded-[24px] border border-white/50 flex min-h-[360px] flex-col shadow-sm overflow-hidden lg:min-h-0 h-full ${
                             hasResults ? 'bg-white/50' : 'bg-white/30'
                         }`}>
-                            <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-slate-100">
+                            <div className="flex items-center justify-between px-4 pt-4 pb-3 sm:px-5 sm:pt-5 border-b border-slate-100">
                                 <h3 className={`${hasResults ? 'text-[24px]' : 'text-[20px]'} font-bold text-slate-800 leading-none`}>{hasResults ? '今日推荐' : '每日推荐预览'}</h3>
                                 {hasResults && (
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
                                         <button onClick={() => setActiveCard(prev => Math.max(0, prev - 1))} disabled={activeCard === 0}
-                                            className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
+                                            className="h-8 w-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
                                             <ChevronLeft className="w-4 h-4 text-indigo-700" />
                                         </button>
                                         <span className="text-xs text-slate-500 font-semibold">{activeCard + 1} / {displayRecommendations.length}</span>
                                         <button onClick={() => setActiveCard(prev => Math.min(displayRecommendations.length - 1, prev + 1))} disabled={activeCard >= displayRecommendations.length - 1}
-                                            className="w-9 h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
+                                            className="h-8 w-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
                                             <ChevronRight className="w-4 h-4 text-indigo-700" />
                                         </button>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="flex-1 px-5 pt-5 pb-4 flex flex-col min-h-0">
+                            <div className="flex-1 px-4 pt-4 pb-4 sm:px-5 sm:pt-5 flex flex-col min-h-0">
                                 {!hasResults ? (
                                     <div className="flex-1 flex flex-col gap-4 relative min-h-0 overflow-hidden rounded-[28px] border border-white/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.4)_0%,rgba(243,244,255,0.72)_100%)]">
                                         <div className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.1),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.08),transparent_36%)]" />
@@ -1573,37 +1573,37 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                         }
                                                         touchStartXRef.current = null
                                                     }}
-                                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 flex-1 h-[420px] relative z-10 text-left hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
+                                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 sm:p-5 flex-1 min-h-[280px] h-[42vh] max-h-[340px] sm:h-[420px] sm:max-h-none relative z-10 text-left hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
                                                 >
-                                                    <h4 className="text-[30px] font-bold text-slate-900 mb-3 leading-[1.12] line-clamp-2">{title}</h4>
-                                                    <div className="flex flex-col gap-1.5 mb-4">
-                                                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                                                    <h4 className="mb-2.5 text-[23px] sm:text-[30px] font-bold text-slate-900 leading-[1.12] line-clamp-2">{title}</h4>
+                                                    <div className="mb-3 flex flex-col gap-1.5">
+                                                        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-500">
                                                             <Building2 className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                                                            <span className="font-semibold text-indigo-600">{company}</span>
+                                                            <span className="truncate font-semibold text-indigo-600">{company}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                                                        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-500">
                                                             <MapPin className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                                                            <span>{location}{timezone ? `，${timezone}` : ''}</span>
+                                                            <span className="truncate">{location}{timezone ? `，${timezone}` : ''}</span>
                                                         </div>
-                                                        <div className="flex items-center gap-2 text-sm text-slate-500">
+                                                        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-500">
                                                             <DollarSign className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                                                            <span>{salary}</span>
+                                                            <span className="truncate">{salary}</span>
                                                         </div>
                                                     </div>
 
                                                     {/* Company Intro */}
-                                                    <div className="mb-3">
+                                                    <div className="mb-2.5 sm:mb-3">
                                                         <div className="text-xs font-bold text-slate-500 mb-1.5">企业介绍</div>
-                                                        <p className="text-sm text-slate-500 leading-relaxed line-clamp-2">{companyIntro || '点击查看详情，查看完整企业介绍。'}</p>
+                                                        <p className="text-[13px] sm:text-sm text-slate-500 leading-relaxed line-clamp-2">{companyIntro || '点击查看详情，查看完整企业介绍。'}</p>
                                                     </div>
                                                     <div className="relative flex-1 overflow-hidden">
                                                         <div className="text-xs font-bold text-slate-500 mb-1.5">岗位详情</div>
-                                                        <p className="text-sm text-slate-500 leading-relaxed">{detail}</p>
+                                                        <p className="text-[13px] sm:text-sm text-slate-500 leading-relaxed line-clamp-5 sm:line-clamp-none">{detail}</p>
                                                         <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" />
                                                     </div>
-                                                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-shrink-0">
+                                                    <div className="mt-3 pt-3 sm:mt-4 sm:pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-shrink-0">
                                                         {!isAuthenticated ? (
-                                                            <div className="text-[11px] leading-5 text-slate-500 inline-flex items-center gap-1.5">
+                                                            <div className="text-[11px] leading-5 text-slate-500 inline-flex min-w-0 items-center gap-1.5">
                                                                 <span>登录后可继续浏览更多推荐。</span>
                                                                 <button
                                                                     type="button"
@@ -1623,7 +1623,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                                 e.stopPropagation()
                                                                 openJobDetail()
                                                             }}
-                                                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-xs font-bold text-indigo-600 shadow-sm whitespace-nowrap hover:bg-indigo-100 transition-colors"
+                                                            className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600 shadow-sm whitespace-nowrap hover:bg-indigo-100 transition-colors"
                                                         >
                                                             查看详情
                                                             <span>→</span>

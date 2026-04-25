@@ -100,7 +100,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   return createPortal(
     <div
       className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-stretch cursor-pointer ${
-        variant === 'center' ? 'justify-center items-center p-4 md:p-8' : 'justify-end'
+        variant === 'center' ? 'justify-center items-stretch p-0 sm:items-center sm:p-4 md:p-8' : 'justify-end'
       }`}
       role="dialog"
       aria-modal="true"
@@ -113,7 +113,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       <div
         className={`relative ${
           variant === 'center'
-            ? 'w-full max-w-[1000px] h-auto max-h-[90vh]'
+            ? 'h-full w-full sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px]'
             : 'h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw]'
         }`}
       >
@@ -121,7 +121,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           ref={modalRef}
           className={`bg-white dark:bg-zinc-900 shadow-xl flex flex-col relative transform transition-all duration-300 overflow-hidden ${
             variant === 'center'
-              ? `rounded-2xl w-full max-w-[1000px] h-auto max-h-[90vh] ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
+              ? `h-full w-full rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px] sm:rounded-2xl ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
               : `h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -143,7 +143,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
         </div>
         {variant === 'center' && jobs.length > 1 && (
           <>
-            <div className="pointer-events-none absolute left-3 top-1/2 z-30 -translate-y-1/2">
+            <div className="pointer-events-none absolute left-3 top-1/2 z-30 hidden -translate-y-1/2 sm:block">
               <button
                 type="button"
                 onClick={() => handleNavigate('prev')}
@@ -154,7 +154,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
                 <ChevronLeft className="h-4 w-4" />
               </button>
             </div>
-            <div className="pointer-events-none absolute right-3 top-1/2 z-30 -translate-y-1/2">
+            <div className="pointer-events-none absolute right-3 top-1/2 z-30 hidden -translate-y-1/2 sm:block">
               <button
                 type="button"
                 onClick={() => handleNavigate('next')}
