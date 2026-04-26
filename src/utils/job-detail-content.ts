@@ -109,7 +109,6 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^who you are$/i,
       /^you bring$/i,
       /^your profile$/i,
-      /^must[- ]have$/i,
       /^skills required$/i,
       /^我们正在寻找什么$/,
       /^我们在寻找什么$/,
@@ -204,6 +203,14 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
 ]
 
 const NOTE_PREFIX = /^(note|please note|备注|注意)[:：]\s*/i
+const WEAK_HEADING_REJECT_PATTERNS: RegExp[] = [
+  /^you (?:are|will|may|might|can|should|have|bring|get|need)(?:\s|$)/i,
+  /^we (?:are|will|offer|provide|need|expect|want|look)(?:\s|$)/i,
+  /^(?:must|should|may|might|can) have(?:\s|$)/i,
+  /^(?:required|preferred) experience(?:\s|$)/i,
+  /^(?:你|您)(?:是|将|会|可|可能|可以|应该|有)(?:\s|$)/,
+  /^必须有(?:\s|$)/
+]
 const HEADING_PREFIX_SPLITS: Array<{ canonicalTitle: JobDetailCanonicalTitle; pattern: RegExp }> = [
   {
     canonicalTitle: 'company',
@@ -252,18 +259,30 @@ export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobD
     parseDescriptionSections(originalDescription)
   )
 
+  const translatedDescriptionSections = canUseTranslatedDescription
+    ? parseDescriptionSections(translatedDescription)
+    : []
+
   const translatedMergedSections = canUseTranslatedDescription
     ? mergeStructuredSections({
-      descriptionSections: parseDescriptionSections(translatedDescription),
+      descriptionSections: translatedDescriptionSections,
       responsibilities: toCleanLines(input.translatedResponsibilities),
       requirements: toCleanLines(input.translatedRequirements),
       benefits: toCleanLines(input.translatedBenefits)
     })
     : []
 
-  const displaySections = Boolean(input.preferTranslated) && translatedMergedSections.length
-    ? translatedMergedSections
-    : originalMergedSections
+  const baseSections = originalMergedSections.length ? originalMergedSections : translatedMergedSections
+  const displaySections = Boolean(input.preferTranslated) && originalMergedSections.length
+    ? attachTranslatedBlocks({
+      baseSections,
+      translatedDescriptionSections,
+      translatedResponsibilities: toCleanLines(input.translatedResponsibilities),
+      translatedRequirements: toCleanLines(input.translatedRequirements),
+      translatedBenefits: toCleanLines(input.translatedBenefits),
+      preferTranslated: true
+    })
+    : baseSections
 
   if (!displaySections.length) {
     return [createFallbackSection(Boolean(input.preferTranslated) && translatedDescription ? translatedDescription : '暂无描述')]
@@ -275,8 +294,8 @@ export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobD
     rawTitle: section.rawTitle,
     displayTitle: section.displayTitle,
     blocks: section.blocks,
-    translatedBlocks: undefined,
-    activeBlocks: section.blocks,
+    translatedBlocks: section.translatedBlocks,
+    activeBlocks: section.activeBlocks || section.blocks,
     source: section.source
   }))
 }
@@ -426,16 +445,16 @@ function mergeStructuredSections(input: {
       displayTitle: CANONICAL_TITLES[entry.canonicalTitle],
       blocks: mergedBlocks,
       source: entry.source,
-      orderHint: SECTION_ORDER[entry.canonicalTitle] + entryIndex
+      orderHint: matchedDescription?.orderHint ?? SECTION_ORDER[entry.canonicalTitle] + entryIndex
     })
   })
 
   const combined = [...descriptionSections, ...structuredSections]
     .filter(section => hasMeaningfulContent(section.blocks))
     .sort((a, b) => {
-      const orderDiff = SECTION_ORDER[a.canonicalTitle] - SECTION_ORDER[b.canonicalTitle]
+      const orderDiff = a.orderHint - b.orderHint
       if (orderDiff !== 0) return orderDiff
-      return a.orderHint - b.orderHint
+      return SECTION_ORDER[a.canonicalTitle] - SECTION_ORDER[b.canonicalTitle]
     })
 
   return mergeAdjacentSections(combined)
@@ -697,17 +716,19 @@ function inferCanonicalTitle(rawTitle: string): JobDetailCanonicalTitle {
 }
 
 function looksLikeWeakHeading(line: string): boolean {
-  if (line.length < 2 || line.length > 60) return false
-  if (/[,，;；]/.test(line)) return false
-  if (/^\d+[\.)]/.test(line)) return false
-  if (/^[-•*▪◦‣]/.test(line)) return false
+  const plainLine = normalizeHeadingText(line)
+  if (plainLine.length < 2 || plainLine.length > 60) return false
+  if (/[,，;；]/.test(plainLine)) return false
+  if (/^\d+[\.)]/.test(plainLine)) return false
+  if (/^[-•*▪◦‣]/.test(plainLine)) return false
+  if (WEAK_HEADING_REJECT_PATTERNS.some(pattern => pattern.test(plainLine))) return false
   const endsWithColon = /[:：]$/.test(line)
   const isBoldHeading = /^\*\*.+\*\*$/.test(line)
-  const isUppercase = /^[A-Z0-9\s/&+-]+$/.test(line) && /[A-Z]/.test(line)
-  const isTitleCase = isTitleCaseHeading(line)
-  const chineseShortTitle = /[\u4e00-\u9fa5]/.test(line)
-    && line.length <= 12
-    && /(职责|要求|福利|介绍|流程|加分|说明|概述|团队|公司)/.test(line)
+  const isUppercase = /^[A-Z0-9\s/&+-]+$/.test(plainLine) && /[A-Z]/.test(plainLine)
+  const isTitleCase = isTitleCaseHeading(plainLine)
+  const chineseShortTitle = /[\u4e00-\u9fa5]/.test(plainLine)
+    && plainLine.length <= 12
+    && /(职责|要求|福利|介绍|流程|加分|说明|概述|团队|公司)/.test(plainLine)
   return endsWithColon || isBoldHeading || isUppercase || isTitleCase || chineseShortTitle
 }
 
