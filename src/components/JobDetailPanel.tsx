@@ -1496,7 +1496,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     <h3 className="text-lg font-bold text-slate-900 leading-7">
                                         {section.displayTitle}
                                     </h3>
-                                    {section.rawTitle && section.rawTitle !== section.displayTitle && (
+                                    {!showTranslation && section.rawTitle && section.rawTitle !== section.displayTitle && (
                                         <p className="mt-1 text-[11px] uppercase tracking-[0.18em] text-slate-400 break-words">
                                             {section.rawTitle}
                                         </p>

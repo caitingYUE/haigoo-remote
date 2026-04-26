@@ -164,7 +164,9 @@ const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; pat
       /^岗位介绍$/,
       /^职位描述$/,
       /^岗位概述$/,
-      /^职位概述$/
+      /^职位概述$/,
+      /^概览$/,
+      /^概述$/
     ]
   },
   {
@@ -272,17 +274,9 @@ export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobD
     })
     : []
 
-  const baseSections = originalMergedSections.length ? originalMergedSections : translatedMergedSections
-  const displaySections = Boolean(input.preferTranslated) && originalMergedSections.length
-    ? attachTranslatedBlocks({
-      baseSections,
-      translatedDescriptionSections,
-      translatedResponsibilities: toCleanLines(input.translatedResponsibilities),
-      translatedRequirements: toCleanLines(input.translatedRequirements),
-      translatedBenefits: toCleanLines(input.translatedBenefits),
-      preferTranslated: true
-    })
-    : baseSections
+  const displaySections = Boolean(input.preferTranslated) && translatedMergedSections.length
+    ? translatedMergedSections
+    : originalMergedSections
 
   if (!displaySections.length) {
     return [createFallbackSection(Boolean(input.preferTranslated) && translatedDescription ? translatedDescription : '暂无描述')]
@@ -458,86 +452,6 @@ function mergeStructuredSections(input: {
     })
 
   return mergeAdjacentSections(combined)
-}
-
-function attachTranslatedBlocks(input: {
-  baseSections: ParsedSection[]
-  translatedDescriptionSections: ParsedSection[]
-  translatedResponsibilities: string[]
-  translatedRequirements: string[]
-  translatedBenefits: string[]
-  preferTranslated: boolean
-}): ParsedSection[] {
-  const translatedPools = new Map<JobDetailCanonicalTitle, ParsedSection[]>()
-  input.translatedDescriptionSections.forEach(section => {
-    const pool = translatedPools.get(section.canonicalTitle) || []
-    pool.push(section)
-    translatedPools.set(section.canonicalTitle, pool)
-  })
-
-  const structuredTranslations: Partial<Record<JobDetailCanonicalTitle, JobDetailBlock[]>> = {}
-  if (input.translatedResponsibilities.length) {
-    structuredTranslations.responsibilities = [{ type: 'list', items: input.translatedResponsibilities }]
-  }
-  if (input.translatedRequirements.length) {
-    structuredTranslations.requirements = [{ type: 'list', items: input.translatedRequirements }]
-  }
-  if (input.translatedBenefits.length) {
-    structuredTranslations.benefits = [{ type: 'list', items: input.translatedBenefits }]
-  }
-
-  return input.baseSections.map((section, index) => {
-    const translatedBlocks = structuredTranslations[section.canonicalTitle] || pullTranslatedBlocks(section, translatedPools, index)
-    const activeBlocks = input.preferTranslated && translatedBlocks && hasMeaningfulContent(translatedBlocks)
-      ? translatedBlocks
-      : section.blocks
-
-    return {
-      ...section,
-      translatedBlocks,
-      activeBlocks
-    }
-  })
-}
-
-function pullTranslatedBlocks(
-  section: ParsedSection,
-  translatedPools: Map<JobDetailCanonicalTitle, ParsedSection[]>,
-  index: number
-): JobDetailBlock[] | undefined {
-  const directMatch = shiftedPoolTake(translatedPools, section.canonicalTitle)
-  if (directMatch && hasMeaningfulContent(directMatch.blocks)) {
-    return directMatch.blocks
-  }
-
-  if (section.canonicalTitle === 'overview' || section.canonicalTitle === 'details') {
-    const fallback = shiftedPoolTake(translatedPools, 'details') || shiftedPoolTake(translatedPools, 'overview')
-    if (fallback && hasMeaningfulContent(fallback.blocks)) {
-      return fallback.blocks
-    }
-  }
-
-  if (index === 0) {
-    const firstAvailable = firstPoolTake(translatedPools)
-    if (firstAvailable && hasMeaningfulContent(firstAvailable.blocks)) {
-      return firstAvailable.blocks
-    }
-  }
-
-  return undefined
-}
-
-function shiftedPoolTake(poolMap: Map<JobDetailCanonicalTitle, ParsedSection[]>, key: JobDetailCanonicalTitle): ParsedSection | undefined {
-  const pool = poolMap.get(key)
-  if (!pool || !pool.length) return undefined
-  return pool.shift()
-}
-
-function firstPoolTake(poolMap: Map<JobDetailCanonicalTitle, ParsedSection[]>): ParsedSection | undefined {
-  for (const pool of poolMap.values()) {
-    if (pool.length) return pool.shift()
-  }
-  return undefined
 }
 
 function mergeAdjacentSections(sections: ParsedSection[]): ParsedSection[] {
