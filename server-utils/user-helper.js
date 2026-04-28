@@ -17,6 +17,9 @@ import {
 // 超级管理员邮箱
 const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
 const SUPER_ADMIN_EMAIL_2 = 'mrzhangzy1996@gmail.com'
+const DEFAULT_FREE_WEBSITE_APPLY_LIMIT = 20
+const DEFAULT_FREE_REFERRAL_LIMIT = 3
+const MAX_ENTITLEMENT_DELTA = 20
 const LOCAL_TEST_PASSWORD_HASH = '$2b$10$A1aJl03alRTYeGBoDveiD.1o03jnu1Fd5lbHEKNQvDnWNzDFvHHaG'
 const LOCAL_USERS = new Map([
     ['test_member@haigoo.com', {
@@ -32,6 +35,10 @@ const LOCAL_USERS = new Map([
         member_status: 'active',
         member_expire_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         member_type: 'quarter',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
         profile: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -49,6 +56,10 @@ const LOCAL_USERS = new Map([
         member_status: 'inactive',
         member_expire_at: null,
         member_type: 'none',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
         profile: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -66,6 +77,10 @@ const LOCAL_USERS = new Map([
         member_status: 'active',
         member_expire_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString(),
         member_type: 'year',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
         profile: {},
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -97,6 +112,10 @@ function enrichUserFields(user) {
     if (u.member_display_id) u.memberDisplayId = u.member_display_id
     if (u.member_type) u.memberType = u.member_type
     if (u.member_cycle_start_at) u.memberCycleStartAt = u.member_cycle_start_at
+    if (u.free_website_apply_count !== undefined) u.freeWebsiteApplyCount = Number(u.free_website_apply_count) || 0
+    if (u.free_website_apply_limit !== undefined) u.freeWebsiteApplyLimit = normalizeNonNegativeInteger(u.free_website_apply_limit, DEFAULT_FREE_WEBSITE_APPLY_LIMIT)
+    if (u.free_referral_count !== undefined) u.freeReferralCount = Number(u.free_referral_count) || 0
+    if (u.free_referral_limit !== undefined) u.freeReferralLimit = normalizeNonNegativeInteger(u.free_referral_limit, DEFAULT_FREE_REFERRAL_LIMIT)
     return u
 }
 
@@ -166,6 +185,66 @@ async function ensureMemberDisplayId(userId, existingValue = null) {
     } catch (e) {
         console.error('[user-helper] Failed to generate member_display_id:', e.message)
         return Math.floor(Math.random() * 100000) + 900000
+    }
+}
+
+function normalizeNonNegativeInteger(value, fallback = 0) {
+    const number = Number(value)
+    if (!Number.isFinite(number)) return fallback
+    return Math.max(0, Math.floor(number))
+}
+
+function normalizeJsonArray(value) {
+    if (Array.isArray(value)) return value
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value)
+            return Array.isArray(parsed) ? parsed : []
+        } catch (_e) {
+            return []
+        }
+    }
+    return []
+}
+
+function getSharedAccessUsage(user) {
+    const unlockedCompanies = normalizeJsonArray(user?.free_unlocked_companies)
+    return Math.max(
+        0,
+        Number(user?.free_company_info_count) || 0,
+        Number(user?.free_email_apply_count) || 0,
+        Number(user?.free_referral_count) || 0,
+        unlockedCompanies.length
+    )
+}
+
+function getWebsiteApplyUsage(user) {
+    const profileWebsiteApply = user?.profile?.preferences?.freeUsage?.websiteApply || {}
+    const profileUnlockedJobIds = normalizeJsonArray(profileWebsiteApply.unlockedJobIds)
+    const columnUnlockedJobIds = normalizeJsonArray(user?.free_website_apply_job_ids)
+    return Math.max(
+        0,
+        Number(user?.free_website_apply_count) || 0,
+        Number(profileWebsiteApply.count) || 0,
+        profileUnlockedJobIds.length,
+        columnUnlockedJobIds.length
+    )
+}
+
+function enrichEntitlementFields(user) {
+    if (!user) return user
+    const websiteUsage = getWebsiteApplyUsage(user)
+    const referralUsage = getSharedAccessUsage(user)
+    const websiteLimit = normalizeNonNegativeInteger(user.free_website_apply_limit, DEFAULT_FREE_WEBSITE_APPLY_LIMIT)
+    const referralLimit = normalizeNonNegativeInteger(user.free_referral_limit, DEFAULT_FREE_REFERRAL_LIMIT)
+    return {
+        ...user,
+        freeWebsiteApplyCount: websiteUsage,
+        freeWebsiteApplyLimit: websiteLimit,
+        freeWebsiteApplyRemaining: Math.max(0, websiteLimit - websiteUsage),
+        freeReferralCount: referralUsage,
+        freeReferralLimit: referralLimit,
+        freeReferralRemaining: Math.max(0, referralLimit - referralUsage)
     }
 }
 
@@ -387,7 +466,17 @@ const userHelper = {
      */
     sanitizeUser(user) {
         if (!user) return null
-        const { passwordHash, verificationToken, ...safeUser } = user
+        const {
+            passwordHash,
+            password_hash,
+            verificationToken,
+            verification_token,
+            verificationExpires,
+            verification_expires,
+            google_id,
+            googleId,
+            ...safeUser
+        } = user
         return safeUser
     },
 
@@ -404,7 +493,10 @@ const userHelper = {
         SELECT user_id, email, username, auth_provider, email_verified, profile,
                status, roles, created_at, updated_at, last_login_at,
                member_status, member_expire_at, member_since, member_display_id,
-               member_type, member_cycle_start_at
+               member_type, member_cycle_start_at,
+               free_company_info_count, free_email_apply_count, free_referral_count,
+               free_unlocked_companies, free_website_apply_count, free_website_apply_job_ids,
+               free_website_apply_limit, free_referral_limit
         FROM users 
         ORDER BY created_at DESC
       `)
@@ -422,7 +514,7 @@ const userHelper = {
                         const favorites = favResult || []
 
                         // 转换字段名为驼峰格式
-                        const mappedUser = {
+                        const mappedUser = enrichEntitlementFields({
                             ...user,
                             userId: user.user_id,
                             authProvider: user.auth_provider,
@@ -444,7 +536,7 @@ const userHelper = {
                             memberDisplayId: user.member_display_id,
                             memberType: user.member_type,
                             memberCycleStartAt: user.member_cycle_start_at
-                        }
+                        })
 
                         return {
                             ...mappedUser,
@@ -503,6 +595,126 @@ const userHelper = {
         } catch (error) {
             console.error(`[user-helper] Error getting user details for ${userId}:`, error.message)
             return null
+        }
+    },
+
+    /**
+     * 管理员调整用户免费权益上限。只修改上限，不修改已用次数。
+     */
+    async updateUserEntitlementLimit(userId, { entitlementKey, delta, adminUserId, reason = '' } = {}) {
+        const key = String(entitlementKey || '').trim()
+        const normalizedDelta = Number(delta)
+        const config = {
+            website_apply: {
+                column: 'free_website_apply_limit',
+                defaultLimit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+                getUsage: getWebsiteApplyUsage
+            },
+            referral: {
+                column: 'free_referral_limit',
+                defaultLimit: DEFAULT_FREE_REFERRAL_LIMIT,
+                getUsage: getSharedAccessUsage
+            }
+        }[key]
+
+        if (!config) {
+            return { success: false, error: '未知权益类型' }
+        }
+
+        if (!Number.isInteger(normalizedDelta) || normalizedDelta === 0 || Math.abs(normalizedDelta) > MAX_ENTITLEMENT_DELTA) {
+            return { success: false, error: `单次调整必须为 -${MAX_ENTITLEMENT_DELTA} 到 ${MAX_ENTITLEMENT_DELTA} 之间的非零整数` }
+        }
+
+        if (!adminUserId) {
+            return { success: false, error: '缺少管理员ID' }
+        }
+
+        try {
+            if (!neonHelper.isConfigured) {
+                const local = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
+                if (!local) return { success: false, error: '用户不存在' }
+
+                const oldLimit = normalizeNonNegativeInteger(local[config.column], config.defaultLimit)
+                const usage = config.getUsage(local)
+                const newLimit = oldLimit + normalizedDelta
+                if (newLimit < usage) {
+                    return { success: false, error: `不能低于已用次数 ${usage}` }
+                }
+
+                local[config.column] = newLimit
+                local.updated_at = new Date().toISOString()
+                LOCAL_USERS.set(local.email, local)
+                const user = enrichEntitlementFields(enrichUserFields(local))
+                return {
+                    success: true,
+                    user,
+                    entitlement: {
+                        key,
+                        oldLimit,
+                        newLimit,
+                        usage,
+                        remaining: Math.max(0, newLimit - usage)
+                    }
+                }
+            }
+
+            const target = await this.getUserById(userId)
+            if (!target) {
+                return { success: false, error: '用户不存在' }
+            }
+
+            const oldLimit = normalizeNonNegativeInteger(target[config.column], config.defaultLimit)
+            const usage = config.getUsage(target)
+            const newLimit = oldLimit + normalizedDelta
+
+            if (newLimit < usage) {
+                return { success: false, error: `不能低于已用次数 ${usage}` }
+            }
+
+            const result = await neonHelper.query(
+                `UPDATE users
+                 SET ${config.column} = $1,
+                     updated_at = NOW()
+                 WHERE user_id = $2
+                 RETURNING *`,
+                [newLimit, userId]
+            )
+
+            if (!result?.[0]) {
+                return { success: false, error: '更新失败，请稍后重试' }
+            }
+
+            await neonHelper.query(
+                `INSERT INTO admin_user_entitlement_audit
+                    (target_user_id, admin_user_id, entitlement_key, old_limit, new_limit, old_usage, new_remaining, reason)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+                [
+                    userId,
+                    adminUserId,
+                    key,
+                    oldLimit,
+                    newLimit,
+                    usage,
+                    Math.max(0, newLimit - usage),
+                    String(reason || '').trim() || null
+                ]
+            )
+
+            const updatedUser = await this.getUserById(userId)
+            return {
+                success: true,
+                user: this.sanitizeUser(enrichEntitlementFields(updatedUser)),
+                entitlement: {
+                    key,
+                    oldLimit,
+                    newLimit,
+                    usage,
+                    remaining: Math.max(0, newLimit - usage)
+                }
+            }
+        } catch (error) {
+            console.error('[user-helper] Error updating entitlement limit:', error.message)
+            return { success: false, error: '服务器错误' }
         }
     },
 

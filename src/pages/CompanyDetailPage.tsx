@@ -15,7 +15,7 @@ import { LocationTooltip } from '../components/LocationTooltip'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
-    const { isMember } = useAuth()
+    const { isAuthenticated, isMember } = useAuth()
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
@@ -27,6 +27,8 @@ export default function CompanyDetailPage() {
     const [currentJobIndex, setCurrentJobIndex] = useState(0)
 
     const decodedCompanyName = decodeURIComponent(companyName || '')
+    const canShowCompanyDetails = isAuthenticated
+    const handleLoginForCompanyInfo = () => navigate('/login')
 
     useEffect(() => {
         loadCompanyData()
@@ -35,7 +37,7 @@ export default function CompanyDetailPage() {
     }, [companyName])
 
     useEffect(() => {
-        if (!companyInfo?.name || !companyInfo?.isTrusted) return
+        if (!isAuthenticated || !companyInfo?.name || !companyInfo?.isTrusted) return
         trackingService.featureExposure('company_info', {
             page_key: 'company_detail',
             module: 'company_detail',
@@ -44,7 +46,7 @@ export default function CompanyDetailPage() {
             entity_id: companyInfo.name,
             company_name: companyInfo.name,
         })
-    }, [companyInfo?.name, companyInfo?.isTrusted])
+    }, [companyInfo?.name, companyInfo?.isTrusted, isAuthenticated])
 
     const loadCompanyData = async () => {
         setLoading(true)
@@ -223,7 +225,7 @@ export default function CompanyDetailPage() {
                         <div className="flex-1 min-w-0">
                             <div className="mb-4 flex items-start gap-3 sm:gap-4">
                                 {/* Company Logo */}
-                                {companyInfo?.logo ? (
+                                {canShowCompanyDetails && (companyInfo?.logo ? (
                                     <div className="h-16 w-16 sm:h-20 sm:w-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
                                         <img
                                             src={companyInfo.logo}
@@ -243,13 +245,13 @@ export default function CompanyDetailPage() {
                                             {decodedCompanyName.charAt(0)}
                                         </span>
                                     </div>
-                                )}
+                                ))}
 
                                 {/* Company Info Header */}
                                 <div className="flex-1 min-w-0">
                                     <h1 className="mb-2 flex flex-wrap items-center gap-2 text-xl sm:text-2xl font-bold text-slate-900">
                                         {companyInfo?.name || decodedCompanyName}
-                                        {companyInfo?.isTrusted && (
+                                        {canShowCompanyDetails && companyInfo?.isTrusted && (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-100 text-xs font-bold align-middle">
                                                 <Shield className="w-3 h-3" />
                                                 已认证
@@ -257,29 +259,44 @@ export default function CompanyDetailPage() {
                                         )}
                                     </h1>
 
-                                    <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-slate-600">
-                                        {companyInfo?.industry && (
-                                            <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
-                                                <Building2 className="w-3.5 h-3.5" />
-                                                <span>{companyInfo.industry}</span>
+                                    {canShowCompanyDetails ? (
+                                        <>
+                                            <div className="mb-2 flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-slate-600">
+                                                {companyInfo?.industry && (
+                                                    <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                                        <Building2 className="w-3.5 h-3.5" />
+                                                        <span>{companyInfo.industry}</span>
+                                                    </div>
+                                                )}
+                                                <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
+                                                    <Briefcase className="w-3.5 h-3.5" />
+                                                    <span>{jobs.length} 个在招岗位</span>
+                                                </div>
                                             </div>
-                                        )}
-                                        <div className="flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded text-xs">
-                                            <Briefcase className="w-3.5 h-3.5" />
-                                            <span>{jobs.length} 个在招岗位</span>
-                                        </div>
-                                    </div>
 
-                                    {companyInfo?.tags && companyInfo.tags.length > 0 && (
-                                        <div className="">
-                                            <SingleLineTags tags={companyInfo.tags} size="sm" />
+                                            {companyInfo?.tags && companyInfo.tags.length > 0 && (
+                                                <div className="">
+                                                    <SingleLineTags tags={companyInfo.tags} size="sm" />
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <div className="mt-3 flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                                            <span className="text-sm font-medium text-slate-700">登录后查看企业信息</span>
+                                            <button
+                                                type="button"
+                                                onClick={handleLoginForCompanyInfo}
+                                                className="inline-flex h-9 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
+                                            >
+                                                登录查看
+                                            </button>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
                             {/* Always render Certified Info for trusted companies */}
-                            {companyInfo?.isTrusted && (
+                            {canShowCompanyDetails && companyInfo?.isTrusted && (
                                 <div className="mt-4 bg-slate-50/50 rounded-xl border border-slate-200/60 relative">
                                     <div className="px-4 py-3 flex items-center gap-2 border-b border-slate-100">
                                         <Shield className="w-4 h-4 text-indigo-600" />
@@ -455,19 +472,21 @@ export default function CompanyDetailPage() {
                         </div>
 
                         {/* Right Column: Description (Sidebar) */}
-                        <div className="w-full lg:w-80 flex-shrink-0">
-                            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:sticky lg:top-6">
-                                <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
-                                    <Info className="w-4 h-4 text-slate-500" />
-                                    <h2 className="font-bold text-slate-900 text-sm">关于我们</h2>
-                                </div>
-                                <div className="p-4 lg:max-h-[400px] lg:overflow-y-auto custom-scrollbar">
-                                    <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
-                                        {companyInfo?.description || '暂无简介'}
+                        {canShowCompanyDetails && (
+                            <div className="w-full lg:w-80 flex-shrink-0">
+                                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:sticky lg:top-6">
+                                    <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-2 bg-slate-50/50">
+                                        <Info className="w-4 h-4 text-slate-500" />
+                                        <h2 className="font-bold text-slate-900 text-sm">关于我们</h2>
+                                    </div>
+                                    <div className="p-4 lg:max-h-[400px] lg:overflow-y-auto custom-scrollbar">
+                                        <div className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">
+                                            {companyInfo?.description || '暂无简介'}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
 
                     {/* Job Listings - Full Width */}

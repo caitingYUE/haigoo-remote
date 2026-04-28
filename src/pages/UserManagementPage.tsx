@@ -19,7 +19,11 @@ import {
   TrendingUp,
   Clock,
   Bookmark,
-  XCircle
+  XCircle,
+  Lock,
+  Unlock,
+  Minus,
+  Plus
 } from 'lucide-react'
 import type { User } from '../types/auth-types'
 import { useAuth } from '../contexts/AuthContext'
@@ -38,6 +42,13 @@ const MEMBER_DURATION_DAYS: Record<'trial_week' | 'quarter' | 'year', number> = 
   quarter: 90,
   year: 365
 }
+
+const DEFAULT_FREE_WEBSITE_APPLY_LIMIT = 20
+const DEFAULT_FREE_REFERRAL_LIMIT = 3
+
+type EntitlementKey = 'website_apply' | 'referral'
+
+type EntitlementBaseline = Record<EntitlementKey, number>
 
 function formatDateTimeInputValue(value?: string | null) {
   if (!value) return ''
@@ -81,6 +92,42 @@ function getQuickMemberStart(kind: 'now' | 'tomorrow') {
   return date.toISOString()
 }
 
+function getUserFreeWebsiteApplyLimit(user?: User | null) {
+  return Math.max(0, Number(user?.freeWebsiteApplyLimit ?? DEFAULT_FREE_WEBSITE_APPLY_LIMIT) || 0)
+}
+
+function getUserFreeWebsiteApplyCount(user?: User | null) {
+  return Math.max(0, Number(user?.freeWebsiteApplyCount ?? 0) || 0)
+}
+
+function getUserFreeReferralLimit(user?: User | null) {
+  return Math.max(0, Number(user?.freeReferralLimit ?? DEFAULT_FREE_REFERRAL_LIMIT) || 0)
+}
+
+function getUserFreeReferralCount(user?: User | null) {
+  return Math.max(0, Number(user?.freeReferralCount ?? 0) || 0)
+}
+
+function isActiveMemberUser(user?: User | null) {
+  if (!user) return false
+  if (user.roles?.admin) return true
+  if (user.memberStatus !== 'active') return false
+  if (user.memberCycleStartAt) {
+    const startAt = new Date(user.memberCycleStartAt)
+    if (!Number.isNaN(startAt.getTime()) && startAt > new Date()) return false
+  }
+  if (!user.memberExpireAt) return true
+  const expireAt = new Date(user.memberExpireAt)
+  return !Number.isNaN(expireAt.getTime()) && expireAt > new Date()
+}
+
+function formatEntitlementSummary(user: User, key: EntitlementKey) {
+  if (isActiveMemberUser(user)) return '无限次'
+  const used = key === 'website_apply' ? getUserFreeWebsiteApplyCount(user) : getUserFreeReferralCount(user)
+  const limit = key === 'website_apply' ? getUserFreeWebsiteApplyLimit(user) : getUserFreeReferralLimit(user)
+  return `${used}/${limit}`
+}
+
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
@@ -108,6 +155,14 @@ export default function UserManagementPage() {
   const [editMemberExpireAt, setEditMemberExpireAt] = useState('')
   const [editMemberScheduleDirty, setEditMemberScheduleDirty] = useState(false)
   const [memberPlanDurations, setMemberPlanDurations] = useState(MEMBER_DURATION_DAYS)
+  const [entitlementsUnlocked, setEntitlementsUnlocked] = useState(false)
+  const [entitlementPassword, setEntitlementPassword] = useState('')
+  const [entitlementUnlockError, setEntitlementUnlockError] = useState('')
+  const [entitlementBaseline, setEntitlementBaseline] = useState<EntitlementBaseline>({
+    website_apply: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+    referral: DEFAULT_FREE_REFERRAL_LIMIT
+  })
+  const [updatingEntitlementKey, setUpdatingEntitlementKey] = useState<EntitlementKey | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -264,6 +319,14 @@ export default function UserManagementPage() {
     setEditMemberCycleStartAt(initialStartAt)
     setEditMemberExpireAt(user.memberExpireAt || '')
     setEditMemberScheduleDirty(false)
+    setEntitlementsUnlocked(false)
+    setEntitlementPassword('')
+    setEntitlementUnlockError('')
+    setEntitlementBaseline({
+      website_apply: getUserFreeWebsiteApplyLimit(user),
+      referral: getUserFreeReferralLimit(user)
+    })
+    setUpdatingEntitlementKey(null)
     trackingService.track('admin_user_edit_open', {
       page_key: 'admin_user_management',
       module: 'admin_user_management',
@@ -343,6 +406,68 @@ export default function UserManagementPage() {
     }
   }
 
+  const unlockEntitlementEditing = () => {
+    if (entitlementPassword !== '123') {
+      setEntitlementUnlockError('解锁密码错误')
+      return
+    }
+    if (editingUser) {
+      setEntitlementBaseline({
+        website_apply: getUserFreeWebsiteApplyLimit(editingUser),
+        referral: getUserFreeReferralLimit(editingUser)
+      })
+    }
+    setEntitlementsUnlocked(true)
+    setEntitlementUnlockError('')
+  }
+
+  const updateEntitlementLimit = async (key: EntitlementKey, delta: number) => {
+    if (!editingUser || !entitlementsUnlocked) return
+    try {
+      setUpdatingId(editingUser.user_id)
+      setUpdatingEntitlementKey(key)
+      const resp = await fetch('/api/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          action: 'update_entitlement_limit',
+          id: editingUser.user_id,
+          entitlementKey: key,
+          delta,
+          unlockPassword: entitlementPassword,
+          reason: 'admin_user_management'
+        })
+      })
+      const data = await resp.json().catch(() => ({}))
+      if (!resp.ok || !data.success || !data.user) {
+        alert(data.error || '权益次数更新失败')
+        return
+      }
+
+      trackingService.track('admin_user_entitlement_update', {
+        page_key: 'admin_user_management',
+        module: 'admin_user_management',
+        source_key: 'admin_user_management',
+        entity_type: 'user',
+        entity_id: editingUser.user_id,
+        entitlement_key: key,
+        delta,
+        old_limit: data.entitlement?.oldLimit,
+        new_limit: data.entitlement?.newLimit
+      })
+
+      const nextUser = { ...editingUser, ...data.user } as User
+      setEditingUser(nextUser)
+      setUsers(prev => prev.map(u => (u.user_id === editingUser.user_id ? { ...u, ...data.user } as User : u)))
+    } catch (error) {
+      console.error('[UserManagement] update entitlement failed:', error)
+      alert('权益次数更新失败，请稍后重试')
+    } finally {
+      setUpdatingEntitlementKey(null)
+      setUpdatingId(null)
+    }
+  }
+
   const deleteUser = async (userId: string) => {
     if (!confirm('确认删除该用户？')) return
     try {
@@ -376,7 +501,7 @@ export default function UserManagementPage() {
       result_count: filteredUsers.length
     })
     const csv = [
-      ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '状态'].join(','),
+      ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '直申次数', '内推次数', '状态'].join(','),
       ...filteredUsers.map(user => [
         user.user_id,
         user.username,
@@ -385,6 +510,8 @@ export default function UserManagementPage() {
         user.emailVerified ? '是' : '否',
         user.createdAt,
         user.lastLoginAt || '-',
+        formatEntitlementSummary(user, 'website_apply'),
+        formatEntitlementSummary(user, 'referral'),
         user.status
       ].join(','))
     ].join('\n')
@@ -394,6 +521,65 @@ export default function UserManagementPage() {
     link.href = URL.createObjectURL(blob)
     link.download = `users_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
+  }
+
+  const renderEntitlementControl = (key: EntitlementKey, label: string) => {
+    if (!editingUser) return null
+    const isMemberEntitlement = isActiveMemberUser(editingUser)
+    const used = key === 'website_apply' ? getUserFreeWebsiteApplyCount(editingUser) : getUserFreeReferralCount(editingUser)
+    const limit = key === 'website_apply' ? getUserFreeWebsiteApplyLimit(editingUser) : getUserFreeReferralLimit(editingUser)
+    const remaining = Math.max(0, limit - used)
+    const isBusy = updatingEntitlementKey === key
+    const canEdit = entitlementsUnlocked && !isMemberEntitlement && !isBusy && updatingId !== editingUser.user_id
+
+    return (
+      <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <div className="text-sm font-semibold text-slate-900">{label}</div>
+            <div className="mt-1 text-xs text-slate-500">
+              {isMemberEntitlement ? '会员权益：无限次' : `已用 ${used} / 上限 ${limit} / 剩余 ${remaining}`}
+            </div>
+            {entitlementsUnlocked && (
+              <div className="mt-1 text-xs text-amber-700">
+                修改前：{entitlementBaseline[key]}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              title={`减少${label}`}
+              disabled={!canEdit || limit <= used}
+              onClick={() => updateEntitlementLimit(key, -1)}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border ${
+                !canEdit || limit <= used
+                  ? 'border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed'
+                  : 'border-red-200 bg-white text-red-600 hover:bg-red-50'
+              }`}
+            >
+              <Minus className="h-4 w-4" />
+            </button>
+            <div className="min-w-[44px] rounded-lg border border-slate-200 bg-white px-2 py-1 text-center text-sm font-semibold text-slate-900">
+              {isMemberEntitlement ? '∞' : limit}
+            </div>
+            <button
+              type="button"
+              title={`增加${label}`}
+              disabled={!canEdit}
+              onClick={() => updateEntitlementLimit(key, 1)}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border ${
+                !canEdit
+                  ? 'border-slate-200 bg-slate-100 text-slate-300 cursor-not-allowed'
+                  : 'border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50'
+              }`}
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -537,18 +723,19 @@ export default function UserManagementPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full table-fixed">
+              <table className="w-full min-w-[1320px] table-fixed">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
-                    <th className="w-[26%] px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
-                    <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
-                    <th className="w-[8%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
-                    <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
-                    <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
-                    <th className="w-[13%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">会员信息</th>
-                    <th className="w-[7%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">收藏</th>
-                    <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
-                    <th className="w-[18%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
+                    <th className="w-[22%] px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
+                    <th className="w-[11%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
+                    <th className="w-[7%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
+                    <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
+                    <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
+                    <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">会员信息</th>
+                    <th className="w-[10%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">权益次数</th>
+                    <th className="w-[6%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">收藏</th>
+                    <th className="w-[5%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">状态</th>
+                    <th className="w-[16%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">操作</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -643,6 +830,18 @@ export default function UserManagementPage() {
                           )
                         })()}
                       </td>
+                      <td className="px-4 py-4 text-xs text-slate-600">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-400">直申</span>
+                            <span className="font-semibold text-slate-800">{formatEntitlementSummary(user, 'website_apply')}</span>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-slate-400">内推</span>
+                            <span className="font-semibold text-slate-800">{formatEntitlementSummary(user, 'referral')}</span>
+                          </div>
+                        </div>
+                      </td>
                       <td className="px-4 py-4 text-sm text-slate-600">
                         <div className="flex items-center gap-1">
                           <Bookmark className="w-4 h-4 text-slate-400" />
@@ -718,7 +917,7 @@ export default function UserManagementPage() {
         >
           <div className="flex min-h-full items-center justify-center">
             <div
-              className="flex w-full max-w-2xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+              className="flex w-full max-w-3xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="border-b border-slate-200 px-6 py-4">
@@ -827,6 +1026,62 @@ export default function UserManagementPage() {
                     />
                   </div>
                 )}
+              </div>
+
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-900">用户权益次数</h4>
+                    <p className="mt-1 text-xs text-slate-500">解锁后调整，保留修改前数字。</p>
+                  </div>
+                  {entitlementsUnlocked ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                      <Unlock className="h-3.5 w-3.5" />
+                      已解锁
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      <Lock className="h-3.5 w-3.5" />
+                      未解锁
+                    </span>
+                  )}
+                </div>
+
+                {!entitlementsUnlocked && (
+                  <div className="mb-3 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center">
+                    <input
+                      type="password"
+                      value={entitlementPassword}
+                      onChange={(e) => {
+                        setEntitlementPassword(e.target.value)
+                        setEntitlementUnlockError('')
+                      }}
+                      placeholder="密码"
+                      className="min-w-0 flex-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      disabled={!isSuperAdmin}
+                      onClick={unlockEntitlementEditing}
+                      className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-2 text-sm font-medium ${
+                        isSuperAdmin
+                          ? 'bg-slate-900 text-white hover:bg-slate-800'
+                          : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      }`}
+                    >
+                      <Unlock className="h-4 w-4" />
+                      解锁
+                    </button>
+                    {entitlementUnlockError && (
+                      <div className="text-xs text-red-600">{entitlementUnlockError}</div>
+                    )}
+                  </div>
+                )}
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  {renderEntitlementControl('website_apply', '直申次数')}
+                  {renderEntitlementControl('referral', '内推次数')}
+                </div>
               </div>
 
               {/* 求职期望展示 */}

@@ -401,6 +401,11 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                       }`}>
                       {user?.username || '用户'}
                     </span>
+                    {!isMember && (
+                      <span className="hidden sm:inline-flex h-5 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
+                        FREE
+                      </span>
+                    )}
                     <ChevronDown
                       className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
@@ -434,7 +439,14 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                             </div>
                           )}
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-slate-900 truncate">{user?.username || '用户'}</p>
+                            <div className="flex min-w-0 items-center gap-2">
+                              <p className="truncate text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                              {!isMember && (
+                                <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
+                                  FREE
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-slate-500 truncate" title={user?.profile?.title || user?.email}>{user?.profile?.title || user?.email}</p>
                           </div>
                         </div>
@@ -568,8 +580,15 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                           <User className="h-5 w-5 text-white" aria-hidden="true" />
                         </div>
                       )}
-                      <div>
-                        <p className="text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <p className="truncate text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                          {!isMember && (
+                            <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
+                              FREE
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-slate-500">{user?.profile?.title || user?.email}</p>
                       </div>
                     </div>

@@ -72,6 +72,14 @@ export interface User {
     canAccessTrustedCompaniesPage: boolean;
   };
 
+  // 免费用户权益次数（后台管理）
+  freeWebsiteApplyCount?: number;
+  freeWebsiteApplyLimit?: number;
+  freeWebsiteApplyRemaining?: number;
+  freeReferralCount?: number;
+  freeReferralLimit?: number;
+  freeReferralRemaining?: number;
+
   // 求职偏好
   jobPreferences?: {
     jobTypes: string[]

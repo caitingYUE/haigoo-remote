@@ -132,15 +132,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const showReferralModule = displayReferralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
     // Free usage quotas for non-members (lifetime cumulative, stored in DB)
-    const FREE_FEATURE_LIMIT = 3
-    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(FREE_FEATURE_LIMIT) // conservative default → locked until loaded
-    const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(FREE_FEATURE_LIMIT)   // conservative default
-    const [referralUsageCount, setReferralUsageCount] = useState(FREE_FEATURE_LIMIT)        // conservative default
+    const DEFAULT_FREE_FEATURE_LIMIT = 3
+    const [companyInfoUsageCount, setCompanyInfoUsageCount] = useState(DEFAULT_FREE_FEATURE_LIMIT) // conservative default -> locked until loaded
+    const [emailApplyUsageCount, setEmailApplyUsageCount] = useState(DEFAULT_FREE_FEATURE_LIMIT)   // conservative default
+    const [referralUsageCount, setReferralUsageCount] = useState(DEFAULT_FREE_FEATURE_LIMIT)        // conservative default
+    const [referralFreeLimit, setReferralFreeLimit] = useState(DEFAULT_FREE_FEATURE_LIMIT)
     const [unlockedCompanies, setUnlockedCompanies] = useState<string[]>([])
-    const WEBSITE_APPLY_FREE_LIMIT = 20
-    const [websiteApplyUsageCount, setWebsiteApplyUsageCount] = useState(WEBSITE_APPLY_FREE_LIMIT)
+    const DEFAULT_WEBSITE_APPLY_FREE_LIMIT = 20
+    const [websiteApplyUsageCount, setWebsiteApplyUsageCount] = useState(DEFAULT_WEBSITE_APPLY_FREE_LIMIT)
+    const [websiteApplyFreeLimit, setWebsiteApplyFreeLimit] = useState(DEFAULT_WEBSITE_APPLY_FREE_LIMIT)
     const [unlockedWebsiteApplyJobIds, setUnlockedWebsiteApplyJobIds] = useState<string[]>([])
-    const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(FREE_FEATURE_LIMIT)
+    const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(DEFAULT_FREE_FEATURE_LIMIT)
     const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
     const [unlockingMatchAnalysis, setUnlockingMatchAnalysis] = useState(false)
     const [sharedFreeUsageReady, setSharedFreeUsageReady] = useState(false)
@@ -213,7 +215,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (hasTranslation) expose('translation')
         const hasJobScopedEmailPath = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
         if (job.url || job.sourceUrl || !hasJobScopedEmailPath) expose('website_apply')
-        if (job.company || companyInfo?.name) expose('company_info', {
+        if (isAuthenticated && (job.company || companyInfo?.name)) expose('company_info', {
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
@@ -225,7 +227,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
-    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts, companyUsesCustomReferralContacts])
+    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts, companyUsesCustomReferralContacts, isAuthenticated])
 
     // Load free feature usage counts from server (company info + email apply + referral)
     useEffect(() => {
@@ -234,16 +236,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             if (!token) return;
             const headers = { 'Authorization': `Bearer ${token}` };
             Promise.all([
-                fetch('/api/users?resource=free-usage&type=company-info', { headers }).then(r => r.json()),
+                fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=website-apply', { headers }).then(r => r.json()),
                 fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
-            ]).then(([ciData, waData, maData]) => {
-                if (ciData.success) {
-                    syncSharedFreeAccessState(ciData.usage, ciData.unlocked_companies || []);
+            ]).then(([sharedData, waData, maData]) => {
+                if (sharedData.success) {
+                    syncSharedFreeAccessState(sharedData.usage, sharedData.unlocked_companies || [], sharedData.limit);
                     setSharedFreeUsageReady(true)
                 }
                 if (waData.success) {
-                    syncWebsiteApplyState(waData.usage, waData.unlocked_job_ids || [])
+                    syncWebsiteApplyState(waData.usage, waData.unlocked_job_ids || [], waData.limit)
                     setWebsiteApplyUsageReady(true)
                 }
                 if (maData.success) {
@@ -331,21 +333,24 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const showHighMatchDetails = isHighDisplayBand && hasHighTrueScore && matchLevel === 'high'
     const matchDetails = job?.matchDetails
     const isMatchAnalysisUnlocked = isMember || unlockedMatchAnalysisJobIds.includes(String(job?.id || ''))
-    const canUseMatchAnalysisTrial = isAuthenticated && !isMember && !isMatchAnalysisUnlocked && matchAnalysisUsageCount < FREE_FEATURE_LIMIT
+    const canUseMatchAnalysisTrial = isAuthenticated && !isMember && !isMatchAnalysisUnlocked && matchAnalysisUsageCount < DEFAULT_FREE_FEATURE_LIMIT
     const matchDetailsLocked = Boolean(job?.matchDetailsLocked) && !isMatchAnalysisUnlocked
 
-    const syncSharedFreeAccessState = (usage: number, unlockedCompaniesList: string[] = []) => {
+    const syncSharedFreeAccessState = (usage: number, unlockedCompaniesList: string[] = [], limit?: number) => {
         const normalizedUsage = Math.max(0, Number(usage) || 0)
         const normalizedUnlocked = Array.isArray(unlockedCompaniesList) ? unlockedCompaniesList : []
+        const normalizedLimit = Number.isFinite(Number(limit)) ? Math.max(0, Number(limit)) : DEFAULT_FREE_FEATURE_LIMIT
 
         setCompanyInfoUsageCount(normalizedUsage)
         setEmailApplyUsageCount(normalizedUsage)
         setReferralUsageCount(normalizedUsage)
+        setReferralFreeLimit(normalizedLimit)
         setUnlockedCompanies(normalizedUnlocked)
     }
 
-    const syncWebsiteApplyState = (usage: number, unlockedJobIds: string[] = []) => {
+    const syncWebsiteApplyState = (usage: number, unlockedJobIds: string[] = [], limit?: number) => {
         setWebsiteApplyUsageCount(Math.max(0, Number(usage) || 0))
+        setWebsiteApplyFreeLimit(Number.isFinite(Number(limit)) ? Math.max(0, Number(limit)) : DEFAULT_WEBSITE_APPLY_FREE_LIMIT)
         setUnlockedWebsiteApplyJobIds(Array.isArray(unlockedJobIds) ? unlockedJobIds.map((item) => String(item)) : [])
     }
 
@@ -411,7 +416,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
             setMatchAnalysisUsageCount(Number(data.usage) || 0)
             setUnlockedMatchAnalysisJobIds(Array.isArray(data.unlocked_job_ids) ? data.unlocked_job_ids.map((item: any) => String(item)) : [])
-            showSuccess('已解锁本次 AI 匹配分析', `本账号还可免费体验 ${Math.max(0, FREE_FEATURE_LIMIT - (Number(data.usage) || 0))} 次`)
+            showSuccess('已解锁本次 AI 匹配分析', `本账号还可免费体验 ${Math.max(0, DEFAULT_FREE_FEATURE_LIMIT - (Number(data.usage) || 0))} 次`)
         } catch (error: any) {
             showError('解锁失败', error?.message || '请稍后重试')
         } finally {
@@ -478,7 +483,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
         const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
-        const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
+        const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < websiteApplyFreeLimit
         const canUseWebsiteApply = isMember || websiteApplyUnlocked || canWebsiteApplyFree
 
         if (hasWebsiteApply) {
@@ -493,7 +498,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (!showReferralModule && hasEmailApply) {
             const accessCompanyName = String(job.company || companyInfo?.name || '').trim()
             const isCompanyAccessUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(accessCompanyName))
-            const canEmailFree = !isMember && !isMemberRestrictedJob && isAuthenticated && !isCompanyAccessUnlocked && emailApplyUsageCount < FREE_FEATURE_LIMIT
+            const canEmailFree = !isMember && !isMemberRestrictedJob && isAuthenticated && !isCompanyAccessUnlocked && emailApplyUsageCount < DEFAULT_FREE_FEATURE_LIMIT
             const canUseEmailApply = isMember || isCompanyAccessUnlocked || canEmailFree
 
             if (!canUseEmailApply) {
@@ -682,8 +687,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             });
             const data = await res.json();
             if (data.success) {
-                syncSharedFreeAccessState(data.usage, data.unlocked_companies || []);
-                showSuccess('已解锁该企业人脉', `当前还可免费查看 ${Math.max(0, FREE_FEATURE_LIMIT - (Number(data.usage) || 0))} 次`)
+                syncSharedFreeAccessState(data.usage, data.unlocked_companies || [], data.limit);
+                showSuccess('已解锁该企业人脉', `当前还可免费查看 ${Math.max(0, (Number(data.limit) || referralFreeLimit) - (Number(data.usage) || 0))} 次`)
                 if (data.remaining === 0) showInfo('免费次数已用完', '升级会员解锁全部人脉');
             } else {
                 showError('解锁失败', data.error || '服务器错误');
@@ -818,7 +823,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 return payload
             })
 
-            syncWebsiteApplyState(data.usage, data.unlocked_job_ids || [])
+            syncWebsiteApplyState(data.usage, data.unlocked_job_ids || [], data.limit)
             return true
         } catch (error) {
             console.error('[free-usage] website-apply consume failed:', error)
@@ -826,7 +831,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             const payload = typeof error === 'object' && error && 'payload' in error ? (error as any).payload : null
 
             if (payload && typeof payload.usage !== 'undefined') {
-                syncWebsiteApplyState(payload.usage, payload.unlocked_job_ids || [])
+                syncWebsiteApplyState(payload.usage, payload.unlocked_job_ids || [], payload.limit)
             }
 
             if (status === 403) {
@@ -975,6 +980,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const handleCompanyClick = () => {
+        if (!isAuthenticated) {
+            promptLogin('登录后可查看企业信息\n\n是否前往登录？')
+            return
+        }
         // Navigate to company detail page using company name as identifier
         const companyName = encodeURIComponent(job.company || '')
         navigate(`/companies/${companyName}`)
@@ -986,12 +995,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const companyOpenJobCount = companyOpenJobsCount ?? trustedCompanyJobCount
     const companyDescription = String(companyInfo?.description || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
     const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
-    const websiteApplyFreeRemaining = Math.max(0, WEBSITE_APPLY_FREE_LIMIT - websiteApplyUsageCount)
-    const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < WEBSITE_APPLY_FREE_LIMIT
+    const websiteApplyFreeRemaining = Math.max(0, websiteApplyFreeLimit - websiteApplyUsageCount)
+    const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < websiteApplyFreeLimit
     const shouldShowWebsiteApplyTrialStatus = Boolean(job.url || job.sourceUrl) && isAuthenticated && !isMember && !isMemberRestrictedJob && websiteApplyUsageReady
     const refCompanyName = String(job.company || companyInfo?.name || '').trim()
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
-    const referralFreeRemaining = Math.max(0, FREE_FEATURE_LIMIT - referralUsageCount)
+    const referralFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
     const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
     const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
     const hasAnyEmailPath = hasEmailApply || showReferralModule
@@ -1010,17 +1019,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (isReferralCompanyUnlocked) return 'unlocked'
         if (!isAuthenticated) return 'guest'
         if (isMemberRestrictedJob) return 'member_only'
-        if (referralUsageCount < FREE_FEATURE_LIMIT) return 'free_available'
+        if (referralUsageCount < referralFreeLimit) return 'free_available'
         return 'free_exhausted'
     }
     const referralAccessMode = getReferralAccessMode()
     const hasMultipleReferralContacts = displayReferralContacts.length > 1
     const shouldShowUnifiedReferralUnlock = hasMultipleReferralContacts && referralAccessMode !== 'unlocked'
     const getUnifiedReferralUnlockLabel = () => {
-        if (referralAccessMode === 'guest') return '登录查看'
+        if (referralAccessMode === 'guest') return '帮我内推（需登录）'
         if (referralAccessMode === 'member_only') return 'VIP 解锁'
-        if (referralAccessMode === 'free_available') return `一键解锁 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
-        if (referralAccessMode === 'free_exhausted') return `一键解锁 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+        if (referralAccessMode === 'free_available') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
+        if (referralAccessMode === 'free_exhausted') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
         return ''
     }
     const handleUnifiedReferralUnlock = (event?: React.MouseEvent) => {
@@ -1043,6 +1052,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }
     const getApplyButtonLabel = () => {
+        if (!isAuthenticated) return '前往申请（需登录）'
+
         switch (websiteApplyState) {
             case 'login_required':
                 return '前往申请（需登录）'
@@ -1050,13 +1061,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 if (isMemberRestrictedJob) return '前往申请 · VIP'
                 if (websiteApplyUnlocked && !isMember) return '前往申请（已解锁）'
                 return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
-                    ? `前往申请 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
+                    ? `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
                     : '前往申请'
             case 'website_locked_member':
                 if (isMemberRestrictedJob) return '前往申请 · VIP'
-                return `前往申请 ${websiteApplyFreeRemaining}/${WEBSITE_APPLY_FREE_LIMIT}`
+                return `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
             case 'email_only':
-                if (!isAuthenticated) return '仅支持邮箱申请（需登录）'
                 if (isReferralCompanyUnlocked && !isMember) return '仅支持邮箱申请（已解锁）'
                 return isMemberRestrictedJob ? '仅支持邮箱申请 · VIP' : '仅支持邮箱申请'
             default:
@@ -1064,6 +1074,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }
     const getApplyButtonClassName = () => {
+        if (!isAuthenticated && websiteApplyState !== 'unavailable') {
+            return 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
+        }
+
         switch (websiteApplyState) {
             case 'login_required':
             case 'website_available':
@@ -1372,14 +1386,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         : getReferralEmailActionLabel(contact)
                                                     : shouldShowUnifiedReferralUnlock
                                                         ? getUnifiedReferralUnlockLabel()
-                                                        : referralAccessMode === 'guest'
-                                                            ? '登录查看'
+                                                            : referralAccessMode === 'guest'
+                                                                ? '帮我内推（需登录）'
                                                             : referralAccessMode === 'member_only'
                                                                 ? 'VIP 解锁'
                                                                 : referralAccessMode === 'free_exhausted'
-                                                                    ? `一键解锁 ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+                                                                    ? `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
                                                                     : shouldShowReferralTrialCount
-                                                                        ? `${getReferralEmailActionLabel(contact)} ${referralFreeRemaining}/${FREE_FEATURE_LIMIT}`
+                                                                        ? `${getReferralEmailActionLabel(contact)} ${referralFreeRemaining}/${referralFreeLimit}`
                                                                         : getReferralEmailActionLabel(contact)
 
                                                 return (
@@ -1479,7 +1493,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 matchDetailsLocked={matchDetailsLocked}
                                 isMember={isMember}
                                 canUseFreeTrial={canUseMatchAnalysisTrial}
-                                freeTrialRemaining={Math.max(0, FREE_FEATURE_LIMIT - matchAnalysisUsageCount)}
+                                freeTrialRemaining={Math.max(0, DEFAULT_FREE_FEATURE_LIMIT - matchAnalysisUsageCount)}
                                 isUnlocking={unlockingMatchAnalysis}
                                 onUnlockFreeTrial={handleUnlockMatchAnalysis}
                                 onShowUpgrade={() => openUpgradeModal('match_analysis')}
@@ -1531,8 +1545,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             className="bg-gradient-to-br from-white to-slate-50/60 border border-slate-200 rounded-[24px] p-5 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer group/card"
                         >
                             <div className="flex items-start gap-4 mb-4">
-                                {job.logo ? (
-                                    <div className="w-14 h-14 rounded-xl bg-white border border-slate-100 flex items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1 group-hover/card:scale-105 transition-transform duration-300">
+                                {isAuthenticated && (job.logo ? (
+                                    <div className="hidden sm:flex w-14 h-14 rounded-xl bg-white border border-slate-100 items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1 group-hover/card:scale-105 transition-transform duration-300">
                                         <img
                                             src={job.logo}
                                             alt={job.company}
@@ -1540,17 +1554,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             onError={(e) => {
                                                 (e.target as HTMLImageElement).style.display = 'none';
                                                 (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
-                                                (e.target as HTMLImageElement).parentElement!.className = "w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300";
+                                                (e.target as HTMLImageElement).parentElement!.className = "hidden sm:flex w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300";
                                             }}
                                         />
                                     </div>
                                 ) : (
-                                    <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300">
+                                    <div className="hidden sm:flex w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300">
                                         <span className="text-white font-bold text-xl">
                                             {(job.company || '未知公司').charAt(0)}
                                         </span>
                                     </div>
-                                )}
+                                ))}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="min-w-0 flex-1">
@@ -1560,57 +1574,68 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 </h3>
                                             </div>
                                         </div>
-                                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 text-xs font-semibold whitespace-nowrap">
-                                            <Briefcase className="w-3.5 h-3.5" />
-                                            <span>{companyOpenJobCount != null ? `${companyOpenJobCount} 个在招岗位` : '在招岗位统计中'}</span>
-                                        </div>
+                                        {isAuthenticated ? (
+                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 text-xs font-semibold whitespace-nowrap">
+                                                <Briefcase className="w-3.5 h-3.5" />
+                                                <span>{companyOpenJobCount != null ? `${companyOpenJobCount} 个在招岗位` : '在招岗位统计中'}</span>
+                                            </div>
+                                        ) : (
+                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold whitespace-nowrap">
+                                                登录查看
+                                                <ChevronRight className="w-3.5 h-3.5" />
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className="mt-2">
-                                        <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                    <Users className="w-3 h-3 text-slate-500" />
+                                    {isAuthenticated ? (
+                                        <>
+                                            <div className="mt-2">
+                                                <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                                            <Users className="w-3 h-3 text-slate-500" />
+                                                        </div>
+                                                        <span className="truncate font-medium text-slate-600">
+                                                            {companyInfo?.employeeCount || '规模未知'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                                            <MapPin className="w-3 h-3 text-slate-500" />
+                                                        </div>
+                                                        <span className="truncate font-medium text-slate-600" title={companyInfo?.address || '总部未知'}>
+                                                            {companyInfo?.address || '总部未知'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                                            <Calendar className="w-3 h-3 text-slate-500" />
+                                                        </div>
+                                                        <span className="font-medium text-slate-600">
+                                                            {companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
+                                                            <Building2 className="w-3 h-3 text-slate-500" />
+                                                        </div>
+                                                        <span className="font-medium text-slate-600">
+                                                            {companyIndustryLabel}
+                                                        </span>
+                                                    </div>
                                                 </div>
-                                                <span className="truncate font-medium text-slate-600">
-                                                    {companyInfo?.employeeCount || '规模未知'}
-                                                </span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                    <MapPin className="w-3 h-3 text-slate-500" />
-                                                </div>
-                                                <span className="truncate font-medium text-slate-600" title={companyInfo?.address || '总部未知'}>
-                                                    {companyInfo?.address || '总部未知'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                    <Calendar className="w-3 h-3 text-slate-500" />
-                                                </div>
-                                                <span className="font-medium text-slate-600">
-                                                    {companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                    <Building2 className="w-3 h-3 text-slate-500" />
-                                                </div>
-                                                <span className="font-medium text-slate-600">
-                                                    {companyIndustryLabel}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <p className="mt-4 text-sm leading-7 text-slate-600 line-clamp-3">
-                                        {companyDescription}
-                                    </p>
+                                            <p className="mt-4 text-sm leading-7 text-slate-600 line-clamp-3">
+                                                {companyDescription}
+                                            </p>
+                                        </>
+                                    ) : null}
                                 </div>
                             </div>
 
                             <div className="mt-3 flex items-center justify-end px-1 text-xs text-slate-500">
                                 <div className="flex items-center gap-1 font-medium text-indigo-600 transition-transform group-hover:translate-x-1">
-                                    查看详情
+                                    {isAuthenticated ? '查看详情' : '登录查看'}
                                     <ChevronRight className="w-3.5 h-3.5" />
                                 </div>
                             </div>
