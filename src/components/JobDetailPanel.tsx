@@ -1015,6 +1015,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return 'unavailable'
     }
     const websiteApplyState = resolveWebsiteApplyState()
+    const lockedCompanyPreviewFields = [
+        { label: '行业类型', widthClass: 'w-20' },
+        { label: '官方网站', widthClass: 'w-28' },
+        { label: '团队规模', widthClass: 'w-16' },
+        { label: '总部地区', widthClass: 'w-24' },
+    ]
     const getReferralAccessMode = (): ReferralAccessMode => {
         if (isReferralCompanyUnlocked) return 'unlocked'
         if (!isAuthenticated) return 'guest'
@@ -1629,16 +1635,33 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 {companyDescription}
                                             </p>
                                         </>
-                                    ) : null}
+                                    ) : (
+                                        <div className="mt-3">
+                                            <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-white p-3 text-xs shadow-sm sm:grid-cols-4">
+                                                {lockedCompanyPreviewFields.map((field) => (
+                                                    <div key={field.label} className="min-w-0">
+                                                        <div className="font-medium text-slate-400">{field.label}</div>
+                                                        <div className={`mt-2 h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${field.widthClass}`} aria-hidden="true" />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="mt-3 space-y-2 rounded-xl border border-slate-100 bg-white p-3">
+                                                <div className="h-3.5 w-11/12 rounded-full bg-slate-300/80 blur-[2px]" aria-hidden="true" />
+                                                <div className="h-3.5 w-8/12 rounded-full bg-slate-200/90 blur-[2px]" aria-hidden="true" />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="mt-3 flex items-center justify-end px-1 text-xs text-slate-500">
-                                <div className="flex items-center gap-1 font-medium text-indigo-600 transition-transform group-hover:translate-x-1">
-                                    {isAuthenticated ? '查看详情' : '登录查看'}
-                                    <ChevronRight className="w-3.5 h-3.5" />
+                            {isAuthenticated && (
+                                <div className="mt-3 flex items-center justify-end px-1 text-xs text-slate-500">
+                                    <div className="flex items-center gap-1 font-medium text-indigo-600 transition-transform group-hover:translate-x-1">
+                                        查看详情
+                                        <ChevronRight className="w-3.5 h-3.5" />
+                                    </div>
                                 </div>
-                            </div>
+                            )}
                         </div>
                     </section>
 

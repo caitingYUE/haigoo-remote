@@ -969,13 +969,13 @@ const MembershipPage: React.FC = () => {
 
          {/* Payment Modal */}
          {showPaymentModal && selectedPlan && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-2 sm:items-center sm:p-4">
                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowPaymentModal(false)}></div>
 
-               <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-300 scale-100 flex flex-col md:flex-row max-h-[90vh] md:max-h-[600px]">
+               <div className="relative my-2 flex max-h-[calc(100dvh-1rem)] w-full max-w-4xl scale-100 animate-in flex-col overflow-y-auto rounded-2xl bg-white shadow-2xl fade-in zoom-in duration-300 sm:my-4 sm:rounded-3xl md:max-h-[600px] md:flex-row md:overflow-hidden">
                   {/* Left Side: Order Details */}
-                  <div className="w-full md:w-5/12 bg-slate-50 border-r border-slate-100 p-8 flex flex-col">
-                     <div className="flex justify-between items-center mb-8 md:hidden">
+                  <div className="flex w-full flex-shrink-0 flex-col border-b border-slate-100 bg-slate-50 p-4 sm:p-6 md:w-5/12 md:border-b-0 md:border-r md:p-8">
+                     <div className="mb-5 flex items-center justify-between md:hidden">
                         <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                            <Zap className="w-5 h-5 text-indigo-500 fill-indigo-500" />
                            确认订单
@@ -988,26 +988,26 @@ const MembershipPage: React.FC = () => {
                         </button>
                      </div>
 
-                     <div className="mb-10">
+                     <div className="mb-5 md:mb-10">
                         <p className="text-xs font-bold text-indigo-500 uppercase tracking-widest mb-2">订阅方案</p>
-                        <h4 className="font-bold text-slate-900 text-3xl mb-3 leading-tight">{selectedPlan.name}</h4>
+                        <h4 className="mb-3 text-2xl font-bold leading-tight text-slate-900 md:text-3xl">{selectedPlan.name}</h4>
                         <div className="flex items-baseline gap-1">
-                           <span className="text-4xl font-bold text-slate-900">¥{selectedPlan.price}</span>
+                           <span className="text-3xl font-bold text-slate-900 md:text-4xl">¥{selectedPlan.price}</span>
                            <span className="text-sm font-medium text-slate-500">/{selectedPlan.memberType === 'trial_week' ? '周' : (selectedPlan.duration_days > 90 ? '年' : '季度')}</span>
                         </div>
                      </div>
 
-                     <div className="flex-1">
+                     <div className="md:flex-1">
                         <p className="font-bold text-slate-900 mb-4 text-sm">选择支付方式</p>
-                        <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-2 md:block md:space-y-3">
                            <button
                               onClick={() => setPaymentMethod('alipay')}
-                              className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${paymentMethod === 'alipay'
+                              className={`w-full rounded-xl border-2 p-3 transition-all flex items-center gap-2 group md:gap-3 md:p-4 ${paymentMethod === 'alipay'
                                  ? 'border-blue-500 bg-blue-50/50 shadow-sm'
                                  : 'border-slate-200 bg-white hover:border-blue-200 hover:bg-slate-50'
                                  }`}
                            >
-                              <span className="w-10 h-10 rounded-full bg-[#1677FF] text-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#1677FF] text-white shadow-sm transition-transform group-hover:scale-110 md:h-10 md:w-10">
                                  <Zap className="w-5 h-5 fill-current" />
                               </span>
                               <span className="text-slate-900 font-bold text-sm flex-1 text-left">支付宝</span>
@@ -1016,12 +1016,12 @@ const MembershipPage: React.FC = () => {
 
                            <button
                               onClick={() => setPaymentMethod('wechat')}
-                              className={`w-full p-4 rounded-xl border-2 transition-all flex items-center gap-3 group ${paymentMethod === 'wechat'
+                              className={`w-full rounded-xl border-2 p-3 transition-all flex items-center gap-2 group md:gap-3 md:p-4 ${paymentMethod === 'wechat'
                                  ? 'border-green-500 bg-green-50/50 shadow-sm'
                                  : 'border-slate-200 bg-white hover:border-green-200 hover:bg-slate-50'
                                  }`}
                            >
-                              <span className="w-10 h-10 rounded-full bg-[#07C160] text-white flex items-center justify-center flex-shrink-0 shadow-sm group-hover:scale-110 transition-transform">
+                              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-[#07C160] text-white shadow-sm transition-transform group-hover:scale-110 md:h-10 md:w-10">
                                  <ShieldCheck className="w-5 h-5" />
                               </span>
                               <span className="text-slate-900 font-bold text-sm flex-1 text-left">微信支付</span>
@@ -1039,7 +1039,7 @@ const MembershipPage: React.FC = () => {
                   </div>
 
                   {/* Right Side: QR Code */}
-                  <div className="w-full md:w-7/12 bg-white p-6 md:p-10 flex flex-col items-center justify-center text-center relative overflow-y-auto">
+                  <div className="relative flex w-full flex-col items-center justify-start overflow-visible bg-white p-4 text-center sm:p-6 md:w-7/12 md:justify-center md:overflow-y-auto md:p-10">
                      <button
                         onClick={() => setShowPaymentModal(false)}
                         className="absolute top-4 right-4 w-8 h-8 hidden md:flex items-center justify-center rounded-full bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
@@ -1052,7 +1052,7 @@ const MembershipPage: React.FC = () => {
                            <img
                               src={currentPaymentInfo.imageUrl}
                               alt="Payment QR"
-                              className="w-40 h-40 object-contain rounded-lg"
+                              className="h-36 w-36 rounded-lg object-contain sm:h-40 sm:w-40"
                            />
                         </div>
                         <p className="text-slate-900 font-bold text-lg mb-1">{currentPaymentInfo.instruction}</p>
@@ -1077,16 +1077,18 @@ const MembershipPage: React.FC = () => {
                            </div>
                         </div>
 
-                        <button
-                           onClick={handlePaymentComplete}
-                           className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-base"
-                        >
-                           <CheckCircle2 className="w-5 h-5" />
-                           我已完成支付
-                        </button>
-                        <p className="text-[10px] text-slate-400 mt-3 font-medium">
-                           * 支付后通常在3min内生效（深夜除外）
-                        </p>
+                        <div className="sticky bottom-0 -mx-4 bg-white/95 px-4 pb-1 pt-3 backdrop-blur md:static md:mx-0 md:bg-transparent md:p-0 md:backdrop-blur-0">
+                           <button
+                              onClick={handlePaymentComplete}
+                              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2 active:scale-[0.98] text-base"
+                           >
+                              <CheckCircle2 className="w-5 h-5" />
+                              我已完成支付
+                           </button>
+                           <p className="text-[10px] text-slate-400 mt-3 font-medium">
+                              * 支付后通常在3min内生效（深夜除外）
+                           </p>
+                        </div>
 
                         <div className="mt-6 pt-6 border-t border-slate-100 md:hidden text-center">
                            <p className="text-xs text-slate-400">

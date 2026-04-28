@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
     Activity,
+    Briefcase,
     Brain,
     Crown,
     DollarSign,
@@ -101,6 +102,7 @@ interface DashboardData {
     };
     coreFunnels: {
         job: FunnelStep[];
+        jobBundle: FunnelStep[];
         monetization: FunnelStep[];
     };
     copilotDemand: {
@@ -169,6 +171,11 @@ const FUNNEL_DEFINITIONS: Record<string, string> = {
     apply_init_click: '点击申请入口的 UV。',
     apply_path_selected: '选择邮箱直申、内推、外链等申请路径的 UV。',
     apply_success_like: '申请成功信号，包含外链跳转、邮箱直申成功、内推提交成功。',
+    bundle_visit: '岗位合集详情页访问 UV/PV，以 view_job_bundle 为准。',
+    bundle_job_click: '在岗位合集页点击岗位卡片的 UV/PV。',
+    bundle_detail_view: '从合集页打开岗位详情弹窗或详情视图的 UV/PV。',
+    bundle_apply_click: '在合集链路内点击岗位申请入口的 UV/PV。',
+    bundle_apply_success: '合集链路内产生外链跳转、邮箱直申或内推提交的 UV/PV。',
     free_feature_exposure: '免费体验功能入口曝光 UV。',
     free_feature_click: '免费体验功能点击 UV。',
     consume_or_limit: '成功消耗免费额度，或触达免费上限的 UV。',
@@ -473,6 +480,18 @@ export default function AdminTrackingDashboard() {
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                                 {data.coreFunnels.job.map((step) => (
+                                    <FunnelCard key={step.stepId} step={step} />
+                                ))}
+                            </div>
+                        </Panel>
+
+                        <Panel
+                            title="岗位合集漏斗"
+                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 合集访问与申请`}
+                            icon={<Briefcase className="h-5 w-5 text-sky-600" />}
+                        >
+                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                {data.coreFunnels.jobBundle.map((step) => (
                                     <FunnelCard key={step.stepId} step={step} />
                                 ))}
                             </div>
