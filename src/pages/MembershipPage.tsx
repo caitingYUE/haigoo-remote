@@ -456,7 +456,7 @@ const MembershipPage: React.FC = () => {
       }
 
       setShowPaymentModal(false);
-      alert('感谢您的支付！权益将在24小时内开通。如有疑问请联系 hi@haigooremote.com');
+      alert('感谢您的支付！权益通常在3min内生效（深夜除外）。如有疑问请联系 hi@haigooremote.com');
       fetchStatus(); // Refresh status
       trackingService.track('complete_payment_client_claim', {
          page_key: 'membership',
@@ -1085,7 +1085,7 @@ const MembershipPage: React.FC = () => {
                            我已完成支付
                         </button>
                         <p className="text-[10px] text-slate-400 mt-3 font-medium">
-                           * 支付后权益将在 24 小时内开通
+                           * 支付后通常在3min内生效（深夜除外）
                         </p>
 
                         <div className="mt-6 pt-6 border-t border-slate-100 md:hidden text-center">
