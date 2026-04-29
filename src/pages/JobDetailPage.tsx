@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from '../components/ShareJobModal'
-import { decodeJobId } from '../utils/share-link-helper'
+import { decodeJobId, getJobDetailPath } from '../utils/share-link-helper'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -24,28 +24,28 @@ export default function JobDetailPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [showCopied, setShowCopied] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const resolvedJobId = id ? decodeJobId(id) : ''
 
   // Track visit source
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const source = params.get('source')
-    if (source === 'share' && id) {
-      trackingService.track('visit_via_share', { jobId: id })
+    if (source === 'share' && resolvedJobId) {
+      trackingService.track('visit_via_share', { jobId: resolvedJobId })
     }
-  }, [location.search, id])
+  }, [location.search, resolvedJobId])
 
   useEffect(() => {
     const fetchJob = async () => {
       if (!id) return
       setLoading(true)
       try {
-        const resolvedId = decodeJobId(id);
         // 登录态优先走个性化匹配接口，确保详情页能拿到 matchLevel/matchDetails
         let resp: Response
         if (isAuthenticated && token) {
           const personalizedParams = new URLSearchParams({
             action: 'jobs_with_match_score',
-            id: String(resolvedId),
+            id: String(resolvedJobId),
             page: '1',
             pageSize: '1',
             sortBy: 'relevance'
@@ -55,10 +55,10 @@ export default function JobDetailPage() {
             headers: { Authorization: `Bearer ${token}` }
           })
           if (!resp.ok) {
-            resp = await fetch(`/api/data/processed-jobs?id=${resolvedId}`)
+            resp = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(resolvedJobId)}`)
           }
         } else {
-          resp = await fetch(`/api/data/processed-jobs?id=${resolvedId}`)
+          resp = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(resolvedJobId)}`)
         }
 
         if (!resp.ok) throw new Error('职位不存在或已下线')
@@ -72,7 +72,7 @@ export default function JobDetailPage() {
             startRedirectCountdown()
           } else {
             setJob(fetchedJob)
-            trackingService.track('view_job_detail', { jobId: resolvedId, title: fetchedJob.title })
+            trackingService.track('view_job_detail', { jobId: resolvedJobId, title: fetchedJob.title })
           }
         } else {
           setError('职位不存在或已下线')
@@ -86,7 +86,7 @@ export default function JobDetailPage() {
     }
 
     fetchJob()
-  }, [id, isAuthenticated, token, location.search])
+  }, [id, isAuthenticated, token, location.search, resolvedJobId])
 
   const startRedirectCountdown = () => {
     setCountdown(5)
@@ -106,13 +106,13 @@ export default function JobDetailPage() {
 
   const handleShare = () => {
     setIsShareModalOpen(true);
-    trackingService.track('click_share_button', { jobId: id, from: 'detail_page_mobile' });
+    trackingService.track('click_share_button', { jobId: resolvedJobId || id, from: 'detail_page_mobile' });
   }
 
   // Check if saved
   useEffect(() => {
     const checkSaved = async () => {
-      if (!id || !isAuthenticated || !token) return
+      if (!resolvedJobId || !isAuthenticated || !token) return
       try {
         const resp = await fetch('/api/user-profile?action=favorites', {
           headers: { Authorization: `Bearer ${token}` }
@@ -120,31 +120,31 @@ export default function JobDetailPage() {
         if (resp.ok) {
           const data = await resp.json()
           const savedIds = (data.favorites || []).map((f: any) => f.id)
-          setIsSaved(savedIds.includes(id))
+          setIsSaved(savedIds.includes(resolvedJobId))
         }
       } catch (e) {
         console.warn('Failed to check saved status', e)
       }
     }
     checkSaved()
-  }, [id, isAuthenticated, token])
+  }, [resolvedJobId, isAuthenticated, token])
 
   const handleSave = async () => {
     if (!isAuthenticated || !token) {
       showWarning('请先登录', '登录后可以收藏职位')
-      navigate(`/login?redirect=/job/${id}`)
+      navigate(`/login?redirect=${encodeURIComponent(getJobDetailPath(id || ''))}`)
       return
     }
 
     try {
       const action = isSaved ? 'favorites_remove' : 'favorites_add'
-      const resp = await fetch(`/api/user-profile?action=${action}&jobId=${id}`, {
+      const resp = await fetch(`/api/user-profile?action=${action}&jobId=${encodeURIComponent(resolvedJobId)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ jobId: id, job })
+        body: JSON.stringify({ jobId: resolvedJobId, job })
       })
 
       if (resp.ok) {

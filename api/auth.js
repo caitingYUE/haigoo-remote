@@ -24,11 +24,16 @@ import { sendVerificationEmail, sendPasswordResetEmail, isEmailServiceConfigured
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
 import neonHelper from '../server-utils/dal/neon-helper.js'
+import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CONFIGURED = !!GOOGLE_CLIENT_ID
 const googleClient = GOOGLE_CONFIGURED ? new OAuth2Client(GOOGLE_CLIENT_ID) : null
+
+function isSuperAdminEmail(email) {
+  return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
+}
 
 // CORS headers
 function setCorsHeaders(res, req) {
@@ -153,9 +158,10 @@ async function handleRegister(req, res) {
   const verificationToken = generateVerificationToken()
   const verificationExpires = generateVerificationExpiry()
 
+  const normalizedEmail = email.toLowerCase()
   const user = {
     user_id: userId,
-    email: email.toLowerCase(),
+    email: normalizedEmail,
     username: finalUsername,
     avatar,
     auth_provider: 'email',
@@ -168,7 +174,7 @@ async function handleRegister(req, res) {
     last_login_at: null,
     status: 'active',
     roles: {
-      admin: email === 'caitlinyct@gmail.com' || email === 'mrzhangzy1996@gmail.com'
+      admin: isSuperAdminEmail(normalizedEmail)
     },
     profile: null
   }
@@ -197,7 +203,7 @@ async function handleRegister(req, res) {
 
   const token = generateToken({
     userId,
-    email,
+    email: normalizedEmail,
     role: user.roles?.admin ? 'admin' : 'user',
     isAdmin: !!user.roles?.admin
   })
@@ -223,7 +229,8 @@ async function handleLogin(req, res) {
     return res.status(400).json({ success: false, error: '邮箱格式无效' })
   }
 
-  const user = await getUserByEmail(email.toLowerCase())
+  const normalizedEmail = email.toLowerCase()
+  const user = await getUserByEmail(normalizedEmail)
   if (!user) {
     return res.status(401).json({ success: false, error: '邮箱或密码错误' })
   }
@@ -236,7 +243,7 @@ async function handleLogin(req, res) {
   }
 
   // Force admin role for test user (Temporary fix for local dev)
-  if (email === 'test@example.com') {
+  if (normalizedEmail === 'test@example.com') {
     console.log('[Auth] Force updating admin role for test user')
     if (!user.roles || !user.roles.admin) {
       user.roles = { ...user.roles, admin: true }
@@ -245,9 +252,8 @@ async function handleLogin(req, res) {
     }
   }
 
-  // Force super admin privileges for caitlinyct@gmail.com
-  if (email === 'caitlinyct@gmail.com') {
-    console.log('[Auth] Force updating super admin privileges for caitlinyct@gmail.com')
+  if (isSuperAdminEmail(normalizedEmail)) {
+    console.log(`[Auth] Force updating super admin privileges for ${normalizedEmail}`)
     let needsUpdate = false
 
     // Ensure admin role
@@ -277,7 +283,7 @@ async function handleLogin(req, res) {
           roles: user.roles,
           membershipLevel: 'vip',
           membershipExpireAt: nextYear.toISOString()
-        })
+        }, { isAdmin: true })
         console.log('[Auth] Super admin privileges updated and saved')
       } catch (err) {
         console.error('[Auth] Failed to update super admin privileges:', err)
@@ -293,6 +299,10 @@ async function handleLogin(req, res) {
   await updateUser(user.user_id, { lastLoginAt: true })
 
   console.log(`[auth] User logged in: ${email}`)
+
+  if (isSuperAdminEmail(normalizedEmail) && !user.roles?.admin) {
+    user.roles = { ...(user.roles || {}), admin: true }
+  }
 
   const token = generateToken({
     userId: user.user_id,
@@ -331,11 +341,16 @@ async function handleGoogleLogin(req, res) {
     return res.status(403).json({ success: false, error: buildDeletedAccountLockMessage(deletedAccountLock) })
   }
 
-  let user = await getUserByEmail(googleUser.email)
+  const googleEmail = String(googleUser.email || '').trim().toLowerCase()
+  let user = await getUserByEmail(googleEmail)
 
   if (user) {
     if (user.auth_provider !== 'google') {
       return res.status(400).json({ success: false, error: `该邮箱已使用 ${user.auth_provider} 方式注册` })
+    }
+    if (isSuperAdminEmail(googleEmail) && !user.roles?.admin) {
+      user.roles = { ...(user.roles || {}), admin: true }
+      await updateUser(user.user_id, { roles: user.roles }, { isAdmin: true })
     }
     // 使用统一的更新函数更新最后登录时间 (不再覆盖头像，保持 Haigoo 系列头像)
     await updateUser(user.user_id, {
@@ -345,7 +360,7 @@ async function handleGoogleLogin(req, res) {
     const userId = crypto.randomUUID()
     user = {
       user_id: userId,
-      email: googleUser.email,
+      email: googleEmail,
       username: googleUser.name || generateRandomUsername(),
       // 统一使用 Haigoo 系列头像
       avatar: generateRandomAvatar(userId),
@@ -356,7 +371,7 @@ async function handleGoogleLogin(req, res) {
       updated_at: new Date().toISOString(),
       last_login_at: new Date().toISOString(),
       status: 'active',
-      roles: { admin: googleUser.email === 'caitlinyct@gmail.com' || googleUser.email === 'mrzhangzy1996@gmail.com' },
+      roles: { admin: isSuperAdminEmail(googleEmail) },
       profile: null
     }
     await saveUser(user)
@@ -366,7 +381,7 @@ async function handleGoogleLogin(req, res) {
       try {
         await neonHelper.query(
           'INSERT INTO admin_messages (type, title, content) VALUES ($1, $2, $3)',
-          ['user_register', '新用户注册', `用户邮箱: ${googleUser.email}\n用户名: ${user.username}`]
+          ['user_register', '新用户注册', `用户邮箱: ${googleEmail}\n用户名: ${user.username}`]
         )
       } catch (e) {
         console.error('[auth] Failed to insert admin message for Google sign up', e)

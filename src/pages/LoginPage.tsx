@@ -25,7 +25,9 @@ export default function LoginPage() {
   const location = useLocation()
 
   // 获取重定向目标（登录后跳转到原页面）
-  const from = (location.state as any)?.from?.pathname || '/'
+  const redirectParam = new URLSearchParams(location.search).get('redirect')
+  const fromState = (location.state as any)?.from?.pathname
+  const from = redirectParam && redirectParam.startsWith('/') ? redirectParam : (fromState || '/')
 
   const handleGoogleCallback = useCallback(async (response: any) => {
     if (!response.credential) {

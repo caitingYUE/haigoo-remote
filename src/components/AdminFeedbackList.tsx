@@ -27,7 +27,7 @@ export default function AdminFeedbackList() {
     const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(user.email);
+    const isSuperAdmin = user?.email && SUPER_ADMIN_EMAILS.includes(String(user.email).toLowerCase());
 
     const fetchFeedbacks = useCallback(async () => {
         try {

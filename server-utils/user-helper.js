@@ -6,6 +6,7 @@
 import neonHelper from './dal/neon-helper.js'
 import { extractToken, verifyToken } from './auth-helpers.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
+import { SUPER_ADMIN_EMAILS } from './admin-config.js'
 import {
     calculateMembershipWindow,
     getDefaultMembershipPlanConfig,
@@ -14,9 +15,6 @@ import {
     normalizeMemberType
 } from '../lib/shared/membership.js'
 
-// 超级管理员邮箱
-const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
-const SUPER_ADMIN_EMAIL_2 = 'mrzhangzy1996@gmail.com'
 const DEFAULT_FREE_WEBSITE_APPLY_LIMIT = 20
 const DEFAULT_FREE_REFERRAL_LIMIT = 3
 const MAX_ENTITLEMENT_DELTA = 20
@@ -89,6 +87,10 @@ const LOCAL_USERS = new Map([
 
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj))
+}
+
+function isSuperAdminEmail(email) {
+    return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
 }
 
 function enrichUserFields(user) {
@@ -406,7 +408,7 @@ const userHelper = {
 
             // 检查是否为超级管理员
             const user = await this.getUserById(userId)
-            if (user && user.email === SUPER_ADMIN_EMAIL) {
+            if (user && isSuperAdminEmail(user.email)) {
                 console.warn('[user-helper] Cannot delete super admin user')
                 return false
             }
@@ -938,7 +940,7 @@ const userHelper = {
 
                 if (roles && typeof roles === 'object') {
                     // 超级管理员不可更改权限
-                    if (user.email === SUPER_ADMIN_EMAIL) {
+                    if (isSuperAdminEmail(user.email)) {
                         updateFields.roles = JSON.stringify({ ...(user.roles || {}), admin: true })
                     } else {
                         updateFields.roles = JSON.stringify({ ...(user.roles || {}), ...roles })
@@ -985,7 +987,7 @@ const userHelper = {
             const user = await this.getUserById(userId)
             if (!user) return false
 
-            return !!(user.roles?.admin || user.email === SUPER_ADMIN_EMAIL || user.email === SUPER_ADMIN_EMAIL_2)
+            return !!(user.roles?.admin || isSuperAdminEmail(user.email))
         } catch (error) {
             console.error('[user-helper] Error checking admin status:', error.message)
             return false
@@ -1002,7 +1004,7 @@ const userHelper = {
             const user = await this.getUserById(userId)
             if (!user) return false
 
-            return user.email === SUPER_ADMIN_EMAIL || user.email === SUPER_ADMIN_EMAIL_2
+            return isSuperAdminEmail(user.email)
         } catch (error) {
             console.error('[user-helper] Error checking super admin status:', error.message)
             return false
@@ -1033,8 +1035,7 @@ const userHelper = {
 
             const isAdmin = !!(
                 user.roles?.admin ||
-                user.email === SUPER_ADMIN_EMAIL ||
-                user.email === SUPER_ADMIN_EMAIL_2
+                isSuperAdminEmail(user.email)
             )
             if (!isAdmin) {
                 return { valid: false, error: 'Forbidden' }

@@ -28,6 +28,7 @@ import {
 import type { User } from '../types/auth-types'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
+import { SUPER_ADMIN_EMAILS } from '../config/admin'
 
 interface UserStats {
   total: number
@@ -154,6 +155,10 @@ function formatEntitlementSummary(user: User, key: EntitlementKey) {
   return `${used}/${limit}`
 }
 
+function isProtectedSuperAdmin(email?: string | null) {
+  return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
+}
+
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [filteredUsers, setFilteredUsers] = useState<User[]>([])
@@ -170,8 +175,6 @@ export default function UserManagementPage() {
     newThisWeek: 0
   })
   const { token, isSuperAdmin } = useAuth()
-  const SUPER_ADMIN_EMAIL = 'caitlinyct@gmail.com'
-  const SUPER_ADMIN_EMAIL_2 = 'mrzhangzy1996@gmail.com'
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
@@ -752,67 +755,91 @@ export default function UserManagementPage() {
             <div className="divide-y divide-slate-100 md:hidden">
               {filteredUsers.map((user) => {
                 const member = getMemberPresentation(user)
+                const isBusy = updatingId === user.user_id || !isSuperAdmin
+                const isProtected = isProtectedSuperAdmin(user.email)
+
                 return (
                   <div key={`mobile-${user.user_id}`} className="p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          {user.avatar ? (
-                            <img src={user.avatar} alt={user.username} className="h-9 w-9 rounded-full" />
-                          ) : (
-                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-purple-500 text-sm font-semibold text-white">
-                              {user.username[0]?.toUpperCase()}
+                    <button
+                      type="button"
+                      disabled={isBusy}
+                      onClick={() => openEdit(user)}
+                      className={`w-full rounded-2xl border border-slate-200 bg-slate-50/80 p-4 text-left transition ${
+                        isBusy ? 'cursor-not-allowed opacity-75' : 'active:scale-[0.99]'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            {user.avatar ? (
+                              <img src={user.avatar} alt={user.username} className="h-10 w-10 rounded-full" />
+                            ) : (
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-purple-500 text-sm font-semibold text-white">
+                                {user.username[0]?.toUpperCase()}
+                              </div>
+                            )}
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-semibold text-slate-900">{user.username}</div>
+                              <div className="truncate text-xs text-slate-500">{user.email}</div>
                             </div>
-                          )}
-                          <div className="min-w-0">
-                            <div className="truncate text-sm font-semibold text-slate-900">{user.username}</div>
-                            <div className="truncate text-xs text-slate-500">{user.email}</div>
+                          </div>
+                          <div className="mt-2 text-[11px] text-slate-400">{formatShortUserId(user.user_id)}</div>
+                        </div>
+                        <span className={`inline-flex min-w-max items-center rounded-full px-2 py-1 text-xs font-medium ${member.className}`}>
+                          {member.label}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div className="rounded-xl bg-white px-3 py-2">
+                          <div className="text-slate-400">注册</div>
+                          <div className="mt-1 font-medium text-slate-700">{formatCompactDateTime(user.createdAt)}</div>
+                        </div>
+                        <div className="rounded-xl bg-white px-3 py-2">
+                          <div className="text-slate-400">会员时间</div>
+                          <div className="mt-1 font-medium text-slate-700">{member.detail || '-'}</div>
+                        </div>
+                        <div className="rounded-xl bg-white px-3 py-2">
+                          <div className="text-slate-400">直申</div>
+                          <div className="mt-1 font-medium text-slate-700">{formatEntitlementSummary(user, 'website_apply')}</div>
+                        </div>
+                        <div className="rounded-xl bg-white px-3 py-2">
+                          <div className="text-slate-400">内推</div>
+                          <div className="mt-1 font-medium text-slate-700">{formatEntitlementSummary(user, 'referral')}</div>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 rounded-2xl bg-white px-3 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <div className="text-sm font-semibold text-slate-900">管理权限与会员</div>
+                            <div className="mt-1 text-xs text-slate-500">点开后可修改会员状态、管理员权限和免费权益</div>
+                          </div>
+                          <div className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
+                            进入编辑
                           </div>
                         </div>
-                        <div className="mt-2 text-[11px] text-slate-400">{formatShortUserId(user.user_id)}</div>
                       </div>
-                      <span className={`inline-flex min-w-max items-center rounded-full px-2 py-1 text-xs font-medium ${member.className}`}>
-                        {member.label}
-                      </span>
-                    </div>
+                    </button>
 
-                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                      <div className="rounded-xl bg-slate-50 px-3 py-2">
-                        <div className="text-slate-400">注册</div>
-                        <div className="mt-1 font-medium text-slate-700">{formatCompactDateTime(user.createdAt)}</div>
-                      </div>
-                      <div className="rounded-xl bg-slate-50 px-3 py-2">
-                        <div className="text-slate-400">会员时间</div>
-                        <div className="mt-1 font-medium text-slate-700">{member.detail || '-'}</div>
-                      </div>
-                      <div className="rounded-xl bg-slate-50 px-3 py-2">
-                        <div className="text-slate-400">直申</div>
-                        <div className="mt-1 font-medium text-slate-700">{formatEntitlementSummary(user, 'website_apply')}</div>
-                      </div>
-                      <div className="rounded-xl bg-slate-50 px-3 py-2">
-                        <div className="text-slate-400">内推</div>
-                        <div className="mt-1 font-medium text-slate-700">{formatEntitlementSummary(user, 'referral')}</div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-3 grid grid-cols-2 gap-2">
                       <button
-                        disabled={updatingId === user.user_id || !isSuperAdmin}
+                        disabled={isBusy}
                         onClick={() => openEdit(user)}
-                        className={`inline-flex flex-1 items-center justify-center gap-1 rounded-xl border px-3 py-2 text-sm font-medium ${
-                          updatingId === user.user_id || !isSuperAdmin
+                        className={`inline-flex min-h-[48px] items-center justify-center gap-1 rounded-xl border px-3 py-3 text-sm font-medium ${
+                          isBusy
                             ? 'cursor-not-allowed bg-slate-100 text-slate-400'
                             : 'border-indigo-200 bg-indigo-50 text-indigo-700'
                         }`}
                       >
-                        <Eye className="h-4 w-4" />
-                        编辑会员
+                        <Lock className="h-4 w-4" />
+                        编辑权限
                       </button>
                       <button
-                        disabled={updatingId === user.user_id || !isSuperAdmin}
+                        disabled={isBusy}
                         onClick={() => updateUserStatus(user.user_id, user.status === 'active' ? 'suspended' : 'active')}
-                        className={`inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-medium ${
-                          updatingId === user.user_id || !isSuperAdmin
+                        className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium ${
+                          isBusy
                             ? 'cursor-not-allowed bg-slate-100 text-slate-400'
                             : user.status === 'active'
                               ? 'border-red-200 bg-white text-red-600'
@@ -821,6 +848,19 @@ export default function UserManagementPage() {
                       >
                         {user.status === 'active' ? '停用' : '启用'}
                       </button>
+                      {!isProtected && (
+                        <button
+                          disabled={isBusy}
+                          onClick={() => deleteUser(user.user_id)}
+                          className={`col-span-2 inline-flex min-h-[48px] items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium ${
+                            isBusy
+                              ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                              : 'border-red-200 bg-red-50 text-red-600'
+                          }`}
+                        >
+                          删除用户
+                        </button>
+                      )}
                     </div>
                   </div>
                 )
@@ -970,7 +1010,7 @@ export default function UserManagementPage() {
                           >
                             <Eye className="w-4 h-4" /> 编辑
                           </button>
-                          {user.email !== SUPER_ADMIN_EMAIL && user.email !== SUPER_ADMIN_EMAIL_2 && (
+                          {!isProtectedSuperAdmin(user.email) && (
                             <button
                               disabled={updatingId === user.user_id || !isSuperAdmin}
                               onClick={() => deleteUser(user.user_id)}
@@ -1020,9 +1060,20 @@ export default function UserManagementPage() {
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg"
                 />
               </div>
-              <label className="inline-flex items-center gap-2">
-                <input type="checkbox" disabled={editingUser?.email === SUPER_ADMIN_EMAIL || editingUser?.email === SUPER_ADMIN_EMAIL_2 || !isSuperAdmin} checked={editAdmin} onChange={(e) => setEditAdmin(e.target.checked)} />
-                <span>{(editingUser?.email === SUPER_ADMIN_EMAIL || editingUser?.email === SUPER_ADMIN_EMAIL_2) ? '超级管理员（不可更改）' : '管理员权限'}</span>
+              <label className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                <div>
+                  <div className="text-sm font-medium text-slate-900">管理员权限</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    {isProtectedSuperAdmin(editingUser?.email) ? '超级管理员账户，权限锁定' : '开启后可进入后台执行管理操作'}
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  disabled={isProtectedSuperAdmin(editingUser?.email) || !isSuperAdmin}
+                  checked={editAdmin}
+                  onChange={(e) => setEditAdmin(e.target.checked)}
+                  className="h-5 w-5"
+                />
               </label>
 
               <div>
@@ -1045,6 +1096,35 @@ export default function UserManagementPage() {
 
               <div>
                 <label className="block text-sm text-slate-700 mb-2">会员类型</label>
+                <div className="mb-3 grid grid-cols-2 gap-2 sm:hidden">
+                  {[
+                    { value: 'none', label: '普通用户' },
+                    { value: 'trial_week', label: '体验会员' },
+                    { value: 'quarter', label: '季度会员' },
+                    { value: 'year', label: '年度会员' }
+                  ].map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => {
+                        const nextType = option.value as 'none' | 'trial_week' | 'quarter' | 'year'
+                        setEditMemberScheduleDirty(true)
+                        setEditMemberType(nextType)
+                        setEditMemberStatus(nextType === 'none' ? 'free' : 'active')
+                        const baseStartAt = editMemberCycleStartAt || getQuickMemberStart('now')
+                        setEditMemberCycleStartAt(nextType === 'none' ? '' : baseStartAt)
+                        setEditMemberExpireAt(nextType === 'none' ? '' : calculateMemberExpireAt(nextType, baseStartAt))
+                      }}
+                      className={`min-h-[46px] rounded-xl border px-3 py-2 text-sm font-medium ${
+                        editMemberType === option.value
+                          ? 'border-violet-500 bg-violet-50 text-violet-700'
+                          : 'border-slate-200 bg-white text-slate-600'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
                 <select
                   value={editMemberType}
                   onChange={(e) => {
@@ -1056,7 +1136,7 @@ export default function UserManagementPage() {
                     setEditMemberCycleStartAt(nextType === 'none' ? '' : baseStartAt)
                     setEditMemberExpireAt(nextType === 'none' ? '' : calculateMemberExpireAt(nextType, baseStartAt))
                   }}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg mb-2"
+                  className="hidden w-full px-4 py-2 border border-slate-300 rounded-lg mb-2 sm:block"
                 >
                   <option value="none">普通用户</option>
                   <option value="trial_week">体验会员（周）</option>

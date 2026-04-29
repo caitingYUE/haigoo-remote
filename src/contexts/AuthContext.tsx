@@ -8,6 +8,7 @@ import type { User, AuthResponse } from '../types/auth-types'
 import { trackingService } from '../services/tracking-service'
 import { claimPendingGuestResume } from '../services/guest-resume-bridge'
 import { deriveMembershipCapabilities } from '../utils/membership'
+import { SUPER_ADMIN_EMAILS } from '../config/admin'
 
 interface AuthContextValue {
   user: User | null
@@ -349,8 +350,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [token])
 
   // Calculate derived permissions
-  const isAdmin = !!(user?.roles?.admin || user?.email === 'caitlinyct@gmail.com')
-  const isSuperAdmin = user?.email === 'caitlinyct@gmail.com' || user?.email === 'mrzhangzy1996@gmail.com'
+  const normalizedEmail = user?.email?.toLowerCase?.() || ''
+  const isSuperAdmin = !!normalizedEmail && SUPER_ADMIN_EMAILS.includes(normalizedEmail)
+  const isAdmin = !!(user?.roles?.admin || isSuperAdmin)
   const membershipCapabilities = deriveMembershipCapabilities(user)
   const isMember = membershipCapabilities.isActive
   const isTrialMember = membershipCapabilities.isTrialMember

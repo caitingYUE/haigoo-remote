@@ -38,7 +38,7 @@ export default async function handler(req, res) {
         const token = extractToken(req)
         const payload = token ? verifyToken(token) : null
         const requester = payload?.userId ? await userHelper.getUserById(payload.userId) : null
-        const isAdmin = !!(requester?.roles?.admin || SUPER_ADMIN_EMAILS.includes(requester?.email))
+        const isAdmin = !!(requester?.roles?.admin || SUPER_ADMIN_EMAILS.includes(String(requester?.email || '').toLowerCase()))
 
         if (!isAdmin) {
             console.warn('[translate-jobs] Unauthorized access attempt:', requester?.email)

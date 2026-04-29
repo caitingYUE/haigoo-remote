@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatSalaryForDisplay } from '../utils/salary-display';
+import { getJobDetailPath } from '../utils/share-link-helper';
 
 export default function JobTickerItem({ job, onOpen }: { job: any, onOpen?: (job: any) => void }) {
     const logos = Array.isArray(job.logo_candidates) ? job.logo_candidates.filter(Boolean) : []
@@ -12,7 +13,7 @@ export default function JobTickerItem({ job, onOpen }: { job: any, onOpen?: (job
             onOpen(job)
             return
         }
-        window.location.href = `/job/${job.id}`
+        window.location.href = getJobDetailPath(String(job.id || ''))
     }
 
     return (

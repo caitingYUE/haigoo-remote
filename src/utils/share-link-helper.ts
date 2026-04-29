@@ -49,3 +49,12 @@ export const getShareLink = (jobId: string): string => {
   const encodedId = encodeJobId(jobId);
   return `${window.location.origin}/job/${encodedId}?source=share`;
 };
+
+export const getJobDetailPath = (jobId: string): string => {
+  const encodedId = encodeJobId(jobId);
+  return `/job/${encodedId}`;
+};
+
+export const getJobDetailLink = (jobId: string): string => {
+  return `${window.location.origin}${getJobDetailPath(jobId)}`;
+};
