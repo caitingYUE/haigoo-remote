@@ -99,6 +99,7 @@ export default function AdminTrustedCompaniesPage() {
         if (!Array.isArray(contacts)) return []
         return contacts
             .map(contact => ({
+                id: String(contact?.id || '').trim() || undefined,
                 hiringEmail: String(contact?.hiringEmail || '').trim(),
                 emailType: normalizeEmailType(contact?.emailType),
                 name: String(contact?.name || '').trim(),
