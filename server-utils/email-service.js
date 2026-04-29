@@ -53,25 +53,6 @@ function formatEmailDate(value) {
   })
 }
 
-function encodeJobShareId(jobId) {
-  const normalized = String(jobId || '').trim()
-  if (!normalized) return ''
-  try {
-    const encoded = Buffer.from(normalized, 'utf8')
-      .toString('base64')
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '')
-    return `E-${encoded}`
-  } catch (_error) {
-    return encodeURIComponent(normalized)
-  }
-}
-
-function buildJobDetailLink(siteUrl, jobId) {
-  return `${siteUrl}/job/${encodeJobShareId(jobId)}`
-}
-
 /**
  * 发送邮件（通用）via Resend API
  */
@@ -457,7 +438,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
   const jobsHtml = jobs.map(job => `
     <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
       <h3 style="margin: 0 0 10px; font-size: 18px;">
-        <a href="${buildJobDetailLink(siteUrl, job.id)}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${job.title}</a>
+        <a href="${siteUrl}/job/${job.id}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${job.title}</a>
       </h3>
       <div style="margin-bottom: 12px; font-weight: 600; color: #4F46E5; font-size: 15px;">${job.company}</div>
       <div style="margin-bottom: 12px; color: #666; font-size: 14px;">
@@ -466,7 +447,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
       </div>
       <p style="margin: 0; color: #555; font-size: 14px; line-height: 1.6;">${(job.description || '').substring(0, 160)}...</p>
       <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
-        <a href="${buildJobDetailLink(siteUrl, job.id)}" style="text-decoration: none; color: #4F46E5; font-size: 14px; font-weight: 600;">查看详情 →</a>
+        <a href="${siteUrl}/job/${job.id}" style="text-decoration: none; color: #4F46E5; font-size: 14px; font-weight: 600;">查看详情 →</a>
       </div>
     </div>
   `).join('')
