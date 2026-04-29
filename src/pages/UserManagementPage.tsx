@@ -809,17 +809,6 @@ export default function UserManagementPage() {
                         </div>
                       </div>
 
-                      <div className="mt-3 rounded-2xl bg-white px-3 py-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <div className="text-sm font-semibold text-slate-900">管理权限与会员</div>
-                            <div className="mt-1 text-xs text-slate-500">点开后可修改会员状态、管理员权限和免费权益</div>
-                          </div>
-                          <div className="rounded-full bg-indigo-50 px-2 py-1 text-xs font-medium text-indigo-700">
-                            进入编辑
-                          </div>
-                        </div>
-                      </div>
                     </button>
 
                     <div className="mt-3 grid grid-cols-2 gap-2">

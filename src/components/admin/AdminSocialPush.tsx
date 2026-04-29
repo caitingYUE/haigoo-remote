@@ -116,6 +116,60 @@ const EMPTY_GROUP_FORM: GroupFormState = {
 
 const DEFAULT_GROUP_NAME = '默认分组';
 
+const encodeShareJobId = (jobId: string) => {
+  const normalized = String(jobId || '').trim();
+  if (!normalized) return '';
+  try {
+    const encoded = btoa(unescape(encodeURIComponent(normalized)))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=+$/, '');
+    return `E-${encoded}`;
+  } catch (_error) {
+    return normalized;
+  }
+};
+
+const normalizeShareUrl = (jobId: string, shareUrl?: string) => {
+  const fallback = `https://haigooremote.com/job/${encodeShareJobId(jobId)}?source=share`;
+  const normalized = String(shareUrl || '').trim();
+  if (!normalized) return fallback;
+  if (/\/job\/E-[^/?#]+(?:\?source=share)?$/i.test(normalized)) {
+    return normalized.includes('?source=share') ? normalized : `${normalized}?source=share`;
+  }
+  return fallback;
+};
+
+const normalizeAudienceCard = (audience: AudienceCardPreview): AudienceCardPreview => {
+  const jobs = audience.jobs.map((job) => ({
+    ...job,
+    shareUrl: normalizeShareUrl(job.id, job.shareUrl)
+  }));
+
+  let copyText = String(audience.copyText || '');
+  jobs.forEach((job, index) => {
+    const originalShareUrl = String(audience.jobs[index]?.shareUrl || '').trim();
+    if (originalShareUrl && originalShareUrl !== job.shareUrl) {
+      copyText = copyText.split(originalShareUrl).join(job.shareUrl || '');
+    }
+  });
+
+  return {
+    ...audience,
+    jobs,
+    copyText
+  };
+};
+
+const normalizePreviewResponse = (preview: PreviewResponse): PreviewResponse => ({
+  ...preview,
+  groups: preview.groups.map((group) => ({
+    ...group,
+    publicCard: normalizeAudienceCard(group.publicCard),
+    memberCard: normalizeAudienceCard(group.memberCard)
+  }))
+});
+
 const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }) => {
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [settings, setSettings] = useState<GroupSettingsResponse | null>(null);
@@ -146,7 +200,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
         throw new Error(data?.error || '加载社群推送失败');
       }
 
-      setPreview(data);
+      setPreview(normalizePreviewResponse(data));
       setSelectedGroupId((current) => {
         if (data.groups.some((group: PreviewGroup) => group.id === current)) return current;
         return data.groups[0]?.id ?? null;
@@ -283,7 +337,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
         throw new Error(data?.error || '刷新当天结果失败');
       }
 
-      setPreview(data);
+      setPreview(normalizePreviewResponse(data));
       setSelectedGroupId((current) => {
         if (data.groups.some((group: PreviewGroup) => group.id === current)) return current;
         return data.groups[0]?.id ?? null;
@@ -393,7 +447,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
 
       setPreview((current) => {
         if (!current) return current;
-        return {
+        return normalizePreviewResponse({
           ...current,
           groups: current.groups.map((group) => {
             if (group.id !== groupId) return group;
@@ -403,7 +457,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
               [audienceKey === 'public' ? 'publicCard' : 'memberCard']: data.card
             };
           })
-        };
+        });
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : '更换岗位失败');
