@@ -259,6 +259,7 @@ class TrustedCompaniesService {
             queryParams.append('target', 'companies'); // Specific handler action (optional but safe)
             queryParams.append('id', id);
             if (jobId) queryParams.append('jobId', jobId);
+            queryParams.append('_t', Date.now().toString());
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined

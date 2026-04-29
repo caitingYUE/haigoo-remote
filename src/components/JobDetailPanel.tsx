@@ -95,14 +95,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const companyEffectiveReferralContactCount = typeof companyInfo?.jobEffectiveReferralContactCount === 'number'
         ? companyInfo.jobEffectiveReferralContactCount
         : null
-    const shouldForceHideCustomReferralModule = (
-        usesCustomReferralContacts && (
-        (hasExplicitSelectedReferralIds && selectedReferralContactIds.length === 0) ||
-        (hasExplicitEffectiveReferralCount && effectiveReferralContactCount === 0)
+    const shouldForceHideCustomReferralModule = companyUsesCustomReferralContacts
+        ? companyEffectiveReferralContactCount === 0
+        : (
+            usesCustomReferralContacts && (
+                (hasExplicitSelectedReferralIds && selectedReferralContactIds.length === 0) ||
+                (hasExplicitEffectiveReferralCount && effectiveReferralContactCount === 0)
+            )
         )
-    ) || (
-        companyUsesCustomReferralContacts && companyEffectiveReferralContactCount === 0
-    )
 
     const referralContacts = useMemo(() => {
         const source = Array.isArray(companyInfo?.referralContacts) ? companyInfo!.referralContacts : []
