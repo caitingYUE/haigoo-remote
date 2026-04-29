@@ -6,14 +6,33 @@
 
 const PREFIX = 'E-';
 
+const encodeBase64Url = (value: string): string => {
+  const bytes = new TextEncoder().encode(value);
+  let binary = '';
+  for (const byte of bytes) {
+    binary += String.fromCharCode(byte);
+  }
+  return btoa(binary)
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+};
+
+const decodeBase64Url = (value: string): string => {
+  const base64 = value
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+  const pad = base64.length % 4;
+  const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
+  const binary = atob(padded);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+};
+
 export const encodeJobId = (jobId: string): string => {
   if (!jobId) return '';
   try {
-    // Simple Base64 URL-safe encoding
-    const encoded = btoa(jobId)
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
+    const encoded = encodeBase64Url(jobId);
     return `${PREFIX}${encoded}`;
   } catch (e) {
     console.error('Failed to encode job ID', e);
@@ -30,15 +49,7 @@ export const decodeJobId = (encodedId: string): string => {
   }
 
   try {
-    const base64 = encodedId.slice(PREFIX.length)
-      .replace(/-/g, '+')
-      .replace(/_/g, '/');
-    
-    // Add padding if needed (though atob usually handles it, strictly valid base64 length % 4 === 0)
-    const pad = base64.length % 4;
-    const padded = pad ? base64 + '='.repeat(4 - pad) : base64;
-
-    return atob(padded);
+    return decodeBase64Url(encodedId.slice(PREFIX.length));
   } catch (e) {
     console.warn('Failed to decode job ID, falling back to original', e);
     return encodedId;

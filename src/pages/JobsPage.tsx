@@ -57,7 +57,6 @@ interface JobBundle {
 }
 
 export default function JobsPage() {
-  console.log('[JobsPage] Version: Preview Fix Applied 2026-02-21 v3 - Layout & Auth Fixes');
   const navigate = useNavigate()
   const location = useLocation()
   const { token, isAuthenticated, isMember } = useAuth()
@@ -268,6 +267,9 @@ export default function JobsPage() {
 
       queryParams.append('page', page.toString())
       queryParams.append('pageSize', pageSize.toString())
+      if (loadMore) {
+        queryParams.append('skipAggregations', 'true')
+      }
 
       // Explicitly handle sortBy
       if (sortBy === 'recent') {
@@ -277,8 +279,9 @@ export default function JobsPage() {
         queryParams.append('sortBy', 'relevance')
       }
 
-      // Debug Log
-      console.log('[loadJobsWithFilters] Current filters state:', filters);
+      if (import.meta.env.DEV) {
+        console.debug('[loadJobsWithFilters] Current filters state:', filters)
+      }
 
       if (searchTerm) queryParams.append('search', searchTerm)
       if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
@@ -295,12 +298,14 @@ export default function JobsPage() {
       // ⚠️ P0 Fix: Always enforce approval check for C-side job list
       queryParams.append('isApproved', 'true')
 
-      // Debug Log
-      console.log('[loadJobsWithFilters] Request params:', queryParams.toString());
+      if (import.meta.env.DEV) {
+        console.debug('[loadJobsWithFilters] Request params:', queryParams.toString())
+      }
 
-      // P0 Fix: Add timestamp to prevent caching of old API response structure
-      const requestUrl = `/api/data/processed-jobs?${queryParams.toString()}&_t=${Date.now()}`;
-      console.log('[loadJobsWithFilters] Fetching:', requestUrl);
+      const requestUrl = `/api/data/processed-jobs?${queryParams.toString()}`
+      if (import.meta.env.DEV) {
+        console.debug('[loadJobsWithFilters] Fetching:', requestUrl)
+      }
 
       let response = await fetch(requestUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -329,13 +334,14 @@ export default function JobsPage() {
 
       const data = await response.json()
 
-      // Debug Aggregations
-      console.log('[loadJobsWithFilters] Response Data:', {
-        total: data.total,
-        jobsCount: data.jobs?.length,
-        hasAggregations: !!data.aggregations,
-        aggregations: data.aggregations
-      });
+      if (import.meta.env.DEV) {
+        console.debug('[loadJobsWithFilters] Response Data:', {
+          total: data.total,
+          jobsCount: data.jobs?.length,
+          hasAggregations: !!data.aggregations,
+          aggregations: data.aggregations
+        })
+      }
 
       // 设置岗位数据和分页信息
       if (loadMore) {
@@ -374,7 +380,9 @@ export default function JobsPage() {
           setSelectedJob(null)
         }
       }
-      setTotalJobs(data.total || 0)
+      if (!loadMore && typeof data.total === 'number') {
+        setTotalJobs(data.total)
+      }
       setCurrentPage(page)
       setLoadingStage('idle')
       lastJobsLoadedAtRef.current = Date.now()
@@ -437,11 +445,15 @@ export default function JobsPage() {
         }
       }
 
-      console.log(`✅ 获取到 ${data.jobs?.length || 0} 个岗位（第${page}页，后端筛选和排序）`)
+      if (import.meta.env.DEV) {
+        console.debug(`获取到 ${data.jobs?.length || 0} 个岗位（第${page}页，后端筛选和排序）`)
+      }
     } catch (error) {
       // P0 Fix: Ignore AbortError (request was intentionally canceled)
       if (error instanceof Error && error.name === 'AbortError') {
-        console.log('[JobsPage] 请求已取消，开始新的搜索')
+        if (import.meta.env.DEV) {
+          console.debug('[JobsPage] 请求已取消，开始新的搜索')
+        }
         return
       }
       setLoadingStage('idle')
@@ -761,11 +773,15 @@ export default function JobsPage() {
             <JobFilterBar
               filters={filters}
               onFilterChange={(newFilters: any) => {
-                console.log('[JobsPage] onFilterChange triggered:', newFilters);
+                if (import.meta.env.DEV) {
+                  console.debug('[JobsPage] onFilterChange triggered:', newFilters)
+                }
                 setFilters((prev: any) => {
-                  const updated = { ...prev, ...newFilters };
-                  console.log('[JobsPage] New filters state:', updated);
-                  return updated;
+                  const updated = { ...prev, ...newFilters }
+                  if (import.meta.env.DEV) {
+                    console.debug('[JobsPage] New filters state:', updated)
+                  }
+                  return updated
                 });
               }}
               categoryOptions={categoryOptions}

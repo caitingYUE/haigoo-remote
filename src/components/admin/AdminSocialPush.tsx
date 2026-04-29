@@ -13,6 +13,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { encodeJobId } from '../../utils/share-link-helper';
 import AdminXiaohongshuPush from './AdminXiaohongshuPush';
 
 interface PreviewJob {
@@ -116,22 +117,8 @@ const EMPTY_GROUP_FORM: GroupFormState = {
 
 const DEFAULT_GROUP_NAME = '默认分组';
 
-const encodeShareJobId = (jobId: string) => {
-  const normalized = String(jobId || '').trim();
-  if (!normalized) return '';
-  try {
-    const encoded = btoa(unescape(encodeURIComponent(normalized)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-    return `E-${encoded}`;
-  } catch (_error) {
-    return normalized;
-  }
-};
-
 const normalizeShareUrl = (jobId: string, shareUrl?: string) => {
-  const fallback = `https://haigooremote.com/job/${encodeShareJobId(jobId)}?source=share`;
+  const fallback = `https://haigooremote.com/job/${encodeJobId(jobId)}?source=share`;
   const normalized = String(shareUrl || '').trim();
   if (!normalized) return fallback;
   if (/\/job\/E-[^/?#]+(?:\?source=share)?$/i.test(normalized)) {
