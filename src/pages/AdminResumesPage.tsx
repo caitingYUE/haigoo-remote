@@ -44,6 +44,7 @@ const AdminResumesPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [storageProvider, setStorageProvider] = useState<string>('');
+    const [resumeTotal, setResumeTotal] = useState(0);
 
     const fetchResumes = async () => {
         setLoading(true);
@@ -86,6 +87,7 @@ const AdminResumesPage: React.FC = () => {
                 );
 
                 setResumes(resumesWithUserInfo);
+                setResumeTotal(Number(data.total || resumesWithUserInfo.length));
                 setStorageProvider(data.provider || 'unknown');
             } else {
                 console.error('Failed to fetch resumes');
@@ -186,7 +188,13 @@ const AdminResumesPage: React.FC = () => {
                         <div className="text-sm text-slate-500">
                             存储提供者: <span className="font-medium text-slate-900">{storageProvider}</span>
                             <span className="mx-2">|</span>
-                            总计: <span className="font-medium text-slate-900">{resumes.length}</span>
+                            总计: <span className="font-medium text-slate-900">{resumeTotal || resumes.length}</span>
+                            {resumeTotal > resumes.length && (
+                                <>
+                                    <span className="mx-2">|</span>
+                                    已加载: <span className="font-medium text-slate-900">{resumes.length}</span>
+                                </>
+                            )}
                         </div>
                     </div>
 

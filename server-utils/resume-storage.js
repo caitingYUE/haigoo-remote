@@ -6,13 +6,25 @@
 
 import neonHelper from './dal/neon-helper.js'
 
+function normalizeResumeListOptions(options = {}) {
+    const normalized = options && typeof options === 'object' ? options : {}
+    const parsedLimit = Number.parseInt(normalized.limit, 10)
+    const parsedOffset = Number.parseInt(normalized.offset, 10)
+
+    return {
+        limit: Number.isFinite(parsedLimit) && parsedLimit > 0 ? Math.min(parsedLimit, 10000) : null,
+        offset: Number.isFinite(parsedOffset) && parsedOffset > 0 ? parsedOffset : 0,
+    }
+}
+
 // 获取简历列表 (支持按用户筛选)
-export async function getResumes(userId = null) {
+export async function getResumes(userId = null, options = {}) {
     if (!neonHelper.isConfigured) {
-        return { resumes: [], provider: 'none' }
+        return { resumes: [], provider: 'none', total: 0 }
     }
 
     try {
+        const { limit, offset } = normalizeResumeListOptions(options)
         let query = `
             SELECT 
                 resume_id, user_id, file_name, file_size, file_type,
@@ -24,15 +36,31 @@ export async function getResumes(userId = null) {
         `
         
         const params = []
+        let countQuery = 'SELECT COUNT(*)::int AS total FROM resumes'
+        const countParams = []
         if (userId) {
             query += ` WHERE user_id = $1 `
             params.push(userId)
+            countQuery += ` WHERE user_id = $1 `
+            countParams.push(userId)
         }
 
-        query += ` ORDER BY created_at DESC LIMIT 50`
+        query += ` ORDER BY created_at DESC`
+        if (limit) {
+            params.push(limit)
+            query += ` LIMIT $${params.length}`
+        }
+        if (offset) {
+            params.push(offset)
+            query += ` OFFSET $${params.length}`
+        }
 
         // Exclude file_content to avoid large payload
-        const result = await neonHelper.query(query, params)
+        const [result, countResult] = await Promise.all([
+            neonHelper.query(query, params),
+            neonHelper.query(countQuery, countParams),
+        ])
+        const total = Number(countResult?.[0]?.total || 0)
         
         if (result && result.length > 0) {
             const resumes = result.map(row => ({
@@ -56,13 +84,13 @@ export async function getResumes(userId = null) {
                 assistantUpdatedAt: row.assistant_updated_at
                 // fileContent is intentionally omitted
             }))
-            return { resumes, provider: 'neon' }
+            return { resumes, provider: 'neon', total }
         }
         
-        return { resumes: [], provider: 'neon' }
+        return { resumes: [], provider: 'neon', total }
     } catch (error) {
         console.error('[Resume Storage] Neon read failed:', error.message)
-        return { resumes: [], provider: 'error', error: error.message }
+        return { resumes: [], provider: 'error', error: error.message, total: 0 }
     }
 }
 
@@ -196,13 +224,13 @@ export async function saveUserResume(userId, resumeData) {
             fileContent
         ])
         
-        // 获取更新后的简历列表用于统计
-        const { resumes } = await getResumes()
+        // 获取更新后的简历总数用于统计，避免上传后读取整张简历表。
+        const { resumes, total } = await getResumes(null, { limit: 1 })
         
         // 更新统计信息
         await updateStats(resumes, 'neon')
         
-        return { success: true, provider: 'neon', count: resumes.length, id: newResume.id }
+        return { success: true, provider: 'neon', count: total || resumes.length, id: newResume.id }
     } catch (error) {
         console.error('[Resume Storage] Neon save user resume failed:', error.message)
         return { success: false, provider: 'error', error: error.message, count: 0 }
@@ -255,13 +283,13 @@ export async function deleteResume(resumeId) {
     try {
         await neonHelper.query('DELETE FROM resumes WHERE resume_id = $1', [resumeId])
         
-        // 获取更新后的简历列表用于统计
-        const { resumes } = await getResumes()
+        // 获取更新后的简历总数用于统计，避免删除后读取整张简历表。
+        const { resumes, total } = await getResumes(null, { limit: 1 })
         
         // 更新统计信息
         await updateStats(resumes, 'neon')
         
-        return { success: true, count: resumes.length }
+        return { success: true, count: total || resumes.length }
     } catch (error) {
         console.error('[Resume Storage] Delete failed:', error.message)
         return { success: false, error: error.message, count: 0 }

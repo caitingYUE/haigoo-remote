@@ -196,6 +196,16 @@ function normalizePlanCompareText(value?: string) {
         .toLowerCase()
 }
 
+function isInvalidJobDirectionInput(value?: string) {
+    const text = String(value || '').trim()
+    if (!text) return true
+    if (/^[a-z0-9]$/i.test(text)) return true
+    const normalized = text.toLowerCase()
+    const validShortTerms = new Set(['hr', 'pm', 'qa', 'ui', 'ux', 'ios'])
+    if (/^[a-z]{2,3}$/.test(normalized) && !validShortTerms.has(normalized)) return true
+    return false
+}
+
 function buildHeroRecommendationContextKey(direction?: string, positionType?: string) {
     return `${normalizePlanCompareText(direction) || 'default'}::${String(positionType || 'full-time').trim().toLowerCase() || 'full-time'}`
 }
@@ -1110,6 +1120,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
 
         if (!nextJobDirection) {
             showWarning('信息不足', '请填写职业方向')
+            return
+        }
+        if (isInvalidJobDirectionInput(nextJobDirection)) {
+            showWarning('职业方向不完整', '请填写更具体的职业方向，例如“产品经理”“前端开发”或“HR”。')
             return
         }
 

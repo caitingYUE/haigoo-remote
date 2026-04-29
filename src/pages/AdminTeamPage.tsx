@@ -105,6 +105,7 @@ const AdminTeamPage: React.FC = () => {
   const [resumeSearchTerm, setResumeSearchTerm] = useState('');
   const [resumeLoading, setResumeLoading] = useState(false);
   const [storageProvider, setStorageProvider] = useState<string>('');
+  const [resumeTotal, setResumeTotal] = useState(0);
 
   // 简历筛选状态
   const [resumeSourceFilter, setResumeSourceFilter] = useState<string>('all');
@@ -294,6 +295,7 @@ const AdminTeamPage: React.FC = () => {
         }));
 
         setResumes(processedResumes);
+        setResumeTotal(Number(data.total || processedResumes.length));
         setStorageProvider(data.provider || 'unknown');
       } else {
         console.error('Failed to fetch resumes');
@@ -847,7 +849,10 @@ const AdminTeamPage: React.FC = () => {
           <div className="card-content">
             <div className="flex justify-between items-center mb-4 text-sm text-slate-500">
               <div>
-                <span className="mr-4">总计: <span className="font-medium text-slate-900">{resumes.length}</span></span>
+                <span className="mr-4">总计: <span className="font-medium text-slate-900">{resumeTotal || resumes.length}</span></span>
+                {resumeTotal > resumes.length && (
+                  <span className="mr-4">已加载: <span className="font-medium text-slate-900">{resumes.length}</span></span>
+                )}
                 <span>筛选结果: <span className="font-medium text-slate-900">{filteredResumes.length}</span></span>
               </div>
               <div>
