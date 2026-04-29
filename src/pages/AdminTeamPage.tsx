@@ -1099,6 +1099,15 @@ const AdminTeamPage: React.FC = () => {
     { id: 'tracking', label: '埋点管理', icon: Activity }
   ];
 
+  const mobilePriorityTabs = tabs.filter(tab => [
+    'dashboard',
+    'core-metrics',
+    'users',
+    'member-applications',
+    'resumes',
+    'feedback'
+  ].includes(tab.id));
+
   return (
     <div className={`admin-panel`}>
       {/* 侧边栏导航 */}
@@ -1158,6 +1167,37 @@ const AdminTeamPage: React.FC = () => {
       {/* 主内容区域 */}
       <main className={`admin-main ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
         <div className="admin-container">
+          <div className="admin-mobile-switcher">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">移动后台</div>
+              <select
+                value={activeTab}
+                onChange={(event) => setActiveTab(event.target.value)}
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                aria-label="切换后台模块"
+              >
+                {tabs.map((tab) => (
+                  <option key={tab.id} value={tab.id}>{tab.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="admin-mobile-quick-tabs">
+              {mobilePriorityTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`admin-mobile-quick-tab ${activeTab === tab.id ? 'active' : ''}`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           {/* 页面头部 */}
           <header className="admin-header">
             <h1>{tabs.find(t => t.id === activeTab)?.label || 'Haigoo Team Admin System'}</h1>

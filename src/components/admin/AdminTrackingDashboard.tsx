@@ -87,6 +87,12 @@ interface PaymentTruthItem {
     completedUsers: number;
 }
 
+interface MembershipActivationItem {
+    memberType: string;
+    activatedUsers: number;
+    currentActiveUsers: number;
+}
+
 interface DashboardData {
     overview: {
         totalUv: number;
@@ -143,6 +149,11 @@ interface DashboardData {
     };
     trend: TrendPoint[];
     paymentTruth: PaymentTruthItem[];
+    membershipActivation: {
+        activatedUsers: number;
+        currentActiveUsers: number;
+        byType: MembershipActivationItem[];
+    };
 }
 
 const VIEW_OPTIONS: { key: ViewKey; label: string; description: string }[] = [
@@ -162,6 +173,12 @@ const PLAN_LABELS: Record<string, string> = {
     trial_week_lite: '体验会员卡',
     club_go_quarterly: '季度会员卡',
     goo_plus_yearly: '年度会员卡',
+};
+
+const MEMBER_TYPE_LABELS: Record<string, string> = {
+    trial_week: '体验会员',
+    quarter: '季度会员',
+    year: '年度会员',
 };
 
 const FUNNEL_DEFINITIONS: Record<string, string> = {
@@ -272,10 +289,10 @@ export default function AdminTrackingDashboard() {
                 icon: <Brain className="w-4 h-4 text-violet-600" />,
             },
             {
-                label: '支付完成用户',
+                label: '会员成功用户',
                 value: formatNum(data.overview.paymentSuccessUv),
-                description: `支付订单 ${formatNum(data.overview.paymentSuccessOrders)}`,
-                footnote: '以后端 completed 订单为准',
+                description: `支付订单 ${formatNum(data.overview.paymentSuccessOrders)} / 状态变更 ${formatNum(data.membershipActivation?.activatedUsers || 0)}`,
+                footnote: '支付记录与用户会员状态综合参考',
                 icon: <DollarSign className="w-4 h-4 text-emerald-600" />,
             },
         ];
@@ -404,7 +421,7 @@ export default function AdminTrackingDashboard() {
                         </button>
                         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
                             <HelpCircle className="h-4 w-4 text-slate-400" />
-                            漏斗卡片的 UV / PV 均按同一链路口径统计，会员支付以后端 completed 为准
+                            漏斗卡片的 UV / PV 均按同一链路口径统计，会员成功参考支付记录与用户会员状态
                         </div>
                     </div>
                 </div>
@@ -541,16 +558,44 @@ export default function AdminTrackingDashboard() {
                         </Panel>
 
                         <Panel
-                            title="支付真值对账"
-                            subtitle="会员支付以 payment_records.completed 为唯一真值"
+                            title="会员成功对账"
+                            subtitle="支付记录 + 用户会员状态变更，用于覆盖手动处理会员的场景"
                             icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
                         >
                             <div className="space-y-3">
-                                {data.paymentTruth.length === 0 && (
-                                    <EmptyState text="当前周期暂无支付完成订单" />
+                                <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-sm font-semibold text-emerald-950">用户会员状态变更</div>
+                                            <div className="text-xs text-emerald-700">按会员生效/状态更新时间计入当前周期</div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="text-lg font-bold text-emerald-950">{formatNum(data.membershipActivation?.activatedUsers || 0)}</div>
+                                            <div className="text-xs text-emerald-700">当前有效 {formatNum(data.membershipActivation?.currentActiveUsers || 0)}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {(data.membershipActivation?.byType || []).map((item) => (
+                                    <div key={`member-${item.memberType}`} className="rounded-2xl border border-slate-200 bg-white px-4 py-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div className="text-sm font-semibold text-slate-900">
+                                                    {MEMBER_TYPE_LABELS[item.memberType] || item.memberType}
+                                                </div>
+                                                <div className="text-xs text-slate-500">{item.memberType}</div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-lg font-bold text-slate-900">{formatNum(item.activatedUsers)}</div>
+                                                <div className="text-xs text-slate-500">状态变更 / 有效 {formatNum(item.currentActiveUsers)}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {data.paymentTruth.length === 0 && (data.membershipActivation?.byType || []).length === 0 && (
+                                    <EmptyState text="当前周期暂无会员成功数据" />
                                 )}
                                 {data.paymentTruth.map((item) => (
-                                    <div key={item.planId} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+                                    <div key={`payment-${item.planId}`} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
                                         <div className="flex items-center justify-between gap-3">
                                             <div>
                                                 <div className="text-sm font-semibold text-slate-900">

@@ -121,6 +121,32 @@ function isActiveMemberUser(user?: User | null) {
   return !Number.isNaN(expireAt.getTime()) && expireAt > new Date()
 }
 
+function getMemberPresentation(user: User) {
+  const memberStartAt = user.memberCycleStartAt ? new Date(user.memberCycleStartAt) : null
+  const isPendingMember = user.memberStatus === 'active' && memberStartAt && !Number.isNaN(memberStartAt.getTime()) && memberStartAt > new Date()
+  const label = isPendingMember
+    ? '待生效'
+    : user.memberStatus === 'active'
+      ? (user.memberType === 'trial_week' ? '体验会员' : user.memberType === 'year' ? '年度会员' : '季度会员')
+      : user.memberStatus === 'expired'
+        ? '已过期'
+        : '普通用户'
+  const className = isPendingMember
+    ? 'bg-amber-100 text-amber-700'
+    : user.memberStatus === 'active'
+      ? 'bg-indigo-100 text-indigo-700'
+      : user.memberStatus === 'expired'
+        ? 'bg-orange-100 text-orange-700'
+        : 'bg-slate-100 text-slate-700'
+  const detail = user.memberStatus === 'active' && user.memberExpireAt
+    ? `到期 ${formatCompactDateTime(user.memberExpireAt)}`
+    : isPendingMember && user.memberCycleStartAt
+      ? `生效 ${formatCompactDateTime(user.memberCycleStartAt)}`
+      : ''
+
+  return { label, className, detail }
+}
+
 function formatEntitlementSummary(user: User, key: EntitlementKey) {
   if (isActiveMemberUser(user)) return '无限次'
   const used = key === 'website_apply' ? getUserFreeWebsiteApplyCount(user) : getUserFreeReferralCount(user)
@@ -583,17 +609,17 @@ export default function UserManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
+    <div className="min-h-screen bg-slate-50 p-3 sm:p-6">
       <div className="max-w-7xl mx-auto">
         {/* 页面标题 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">用户管理</h1>
-          <p className="text-slate-600">管理和监控平台所有注册用户</p>
+        <div className="mb-5 sm:mb-8">
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">用户管理</h1>
+          <p className="mt-1 text-sm text-slate-600 sm:text-base">管理和监控平台所有注册用户</p>
         </div>
 
         {/* 统计卡片 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+        <div className="grid grid-cols-2 gap-3 mb-5 md:grid-cols-2 lg:grid-cols-5 lg:gap-4 lg:mb-6">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600 mb-1">总用户数</p>
@@ -603,7 +629,7 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600 mb-1">活跃用户</p>
@@ -613,7 +639,7 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600 mb-1">已停用</p>
@@ -623,7 +649,7 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600 mb-1">今日新增</p>
@@ -633,7 +659,7 @@ export default function UserManagementPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-sm p-6 border border-slate-200">
+          <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 border border-slate-200">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600 mb-1">本周新增</p>
@@ -722,7 +748,86 @@ export default function UserManagementPage() {
               <p className="text-slate-600">暂无用户数据</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            <div className="divide-y divide-slate-100 md:hidden">
+              {filteredUsers.map((user) => {
+                const member = getMemberPresentation(user)
+                return (
+                  <div key={`mobile-${user.user_id}`} className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          {user.avatar ? (
+                            <img src={user.avatar} alt={user.username} className="h-9 w-9 rounded-full" />
+                          ) : (
+                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-purple-500 text-sm font-semibold text-white">
+                              {user.username[0]?.toUpperCase()}
+                            </div>
+                          )}
+                          <div className="min-w-0">
+                            <div className="truncate text-sm font-semibold text-slate-900">{user.username}</div>
+                            <div className="truncate text-xs text-slate-500">{user.email}</div>
+                          </div>
+                        </div>
+                        <div className="mt-2 text-[11px] text-slate-400">{formatShortUserId(user.user_id)}</div>
+                      </div>
+                      <span className={`inline-flex min-w-max items-center rounded-full px-2 py-1 text-xs font-medium ${member.className}`}>
+                        {member.label}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                      <div className="rounded-xl bg-slate-50 px-3 py-2">
+                        <div className="text-slate-400">注册</div>
+                        <div className="mt-1 font-medium text-slate-700">{formatCompactDateTime(user.createdAt)}</div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 px-3 py-2">
+                        <div className="text-slate-400">会员时间</div>
+                        <div className="mt-1 font-medium text-slate-700">{member.detail || '-'}</div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 px-3 py-2">
+                        <div className="text-slate-400">直申</div>
+                        <div className="mt-1 font-medium text-slate-700">{formatEntitlementSummary(user, 'website_apply')}</div>
+                      </div>
+                      <div className="rounded-xl bg-slate-50 px-3 py-2">
+                        <div className="text-slate-400">内推</div>
+                        <div className="mt-1 font-medium text-slate-700">{formatEntitlementSummary(user, 'referral')}</div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex gap-2">
+                      <button
+                        disabled={updatingId === user.user_id || !isSuperAdmin}
+                        onClick={() => openEdit(user)}
+                        className={`inline-flex flex-1 items-center justify-center gap-1 rounded-xl border px-3 py-2 text-sm font-medium ${
+                          updatingId === user.user_id || !isSuperAdmin
+                            ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                            : 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                        }`}
+                      >
+                        <Eye className="h-4 w-4" />
+                        编辑会员
+                      </button>
+                      <button
+                        disabled={updatingId === user.user_id || !isSuperAdmin}
+                        onClick={() => updateUserStatus(user.user_id, user.status === 'active' ? 'suspended' : 'active')}
+                        className={`inline-flex items-center justify-center rounded-xl border px-3 py-2 text-sm font-medium ${
+                          updatingId === user.user_id || !isSuperAdmin
+                            ? 'cursor-not-allowed bg-slate-100 text-slate-400'
+                            : user.status === 'active'
+                              ? 'border-red-200 bg-white text-red-600'
+                              : 'border-emerald-200 bg-white text-emerald-700'
+                        }`}
+                      >
+                        {user.status === 'active' ? '停用' : '启用'}
+                      </button>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
               <table className="w-full min-w-[1320px] table-fixed">
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
@@ -795,35 +900,15 @@ export default function UserManagementPage() {
                       </td>
                       <td className="px-4 py-4">
                         {(() => {
-                          const memberStartAt = user.memberCycleStartAt ? new Date(user.memberCycleStartAt) : null
-                          const isPendingMember = user.memberStatus === 'active' && memberStartAt && !Number.isNaN(memberStartAt.getTime()) && memberStartAt > new Date()
-                          const memberLabel = isPendingMember
-                            ? '待生效'
-                            : user.memberStatus === 'active'
-                              ? (user.memberType === 'trial_week' ? '体验会员' : user.memberType === 'year' ? '年度会员' : '季度会员')
-                              : user.memberStatus === 'expired'
-                                ? '已过期'
-                                : '普通用户'
-                          const memberClass = isPendingMember
-                            ? 'bg-amber-100 text-amber-700'
-                            : user.memberStatus === 'active'
-                              ? 'bg-indigo-100 text-indigo-700'
-                              : user.memberStatus === 'expired'
-                                ? 'bg-orange-100 text-orange-700'
-                                : 'bg-slate-100 text-slate-700'
+                          const member = getMemberPresentation(user)
                           return (
                             <div className="space-y-1">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${memberClass}`}>
-                                {memberLabel}
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${member.className}`}>
+                                {member.label}
                               </span>
-                              {user.memberStatus === 'active' && user.memberExpireAt && (
+                              {member.detail && (
                                 <div className="text-xs text-slate-400">
-                                  到期 {formatCompactDateTime(user.memberExpireAt)}
-                                </div>
-                              )}
-                              {isPendingMember && user.memberCycleStartAt && (
-                                <div className="text-xs text-slate-400">
-                                  生效 {formatCompactDateTime(user.memberCycleStartAt)}
+                                  {member.detail}
                                 </div>
                               )}
                             </div>
@@ -901,6 +986,7 @@ export default function UserManagementPage() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </div>
 
@@ -912,18 +998,19 @@ export default function UserManagementPage() {
 
       {editingUser && (
         <div
-          className="fixed inset-0 z-[1000] overflow-y-auto bg-black/30 p-4"
+          className="fixed inset-0 z-[1000] overflow-y-auto bg-black/30 p-2 sm:p-4"
           onClick={() => setEditingUser(null)}
         >
-          <div className="flex min-h-full items-center justify-center">
+          <div className="flex min-h-full items-end justify-center sm:items-center">
             <div
-              className="flex w-full max-w-3xl max-h-[calc(100vh-2rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-xl"
+              className="flex w-full max-w-3xl max-h-[calc(100vh-1rem)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl"
               onClick={(event) => event.stopPropagation()}
             >
-              <div className="border-b border-slate-200 px-6 py-4">
+              <div className="border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-4">
                 <h3 className="text-lg font-semibold">编辑用户</h3>
+                <div className="mt-1 truncate text-xs text-slate-500">{editingUser.email}</div>
               </div>
-              <div className="flex-1 overflow-y-auto px-6 py-4">
+              <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-6">
                 <div className="space-y-4">
               <div>
                 <label className="block text-sm text-slate-700 mb-2">用户名</label>
@@ -1161,11 +1248,11 @@ export default function UserManagementPage() {
               </div>
             </div>
               </div>
-              <div className="border-t border-slate-200 px-6 py-4">
-                <div className="flex justify-end gap-2">
-                  <button onClick={() => setEditingUser(null)} className="px-4 py-2 border rounded-lg">取消</button>
+              <div className="border-t border-slate-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+                <div className="flex gap-2 sm:justify-end">
+                  <button onClick={() => setEditingUser(null)} className="flex-1 rounded-lg border px-4 py-2 sm:flex-none">取消</button>
                   {isSuperAdmin && (
-                    <button onClick={saveEdit} className="px-4 py-2 bg-violet-600 text-white rounded-lg">保存</button>
+                    <button onClick={saveEdit} className="flex-1 rounded-lg bg-violet-600 px-4 py-2 text-white sm:flex-none">保存</button>
                   )}
                 </div>
               </div>
