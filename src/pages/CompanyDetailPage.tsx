@@ -506,13 +506,16 @@ export default function CompanyDetailPage() {
                                 <p className="text-slate-500">该公司目前没有开放的职位</p>
                             </div>
                         ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:gap-7">
                                 {jobs.map((job) => (
                                     <JobCardNew
                                         key={job.id}
                                         job={job}
-                                        onClick={handleJobClick}
-                                        className="h-[336px] sm:h-[360px] lg:h-[397px] w-full"
+                                        variant="list"
+                                        onClick={() => handleJobClick(job)}
+                                        isActive={selectedJob?.id === job.id}
+                                        showApplicationMethodIcons
+                                        compactFeatured
                                     />
                                 ))}
                             </div>
