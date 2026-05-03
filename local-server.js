@@ -89,6 +89,8 @@ async function startServer() {
         // Backward compatibility if needed, or just redirect
         app.all('/api/proxy-image', async (req, res) => { await imagesHandler(req, res); });
         app.all('/api/process-image', async (req, res) => { await imagesHandler(req, res); });
+        const companyAssetsHandler = (await import('./lib/api-handlers/company-assets.js')).default;
+        app.all('/api/company-assets', async (req, res) => { await companyAssetsHandler(req, res); });
         console.log('Images handler imported.');
 
         console.log('Importing bug reports handler (merged into admin-ops)...');

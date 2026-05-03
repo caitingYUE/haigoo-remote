@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Building2, Briefcase, Clock } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
 import { trustedCompaniesService } from '../services/trusted-companies-service'
+import { getCompanyLogoSources } from '../utils/company-logo'
 
 interface HomeCompanyCardProps {
     company: TrustedCompany
@@ -16,6 +17,19 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
     const [coverImage, setCoverImage] = useState<string>('')
     const [isLoadingCover, setIsLoadingCover] = useState(false)
     const [hasLoadedCover, setHasLoadedCover] = useState(false)
+    const logoSources = React.useMemo(() => getCompanyLogoSources({
+        companyId: company.id,
+        cachedLogoUrl: company.cachedLogoUrl,
+        originalLogoUrl: company.logo,
+        version: company.updatedAt
+    }), [company.id, company.cachedLogoUrl, company.logo, company.updatedAt])
+    const logoSourceKey = React.useMemo(() => logoSources.join('|'), [logoSources])
+    const [logoSourceIndex, setLogoSourceIndex] = useState(0)
+    const logoSrc = logoSources[logoSourceIndex] || ''
+
+    useEffect(() => {
+        setLogoSourceIndex(0)
+    }, [logoSourceKey])
 
     // Generate a consistent gradient based on company name length
     const getGradient = (name: string) => {
@@ -85,13 +99,20 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                             loading="lazy"
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
-                    ) : company.logo ? (
+                    ) : logoSrc ? (
                         <div className="absolute inset-0 bg-white flex items-center justify-center p-8">
                             <img
-                                src={company.logo}
+                                src={logoSrc}
                                 alt={`${company.name} logo`}
                                 loading="lazy"
                                 className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                                onError={() => {
+                                    if (logoSourceIndex < logoSources.length - 1) {
+                                        setLogoSourceIndex((idx) => idx + 1)
+                                    } else {
+                                        setLogoSourceIndex(logoSources.length)
+                                    }
+                                }}
                             />
                         </div>
                     ) : (

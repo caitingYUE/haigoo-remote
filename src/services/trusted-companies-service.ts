@@ -26,6 +26,7 @@ export interface TrustedCompany {
     linkedin?: string;
     description?: string;
     logo?: string;
+    cachedLogoUrl?: string;
     coverImage?: string;
     address?: string;
     employeeCount?: string;

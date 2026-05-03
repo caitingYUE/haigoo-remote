@@ -7,6 +7,7 @@ import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import JobDetailModal from '../components/JobDetailModal'
+import { getCompanyLogoSources } from '../utils/company-logo'
 
 export default function CompanyProfilePage() {
     const navigate = useNavigate()
@@ -75,6 +76,19 @@ export default function CompanyProfilePage() {
     }, [jobs, searchTerm, typeFilter, remoteFilter])
 
     const currentJobIndex = selectedJob ? filteredJobs.findIndex(j => j.id === selectedJob.id) : -1
+    const logoSources = useMemo(() => getCompanyLogoSources({
+        companyId: company?.id,
+        cachedLogoUrl: company?.cachedLogoUrl,
+        originalLogoUrl: company?.logo,
+        version: company?.updatedAt
+    }), [company?.id, company?.cachedLogoUrl, company?.logo, company?.updatedAt])
+    const logoSourceKey = useMemo(() => logoSources.join('|'), [logoSources])
+    const [logoSourceIndex, setLogoSourceIndex] = useState(0)
+    const logoSrc = logoSources[logoSourceIndex] || ''
+
+    useEffect(() => {
+        setLogoSourceIndex(0)
+    }, [logoSourceKey])
 
     if (loading) {
         return (
@@ -109,8 +123,19 @@ export default function CompanyProfilePage() {
                     <div className="flex flex-col md:flex-row gap-8 items-start">
                         {/* Logo */}
                         <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl shadow-sm border border-slate-100 p-2 flex-shrink-0">
-                            {company.logo ? (
-                                <img src={company.logo} alt={company.name} className="w-full h-full object-contain rounded-xl" />
+                            {logoSrc ? (
+                                <img
+                                    src={logoSrc}
+                                    alt={company.name}
+                                    className="w-full h-full object-contain rounded-xl"
+                                    onError={() => {
+                                        if (logoSourceIndex < logoSources.length - 1) {
+                                            setLogoSourceIndex((idx) => idx + 1)
+                                        } else {
+                                            setLogoSourceIndex(logoSources.length)
+                                        }
+                                    }}
+                                />
                             ) : (
                                 <div className="w-full h-full bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-4xl">
                                     {company.name.charAt(0)}

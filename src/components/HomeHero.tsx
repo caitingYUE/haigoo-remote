@@ -12,6 +12,7 @@ import JobDetailModal from './JobDetailModal'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { stripMarkdown } from '../utils/text-formatter'
 import { formatSalaryForDisplay } from '../utils/salary-display'
+import { getCompanyLogoSources } from '../utils/company-logo'
 import {
     readPendingGuestResume,
     savePendingGuestResume,
@@ -34,7 +35,7 @@ const SAMPLE_RECOMMENDATIONS = [
         id: 'remotive-clickhouse-pm',
         title: 'Senior Product Manager, ClickHouse Cloud',
         company_name: 'ClickHouse',
-        company_logo: 'https://logo.clearbit.com/clickhouse.com',
+        company_logo: '',
         location: 'USA (Remote)',
         timezone: 'US time zones',
         salary: '$145k - $225k USD',
@@ -45,7 +46,7 @@ const SAMPLE_RECOMMENDATIONS = [
         id: 'remotive-metrostar-fullstack',
         title: 'Sr. Full Stack Developer I',
         company_name: 'MetroStar',
-        company_logo: 'https://logo.clearbit.com/metrostar.com',
+        company_logo: '',
         location: 'USA (Remote)',
         timezone: 'US time zones',
         salary: '$101k - $147k USD',
@@ -56,7 +57,7 @@ const SAMPLE_RECOMMENDATIONS = [
         id: 'remotive-moneygram-data',
         title: 'Sr. Data Scientist',
         company_name: 'MoneyGram',
-        company_logo: 'https://logo.clearbit.com/moneygram.com',
+        company_logo: '',
         location: 'USA (Remote)',
         timezone: 'US time zones',
         salary: '$130k - $185k USD',
@@ -67,7 +68,7 @@ const SAMPLE_RECOMMENDATIONS = [
         id: 'remotive-pexa-ux',
         title: 'UX Designer',
         company_name: 'PEXA Group',
-        company_logo: 'https://logo.clearbit.com/pexa.com',
+        company_logo: '',
         location: 'UK (Remote)',
         timezone: 'UK time zones',
         salary: '£45k - £55k GBP',
@@ -81,7 +82,7 @@ const PREVIEW_PM_RECOMMENDATIONS = [
         id: 'preview-clickhouse-pm',
         title: 'Senior Product Manager, ClickHouse Cloud',
         company_name: 'ClickHouse',
-        company_logo: 'https://logo.clearbit.com/clickhouse.com',
+        company_logo: '',
         location: 'USA (Remote)',
         timezone: 'US time zones',
         salary: '$145k - $225k USD',
@@ -91,7 +92,7 @@ const PREVIEW_PM_RECOMMENDATIONS = [
         id: 'preview-gitlab-growth-pm',
         title: 'Senior Product Manager, Growth',
         company_name: 'GitLab',
-        company_logo: 'https://logo.clearbit.com/gitlab.com',
+        company_logo: '',
         location: 'Global (Remote)',
         timezone: 'EU/US overlap',
         salary: '$135k - $205k USD',
@@ -101,7 +102,7 @@ const PREVIEW_PM_RECOMMENDATIONS = [
         id: 'preview-zapier-ai-pm',
         title: 'Product Manager, AI Platform',
         company_name: 'Zapier',
-        company_logo: 'https://logo.clearbit.com/zapier.com',
+        company_logo: '',
         location: 'North America (Remote)',
         timezone: 'US/CAN time zones',
         salary: '$130k - $190k USD',
@@ -117,22 +118,13 @@ interface HomeHeroProps {
     }
 }
 
-function extractHost(input?: string) {
-    if (!input) return ''
-    try {
-        const normalized = input.startsWith('http') ? input : `https://${input}`
-        return new URL(normalized).hostname.replace(/^www\./, '')
-    } catch {
-        return ''
-    }
-}
-
-function resolveLogoCandidates(logo?: string, company?: string, website?: string) {
-    const host = extractHost(website)
-    const first = logo ? [logo] : []
-    const fromWebsite = host ? [`https://logo.clearbit.com/${host}`] : []
-    const fallback = company ? [`https://ui-avatars.com/api/?name=${encodeURIComponent(company)}&background=EEF2FF&color=4F46E5&size=96&bold=true&format=png`] : []
-    return [...first, ...fromWebsite, ...fallback]
+function resolveLogoCandidates(logo?: string, company?: string, website?: string, companyId?: string, cachedLogoUrl?: string) {
+    return getCompanyLogoSources({
+        companyId,
+        cachedLogoUrl,
+        originalLogoUrl: logo,
+        version: company || website
+    })
 }
 
 function getHeroCacheKey(userId?: string | null) {
@@ -583,7 +575,13 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             source: job?.source || 'hero',
             publishedAt: job?.publishedAt || job?.published_at || '',
             createdAt: job?.createdAt || job?.created_at || '',
-            logo_candidates: job?.logo_candidates || resolveLogoCandidates(job?.logo || job?.company_logo, company, job?.companyWebsite || job?.company_website),
+            logo_candidates: job?.logo_candidates || resolveLogoCandidates(
+                job?.logo || job?.company_logo,
+                company,
+                job?.companyWebsite || job?.company_website,
+                job?.companyId || job?.company_id,
+                job?.cachedLogoUrl || job?.cachedCompanyLogoUrl || job?.cached_logo_url
+            ),
         }
     }
     const heroDetailJobs = useMemo(
@@ -1519,7 +1517,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                                                 <div key={job.id} className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-4 opacity-60">
                                                     <div className="flex items-start gap-4">
                                                         <div className="w-11 h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                                            <CompanyLogo companyName={job.company_name} logoCandidates={job.logo_candidates || resolveLogoCandidates(job.company_logo, job.company_name, job.company_website)} className="w-full h-full object-contain p-1.5" />
+                                                            <CompanyLogo
+                                                                companyName={job.company_name}
+                                                                logoCandidates={job.logo_candidates || resolveLogoCandidates(job.company_logo, job.company_name, job.company_website, job.companyId || job.company_id, job.cachedLogoUrl || job.cachedCompanyLogoUrl || job.cached_logo_url)}
+                                                                className="w-full h-full object-contain p-1.5"
+                                                            />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-start justify-between gap-3">

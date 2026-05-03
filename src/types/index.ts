@@ -20,11 +20,13 @@ export interface Job {
   skills: string[]
   tags?: string[]
   publishedAt: string
+  updatedAt?: string
   expiresAt?: string  // 可选，避免虚假过期时间
   source: string
   sourceUrl?: string
   url?: string // Standard job post URL
   logo?: string
+  cachedLogoUrl?: string
   // RSS数据扩展字段
   experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive'
   category?: string
@@ -66,6 +68,8 @@ export interface Job {
   effectiveReferralContactCount?: number
   companyWebsite?: string
   companyDescription?: string
+  companyLogo?: string
+  cachedCompanyLogoUrl?: string
 
   // AI-generated job summary (30-50 characters)
   summary?: string

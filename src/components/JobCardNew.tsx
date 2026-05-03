@@ -1,11 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Star, Crown, Link2, Mail, Zap } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { resolveMatchLevel } from '../utils/match-display';
 import { trackingService } from '../services/tracking-service';
 import { formatSalaryForDisplay } from '../utils/salary-display';
+import { getCompanyLogoSources } from '../utils/company-logo';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -135,6 +136,19 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    }, [job.publishedAt]);
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
+   const logoSources = useMemo(() => getCompanyLogoSources({
+      companyId: job.companyId,
+      cachedLogoUrl: job.cachedLogoUrl || job.cachedCompanyLogoUrl,
+      originalLogoUrl: job.logo || job.companyLogo,
+      version: job.updatedAt || job.publishedAt
+   }), [job.companyId, job.cachedLogoUrl, job.cachedCompanyLogoUrl, job.logo, job.companyLogo, job.updatedAt, job.publishedAt]);
+   const logoSourceKey = useMemo(() => logoSources.join('|'), [logoSources]);
+   const [logoSourceIndex, setLogoSourceIndex] = useState(0);
+   const resolvedLogoSrc = logoSources[logoSourceIndex] || '';
+
+   useEffect(() => {
+      setLogoSourceIndex(0);
+   }, [logoSourceKey]);
 
    // Dynamic Background Color Logic
    const bgColor = useMemo(() => getPastelColor(job.company || 'default'), [job.company]);
@@ -347,12 +361,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {/* Logo (Centered) */}
             <div className="relative flex-shrink-0 w-16 h-16 bg-white rounded-[18px] shadow-[0_16px_32px_-24px_rgba(15,23,42,0.45)] flex items-center justify-center p-2 overflow-hidden">
-               {job.logo ? (
+               {resolvedLogoSrc ? (
                   <img
-                     src={job.logo}
+                     src={resolvedLogoSrc}
                      alt={job.company}
                      className="w-full h-full object-contain"
                      onError={(e) => {
+                        if (logoSourceIndex < logoSources.length - 1) {
+                           setLogoSourceIndex((idx) => idx + 1);
+                           return;
+                        }
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';
                         if (target.parentElement && !target.dataset.errorHandled) {
@@ -387,12 +405,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       return (
          <div className={`${sizeClasses[size]} flex-shrink-0 bg-white rounded-xl border border-slate-100 flex items-center justify-center overflow-hidden relative group-hover:border-indigo-100 transition-colors shadow-sm`}>
-            {job.logo ? (
+            {resolvedLogoSrc ? (
                <img
-                  src={job.logo}
+                  src={resolvedLogoSrc}
                   alt={job.company}
                   className="w-full h-full object-contain"
                   onError={(e) => {
+                     if (logoSourceIndex < logoSources.length - 1) {
+                        setLogoSourceIndex((idx) => idx + 1);
+                        return;
+                     }
                      const target = e.target as HTMLImageElement;
                      target.style.display = 'none';
                      if (target.parentElement && !target.dataset.errorHandled) {

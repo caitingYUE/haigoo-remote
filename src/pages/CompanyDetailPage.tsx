@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Info, Mail } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -9,6 +9,7 @@ import { trackingService } from '../services/tracking-service'
 import JobCardNew from '../components/JobCardNew'
 import { SingleLineTags } from '../components/SingleLineTags'
 import JobDetailModal from '../components/JobDetailModal'
+import { getCompanyLogoSources } from '../utils/company-logo'
 
 import { LocationTooltip } from '../components/LocationTooltip'
 
@@ -28,6 +29,19 @@ export default function CompanyDetailPage() {
 
     const decodedCompanyName = decodeURIComponent(companyName || '')
     const canShowCompanyDetails = true
+    const companyLogoSources = useMemo(() => getCompanyLogoSources({
+        companyId: companyInfo?.id,
+        cachedLogoUrl: companyInfo?.cachedLogoUrl,
+        originalLogoUrl: companyInfo?.logo,
+        version: companyInfo?.updatedAt
+    }), [companyInfo?.id, companyInfo?.cachedLogoUrl, companyInfo?.logo, companyInfo?.updatedAt])
+    const companyLogoSourceKey = useMemo(() => companyLogoSources.join('|'), [companyLogoSources])
+    const [companyLogoIndex, setCompanyLogoIndex] = useState(0)
+    const companyLogoSrc = companyLogoSources[companyLogoIndex] || ''
+
+    useEffect(() => {
+        setCompanyLogoIndex(0)
+    }, [companyLogoSourceKey])
 
     useEffect(() => {
         loadCompanyData()
@@ -224,13 +238,17 @@ export default function CompanyDetailPage() {
                         <div className="flex-1 min-w-0">
                             <div className="mb-4 flex items-start gap-3 sm:gap-4">
                                 {/* Company Logo */}
-                                {canShowCompanyDetails && (companyInfo?.logo ? (
+                                {canShowCompanyDetails && (companyLogoSrc ? (
                                     <div className="h-16 w-16 sm:h-20 sm:w-20 bg-white rounded-xl flex items-center justify-center shadow-lg flex-shrink-0 border border-slate-100 p-2 overflow-hidden">
                                         <img
-                                            src={companyInfo.logo}
+                                            src={companyLogoSrc}
                                             alt={decodedCompanyName}
                                             className="w-full h-full object-contain"
                                             onError={(e) => {
+                                                if (companyLogoIndex < companyLogoSources.length - 1) {
+                                                    setCompanyLogoIndex((idx) => idx + 1)
+                                                    return
+                                                }
                                                 const parent = e.currentTarget.parentElement!;
                                                 parent.classList.remove('bg-white', 'p-2', 'border', 'border-slate-100');
                                                 parent.classList.add('bg-gradient-to-br', 'from-indigo-500', 'to-indigo-600');

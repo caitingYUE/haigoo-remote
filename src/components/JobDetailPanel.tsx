@@ -18,6 +18,7 @@ import { ShareJobModal } from './ShareJobModal'
 import { resolveMatchLevel } from '../utils/match-display'
 import { buildJobDetailSections, type JobDetailBlock } from '../utils/job-detail-content'
 import { formatSalaryForDisplay } from '../utils/salary-display'
+import { getCompanyLogoSources } from '../utils/company-logo'
 
 interface JobDetailPanelProps {
     job: Job
@@ -83,6 +84,19 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
     const companyInfoRequestRef = useRef(0)
+    const logoSources = useMemo(() => getCompanyLogoSources({
+        companyId: job.companyId,
+        cachedLogoUrl: job.cachedLogoUrl || job.cachedCompanyLogoUrl,
+        originalLogoUrl: job.logo || job.companyLogo,
+        version: job.updatedAt || job.publishedAt
+    }), [job.companyId, job.cachedLogoUrl, job.cachedCompanyLogoUrl, job.logo, job.companyLogo, job.updatedAt, job.publishedAt])
+    const logoSourceKey = useMemo(() => logoSources.join('|'), [logoSources])
+    const [logoSourceIndex, setLogoSourceIndex] = useState(0)
+    const detailLogoSrc = logoSources[logoSourceIndex] || ''
+
+    useEffect(() => {
+        setLogoSourceIndex(0)
+    }, [logoSourceKey])
 
     const usesCustomReferralContacts = job?.referralContactMode === 'custom'
     const hasExplicitSelectedReferralIds = Object.prototype.hasOwnProperty.call(job || {}, 'selectedReferralContactIds')
@@ -1551,13 +1565,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             className="bg-gradient-to-br from-white to-slate-50/60 border border-slate-200 rounded-[24px] p-5 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer group/card"
                         >
                             <div className="flex items-start gap-4 mb-4">
-                                {isAuthenticated && (job.logo ? (
+                                {isAuthenticated && (detailLogoSrc ? (
                                     <div className="hidden sm:flex w-14 h-14 rounded-xl bg-white border border-slate-100 items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1 group-hover/card:scale-105 transition-transform duration-300">
                                         <img
-                                            src={job.logo}
+                                            src={detailLogoSrc}
                                             alt={job.company}
                                             className="w-full h-full object-contain"
                                             onError={(e) => {
+                                                if (logoSourceIndex < logoSources.length - 1) {
+                                                    setLogoSourceIndex((idx) => idx + 1)
+                                                    return
+                                                }
                                                 (e.target as HTMLImageElement).style.display = 'none';
                                                 (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
                                                 (e.target as HTMLImageElement).parentElement!.className = "hidden sm:flex w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300";

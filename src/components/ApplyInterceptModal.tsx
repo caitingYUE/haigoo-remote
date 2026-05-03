@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle, Crown, ArrowRight, Shield, TrendingUp, Sparkles, Target, CheckCircle2, FileCheck, Building2, MapPin, Users, Star, Calendar, ExternalLink, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Job } from '../types';
 import { TrustedCompany } from '../services/trusted-companies-service';
 import { trackingService } from '../services/tracking-service';
+import { getCompanyLogoSources } from '../utils/company-logo';
 
 interface ApplyInterceptModalProps {
     isOpen: boolean;
@@ -48,6 +49,19 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 }) => {
     const navigate = useNavigate();
     const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
+    const logoSources = useMemo(() => getCompanyLogoSources({
+        companyId: companyInfo?.id || job.companyId,
+        cachedLogoUrl: companyInfo?.cachedLogoUrl || job.cachedLogoUrl || job.cachedCompanyLogoUrl,
+        originalLogoUrl: companyInfo?.logo || job.logo || job.companyLogo,
+        version: companyInfo?.updatedAt || job.updatedAt || job.publishedAt
+    }), [companyInfo?.id, companyInfo?.cachedLogoUrl, companyInfo?.logo, companyInfo?.updatedAt, job.companyId, job.cachedLogoUrl, job.cachedCompanyLogoUrl, job.logo, job.companyLogo, job.updatedAt, job.publishedAt]);
+    const logoSourceKey = useMemo(() => logoSources.join('|'), [logoSources]);
+    const [logoSourceIndex, setLogoSourceIndex] = useState(0);
+    const logoSrc = logoSources[logoSourceIndex] || '';
+
+    useEffect(() => {
+        setLogoSourceIndex(0);
+    }, [logoSourceKey]);
 
     const baseTrackingProps = {
         page_key: 'job_detail',
@@ -186,8 +200,19 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         
                         <div className="relative z-10 flex items-start gap-3">
                             <div className="rounded-2xl border border-white/15 bg-white/10 p-3 shadow-lg backdrop-blur-md">
-                                {companyInfo?.logo ? (
-                                    <img src={companyInfo.logo} alt={companyInfo.name} className="w-8 h-8 object-contain" />
+                                {logoSrc ? (
+                                    <img
+                                        src={logoSrc}
+                                        alt={companyInfo?.name || job.company}
+                                        className="w-8 h-8 object-contain"
+                                        onError={() => {
+                                            if (logoSourceIndex < logoSources.length - 1) {
+                                                setLogoSourceIndex((idx) => idx + 1);
+                                            } else {
+                                                setLogoSourceIndex(logoSources.length);
+                                            }
+                                        }}
+                                    />
                                 ) : (
                                     <Building2 className="w-8 h-8 text-white" />
                                 )}
