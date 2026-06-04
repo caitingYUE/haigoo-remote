@@ -350,6 +350,12 @@ export default function JobsPage() {
     }
   }, [filters.memberOnly, isAuthenticated])
 
+  useEffect(() => {
+    if (!isAuthenticated && filters.category.length > 0) {
+      setFilters(prev => normalizeJobFilters({ ...prev, category: [] }))
+    }
+  }, [filters.category.length, isAuthenticated])
+
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
@@ -371,6 +377,7 @@ export default function JobsPage() {
   const [listMode, setListMode] = useState<'jobs' | 'favorites' | 'applications'>('jobs')
   const [favoriteJobs, setFavoriteJobs] = useState<Job[]>([])
   const [applicationJobs, setApplicationJobs] = useState<Job[]>([])
+  const [applicationCount, setApplicationCount] = useState(0)
   const [personalListLoading, setPersonalListLoading] = useState(false)
   const [activeBundles, setActiveBundles] = useState<JobBundle[]>([]);
 
@@ -474,7 +481,7 @@ export default function JobsPage() {
       }
 
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
       if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
       if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
@@ -654,7 +661,7 @@ export default function JobsPage() {
       queryParams.append('isApproved', 'true')
 
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
       if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
       if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
@@ -814,7 +821,7 @@ export default function JobsPage() {
             : []
         const next = normalizeJobFilters({
           ...prev,
-          ...(params.has('category') ? { category: readCsvParam(params, 'category') } : {}),
+          ...(params.has('category') && isAuthenticated ? { category: readCsvParam(params, 'category') } : {}),
           ...(params.has('experienceLevel') ? { experienceLevel: readCsvParam(params, 'experienceLevel') } : {}),
           ...(params.has('industry') ? { industry: readCsvParam(params, 'industry') } : {}),
           ...(params.has('regionType') || params.has('region') ? { regionType: urlRegionType.length > 0 ? urlRegionType : legacyRegionType } : {}),
@@ -828,7 +835,7 @@ export default function JobsPage() {
         return JSON.stringify(next) === JSON.stringify(prev) ? prev : next
       })
     }
-  }, [location.search])
+  }, [isAuthenticated, location.search])
 
   const toggleSaveJob = async (jobId: string, job?: Job) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
@@ -893,6 +900,48 @@ export default function JobsPage() {
   // Simply alias filteredJobs as distributedJobs for backward compatibility
   const distributedJobs = filteredJobs
 
+  const mapApplicationJobs = useCallback((applications: any[]) => (
+    Array.isArray(applications)
+      ? applications.map((item: any) => ({ ...item.job, appliedAt: item.updatedAt })).filter((item: any) => item?.id)
+      : []
+  ), [])
+
+  const refreshApplicationSummary = useCallback(async (options: { hydrateList?: boolean } = {}) => {
+    if (!token) {
+      setApplicationCount(0)
+      setApplicationJobs([])
+      return
+    }
+
+    try {
+      const resp = await fetch('/api/user-profile?action=my_applications', { headers: { Authorization: `Bearer ${token}` } })
+      const data = await resp.json().catch(() => ({}))
+      const applications = Array.isArray(data?.applications) ? data.applications : []
+      setApplicationCount(applications.length)
+      if (options.hydrateList) {
+        setApplicationJobs(mapApplicationJobs(applications))
+      }
+    } catch (error) {
+      console.error('[JobsPage] Failed to refresh application summary:', error)
+    }
+  }, [mapApplicationJobs, token])
+
+  useEffect(() => {
+    void refreshApplicationSummary({ hydrateList: listMode === 'applications' })
+  }, [listMode, refreshApplicationSummary])
+
+  useEffect(() => {
+    const handleApplicationUpdated = () => {
+      void refreshApplicationSummary({ hydrateList: listMode === 'applications' })
+    }
+    window.addEventListener('haigoo:applications-updated', handleApplicationUpdated)
+    window.addEventListener('focus', handleApplicationUpdated)
+    return () => {
+      window.removeEventListener('haigoo:applications-updated', handleApplicationUpdated)
+      window.removeEventListener('focus', handleApplicationUpdated)
+    }
+  }, [listMode, refreshApplicationSummary])
+
   useEffect(() => {
     if (!token || listMode === 'jobs') return
     let cancelled = false
@@ -906,10 +955,11 @@ export default function JobsPage() {
         } else {
           const resp = await fetch('/api/user-profile?action=my_applications', { headers: { Authorization: `Bearer ${token}` } })
           const data = await resp.json().catch(() => ({}))
-          const mappedJobs = Array.isArray(data?.applications)
-            ? data.applications.map((item: any) => ({ ...item.job, appliedAt: item.updatedAt })).filter((item: any) => item?.id)
-            : []
-          if (!cancelled) setApplicationJobs(mappedJobs)
+          const applications = Array.isArray(data?.applications) ? data.applications : []
+          if (!cancelled) {
+            setApplicationCount(applications.length)
+            setApplicationJobs(mapApplicationJobs(applications))
+          }
         }
       } catch (error) {
         console.error('[JobsPage] Failed to load personal job list:', error)
@@ -923,7 +973,7 @@ export default function JobsPage() {
     }
     void loadPersonalList()
     return () => { cancelled = true }
-  }, [listMode, token])
+  }, [listMode, mapApplicationJobs, token])
 
   const visibleJobs = useMemo(() => {
     if (listMode === 'favorites') return favoriteJobs
@@ -1083,7 +1133,7 @@ export default function JobsPage() {
                   sortBy={sortBy}
                   listMode={listMode}
                   favoriteCount={savedJobs.size}
-                  applicationCount={applicationJobs.length}
+                  applicationCount={applicationCount}
                   isAuthenticated={isAuthenticated}
                   isMember={isMember}
                   onListModeChange={(mode) => {

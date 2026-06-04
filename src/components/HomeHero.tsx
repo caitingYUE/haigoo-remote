@@ -217,12 +217,27 @@ function spreadJobsByCompany<T extends Record<string, any>>(jobs: T[], limit = 6
 }
 
 function resolveLogoCandidates(logo?: string, company?: string, website?: string, companyId?: string, cachedLogoUrl?: string) {
-    return getCompanyLogoSources({
+    const baseSources = getCompanyLogoSources({
         companyId,
         cachedLogoUrl,
         originalLogoUrl: logo,
         version: company || website
     })
+    const websiteFallbacks: string[] = []
+    const rawWebsite = String(website || '').trim()
+    if (rawWebsite) {
+        try {
+            const withProtocol = /^https?:\/\//i.test(rawWebsite) ? rawWebsite : `https://${rawWebsite}`
+            const host = new URL(withProtocol).hostname.replace(/^www\./, '')
+            if (host) {
+                websiteFallbacks.push(`https://logo.clearbit.com/${host}`)
+                websiteFallbacks.push(`https://www.google.com/s2/favicons?domain=${host}&sz=128`)
+            }
+        } catch {
+            // ignore malformed company websites
+        }
+    }
+    return Array.from(new Set([...baseSources, ...websiteFallbacks]))
 }
 
 function getHeroCacheKey(userId?: string | null) {
@@ -917,6 +932,9 @@ export default function HomeHero({
 
     const normalizeHeroJob = (job: any) => {
         const company = job?.company_name || job?.company || 'Company'
+        const originalLogo = job?.logo || job?.company_logo || job?.companyLogo || job?.originalLogoUrl || ''
+        const cachedLogo = job?.cachedLogoUrl || job?.cachedCompanyLogoUrl || job?.cached_logo_url || ''
+        const companyWebsite = job?.companyWebsite || job?.company_website || job?.website || ''
         return {
             ...job,
             id: String(job?.id || job?.jobId || job?.job_id || ''),
@@ -932,25 +950,29 @@ export default function HomeHero({
             translations: job?.translations || null,
             companyTranslations: job?.companyTranslations || job?.company_translations || null,
             companyId: job?.companyId || job?.company_id,
-            logo: job?.logo || job?.company_logo || '',
-            company_logo: job?.logo || job?.company_logo || '',
-            company_website: job?.companyWebsite || job?.company_website || '',
-            companyWebsite: job?.companyWebsite || job?.company_website || '',
+            cachedLogoUrl: cachedLogo,
+            logo: originalLogo,
+            company_logo: originalLogo,
+            companyLogo: originalLogo,
+            company_website: companyWebsite,
+            companyWebsite,
             url: job?.url || job?.sourceUrl || '',
             sourceUrl: job?.sourceUrl || job?.url || '',
             source: job?.source || 'hero',
             publishedAt: job?.publishedAt || job?.published_at || '',
             createdAt: job?.createdAt || job?.created_at || '',
             category: job?.category || '',
+            jobType: job?.jobType || job?.job_type || job?.type || '',
+            experienceLevel: job?.experienceLevel || job?.experience_level || '',
             companyRating: job?.companyRating || job?.company_rating || job?.trustedCompanyRating || job?.trusted_company_rating || '',
             ratingSource: job?.ratingSource || job?.rating_source || job?.trustedRatingSource || job?.trusted_rating_source || '',
             memberOnly: Boolean(job?.memberOnly ?? job?.member_only),
             logo_candidates: job?.logo_candidates || resolveLogoCandidates(
-                job?.logo || job?.company_logo,
+                originalLogo,
                 company,
-                job?.companyWebsite || job?.company_website,
+                companyWebsite,
                 job?.companyId || job?.company_id,
-                job?.cachedLogoUrl || job?.cachedCompanyLogoUrl || job?.cached_logo_url
+                cachedLogo
             ),
         }
     }
@@ -1763,11 +1785,11 @@ export default function HomeHero({
                     alt=""
                     loading="eager"
                     decoding="sync"
-                    className="absolute inset-x-0 top-[-18px] h-[800px] w-full origin-center scale-[1.08] object-cover object-[58%_center] opacity-95 saturate-[1.05] contrast-[1.04]"
+                    className="absolute inset-x-0 top-[-18px] h-[1040px] w-full origin-center scale-[1.08] object-cover object-[58%_center] opacity-95 saturate-[1.05] contrast-[1.04]"
                 />
-                <div className="absolute inset-x-0 top-0 h-[760px] bg-[linear-gradient(90deg,rgba(255,253,249,0.9)_0%,rgba(255,253,249,0.66)_31%,rgba(255,253,249,0.1)_64%,rgba(255,253,249,0.03)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.18),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.18)_70%,#fbfaf6_100%)]" />
-                <div className="absolute inset-x-0 top-[610px] h-[260px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,#fbfaf6_72%)]" />
-                <div className="absolute inset-x-0 top-[760px] h-20 bg-[radial-gradient(58%_70%_at_18%_90%,rgba(116,159,128,0.16),transparent_68%),radial-gradient(62%_80%_at_72%_94%,rgba(116,159,128,0.13),transparent_72%)]" />
+                <div className="absolute inset-x-0 top-0 h-[980px] bg-[linear-gradient(90deg,rgba(255,253,249,0.92)_0%,rgba(255,253,249,0.68)_31%,rgba(255,253,249,0.14)_64%,rgba(255,253,249,0.05)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.18),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.12)_68%,rgba(251,250,246,0.78)_92%,#fbfaf6_100%)]" />
+                <div className="absolute inset-x-0 top-[700px] h-[360px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,rgba(251,250,246,0.62)_64%,#fbfaf6_100%)]" />
+                <div className="absolute inset-x-0 top-[900px] h-32 bg-[radial-gradient(58%_70%_at_18%_90%,rgba(116,159,128,0.16),transparent_68%),radial-gradient(62%_80%_at_72%_94%,rgba(116,159,128,0.13),transparent_72%)]" />
             </div>
 
             {upgradeBannerPhase && (
@@ -1927,6 +1949,15 @@ export default function HomeHero({
                                 const job = normalizeHeroJob(rawJob)
                                 const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
                                 const isVipJob = Boolean((job as any).memberOnly || (job as any).member_only)
+                                const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
+                                const displayTitle = translatedTitle || job.title
+                                const displayCompany = job.translations?.company || job.company_name || job.company || '远程企业'
+                                const metaItems = [
+                                    job.category,
+                                    job.jobType,
+                                    job.location || 'Remote'
+                                ].map((item) => String(item || '').trim()).filter(Boolean)
+                                const logoCandidates = Array.isArray(job.logo_candidates) ? job.logo_candidates : []
                                 return (
                                     <button
                                         key={job.id}
@@ -1934,15 +1965,20 @@ export default function HomeHero({
                                         onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
                                         className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8]"
                                     >
-                                        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6]">
-                                            {(job.company_name || job.company || 'HG').slice(0, 2).toUpperCase()}
+                                        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
+                                            <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
                                             {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-2 z-10 scale-90" /> : null}
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="flex min-w-0 items-center gap-1.5">
-                                                <span className="block truncate text-sm font-black text-slate-900">{job.title}</span>
+                                                <span className="block truncate text-sm font-black text-slate-900" title={displayTitle}>{displayTitle}</span>
+                                                {translatedTitle ? (
+                                                    <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-black text-slate-500" title="已翻译">译</span>
+                                                ) : null}
                                             </span>
-                                            <span className="block truncate text-xs font-semibold text-slate-500">{job.company_name || job.company || '远程企业'} · {job.location || 'Remote'}</span>
+                                            <span className="block truncate text-xs font-semibold text-slate-500">
+                                                {displayCompany}{metaItems.length ? ` · ${metaItems.slice(0, 2).join(' · ')}` : ''}
+                                            </span>
                                         </span>
                                         <span className="hidden shrink-0 rounded-full bg-[#fff8e8] px-2.5 py-1 text-xs font-black text-[#c48212] sm:inline-flex">
                                             {salaryText}

@@ -12,13 +12,17 @@ interface MultiSelectDropdownProps {
   selected: string[];
   onChange: (selected: string[]) => void;
   placeholder?: string;
+  disabled?: boolean;
+  disabledMessage?: string;
 }
 
 export default function MultiSelectDropdown({
   label,
   options,
   selected,
-  onChange
+  onChange,
+  disabled = false,
+  disabledMessage = '暂无权限'
 }: MultiSelectDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,6 +39,7 @@ export default function MultiSelectDropdown({
   }, []);
 
   const toggleOption = (value: string) => {
+    if (disabled) return;
     if (selected.includes(value)) {
       onChange(selected.filter(item => item !== value));
     } else {
@@ -44,6 +49,7 @@ export default function MultiSelectDropdown({
 
   const clearSelection = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (disabled) return;
     onChange([]);
   };
 
@@ -52,8 +58,11 @@ export default function MultiSelectDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-disabled={disabled}
         className={`flex h-12 items-center gap-2 rounded-[18px] border px-5 text-sm font-bold shadow-[0_14px_32px_-30px_rgba(61,89,120,0.5)] transition-colors hover:bg-white ${
-          selected.length > 0 ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-[#dce8ef] bg-white/90 text-slate-700'
+          disabled
+            ? 'border-[#dce8ef] bg-white/70 text-slate-400'
+            : selected.length > 0 ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-[#dce8ef] bg-white/90 text-slate-700'
         }`}
       >
         <span className="truncate max-w-[100px]">
@@ -77,7 +86,11 @@ export default function MultiSelectDropdown({
 
       {isOpen && (
         <div className="absolute right-0 top-full z-[90] mt-2 w-72 max-h-80 overflow-y-auto rounded-[20px] border border-[#dce8ef] bg-white p-2 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.28)]">
-          {options.map((option) => {
+          {disabled ? (
+            <div className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm font-bold text-slate-500">
+              {disabledMessage}
+            </div>
+          ) : options.map((option) => {
             const isSelected = selected.includes(option.value);
             return (
               <div

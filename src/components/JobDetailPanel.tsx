@@ -803,6 +803,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             source: 'email'
                         })
                     });
+                    window.dispatchEvent(new CustomEvent('haigoo:applications-updated', { detail: { jobId: job.id } }));
                     showSuccess('已为你记录申请，可在「我的投递」查看');
                 } catch (error) {
                     console.error('Failed to record interaction:', error);
@@ -862,6 +863,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             source: sourceType
                         })
                     });
+                    window.dispatchEvent(new CustomEvent('haigoo:applications-updated', { detail: { jobId: job.id } }));
                     showSuccess('已为你记录申请，可在「我的投递」查看');
                 } catch (error) {
                     console.error('Failed to record interaction:', error);
@@ -1032,6 +1034,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     source: 'referral_contact_email'
                 })
             })
+            window.dispatchEvent(new CustomEvent('haigoo:applications-updated', { detail: { jobId: job.id } }))
             showSuccess('已为你记录申请，可在「我的投递」查看')
         } catch (error) {
             console.error('Failed to record interaction:', error)

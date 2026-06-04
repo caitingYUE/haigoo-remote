@@ -85,25 +85,37 @@ export default function TrustedCompaniesPage() {
         loadFilteredData(1, true, hasCache)
     }, [])
 
+    useEffect(() => {
+        if (canAccessTrustedCompaniesPage) return
+        if (searchTerm || selectedIndustries.length > 0 || selectedJobCategories.length > 0) {
+            setSearchTerm('')
+            setSelectedIndustries([])
+            setSelectedJobCategories([])
+        }
+    }, [canAccessTrustedCompaniesPage, searchTerm, selectedIndustries.length, selectedJobCategories.length])
+
     // 当搜索或过滤条件变化时，重新加载数据 (reset to page 1)
     useEffect(() => {
         const timer = setTimeout(() => {
             loadFilteredData(1, true)
         }, 300)
         return () => clearTimeout(timer)
-    }, [searchTerm, selectedIndustries, selectedJobCategories])
+    }, [canAccessTrustedCompaniesPage, searchTerm, selectedIndustries, selectedJobCategories])
 
     const loadFilteredData = async (pageNum: number, isReset: boolean = false, silent: boolean = false) => {
         try {
             if (!silent) setLoading(true)
+            const effectiveSearch = canAccessTrustedCompaniesPage ? searchTerm : ''
+            const effectiveIndustries = canAccessTrustedCompaniesPage ? selectedIndustries : []
+            const effectiveJobCategories = canAccessTrustedCompaniesPage ? selectedJobCategories : []
             const result = await trustedCompaniesService.getCompaniesWithJobStats({
                 page: pageNum,
                 limit: PAGE_SIZE,
                 sortBy: 'updatedAt',
                 sortOrder: 'desc',
-                search: searchTerm,
-                industry: selectedIndustries.length > 0 ? selectedIndustries[0] : undefined,
-                jobCategories: selectedJobCategories,
+                search: effectiveSearch,
+                industry: effectiveIndustries.length > 0 ? effectiveIndustries[0] : undefined,
+                jobCategories: effectiveJobCategories,
                 minJobs: 1
             })
 
@@ -115,7 +127,7 @@ export default function TrustedCompaniesPage() {
                 setPage(1)
 
                 // Cache the first page result if no filters active
-                if (pageNum === 1 && !searchTerm && selectedIndustries.length === 0 && selectedJobCategories.length === 0) {
+                if (pageNum === 1 && !effectiveSearch && effectiveIndustries.length === 0 && effectiveJobCategories.length === 0) {
                     try {
                         localStorage.setItem('haigoo_trusted_companies_cache', JSON.stringify(newList))
                     } catch (e) {
@@ -204,19 +216,28 @@ export default function TrustedCompaniesPage() {
                             <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
                             <input
                                 value={searchTerm}
-                                onChange={(event) => setSearchTerm(event.target.value)}
+                                onChange={(event) => {
+                                    if (!canAccessTrustedCompaniesPage) return
+                                    setSearchTerm(event.target.value)
+                                }}
                                 onKeyDown={(event) => {
                                     if (event.key === 'Enter') {
+                                        if (!canAccessTrustedCompaniesPage) return
                                         loadFilteredData(1, true)
                                     }
                                 }}
-                                placeholder="搜索公司、行业或关键词..."
-                                className="h-14 w-full rounded-full border border-[#dce8ef] bg-white/92 pl-14 pr-14 text-base font-semibold text-slate-800 shadow-[0_18px_48px_-40px_rgba(61,89,120,0.5)] outline-none transition focus:border-[#86b9e8] focus:bg-white focus:ring-4 focus:ring-[#dfeeff]/70"
+                                disabled={!canAccessTrustedCompaniesPage}
+                                placeholder={canAccessTrustedCompaniesPage ? '搜索公司、行业或关键词...' : '升级季度会员后可搜索精选企业'}
+                                className="h-14 w-full rounded-full border border-[#dce8ef] bg-white/92 pl-14 pr-14 text-base font-semibold text-slate-800 shadow-[0_18px_48px_-40px_rgba(61,89,120,0.5)] outline-none transition placeholder:text-slate-300 focus:border-[#86b9e8] focus:bg-white focus:ring-4 focus:ring-[#dfeeff]/70 disabled:cursor-not-allowed disabled:bg-white/62 disabled:text-slate-400"
                             />
                             <button
                                 type="button"
-                                onClick={() => loadFilteredData(1, true)}
-                                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#2f7edb] transition hover:bg-[#eef7ff]"
+                                onClick={() => {
+                                    if (!canAccessTrustedCompaniesPage) return
+                                    loadFilteredData(1, true)
+                                }}
+                                disabled={!canAccessTrustedCompaniesPage}
+                                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#2f7edb] transition hover:bg-[#eef7ff] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
                                 aria-label="搜索企业"
                             >
                                 <Search className="h-5 w-5" />
@@ -228,12 +249,16 @@ export default function TrustedCompaniesPage() {
                                 options={industryOptions}
                                 selected={selectedIndustries}
                                 onChange={setSelectedIndustries}
+                                disabled={!canAccessTrustedCompaniesPage}
+                                disabledMessage="升级季度会员后可筛选行业"
                             />
                             <MultiSelectDropdown
                                 label="在招岗位"
                                 options={jobCategoryOptions}
                                 selected={selectedJobCategories}
                                 onChange={setSelectedJobCategories}
+                                disabled={!canAccessTrustedCompaniesPage}
+                                disabledMessage="升级季度会员后可筛选岗位"
                             />
                             {(selectedIndustries.length > 0 || selectedJobCategories.length > 0) && (
                                 <button

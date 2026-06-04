@@ -3468,10 +3468,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <div className="pr-1 pb-10 transition-all duration-300 lg:min-h-full">
               {tab === 'resume' && (
                 <>
-                  <section className="relative mb-5 overflow-hidden rounded-[30px] border border-[#e1e9f1] bg-white/84 p-6 shadow-[0_24px_70px_-60px_rgba(61,89,120,0.62)] backdrop-blur sm:p-8">
-                    <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-0 h-full w-full scale-[1.03] object-cover object-[72%_52%] opacity-50" />
-                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.9)_40%,rgba(255,255,255,0.42)_72%,rgba(255,255,255,0.76)_100%)]" />
-                    <img src="/pic_lists/Home_pics/Haigoo_hi-transparent.webp" alt="" className="pointer-events-none absolute bottom-3 right-8 h-24 w-24 object-contain opacity-65" />
+                  <section className="relative mb-5 overflow-hidden rounded-[30px] border border-[#e1e9f1] bg-[#fffdf8]/78 p-6 shadow-[0_24px_70px_-60px_rgba(61,89,120,0.62)] backdrop-blur sm:p-8">
+                    <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-0 h-full w-full scale-[1.08] object-cover object-[70%_58%] opacity-[0.62] saturate-[0.98]" />
+                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.94)_0%,rgba(255,253,248,0.84)_40%,rgba(255,253,248,0.36)_72%,rgba(255,253,248,0.62)_100%),linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,253,248,0.72)_100%)]" />
+                    <img src="/pic_lists/Home_pics/Haigoo_hi-transparent.webp" alt="" className="pointer-events-none absolute bottom-3 right-8 h-24 w-24 object-contain opacity-75" />
                     <div className="relative max-w-[860px]">
                       <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#f3e7c8] bg-[#fffaf0]/90 px-3 py-1 text-xs font-black text-[#bd7a12]">
                         <Sparkles className="h-3.5 w-3.5" />

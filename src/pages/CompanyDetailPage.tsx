@@ -244,14 +244,14 @@ export default function CompanyDetailPage() {
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f9fbff_46%,#fffdf8_100%)]">
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[980px] overflow-hidden">
+            <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[1080px] overflow-hidden">
                 <img
                     src={companyDecor.bg}
                     alt=""
-                    className="absolute inset-x-0 top-0 h-[760px] w-full object-cover object-[58%_44%] opacity-[0.22] saturate-[0.96]"
+                    className="absolute inset-x-0 top-0 h-[900px] w-full object-cover object-[58%_44%] opacity-[0.32] saturate-[0.98]"
                 />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.42)_0%,rgba(255,253,248,0.78)_45%,rgba(249,252,255,0.9)_74%,rgba(255,253,248,0.98)_100%)]" />
-                <div className="absolute inset-x-0 bottom-0 h-48 bg-[linear-gradient(180deg,rgba(255,253,248,0)_0%,#fffdf8_86%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.34)_0%,rgba(255,253,248,0.64)_48%,rgba(249,252,255,0.84)_78%,rgba(255,253,248,0.98)_100%)]" />
+                <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,rgba(255,253,248,0)_0%,#fffdf8_86%)]" />
             </div>
             {/* Header */}
             <div className="relative z-10 pt-[82px] lg:pt-[90px]">
@@ -266,18 +266,18 @@ export default function CompanyDetailPage() {
                     </button>
                 </div>
 
-                <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 pb-8">
-                    <div className="relative overflow-hidden rounded-[30px] border border-[#eadfcf] bg-[#fffdf8]/94 p-3 shadow-[0_26px_78px_-62px_rgba(139,101,54,0.34)] sm:p-4 lg:p-5">
+                <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 pb-7">
+                    <div className="relative overflow-hidden rounded-[30px] border border-[#eadfcf]/90 bg-[#fffdf8]/78 p-3 shadow-[0_26px_78px_-62px_rgba(139,101,54,0.34)] backdrop-blur-[2px] sm:p-4 lg:p-5">
                         <img src={companyDecor.grass} alt="" className="pointer-events-none absolute -left-3 bottom-0 hidden h-28 opacity-30 lg:block" />
 
                         <div className="relative">
-                            <section className="relative min-h-[188px] overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,rgba(255,253,248,0.98)_0%,rgba(255,255,255,0.94)_50%,rgba(249,252,255,0.86)_100%)] p-4 sm:p-5 lg:min-h-[214px]">
+                            <section className="relative min-h-[164px] overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,rgba(255,253,248,0.88)_0%,rgba(255,255,255,0.68)_48%,rgba(249,252,255,0.46)_100%)] p-4 sm:p-5 lg:min-h-[188px]">
                                 <img
                                     src={companyDecor.bg}
                                     alt=""
                                     className="pointer-events-none absolute bottom-0 right-0 hidden h-[232px] w-[58%] object-cover object-[68%_62%] opacity-[0.58] lg:block"
                                 />
-                                <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[232px] w-[72%] bg-[linear-gradient(90deg,rgba(255,253,248,0.99)_0%,rgba(255,253,248,0.58)_44%,rgba(255,253,248,0.34)_72%,rgba(255,253,248,0.7)_100%)] lg:block" />
+                                <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[232px] w-[72%] bg-[linear-gradient(90deg,rgba(255,253,248,0.9)_0%,rgba(255,253,248,0.46)_44%,rgba(255,253,248,0.2)_72%,rgba(255,253,248,0.56)_100%)] lg:block" />
                                 <div className="relative z-10 flex items-start gap-4 lg:items-center">
                                     {canShowCompanyDetails && (companyLogoSrc ? (
                                         <div className="h-[74px] w-[74px] flex-shrink-0 overflow-hidden rounded-[22px] border border-[#dfeaf1] bg-white/94 p-2 shadow-[0_22px_48px_-32px_rgba(62,91,120,0.62)] sm:h-20 sm:w-20 lg:h-[88px] lg:w-[88px]">
@@ -337,14 +337,14 @@ export default function CompanyDetailPage() {
                             </section>
                         </div>
 
-                        <section className="mt-5 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white/96 shadow-[0_22px_56px_-44px_rgba(62,91,120,0.26)]">
-                            <div className="flex items-center gap-2 border-b border-[#edf2f6] bg-white/72 px-4 py-3">
+                        <section className="mt-3 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white/76 shadow-[0_22px_56px_-44px_rgba(62,91,120,0.26)] backdrop-blur-[2px]">
+                            <div className="flex items-center gap-2 border-b border-[#edf2f6] bg-white/48 px-4 py-3">
                                 <Info className="w-4 h-4 text-[#6f63f6]" />
                                 <h2 className="text-sm font-black text-slate-900">企业简介与信息</h2>
                             </div>
 
                             <div className="p-4 sm:p-5">
-                                <div className="relative overflow-hidden rounded-[22px] border border-[#e3edf4] bg-[linear-gradient(135deg,#ffffff_0%,#fbfdff_100%)] p-4">
+                                <div className="relative overflow-hidden rounded-[22px] border border-[#e3edf4] bg-[linear-gradient(135deg,rgba(255,255,255,0.82)_0%,rgba(251,253,255,0.58)_100%)] p-4">
                                     <div className="flex items-center gap-2 text-sm font-black text-slate-900">
                                         <Building2 className="h-4 w-4 text-[#6f63f6]" />
                                         <span>关于我们</span>
