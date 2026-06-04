@@ -1,4 +1,4 @@
-import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles, Search } from 'lucide-react'
+import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles, Search, X } from 'lucide-react'
 import type { FormEvent } from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -175,10 +175,32 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
 
   const isHome = location.pathname === '/'
   const isJobsPage = location.pathname === '/jobs' || location.pathname.startsWith('/jobs/')
+  useEffect(() => {
+    if (!isJobsPage) return
+    const params = new URLSearchParams(location.search)
+    setHeaderSearchTerm(params.get('search') || '')
+  }, [isJobsPage, location.search])
+
   const submitHeaderSearch = (event: FormEvent) => {
     event.preventDefault()
     const keyword = headerSearchTerm.trim()
-    navigate(keyword ? `/jobs?search=${encodeURIComponent(keyword)}` : '/jobs')
+    if (!isJobsPage) {
+      navigate(keyword ? `/jobs?search=${encodeURIComponent(keyword)}` : '/jobs')
+      return
+    }
+
+    const params = new URLSearchParams(location.search)
+    if (keyword) params.set('search', keyword)
+    else params.delete('search')
+    navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`)
+  }
+
+  const clearHeaderSearch = () => {
+    setHeaderSearchTerm('')
+    if (!isJobsPage) return
+    const params = new URLSearchParams(location.search)
+    params.delete('search')
+    navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   return (
@@ -210,8 +232,19 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 value={headerSearchTerm}
                 onChange={(event) => setHeaderSearchTerm(event.target.value)}
                 placeholder="搜索岗位、公司、技能..."
-                className="h-10 w-full rounded-full border border-[#dfeaf1] bg-white pl-9 pr-4 text-sm font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#b9d9f5] focus:bg-white focus:ring-2 focus:ring-[#9ecbf2]/20"
+                className="h-10 w-full rounded-full border border-[#dfeaf1] bg-white pl-9 pr-10 text-sm font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#b9d9f5] focus:bg-white focus:ring-2 focus:ring-[#9ecbf2]/20"
               />
+              {headerSearchTerm ? (
+                <button
+                  type="button"
+                  onClick={clearHeaderSearch}
+                  className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                  aria-label="清除搜索"
+                  title="清除搜索"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              ) : null}
             </div>
           </form>
 

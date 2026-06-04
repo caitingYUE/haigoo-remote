@@ -120,6 +120,7 @@ const LOCATION_GROUPS = [
 ] as const;
 
 type LocationGroupValue = typeof LOCATION_GROUPS[number]['value'];
+const ALL_LOCATION_FILTER_VALUES = LOCATION_GROUPS.map(option => option.filterValue);
 
 const THEME_STYLES = {
   indigo: {
@@ -327,15 +328,7 @@ export default function JobFilterBar({
     return groups;
   }, [categoryOptions]);
 
-  const visibleLocationGroups = useMemo(() => {
-    if (!locationOptions.length) return LOCATION_GROUPS;
-    const optionText = locationOptions.map(option => `${option.value} ${option.label}`.toLowerCase());
-    return LOCATION_GROUPS.filter(group => {
-      if (filters.location?.includes(group.filterValue)) return true;
-      const terms = [group.filterValue, group.label, ...group.keywords].map(item => item.toLowerCase());
-      return optionText.some(text => terms.some(term => text.includes(term)));
-    });
-  }, [filters.location, locationOptions]);
+  const visibleLocationGroups = LOCATION_GROUPS;
 
   useEffect(() => {
     if (openDropdown !== 'category') return;
@@ -375,6 +368,16 @@ export default function JobFilterBar({
     });
   };
 
+  const getEffectiveLocationSelection = (locations?: string[]) => {
+    const selected = (locations || []).filter(value => ALL_LOCATION_FILTER_VALUES.includes(value as any));
+    return selected.length > 0 ? selected : ALL_LOCATION_FILTER_VALUES;
+  };
+
+  const collapseLocationSelection = (locations: string[]) => {
+    const selected = Array.from(new Set(locations.filter(value => ALL_LOCATION_FILTER_VALUES.includes(value as any))));
+    return selected.length === 0 || selected.length >= ALL_LOCATION_FILTER_VALUES.length ? [] : selected;
+  };
+
   const handleCheckboxChange = (section: keyof typeof filters, value: string, checked: boolean) => {
     setTempFilters(prev => {
       const current = (prev[section] as string[]) || [];
@@ -394,22 +397,26 @@ export default function JobFilterBar({
     const group = LOCATION_GROUPS.find(option => option.value === value);
     if (!group) return;
     setTempFilters(prev => {
+      const current = getEffectiveLocationSelection(prev.location);
+      const nextLocation = checked
+        ? Array.from(new Set([...current, group.filterValue]))
+        : current.filter(item => item !== group.filterValue);
       return {
         ...prev,
         regionType: [],
-        location: checked ? [group.filterValue] : []
+        location: collapseLocationSelection(nextLocation)
       };
     });
   };
 
   const toggleLocationOption = (value: string) => {
     setTempFilters(prev => {
-      const current = prev.location || [];
-      const nextLocation = current.includes(value) ? current.filter(item => item !== value) : [value];
+      const current = getEffectiveLocationSelection(prev.location);
+      const nextLocation = current.includes(value) ? current.filter(item => item !== value) : [...current, value];
       return {
         ...prev,
         regionType: [],
-        location: nextLocation
+        location: collapseLocationSelection(nextLocation)
       };
     });
   };
@@ -452,8 +459,12 @@ export default function JobFilterBar({
   };
 
   const getLocationActiveLabel = () => {
-    const selectedGroup = LOCATION_GROUPS.find(option => filters.location?.includes(option.filterValue));
-    if (selectedGroup) return selectedGroup.label;
+    const current = filters.location || [];
+    if (current.length === 1) {
+      const selectedGroup = LOCATION_GROUPS.find(option => current.includes(option.filterValue));
+      if (selectedGroup) return selectedGroup.label;
+    }
+    if (current.length > 1) return `地点 (${current.length})`;
     return getActiveLabel('location', locationOptions, '地点');
   };
 
@@ -559,16 +570,6 @@ export default function JobFilterBar({
             </button>
           </div>
 
-          {searchTerm ? (
-            <button
-              type="button"
-              onClick={() => onSearchChange('')}
-              className="ml-auto inline-flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
-            >
-              清除搜索
-              <X className="h-3 w-3" />
-            </button>
-          ) : null}
         </div>
 
         <div className="-mx-1 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
@@ -644,7 +645,10 @@ export default function JobFilterBar({
           >
             <div className="space-y-2 px-1 py-1">
               <div className="grid gap-2">
-                {visibleLocationGroups.map(option => (
+                {visibleLocationGroups.map(option => {
+                  const selectedLocations = getEffectiveLocationSelection(tempFilters.location);
+                  const isSelected = selectedLocations.includes(option.filterValue);
+                  return (
                   <button
                     key={option.value}
                     type="button"
@@ -652,22 +656,23 @@ export default function JobFilterBar({
                       event.preventDefault();
                       event.stopPropagation();
                       setActiveLocationGroup(option.value);
-                      handleLocationGroupChange(option.value, !tempFilters.location?.includes(option.filterValue));
+                      handleLocationGroupChange(option.value, !isSelected);
                     }}
                     className={`flex items-center justify-between rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-colors ${
-                      tempFilters.location?.includes(option.filterValue)
+                      isSelected
                         ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
                         : 'border-slate-100 bg-white text-slate-600 hover:border-emerald-100 hover:bg-emerald-50/40 hover:text-slate-900'
                     }`}
                   >
                     <span>{option.label}</span>
                     <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                      tempFilters.location?.includes(option.filterValue) ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
+                      isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
                     }`}>
-                      {tempFilters.location?.includes(option.filterValue) ? <Check className="h-3 w-3 text-white" /> : null}
+                      {isSelected ? <Check className="h-3 w-3 text-white" /> : null}
                     </span>
                   </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </FilterDropdown>

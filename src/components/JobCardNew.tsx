@@ -236,7 +236,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    }, [job, resolvedDisplayScore]);
 
    const rawScoreNum = Math.round(resolvedDisplayScore);
-   const showMatchScore = rawScoreNum > 0;
+   const showMatchScore = rawScoreNum >= 80;
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
    const isCompactFeaturedCard = variant === 'list' && compactFeatured;
    const listCardTone = isActive
@@ -654,7 +654,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : formatSalaryForDisplay(job.salary, '薪资Open')}
                   </div>
                </div>
-               {resolvedMatchLevel !== 'none' && rawScoreNum > 0 ? (
+               {resolvedMatchLevel !== 'none' && showMatchScore ? (
                   <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
                ) : (
                   <span className="text-xs text-slate-400 font-medium">

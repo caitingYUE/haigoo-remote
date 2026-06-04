@@ -19,11 +19,15 @@ import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
 
 // Industry Options - aligned with DB canonical values (trusted-companies.js DEFAULT_CONFIG)
 const INDUSTRY_OPTIONS = [
-  '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
+  '互联网/软件', '人工智能', '大健康/医疗', '教育/文化', '金融/Fintech',
   '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-  '硬件/物联网', '消费生活', '教育/文化', '广告/营销', '咨询',
-  '投资', '制造业', '物流/供应链', '能源/环保', '房地产',
-  '旅游/酒店', '非营利/公益', '政府/公共服务', '其他'
+  '硬件/物联网', '消费生活', '其他', '大数据/云计算', '市场调研',
+  '半导体/制造业', '通信/5G', '人力资源服务', 'CRM', '房地产/物业',
+  '风险投资/私募', '零售/批发', '交通物流/运输', '汽车/新能源',
+  '广告/营销', '非营利组织/公益', '语言/翻译', '生物科学',
+  '设计工作室', '供应链', '教育', '咨询', '投资', '制造业',
+  '物流/供应链', '能源/环保', '房地产', '旅游/酒店', '非营利/公益',
+  '政府/公共服务'
 ].map(v => ({ label: v, value: v }));
 
 // Job Type Options - Standardized
@@ -794,10 +798,8 @@ export default function JobsPage() {
   // 从URL参数中获取初始搜索词
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    const search = params.get('search')
-    if (search) {
-      setSearchTerm(search)
-    }
+    const search = params.get('search') || ''
+    setSearchTerm(prev => (prev === search ? prev : search))
 
     const paramKeys = ['category', 'experienceLevel', 'industry', 'regionType', 'region', 'sourceType', 'location', 'type', 'jobType', 'salary', 'memberOnly']
     const hasFilterParam = paramKeys.some(key => params.has(key))

@@ -1735,12 +1735,25 @@ export default function HomeHero({
         { title: '热爱驱动', desc: '做你喜欢的事', icon: '/pic_lists/Home_pics/strength-passion.webp' },
     ]
     const companyFallbackImages = ['/pic_lists/Jobs_pics/card_bg1.webp', '/pic_lists/Jobs_pics/card_bg2.webp', '/pic_lists/Home_pics/background03.webp']
-    const heroCaseJobs = (displayRecommendations.length > 0
+    const heroRecommendationPreviewLimit = isAuthenticated ? dailyLimit : 3
+    const heroCaseCandidates = displayRecommendations.length > 0
         ? displayRecommendations
         : curatedJobs.length > 0
             ? curatedJobs
             : PREVIEW_PM_RECOMMENDATIONS
-    ).slice(0, 3)
+    const heroCaseJobs = (() => {
+        const primary = heroCaseCandidates.slice(0, heroRecommendationPreviewLimit)
+        if (primary.length >= heroRecommendationPreviewLimit) return primary
+
+        const seen = new Set(primary.map((job: any) => String(job?.id || `${job?.title || ''}:${job?.company || job?.company_name || ''}`)))
+        const fillers = [...curatedJobs, ...previewJobs, ...PREVIEW_PM_RECOMMENDATIONS].filter((job: any) => {
+            const key = String(job?.id || `${job?.title || ''}:${job?.company || job?.company_name || ''}`)
+            if (!key || seen.has(key)) return false
+            seen.add(key)
+            return true
+        })
+        return [...primary, ...fillers].slice(0, heroRecommendationPreviewLimit)
+    })()
     const canRequestRecommendations = Boolean(String(jobDirection).trim() || resumeId || resumeName || guestResumeFile)
     return (
         <div className="relative overflow-hidden bg-[#fbfaf6] pt-20 text-slate-950 md:pt-24">
@@ -1811,7 +1824,7 @@ export default function HomeHero({
                 </div>
             )}
 
-            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 py-8 lg:min-h-[650px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
+            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 py-8 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
                 <div className="relative z-10 max-w-[620px]">
                     <h1
                         className="haigoo-hero-title haigoo-hand-bold relative font-haigoo-hand text-[42px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
@@ -1873,7 +1886,7 @@ export default function HomeHero({
                     </div>
                 </div>
 
-                <div className="relative min-h-0 lg:min-h-[520px]">
+                <div className="relative min-h-0 lg:min-h-[620px]">
                     <div className="relative z-20 flex w-full min-w-0 flex-col rounded-[26px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:rounded-[34px] lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
                         <div className="mb-3">
                             <h2 className="text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
@@ -1919,7 +1932,7 @@ export default function HomeHero({
                                         key={job.id}
                                         type="button"
                                         onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
-                                        className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-3 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8]"
+                                        className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8]"
                                     >
                                         <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6]">
                                             {(job.company_name || job.company || 'HG').slice(0, 2).toUpperCase()}
@@ -2191,7 +2204,7 @@ export default function HomeHero({
                         </div>
                         <button
                             type="button"
-                            onClick={() => navigate(isMember ? '/jobs' : '/profile?tab=membership')}
+                            onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership')}
                             className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(217,149,31,0.64)] transition-all hover:-translate-y-0.5 ${isMember ? 'bg-slate-950' : 'bg-[#f0a11f]'}`}
                         >
                             {isMember ? '继续查看会员岗位' : '查看会员权益'}
