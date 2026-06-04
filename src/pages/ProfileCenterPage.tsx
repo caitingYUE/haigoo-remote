@@ -2768,9 +2768,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
       <section className="relative mb-7 overflow-hidden rounded-[30px] border border-[#eadfcf] bg-[#fffdf8] px-6 py-7 shadow-[0_28px_86px_-62px_rgba(139,101,54,0.46)] sm:px-8 lg:px-10 lg:py-9">
         <div className="pointer-events-none absolute inset-0">
-          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-y-0 right-0 h-full w-[68%] object-cover object-[68%_55%] opacity-[0.62] saturate-[0.95]" />
+          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full scale-[1.04] object-cover object-[70%_55%] opacity-[0.54] saturate-[0.95]" />
           <img src="/pic_lists/About_pics/grass_icon-transparent.webp" alt="" className="absolute bottom-3 left-[54%] hidden h-24 w-24 object-contain opacity-24 xl:block" />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.99)_0%,rgba(255,253,248,0.94)_45%,rgba(255,253,248,0.58)_72%,rgba(255,253,248,0.8)_100%),linear-gradient(180deg,rgba(255,255,255,0.02)_0%,rgba(255,253,248,0.58)_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.99)_0%,rgba(255,253,248,0.94)_42%,rgba(255,253,248,0.66)_70%,rgba(255,253,248,0.86)_100%),linear-gradient(180deg,rgba(255,255,255,0.04)_0%,rgba(255,253,248,0.62)_100%)]" />
           <div className="absolute inset-x-0 bottom-0 h-24 bg-[linear-gradient(180deg,rgba(255,253,248,0)_0%,rgba(255,253,248,0.96)_100%)]" />
         </div>
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-center">
@@ -3211,7 +3211,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 </span>
               </h1>
               <p className="mt-3 text-base font-bold leading-7 text-slate-600">来自 Haigoo Remote 的初心与坚持</p>
-              <div className="mt-7 text-3xl font-semibold text-slate-950">Hi，朋友们：</div>
+              <div className="haigoo-hand-bold mt-7 font-haigoo-hand text-3xl text-slate-950">Hi，朋友们：</div>
             </div>
 
             <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-4">
@@ -3223,7 +3223,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </div>
 
             <div className="mt-5 shrink-0 border-t border-dashed border-[#eadfcf] pt-5">
-              <p className="flex items-center gap-3 text-xl font-semibold text-slate-950">
+              <p className="haigoo-hand-bold flex items-center gap-3 font-haigoo-hand text-2xl text-slate-950">
                 <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="h-9 w-9 object-contain opacity-70" />
                 Good Day, Now and Future!
               </p>
@@ -3243,7 +3243,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
                     <span>Haigoo Remote 创始人&CEO</span>
-                    <span className="text-2xl font-semibold text-slate-700">Caitlin Y.</span>
+                    <span className="haigoo-hand-bold font-haigoo-hand text-2xl text-slate-700">Caitlin Y.</span>
                     <span className="inline-flex h-8 w-8 items-center justify-center">
                       <img src="/pic_lists/About_pics/sun-transparent.webp" alt="" className="h-8 w-8 object-contain opacity-80" />
                     </span>
@@ -3357,7 +3357,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="overflow-hidden rounded-[28px] border border-[#e1e9f1] bg-white/82 text-slate-900 shadow-[0_24px_70px_-58px_rgba(61,89,120,0.62)] backdrop-blur">
                   <div className="relative overflow-hidden border-b border-[#edf2f6] bg-[linear-gradient(135deg,rgba(255,255,255,0.98)_0%,rgba(247,251,255,0.96)_100%)] px-4 py-3.5">
                     <div className="relative">
-                      <div className="text-sm font-black text-slate-950">会员中心</div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-sm font-black text-slate-950">会员中心</div>
+                        {isMember ? <Crown className="h-4 w-4 shrink-0 text-[#6f63f6]" /> : null}
+                      </div>
                       <div className="mt-0.5 text-xs text-slate-500">{isMember ? '权益与账号管理' : '查看会员权益和方案'}</div>
                     </div>
                   </div>
@@ -3367,17 +3370,16 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       <>
                         <div className="relative overflow-hidden rounded-[22px] border border-[#eadfcf] bg-[linear-gradient(135deg,rgba(255,251,243,0.98)_0%,rgba(255,255,255,0.96)_56%,rgba(246,244,255,0.94)_100%)] p-3.5 shadow-[0_18px_44px_-38px_rgba(139,101,54,0.46)]">
                           <div className="pointer-events-none absolute -right-10 -top-12 h-28 w-28 rounded-full bg-[#f3d89f]/28 blur-2xl" />
-                          <div className="relative flex items-center justify-between gap-2">
+                          <div className="relative flex items-center gap-2">
                             <div className="min-w-0">
-                              <div className="flex min-w-0 items-center gap-2">
-                                <div className="truncate text-[15px] font-black leading-tight text-slate-950">{activeMemberLabel}</div>
+                              <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                <div className="max-w-full truncate text-[15px] font-black leading-tight text-slate-950">{activeMemberLabel}</div>
                                 <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-200 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-black text-emerald-700">
                                 <CheckCircle className="h-3 w-3" />
                                 生效中
                                 </div>
                               </div>
                             </div>
-                            <Crown className="h-5 w-5 shrink-0 text-[#6f63f6]" />
                           </div>
                           <div className="relative mt-3 rounded-[16px] border border-[#efe5d5] bg-white/80 px-3 py-2.5">
                             <div className="text-[10px] font-black tracking-[0.12em] text-slate-400">有效期至</div>
@@ -3467,9 +3469,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               {tab === 'resume' && (
                 <>
                   <section className="relative mb-5 overflow-hidden rounded-[30px] border border-[#e1e9f1] bg-white/84 p-6 shadow-[0_24px_70px_-60px_rgba(61,89,120,0.62)] backdrop-blur sm:p-8">
-                    <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[58%] object-cover object-right opacity-50" />
+                    <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-0 h-full w-full scale-[1.03] object-cover object-[72%_52%] opacity-50" />
+                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.9)_40%,rgba(255,255,255,0.42)_72%,rgba(255,255,255,0.76)_100%)]" />
                     <img src="/pic_lists/Home_pics/Haigoo_hi-transparent.webp" alt="" className="pointer-events-none absolute bottom-3 right-8 h-24 w-24 object-contain opacity-65" />
-                    <div className="relative max-w-xl">
+                    <div className="relative max-w-[860px]">
                       <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#f3e7c8] bg-[#fffaf0]/90 px-3 py-1 text-xs font-black text-[#bd7a12]">
                         <Sparkles className="h-3.5 w-3.5" />
                         今日小确幸
@@ -3478,7 +3481,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         {greeting}，{displayName}
                         <span className="ml-2 text-[#7b74ff]">♡</span>
                       </h1>
-                      <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base">
+                      <p className="mt-3 text-sm leading-7 text-slate-500 sm:text-base lg:whitespace-nowrap">
                         愿你今天也是自由而专注的一天。把简历、收藏和申请线索放在这里，慢慢整理也来得及。
                       </p>
                     </div>

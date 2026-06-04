@@ -65,7 +65,7 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
         <div>
           <div>© 2026 Haigoo. All rights reserved.</div>
         </div>
-        <div className="flex items-center gap-2 text-base font-semibold tracking-normal text-[#a9a3ff] md:justify-center md:text-center">
+        <div className="haigoo-hand-bold flex items-center gap-2 font-haigoo-hand text-lg tracking-normal text-[#a9a3ff] md:justify-center md:text-center">
           <span>Be free. Work anywhere. Live fully.</span>
           <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
             <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" className="h-10 w-10 object-contain opacity-80" />

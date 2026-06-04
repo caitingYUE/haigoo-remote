@@ -21,7 +21,9 @@ import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
 const INDUSTRY_OPTIONS = [
   '互联网/软件', '人工智能', '大健康/医疗', '教育', '金融/Fintech',
   '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-  '硬件/物联网', '消费生活', '其他'
+  '硬件/物联网', '消费生活', '教育/文化', '广告/营销', '咨询',
+  '投资', '制造业', '物流/供应链', '能源/环保', '房地产',
+  '旅游/酒店', '非营利/公益', '政府/公共服务', '其他'
 ].map(v => ({ label: v, value: v }));
 
 // Job Type Options - Standardized
@@ -192,6 +194,12 @@ function mergeFacetOptions(staticOpts: { label: string; value: string; count?: n
     if (!value) return
     if (resultMap.has(value)) {
       resultMap.get(value)!.count = Number(item.count || 0)
+    } else {
+      resultMap.set(value, {
+        label: String(item?.label || value).trim() || value,
+        value,
+        count: Number(item.count || 0)
+      })
     }
   })
 

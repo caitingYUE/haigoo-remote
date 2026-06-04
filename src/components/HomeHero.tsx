@@ -1814,7 +1814,7 @@ export default function HomeHero({
             <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 py-8 lg:min-h-[650px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
                 <div className="relative z-10 max-w-[620px]">
                     <h1
-                        className="haigoo-hero-title relative font-haigoo-hand text-[42px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
+                        className="haigoo-hero-title haigoo-hand-bold relative font-haigoo-hand text-[42px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
                         aria-label="用你喜欢的方式 工作和生活"
                     >
                         <span className="relative" aria-hidden="true">

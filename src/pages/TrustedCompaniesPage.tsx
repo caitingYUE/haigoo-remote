@@ -187,7 +187,7 @@ export default function TrustedCompaniesPage() {
                 </div>
 
                 <div className="relative z-10 mx-auto max-w-[1360px] px-4 pb-10 text-center sm:px-6 lg:px-8">
-                    <h1 className="text-[42px] font-semibold leading-[1.18] tracking-normal text-slate-950 sm:text-[64px] lg:text-[76px]">
+                    <h1 className="haigoo-hand-bold font-haigoo-hand text-[42px] leading-[1.18] tracking-normal text-slate-950 sm:text-[64px] lg:text-[76px]">
                         发现全球顶尖
                         <span className="mx-2 text-[#6f72ff]">远程友好</span>
                         企业

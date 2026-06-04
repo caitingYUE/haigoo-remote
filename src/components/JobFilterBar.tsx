@@ -205,7 +205,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             className={`fixed bottom-0 left-0 right-0 z-[9999] w-full overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom duration-200 md:absolute md:bottom-auto md:left-0 md:right-auto md:top-full md:mt-2 ${panelWidthClassName} md:rounded-2xl md:border md:border-slate-100 md:shadow-xl md:animate-in md:fade-in md:zoom-in-95`}
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="max-h-[60vh] overflow-y-auto p-2 pb-8 custom-scrollbar md:max-h-[300px] md:pb-2">
+            <div className="max-h-[60vh] overflow-y-auto p-2 pb-8 custom-scrollbar md:max-h-[460px] md:pb-2">
               <div className="flex justify-center pb-2 pt-1 md:hidden">
                 <div className="h-1 w-12 rounded-full bg-slate-200" />
               </div>
@@ -563,7 +563,7 @@ export default function JobFilterBar({
             <button
               type="button"
               onClick={() => onSearchChange('')}
-              className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+              className="ml-auto inline-flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             >
               清除搜索
               <X className="h-3 w-3" />
@@ -683,6 +683,7 @@ export default function JobFilterBar({
             onClear={() => clearTempFilters(['jobType', 'experienceLevel', 'industry'])}
             icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
             colorTheme="slate"
+            panelWidthClassName="md:w-[720px]"
           >
             <FilterSectionHeader title="工作类型" />
             <div className="flex flex-wrap gap-2 px-2 pb-2">
@@ -727,7 +728,7 @@ export default function JobFilterBar({
             <button
               type="button"
               onClick={clearAllFilters}
-              className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+              className="inline-flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             >
               清空筛选
               <X className="h-3 w-3" />
