@@ -39,7 +39,7 @@ const MockPaymentGateway: React.FC = () => {
       
       // Redirect back after short delay
       setTimeout(() => {
-        navigate('/membership');
+        navigate('/profile?tab=membership');
       }, 2000);
     } catch (err: any) {
       console.error(err);
@@ -119,7 +119,7 @@ const MockPaymentGateway: React.FC = () => {
             </button>
             
             <button
-              onClick={() => navigate('/membership')}
+              onClick={() => navigate('/profile?tab=membership')}
               className="w-full py-4 bg-white hover:bg-slate-50 text-slate-500 font-medium rounded-xl border border-slate-200 transition-colors"
             >
               取消支付

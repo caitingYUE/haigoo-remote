@@ -1,30 +1,30 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { ChevronDown, Check, Search, Sparkles, SlidersHorizontal, Gem, MapPin, Clock, Banknote, BarChart2, Globe, Building2, X, Briefcase, Calendar, TrendingUp, ArrowUpDown } from 'lucide-react';
-
-// --- Types ---
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowUpDown, Briefcase, Check, ChevronDown, Crown, MapPin, SlidersHorizontal, X } from 'lucide-react';
 
 interface FilterDropdownProps {
-  label: string; // Default label
-  activeLabel?: string; // Label when active/selected
+  label: string;
+  activeLabel?: string;
   isOpen: boolean;
   onToggle: () => void;
   onClose: () => void;
   children: React.ReactNode;
-  isActive: boolean; // Whether any value is selected
-  colorTheme?: 'indigo' | 'amber' | 'emerald' | 'purple' | 'slate';
+  isActive: boolean;
+  colorTheme?: 'indigo' | 'emerald' | 'slate';
   icon?: React.ReactNode;
   onApply?: () => void;
   onClear?: () => void;
+  panelWidthClassName?: string;
 }
 
-interface CheckboxItemProps {
+interface FilterChipProps {
   label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
+  active: boolean;
+  onClick: () => void;
   count?: number;
-  emphasized?: boolean;
-  colorTheme?: 'indigo' | 'amber' | 'emerald' | 'purple' | 'slate';
+  tone?: 'indigo' | 'emerald' | 'slate';
 }
+
+type ListMode = 'jobs' | 'favorites' | 'applications';
 
 interface JobFilterBarProps {
   filters: {
@@ -33,45 +33,94 @@ interface JobFilterBarProps {
     industry: string[];
     regionType: string[];
     sourceType: string[];
+    type?: string[];
     jobType: string[];
     salary: string[];
     location: string[];
     timezone: string[];
     isTrusted: boolean;
     isNew: boolean;
+    memberOnly?: boolean;
+    aiRecommended?: boolean;
   };
   onFilterChange: (newFilters: any) => void;
-  categoryOptions: { label: string, value: string }[];
-  industryOptions: { label: string, value: string }[];
-  jobTypeOptions: { label: string, value: string }[];
-  locationOptions: { label: string, value: string }[];
-  timezoneOptions: { label: string, value: string }[];
+  categoryOptions: { label: string; value: string; count?: number }[];
+  industryOptions: { label: string; value: string; count?: number }[];
+  jobTypeOptions: { label: string; value: string; count?: number }[];
+  experienceLevelOptions?: { label: string; value: string; count?: number }[];
+  locationOptions: { label: string; value: string; count?: number }[];
+  timezoneOptions: { label: string; value: string; count?: number }[];
   searchTerm: string;
   onSearchChange: (value: string) => void;
   sortBy: 'recent' | 'relevance';
   onSortChange: () => void;
   onOpenTracking: () => void;
+  listMode: ListMode;
+  favoriteCount?: number;
+  applicationCount?: number;
+  onListModeChange: (mode: ListMode) => void;
+  isAuthenticated?: boolean;
+  isMember?: boolean;
 }
 
-// --- Constants ---
-
 const EXPERIENCE_OPTIONS = [
-  { label: '初级/Entry Level', value: 'Entry' },
-  { label: '中级/Mid Level', value: 'Mid' },
-  { label: '高级/Senior', value: 'Senior' },
-  { label: '专家/Lead', value: 'Lead' },
-  { label: '高管/Executive', value: 'Executive' }
+  { label: '初级', value: 'Entry' },
+  { label: '中级', value: 'Mid' },
+  { label: '高级', value: 'Senior' },
+  { label: '专家/负责人', value: 'Lead' },
+  { label: '管理层', value: 'Executive' }
 ];
 
-const SALARY_OPTIONS = [
-  { label: '15k以下', value: '0-15000' },
-  { label: '15k-30k', value: '15000-30000' },
-  { label: '30k-50k', value: '30000-50000' },
-  { label: '50k-80k', value: '50000-80000' },
-  { label: '80k以上', value: '80000-999999' }
+const ROLE_GROUPS = [
+  {
+    title: '技术研发类',
+    keywords: ['前端', '后端', '全栈', '移动', '算法', '数据开发', '测试', 'QA', '运维', 'SRE', '安全', '架构', '技术', '工程', '开发', 'CTO', '内核', '硬件', '数据库', '平台', '服务器']
+  },
+  {
+    title: '产品 / 项目类',
+    keywords: ['产品经理', '产品设计', '营销设计', '视觉设计', '平面设计', '创意设计', 'UI', 'UX', '项目', '增长', '用户研究']
+  },
+  {
+    title: '市场 / 销售类',
+    keywords: ['市场', '品牌', '销售', '商务', '客户经理', '营销']
+  },
+  {
+    title: '运营 / 客服类',
+    keywords: ['运营', '产品运营', '活动运营', '客户服务', '内容']
+  },
+  {
+    title: '职能 / 服务类',
+    keywords: ['人力', '招聘', '财务', '会计', '法务', '行政', '管理']
+  },
+  {
+    title: '数据 / 教育 / 其他',
+    keywords: ['数据分析', '商业分析', '数据科学', '教育', '培训', '投资', '游戏', '其他']
+  }
 ];
 
-// --- Theme Configuration ---
+const LOCATION_GROUPS = [
+  {
+    label: '中国远程',
+    value: 'china',
+    filterValue: 'China',
+    keywords: ['china', '中国', '香港', 'hong kong', '台湾', 'taiwan', '上海', '北京', '深圳', '广州', '杭州', '成都', '国内']
+  },
+  {
+    label: '亚太远程',
+    value: 'apac',
+    filterValue: 'APAC',
+    keywords: ['apac', 'asia', 'pacific', '亚太', '亚洲', '新加坡', 'singapore', '日本', 'japan', '韩国', 'korea', '澳洲', 'australia']
+  },
+  {
+    label: '全球远程',
+    value: 'global',
+    filterValue: 'Global',
+    keywords: ['global', 'worldwide', 'remote', 'anywhere', '全球', '不限', 'world']
+  }
+] as const;
+
+type LocationGroupValue = typeof LOCATION_GROUPS[number]['value'];
+
 const THEME_STYLES = {
   indigo: {
     active: 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm',
@@ -79,128 +128,87 @@ const THEME_STYLES = {
     checkbox: 'bg-indigo-600 border-indigo-600',
     textChecked: 'text-indigo-700'
   },
-  amber: {
-    active: 'bg-amber-50 text-amber-700 border-amber-200 shadow-sm',
-    icon: 'text-amber-500',
-    checkbox: 'bg-amber-500 border-amber-500',
-    textChecked: 'text-amber-700'
-  },
   emerald: {
     active: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm',
     icon: 'text-emerald-500',
     checkbox: 'bg-emerald-600 border-emerald-600',
     textChecked: 'text-emerald-700'
   },
-  purple: {
-    active: 'bg-purple-50 text-purple-700 border-purple-200 shadow-sm',
-    icon: 'text-purple-500',
-    checkbox: 'bg-purple-600 border-purple-600',
-    textChecked: 'text-purple-700'
-  },
   slate: {
     active: 'bg-slate-100 text-slate-900 border-slate-200 shadow-sm',
     icon: 'text-slate-500',
-    checkbox: 'bg-slate-600 border-slate-600',
+    checkbox: 'bg-slate-700 border-slate-700',
     textChecked: 'text-slate-900'
   }
 };
 
-// --- Components ---
-
-const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isOpen, onToggle, onClose, children, isActive, colorTheme = 'slate', icon, onApply, onClear }) => {
+const FilterDropdown: React.FC<FilterDropdownProps> = ({
+  label,
+  activeLabel,
+  isOpen,
+  onToggle,
+  onClose,
+  children,
+  isActive,
+  colorTheme = 'slate',
+  icon,
+  onApply,
+  onClear,
+  panelWidthClassName = 'md:w-[430px]'
+}) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        // If clicking outside, trigger apply if available, otherwise just close
-        if (onApply) {
-          onApply();
-        } else {
-          onClose();
-        }
+        if (onApply) onApply();
+        else onClose();
       }
     };
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    if (isOpen) document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose, onApply]);
 
   const theme = THEME_STYLES[colorTheme];
-
-  // Button Styles
-  let buttonClass = "flex h-10 sm:h-11 items-center gap-1.5 px-3 sm:px-4 rounded-xl text-[13px] transition-all border whitespace-nowrap ";
-
-  if (isActive || isOpen) {
-    buttonClass += theme.active + " font-semibold";
-  } else {
-    // Default state: Clean white background with subtle border
-    buttonClass += "bg-white/88 text-slate-600 border-slate-200/90 hover:border-slate-300 hover:text-slate-900 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)] hover:shadow-[0_14px_28px_-18px_rgba(15,23,42,0.28)]";
-  }
-
-  // Chevron Style
-  const chevronClass = `w-3.5 h-3.5 transition-transform flex-shrink-0 ${isOpen ? 'rotate-180' : ''} ${isActive || isOpen ? theme.icon : 'text-slate-400'}`;
-
-  // Icon Style (Input icon)
-  const iconClass = isActive || isOpen ? theme.icon : 'text-slate-400 group-hover:text-slate-500';
+  const buttonClass = `inline-flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-all whitespace-nowrap ${
+    isActive || isOpen
+      ? theme.active
+      : 'border-slate-200/90 bg-white text-slate-600 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.35)] hover:border-slate-300 hover:text-slate-900'
+  }`;
 
   return (
-    <div className="relative inline-block text-left group" ref={dropdownRef}>
+    <div className="relative z-[120] inline-block text-left" ref={dropdownRef}>
       <button
-        onClick={(e) => {
-          console.log(`[FilterDropdown] Button clicked: ${label}`);
-          if (isOpen && onApply) {
-            onApply(); // Apply on toggle close
-          } else {
-            onToggle();
-          }
+        onClick={() => {
+          if (isOpen && onApply) onApply();
+          else onToggle();
         }}
         className={buttonClass}
       >
-        {icon && <span className={iconClass}>{icon}</span>}
-      <span className="truncate max-w-[96px] sm:max-w-[108px]">{isActive && activeLabel ? activeLabel : label}</span>
-        <ChevronDown className={chevronClass} />
+        {icon ? <span className={isActive || isOpen ? theme.icon : 'text-slate-400'}>{icon}</span> : null}
+        <span className="max-w-[86px] truncate">{isActive && activeLabel ? activeLabel : label}</span>
+        <ChevronDown className={`h-3.5 w-3.5 transition-transform ${isOpen ? 'rotate-180' : ''} ${isActive || isOpen ? theme.icon : 'text-slate-400'}`} />
       </button>
 
       {isOpen && (
         <>
-          {/* Backdrop Overlay - Handles 'click outside' reliably */}
           <div
-            className="fixed inset-0 z-[9990] bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none cursor-default"
-            onClick={(e) => {
-              console.log('[FilterDropdown] Backdrop clicked');
-              e.stopPropagation();
-              if (onApply) onApply(); else onClose();
+            className="fixed inset-0 z-[9990] bg-black/20 backdrop-blur-sm md:bg-transparent md:backdrop-blur-none"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (onApply) onApply();
+              else onClose();
             }}
           />
-
-          <div className="
-            z-[9999] overflow-hidden bg-white
-            
-            /* Mobile Styles */
-            fixed bottom-0 left-0 right-0 w-full rounded-t-2xl shadow-[0_-4px_24px_rgba(0,0,0,0.1)] border-t border-slate-200
-            animate-in slide-in-from-bottom duration-200
-            
-            /* Desktop Styles */
-            md:absolute md:inset-auto md:left-0 md:top-full md:mt-2 md:w-auto md:min-w-[240px] md:max-w-[300px] md:rounded-xl md:shadow-xl md:border md:border-slate-100
-             md:animate-in md:fade-in md:zoom-in-95
-           "
-            style={{ pointerEvents: 'auto' }}
-            onClick={(e) => {
-              console.log('[FilterDropdown] Content container clicked (propagation stopped)');
-              e.stopPropagation();
-            }}
+          <div
+            className={`fixed bottom-0 left-0 right-0 z-[9999] w-full overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom duration-200 md:absolute md:bottom-auto md:left-0 md:right-auto md:top-full md:mt-2 ${panelWidthClassName} md:rounded-2xl md:border md:border-slate-100 md:shadow-xl md:animate-in md:fade-in md:zoom-in-95`}
+            onClick={(event) => event.stopPropagation()}
           >
-            <div className="p-2 pb-8 md:pb-2 max-h-[60vh] md:max-h-[320px] overflow-y-auto custom-scrollbar">
-              {/* Mobile Handle */}
-              <div className="md:hidden flex justify-center pb-2 pt-1" onClick={onApply || onClose}>
-                <div className="w-12 h-1 bg-slate-200 rounded-full"></div>
+            <div className="max-h-[60vh] overflow-y-auto p-2 pb-8 custom-scrollbar md:max-h-[300px] md:pb-2">
+              <div className="flex justify-center pb-2 pt-1 md:hidden">
+                <div className="h-1 w-12 rounded-full bg-slate-200" />
               </div>
-              {/* Pass theme to children (CheckboxItems) */}
               {React.Children.map(children, child => {
                 if (React.isValidElement(child)) {
                   return React.cloneElement(child as React.ReactElement<any>, { colorTheme });
@@ -209,29 +217,23 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
               })}
             </div>
 
-            {/* Action Footer */}
             {(onApply || onClear) && (
-              <div className="p-3 border-t border-slate-100 bg-slate-50/80 backdrop-blur-sm flex justify-between items-center gap-4">
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 p-3">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onClear) onClear();
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onClear?.();
                   }}
-                  className="text-xs text-slate-500 hover:text-slate-800 font-medium px-2 py-1 rounded hover:bg-slate-200/50 transition-colors"
+                  className="rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/50 hover:text-slate-800"
                 >
                   清空
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onApply) onApply();
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onApply?.();
                   }}
-                  className={`flex-1 px-3 py-1.5 text-xs font-semibold text-white rounded-md shadow-sm shadow-${colorTheme}-500/20 hover:shadow-md transition-all ${colorTheme === 'indigo' ? 'bg-indigo-600 hover:bg-indigo-700' :
-                    colorTheme === 'amber' ? 'bg-amber-500 hover:bg-amber-600' :
-                      colorTheme === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' :
-                        colorTheme === 'purple' ? 'bg-purple-600 hover:bg-purple-700' :
-                          'bg-slate-800 hover:bg-slate-900'
-                    }`}
+                  className="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
                 >
                   应用筛选
                 </button>
@@ -244,39 +246,44 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({ label, activeLabel, isO
   );
 };
 
-const CheckboxItem: React.FC<CheckboxItemProps> = ({ label, checked, onChange, count, emphasized, colorTheme = 'slate' }) => {
-  const theme = THEME_STYLES[colorTheme];
+const FilterSectionHeader: React.FC<{ title: string; description?: string }> = ({ title }) => (
+  <div className="px-2 pb-1 pt-2 first:pt-0">
+    <div className="text-[12px] font-bold text-slate-900">{title}</div>
+  </div>
+);
+
+const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, tone = 'slate' }) => {
+  const activeClass = tone === 'emerald'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : tone === 'indigo'
+      ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
+      : 'border-slate-300 bg-slate-100 text-slate-900';
 
   return (
-    <div
-      className="flex items-center gap-2 cursor-pointer py-1.5 px-2 hover:bg-slate-50 rounded-lg transition-colors w-full select-none"
-      onClick={(e) => {
-        // P0 Debug: Explicitly handle label click to ensure event propagation
-        console.log(`[JobFilterBar] Container clicked for: ${label}`);
-        e.preventDefault(); // Prevent default label behavior
-        e.stopPropagation(); // Stop bubbling
-        onChange(!checked); // Manually toggle
+    <button
+      type="button"
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onClick();
       }}
+      className={`inline-flex h-8 max-w-full items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-colors ${
+        active ? activeClass : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
+      }`}
+      title={label}
     >
-      <div className={`w-4 h-4 rounded border flex items-center justify-center transition-all flex-shrink-0 ${checked ? theme.checkbox : 'border-slate-300 bg-white'
-        }`}>
-        {checked && <Check className="w-3 h-3 text-white" />}
-      </div>
-      <span className={`text-[13px] flex-1 ${checked ? `${theme.textChecked} font-medium` : 'text-slate-600'} ${emphasized ? 'font-bold' : ''}`}>
-        {label}
-      </span>
-      {count !== undefined && (
-        <span className="ml-auto text-[11px] text-slate-400">{count}</span>
-      )}
-    </div>
+      <span className="truncate">{label}</span>
+      {typeof count === 'number' ? <span className="text-[10px] opacity-60">{count}</span> : null}
+    </button>
   );
 };
 
-const FilterSectionHeader: React.FC<{ title: string }> = ({ title }) => (
-  <div className="px-2 py-1.5 mt-2 first:mt-0 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50/50 rounded-md">
-    {title}
-  </div>
-);
+const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, '');
+
+const optionMatches = (option: { label: string; value: string }, keywords: string[]) => {
+  const text = normalizeText(`${option.label} ${option.value}`);
+  return keywords.some(keyword => text.includes(normalizeText(keyword)));
+};
 
 export default function JobFilterBar({
   filters,
@@ -284,67 +291,97 @@ export default function JobFilterBar({
   categoryOptions,
   industryOptions,
   jobTypeOptions,
+  experienceLevelOptions = EXPERIENCE_OPTIONS,
   locationOptions,
-  timezoneOptions,
   searchTerm,
   onSearchChange,
   sortBy,
   onSortChange,
-  onOpenTracking
+  listMode,
+  favoriteCount = 0,
+  applicationCount = 0,
+  onListModeChange,
+  isAuthenticated = false,
+  isMember = false
 }: JobFilterBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  // Temp filters for deferred application
   const [tempFilters, setTempFilters] = useState(filters);
+  const [activeRoleGroup, setActiveRoleGroup] = useState(0);
+  const [activeLocationGroup, setActiveLocationGroup] = useState<LocationGroupValue>('china');
 
-  // Sync temp filters when dropdown is closed or filters change externally
   useEffect(() => {
-    if (openDropdown === null) {
-      setTempFilters(filters);
-    }
+    if (openDropdown === null) setTempFilters(filters);
   }, [filters, openDropdown]);
+  const previousOpenDropdownRef = useRef<string | null>(null);
 
-  const applyFilters = (key: string) => {
-    // Only trigger update if changed
-    // Simple deep check for the specific key
-    const currentVal = filters[key as keyof typeof filters];
-    const newVal = tempFilters[key as keyof typeof filters];
+  const groupedCategories = useMemo(() => {
+    const used = new Set<string>();
+    const groups = ROLE_GROUPS.map(group => {
+      const options = categoryOptions.filter(option => optionMatches(option, group.keywords));
+      options.forEach(option => used.add(option.value));
+      return { ...group, options };
+    }).filter(group => group.options.length > 0);
 
-    if (JSON.stringify(currentVal) !== JSON.stringify(newVal)) {
-      onFilterChange({ [key]: newVal });
+    const remaining = categoryOptions.filter(option => !used.has(option.value));
+    if (remaining.length > 0) groups.push({ title: '更多角色', keywords: [], options: remaining });
+    return groups;
+  }, [categoryOptions]);
+
+  const visibleLocationGroups = useMemo(() => {
+    if (!locationOptions.length) return LOCATION_GROUPS;
+    const optionText = locationOptions.map(option => `${option.value} ${option.label}`.toLowerCase());
+    return LOCATION_GROUPS.filter(group => {
+      if (filters.location?.includes(group.filterValue)) return true;
+      const terms = [group.filterValue, group.label, ...group.keywords].map(item => item.toLowerCase());
+      return optionText.some(text => terms.some(term => text.includes(term)));
+    });
+  }, [filters.location, locationOptions]);
+
+  useEffect(() => {
+    if (openDropdown !== 'category') return;
+    if (previousOpenDropdownRef.current === 'category') return;
+    const selectedCategories = filters.category || [];
+    if (selectedCategories.length === 0) return;
+    const targetIndex = groupedCategories.findIndex(group =>
+      group.options.some(option => selectedCategories.includes(option.value))
+    );
+    if (targetIndex >= 0 && targetIndex !== activeRoleGroup) {
+      setActiveRoleGroup(targetIndex);
     }
+  }, [openDropdown, groupedCategories, filters.category]);
+
+  useEffect(() => {
+    previousOpenDropdownRef.current = openDropdown;
+  }, [openDropdown]);
+
+  const applyFilters = (keys: Array<keyof typeof filters>) => {
+    const updates: any = {};
+    keys.forEach(key => {
+      const currentVal = filters[key];
+      const newVal = tempFilters[key];
+      if (JSON.stringify(currentVal) !== JSON.stringify(newVal)) updates[key] = newVal;
+    });
+    if (Object.keys(updates).length > 0) onFilterChange(updates);
     setOpenDropdown(null);
   };
 
-  const clearTempFilter = (key: string) => {
-    setTempFilters(prev => ({ ...prev, [key]: [] }));
-  };
-
-  const toggleDropdown = (key: string) => {
-    if (openDropdown === key) {
-      // Closing: Apply
-      applyFilters(key);
-    } else {
-      // Opening: Sync temp with real (just in case)
-      setTempFilters(prev => ({ ...prev, [key]: filters[key as keyof typeof filters] }));
-      setOpenDropdown(key);
-    }
+  const clearTempFilters = (keys: Array<keyof typeof filters>) => {
+    setTempFilters(prev => {
+      const next: any = { ...prev };
+      keys.forEach(key => {
+        next[key] = typeof prev[key] === 'boolean' ? false : [];
+      });
+      return next;
+    });
   };
 
   const handleCheckboxChange = (section: keyof typeof filters, value: string, checked: boolean) => {
-    console.log(`[JobFilterBar] Checkbox changed: section=${section}, value=${value}, checked=${checked}`);
-
-    // Update TEMP state only
     setTempFilters(prev => {
       const current = (prev[section] as string[]) || [];
-      let updated;
+      let updated: string[];
 
       if (checked) {
-        if (section === 'regionType') {
-          updated = [value]; // Single select behavior
-        } else {
-          updated = [...current, value];
-        }
+        updated = section === 'regionType' ? [value] : Array.from(new Set([...current, value]));
       } else {
         updated = current.filter(item => item !== value);
       }
@@ -353,19 +390,88 @@ export default function JobFilterBar({
     });
   };
 
-  const getActiveLabel = (section: keyof typeof filters, options: { label: string, value: string }[], defaultLabel: string) => {
-    // Use REAL filters for label display when closed, TEMP when open?
-    // Actually better to use REAL filters for the button label always, 
-    // but maybe TEMP when open to show live count?
-    // Let's stick to REAL filters for the button label to avoid jumping during edit before apply.
+  const handleLocationGroupChange = (value: LocationGroupValue, checked: boolean) => {
+    const group = LOCATION_GROUPS.find(option => option.value === value);
+    if (!group) return;
+    setTempFilters(prev => {
+      return {
+        ...prev,
+        regionType: [],
+        location: checked ? [group.filterValue] : []
+      };
+    });
+  };
+
+  const toggleLocationOption = (value: string) => {
+    setTempFilters(prev => {
+      const current = prev.location || [];
+      const nextLocation = current.includes(value) ? current.filter(item => item !== value) : [value];
+      return {
+        ...prev,
+        regionType: [],
+        location: nextLocation
+      };
+    });
+  };
+
+  const setRoleGroup = (index: number) => {
+    setActiveRoleGroup(index);
+  };
+
+  const selectRoleGroup = (index: number) => {
+    const group = groupedCategories[index];
+    if (!group) return;
+    const groupValues = group.options.map(option => option.value);
+    setTempFilters(prev => {
+      const current = prev.category || [];
+      const allSelected = groupValues.length > 0 && groupValues.every(value => current.includes(value));
+      return {
+        ...prev,
+        category: allSelected
+          ? current.filter(value => !groupValues.includes(value))
+          : Array.from(new Set([...current, ...groupValues]))
+      };
+    });
+  };
+
+  const toggleRoleOption = (value: string) => {
+    setTempFilters(prev => {
+      const current = prev.category || [];
+      return {
+        ...prev,
+        category: current.includes(value) ? current.filter(item => item !== value) : [...current, value]
+      };
+    });
+  };
+
+  const getActiveLabel = (section: keyof typeof filters, options: { label: string; value: string }[], defaultLabel: string) => {
     const current = filters[section] as string[];
     if (!current || current.length === 0) return defaultLabel;
-    if (current.length === 1) {
-      const found = options.find(o => o.value === current[0]);
-      return found ? found.label : current[0];
-    }
+    if (current.length === 1) return options.find(option => option.value === current[0])?.label || current[0];
     return `${defaultLabel} (${current.length})`;
   };
+
+  const getLocationActiveLabel = () => {
+    const selectedGroup = LOCATION_GROUPS.find(option => filters.location?.includes(option.filterValue));
+    if (selectedGroup) return selectedGroup.label;
+    return getActiveLabel('location', locationOptions, '地点');
+  };
+
+  const moreFilterCount =
+    (filters.jobType?.length || 0) +
+    (filters.experienceLevel?.length || 0) +
+    (filters.industry?.length || 0);
+
+  const hasActiveFilters =
+    (filters.category?.length || 0) > 0 ||
+    (filters.experienceLevel?.length || 0) > 0 ||
+    (filters.industry?.length || 0) > 0 ||
+    (filters.regionType?.length || 0) > 0 ||
+    (filters.jobType?.length || 0) > 0 ||
+    (filters.location?.length || 0) > 0 ||
+    Boolean(filters.memberOnly) ||
+    filters.isTrusted ||
+    filters.isNew;
 
   const clearAllFilters = () => {
     onFilterChange({
@@ -379,199 +485,254 @@ export default function JobFilterBar({
       location: [],
       timezone: [],
       isTrusted: false,
-      isNew: false
+      isNew: false,
+      memberOnly: false
     });
     onSearchChange('');
   };
 
-  const hasActiveFilters =
-    (filters.category?.length || 0) > 0 ||
-    (filters.experienceLevel?.length || 0) > 0 ||
-    (filters.industry?.length || 0) > 0 ||
-    (filters.regionType?.length || 0) > 0 ||
-    (filters.jobType?.length || 0) > 0 ||
-    (filters.salary?.length || 0) > 0 ||
-    (filters.location?.length || 0) > 0 ||
-    (filters.timezone?.length || 0) > 0 ||
-    filters.isTrusted ||
-    filters.isNew;
+  const navClass = (active: boolean) => `relative inline-flex h-8 items-center gap-1.5 px-1 text-[13px] font-bold transition-colors ${
+    active ? 'text-[#2b3448]' : 'text-slate-500 hover:text-slate-900'
+  }`;
 
   return (
-    <div className="mb-2">
-      <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-        <div className="flex w-full xl:w-auto items-center gap-2 flex-shrink-0">
-          <button
-            onClick={onSortChange}
-            className={`inline-flex h-10 sm:h-11 items-center gap-1.5 sm:gap-2 rounded-xl border px-3 sm:px-4 text-[13px] font-semibold transition-all whitespace-nowrap shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)] ${
-              sortBy === 'recent'
-                ? 'bg-slate-900 border-slate-900 text-white'
-                : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:text-slate-900'
-            }`}
-            title={sortBy === 'recent' ? '当前：最新发布' : '当前：按推荐排序'}
-          >
-            <ArrowUpDown className="h-3.5 w-3.5" />
-            <span>{sortBy === 'recent' ? '最新' : '推荐'}</span>
-          </button>
-
-          <div className="relative w-full xl:w-[360px] flex-shrink-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="搜索岗位 / 公司..."
-              className="h-10 sm:h-11 w-full rounded-xl border border-slate-200/90 bg-white pl-9 pr-4 text-[13px] font-medium text-slate-900 shadow-[0_10px_24px_-18px_rgba(15,23,42,0.35)] transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => onSearchChange('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-300 hover:text-slate-500"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
+    <div className={`relative z-30 mb-2 overflow-visible rounded-[24px] border p-3.5 shadow-[0_22px_54px_-46px_rgba(64,78,102,0.28)] backdrop-blur-sm ${
+      isMember
+        ? 'border-[#e6d8bd] bg-white/88'
+        : 'border-[#dfe8ef] bg-white/88'
+    }`}>
+      {isMember ? (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[24px]">
+          <img
+            src="/pic_lists/Home_pics/background04.webp"
+            alt=""
+            className="absolute inset-0 h-full w-full scale-[1.08] object-cover object-[74%_44%] opacity-[0.34] saturate-[0.86]"
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.98)_0%,rgba(255,253,248,0.9)_58%,rgba(255,253,248,0.58)_100%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-[linear-gradient(180deg,rgba(255,253,248,0)_0%,rgba(255,253,248,0.88)_100%)]" />
+        </div>
+      ) : (
+        <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="pointer-events-none absolute -bottom-5 right-6 h-20 w-20 opacity-20" />
+      )}
+      <div className="relative flex flex-col gap-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-5">
+          <div className="min-w-0 xl:shrink-0">
+            <div className="flex min-w-0 items-center gap-2">
+              <h2 className="text-[30px] font-semibold leading-none tracking-normal text-slate-950">远程工作</h2>
+              {isMember ? (
+                <span className="pointer-events-none inline-flex h-5 shrink-0 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
+                  <Crown className="h-2.5 w-2.5 fill-current" />
+                  <span className="text-[8px] font-black leading-none tracking-wide">VIP</span>
+                </span>
+              ) : (
+                <img src="/pic_lists/Jobs_pics/sun-transparent.webp" alt="" className="h-7 w-7 opacity-80" />
+              )}
+              <ChevronDown className="-rotate-90 h-4 w-4 text-slate-300" />
+            </div>
           </div>
+          <div className="flex shrink-0 items-center gap-5 xl:pt-0.5">
+            <button
+              type="button"
+              className={navClass(listMode === 'jobs')}
+              onClick={() => {
+                if (listMode === 'jobs') {
+                  onSortChange();
+                  return;
+                }
+                onListModeChange('jobs');
+              }}
+              title={sortBy === 'recent' ? '当前：最新排序，点击切换推荐' : '当前：推荐排序，点击切换最新'}
+            >
+              <ArrowUpDown className="h-3.5 w-3.5" />
+              {sortBy === 'recent' ? '最新' : '推荐'}
+              {listMode === 'jobs' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#8f83ff]" /> : null}
+            </button>
+            <button type="button" className={navClass(listMode === 'favorites')} onClick={() => onListModeChange('favorites')}>
+              收藏
+              <span className="rounded-full bg-[#2b3448] px-1.5 py-0.5 text-[10px] text-white">{favoriteCount}</span>
+              {listMode === 'favorites' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#8f83ff]" /> : null}
+            </button>
+            <button type="button" className={navClass(listMode === 'applications')} onClick={() => onListModeChange('applications')}>
+              申请中
+              <span className="rounded-full bg-[#2b3448] px-1.5 py-0.5 text-[10px] text-white">{applicationCount}</span>
+              {listMode === 'applications' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#8f83ff]" /> : null}
+            </button>
+          </div>
+
+          {searchTerm ? (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+            >
+              清除搜索
+              <X className="h-3 w-3" />
+            </button>
+          ) : null}
         </div>
 
-        {/* Filter Row - Scrollable on mobile, wrap on desktop */}
-        <div className="-mx-4 flex w-[calc(100%+2rem)] min-w-0 flex-1 flex-nowrap items-center gap-2.5 overflow-x-auto px-4 pb-1 xl:mx-0 xl:w-auto xl:flex-wrap xl:overflow-visible xl:px-0 xl:pb-0">
-
-          {/* Job Type (Renamed from Commitment) */}
-          <FilterDropdown
-            label="工作类型"
-            activeLabel={getActiveLabel('jobType', jobTypeOptions, '工作类型')}
-            isActive={(filters.jobType?.length || 0) > 0}
-            isOpen={openDropdown === 'jobType'}
-            onToggle={() => toggleDropdown('jobType')}
-            onClose={() => applyFilters('jobType')}
-            onApply={() => applyFilters('jobType')}
-            onClear={() => clearTempFilter('jobType')}
-            icon={<Calendar className="w-3.5 h-3.5" />}
-            colorTheme="amber"
-          >
-            {jobTypeOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={tempFilters.jobType?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('jobType', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
-          {/* Experience Level (New) */}
-          <FilterDropdown
-            label="级别"
-            activeLabel={getActiveLabel('experienceLevel', EXPERIENCE_OPTIONS, '级别')}
-            isActive={(filters.experienceLevel?.length || 0) > 0}
-            isOpen={openDropdown === 'experienceLevel'}
-            onToggle={() => toggleDropdown('experienceLevel')}
-            onClose={() => applyFilters('experienceLevel')}
-            onApply={() => applyFilters('experienceLevel')}
-            onClear={() => clearTempFilter('experienceLevel')}
-            icon={<TrendingUp className="w-3.5 h-3.5" />}
-            colorTheme="emerald"
-          >
-            {EXPERIENCE_OPTIONS.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={tempFilters.experienceLevel?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('experienceLevel', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
-          {/* Industry - Moved before Role */}
-          <FilterDropdown
-            label="行业"
-            activeLabel={getActiveLabel('industry', industryOptions, '行业')}
-            isActive={(filters.industry?.length || 0) > 0}
-            isOpen={openDropdown === 'industry'}
-            onToggle={() => toggleDropdown('industry')}
-            onClose={() => applyFilters('industry')}
-            onApply={() => applyFilters('industry')}
-            onClear={() => clearTempFilter('industry')}
-            icon={<Building2 className="w-3.5 h-3.5" />}
-            colorTheme="purple"
-          >
-            {industryOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={tempFilters.industry?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('industry', opt.value, c)}
-              />
-            ))}
-          </FilterDropdown>
-
-          {/* Role (Category) -> Renamed to '角色' (Role) to match backend 'category' better */}
+        <div className="-mx-1 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
           <FilterDropdown
             label="角色"
             activeLabel={getActiveLabel('category', categoryOptions, '角色')}
             isActive={(filters.category?.length || 0) > 0}
             isOpen={openDropdown === 'category'}
-            onToggle={() => toggleDropdown('category')}
-            onClose={() => applyFilters('category')}
-            onApply={() => applyFilters('category')}
-            onClear={() => clearTempFilter('category')}
-            icon={<Briefcase className="w-3.5 h-3.5" />}
+            onToggle={() => setOpenDropdown('category')}
+            onClose={() => applyFilters(['category'])}
+            onApply={() => applyFilters(['category'])}
+            onClear={() => clearTempFilters(['category'])}
+            icon={<Briefcase className="h-3.5 w-3.5" />}
             colorTheme="indigo"
           >
-            {categoryOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={tempFilters.category?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('category', opt.value, c)}
-              />
-            ))}
+            <div className="grid gap-3 md:grid-cols-[128px_minmax(0,1fr)]">
+              <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-1.5">
+                {groupedCategories.map((group, index) => (
+                  <button
+                    key={group.title}
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setRoleGroup(index);
+                    }}
+                    className={`rounded-xl px-2.5 py-2 text-left text-xs font-bold transition-colors ${
+                      activeRoleGroup === index ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
+                    }`}
+                  >
+                    {group.title.replace('类', '')}
+                  </button>
+                ))}
+              </div>
+              <div className="min-w-0">
+                <FilterSectionHeader title={groupedCategories[activeRoleGroup]?.title || '角色'} />
+                <div className="flex flex-wrap gap-2 px-2 pb-2">
+                  {groupedCategories[activeRoleGroup]?.options?.length ? (
+                    <FilterChip
+                      label={`全部${groupedCategories[activeRoleGroup].title.replace('类', '')}`}
+                      active={groupedCategories[activeRoleGroup].options.every(option => tempFilters.category?.includes(option.value))}
+                      tone="indigo"
+                      onClick={() => selectRoleGroup(activeRoleGroup)}
+                    />
+                  ) : null}
+                  {(groupedCategories[activeRoleGroup]?.options || []).map(option => (
+                    <FilterChip
+                      key={option.value}
+                      label={option.label}
+                      count={option.count}
+                      active={tempFilters.category?.includes(option.value) || false}
+                      tone="indigo"
+                      onClick={() => toggleRoleOption(option.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
           </FilterDropdown>
 
-          {/* Location */}
           <FilterDropdown
             label="地点"
-            activeLabel={getActiveLabel('location', locationOptions, '地点')}
-            isActive={(filters.location?.length || 0) > 0}
+            activeLabel={getLocationActiveLabel()}
+            isActive={(filters.regionType?.length || 0) > 0 || (filters.location?.length || 0) > 0}
             isOpen={openDropdown === 'location'}
-            onToggle={() => toggleDropdown('location')}
-            onClose={() => applyFilters('location')}
-            onApply={() => applyFilters('location')}
-            onClear={() => clearTempFilter('location')}
-            icon={<MapPin className="w-3.5 h-3.5" />}
-            colorTheme="slate"
+            onToggle={() => setOpenDropdown('location')}
+            onClose={() => applyFilters(['regionType', 'location'])}
+            onApply={() => applyFilters(['regionType', 'location'])}
+            onClear={() => clearTempFilters(['regionType', 'location'])}
+            icon={<MapPin className="h-3.5 w-3.5" />}
+            colorTheme="emerald"
+            panelWidthClassName="md:w-[292px]"
           >
-            {locationOptions.map(opt => (
-              <CheckboxItem
-                key={opt.value}
-                label={opt.label}
-                checked={tempFilters.location?.includes(opt.value) || false}
-                onChange={(c) => handleCheckboxChange('location', opt.value, c)}
-              />
-            ))}
+            <div className="space-y-2 px-1 py-1">
+              <div className="grid gap-2">
+                {visibleLocationGroups.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setActiveLocationGroup(option.value);
+                      handleLocationGroupChange(option.value, !tempFilters.location?.includes(option.filterValue));
+                    }}
+                    className={`flex items-center justify-between rounded-2xl border px-3 py-3 text-left text-xs font-bold transition-colors ${
+                      tempFilters.location?.includes(option.filterValue)
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
+                        : 'border-slate-100 bg-white text-slate-600 hover:border-emerald-100 hover:bg-emerald-50/40 hover:text-slate-900'
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
+                      tempFilters.location?.includes(option.filterValue) ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
+                    }`}>
+                      {tempFilters.location?.includes(option.filterValue) ? <Check className="h-3 w-3 text-white" /> : null}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
           </FilterDropdown>
 
-          {/* Clear All Button */}
-          {(hasActiveFilters || searchTerm) && (
+          <FilterDropdown
+            label="更多筛选"
+            activeLabel={moreFilterCount > 0 ? `更多筛选 (${moreFilterCount})` : '更多筛选'}
+            isActive={moreFilterCount > 0}
+            isOpen={openDropdown === 'more'}
+            onToggle={() => setOpenDropdown('more')}
+            onClose={() => applyFilters(['jobType', 'experienceLevel', 'industry'])}
+            onApply={() => applyFilters(['jobType', 'experienceLevel', 'industry'])}
+            onClear={() => clearTempFilters(['jobType', 'experienceLevel', 'industry'])}
+            icon={<SlidersHorizontal className="h-3.5 w-3.5" />}
+            colorTheme="slate"
+          >
+            <FilterSectionHeader title="工作类型" />
+            <div className="flex flex-wrap gap-2 px-2 pb-2">
+              {jobTypeOptions.map(option => (
+                <FilterChip key={option.value} label={option.label} active={tempFilters.jobType?.includes(option.value) || false} onClick={() => handleCheckboxChange('jobType', option.value, !tempFilters.jobType?.includes(option.value))} />
+              ))}
+            </div>
+
+            <FilterSectionHeader title="级别" />
+            <div className="flex flex-wrap gap-2 px-2 pb-2">
+              {experienceLevelOptions.map(option => (
+                <FilterChip key={option.value} label={option.label} active={tempFilters.experienceLevel?.includes(option.value) || false} onClick={() => handleCheckboxChange('experienceLevel', option.value, !tempFilters.experienceLevel?.includes(option.value))} />
+              ))}
+            </div>
+
+            <FilterSectionHeader title="行业" />
+            <div className="flex flex-wrap gap-2 px-2 pb-2">
+              {industryOptions.map(option => (
+                <FilterChip key={option.value} label={option.label} active={tempFilters.industry?.includes(option.value) || false} onClick={() => handleCheckboxChange('industry', option.value, !tempFilters.industry?.includes(option.value))} />
+              ))}
+            </div>
+          </FilterDropdown>
+
+          {isAuthenticated ? (
             <button
+              type="button"
+              onClick={() => onFilterChange({ memberOnly: !filters.memberOnly })}
+              className={`inline-flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-all whitespace-nowrap ${
+                filters.memberOnly
+                  ? 'border-[#d8d2ff] bg-[#f1efff] text-[#6f63ff] shadow-sm'
+                  : 'border-slate-200/90 bg-white text-slate-600 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.35)] hover:border-slate-300 hover:text-slate-900'
+              }`}
+            >
+              <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${filters.memberOnly ? 'border-[#6f63ff] bg-[#6f63ff]' : 'border-slate-300 bg-white'}`}>
+                {filters.memberOnly ? <Check className="h-3 w-3 text-white" /> : null}
+              </span>
+              仅会员
+            </button>
+          ) : null}
+
+          {hasActiveFilters || searchTerm ? (
+            <button
+              type="button"
               onClick={clearAllFilters}
               className="inline-flex h-10 items-center gap-1 rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             >
               清空筛选
-              <X className="w-3 h-3" />
+              <X className="h-3 w-3" />
             </button>
-          )}
-        </div>
-
-        {/* Right Actions */}
-        <div className="flex items-center gap-2 ml-auto hidden xl:flex flex-shrink-0">
-          <button
-            onClick={onOpenTracking}
-            className="flex hidden items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white border border-indigo-600 rounded-lg shadow-sm text-[13px] font-bold hover:bg-indigo-700 transition-all whitespace-nowrap"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-100" />
-            <span className="hidden sm:inline">岗位订阅</span>
-          </button>
+          ) : null}
         </div>
       </div>
     </div>

@@ -40,7 +40,6 @@ const JobBundleDetailPage = lazy(() => import('./pages/JobBundleDetailPage'))
 const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const CommunityPage = lazy(() => import('./pages/CommunityPage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
-const AboutPage = lazy(() => import('./pages/AboutPage'))
 const ResumePrivacyPage = lazy(() => import('./pages/ResumePrivacyPage'))
 
 
@@ -155,11 +154,12 @@ function App() {
                           <Routes>
                             {/* 公开页面 */}
                             <Route path="/" element={<LandingPage />} />
-                            <Route path="/about" element={<AboutPage />} />
+                            <Route path="/about" element={<ProfileCenterPage publicAboutOnly />} />
                             <Route path="/privacy" element={<ResumePrivacyPage />} />
                             <Route path="/jobs" element={<JobsPage />} />
                             <Route path="/job-bundles/:id" element={<JobBundleDetailPage />} />
                             <Route path="/job/:id" element={<JobDetailPage />} />
+                            <Route path="/companies" element={<TrustedCompaniesPage />} />
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                             <Route path="/company/:id" element={<CompanyProfilePage />} />
                             <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
@@ -176,11 +176,7 @@ function App() {
                             {/* <Route path="/bug-leaderboard" element={<BugLeaderboardPage />} /> */}
 
                             {/* 需要登录的页面 */}
-                            <Route path="/profile" element={
-                              <ProtectedRoute>
-                                <ProfileCenterPage />
-                              </ProtectedRoute>
-                            } />
+                            <Route path="/profile" element={<ProfileCenterPage />} />
                             <Route path="/my-applications" element={
                               <ProtectedRoute>
                                 <MyApplicationsPage />

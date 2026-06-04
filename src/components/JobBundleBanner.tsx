@@ -15,6 +15,10 @@ interface JobBundleBannerProps {
   bundle: JobBundle;
 }
 
+interface JobBundleCarouselProps {
+  bundles: JobBundle[];
+}
+
 // Default full-width banner (kept for compatibility)
 export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const navigate = useNavigate();
@@ -26,7 +30,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
 
   const handleClick = () => {
     if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=/job-bundles/${bundle.id}` : '/membership');
+      navigate(!isAuthenticated ? `/login?redirect=/job-bundles/${bundle.id}` : '/profile?tab=membership');
       return;
     }
     navigate(`/job-bundles/${bundle.id}`);
@@ -38,10 +42,9 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-      className="group relative overflow-hidden rounded-2xl cursor-pointer mb-0 border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-slate-300 bg-[linear-gradient(135deg,rgba(248,250,252,1),rgba(243,244,255,1),rgba(239,246,255,1))]"
+      className="group relative overflow-hidden rounded-2xl cursor-pointer mb-0 border border-[#dfe8ef] shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-[#cfe0ea] bg-[linear-gradient(135deg,#fffdf8_0%,#ffffff_58%,#f3fbf6_100%)]"
     >
-      <div className="absolute top-0 right-0 w-40 h-40 bg-blue-200/30 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-32 h-32 bg-purple-200/20 rounded-full blur-3xl translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+      <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="pointer-events-none absolute bottom-0 right-5 h-20 opacity-20" />
       <div className="relative pl-4 pr-8 py-4 flex items-center gap-4 min-h-[104px]">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
@@ -53,8 +56,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
             </span>
             <span className="text-xs text-slate-600 font-medium">{jobCount} 个职位</span>
           </div>
-          <h3 className="text-base font-bold text-slate-900 truncate">{bundle.title}</h3>
-          <p className="text-sm text-slate-500 truncate mt-0.5">{bundle.subtitle}</p>
+          <h3 className="line-clamp-2 text-base font-bold leading-snug text-slate-900">{bundle.title}</h3>
         </div>
         <div className="flex-shrink-0">
           {isLocked ? (
@@ -62,7 +64,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
               <Lock className="w-4 h-4" />
             </div>
           ) : (
-            <div className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-md shadow-indigo-200/50 transition-transform duration-200 group-hover:scale-105 bg-indigo-600">
+            <div className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-md shadow-[#7b74ff]/20 transition-transform duration-200 group-hover:scale-105 bg-[#7b74ff]">
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
             </div>
           )}
@@ -72,137 +74,138 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   );
 }
 
-// Light-colour themes — soft pastel look matching the overall indigo/slate design system
-const CARD_THEMES = [
+const CAROUSEL_COLORS = [
   {
-    bg: 'bg-[linear-gradient(135deg,rgba(219,252,244,0.98),rgba(229,247,255,0.96),rgba(255,255,255,0.98))]',
-    border: 'border-emerald-200/90 hover:border-emerald-300',
-    badge: 'bg-white/80 text-slate-700 border-slate-200',
-    title: 'text-slate-900',
-    sub: 'text-slate-600',
-    count: 'bg-white/80 text-slate-700 border border-slate-200',
-    arrow: 'bg-indigo-600 text-white shadow-sm',
-    orb1: 'bg-emerald-200/58',
-    orb2: 'bg-sky-200/46',
+    shell: 'border-[#b9ead4] bg-[linear-gradient(135deg,#f7fff9_0%,#ffffff_58%,#f0fbf5_100%)]',
+    badge: 'border-[#bde8d1] bg-white/86 text-[#26946b]',
+    count: 'border-[#d7eee3] bg-white/92 text-[#43886c]',
+    button: 'bg-[#38b985] hover:bg-[#2ca875] shadow-[#38b985]/20',
+    image: '/pic_lists/Jobs_pics/bundle-nontech.webp'
   },
   {
-    bg: 'bg-[linear-gradient(135deg,rgba(238,236,255,0.98),rgba(236,247,255,0.95),rgba(255,255,255,0.98))]',
-    border: 'border-indigo-200/90 hover:border-indigo-300',
-    badge: 'bg-white/80 text-slate-700 border-slate-200',
-    title: 'text-slate-900',
-    sub: 'text-slate-600',
-    count: 'bg-white/80 text-slate-700 border border-slate-200',
-    arrow: 'bg-indigo-600 text-white shadow-sm',
-    orb1: 'bg-violet-200/48',
-    orb2: 'bg-sky-200/42',
+    shell: 'border-[#c9dcf6] bg-[linear-gradient(135deg,#f7fbff_0%,#ffffff_58%,#f2f7ff_100%)]',
+    badge: 'border-[#c9dcf6] bg-white/86 text-[#2f6ed8]',
+    count: 'border-[#dce8f7] bg-white/92 text-[#587aa9]',
+    button: 'bg-[#3f7ee8] hover:bg-[#2f6ed8] shadow-[#3f7ee8]/20',
+    image: '/pic_lists/Jobs_pics/bundle-product.webp'
   },
   {
-    bg: 'bg-[linear-gradient(135deg,rgba(255,239,221,0.98),rgba(255,247,227,0.95),rgba(255,255,255,0.98))]',
-    border: 'border-amber-200/90 hover:border-amber-300',
-    badge: 'bg-white/80 text-slate-700 border-slate-200',
-    title: 'text-slate-900',
-    sub: 'text-slate-600',
-    count: 'bg-white/80 text-slate-700 border border-slate-200',
-    arrow: 'bg-indigo-600 text-white shadow-sm',
-    orb1: 'bg-amber-200/54',
-    orb2: 'bg-orange-200/40',
+    shell: 'border-[#f4dda6] bg-[linear-gradient(135deg,#fffaf0_0%,#ffffff_58%,#fff6df_100%)]',
+    badge: 'border-[#f0d89c] bg-white/86 text-[#c28222]',
+    count: 'border-[#f5e5bd] bg-white/92 text-[#a9792c]',
+    button: 'bg-[#e7a53b] hover:bg-[#d99322] shadow-[#e7a53b]/20',
+    image: '/pic_lists/Jobs_pics/bundle-tech.webp'
   }
 ];
 
-/**
- * Adaptive-width card for the bundle carousel.
- *
- * Layout rules (controlled by the parent carousel container in JobsPage):
- *   1 bundle  → card fills full width (flex-1)
- *   2 bundles → each card is ~50% width
- *   3+ bundles → fixed width so they peek to indicate scrollability
- *
- * The parent passes `totalCount` and `index` so this card can style itself.
- */
-interface JobBundleCardProps extends JobBundleBannerProps {
-  totalCount: number;
+function getBundleVisualType(bundle: JobBundle) {
+  const text = `${bundle.title || ''} ${bundle.subtitle || ''}`.toLowerCase();
+  if (/技术|研发|开发|工程|engineer|developer|tech/.test(text) && !/非技术/.test(text)) return 'tech';
+  if (/产品|运营|设计|product|design|operation/.test(text)) return 'product';
+  return 'nontech';
 }
 
-export function JobBundleCard({ bundle, totalCount }: JobBundleCardProps) {
+function getBundleTheme(bundle: JobBundle, colorIndex: number) {
+  const visualType = getBundleVisualType(bundle);
+  const byType = {
+    tech: {
+      ...CAROUSEL_COLORS[0],
+      image: '/pic_lists/Jobs_pics/bundle-tech.webp'
+    },
+    product: {
+      ...CAROUSEL_COLORS[1],
+      image: '/pic_lists/Jobs_pics/bundle-product.webp'
+    },
+    nontech: {
+      ...CAROUSEL_COLORS[2],
+      image: '/pic_lists/Jobs_pics/bundle-nontech.webp'
+    }
+  } as const;
+  return byType[visualType] || CAROUSEL_COLORS[colorIndex % CAROUSEL_COLORS.length];
+}
+
+interface JobBundleCardProps extends JobBundleBannerProps {
+  colorIndex: number;
+}
+
+export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const navigate = useNavigate();
   const { isAuthenticated, isMember } = useAuth();
 
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
   const jobCount = bundle.job_ids?.length || 0;
-  const theme = CARD_THEMES[bundle.id % CARD_THEMES.length];
 
   const handleClick = () => {
     if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=/job-bundles/${bundle.id}` : '/membership');
+      navigate(!isAuthenticated ? `/login?redirect=/job-bundles/${bundle.id}` : '/profile?tab=membership');
       return;
     }
     navigate(`/job-bundles/${bundle.id}`);
   };
 
-  // width strategy:
-  // 1 bundle  → fill width
-  // 2-3 bundles → mobile uses peekable horizontal cards, desktop returns to equal-width layout
-  // 4+ bundles → fixed-width carousel across breakpoints
-  const widthClass = totalCount === 1
-    ? 'w-full'
-    : totalCount <= 3
-      ? 'w-[82vw] max-w-[320px] flex-shrink-0 lg:w-auto lg:max-w-none lg:flex-1'
-      : 'w-[82vw] max-w-[320px] flex-shrink-0 sm:w-[320px] lg:w-[236px]';
-
+  const theme = getBundleTheme(bundle, colorIndex);
   return (
     <div
       onClick={handleClick}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-      className={`group relative ${widthClass} rounded-[26px] overflow-hidden cursor-pointer border shadow-[0_20px_44px_-34px_rgba(15,23,42,0.22)]
-        transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_28px_54px_-34px_rgba(15,23,42,0.24)] select-none
-        ${theme.bg} ${theme.border}`}
-      style={{ minHeight: '126px' }}
+      className={`group relative h-full min-w-0 cursor-pointer select-none overflow-hidden rounded-[18px] border ${theme.shell} shadow-[0_14px_34px_-32px_rgba(52,76,92,0.26)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-36px_rgba(52,76,92,0.34)]`}
+      style={{ minHeight: '122px' }}
     >
-      {/* Decorative orbs */}
-      <div className={`absolute -top-6 -right-5 h-24 w-24 ${theme.orb1} rounded-full blur-2xl pointer-events-none`} />
-      <div className={`absolute -bottom-5 left-10 h-16 w-24 ${theme.orb2} rounded-full blur-2xl pointer-events-none`} />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.22),transparent_38%,rgba(255,255,255,0.15)_68%,transparent)] opacity-80" />
-
-      <div className="relative flex h-full flex-col justify-between p-4" style={{ minHeight: '126px' }}>
-        {/* Badge row */}
-        <div className="mb-3 flex items-center justify-between">
-          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full border text-[10px] font-bold backdrop-blur-sm ${theme.badge}`}>
-            {isMemberBundle
-              ? <><Crown className="w-2.5 h-2.5" />会员专属</>
-              : <><Layers className="w-2.5 h-2.5" />精选合集</>
-            }
-          </span>
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${theme.count}`}>
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_62%,rgba(255,255,255,0.34)_100%)]" />
+      <img
+        src={theme.image}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-0 left-1/2 h-[58px] w-[138px] -translate-x-1/2 object-contain opacity-82 transition-transform duration-300 group-hover:scale-105"
+        loading="lazy"
+        decoding="async"
+      />
+      <div className="relative flex h-full flex-col p-3.5">
+        <div className="mb-1 flex items-start justify-between gap-2">
+          <h3 className="line-clamp-3 min-h-[60px] max-w-[190px] text-[16px] font-black leading-snug tracking-tight text-slate-900">
+            {bundle.title}
+          </h3>
+          <span className={`shrink-0 rounded-full border bg-white/86 px-2 py-0.5 text-[11px] font-bold shadow-sm ${theme.count}`}>
             {jobCount}个
           </span>
         </div>
+      </div>
+      {isLocked && (
+        <div className="absolute inset-0 rounded-[18px] bg-white/34 backdrop-blur-[1px]" />
+      )}
+    </div>
+  );
+}
 
-        {/* Title */}
-        <div className="flex-1 flex items-center">
-          <h3 className={`text-[15px] font-black leading-snug line-clamp-2 tracking-tight ${theme.title}`}>
-            {bundle.title}
-          </h3>
-        </div>
+export function JobBundleCarousel({ bundles }: JobBundleCarouselProps) {
+  if (!bundles.length) return null;
 
-        {/* Bottom: subtitle + arrow */}
-        <div className="mt-3 flex items-end justify-between gap-3">
-          <span className={`line-clamp-2 flex-1 text-[11px] leading-5 ${theme.sub}`}>
-            {bundle.subtitle}
-          </span>
-          <div className={`flex items-center justify-center w-9 h-9 rounded-full flex-shrink-0
-            transition-all duration-200 group-hover:scale-110 shadow-sm ${
-              isLocked ? 'bg-white/60 border border-current/20 opacity-60' : `${theme.arrow}`
-            }`}
+  return (
+    <div className="relative w-full overflow-hidden rounded-[22px] bg-[#fffdf9]">
+      <div
+        className="flex touch-pan-x snap-x snap-mandatory gap-3 overflow-x-auto px-0.5 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {bundles.map((bundle, index) => (
+          <div
+            key={bundle.id}
+            className="snap-start"
+            style={{
+              flex: bundles.length === 1
+                ? '0 0 100%'
+                : bundles.length === 2
+                  ? '0 0 calc((100% - 12px) / 2)'
+                  : '0 0 clamp(190px, calc((100% - 24px) / 2.35), 238px)'
+            }}
           >
-            {isLocked
-              ? <Lock className="w-3.5 h-3.5" />
-              : <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
-            }
+            <JobBundleCard
+              bundle={bundle}
+              colorIndex={index}
+            />
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

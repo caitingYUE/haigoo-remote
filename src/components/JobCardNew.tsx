@@ -1,12 +1,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { MapPin, Clock, Calendar, Building2, Briefcase, TrendingUp, Trash2, Star, Crown, Link2, Mail, Zap } from 'lucide-react';
+import { MapPin, Building2, Briefcase, TrendingUp, Trash2, Star, Crown, Zap, Bookmark } from 'lucide-react';
 import { Job } from '../types';
 import { DateFormatter } from '../utils/date-formatter';
 import { resolveMatchLevel } from '../utils/match-display';
 import { trackingService } from '../services/tracking-service';
 import { formatSalaryForDisplay } from '../utils/salary-display';
 import { getCompanyLogoSources } from '../utils/company-logo';
+import { useAuth } from '../contexts/AuthContext';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -22,20 +23,6 @@ const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
    'executive': '高管'
 };
 
-const JOB_TYPE_MAP: Record<string, string> = {
-   'full-time': '全职',
-   'Full-time': '全职',
-   'part-time': '兼职',
-   'Part-time': '兼职',
-   'contract': '合同',
-   'Contract': '合同',
-   'freelance': '自由职业',
-   'Freelance': '自由职业',
-   'internship': '实习',
-   'Internship': '实习',
-   'remote': '远程',
-   'Remote': '远程'
-};
 // import { FastAverageColor } from 'fast-average-color'; // Optional: Use if installed
 
 interface JobCardNewProps {
@@ -46,6 +33,7 @@ interface JobCardNewProps {
    className?: string;
    variant?: 'grid' | 'list';
    isActive?: boolean;
+   isSaved?: boolean;
    applicationStatusNode?: React.ReactNode;
    showApplicationMethodIcons?: boolean;
    compactFeatured?: boolean;
@@ -71,6 +59,29 @@ const getBrandPalette = (str: string) => {
 const getPastelColor = (str: string) => getBrandPalette(str).bg;
 const getDarkerColor = (str: string) => getBrandPalette(str).text;
 const getHoverColor = (str: string) => getBrandPalette(str).hover;
+
+const resolveDirectConnectEmailLabel = (rawType: string) => {
+   const emailType = String(rawType || '').trim();
+   const normalized = emailType.toLowerCase();
+   const haystack = `${normalized} ${emailType}`;
+
+   if (/(boss|ceo|chief|founder|vp|head|director|高管|老板|创始|负责人)/i.test(haystack)) {
+      return '直连企业BOSS邮箱';
+   }
+   if (/(hr|human resources|people|人力|人事|hr邮箱)/i.test(haystack)) {
+      return '直连企业HR邮箱';
+   }
+   if (/(招聘|recruit|recruiter|hiring|career|talent|talent acquisition)/i.test(haystack)) {
+      return '直连企业招聘邮箱';
+   }
+   if (/(员工|employee|staff|teammate|team)/i.test(haystack)) {
+      return '直连企业员工邮箱';
+   }
+   if (emailType && emailType.includes('邮箱')) {
+      return `直连企业${emailType}`;
+   }
+   return '直连企业邮箱';
+};
 
 // Match Score Badge
 const MatchScoreBadge = ({ score, level, compact = false }: { score: number, level: string, compact?: boolean }) => {
@@ -102,25 +113,36 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
 
 const FreshBadge = () => (
    <span
-      className="inline-flex items-center justify-center rounded-full border border-emerald-500/15 bg-emerald-500 px-2.5 py-1 text-[11px] font-bold uppercase leading-none tracking-[0.08em] text-white shadow-sm"
+      className="inline-flex h-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 px-2 text-[10px] font-black leading-none text-white shadow-[0_10px_18px_-14px_rgba(16,185,129,0.55)]"
       aria-label="new"
       title="最近 3 天内上新"
    >
-      new
+      New
    </span>
 );
 
-export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false }: JobCardNewProps) {
+const GuestMaskedValue = ({ className = 'w-20' }: { className?: string }) => (
+   <span
+      className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
+      aria-label="登录后查看"
+      title="登录后查看"
+   />
+);
+
+export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, isSaved = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
+   const { isAuthenticated } = useAuth();
    const isTranslated = !!job.translations?.title;
 
    const isMemberOnlyJob = Boolean(job.memberOnly);
+   const shouldMaskGuestMeta = !isAuthenticated;
+   const showMemberOnlySignals = isAuthenticated;
 
    const MemberBadge = () => (
-      <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 inline-flex -translate-x-1/2 items-center justify-center gap-1 rounded-full bg-indigo-600/95 px-2.5 py-[3px] text-center text-[10px] font-bold leading-none text-white shadow-lg shadow-indigo-500/15 backdrop-blur-[2px]">
-         <Crown className="h-2.5 w-2.5" />
-         <span className="whitespace-nowrap">会员</span>
+      <div className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 inline-flex h-5 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
+         <Crown className="h-2.5 w-2.5 fill-current" />
+         <span className="text-[8px] font-black leading-none tracking-wide">VIP</span>
       </div>
    );
    const isNew = useMemo(() => {
@@ -136,12 +158,28 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    }, [job.publishedAt]);
 
    const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
-   const logoSources = useMemo(() => getCompanyLogoSources({
-      companyId: job.companyId,
-      cachedLogoUrl: job.cachedLogoUrl || job.cachedCompanyLogoUrl,
-      originalLogoUrl: job.logo || job.companyLogo,
-      version: job.updatedAt || job.publishedAt
-   }), [job.companyId, job.cachedLogoUrl, job.cachedCompanyLogoUrl, job.logo, job.companyLogo, job.updatedAt, job.publishedAt]);
+   const websiteLogoFallbacks = useMemo(() => {
+      const rawWebsite = String(job.companyWebsite || '').trim();
+      if (!rawWebsite) return [];
+      try {
+         const withProtocol = /^https?:\/\//i.test(rawWebsite) ? rawWebsite : `https://${rawWebsite}`;
+         const host = new URL(withProtocol).hostname.replace(/^www\./, '');
+         return host
+            ? [`https://logo.clearbit.com/${host}`, `https://www.google.com/s2/favicons?domain=${host}&sz=128`]
+            : [];
+      } catch {
+         return [];
+      }
+   }, [job.companyWebsite]);
+   const logoSources = useMemo(() => {
+      const baseSources = getCompanyLogoSources({
+         companyId: job.companyId,
+         cachedLogoUrl: job.cachedLogoUrl || job.cachedCompanyLogoUrl,
+         originalLogoUrl: job.logo || job.companyLogo || websiteLogoFallbacks[0],
+         version: job.updatedAt || job.publishedAt
+      });
+      return Array.from(new Set([...baseSources, ...websiteLogoFallbacks]));
+   }, [job.companyId, job.cachedLogoUrl, job.cachedCompanyLogoUrl, job.logo, job.companyLogo, websiteLogoFallbacks, job.updatedAt, job.publishedAt]);
    const logoSourceKey = useMemo(() => logoSources.join('|'), [logoSources]);
    const [logoSourceIndex, setLogoSourceIndex] = useState(0);
    const resolvedLogoSrc = logoSources[logoSourceIndex] || '';
@@ -156,15 +194,34 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const hoverColor = useMemo(() => getHoverColor(job.company || 'default'), [job.company]);
 
    const isFeatured = job.isFeatured;
-   const titleAccessoryWidth = (isTranslated ? 22 : 0) + (isNew ? 48 : 0) + (isFeatured ? 24 : 0) + (((isTranslated || isNew || isFeatured) ? 12 : 0));
-   const directApplyUrl = useMemo(() => {
-      const value = String(job.url || job.sourceUrl || '').trim();
-      if (!value || /^mailto:/i.test(value)) return '';
-      return /^https?:\/\//i.test(value) ? value : '';
-   }, [job.url, job.sourceUrl]);
-   const directApplyEmail = useMemo(() => String(job.hiringEmail || '').trim(), [job.hiringEmail]);
-   const hasDirectApplyUrl = Boolean(directApplyUrl);
+   const directApplyEmail = useMemo(() => String(
+      job.hiringEmail
+      || (job as any).hiring_email
+      || (job as any).trusted_hiring_email
+      || ''
+   ).trim(), [job]);
    const hasDirectApplyEmail = Boolean(directApplyEmail);
+   const rawReferralTypes: string[] = (Array.isArray(job.referralContactTypes)
+      ? job.referralContactTypes
+      : (Array.isArray((job as any).referral_contact_types) ? (job as any).referral_contact_types : [])
+   ).map((item: unknown) => String(item || '').trim()).filter(Boolean);
+   const directConnectLabels = useMemo(() => {
+      const authoritativeTypes = rawReferralTypes;
+      const fallbackTypes = hasDirectApplyEmail
+         ? [
+            job.emailType,
+            (job as any).email_type,
+            (job as any).trusted_email_type
+         ].map((item) => String(item || '').trim()).filter(Boolean)
+         : [];
+      const rawTypes = authoritativeTypes.length > 0 ? authoritativeTypes : fallbackTypes;
+      if (rawTypes.length === 0) return [];
+
+      const labels = rawTypes.map(resolveDirectConnectEmailLabel);
+
+      return [...new Set(labels)].slice(0, 4);
+   }, [hasDirectApplyEmail, job, rawReferralTypes]);
+   const hasReferralContactSignal = directConnectLabels.length > 0;
    const resolvedDisplayScore = Number(
       matchScore
       ?? (job as any).displayMatchScore
@@ -179,9 +236,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    }, [job, resolvedDisplayScore]);
 
    const rawScoreNum = Math.round(resolvedDisplayScore);
-   const showMatchScore = resolvedMatchLevel !== 'none' && rawScoreNum > 0;
+   const showMatchScore = rawScoreNum > 0;
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
    const isCompactFeaturedCard = variant === 'list' && compactFeatured;
+   const listCardTone = isActive
+      ? 'border-[#acd4ea] bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(246,252,255,0.98))] shadow-[0_24px_54px_-36px_rgba(69,111,142,0.28)] ring-1 ring-[#d6eaf4]'
+      : isMemberOnlyJob
+         ? 'border-[#e7d8bd] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,250,241,0.98))] shadow-[0_22px_48px_-36px_rgba(139,111,66,0.24)] hover:border-[#d8c39a] hover:shadow-[0_28px_58px_-38px_rgba(139,111,66,0.28)]'
+         : 'border-[#e3edf4]/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(251,253,255,0.98))] shadow-[0_18px_38px_-34px_rgba(40,65,90,0.18)] hover:border-[#c9def0] hover:shadow-[0_26px_52px_-36px_rgba(69,111,142,0.22)]';
 
    // 1. Merge and deduplicate tags for display (Common for both variants)
    const displayTags = useMemo(() => {
@@ -220,92 +282,25 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const salaryText = formatSalaryForDisplay(job.salary, '薪资Open');
    const isSalaryOpen = salaryText === '薪资Open' || salaryText === '薪资 Open';
-   const topMetaBadges = [
-      job.type ? {
-         key: 'jobType',
-         label: JOB_TYPE_MAP[job.type] || job.type,
-         options: {
-            icon: Calendar,
-            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: isCompactFeaturedCard ? 'max-w-[7ch]' : 'max-w-[8ch]'
-         }
-      } : null,
-      job.experienceLevel ? {
-         key: 'experienceLevel',
-         label: EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel,
-         options: {
-            icon: TrendingUp,
-            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: isCompactFeaturedCard ? 'max-w-[7ch]' : 'max-w-[8ch]'
-         }
-      } : null,
-      job.category ? {
-         key: 'category',
-         label: job.category,
-         options: {
-            icon: Briefcase,
-            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: isCompactFeaturedCard ? 'max-w-[9ch] lg:max-w-[10ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
-         }
-      } : null,
-      job.companyIndustry ? {
-         key: 'companyIndustry',
-         label: job.companyIndustry,
-         options: {
-            icon: Building2,
-            tone: 'bg-slate-50 text-slate-700 border border-slate-200/80',
-            maxWidthClass: isCompactFeaturedCard ? 'max-w-[8ch] lg:max-w-[9ch]' : 'max-w-[10ch] lg:max-w-[14ch]'
-         }
-      } : null
-   ].filter(Boolean) as Array<{
-      key: string;
-      label: string;
-      options: {
-         icon: React.ComponentType<{ className?: string }>;
-         tone: string;
-         maxWidthClass?: string;
-      };
-   }>;
-
-   const compactTopBadges = isCompactFeaturedCard ? topMetaBadges.slice(0, 5) : topMetaBadges;
-   const compactTopBadgeOverflow = isCompactFeaturedCard ? Math.max(topMetaBadges.length - compactTopBadges.length, 0) : 0;
-   const compactSalaryDesktopWidthClass = isCompactFeaturedCard ? 'md:basis-[21%] md:max-w-[21%]' : 'md:basis-[24%] md:max-w-[24%]';
-   const compactSalaryMobileWidthClass = isCompactFeaturedCard ? 'max-w-[180px]' : 'max-w-[156px]';
-   const compactSalaryTextClass = salaryText.length > 28 ? 'text-[11px]' : salaryText.length > 20 ? 'text-[12px]' : 'text-[15px]';
-   const renderTopMetaBadge = (
-      label: string,
-      options: {
-         icon: React.ComponentType<{ className?: string }>;
-         tone: string;
-         maxWidthClass?: string;
-      }
-   ) => {
-      const Icon = options.icon;
-      return (
-         <span
-            className={`inline-flex min-w-0 max-w-full shrink items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-semibold ${options.tone}`}
-            title={label}
-         >
-            <Icon className="h-3 w-3 shrink-0" />
-            <span className={`truncate ${options.maxWidthClass || 'max-w-[12ch] lg:max-w-[16ch]'}`}>{label}</span>
-         </span>
-      );
-   };
-   const renderApplicationMethodIcons = () => {
-      if (!showApplicationMethodIcons || (!hasDirectApplyUrl && !hasDirectApplyEmail)) return null;
+   const companyRatingText = String(job.companyRating || (job as any).company_rating || '').trim();
+   const renderApplicationMethodBadges = () => {
+      if (!showApplicationMethodIcons || !hasReferralContactSignal) return null;
 
       return (
-         <div className="inline-flex items-center gap-1.5 text-slate-400">
-            {hasDirectApplyUrl ? (
-               <span className="inline-flex h-5 w-5 items-center justify-center" title="支持网申" aria-label="支持网申">
-                  <Link2 className="h-3.5 w-3.5" />
+         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            {directConnectLabels.map((label) => (
+               <span
+                  key={label}
+                  className="inline-flex max-w-[170px] items-center gap-1.5 rounded-full border border-emerald-200/80 bg-[#f4fbf6] px-2.5 py-1 text-[11px] font-bold leading-none text-slate-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.78)]"
+                  title={label}
+               >
+                  <span className="relative flex h-2 w-2 shrink-0">
+                     <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-35 animate-ping" />
+                     <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
+                  </span>
+                  <span className="truncate">{label}</span>
                </span>
-            ) : null}
-            {hasDirectApplyEmail ? (
-               <span className="inline-flex h-5 w-5 items-center justify-center" title="支持邮箱直申" aria-label="支持邮箱直申">
-                  <Mail className="h-3.5 w-3.5" />
-               </span>
-            ) : null}
+            ))}
          </div>
       );
    };
@@ -338,7 +333,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       return (
          <div
-            className="relative flex h-full w-full flex-shrink-0 flex-col items-center justify-center overflow-hidden rounded-[22px] border border-white/70 px-2 py-3 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+            className="relative flex h-full w-full flex-shrink-0 flex-col items-center justify-center overflow-hidden rounded-[22px] border border-white/70 px-1.5 py-2 transition-colors shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
             style={{ backgroundColor: bgColor }}
          >
             {/* Featured Badge for Grid View (Hidden per user request) */}
@@ -360,7 +355,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             </div>
 
             {/* Logo (Centered) */}
-            <div className="relative flex-shrink-0 w-16 h-16 bg-white rounded-[18px] shadow-[0_16px_32px_-24px_rgba(15,23,42,0.45)] flex items-center justify-center p-2 overflow-hidden">
+            <div className="relative flex-shrink-0 w-[72px] h-[72px] bg-white rounded-[18px] shadow-[0_16px_32px_-24px_rgba(15,23,42,0.45)] flex items-center justify-center p-1 overflow-hidden">
                {resolvedLogoSrc ? (
                   <img
                      src={resolvedLogoSrc}
@@ -388,7 +383,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                )}
 
                {/* Email Only Badge */}
-               {isMemberOnlyJob && <MemberBadge />}
+               {showMemberOnlySignals && isMemberOnlyJob && <MemberBadge />}
             </div>
          </div>
       );
@@ -397,19 +392,19 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    // Legacy Small Logo (for mobile or specific variants if needed)
    const CompanyLogoSmall = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' | 'xl' }) => {
       const sizeClasses = {
-         sm: 'w-10 h-10 p-1.5',
-         md: 'w-12 h-12 p-2',
-         lg: 'w-14 h-14 p-2',
-         xl: 'w-20 h-20 p-3'
+         sm: 'h-10 w-10 p-1',
+         md: 'h-12 w-12 p-1',
+         lg: 'h-14 w-14 p-1.5',
+         xl: 'h-20 w-20 p-2'
       };
 
       return (
-         <div className={`${sizeClasses[size]} flex-shrink-0 bg-white rounded-xl border border-slate-100 flex items-center justify-center overflow-hidden relative group-hover:border-indigo-100 transition-colors shadow-sm`}>
+         <div className={`${sizeClasses[size]} relative flex flex-shrink-0 items-center justify-center overflow-visible rounded-[14px] border border-[#dfe8f1] bg-white shadow-[0_10px_22px_-18px_rgba(15,23,42,0.42)] transition-colors group-hover:border-[#c7d9ef]`}>
             {resolvedLogoSrc ? (
                <img
                   src={resolvedLogoSrc}
                   alt={job.company}
-                  className="w-full h-full object-contain"
+                  className="h-full w-full rounded-[10px] object-contain"
                   onError={(e) => {
                      if (logoSourceIndex < logoSources.length - 1) {
                         setLogoSourceIndex((idx) => idx + 1);
@@ -418,7 +413,6 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      const target = e.target as HTMLImageElement;
                      target.style.display = 'none';
                      if (target.parentElement && !target.dataset.errorHandled) {
-                        target.parentElement.style.backgroundColor = bgColor;
                         target.dataset.errorHandled = 'true';
                         const initialSpan = document.createElement('span');
                         initialSpan.className = "font-bold text-xl";
@@ -429,18 +423,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   }}
                />
             ) : (
-               <div className="w-full h-full flex items-center justify-center font-bold text-xl" style={{ backgroundColor: bgColor, color: textColor }}>
+               <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-slate-50 text-xl font-bold" style={{ color: textColor }}>
                   {companyInitial}
                </div>
             )}
 
-            {/* Email Only Badge */}
-            {isMemberOnlyJob && (
-               <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 inline-flex -translate-x-1/2 items-center justify-center gap-1 rounded-full bg-indigo-600/95 px-1.5 py-[2px] text-center text-[8px] font-bold leading-none text-white shadow-md shadow-indigo-500/15 backdrop-blur-[2px]">
-                  <Crown className="h-2 w-2" />
-                  <span className="whitespace-nowrap">会员</span>
-               </div>
-            )}
+            {showMemberOnlySignals && isMemberOnlyJob && <MemberBadge />}
          </div>
       );
    };
@@ -458,189 +446,118 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                onClick && onClick(job);
             }}
             className={`
-               group relative flex min-h-[132px] md:min-h-[148px] cursor-pointer items-stretch gap-3 md:gap-4 rounded-[22px] md:rounded-[26px] border p-3.5 md:p-4 transition-all duration-300
-               ${isActive ? 'border-indigo-300 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(244,247,255,0.92))] shadow-[0_24px_54px_-36px_rgba(79,70,229,0.38)] ring-1 ring-indigo-200/80' : 'border-slate-200/85 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,252,255,0.98))] shadow-[0_18px_38px_-32px_rgba(15,23,42,0.2)] hover:border-indigo-200 hover:shadow-[0_26px_52px_-34px_rgba(79,70,229,0.18)]'}
-               ${isFeatured ? 'before:absolute before:inset-y-5 before:left-0 before:w-[3px] before:rounded-r-full before:bg-indigo-500' : ''}
+               group relative min-h-[118px] cursor-pointer rounded-[22px] border p-3.5 transition-all duration-300 md:rounded-[24px] md:p-4
+               ${listCardTone}
                ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
                ${className}
             `}
          >
-            {/* Left: Company Logo Card */}
-            <div className="hidden w-[110px] flex-shrink-0 self-stretch md:flex">
-               <CompanyCard size="sm" />
-            </div>
+            {isMemberOnlyJob ? (
+               <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[46%] object-cover object-right opacity-[0.1]" />
+            ) : null}
+            <div className="flex min-w-0 items-start gap-3">
+               <CompanyLogoSmall size="md" />
 
-            {/* Content Area */}
-            <div className="flex min-w-0 flex-1 gap-3 md:gap-4 py-0.5">
-               <div className="min-w-0 flex-1 flex flex-col gap-1.5">
-
-                  {/* Row 1: Badges & Salary (Desktop) */}
-                  <div className="flex items-start gap-2 min-h-[24px]">
-                     <div className={`flex min-w-0 items-center gap-2 pt-1 ${isCompactFeaturedCard ? 'flex-nowrap overflow-hidden' : 'flex-wrap'}`}>
-                        {(isCompactFeaturedCard ? compactTopBadges : topMetaBadges).map((badge) => (
-                           <div key={badge.key} className="shrink-0">
-                              {renderTopMetaBadge(badge.label, badge.options)}
-                           </div>
-                        ))}
-                        {isCompactFeaturedCard && compactTopBadgeOverflow > 0 ? (
-                           <span
-                              className="inline-flex shrink-0 items-center rounded px-2 py-0.5 text-[10px] font-semibold text-slate-500 border border-slate-200 bg-slate-50"
-                              title={`还有 ${compactTopBadgeOverflow} 个属性标签`}
-                           >
-                              +{compactTopBadgeOverflow}
-                           </span>
-                        ) : null}
-
-                        {(job.status === '已失效' || job.status === '已结束') && (
-                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 border border-slate-200">
-                              已下架
-                           </span>
-                        )}
-                     </div>
-                  </div>
-
-                  {/* Row 2: Title */}
-                  <div className="mt-0.5 flex w-full min-w-0 items-center gap-2">
+               <div className="min-w-0 flex-1">
+                  <div className="flex min-w-0 items-center gap-1.5">
                      <h3
-                        className={`min-w-0 truncate font-bold tracking-tight text-[color:var(--job-title-color)] transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.12rem]' : 'text-[18px] md:text-[22px]'}`}
-                        style={{ maxWidth: `calc(100% - ${titleAccessoryWidth}px)`, ['--job-title-color' as any]: '#0f172a', ['--job-title-hover-color' as any]: hoverColor }}
+                        className={`min-w-0 shrink truncate font-bold tracking-tight text-slate-950 transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.08rem]' : 'text-[18px] md:text-[20px]'}`}
+                        style={{ ['--job-title-hover-color' as any]: hoverColor }}
                         title={job.translations?.title || job.title}
                      >
                         {job.translations?.title || job.title}
                      </h3>
-                     {isTranslated && (
-                        <span className="flex-shrink-0 inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-100 text-[10px] text-slate-500" title="已翻译">
+                     {isTranslated ? (
+                        <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold leading-none text-slate-500" title="已翻译">
                            译
                         </span>
-                     )}
-                     {isNew && (
-                        <div className="flex-shrink-0">
-                           <FreshBadge />
-                        </div>
-                     )}
-                     {isFeatured && (
-                        <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500" title="精选岗位">
-                           <Star className="h-3 w-3 fill-current" />
+                     ) : null}
+                     {isNew ? <FreshBadge /> : null}
+                     {isSaved ? (
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eaf3ff] text-[#2f6ed8]" title="已收藏">
+                           <Bookmark className="h-3 w-3 fill-current" />
                         </span>
-                     )}
+                     ) : null}
+                     {(job.status === '已失效' || job.status === '已结束') ? (
+                        <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                           已下架
+                        </span>
+                     ) : null}
                   </div>
 
-                  {/* Row 3: Meta Info */}
-                  <div className={`flex items-center text-[13px] md:text-sm text-slate-500 gap-x-4 md:gap-x-6 gap-y-1 mt-1 ${isCompactFeaturedCard ? 'flex-nowrap overflow-hidden' : 'flex-wrap'}`}>
-                     {/* Company Name (Mobile / Tablet - since desktop has it in the card) */}
-                     <span className="font-medium text-slate-700 md:hidden" title={job.translations?.company || job.company}>
+                  <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-slate-500 md:text-[13px]">
+                     <span className="min-w-0 max-w-[132px] truncate font-medium text-slate-700" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
-
-                     <div className={`flex items-center gap-1.5 ${isCompactFeaturedCard ? 'min-w-0 shrink overflow-hidden' : ''}`}>
-                        <MapPin className="w-4 h-4 text-slate-400" />
-                        <span className={`truncate ${isCompactFeaturedCard ? 'max-w-[180px] lg:max-w-[220px]' : 'max-w-[200px]'}`}>{job.translations?.location || job.location}</span>
-                     </div>
-
-                     <div className="flex shrink-0 items-center gap-1.5">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{DateFormatter.formatPublishTime(job.publishedAt)}</span>
-                     </div>
-
-                     {renderApplicationMethodIcons()}
-
-                     {(job as any).appliedAt ? (
-                        <div className="flex items-center gap-1.5 ml-2">
-                           <span className="text-slate-400 text-xs">申请于: {new Date((job as any).appliedAt).toLocaleDateString()}</span>
-                        </div>
-                     ) : (job as any).savedAt ? (
-                        <div className="flex items-center gap-1.5 ml-2">
-                           <span className="text-slate-400 text-xs">收藏于: {new Date((job as any).savedAt).toLocaleDateString()}</span>
-                        </div>
+                     {companyRatingText ? (
+                        <>
+                           <span className="text-slate-300">·</span>
+                           <span className="inline-flex shrink-0 items-center gap-1 font-semibold text-amber-500">
+                              <Star className="h-3 w-3 fill-current" />
+                              {shouldMaskGuestMeta ? <GuestMaskedValue className="w-7" /> : companyRatingText}
+                           </span>
+                        </>
                      ) : null}
-                  </div>
-
-                  {/* Row 4: Tags & Mobile Actions */}
-                  <div className="mt-auto flex flex-col gap-2.5 pt-2 md:flex-row md:items-end md:justify-between">
-                     <div className={`flex min-w-0 items-center gap-2 ${isCompactFeaturedCard ? 'flex-nowrap' : 'flex-wrap content-start md:max-h-[60px]'}`}>
-                        {(isCompactFeaturedCard ? compactSkillTags : displayTags.slice(0, 4)).map((tag, i) => (
-                           <span
-                              key={i}
-                              className={`inline-flex items-center rounded-full border border-slate-200/80 bg-slate-50/95 px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-slate-300 hover:bg-white ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : 'max-w-full'}`}
-                              title={tag.text}
-                           >
-                              <span className="truncate">{tag.text}</span>
-                           </span>
-                        ))}
-                        {isCompactFeaturedCard && compactSkillTagOverflow > 0 ? (
-                           <span
-                              className="inline-flex shrink-0 items-center rounded-full border border-slate-200/80 bg-slate-50/95 px-2 py-1 text-[11px] font-medium text-slate-500"
-                              title={`还有 ${compactSkillTagOverflow} 个标签`}
-                           >
-                              +{compactSkillTagOverflow}
-                           </span>
-                        ) : null}
-                     </div>
-
-                     <div className="flex items-center gap-2 md:hidden">
-                        {showMatchScore && (
-                           <div>
-                              <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} compact />
-                           </div>
-                        )}
-
-                        <div
-                           className={`ml-auto line-clamp-2 text-right text-[13px] leading-5 ${isCompactFeaturedCard ? 'max-w-[148px] sm:max-w-[180px]' : 'max-w-[128px] sm:max-w-[156px]'} ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'}`}
-                           title={salaryText}
-                        >
-                           {salaryText}
-                        </div>
-
-                        {/* Hidden per user request 
-                        {isFeatured && (
-                           <div className="flex-shrink-0 flex items-center gap-1 px-2 py-1 rounded-full bg-indigo-50 text-indigo-600 text-[11px] font-bold border border-indigo-100 whitespace-nowrap">
-                              <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
-                              <span>精选</span>
-                           </div>
-                        )}
-                        */}
-
-                        {hasActionControls && (
-                           <div className="ml-auto flex items-center gap-2">
-                              {renderActionControls(true)}
-                           </div>
-                        )}
-                     </div>
-                  </div>
-               </div>
-
-               <div className={`hidden shrink-0 self-stretch py-1 md:flex md:flex-col md:items-end md:justify-between md:gap-3 md:text-right ${isCompactFeaturedCard ? 'pl-0' : 'pl-4 border-l border-slate-100/90'} ${compactSalaryDesktopWidthClass}`}>
-                  <div className={`w-full whitespace-normal break-words leading-[1.3] ${isSalaryOpen ? 'text-slate-500 font-semibold' : 'font-semibold text-slate-800'} ${isCompactFeaturedCard ? `${compactSalaryTextClass} line-clamp-2` : `${salaryText.length > 26 ? 'text-[14px]' : salaryText.length > 18 ? 'text-[15px]' : 'text-[16px]'} line-clamp-2`}`} title={salaryText}>
-                     {salaryText}
-                  </div>
-
-                  <div className="flex w-full flex-1 items-end justify-end pb-2">
+                     <span className="text-slate-300">·</span>
+                     <span className={`max-w-[150px] truncate ${isSalaryOpen ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`} title={shouldMaskGuestMeta ? '登录后查看' : salaryText}>
+                        {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : salaryText}
+                     </span>
                      {showMatchScore ? (
-                        <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
-                     ) : (
-                        <div />
-                     )}
-                  </div>
-
-                  <div className="flex items-end justify-end gap-2 shrink-0">
-                     {/* Hidden per user request 
-                     {isFeatured ? (
-                        <div className="flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-600 text-[12px] font-bold border border-indigo-100 whitespace-nowrap shadow-sm">
-                           <Sparkles className="w-3 h-3 fill-indigo-100 flex-shrink-0" />
-                           <span>精选</span>
-                        </div>
-                     ) : !hasActionControls ? (
-                        <div className="h-[32px]" />
-                     ) : null}
-                     */}
-
-                     {hasActionControls ? (
-                        <div className="flex items-center gap-2">
-                           {renderActionControls()}
-                        </div>
+                        <span className="inline-flex shrink-0 items-center rounded-full border border-[#d9eaf5] bg-[#f3fbff] px-2 py-0.5 text-[11px] font-bold text-[#3a6f92]">
+                           {rawScoreNum}% 匹配
+                        </span>
                      ) : null}
                   </div>
+
+                  {(job as any).appliedAt || (job as any).savedAt ? (
+                     <div className="mt-1 text-[11px] text-slate-400">
+                        {(job as any).appliedAt
+                           ? `申请于 ${new Date((job as any).appliedAt).toLocaleDateString()}`
+                           : `收藏于 ${new Date((job as any).savedAt).toLocaleDateString()}`}
+                     </div>
+                  ) : null}
                </div>
+
+               {hasActionControls ? (
+                  <div className="hidden shrink-0 items-center gap-2 md:flex">
+                     {renderActionControls()}
+                  </div>
+               ) : null}
+            </div>
+
+            {(() => {
+               const applicationBadges = renderApplicationMethodBadges();
+               return applicationBadges ? (
+               <div className="mt-2.5">
+                  {applicationBadges}
+               </div>
+               ) : null;
+            })()}
+
+            {displayTags.length > 0 ? (
+               <div className={`${hasReferralContactSignal ? 'mt-2' : 'mt-2.5'} flex min-w-0 flex-wrap items-center gap-2`}>
+                  {(isCompactFeaturedCard ? compactSkillTags : displayTags.slice(0, 4)).map((tag, i) => (
+                     <span
+                        key={i}
+                        className={`inline-flex items-center rounded-full border border-[#dfe8ef] bg-[#fbfcfa] px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-[#cfe0ea] hover:bg-white ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : 'max-w-full'}`}
+                        title={tag.text}
+                     >
+                        <span className="truncate">{tag.text}</span>
+                     </span>
+                  ))}
+                  {isCompactFeaturedCard && compactSkillTagOverflow > 0 ? (
+                     <span
+                        className="inline-flex shrink-0 items-center rounded-full border border-[#dfe8ef] bg-[#fbfcfa] px-2 py-1 text-[11px] font-medium text-slate-500"
+                        title={`还有 ${compactSkillTagOverflow} 个标签`}
+                     >
+                        +{compactSkillTagOverflow}
+                     </span>
+                  ) : null}
+               </div>
+            ) : null}
+
+            <div className="mt-2 flex items-center gap-2 md:hidden">
+               {hasActionControls ? <div className="ml-auto flex items-center gap-2">{renderActionControls(true)}</div> : null}
             </div>
          </div>
       );
@@ -712,7 +629,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                {job.companyIndustry && job.companyIndustry.length < 15 && !job.companyIndustry.includes('年以上') && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap max-w-[140px] truncate">
                      <Building2 className="w-3 h-3 mr-1" />
-                     {job.companyIndustry}
+                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-16" /> : job.companyIndustry}
                   </span>
                )}
                {/* Category (Blue/Indigo - Role related) */}
@@ -734,14 +651,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                <div className="flex items-center gap-2">
                   <div className={`text-[15px] ${formatSalaryForDisplay(job.salary, '薪资Open') === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
-                     {formatSalaryForDisplay(job.salary, '薪资Open')}
+                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : formatSalaryForDisplay(job.salary, '薪资Open')}
                   </div>
                </div>
                {resolvedMatchLevel !== 'none' && rawScoreNum > 0 ? (
                   <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
                ) : (
                   <span className="text-xs text-slate-400 font-medium">
-                     {DateFormatter.formatPublishTime(job.publishedAt)}
+                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-16" /> : DateFormatter.formatPublishTime(job.publishedAt)}
                   </span>
                )}
             </div>

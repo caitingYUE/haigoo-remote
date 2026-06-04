@@ -83,14 +83,18 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
             .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
         : []
+    const totalJobs = Number(jobStats?.total ?? company.jobCount ?? 0)
+    const hiringLine = topCategories.length > 0
+        ? `${totalJobs} 个在招 ${topCategories.map(([cat]) => cat).join('/')}`
+        : `${totalJobs} 个在招岗位`
 
     return (
         <div
             onClick={onClick}
-            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-xl border border-slate-100 bg-white transition-all duration-300 hover:border-indigo-200 hover:shadow-xl hover:shadow-indigo-50/50"
+            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[26px] border border-[#dfeaf1] bg-white/86 shadow-[0_18px_55px_-48px_rgba(61,89,120,0.6)] transition-all duration-300 hover:-translate-y-1 hover:border-[#c7dff0] hover:shadow-[0_24px_70px_-50px_rgba(61,89,120,0.68)]"
         >
             {/* Cover Area - 16:9 Aspect Ratio */}
-            <div className="relative w-full pt-[56.25%] overflow-hidden bg-slate-50">
+            <div className="relative w-full pt-[56.25%] overflow-hidden bg-[#f7fbff]">
                 {!isLoadingCover && (
                     coverImage ? (
                         <img
@@ -100,7 +104,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                     ) : logoSrc ? (
-                        <div className="absolute inset-0 bg-white flex items-center justify-center p-8">
+                        <div className="absolute inset-0 bg-[#fbfdff] flex items-center justify-center p-8">
                             <img
                                 src={logoSrc}
                                 alt={`${company.name} logo`}
@@ -135,7 +139,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                         {company.name}
                     </h3>
                     {company.industry && (
-                        <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] sm:text-xs text-indigo-600">
+                        <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-[#eef5ff] px-2 py-0.5 text-[11px] sm:text-xs text-[#4f63f6]">
                             {company.industry}
                         </span>
                     )}
@@ -155,17 +159,12 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 {/* Footer: Hiring Info */}
                 <div className="flex items-center justify-between border-t border-slate-50 pt-3.5 text-sm sm:pt-4">
                     <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-600">
-                        <Briefcase className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                        <Briefcase className="w-4 h-4 text-[#4f63f6] flex-shrink-0" />
                         <span className="truncate text-[11px] sm:text-xs font-medium">
-                            {company.jobCount || 0} 个在招职位
-                            {topCategories.length > 0 && (
-                                <span className="text-slate-400 font-normal ml-1">
-                                    · {topCategories.map(([cat]) => cat).join('/')}
-                                </span>
-                            )}
+                            {hiringLine}
                         </span>
                     </div>
-                    <span className="ml-2 flex-shrink-0 whitespace-nowrap text-[11px] sm:text-xs font-medium text-indigo-600 transition-transform group-hover:translate-x-1">
+                    <span className="ml-2 flex-shrink-0 whitespace-nowrap text-[11px] sm:text-xs font-medium text-[#4f63f6] transition-transform group-hover:translate-x-1">
                         查看岗位 &rarr;
                     </span>
                 </div>

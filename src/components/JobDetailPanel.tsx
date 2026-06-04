@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, X, ChevronRight, ChevronLeft, CheckCircle2, Clock, Mail, Linkedin, Users, Calendar } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, X, ChevronRight, ChevronLeft, CheckCircle2, Mail, Linkedin, Calendar, Lock, Star, Leaf } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -18,7 +19,7 @@ import { ShareJobModal } from './ShareJobModal'
 import { resolveMatchLevel } from '../utils/match-display'
 import { buildJobDetailSections, type JobDetailBlock } from '../utils/job-detail-content'
 import { formatSalaryForDisplay } from '../utils/salary-display'
-import { getCompanyLogoSources } from '../utils/company-logo'
+import { findLocation } from '../data/locations'
 
 interface JobDetailPanelProps {
     job: Job
@@ -49,6 +50,219 @@ type ReferralAccessMode =
     | 'free_available'
     | 'free_exhausted'
 
+const GuestMaskedInline = ({ className = 'w-20' }: { className?: string }) => (
+    <span
+        className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
+        aria-label="登录后查看"
+        title="登录后查看"
+    />
+)
+
+const GuestMaskedStatValue = ({ className = 'w-24' }: { className?: string }) => (
+    <span
+        className={`mt-1 inline-flex h-4 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
+        aria-label="登录后查看"
+        title="登录后查看"
+    />
+)
+
+const JOB_TYPE_LABELS: Record<string, string> = {
+    'full-time': '全职',
+    full_time: '全职',
+    fulltime: '全职',
+    'part-time': '兼职',
+    part_time: '兼职',
+    parttime: '兼职',
+    contract: '合同',
+    freelance: '自由职业',
+    internship: '实习',
+    intern: '实习',
+    remote: '远程'
+}
+
+const EXPERIENCE_LABELS: Record<string, string> = {
+    Entry: '初级',
+    entry: '初级',
+    junior: '初级',
+    Mid: '中级',
+    mid: '中级',
+    middle: '中级',
+    Senior: '高级',
+    senior: '高级',
+    Lead: '专家',
+    lead: '专家',
+    expert: '专家',
+    Executive: '高管'
+}
+
+const normalizeJobMetaValue = (value: unknown) => String(value || '').trim()
+
+const resolveJobTypeLabel = (value: unknown) => {
+    const raw = normalizeJobMetaValue(value)
+    if (!raw) return ''
+    const normalized = raw.toLowerCase().replace(/\s+/g, '-')
+    const underscore = normalized.replace(/-/g, '_')
+    return JOB_TYPE_LABELS[normalized] || JOB_TYPE_LABELS[underscore] || JOB_TYPE_LABELS[raw] || raw
+}
+
+const resolveExperienceLabel = (value: unknown) => {
+    const raw = normalizeJobMetaValue(value)
+    if (!raw) return ''
+    const normalized = raw.toLowerCase().replace(/\s+/g, '-')
+    const titleCase = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase()
+    return EXPERIENCE_LABELS[raw] || EXPERIENCE_LABELS[normalized] || EXPERIENCE_LABELS[titleCase] || raw
+}
+
+const inferExperienceLabelFromText = (value: unknown) => {
+    const text = normalizeJobMetaValue(value)
+    if (!text) return ''
+    if (/(实习|intern|internship)/i.test(text)) return '实习'
+    if (/(初级|junior|entry)/i.test(text)) return '初级'
+    if (/(中级|mid|middle)/i.test(text)) return '中级'
+    if (/(高级|资深|senior)/i.test(text)) return '高级'
+    if (/(专家|lead|staff|principal)/i.test(text)) return '专家'
+    if (/(高管|executive|director|head|vp|chief|cxo)/i.test(text)) return '高管'
+    return ''
+}
+
+const inferRoleLabelFromText = (value: unknown) => {
+    const text = normalizeJobMetaValue(value)
+    if (!text) return ''
+    if (/(产品|product)/i.test(text)) return '产品'
+    if (/(设计|designer|design)/i.test(text)) return '设计'
+    if (/(运营|operation|ops)/i.test(text)) return '运营'
+    if (/(市场|营销|marketing|growth)/i.test(text)) return '市场/营销'
+    if (/(销售|sales|business development|bd)/i.test(text)) return '销售/商务'
+    if (/(开发|工程|engineer|developer|frontend|backend|fullstack|software|devops|sre|qa|test)/i.test(text)) return '技术'
+    if (/(数据|data|analytics|analyst|algorithm|ml|ai)/i.test(text)) return '数据/AI'
+    if (/(客服|客户|support|success|customer)/i.test(text)) return '客户支持'
+    if (/(招聘|人力|hr|talent|people)/i.test(text)) return '人力/招聘'
+    return ''
+}
+
+const DETAIL_BACKGROUND_FALLBACK = '/pic_lists/Jobs_pics/background01.webp'
+const TECH_BACKGROUND = '/pic_lists/Jobs_pics/job-tech-bg.webp'
+const PRODUCT_BACKGROUND = '/pic_lists/Jobs_pics/job-product-bg.webp'
+const NON_TECH_BACKGROUND = '/pic_lists/Jobs_pics/job-nontech-bg.webp'
+const FREE_USAGE_CACHE_TTL_MS = 60 * 1000
+
+function isConcreteLocationValue(location?: string | null) {
+    const rawLocation = String(location || '').trim()
+    if (!rawLocation) return false
+
+    const normalized = rawLocation.toLowerCase()
+    const exactGenericRemote = /^(remote|remote only|fully remote|worldwide|global|anywhere|work from anywhere|全球|全球远程|国内|国内远程|中国|中国远程|远程|不限地点|地点不限|remote in china|china remote|总部未知|未知|n\/a|na|not specified|not provided)$/i
+    if (exactGenericRemote.test(rawLocation) || /^(apac|asia pacific|emea|americas|europe|north america|south america)\s*(remote|time zones?)?$/i.test(normalized)) {
+        return false
+    }
+    return true
+}
+
+type FreeUsageSnapshot = {
+    sharedData: any
+    websiteApplyData: any
+    matchAnalysisData: any
+}
+
+let freeUsageCache: {
+    token: string
+    expiresAt: number
+    data: FreeUsageSnapshot | null
+    promise: Promise<FreeUsageSnapshot> | null
+} = {
+    token: '',
+    expiresAt: 0,
+    data: null,
+    promise: null
+}
+
+function clearFreeUsageCache() {
+    freeUsageCache = {
+        token: '',
+        expiresAt: 0,
+        data: null,
+        promise: null
+    }
+}
+
+function loadFreeUsageSnapshot(token: string): Promise<FreeUsageSnapshot> {
+    const now = Date.now()
+    if (freeUsageCache.token === token && freeUsageCache.data && freeUsageCache.expiresAt > now) {
+        return Promise.resolve(freeUsageCache.data)
+    }
+    if (freeUsageCache.token === token && freeUsageCache.promise) {
+        return freeUsageCache.promise
+    }
+
+    const headers = { 'Authorization': `Bearer ${token}` }
+    const promise = Promise.all([
+        fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
+        fetch('/api/users?resource=free-usage&type=website-apply', { headers }).then(r => r.json()),
+        fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
+    ]).then(([sharedData, websiteApplyData, matchAnalysisData]) => {
+        const data = { sharedData, websiteApplyData, matchAnalysisData }
+        freeUsageCache = {
+            token,
+            expiresAt: Date.now() + FREE_USAGE_CACHE_TTL_MS,
+            data,
+            promise: null
+        }
+        return data
+    }).catch((error) => {
+        if (freeUsageCache.token === token) {
+            freeUsageCache.promise = null
+        }
+        throw error
+    })
+
+    freeUsageCache = {
+        token,
+        expiresAt: 0,
+        data: null,
+        promise
+    }
+
+    return promise
+}
+
+function resolveDetailBackground(job: Job) {
+    const primaryCategory = String(job.category || '').toLowerCase()
+    if (/(招聘|人力|hr|财务|法务|行政|客服|客户服务|教育|课程|采购|心理|营养|非技术|综合)/i.test(primaryCategory)) {
+        return NON_TECH_BACKGROUND
+    }
+    if (/(产品|设计|运营|市场|营销|销售|内容|商务|增长|品牌|用户)/i.test(primaryCategory)) {
+        return PRODUCT_BACKGROUND
+    }
+    if (/(开发|工程|算法|数据|安全|运维|架构|技术支持|前端|后端|全栈|软件|测试)/i.test(primaryCategory)) {
+        return TECH_BACKGROUND
+    }
+
+    const text = [
+        job.category,
+        job.companyIndustry,
+        job.title,
+        job.translations?.title,
+        ...(job.skills || []),
+        ...(job.tags || []),
+    ].filter(Boolean).join(' ').toLowerCase()
+
+    if (!text.trim()) return DETAIL_BACKGROUND_FALLBACK
+
+    if (/(engineer|developer|frontend|backend|fullstack|software|devops|sre|qa|data|security|算法|工程|开发|前端|后端|全栈|测试|数据|安全|运维|架构|技术)/i.test(text)) {
+        return TECH_BACKGROUND
+    }
+
+    if (/(product|design|operation|growth|marketing|sales|content|community|产品|设计|运营|增长|市场|营销|销售|内容|用户|商务)/i.test(text)) {
+        return PRODUCT_BACKGROUND
+    }
+
+    if (/(hr|recruit|finance|legal|admin|support|customer|教育|行政|人事|招聘|财务|法务|客服|支持|非技术|综合)/i.test(text)) {
+        return NON_TECH_BACKGROUND
+    }
+
+    return DETAIL_BACKGROUND_FALLBACK
+}
+
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     job,
     onSave,
@@ -62,9 +276,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     showInlineNavigation = true
 }) => {
     const navigate = useNavigate()
-    const { user, isMember } = useAuth()
+    const { isMember, isAuthenticated } = useAuth()
     const sourceType = getJobSourceType(job)
-    const isAuthenticated = !!user
+    const shouldMaskGuestMeta = !isAuthenticated
 
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
@@ -74,29 +288,28 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const hasTranslation = !!(job?.translations?.title || job?.translations?.description)
     const [showTranslation, setShowTranslation] = useState(false)
     const [companyInfo, setCompanyInfo] = useState<TrustedCompany | null>(null)
+    const [companyInfoLoading, setCompanyInfoLoading] = useState(false)
     const [companyOpenJobsCount, setCompanyOpenJobsCount] = useState<number | null>(null)
+    const [companyOpenJobs, setCompanyOpenJobs] = useState<Job[]>([])
+    const [activeDetailTab, setActiveDetailTab] = useState<'description' | 'company' | 'jobs'>('description')
     const [showUpgradeModal, setShowUpgradeModal] = useState(false)
     const [upgradeTriggerSource, setUpgradeTriggerSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
-    const [showLocationTooltip, setShowLocationTooltip] = useState(false)
+    const [showHeadquartersLocationTooltip, setShowHeadquartersLocationTooltip] = useState(false)
+    const [headquartersTooltipPosition, setHeadquartersTooltipPosition] = useState<{ left: number; top: number } | null>(null)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const [isEmailConnectOpen, setIsEmailConnectOpen] = useState(false)
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
+    const [nestedJobIndex, setNestedJobIndex] = useState<number | null>(null)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
     const companyInfoRequestRef = useRef(0)
-    const logoSources = useMemo(() => getCompanyLogoSources({
-        companyId: job.companyId,
-        cachedLogoUrl: job.cachedLogoUrl || job.cachedCompanyLogoUrl,
-        originalLogoUrl: job.logo || job.companyLogo,
-        version: job.updatedAt || job.publishedAt
-    }), [job.companyId, job.cachedLogoUrl, job.cachedCompanyLogoUrl, job.logo, job.companyLogo, job.updatedAt, job.publishedAt])
-    const logoSourceKey = useMemo(() => logoSources.join('|'), [logoSources])
-    const [logoSourceIndex, setLogoSourceIndex] = useState(0)
-    const detailLogoSrc = logoSources[logoSourceIndex] || ''
+    const headquartersStatRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
-        setLogoSourceIndex(0)
-    }, [logoSourceKey])
+        setNestedJobIndex(null)
+        setShowHeadquartersLocationTooltip(false)
+        setHeadquartersTooltipPosition(null)
+    }, [job.id])
 
     const usesCustomReferralContacts = job?.referralContactMode === 'custom'
     const hasExplicitSelectedReferralIds = Object.prototype.hasOwnProperty.call(job || {}, 'selectedReferralContactIds')
@@ -109,6 +322,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const companyEffectiveReferralContactCount = typeof companyInfo?.jobEffectiveReferralContactCount === 'number'
         ? companyInfo.jobEffectiveReferralContactCount
         : null
+    const fallbackHiringEmail = String(job?.hiringEmail || '').trim()
+    const resolvedHiringEmail = String(companyInfo?.hiringEmail || fallbackHiringEmail || '').trim()
+    const resolvedEmailType = String(companyInfo?.emailType || job?.emailType || (job as any)?.email_type || (job as any)?.trusted_email_type || '').trim()
     const shouldForceHideCustomReferralModule = companyUsesCustomReferralContacts
         ? companyEffectiveReferralContactCount === 0
         : (
@@ -131,17 +347,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (shouldForceHideCustomReferralModule) return []
         if (referralContacts.length > 0) return referralContacts
         if (usesCustomReferralContacts || companyUsesCustomReferralContacts) return []
-        const fallbackEmail = String(companyInfo?.hiringEmail || '').trim()
+        const fallbackEmail = resolvedHiringEmail
         if (!fallbackEmail) return []
         return [{
             id: `fallback-${job.id}`,
             name: `${job.company || companyInfo?.name || '企业'} 联系人`,
-            title: companyInfo?.emailType || job.emailType || '通用邮箱',
-            emailType: companyInfo?.emailType || job.emailType || '通用邮箱',
+            title: resolvedEmailType || '通用邮箱',
+            emailType: resolvedEmailType || '通用邮箱',
             hiringEmail: fallbackEmail,
             linkedin: '',
         }]
-    }, [shouldForceHideCustomReferralModule, referralContacts, usesCustomReferralContacts, companyUsesCustomReferralContacts, companyInfo?.hiringEmail, companyInfo?.emailType, job.id, job.company, job.emailType, companyInfo?.name])
+    }, [shouldForceHideCustomReferralModule, referralContacts, usesCustomReferralContacts, companyUsesCustomReferralContacts, resolvedHiringEmail, resolvedEmailType, job.id, job.company, companyInfo?.name])
 
     const showReferralModule = displayReferralContacts.length > 0
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
@@ -184,6 +400,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setFeedbackMessage('')
         setIsEmailConnectOpen(false)
         setSelectedReferralContact(null)
+        setActiveDetailTab('description')
 
         const savedPreference = typeof window !== 'undefined' ? localStorage.getItem(translationPreferenceKey) : null
         const shouldShowTranslation = hasTranslation && savedPreference !== 'original'
@@ -227,7 +444,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         expose('favorite')
         if (hasTranslation) expose('translation')
-        const hasJobScopedEmailPath = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+        const hasJobScopedEmailPath = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
         if (job.url || job.sourceUrl || !hasJobScopedEmailPath) expose('website_apply')
         if (isAuthenticated && (job.company || companyInfo?.name)) expose('company_info', {
             entity_type: 'company',
@@ -241,30 +458,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'company',
             entity_id: String(job.company || companyInfo?.name || '').trim(),
         })
-    }, [job?.id, hasTranslation, companyInfo?.name, companyInfo?.hiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts, companyUsesCustomReferralContacts, isAuthenticated])
+    }, [job?.id, hasTranslation, companyInfo?.name, resolvedHiringEmail, showReferralModule, job?.url, job?.sourceUrl, job?.canRefer, usesCustomReferralContacts, companyUsesCustomReferralContacts, isAuthenticated])
 
     // Load free feature usage counts from server (company info + email apply + referral)
     useEffect(() => {
         if (isAuthenticated && !isMember) {
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) return;
-            const headers = { 'Authorization': `Bearer ${token}` };
-            Promise.all([
-                fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
-                fetch('/api/users?resource=free-usage&type=website-apply', { headers }).then(r => r.json()),
-                fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
-            ]).then(([sharedData, waData, maData]) => {
+            loadFreeUsageSnapshot(token).then(({ sharedData, websiteApplyData, matchAnalysisData }) => {
                 if (sharedData.success) {
                     syncSharedFreeAccessState(sharedData.usage, sharedData.unlocked_companies || [], sharedData.limit);
                     setSharedFreeUsageReady(true)
                 }
-                if (waData.success) {
-                    syncWebsiteApplyState(waData.usage, waData.unlocked_job_ids || [], waData.limit)
+                if (websiteApplyData.success) {
+                    syncWebsiteApplyState(websiteApplyData.usage, websiteApplyData.unlocked_job_ids || [], websiteApplyData.limit)
                     setWebsiteApplyUsageReady(true)
                 }
-                if (maData.success) {
-                    setMatchAnalysisUsageCount(maData.usage);
-                    setUnlockedMatchAnalysisJobIds(Array.isArray(maData.unlocked_job_ids) ? maData.unlocked_job_ids.map((item: any) => String(item)) : []);
+                if (matchAnalysisData.success) {
+                    setMatchAnalysisUsageCount(matchAnalysisData.usage);
+                    setUnlockedMatchAnalysisJobIds(Array.isArray(matchAnalysisData.unlocked_job_ids) ? matchAnalysisData.unlocked_job_ids.map((item: any) => String(item)) : []);
                 }
             }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
         } else if (isMember) {
@@ -287,22 +499,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setCompanyInfo(null)
 
         if (!job?.companyId) {
+            setCompanyInfoLoading(false)
             return () => {
                 companyInfoRequestRef.current = requestId
             }
         }
 
         let cancelled = false
+        setCompanyInfoLoading(true)
         trustedCompaniesService.getCompanyById(job.companyId, job.id)
             .then((nextCompanyInfo) => {
                 if (cancelled) return
                 if (companyInfoRequestRef.current !== requestId) return
                 setCompanyInfo(nextCompanyInfo)
+                setCompanyInfoLoading(false)
             })
             .catch(() => {
                 if (cancelled) return
                 if (companyInfoRequestRef.current !== requestId) return
                 setCompanyInfo(null)
+                setCompanyInfoLoading(false)
             })
 
         return () => {
@@ -319,25 +535,32 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     : { company: job.company, isApproved: true, skipAggregations: true as const }
                 const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, jobsQuery)
                 if (!cancelled) {
-                    setCompanyOpenJobsCount(Array.isArray(jobsResponse.jobs) ? jobsResponse.jobs.length : null)
+                    const openJobs = Array.isArray(jobsResponse.jobs) ? jobsResponse.jobs : []
+                    setCompanyOpenJobs(openJobs)
+                    setCompanyOpenJobsCount(openJobs.length)
                 }
             } catch (error) {
                 if (!cancelled) {
                     setCompanyOpenJobsCount(null)
+                    setCompanyOpenJobs([])
                 }
             }
         }
 
-        if (job?.companyId || job?.company) {
+        if (activeDetailTab !== 'jobs') {
+            setCompanyOpenJobsCount(null)
+            setCompanyOpenJobs([])
+        } else if (job?.companyId || job?.company) {
             loadCompanyOpenJobsCount()
         } else {
             setCompanyOpenJobsCount(null)
+            setCompanyOpenJobs([])
         }
 
         return () => {
             cancelled = true
         }
-    }, [job?.companyId, job?.company])
+    }, [activeDetailTab, job?.companyId, job?.company])
 
     const matchLevel = useMemo(() => {
         return resolveMatchLevel(job?.matchScore, job?.matchLevel)
@@ -428,6 +651,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 throw new Error(data.error || '解锁失败')
             }
 
+            clearFreeUsageCache()
             setMatchAnalysisUsageCount(Number(data.usage) || 0)
             setUnlockedMatchAnalysisJobIds(Array.isArray(data.unlocked_job_ids) ? data.unlocked_job_ids.map((item: any) => String(item)) : [])
             showSuccess('已解锁本次 AI 匹配分析', `本账号还可免费体验 ${Math.max(0, DEFAULT_FREE_FEATURE_LIMIT - (Number(data.usage) || 0))} 次`)
@@ -438,12 +662,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }
 
-    const [logoError, setLogoError] = useState(false);
     const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
-
-    useEffect(() => {
-        setLogoError(false);
-    }, [job?.id]); // Reset error state when job changes
 
     const jobDetailSections = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
@@ -495,7 +714,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-        const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+        const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
         const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < websiteApplyFreeLimit
         const canUseWebsiteApply = isMember || websiteApplyUnlocked || canWebsiteApplyFree
@@ -541,7 +760,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const executeApply = async (method: 'website' | 'email', pendingWindow: PendingApplyWindow = null) => {
-        if (method === 'email' && companyInfo?.hiringEmail) {
+        if (method === 'email' && resolvedHiringEmail) {
             trackingService.track('click_apply', {
                 page_key: 'job_detail',
                 module: 'job_detail_footer',
@@ -556,7 +775,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             });
 
-            window.location.href = `mailto:${companyInfo.hiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || ''}`)}`;
+            window.location.href = `mailto:${resolvedHiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || ''}`)}`;
             trackingService.track('email_apply_success', {
                 page_key: 'job_detail',
                 module: 'job_detail_footer',
@@ -659,19 +878,38 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return normalized.charAt(0).toUpperCase()
     }
 
+    const resolveReferralDisplayEmailType = (contact: ReferralContact) => {
+        const rawEmailType = String(contact.emailType || resolvedEmailType || '').trim()
+        const normalizedEmailType = rawEmailType.toLowerCase()
+        const emailTypeHaystack = `${normalizedEmailType} ${rawEmailType}`
+        if (/(boss|ceo|chief|founder|vp|head|director|executive|高管|老板|创始|负责人|企业领导|领导邮箱)/i.test(emailTypeHaystack)) return 'BOSS邮箱'
+        if (/(hr|human resources|people|人力|人事|hr邮箱)/i.test(emailTypeHaystack)) return 'HR邮箱'
+        if (/(招聘|recruit|recruiter|hiring|career|talent|talent acquisition)/i.test(emailTypeHaystack)) return '招聘邮箱'
+        if (/(员工|employee|staff|teammate|team)/i.test(emailTypeHaystack)) return '员工邮箱'
+        if (/(通用|general|generic|support)/i.test(emailTypeHaystack)) return '通用邮箱'
+        if (rawEmailType.endsWith('邮箱')) return rawEmailType
+
+        const title = String(contact.title || '').trim()
+        const titleHaystack = `${title.toLowerCase()} ${title}`
+        if (/(boss|ceo|chief|founder|vp|head|director|executive|\blead\b|决策|业务负责人|负责人|高管|老板|创始|企业领导)/i.test(titleHaystack)) return 'BOSS邮箱'
+        if (/(hr|human resources|people|人力|人事|talent acquisition|talent partner|talent)/i.test(titleHaystack)) return 'HR邮箱'
+        if (/(招聘|recruit|recruiter|hiring|career)/i.test(titleHaystack)) return '招聘邮箱'
+        if (/(员工|employee|staff|teammate|partner|manager)/i.test(titleHaystack)) return '员工邮箱'
+        return ''
+    }
+
     const getReferralEmailActionLabel = (contact: ReferralContact) => {
-        const baseLabel = String(contact.emailType || companyInfo?.emailType || job.emailType || '').trim()
+        const baseLabel = resolveReferralDisplayEmailType(contact)
         if (!baseLabel) return '邮箱直申'
         return baseLabel.endsWith('邮箱') ? `${baseLabel}直申` : `${baseLabel}邮箱直申`
     }
 
     const getReferralAvatarLabel = (contact: ReferralContact) => {
-        const emailType = String(contact.emailType || '').toLowerCase()
-        const title = String(contact.title || '').toLowerCase()
-        if (/(hr|talent|people|招聘核心)/i.test(`${emailType} ${title}`)) return 'HR'
-        if (/(招聘|recruit|hiring)/i.test(`${emailType} ${title}`)) return 'HIRE'
-        if (/(boss|ceo|chief|founder|vp|head|director|决策)/i.test(`${emailType} ${title}`)) return 'BOSS'
-        if (/(员工|employee|staff|teammate|partner|manager)/i.test(`${emailType} ${title}`)) return 'TEAM'
+        const displayType = resolveReferralDisplayEmailType(contact)
+        if (displayType === 'BOSS邮箱') return 'BOSS'
+        if (displayType === 'HR邮箱') return 'HR'
+        if (displayType === '招聘邮箱') return 'HIRE'
+        if (displayType === '员工邮箱') return 'TEAM'
         return 'GEN'
     }
 
@@ -701,6 +939,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             });
             const data = await res.json();
             if (data.success) {
+                clearFreeUsageCache()
                 syncSharedFreeAccessState(data.usage, data.unlocked_companies || [], data.limit);
                 showSuccess('已解锁该企业人脉', `当前还可免费查看 ${Math.max(0, (Number(data.limit) || referralFreeLimit) - (Number(data.usage) || 0))} 次`)
                 if (data.remaining === 0) showInfo('免费次数已用完', '升级会员解锁全部人脉');
@@ -837,6 +1076,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 return payload
             })
 
+            clearFreeUsageCache()
             syncWebsiteApplyState(data.usage, data.unlocked_job_ids || [], data.limit)
             return true
         } catch (error) {
@@ -938,6 +1178,22 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return originalText || ''
     }
 
+    const setTranslationMode = (nextShowTranslation: boolean) => {
+        setShowTranslation(nextShowTranslation)
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(translationPreferenceKey, nextShowTranslation ? 'translated' : 'original')
+        }
+        trackingService.track('feature_click', {
+            page_key: 'job_detail',
+            module: 'job_detail',
+            feature_key: 'translation',
+            entity_type: 'job',
+            entity_id: job.id,
+            language: nextShowTranslation ? 'zh' : 'en'
+        })
+    }
+
+    const locationDisplayText = displayText(job.location || '', job.translations?.location)
     const renderSectionBlocks = (blocks: JobDetailBlock[]) => {
         if (!Array.isArray(blocks) || blocks.length === 0) return null
 
@@ -1007,7 +1263,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const rawCompanyJobCount = Number(companyInfo?.jobCount)
     const trustedCompanyJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : null
     const companyOpenJobCount = companyOpenJobsCount ?? trustedCompanyJobCount
-    const companyDescription = String(companyInfo?.description || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
+    const companyDescription = String(companyInfo?.description || job.companyDescription || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
+    const companySpecialties = Array.isArray(companyInfo?.specialties) ? companyInfo!.specialties.filter(Boolean).slice(0, 8) : []
+    const companyFactCards = [
+        { label: '官网', value: companyInfo?.website || job.companyWebsite || '', href: companyInfo?.website || job.companyWebsite || '' },
+        { label: '员工规模', value: companyInfo?.employeeCount || '规模未知' },
+        { label: '总部地址', value: companyInfo?.address || job.companyAddress || '总部未知' },
+        { label: '成立年份', value: companyInfo?.foundedYear ? `${companyInfo.foundedYear}年` : '年份未知' },
+        { label: '企业评分', value: companyInfo?.companyRating || job.companyRating ? `${companyInfo?.companyRating || job.companyRating}${(companyInfo?.ratingSource || job.ratingSource) ? ` · ${companyInfo?.ratingSource || job.ratingSource}` : ''}` : '暂无评分' },
+        { label: '行业类型', value: companyIndustryLabel },
+        { label: '在招岗位', value: companyOpenJobCount != null ? `${companyOpenJobCount} 个` : '统计中' }
+    ].filter((item) => item.value)
     const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
     const websiteApplyFreeRemaining = Math.max(0, websiteApplyFreeLimit - websiteApplyUsageCount)
     const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < websiteApplyFreeLimit
@@ -1016,7 +1282,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const referralFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
     const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-    const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(companyInfo?.hiringEmail)
+    const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
     const hasAnyEmailPath = hasEmailApply || showReferralModule
     const canUseWebsiteApply = hasWebsiteApply && (isMember || websiteApplyUnlocked || canWebsiteApplyFree)
     const resolveWebsiteApplyState = (): WebsiteApplyState => {
@@ -1044,7 +1310,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
     const referralAccessMode = getReferralAccessMode()
     const hasMultipleReferralContacts = displayReferralContacts.length > 1
+    const hasScrollableReferralContacts = displayReferralContacts.length >= 3
     const shouldShowUnifiedReferralUnlock = hasMultipleReferralContacts && referralAccessMode !== 'unlocked'
+    const mayHaveReferralPath = Boolean(
+        fallbackHiringEmail ||
+        job.canRefer ||
+        (typeof effectiveReferralContactCount === 'number' && effectiveReferralContactCount > 0)
+    )
+    const showReferralLoadingPlaceholder = isAuthenticated && !showReferralModule && companyInfoLoading && mayHaveReferralPath
     const getUnifiedReferralUnlockLabel = () => {
         if (referralAccessMode === 'guest') return '帮我内推（需登录）'
         if (referralAccessMode === 'member_only') return 'VIP 解锁'
@@ -1071,6 +1344,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             goToMembershipPayment('referral', 'job_detail_referral_group_exhausted')
         }
     }
+    const companyRatingText = String(companyInfo?.companyRating || job.companyRating || '').trim()
     const getApplyButtonLabel = () => {
         if (!isAuthenticated) return '前往申请（需登录）'
 
@@ -1078,31 +1352,38 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             case 'login_required':
                 return '前往申请（需登录）'
             case 'website_available':
-                if (isMemberRestrictedJob) return '前往申请 · VIP'
+                if (isMemberRestrictedJob && !isMember) return '前往申请 · VIP'
+                if (isMemberRestrictedJob) return '前往申请'
                 if (websiteApplyUnlocked && !isMember) return '前往申请（已解锁）'
                 return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
                     ? `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
                     : '前往申请'
             case 'website_locked_member':
-                if (isMemberRestrictedJob) return '前往申请 · VIP'
+                if (isMemberRestrictedJob && !isMember) return '前往申请 · VIP'
+                if (isMemberRestrictedJob) return '前往申请'
                 return `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
             case 'email_only':
+                if (isMemberRestrictedJob && !isMember) return '仅支持邮箱申请 · VIP'
                 if (isReferralCompanyUnlocked && !isMember) return '仅支持邮箱申请（已解锁）'
-                return isMemberRestrictedJob ? '仅支持邮箱申请 · VIP' : '仅支持邮箱申请'
+                return '仅支持邮箱申请'
             default:
                 return '暂无申请入口'
         }
     }
     const getApplyButtonClassName = () => {
+        if (isMemberRestrictedJob && !isMember && websiteApplyState !== 'unavailable') {
+            return 'border border-[#d8ddff] bg-[linear-gradient(135deg,#6d5dfc_0%,#4f46e5_100%)] text-white shadow-[0_20px_40px_-24px_rgba(79,70,229,0.55)] hover:shadow-[0_24px_46px_-24px_rgba(79,70,229,0.62)]'
+        }
+
         if (!isAuthenticated && websiteApplyState !== 'unavailable') {
-            return 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
+            return 'bg-[#2f6ed8] text-white shadow-[0_20px_36px_-24px_rgba(47,110,216,0.55)] hover:bg-[#285fc4] hover:shadow-[0_24px_40px_-22px_rgba(47,110,216,0.48)]'
         }
 
         switch (websiteApplyState) {
             case 'login_required':
             case 'website_available':
             case 'website_locked_member':
-                return 'bg-indigo-600 text-white shadow-[0_20px_36px_-24px_rgba(79,70,229,0.55)] hover:-translate-y-0.5 hover:bg-indigo-700 hover:shadow-[0_24px_40px_-22px_rgba(79,70,229,0.48)]'
+                return 'bg-[#2f6ed8] text-white shadow-[0_20px_36px_-24px_rgba(47,110,216,0.55)] hover:bg-[#285fc4] hover:shadow-[0_24px_40px_-22px_rgba(47,110,216,0.48)]'
             case 'email_only':
                 return 'border border-slate-200 bg-slate-100 text-slate-500 hover:border-slate-300 hover:text-slate-700'
             default:
@@ -1148,189 +1429,394 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         handleApply()
     }
+    const jobAny = job as any
+    const rawType = String(
+        job.type ||
+        jobAny.positionType ||
+        jobAny.position_type ||
+        jobAny.jobType ||
+        jobAny.job_type ||
+        jobAny.jobTypeLabel ||
+        jobAny.job_type_label ||
+        jobAny.typeLabel ||
+        jobAny.type_label ||
+        ''
+    ).trim()
+    const titleMetaText = [
+        job.title,
+        job.translations?.title,
+        job.category,
+        job.companyIndustry,
+        ...(Array.isArray(job.tags) ? job.tags : []),
+        ...(Array.isArray(job.skills) ? job.skills : [])
+    ].filter(Boolean).join(' ')
+    const inferredExperienceLabel = inferExperienceLabelFromText(titleMetaText)
+    const jobTypeLabel = resolveJobTypeLabel(rawType) || (inferredExperienceLabel === '实习' ? '实习' : '')
+    const roleCandidates = [
+        jobAny.role,
+        jobAny.roleLabel,
+        jobAny.role_label,
+        jobAny.role_type,
+        jobAny.roleType,
+        jobAny.roleCategory,
+        jobAny.role_category,
+        jobAny.jobDirection,
+        jobAny.job_direction,
+        jobAny.direction,
+        jobAny.professionDirection,
+        jobAny.profession_direction,
+        jobAny.careerDirection,
+        jobAny.career_direction,
+        job.category,
+        jobAny.category
+    ].map((item) => String(item || '').trim()).filter(Boolean)
+    const roleLabel = roleCandidates[0] || inferRoleLabelFromText(titleMetaText)
+    const rawExperienceLevel = String(
+        job.experienceLevel ||
+        jobAny.experienceLevel ||
+        jobAny.experienceLevelLabel ||
+        jobAny.experience_level_label ||
+        jobAny.experience_level ||
+        jobAny.experience ||
+        jobAny.level ||
+        jobAny.levelLabel ||
+        jobAny.level_label ||
+        jobAny.job_level ||
+        jobAny.jobLevel ||
+        ''
+    ).trim()
+    const experienceLabel = resolveExperienceLabel(rawExperienceLevel) || inferredExperienceLabel
+    const categoryLabel = String(job.category || jobAny.category || '').trim()
+
+    const headerTags = [
+        jobTypeLabel ? { label: jobTypeLabel, type: 'normal' } : null,
+        roleLabel ? { label: roleLabel, type: 'normal' } : null,
+        categoryLabel ? { label: categoryLabel, type: 'normal' } : null,
+        experienceLabel ? { label: experienceLabel, type: 'normal' } : null
+    ].filter(Boolean).reduce((items, item) => {
+        const tag = item as { label: string, type: 'normal' }
+        if (!items.some((existing) => existing.label.toLowerCase() === tag.label.toLowerCase())) {
+            items.push(tag)
+        }
+        return items
+    }, [] as { label: string, type: 'normal' }[])
+
+    const headquartersAddress = companyInfo?.address || job.companyAddress || jobAny.company_address || jobAny.trustedAddress || jobAny.trusted_address || '总部未知'
+    const headquartersLocationData = useMemo(() => {
+        return isConcreteLocationValue(headquartersAddress) ? findLocation(headquartersAddress) : null
+    }, [headquartersAddress])
+    const canShowHeadquartersLocationTooltip = Boolean(headquartersLocationData)
+    const detailBackgroundSrc = resolveDetailBackground(job)
+    const iconStats = [
+        { label: '薪资范围', value: formatSalaryForDisplay(job.salary, '具体面议'), icon: DollarSign, maskForGuest: true, maskWidth: 'w-24' },
+        { label: '发布时间', value: job.publishedAt ? new Date(job.publishedAt).toLocaleDateString('zh-CN') : '未知', icon: Calendar, maskForGuest: true, maskWidth: 'w-20' },
+        { label: '总部地址', value: headquartersAddress, icon: MapPin, maskForGuest: true, maskWidth: 'w-24', locationTooltip: canShowHeadquartersLocationTooltip ? 'headquarters' as const : undefined },
+        { label: '行业类型', value: companyIndustryLabel || '未知', icon: Building2, maskForGuest: true, maskWidth: 'w-20' }
+    ]
+    const positionHeadquartersTooltip = () => {
+        if (typeof window === 'undefined') return
+        const rect = headquartersStatRef.current?.getBoundingClientRect()
+        if (!rect) return
+        const margin = 12
+        const tooltipWidth = 320
+        const left = Math.max(margin, Math.min(rect.left, window.innerWidth - tooltipWidth - margin))
+        setHeadquartersTooltipPosition({ left, top: rect.bottom + 6 })
+    }
+
+    const detailTabs = [
+        { key: 'description' as const, label: '职位详情' },
+        { key: 'company' as const, label: '企业信息' },
+        { key: 'jobs' as const, label: `在招职位 ${companyOpenJobCount != null ? companyOpenJobCount : ''}`.trim() }
+    ]
+    const companyJobsForTab = useMemo(() => {
+        const seen = new Set<string>()
+        const items = [job, ...companyOpenJobs].filter(Boolean).reduce((acc, item) => {
+            if (!item?.id || seen.has(item.id)) return acc
+            seen.add(item.id)
+            acc.push(item)
+            return acc
+        }, [] as Job[])
+        return items.slice(0, 8)
+    }, [companyOpenJobs, job])
+    const nestedJob = nestedJobIndex == null ? null : companyJobsForTab[nestedJobIndex] || null
+
     return (
-        <div className="flex flex-col bg-[radial-gradient(circle_at_top,rgba(238,242,255,0.6),transparent_32%),linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)]">
-            <header className="relative z-20 flex-shrink-0 border-b border-slate-200/80 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] px-4 py-4 sm:px-6 sm:py-6 backdrop-blur-md">
-                <div className="pointer-events-none absolute right-0 top-0 h-32 w-32 rounded-full bg-indigo-100/35 blur-3xl" />
-                <div className="mb-3 sm:mb-4 flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 flex-[1_1_56%]">
-                        <div className="flex flex-wrap items-center gap-2">
-                            <h1 className="text-[1.1rem] sm:text-2xl font-bold text-slate-900 leading-snug tracking-tight">
-                                {displayText(job.title, job.translations?.title)}
-                            </h1>
-                            {hasTranslation && (
-                                <button
-                                    onClick={() => {
-                                        trackingService.featureClick('translation', {
-                                            page_key: 'job_detail',
-                                            module: 'job_detail_translation',
-                                            source_key: 'job_detail',
-                                            entity_type: 'job',
-                                            entity_id: job.id,
-                                        })
-                                        const nextShowTranslation = !showTranslation
-                                        setShowTranslation(nextShowTranslation)
-                                        if (typeof window !== 'undefined') {
-                                            localStorage.setItem(translationPreferenceKey, nextShowTranslation ? 'translated' : 'original')
-                                        }
-                                    }}
-                                    className={`inline-flex h-6 items-center justify-center gap-1 rounded-full border px-2 transition-colors ${
-                                        showTranslation
-                                            ? 'border-indigo-200 bg-indigo-50 text-indigo-600'
-                                            : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
-                                    }`}
-                                    title={showTranslation ? '当前为中文，点击恢复原文' : '当前为原文，点击切换中文'}
-                                >
-                                    <span className={`leading-none ${showTranslation ? 'text-[12px] font-bold text-indigo-700' : 'text-[8px] font-semibold text-slate-400'}`}>中</span>
-                                    <span className="text-[9px] text-slate-300">/</span>
-                                    <span className={`leading-none ${showTranslation ? 'text-[8.5px] font-semibold text-slate-400' : 'text-[11px] font-bold text-slate-700'}`}>EN</span>
+        <div className="flex flex-col overflow-hidden bg-[#fbfaf6]">
+            <header className="relative z-20 flex-shrink-0 overflow-hidden border-b border-[#e8f0f4] bg-[#fffdf9] px-4 pb-0 pt-5 sm:px-6 sm:pt-6 xl:px-8">
+                <img
+                    src={detailBackgroundSrc}
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[58%] object-cover object-right-bottom opacity-[0.52] saturate-[0.98] lg:block"
+                    loading="lazy"
+                    decoding="async"
+                />
+                <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[60%] bg-[radial-gradient(circle_at_82%_14%,rgba(255,238,190,0.28),transparent_28%),linear-gradient(90deg,rgba(255,253,249,0.99)_0%,rgba(255,253,249,0.78)_42%,rgba(255,255,255,0.1)_100%)] lg:block" />
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.36)_0%,rgba(255,250,239,0.4)_100%)]" />
+                {showCloseButton && (
+                    <div className="absolute right-4 top-4 z-40 flex items-center gap-1">
+                        {showInlineNavigation && (
+                            <>
+                                <button onClick={() => onNavigateJob?.('prev')} disabled={!canNavigatePrev} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/80 disabled:opacity-30">
+                                    <ChevronLeft className="w-5 h-5" />
                                 </button>
-                            )}
-                        </div>
+                                <button onClick={() => onNavigateJob?.('next')} disabled={!canNavigateNext} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/80 disabled:opacity-30">
+                                    <ChevronRight className="w-5 h-5" />
+                                </button>
+                            </>
+                        )}
+                        {onClose && (
+                            <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#dce8ef] bg-white/92 text-slate-500 shadow-sm hover:bg-white hover:text-slate-900">
+                                <X className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
+                )}
+
+                {/* Top Row: Title & Actions */}
+                <div className="relative z-10 mb-3 flex min-w-0 items-start gap-3 pr-12 sm:pr-36 xl:pr-[320px]">
+                    <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5">
+                        <h1 className="line-clamp-2 min-w-0 max-w-full break-words text-[22px] font-black leading-[1.16] tracking-tight text-slate-950 [text-wrap:balance] sm:text-[25px] xl:text-[28px] 2xl:text-[30px]">
+                            {displayText(job.title, job.translations?.title)}
+                        </h1>
+
+                        {hasTranslation ? (
+                            <div className="inline-flex h-6 shrink-0 items-center rounded-full border border-[#d7e2ff] bg-[#f8faff] px-0.5 text-[11px] font-black text-slate-400 shadow-[0_8px_20px_-18px_rgba(47,81,140,0.5)]" aria-label="切换岗位详情语言">
+                                <button
+                                    type="button"
+                                    onClick={() => setTranslationMode(true)}
+                                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 transition-colors ${showTranslation ? 'bg-[#6f63f6] text-white shadow-sm' : 'text-[#6f63f6] hover:bg-white'}`}
+                                    aria-pressed={showTranslation}
+                                >
+                                    译
+                                </button>
+                                <span className="px-0.5 text-slate-300">/</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setTranslationMode(false)}
+                                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 transition-colors ${!showTranslation ? 'bg-slate-950 text-white shadow-sm' : 'text-slate-400 hover:bg-white hover:text-slate-700'}`}
+                                    aria-pressed={!showTranslation}
+                                >
+                                    原
+                                </button>
+                            </div>
+                        ) : null}
                     </div>
 
-                    <div className="relative z-20 flex w-full flex-wrap items-center justify-between gap-2.5 sm:w-auto sm:flex-shrink-0 sm:flex-nowrap sm:justify-end sm:gap-3.5">
-                        <div className="relative z-20 flex flex-shrink-0 items-center gap-2">
-                            <button
-                                onClick={handleSave}
-                                className={`relative z-10 inline-flex h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-2xl border transition-all ${
-                                    isSaved
-                                        ? 'border-indigo-200 bg-indigo-50 text-indigo-600 shadow-[0_14px_26px_-20px_rgba(79,70,229,0.45)]'
-                                        : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]'
+                    <div className="absolute right-16 top-0 hidden shrink-0 items-center gap-2 sm:flex xl:fixed xl:right-auto xl:top-auto xl:hidden">
+                        <button
+                            onClick={handleSave}
+                            className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
+                                isSaved ? 'border-[#b9d9f5] bg-white text-[#2f6ed8]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#b9d9f5] hover:text-[#2f6ed8]'
+                            }`}
+                        >
+                            <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                            <span>{isSaved ? '已收藏' : '收藏'}</span>
+                        </button>
+                        <button
+                            onClick={handleShare}
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#b9d9f5] hover:text-[#2f6ed8]"
+                        >
+                            <Share2 className="h-3.5 w-3.5" />
+                            <span>分享</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div className="absolute right-8 top-6 z-30 hidden shrink-0 items-center gap-2 xl:flex">
+                    <button
+                        onClick={handleSave}
+                        className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
+                            isSaved ? 'border-[#b9d9f5] bg-white text-[#2f6ed8]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#b9d9f5] hover:text-[#2f6ed8]'
+                        }`}
+                    >
+                        <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
+                        <span>{isSaved ? '已收藏' : '收藏'}</span>
+                    </button>
+                    <button
+                        onClick={handleShare}
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#b9d9f5] hover:text-[#2f6ed8]"
+                    >
+                        <Share2 className="h-3.5 w-3.5" />
+                        <span>分享</span>
+                    </button>
+                </div>
+
+                {/* Company & Location Row */}
+                <div className="relative z-10 mb-4 flex items-center gap-3 xl:max-w-[calc(100%-380px)]">
+                    <div className="flex flex-wrap items-center gap-2 text-[13px] text-slate-500 font-medium sm:text-[14px]">
+                        <span className="font-bold text-slate-700">{displayText(job.company || '')}</span>
+                        {companyRatingText && (
+                            <>
+                                <span className="text-slate-300">·</span>
+                                <span className="flex items-center gap-0.5 font-bold text-amber-500">
+                                    <Star className="h-3.5 w-3.5 fill-current" />
+                                    {shouldMaskGuestMeta ? <GuestMaskedInline className="w-8" /> : companyRatingText}
+                                </span>
+                            </>
+                        )}
+                        <span className="text-slate-300">·</span>
+                        <span className="flex items-center gap-1">
+                            <MapPin className="h-3.5 w-3.5 text-slate-400" />
+                            <span>{locationDisplayText}</span>
+                        </span>
+                    </div>
+                </div>
+
+                {/* Tags & Apply Row */}
+                <div className="relative z-20 mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
+                    {/* Tags */}
+                    <div className="flex min-h-[44px] min-w-0 flex-wrap items-center gap-2">
+                        {headerTags.map((tag, idx) => (
+                            <span
+                                key={idx}
+                                className={`rounded-full px-3 py-1 text-[13px] font-bold shadow-[0_10px_20px_-16px_rgba(52,76,92,0.42)] ${
+                                    'border border-[#e0e9ef] bg-white/92 text-slate-700'
                                 }`}
-                                title={isSaved ? '取消收藏' : '收藏'}
                             >
-                                <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
-                            </button>
+                                {tag.label}
+                            </span>
+                        ))}
+                    </div>
 
-                            <button
-                                onClick={handleShare}
-                                className="relative z-10 inline-flex h-10 w-10 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 transition-all hover:border-slate-300 hover:text-slate-900 hover:shadow-[0_14px_26px_-20px_rgba(15,23,42,0.24)]"
-                                title="分享"
-                            >
-                                <Share2 className="h-4 w-4" />
-                            </button>
-                        </div>
-
+                    {/* Apply Button Group */}
+                    <div className="flex min-h-[44px] w-full shrink-0 items-end xl:-translate-y-2 xl:justify-self-end">
                         {(hasWebsiteApply || hasAnyEmailPath || onApply) && (
-                            <>
-                                <div className="hidden h-9 w-px flex-shrink-0 bg-slate-200/80 sm:block" />
-                                <button
-                                    onClick={handleApplyButtonClick}
-                                    className={`order-3 inline-flex min-h-[42px] w-full flex-1 items-center justify-center rounded-2xl px-4 py-2.5 text-[14px] font-bold transition-all duration-200 sm:order-none sm:w-auto sm:min-w-[132px] sm:flex-none sm:px-5 sm:py-3 sm:text-[15px] ${getApplyButtonClassName()}`}
-                                    title={getApplyButtonLabel()}
-                                >
-                                    <span className="inline-flex max-w-full items-center justify-center gap-2 whitespace-normal text-center sm:whitespace-nowrap">
-                                        <span>{getApplyButtonLabel()}</span>
-                                    </span>
-                                </button>
-                            </>
-                        )}
-
-                        {showCloseButton && showInlineNavigation && (
-                            <>
-                                <div className="hidden h-9 w-px flex-shrink-0 bg-slate-200/80 sm:block" />
-                                <div className="relative z-20 mr-1 flex flex-shrink-0 items-center gap-1">
-                                    <button
-                                        onClick={() => onNavigateJob?.('prev')}
-                                        disabled={!canNavigatePrev}
-                                        className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                                        title="上一个岗位"
-                                    >
-                                        <ChevronLeft className="w-5 h-5" />
-                                    </button>
-                                    <button
-                                        onClick={() => onNavigateJob?.('next')}
-                                        disabled={!canNavigateNext}
-                                        className="rounded-lg p-1.5 text-slate-400 transition-all hover:bg-slate-100 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
-                                        title="下一个岗位"
-                                    >
-                                        <ChevronRight className="w-5 h-5" />
-                                    </button>
-                                </div>
-                            </>
-                        )}
-
-                        {showCloseButton && onClose && (
-                            <>
-                                <div className="ml-1 hidden h-9 w-px flex-shrink-0 bg-slate-200/80 sm:block" />
-                                <button
-                                    onClick={onClose}
-                                    className="relative z-20 inline-flex h-10 w-10 sm:ml-1.5 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 transition-colors hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-                                    title="关闭"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </>
+                            <button
+                                onClick={handleApplyButtonClick}
+                            className={`inline-flex h-[44px] w-full items-center justify-center gap-2 rounded-[18px] px-4 text-[15px] font-bold transition-all duration-200 shadow-[0_16px_30px_-20px_rgba(47,110,216,0.55)] hover:-translate-y-0.5 active:translate-y-0 ${getApplyButtonClassName()}`}
+                        >
+                                <span className="flex items-center gap-1.5">
+                                    {getApplyButtonLabel()}
+                                </span>
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
                         )}
                     </div>
                 </div>
 
-                {/* Meta row — single compact line */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-slate-500">
-                    <div className="flex items-center gap-1">
-                        <Building2 className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <span className="font-medium text-slate-700 truncate max-w-[160px]">{displayText(job.company || '')}</span>
-                    </div>
-
-                    <span className="text-slate-200">·</span>
-
-                    <div className="flex items-center gap-1">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        {(() => {
-                            const locText = displayText(job.location || '', job.translations?.location);
-                            const isLongText = locText.length > 30;
-                            return (
-                                <div className="relative">
-                                    <span
-                                        className={`inline-block truncate align-middle leading-[1.1] max-w-[130px] ${isLongText ? 'cursor-help border-b border-dashed border-slate-300 hover:text-indigo-600 hover:border-indigo-400' : ''}`}
-                                        onClick={(e) => { if (isLongText) { e.stopPropagation(); setShowLocationTooltip(!showLocationTooltip); } }}
-                                        title={locText}
-                                    >{locText}</span>
-                                    {showLocationTooltip && isLongText && (
-                                        <div className="absolute z-50 mt-2 left-0">
-                                            <LocationTooltip location={locText} onClose={() => setShowLocationTooltip(false)} />
-                                        </div>
+                {/* Icon Stats Row */}
+                <div className="relative z-10 grid max-w-full grid-cols-2 gap-2 border-t border-[#e8f0f4]/70 pb-4 pt-3 sm:gap-2.5 sm:pb-5 sm:pt-4 md:grid-cols-4">
+                    {iconStats.map((stat, idx) => {
+                        const canShowHeadquartersTooltip = stat.locationTooltip === 'headquarters' && !shouldMaskGuestMeta && canShowHeadquartersLocationTooltip
+                        return (
+                            <div
+                                key={idx}
+                                ref={stat.locationTooltip === 'headquarters' ? headquartersStatRef : undefined}
+                                className={`relative flex min-h-[58px] min-w-0 items-center gap-2 rounded-[16px] border border-white/90 bg-white/86 px-2.5 py-2 shadow-[0_14px_34px_-28px_rgba(52,76,92,0.25)] backdrop-blur-[3px] sm:min-h-[64px] sm:rounded-[18px] ${canShowHeadquartersTooltip ? 'cursor-help transition-colors hover:border-[#c9dcf6] hover:bg-white' : ''}`}
+                                onMouseEnter={() => {
+                                    if (canShowHeadquartersTooltip) {
+                                        positionHeadquartersTooltip()
+                                        setShowHeadquartersLocationTooltip(true)
+                                    }
+                                }}
+                                onClick={(event) => {
+                                    if (!canShowHeadquartersTooltip) return
+                                    event.stopPropagation()
+                                    positionHeadquartersTooltip()
+                                    setShowHeadquartersLocationTooltip((value) => !value)
+                                }}
+                            >
+                                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#eef7ff] text-[#6a91c3] ${canShowHeadquartersTooltip ? 'ring-1 ring-[#c9dcf6]' : ''}`}>
+                                    <stat.icon className="h-3.5 w-3.5" />
+                                </div>
+                                <div className="min-w-0">
+                                    <span className="block whitespace-nowrap text-[10px] font-semibold text-slate-400">{stat.label}</span>
+                                    {shouldMaskGuestMeta && stat.maskForGuest ? (
+                                        <GuestMaskedStatValue className={stat.maskWidth} />
+                                    ) : (
+                                        <span className="mt-0.5 block truncate text-[12px] font-black leading-snug text-slate-900" title={stat.value}>{stat.value}</span>
                                     )}
                                 </div>
-                            )
-                        })()}
-                    </div>
-
-                    {job.timezone && (
-                        <>
-                            <span className="text-slate-200">·</span>
-                            <div className="flex items-center gap-1">
-                                <Clock className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                                <span className="truncate max-w-[160px]" title={job.timezone}>{job.timezone}</span>
                             </div>
-                        </>
-                    )}
-
-                    <span className="text-slate-200">·</span>
-
-                    <div className="flex items-center gap-1">
-                        <DollarSign className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        <span className="font-medium text-slate-800">{formatSalaryForDisplay(job.salary, '薪资面议')}</span>
-                    </div>
+                        )
+                    })}
                 </div>
             </header>
 
             {/* Content - Flat layout, no internal scroll */}
-            < main className="flex-1 bg-[linear-gradient(180deg,rgba(255,255,255,0.76),rgba(248,250,252,0.2))] px-6 py-7" >
-                <div className="space-y-8">
+            <main className="flex-1 bg-[#fbfaf6]">
+                <div className="sticky top-0 z-30 border-b border-[#e8f0f4] bg-white/92 px-4 py-2.5 sm:px-6">
+                    <div className="flex items-center justify-start gap-7 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {detailTabs.map((tab) => (
+                            <button
+                                key={tab.key}
+                                onClick={() => setActiveDetailTab(tab.key)}
+                                className={`relative whitespace-nowrap pb-2 text-sm font-semibold transition-colors ${
+                                    activeDetailTab === tab.key ? 'text-[#2f6ed8]' : 'text-slate-500 hover:text-slate-900'
+                                }`}
+                            >
+                                {tab.label}
+                                {activeDetailTab === tab.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#2f6ed8]" />}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                <div className="space-y-4 bg-[#fbfaf6] px-4 py-4 sm:px-6 sm:py-5">
+                    {activeDetailTab === 'description' && (
+                        <>
+                    {(showReferralModule || isMemberRestrictedJob) && isAuthenticated && !isMember && (
+                            <button
+                                type="button"
+                                onClick={() => goToMembershipPayment('referral', 'job_detail_member_value_panel')}
+                                className="group flex w-full items-center justify-between gap-3 rounded-[18px] border border-[#f1d9a5] bg-[linear-gradient(135deg,rgba(255,252,242,0.98)_0%,rgba(246,251,255,0.96)_100%)] px-3.5 py-2.5 text-left shadow-[0_18px_46px_-40px_rgba(82,112,136,0.42)] transition-all hover:-translate-y-0.5 hover:border-[#e9c775] hover:shadow-[0_24px_54px_-42px_rgba(154,100,16,0.35)]"
+                            >
+                                <div className="flex min-w-0 items-center gap-2.5">
+                                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff3d6] text-[#bd7a12]">
+                                        <Lock className="h-4 w-4" />
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span className="block truncate text-[13px] font-black text-slate-900">解锁联系人邮箱与直达申请入口</span>
+                                        <span className="block truncate text-[12px] font-semibold text-slate-500">体验会员 ¥29.9 起，简历直达用人侧</span>
+                                    </span>
+                                </div>
+                                <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-slate-950 px-3.5 text-[12px] font-black text-white transition-colors group-hover:bg-[#2f6ed8]">
+                                    升级会员解锁
+                                </span>
+                            </button>
+                    )}
+                    {showReferralLoadingPlaceholder && (
+                        <section className="rounded-[26px] border border-[#dce8ef] bg-white/88 p-5 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.26)] md:p-6">
+                            <div className="flex items-center justify-between gap-4">
+                                <div className="min-w-0">
+                                    <div className="h-6 w-44 rounded-full bg-slate-200/90" />
+                                    <div className="mt-3 h-4 w-full max-w-[560px] rounded-full bg-slate-100" />
+                                </div>
+                                <div className="hidden h-10 w-28 rounded-2xl bg-slate-100 md:block" />
+                            </div>
+                            <div className="mt-5 grid gap-3 md:grid-cols-2">
+                                {[0, 1].map((item) => (
+                                    <div key={item} className="h-[148px] rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-12 w-12 rounded-2xl bg-slate-200/80" />
+                                            <div className="min-w-0 flex-1 space-y-2">
+                                                <div className="h-4 w-24 rounded-full bg-slate-200/90" />
+                                                <div className="h-3 w-36 rounded-full bg-slate-100" />
+                                            </div>
+                                        </div>
+                                        <div className="mt-6 h-10 rounded-xl bg-white" />
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
+                    )}
                     {/* 帮我内推 — placed ABOVE AI match analysis */}
                     {showReferralModule && (
                         <section>
-                            <div className="rounded-[28px] border border-slate-200/90 bg-[radial-gradient(circle_at_top_right,rgba(219,234,254,0.55),transparent_30%),linear-gradient(180deg,#ffffff_0%,#fbfdff_100%)] p-5 md:p-6 shadow-[0_28px_72px_-46px_rgba(15,23,42,0.2)]">
+                            <div className="rounded-[22px] border border-[#dce8ef] bg-white/92 p-4 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.34)] sm:rounded-[26px] sm:p-5 md:p-6">
                                 <div className="min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <h3 className="text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
-                                        帮我内推 <span className="font-black text-indigo-600">@{job.company || companyInfo?.name || '该企业'}</span>
+                                    <div className="flex items-start justify-between gap-3">
+                                        <h3 className="min-w-0 text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
+                                            帮我内推 <span className="font-black text-[#2f6ed8]">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
+                                        {hasScrollableReferralContacts && (
+                                            <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-[#dce8ef] bg-[#f7fbff] px-2 py-0.5 text-[11px] font-black text-[#2f6ed8]">
+                                                {displayReferralContacts.length} 位联系人
+                                            </span>
+                                        )}
                                     </div>
-                                    <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'truncate' : ''}`}>
-                                        Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍
+                                    <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'sm:truncate' : ''}`}>
+                                        Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍。
                                     </p>
                                 </div>
 
@@ -1339,13 +1825,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                                     const contactThemes = [
                                         {
-                                            shell: 'border-indigo-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,248,255,0.96))]',
-                                            glow: 'from-indigo-500 via-violet-400 to-sky-400',
-                                            avatar: 'border-indigo-200 bg-[linear-gradient(135deg,#5b5ff7_0%,#26b8ff_100%)] text-white',
-                                            icon: 'border-indigo-100 bg-indigo-50 text-indigo-700',
-                                            chip: 'border-indigo-100 bg-indigo-50 text-indigo-700'
+                                            art: '/pic_lists/Jobs_pics/card_bg1.webp',
+                                            shell: 'border-[#c9dcf6] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,251,255,0.96))]',
+                                            glow: 'from-[#8eb8f0] via-[#5bb6e8] to-[#6cd4bd]',
+                                            avatar: 'border-[#b9d9f5] bg-[linear-gradient(135deg,#3f7ee8_0%,#35b6e8_100%)] text-white',
+                                            icon: 'border-[#c9dcf6] bg-[#eef7ff] text-[#2f6ed8]',
+                                            chip: 'border-[#c9dcf6] bg-[#eef7ff] text-[#2f6ed8]'
                                         },
                                         {
+                                            art: '/pic_lists/Jobs_pics/card_bg2.webp',
                                             shell: 'border-sky-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,250,255,0.96))]',
                                             glow: 'from-sky-500 via-cyan-400 to-teal-400',
                                             avatar: 'border-sky-200 bg-[linear-gradient(135deg,#1d9bf0_0%,#4dd4ff_100%)] text-white',
@@ -1353,6 +1841,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             chip: 'border-sky-100 bg-sky-50 text-sky-700'
                                         },
                                         {
+                                            art: '/pic_lists/Jobs_pics/card_bg1.webp',
                                             shell: 'border-emerald-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,252,248,0.96))]',
                                             glow: 'from-emerald-500 via-teal-400 to-cyan-400',
                                             avatar: 'border-emerald-200 bg-[linear-gradient(135deg,#22c55e_0%,#14b8a6_100%)] text-white',
@@ -1360,6 +1849,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             chip: 'border-emerald-100 bg-emerald-50 text-emerald-700'
                                         },
                                         {
+                                            art: '/pic_lists/Jobs_pics/card_bg2.webp',
                                             shell: 'border-violet-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,246,255,0.96))]',
                                             glow: 'from-violet-500 via-fuchsia-400 to-pink-400',
                                             avatar: 'border-violet-200 bg-[linear-gradient(135deg,#8b5cf6_0%,#ec4899_100%)] text-white',
@@ -1386,13 +1876,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         goToMembershipPayment('referral', 'job_detail_referral_exhausted')
                                     }
 
-                                    const shouldUseReferralCarousel = displayReferralContacts.length > 1 || (showCloseButton && !showInlineNavigation)
-                                    const referralListClass = shouldUseReferralCarousel
-                                        ? 'flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-                                        : 'space-y-3'
-
                                     return (
-                                        <div className={`mt-4 ${referralListClass}`}>
+                                        <div className="mt-4 flex overflow-x-auto gap-3 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
                                             {displayReferralContacts.map((contact, index) => {
                                                 const theme = contactThemes[index % contactThemes.length]
                                                 const isUnlockedCard = referralAccessMode === 'unlocked'
@@ -1420,79 +1905,85 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     <div
                                                         key={`ref-contact-${index}`}
                                                         onClick={referralAccessMode === 'guest' ? (event) => handleLockedContactClick(event, 'guest') : undefined}
-                                                        className={`relative overflow-hidden rounded-[24px] border ${theme.shell} shadow-[0_24px_50px_-36px_rgba(79,70,229,0.2)] ${
+                                                        className={`relative min-w-[min(260px,calc(100vw-72px))] basis-[78%] shrink-0 snap-start overflow-hidden rounded-2xl border ${
+                                                            hasScrollableReferralContacts
+                                                                ? 'sm:min-w-[260px] sm:basis-[calc((100%_-_2rem)/2.5)]'
+                                                                : 'sm:min-w-[340px] sm:basis-[calc((100%_-_1rem)/2)]'
+                                                        } ${theme.shell} ${
                                                             referralAccessMode === 'guest' ? 'cursor-pointer' : ''
-                                                        } ${shouldUseReferralCarousel ? 'min-w-[308px] max-w-[328px] flex-shrink-0 snap-start md:min-w-[320px] md:max-w-[336px]' : ''}`}
+                                                        } shadow-[0_10px_25px_-12px_rgba(15,23,42,0.12)]`}
                                                     >
-                                                        <div className={`pointer-events-none absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r ${theme.glow}`} />
+                                                        <img
+                                                            src={theme.art}
+                                                            alt=""
+                                                            aria-hidden="true"
+                                                            className="pointer-events-none absolute bottom-0 right-0 h-[86px] w-[128px] object-cover object-right-bottom opacity-[0.13]"
+                                                            loading="lazy"
+                                                        />
+                                                        <div className={`pointer-events-none absolute inset-y-0 left-0 w-[4px] bg-gradient-to-b ${theme.glow}`} />
                                                         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.28),transparent_34%,rgba(255,255,255,0.12)_68%,transparent)] opacity-90" />
-                                                        <div className="relative p-4">
-                                                            <div className="flex items-center gap-3.5">
-                                                                <div className={`flex h-[60px] w-[60px] shrink-0 items-center justify-center rounded-[20px] border text-center font-black uppercase tracking-[-0.02em] shadow-[0_18px_30px_-24px_rgba(79,70,229,0.32)] ${theme.avatar}`}>
+                                                        <div className="relative p-5">
+                                                            <div className="flex items-center gap-3 mb-6">
+                                                                <div className={`flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[14px] border text-center font-black uppercase tracking-[-0.02em] ${theme.avatar} shadow-sm`}>
                                                                     <span className="block text-[14px] leading-none">{avatarLabel}</span>
                                                                 </div>
-                                                                <div className="min-w-0 flex-1">
-                                                                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-                                                                        <div className="truncate text-[18px] font-black tracking-tight text-slate-900">
-                                                                            {displayName}
-                                                                        </div>
-                                                                        <div className="truncate text-[13px] font-medium text-slate-500">
-                                                                            / {displayTitle}
-                                                                        </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="truncate text-[17px] font-black tracking-tight text-slate-900 leading-tight">
+                                                                        {displayName}
+                                                                    </div>
+                                                                    <div className="truncate text-[13px] font-bold text-slate-500 mt-1">
+                                                                        {displayTitle}
                                                                     </div>
                                                                 </div>
                                                             </div>
 
-                                                            <div className="mt-4 border-t border-slate-200/70 pt-3">
-                                                                <div className="flex items-center gap-2">
-                                                                    {contact.linkedin ? (
-                                                                        <button
-                                                                            type="button"
-                                                                            onClick={(event) => {
-                                                                                if (!isUnlockedCard) {
-                                                                                    handleLockedContactClick(event, referralAccessMode)
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                        type="button"
+                                                                        onClick={(event) => {
+                                                                            if (!isUnlockedCard) {
+                                                                                if (shouldShowUnifiedReferralUnlock) {
+                                                                                    handleUnifiedReferralUnlock(event)
                                                                                     return
                                                                                 }
-                                                                                event.stopPropagation()
-                                                                                window.open(toSafeExternalUrl(contact.linkedin), '_blank', 'noopener,noreferrer')
-                                                                            }}
-                                                                            className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors ${
-                                                                                isUnlockedCard
-                                                                                    ? `${theme.icon} shadow-[0_12px_22px_-18px_rgba(79,70,229,0.28)] hover:brightness-95`
-                                                                                    : 'border-slate-200 bg-slate-100 text-slate-500'
-                                                                            }`}
-                                                                            title="LinkedIn"
-                                                                        >
-                                                                            <Linkedin className="h-4 w-4 shrink-0" />
-                                                                        </button>
-                                                                    ) : null}
-
-                                                                    <button
-                                                                            type="button"
-                                                                            onClick={(event) => {
-                                                                                if (!isUnlockedCard) {
-                                                                                    if (shouldShowUnifiedReferralUnlock) {
-                                                                                        handleUnifiedReferralUnlock(event)
-                                                                                        return
-                                                                                    }
-                                                                                    handleLockedContactClick(event, referralAccessMode)
-                                                                                    return
-                                                                                }
-                                                                                event.stopPropagation()
-                                                                                openReferralEmailAssistant(contact)
-                                                                            }}
-                                                                        className={`inline-flex min-w-0 flex-1 items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-colors ${
+                                                                                handleLockedContactClick(event, referralAccessMode)
+                                                                                return
+                                                                            }
+                                                                            event.stopPropagation()
+                                                                            openReferralEmailAssistant(contact)
+                                                                        }}
+                                                                        className={`flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[13px] font-bold shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[1] ${
                                                                             isUnlockedCard
-                                                                                ? 'border-slate-900 bg-slate-900 text-white shadow-[0_18px_32px_-24px_rgba(15,23,42,0.5)] hover:bg-slate-800 hover:border-slate-800'
-                                                                                : 'border-slate-900 bg-slate-900 text-white shadow-[0_18px_32px_-24px_rgba(15,23,42,0.4)] hover:bg-slate-800 hover:border-slate-800'
+                                                                                ? 'border-[#2f6ed8] bg-[#2f6ed8] text-white shadow-[#2f6ed8]/20'
+                                                                                : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
                                                                         }`}
+                                                                >
+                                                                    {isUnlockedCard && <Mail className="h-4 w-4 shrink-0 opacity-80" />}
+                                                                    {!isUnlockedCard && <Lock className="h-3.5 w-3.5 shrink-0 opacity-60" />}
+                                                                    <span>{emailButtonLabel}</span>
+                                                                </button>
+
+                                                                {contact.linkedin ? (
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={(event) => {
+                                                                            if (!isUnlockedCard) {
+                                                                                handleLockedContactClick(event, referralAccessMode)
+                                                                                return
+                                                                            }
+                                                                            event.stopPropagation()
+                                                                            window.open(toSafeExternalUrl(contact.linkedin), '_blank', 'noopener,noreferrer')
+                                                                        }}
+                                                                        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all hover:scale-[1.02] ${
+                                                                            isUnlockedCard
+                                                                                ? `${theme.icon} shadow-sm hover:brightness-95`
+                                                                                : 'border-slate-200 bg-slate-100 text-slate-500'
+                                                                        }`}
+                                                                        title="LinkedIn"
                                                                     >
-                                                                        <Mail className="h-4 w-4 shrink-0" />
-                                                                        <span className="truncate">
-                                                                            {emailButtonLabel}
-                                                                        </span>
+                                                                        <Linkedin className="h-4 w-4 shrink-0" />
                                                                     </button>
-                                                                </div>
+                                                                ) : null}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1523,9 +2014,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Job Description Sections */}
                     {jobDetailSections.map((section, index) => (
-                        <section key={index} className="last:mb-0 rounded-[26px] border border-slate-100 bg-white/86 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
+                        <section key={index} className="last:mb-0 rounded-[26px] border border-[#dce8ef] bg-white/88 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(52,76,92,0.24)]">
                             <div className="mb-4 flex items-start gap-3">
-                                <div className="w-1.5 h-7 bg-indigo-600 rounded-full mt-0.5"></div>
+                                <div className="mt-0.5 h-7 w-1.5 rounded-full bg-[#7fbf91]"></div>
                                 <div className="min-w-0">
                                     <h3 className="text-lg font-bold text-slate-900 leading-7">
                                         {section.displayTitle}
@@ -1545,7 +2036,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Skills/Tags */}
                     {((job.tags && job.tags.length > 0) || (job.skills && job.skills.length > 0)) && (
-                        <section className="rounded-[26px] border border-slate-100 bg-white/86 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
+                        <section className="rounded-[26px] border border-[#dce8ef] bg-white/88 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(52,76,92,0.24)]">
                             <h3 className="text-base font-semibold text-slate-900 mb-3">
                                 技能要求
                             </h3>
@@ -1557,134 +2048,135 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             />
                         </section>
                     )}
+                    <div className="mx-auto flex max-w-[760px] items-center justify-center gap-2 rounded-full border border-[#dce8ef] bg-white/72 px-4 py-2 text-center text-[12px] font-medium text-slate-500 shadow-[0_16px_34px_-32px_rgba(52,76,92,0.3)]">
+                        <Leaf className={`h-3.5 w-3.5 shrink-0 ${isMember ? 'text-[#7fbf91]' : 'text-[#7fbf91]'}`} aria-hidden="true" />
+                        <span>
+                            {isMember
+                                ? '心若安定，路自清明；慢慢走，也会抵达适合自己的远方。'
+                                : '迷茫的时候，不妨换个地方，给自己一点时间和空间。你想要的生活正在路上。'}
+                        </span>
+                    </div>
+                        </>
+                    )}
 
-                    {/* Company Card at Bottom */}
-                    <section className="pb-2">
-                        <div
-                            onClick={handleCompanyClick}
-                            className="bg-gradient-to-br from-white to-slate-50/60 border border-slate-200 rounded-[24px] p-5 hover:border-slate-300 hover:shadow-md transition-all cursor-pointer group/card"
-                        >
-                            <div className="flex items-start gap-4 mb-4">
-                                {isAuthenticated && (detailLogoSrc ? (
-                                    <div className="hidden sm:flex w-14 h-14 rounded-xl bg-white border border-slate-100 items-center justify-center overflow-hidden shadow-sm flex-shrink-0 p-1 group-hover/card:scale-105 transition-transform duration-300">
-                                        <img
-                                            src={detailLogoSrc}
-                                            alt={job.company}
-                                            className="w-full h-full object-contain"
-                                            onError={(e) => {
-                                                if (logoSourceIndex < logoSources.length - 1) {
-                                                    setLogoSourceIndex((idx) => idx + 1)
-                                                    return
-                                                }
-                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                (e.target as HTMLImageElement).parentElement!.innerHTML = `<span class="text-white font-bold text-lg">${(job.company || '未知').charAt(0)}</span>`;
-                                                (e.target as HTMLImageElement).parentElement!.className = "hidden sm:flex w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300";
-                                            }}
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="hidden sm:flex w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl items-center justify-center shadow-sm flex-shrink-0 group-hover/card:scale-105 transition-transform duration-300">
-                                        <span className="text-white font-bold text-xl">
-                                            {(job.company || '未知公司').charAt(0)}
-                                        </span>
-                                    </div>
-                                ))}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="min-w-0 flex-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <h3 className="text-lg font-bold text-slate-900 transition-colors truncate">
-                                                    {displayText(job.company || '')}
-                                                </h3>
-                                            </div>
-                                        </div>
-                                        {isAuthenticated ? (
-                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-slate-200 text-slate-700 text-xs font-semibold whitespace-nowrap">
-                                                <Briefcase className="w-3.5 h-3.5" />
-                                                <span>{companyOpenJobCount != null ? `${companyOpenJobCount} 个在招岗位` : '在招岗位统计中'}</span>
-                                            </div>
-                                        ) : (
-                                            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold whitespace-nowrap">
-                                                登录查看
-                                                <ChevronRight className="w-3.5 h-3.5" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {isAuthenticated ? (
-                                        <>
-                                            <div className="mt-2">
-                                                <div className="grid grid-cols-2 gap-3 text-xs text-slate-500 bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                            <Users className="w-3 h-3 text-slate-500" />
-                                                        </div>
-                                                        <span className="truncate font-medium text-slate-600">
-                                                            {companyInfo?.employeeCount || '规模未知'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                            <MapPin className="w-3 h-3 text-slate-500" />
-                                                        </div>
-                                                        <span className="truncate font-medium text-slate-600" title={companyInfo?.address || '总部未知'}>
-                                                            {companyInfo?.address || '总部未知'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                            <Calendar className="w-3 h-3 text-slate-500" />
-                                                        </div>
-                                                        <span className="font-medium text-slate-600">
-                                                            {companyInfo?.foundedYear ? `${companyInfo.foundedYear}年成立` : '年份未知'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-6 h-6 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center flex-shrink-0">
-                                                            <Building2 className="w-3 h-3 text-slate-500" />
-                                                        </div>
-                                                        <span className="font-medium text-slate-600">
-                                                            {companyIndustryLabel}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <p className="mt-4 text-sm leading-7 text-slate-600 line-clamp-3">
-                                                {companyDescription}
-                                            </p>
-                                        </>
-                                    ) : (
-                                        <div className="mt-3">
-                                            <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-white p-3 text-xs shadow-sm sm:grid-cols-4">
-                                                {lockedCompanyPreviewFields.map((field) => (
-                                                    <div key={field.label} className="min-w-0">
-                                                        <div className="font-medium text-slate-400">{field.label}</div>
-                                                        <div className={`mt-2 h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${field.widthClass}`} aria-hidden="true" />
-                                                    </div>
-                                                ))}
-                                            </div>
-                                            <div className="mt-3 space-y-2 rounded-xl border border-slate-100 bg-white p-3">
-                                                <div className="h-3.5 w-11/12 rounded-full bg-slate-300/80 blur-[2px]" aria-hidden="true" />
-                                                <div className="h-3.5 w-8/12 rounded-full bg-slate-200/90 blur-[2px]" aria-hidden="true" />
-                                            </div>
-                                        </div>
-                                    )}
+                    {activeDetailTab === 'company' && (
+                        <section className="rounded-[26px] border border-slate-100 bg-white/92 p-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
+                            <div className="mb-5 flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                    <h3 className="truncate text-xl font-black text-slate-950">{displayText(job.company || '')}</h3>
+                                    <p className="mt-2 text-sm leading-7 text-slate-600">{companyDescription}</p>
                                 </div>
                             </div>
 
-                            {isAuthenticated && (
-                                <div className="mt-3 flex items-center justify-end px-1 text-xs text-slate-500">
-                                    <div className="flex items-center gap-1 font-medium text-indigo-600 transition-transform group-hover:translate-x-1">
-                                        查看详情
-                                        <ChevronRight className="w-3.5 h-3.5" />
+                            {isAuthenticated ? (
+                                <>
+                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                        {companyFactCards.map((item) => (
+                                            <div key={item.label} className="flex min-w-0 flex-col justify-center rounded-[18px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.06)] transition-colors hover:border-slate-200">
+                                                <div className="mb-1 text-[12px] font-medium text-slate-400">{item.label}</div>
+                                                {item.href ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => window.open(toSafeExternalUrl(item.href), '_blank', 'noopener,noreferrer')}
+                                                        className="block max-w-full truncate text-left text-[14px] font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+                                                        title={item.value}
+                                                    >
+                                                        {item.value}
+                                                    </button>
+                                                ) : (
+                                                    <div className="truncate text-[14px] font-bold text-slate-800" title={item.value}>{item.value}</div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    {companySpecialties.length > 0 && (
+                                        <div className="mt-6 border-t border-slate-100 pt-5">
+                                            <div className="text-[13px] font-semibold text-slate-400">企业领域/专长</div>
+                                            <div className="mt-3 flex flex-wrap gap-2.5">
+                                                {companySpecialties.map((item) => (
+                                                    <span key={item} className="rounded-full border border-slate-200/80 bg-white px-3.5 py-1.5 text-[13px] font-semibold text-slate-600 shadow-sm">
+                                                        {item}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="mt-4">
+                                    <div className="grid grid-cols-2 gap-3 rounded-xl border border-slate-100 bg-white p-3 text-xs shadow-sm sm:grid-cols-4">
+                                        {lockedCompanyPreviewFields.map((field) => (
+                                            <div key={field.label} className="min-w-0">
+                                                <div className="font-medium text-slate-400">{field.label}</div>
+                                                <div className={`mt-2 h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${field.widthClass}`} aria-hidden="true" />
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             )}
-                        </div>
-                    </section>
+                        </section>
+                    )}
+
+                    {activeDetailTab === 'jobs' && (
+                        <section className="rounded-[26px] border border-slate-100 bg-white/88 p-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
+                            <div className="mb-4 flex items-center justify-between">
+                                <div>
+                                    <h3 className="text-lg font-bold text-slate-900">企业在招岗位</h3>
+                                    <p className="mt-1 text-sm text-slate-500">包含当前岗位；点击其他岗位可在弹窗中查看详情</p>
+                                </div>
+                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                                    {companyOpenJobCount != null ? `${companyOpenJobCount} 个` : '统计中'}
+                                </span>
+                            </div>
+                            {companyJobsForTab.length > 0 ? (
+                                <div className="space-y-2">
+                                    {companyJobsForTab.map((item, index) => {
+                                        const isCurrentJob = item.id === job.id
+                                        return (
+                                        <button
+                                            key={item.id}
+                                            type="button"
+                                            onClick={() => {
+                                                if (isCurrentJob) {
+                                                    setActiveDetailTab('description')
+                                                    return
+                                                }
+                                                setNestedJobIndex(index)
+                                            }}
+                                            className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
+                                                isCurrentJob
+                                                    ? 'border-[#b9d9f5] bg-[#eef7ff]/70'
+                                                    : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/40'
+                                            }`}
+                                        >
+                                            <div className="min-w-0">
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    <div className="truncate text-sm font-bold text-slate-900">{item.translations?.title || item.title}</div>
+                                                    {isCurrentJob ? (
+                                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#2f6ed8]">当前</span>
+                                                    ) : null}
+                                                </div>
+                                                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                                    <span>{JOB_TYPE_LABELS[item.type] || item.type || '岗位'}</span>
+                                                    <span>·</span>
+                                                    <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('zh-CN') : '未知时间'}</span>
+                                                </div>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
+                                        </button>
+                                    )})}
+                                </div>
+                            ) : (
+                                <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+                                    暂无其他公开在招岗位
+                                </div>
+                            )}
+                        </section>
+                    )}
 
                 </div>
-            </main >
+            </main>
 
             {/* Feedback Modal */}
             {
@@ -1767,6 +2259,76 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 jobTitle={job.translations?.title || job.title}
                 companyName={job.translations?.company || job.company || ''}
             />
+
+            {showHeadquartersLocationTooltip && headquartersTooltipPosition && typeof document !== 'undefined' && createPortal(
+                <div
+                    className="fixed z-[10000] w-80"
+                    style={{
+                        left: `${headquartersTooltipPosition.left}px`,
+                        top: `${headquartersTooltipPosition.top}px`
+                    }}
+                    onMouseLeave={() => setShowHeadquartersLocationTooltip(false)}
+                    onClick={(event) => event.stopPropagation()}
+                >
+                    <LocationTooltip
+                        location={headquartersAddress}
+                        floating
+                        onClose={() => setShowHeadquartersLocationTooltip(false)}
+                    />
+                </div>,
+                document.body
+            )}
+
+            {nestedJob && createPortal(
+                <div
+                    className="fixed inset-0 z-[1200] flex items-center justify-center bg-slate-950/50 px-4 py-6 backdrop-blur-sm"
+                    onClick={() => setNestedJobIndex(null)}
+                >
+                    <div
+                        className="relative h-[88vh] w-full max-w-[1120px] overflow-hidden rounded-[30px] border border-white/70 bg-[#fbfaf6] shadow-[0_42px_120px_-42px_rgba(15,23,42,0.62)]"
+                        onClick={(event) => event.stopPropagation()}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setNestedJobIndex(null)}
+                            className="absolute right-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe7ef] bg-white/92 text-slate-500 shadow-[0_16px_34px_-26px_rgba(15,23,42,0.45)] transition-colors hover:text-slate-900"
+                            aria-label="关闭岗位详情"
+                        >
+                            <X className="h-5 w-5" />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={nestedJobIndex == null || nestedJobIndex <= 0}
+                            onClick={() => setNestedJobIndex((current) => current == null ? current : Math.max(0, current - 1))}
+                            className="absolute left-4 top-1/2 z-40 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#dbe7ef] bg-white/92 text-slate-500 shadow-[0_16px_34px_-26px_rgba(15,23,42,0.45)] transition-colors hover:text-slate-900 disabled:pointer-events-none disabled:opacity-25 md:inline-flex"
+                            aria-label="上一个岗位"
+                        >
+                            <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                            type="button"
+                            disabled={nestedJobIndex == null || nestedJobIndex >= companyJobsForTab.length - 1}
+                            onClick={() => setNestedJobIndex((current) => current == null ? current : Math.min(companyJobsForTab.length - 1, current + 1))}
+                            className="absolute right-4 top-1/2 z-40 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-[#dbe7ef] bg-white/92 text-slate-500 shadow-[0_16px_34px_-26px_rgba(15,23,42,0.45)] transition-colors hover:text-slate-900 disabled:pointer-events-none disabled:opacity-25 md:inline-flex"
+                            aria-label="下一个岗位"
+                        >
+                            <ChevronRight className="h-5 w-5" />
+                        </button>
+                        <div className="h-full overflow-y-auto">
+                            <JobDetailPanel
+                                key={nestedJob.id}
+                                job={nestedJob}
+                                onSave={onSave}
+                                isSaved={isSaved}
+                                onApply={onApply}
+                                showCloseButton={false}
+                                showInlineNavigation={false}
+                            />
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
 
             {/* Apply Selection Modal (Removed as per optimization request) */}
             {/* Direct Apply Buttons integrated below */}

@@ -17,12 +17,32 @@ interface FeaturedJobsSectionProps {
 
 const CATEGORIES = [
   { id: 'all', label: '综合推荐', icon: Sparkles },
-  { id: 'Customer Service,Sales,Operations,Technical Support,AI Trainer,Writer,Admin,Virtual Assistant,Marketing,客服,客户服务,销售,运营,技术支持,AI训练师,作家,文案,行政,助理,虚拟助理,市场营销,远程入门', label: '入门机会', icon: PenTool },
-  { id: 'Product Manager,Product Owner,Product Marketing,Head of Product,产品经理,产品', label: '产品岗位', icon: Layers },
-  { id: 'Software Engineer,Frontend,Backend,Full Stack,DevOps,Data Engineer,Algorithm,Developer,研发,前端,后端,全栈,算法,工程师', label: '技术岗位', icon: Code2 },
+  { id: '人力资源,招聘,财务,会计,法务,行政,管理,客户服务,HR,Recruiter,Talent Acquisition,Finance,Legal,Admin', label: '人事行政', icon: PenTool },
+  { id: '产品经理,产品设计,营销设计,网站和营销设计,视觉设计,平面设计,创意设计,UI/UX设计,用户研究,增长黑客,Product Manager,Product Designer,Marketing Designer,Visual Designer,Graphic Designer,Creative Designer,UI,UX,Growth', label: '产品设计', icon: Layers },
+  { id: '前端开发,后端开发,全栈开发,软件开发,移动开发,算法工程师,测试/QA,数据开发,数据库工程师,平台工程师,服务器开发,运维/SRE,网络安全,架构师,技术支持,工程,开发,Engineer,Developer,Frontend,Backend,Full Stack,Software,QA,DevOps,Data Engineer', label: '技术研发', icon: Code2 },
   { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '运营营销', icon: TrendingUp },
   { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '销售商务', icon: Megaphone },
 ]
+
+function spreadFeaturedJobs(jobs: Job[], limit = 6) {
+  const companyCounts = new Map<string, number>()
+  const seen = new Set<string>()
+  return [...jobs]
+    .filter(job => {
+      if (!job.id || seen.has(job.id)) return false
+      seen.add(job.id)
+      return true
+    })
+    .sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime())
+    .filter(job => {
+      const companyKey = (job.company || 'unknown').trim().toLowerCase()
+      const count = companyCounts.get(companyKey) || 0
+      if (count >= 2) return false
+      companyCounts.set(companyKey, count + 1)
+      return true
+    })
+    .slice(0, limit)
+}
 
 export default function FeaturedJobsSection({
   initialJobs = [],
@@ -51,12 +71,14 @@ export default function FeaturedJobsSection({
 
       setLoading(true)
       try {
-        let fetchLimit = activeTab === CATEGORIES[1].id ? 60 : 6;
+        const fetchLimit = activeTab === 'all' ? 6 : 24;
 
         const filters: any = {
           isFeatured: true, // Only fetch initially featured
           isApproved: true, // MANDATORY requirement for all homepage jobs
-          limit: fetchLimit
+          limit: fetchLimit,
+          sortBy: 'recent',
+          skipAggregations: true
         }
 
         if (activeTab !== 'all') {
@@ -64,94 +86,7 @@ export default function FeaturedJobsSection({
         }
 
         const res = await processedJobsService.getProcessedJobs(1, fetchLimit, filters)
-        let finalJobs = res.jobs;
-
-        if (activeTab === CATEGORIES[1].id) {
-          // 条件一: CATEGORY ALREADY APPLIED IN THE QUERY String.
-          const juniorKeywords = ['entry', 'junior', '初级', '实习', 'intern'];
-          const excludeKeywords = ['mid', 'senior', 'lead', 'manager', 'director', '中级', '高级', '资深', '专家', '管理', '架构师', 'architect', 'head of'];
-
-          // Helper to check if a job is junior/intern (and not senior)
-          const isJuniorOrIntern = (j: Job) => {
-            const expStr = String(j.experienceLevel || '').toLowerCase();
-            const titleStr = String(j.title || '').toLowerCase();
-
-            // 1. Must NOT contain senior/expert keywords
-            const hasSenior = excludeKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
-            if (hasSenior) return false;
-
-            // 2. Ideal: explicitly mentions junior/entry
-            const hasJunior = juniorKeywords.some(k => expStr.includes(k) || titleStr.includes(k));
-
-            // 3. Or it is empty but the title/role belongs to the entry-friendly list 
-            // and doesn't have senior markers.
-            return hasJunior || (!j.experienceLevel && !hasSenior);
-          };
-
-          const companyCountMap = new Map<string, number>();
-          const dispersedJobs: typeof finalJobs = [];
-          const addedJobIds = new Set<string>();
-
-          // Helper to add jobs to the final list ensuring company limit (max 1 per company)
-          const addJobs = (jobsToAdd: typeof finalJobs) => {
-            // Sort by updated/published descending (processedJobsService usually sorts by recent or relevance, let's enforce recent)
-            const sortedJobs = [...jobsToAdd].sort((a, b) => new Date(b.publishedAt || 0).getTime() - new Date(a.publishedAt || 0).getTime());
-
-            for (const job of sortedJobs) {
-              if (addedJobIds.has(job.id)) continue;
-              const compName = job.company ? job.company.toLowerCase() : 'unknown';
-              const count = companyCountMap.get(compName) || 0;
-              if (count < 1) {
-                dispersedJobs.push(job);
-                addedJobIds.add(job.id);
-                companyCountMap.set(compName, count + 1);
-              }
-              if (dispersedJobs.length >= 6) break;
-            }
-          };
-
-          // Step 1: Add original category jobs
-          addJobs(finalJobs.filter(isJuniorOrIntern));
-
-          // Step 2: If we still need more jobs, fetch 'internship' explicitly
-          if (dispersedJobs.length < 6) {
-            try {
-              const internRes = await processedJobsService.getProcessedJobs(1, 60, {
-                isFeatured: true,
-                isApproved: true,
-                type: 'internship', // Fetch explicitly by job type
-                limit: 60
-              });
-              
-              if (internRes.jobs && internRes.jobs.length > 0) {
-                 addJobs(internRes.jobs.filter(isJuniorOrIntern));
-              }
-            } catch (err) {
-              console.warn('Failed to fetch internship jobs as fallback', err);
-            }
-          }
-
-          // Step 3: If we STILL need more jobs, fallback to Product (CATEGORIES[2]) and Tech (CATEGORIES[3])
-          if (dispersedJobs.length < 6) {
-             try {
-               const fallbackCategories = [CATEGORIES[2].id, CATEGORIES[3].id].join(',');
-               const fallbackRes = await processedJobsService.getProcessedJobs(1, 60, {
-                  isFeatured: true,
-                  isApproved: true,
-                  category: fallbackCategories,
-                  limit: 60
-               });
-
-               if (fallbackRes.jobs && fallbackRes.jobs.length > 0) {
-                  addJobs(fallbackRes.jobs.filter(isJuniorOrIntern));
-               }
-             } catch (err) {
-               console.warn('Failed to fetch product/tech fallback jobs', err);
-             }
-          }
-
-          finalJobs = dispersedJobs;
-        }
+        let finalJobs = spreadFeaturedJobs(res.jobs, 6);
 
         setJobs(finalJobs)
       } catch (error) {

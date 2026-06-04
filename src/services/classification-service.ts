@@ -109,6 +109,13 @@ const JOB_KEYWORDS: Record<string, JobCategory> = {
     'product owner': '产品经理',
 
     'product designer': '产品设计',
+    'product design': '产品设计',
+    'marketing designer': '营销设计',
+    'marketing design': '营销设计',
+    'visual design': '视觉设计',
+    'graphic design': '平面设计',
+    'creative designer': '创意设计',
+    'creative design': '创意设计',
 
     'user researcher': '用户研究',
     'ux researcher': '用户研究',

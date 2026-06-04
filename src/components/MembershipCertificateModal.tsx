@@ -1,8 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { X, Download, Loader2, Share2 } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { X, Download, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { User } from '../types/auth-types';
-import brandLogoPng from '../assets/brandlogo.png';
+import brandLogoPng from '../assets/brandlogo.webp';
 import { deriveMembershipCapabilities } from '../utils/membership';
 
 interface MembershipCertificateModalProps {
@@ -19,7 +20,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
   const certificateRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === 'undefined') return null;
 
   const handleDownload = async () => {
     if (!certificateRef.current) return;
@@ -55,34 +56,38 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
   const capabilities = deriveMembershipCapabilities(user);
   const certificateTitle = capabilities.isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member';
 
-  return (
-    <div className="fixed inset-0 z-[2200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
-      <div 
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity cursor-pointer" 
+  return createPortal(
+    <div className="fixed inset-0 z-[10000] isolate flex items-center justify-center p-4" role="dialog" aria-modal="true">
+      <button
+        type="button"
+        aria-label="关闭会员证书弹窗"
+        className="fixed inset-0 z-0 cursor-default bg-slate-950/70 backdrop-blur-md"
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-2xl transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
-        {/* Close Button */}
-        <button 
-          onClick={onClose}
-          className="absolute -top-12 right-0 p-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors z-10"
-        >
-          <X className="w-6 h-6" />
-        </button>
-
-        <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+      <div className="relative z-10 w-full max-w-2xl transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.75)]">
             {/* Toolbar */}
             <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
                 <h3 className="font-bold text-slate-800">您的会员证书</h3>
-                <button
-                    onClick={handleDownload}
-                    disabled={downloading}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-70"
-                >
-                    {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                    保存证书
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={handleDownload}
+                        disabled={downloading}
+                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-70"
+                    >
+                        {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                        保存证书
+                    </button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-700"
+                        aria-label="关闭"
+                    >
+                        <X className="h-5 w-5" />
+                    </button>
+                </div>
             </div>
 
             {/* Certificate Preview Area */}
@@ -153,6 +158,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
             </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

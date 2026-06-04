@@ -20,6 +20,12 @@ interface Feedback {
     companyName?: string;
     companyWebsite?: string;
     recruitmentNeeds?: string;
+    isPublic?: boolean;
+    reviewStatus?: 'pending' | 'approved' | 'rejected';
+    displayName?: string;
+    displayTitle?: string;
+    reviewedAt?: string;
+    reviewedBy?: string;
 }
 
 export default function AdminFeedbackList() {
@@ -76,6 +82,27 @@ export default function AdminFeedbackList() {
             }
         } catch (e) {
             alert('回复失败: 网络错误');
+        }
+    };
+
+    const handleReview = async (feedbackId: string, reviewStatus: 'approved' | 'rejected' | 'pending') => {
+        try {
+            const res = await fetch('/api/admin-ops?action=review_feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ feedbackId, reviewStatus })
+            });
+            const data = await res.json();
+            if (data.success) {
+                fetchFeedbacks();
+            } else {
+                alert('审核操作失败: ' + (data.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('审核操作失败: 网络错误');
         }
     };
 
@@ -190,7 +217,22 @@ export default function AdminFeedbackList() {
                                                 </div>
                                             </td>
                                             <td>
-                                                {feedback.source === 'recruitment_request' ? (
+                                                {feedback.source === 'about_testimonial' ? (
+                                                    <div className="flex flex-col gap-1 items-start">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-800">
+                                                            <MessageSquare className="w-3 h-3 mr-1" /> 关于我们留言
+                                                        </span>
+                                                        <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
+                                                            feedback.reviewStatus === 'approved'
+                                                                ? 'bg-green-50 text-green-700 border-green-200'
+                                                                : feedback.reviewStatus === 'rejected'
+                                                                    ? 'bg-red-50 text-red-700 border-red-200'
+                                                                    : 'bg-amber-50 text-amber-700 border-amber-200'
+                                                        }`}>
+                                                            {feedback.reviewStatus === 'approved' ? '已公开' : feedback.reviewStatus === 'rejected' ? '已拒绝' : '待审核'}
+                                                        </span>
+                                                    </div>
+                                                ) : feedback.source === 'recruitment_request' ? (
                                                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                                         <Briefcase className="w-3 h-3 mr-1" /> 我要招聘
                                                     </span>
@@ -217,6 +259,13 @@ export default function AdminFeedbackList() {
                                             </td>
                                             <td className="min-w-[350px]">
                                                 <div className="text-sm text-slate-900 break-words">{feedback.content}</div>
+                                                {feedback.source === 'about_testimonial' && (
+                                                    <div className="mt-2 text-xs bg-violet-50 p-2 rounded border border-violet-100 text-slate-700">
+                                                        <div className="font-semibold text-violet-700 mb-1">页面展示信息</div>
+                                                        <div>名称：{feedback.displayName || '-'}</div>
+                                                        <div>身份：{feedback.displayTitle || '-'}</div>
+                                                    </div>
+                                                )}
                                                 {feedback.companyName && (
                                                     <div className="mt-2 text-xs bg-indigo-50 p-2 rounded border border-indigo-100">
                                                         <div className="font-semibold text-indigo-700 mb-1 flex items-center gap-1">
@@ -261,6 +310,24 @@ export default function AdminFeedbackList() {
                                             </td>
                                             <td>
                                                 <div className="flex items-center gap-2">
+                                                    {feedback.source === 'about_testimonial' && feedback.reviewStatus !== 'approved' && (
+                                                        <button
+                                                            onClick={() => handleReview(feedback.id, 'approved')}
+                                                            className="p-1.5 text-green-600 hover:bg-green-50 rounded transition-colors"
+                                                            title="审核通过并公开展示"
+                                                        >
+                                                            <CheckCircle className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    {feedback.source === 'about_testimonial' && feedback.reviewStatus !== 'rejected' && (
+                                                        <button
+                                                            onClick={() => handleReview(feedback.id, 'rejected')}
+                                                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                                                            title="拒绝公开展示"
+                                                        >
+                                                            <XCircle className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                     {!feedback.replyContent && (
                                                         <button
                                                             onClick={() => handleReply(feedback.id)}

@@ -48,11 +48,12 @@ export default function MultiSelectDropdown({
   };
 
   return (
-    <div className="relative group" ref={containerRef}>
+    <div className="relative z-50 group" ref={containerRef}>
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg hover:bg-slate-50 transition-colors ${
-          selected.length > 0 ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-slate-300 text-slate-700'
+        className={`flex h-12 items-center gap-2 rounded-[18px] border px-5 text-sm font-bold shadow-[0_14px_32px_-30px_rgba(61,89,120,0.5)] transition-colors hover:bg-white ${
+          selected.length > 0 ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-[#dce8ef] bg-white/90 text-slate-700'
         }`}
       >
         <span className="truncate max-w-[100px]">
@@ -75,14 +76,14 @@ export default function MultiSelectDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto p-1">
+        <div className="absolute right-0 top-full z-[90] mt-2 w-72 max-h-80 overflow-y-auto rounded-[20px] border border-[#dce8ef] bg-white p-2 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.28)]">
           {options.map((option) => {
             const isSelected = selected.includes(option.value);
             return (
               <div
                 key={option.value}
                 onClick={() => toggleOption(option.value)}
-                className={`flex items-center px-3 py-2 rounded-md cursor-pointer text-sm ${
+                className={`flex items-center rounded-2xl px-3 py-2.5 cursor-pointer text-sm ${
                   isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >

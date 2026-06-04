@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { Eye, EyeOff, Lock, CheckCircle, AlertCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import logoPng from '../assets/logo.png'
+import logoPng from '../assets/logo.webp'
 
 export default function ResetPasswordPage() {
   const [searchParams] = useSearchParams()

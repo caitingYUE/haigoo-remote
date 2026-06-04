@@ -2,17 +2,22 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo, type CSSProperties } from 'react'
 import {
     Sparkles, Target, Briefcase, Loader2, X, UploadCloud,
-    ChevronLeft, ChevronRight, MapPin, DollarSign, Building2
+    ChevronLeft, ChevronRight, MapPin, DollarSign, Building2, Search, ArrowRight,
+    Crown, CheckCircle2, Heart, Star, Users, ShieldCheck, MessageCircle
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import JobTickerItem from './JobTickerItem'
 import GeneratedPlanView from './GeneratedPlanView'
 import JobDetailModal from './JobDetailModal'
+import { Job } from '../types'
+import { processedJobsService } from '../services/processed-jobs-service'
+import { TrustedCompany, trustedCompaniesService } from '../services/trusted-companies-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { stripMarkdown } from '../utils/text-formatter'
 import { formatSalaryForDisplay } from '../utils/salary-display'
 import { getCompanyLogoSources } from '../utils/company-logo'
+import HaigooClubInfoCard from './HaigooClubInfoCard'
 import {
     readPendingGuestResume,
     savePendingGuestResume,
@@ -28,6 +33,43 @@ const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
 const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
 const LOGIN_EVENT_KEY = 'haigoo_login_event_at'
+const HOME_HERO_BG_SRC = '/pic_lists/Home_pics/background05.webp'
+const HOME_HERO_LOVE_SRC = '/pic_lists/Home_pics/love-transparent.webp'
+const HOME_UPGRADE_AVATAR_SRC = '/pic_lists/Home_pics/Haigoo_hi-transparent.webp'
+const HOME_UPGRADE_BANNER_DISMISS_KEY = 'haigoo_home_upgrade_banner_dismissed_v1'
+const HOME_UPGRADE_DEPLOY_AT = Date.parse(import.meta.env.VITE_HAIGOO_UPGRADE_DEPLOY_AT || '2026-06-05T00:00:00+08:00')
+const HOME_UPGRADE_MAINTENANCE_END_AT = HOME_UPGRADE_DEPLOY_AT + 30 * 60 * 1000
+const HOME_UPGRADE_LAUNCH_START_AT = Date.UTC(2026, 5, 4, 16, 0, 0)
+const HOME_UPGRADE_END_AT = Date.UTC(2026, 5, 11, 16, 0, 0)
+
+type HomeUpgradeBannerPhase = 'maintenance' | 'launch'
+
+function resolveHomeUpgradeBannerPhase(nowMs = Date.now()): HomeUpgradeBannerPhase | null {
+    if (nowMs < HOME_UPGRADE_MAINTENANCE_END_AT) return 'maintenance'
+    if (nowMs >= HOME_UPGRADE_LAUNCH_START_AT && nowMs < HOME_UPGRADE_END_AT) return 'launch'
+    return null
+}
+
+function formatChinaMonthDayTime(timestamp: number) {
+    const formatter = new Intl.DateTimeFormat('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        month: 'numeric',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+    })
+    const parts = formatter.formatToParts(new Date(timestamp))
+    const get = (type: string) => parts.find(part => part.type === type)?.value || ''
+    return `${get('month')}月${get('day')}日${get('hour')}:${get('minute')}`
+}
+
+const HomeVipBadge = ({ className = '' }: { className?: string }) => (
+    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-white bg-[#6f63ff] px-1.5 py-0.5 text-[10px] font-black text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)] ${className}`}>
+        <Crown className="h-3 w-3 fill-current" />
+        <span className="text-[8px] font-black leading-none tracking-wide">VIP</span>
+    </span>
+)
 
 // Sample data from public remote job listings for local preview.
 const SAMPLE_RECOMMENDATIONS = [
@@ -116,6 +158,62 @@ interface HomeHeroProps {
         companiesCount: number | null
         dailyJobs: number | null
     }
+    featuredJobs?: Job[]
+    trustedCompanies?: TrustedCompany[]
+    companyJobStats?: Record<string, { total: number; categories: Record<string, number> }>
+    companiesLoading?: boolean
+}
+
+const HOME_FEATURED_TABS = [
+    { id: 'all', label: '综合推荐' },
+    { id: '人力资源,招聘,财务,会计,法务,行政,管理,客户服务,HR,Recruiter,Talent Acquisition,Finance,Legal,Admin', label: '人事行政' },
+    { id: '产品经理,产品设计,营销设计,网站和营销设计,视觉设计,平面设计,创意设计,UI/UX设计,用户研究,增长黑客,Product Manager,Product Designer,Marketing Designer,Visual Designer,Graphic Designer,Creative Designer,UI,UX,Growth', label: '产品设计' },
+    { id: '前端开发,后端开发,全栈开发,软件开发,移动开发,算法工程师,测试/QA,数据开发,数据库工程师,平台工程师,服务器开发,运维/SRE,网络安全,架构师,技术支持,工程,开发,Engineer,Developer,Frontend,Backend,Full Stack,Software,QA,DevOps,Data Engineer', label: '技术研发' },
+    { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '运营营销' },
+    { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '销售商务' },
+]
+
+const HAIGOO_VERIFICATION_STANDARDS = [
+    '官网、LinkedIn等主页信息正常，近期有持续更新',
+    '主营业务/产品运营状态正常，且非灰黑产',
+    '企业远程文化悠久或远程友好，支持员工成长',
+    '有中国业务/分公司或对中国员工友好',
+    '岗位来自官方招聘平台发布/内推合作，有可联系的对接人或联系方式',
+]
+
+function getJobCompanyKey(job: any) {
+    return String(job?.company || job?.company_name || job?.companyName || 'unknown').trim().toLowerCase()
+}
+
+function getJobTimestamp(job: any) {
+    const rawDate = job?.publishedAt || job?.published_at || job?.createdAt || job?.created_at || ''
+    const time = rawDate ? new Date(rawDate).getTime() : 0
+    return Number.isFinite(time) ? time : 0
+}
+
+function spreadJobsByCompany<T extends Record<string, any>>(jobs: T[], limit = 6, maxPerCompany = 2) {
+    const seen = new Set<string>()
+    const companyCounts = new Map<string, number>()
+    const sortedJobs = [...jobs]
+        .filter((job) => {
+            const id = String(job?.id || job?.jobId || job?.job_id || '')
+            if (!id || seen.has(id)) return false
+            seen.add(id)
+            return true
+        })
+        .sort((a, b) => getJobTimestamp(b) - getJobTimestamp(a))
+
+    const selected: T[] = []
+    for (const job of sortedJobs) {
+        const companyKey = getJobCompanyKey(job)
+        const currentCount = companyCounts.get(companyKey) || 0
+        if (currentCount >= maxPerCompany) continue
+        companyCounts.set(companyKey, currentCount + 1)
+        selected.push(job)
+        if (selected.length >= limit) break
+    }
+
+    return selected
 }
 
 function resolveLogoCandidates(logo?: string, company?: string, website?: string, companyId?: string, cachedLogoUrl?: string) {
@@ -167,6 +265,17 @@ function spreadByCompany<T extends { company_name?: string; company?: string }>(
 
 function getHeroDisplaySalary(rawSalary: any) {
     return formatSalaryForDisplay(rawSalary, '薪资Open')
+}
+
+function formatHiringLine(total?: number, categories?: Record<string, number>) {
+    const safeTotal = Number(total || 0)
+    const categoryText = Object.entries(categories || {})
+        .sort(([, a], [, b]) => Number(b) - Number(a))
+        .slice(0, 3)
+        .map(([name]) => name)
+        .filter(Boolean)
+        .join('/')
+    return categoryText ? `${safeTotal} 个在招 ${categoryText}` : `${safeTotal} 个在招岗位`
 }
 
 function cleanHeroRichText(text?: string) {
@@ -310,17 +419,17 @@ function InputCard({
     icon: any
 }) {
     return (
-        <div className="relative group bg-white border-2 border-slate-100 rounded-2xl transition-all focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-500/10 hover:border-slate-200 h-[72px]">
-            <div className="absolute left-4 top-3 text-[10px] font-bold text-slate-400 uppercase tracking-wide pointer-events-none select-none">
+        <div className="relative group h-[58px] rounded-[18px] border border-white/80 bg-white/92 shadow-[0_12px_30px_-26px_rgba(62,91,120,0.45)] transition-all focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-500/10 hover:border-slate-200">
+            <div className="absolute left-3.5 top-2 text-[9px] font-bold text-slate-400 uppercase tracking-wide pointer-events-none select-none">
                 {label} <span className="text-rose-500">*</span>
             </div>
-            <Icon className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-300 group-focus-within:text-indigo-500 transition-colors pointer-events-none" />
+            <Icon className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300 transition-colors pointer-events-none group-focus-within:text-indigo-500" />
             
             {options ? (
                 <select
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
-                    className="w-full h-full pl-4 pr-12 pt-6 pb-2 bg-transparent border-none outline-none text-sm font-bold text-slate-800 appearance-none cursor-pointer"
+                    className="h-full w-full cursor-pointer appearance-none border-none bg-transparent pb-1.5 pl-3.5 pr-10 pt-5 text-sm font-bold text-slate-800 outline-none"
                 >
                     {options.map(opt => (
                         <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -332,7 +441,7 @@ function InputCard({
                     value={value}
                     onChange={(e) => onChange(e.target.value)}
                     placeholder={placeholder}
-                    className="w-full h-full pl-4 pr-12 pt-6 pb-2 bg-transparent border-none outline-none text-sm font-bold text-slate-800 placeholder:font-normal placeholder:text-slate-300"
+                    className="h-full w-full border-none bg-transparent pb-1.5 pl-3.5 pr-10 pt-5 text-sm font-bold text-slate-800 outline-none placeholder:font-normal placeholder:text-slate-300"
                 />
             )}
         </div>
@@ -465,18 +574,147 @@ function writeStoredPlanStatus(status: 'idle' | 'pending' | 'ready') {
     }
 }
 
-export default function HomeHero({ stats: _stats }: HomeHeroProps) {
+export default function HomeHero({
+    stats: _stats,
+    featuredJobs = [],
+    trustedCompanies = [],
+    companyJobStats = {},
+    companiesLoading = false
+}: HomeHeroProps) {
     const navigate = useNavigate()
     const { user, isAuthenticated, token, isMember, updateProfile, isLoading: authLoading } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
     const userId = user?.user_id || null
     const storedTargetRole = String(user?.profile?.targetRole || '').trim()
+    const [upgradeBannerPhase, setUpgradeBannerPhase] = useState<HomeUpgradeBannerPhase | null>(() => {
+        const phase = resolveHomeUpgradeBannerPhase()
+        if (!phase) return null
+        try {
+            return localStorage.getItem(HOME_UPGRADE_BANNER_DISMISS_KEY) === phase ? null : phase
+        } catch {
+            return phase
+        }
+    })
+    const [isUpgradeBannerExpanded, setIsUpgradeBannerExpanded] = useState(false)
+    const [isUpgradeBannerCollapsible, setIsUpgradeBannerCollapsible] = useState(false)
+    const [showUpgradeFeedbackModal, setShowUpgradeFeedbackModal] = useState(false)
+    const [upgradeFeedbackContent, setUpgradeFeedbackContent] = useState('')
+    const [upgradeFeedbackSubmitting, setUpgradeFeedbackSubmitting] = useState(false)
+    const upgradeBannerTextRef = useRef<HTMLDivElement>(null)
+
+    useEffect(() => {
+        const refreshBannerPhase = () => {
+            const nextPhase = resolveHomeUpgradeBannerPhase()
+            if (!nextPhase) {
+                setUpgradeBannerPhase(null)
+                return
+            }
+            try {
+                setUpgradeBannerPhase(localStorage.getItem(HOME_UPGRADE_BANNER_DISMISS_KEY) === nextPhase ? null : nextPhase)
+            } catch {
+                setUpgradeBannerPhase(nextPhase)
+            }
+        }
+
+        refreshBannerPhase()
+        const timer = window.setInterval(refreshBannerPhase, 60 * 1000)
+        return () => window.clearInterval(timer)
+    }, [])
+
+    useEffect(() => {
+        setIsUpgradeBannerExpanded(false)
+    }, [upgradeBannerPhase])
+
+    useEffect(() => {
+        const updateCollapsibleState = () => {
+            const node = upgradeBannerTextRef.current
+            if (!node) {
+                setIsUpgradeBannerCollapsible(false)
+                return
+            }
+            setIsUpgradeBannerCollapsible(node.scrollWidth > node.clientWidth + 4)
+        }
+
+        updateCollapsibleState()
+        window.addEventListener('resize', updateCollapsibleState)
+        return () => window.removeEventListener('resize', updateCollapsibleState)
+    }, [upgradeBannerPhase])
+
+    const dismissUpgradeBanner = () => {
+        if (!upgradeBannerPhase) return
+        try {
+            localStorage.setItem(HOME_UPGRADE_BANNER_DISMISS_KEY, upgradeBannerPhase)
+        } catch {
+            // ignore
+        }
+        setUpgradeBannerPhase(null)
+    }
+
+    const handleUpgradeBannerFeedback = () => {
+        trackingService.track('feedback_entry_click', {
+            page_key: 'home',
+            module: 'home_upgrade_banner',
+            feature_key: 'platform_feedback',
+            source_key: 'home_upgrade_banner'
+        })
+        if (!isAuthenticated) {
+            showWarning('请先登录后反馈', '登录后可以把问题直接提交到后台。')
+            return
+        }
+        setShowUpgradeFeedbackModal(true)
+    }
+    const submitUpgradeFeedback = async () => {
+        const content = upgradeFeedbackContent.trim()
+        if (!content) {
+            showError('请填写反馈内容')
+            return
+        }
+        try {
+            setUpgradeFeedbackSubmitting(true)
+            trackingService.track('feedback_submit', {
+                page_key: 'home',
+                module: 'home_upgrade_banner',
+                feature_key: 'platform_feedback',
+                source_key: 'home_upgrade_banner_modal'
+            })
+            const res = await fetch('/api/user-profile?action=submit_feedback', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token || localStorage.getItem('haigoo_auth_token') || ''}`
+                },
+                body: JSON.stringify({
+                    accuracy: 'unknown',
+                    content,
+                    contact: user?.email || '',
+                    source: 'home_upgrade_banner',
+                    sourceUrl: '/'
+                })
+            })
+            const data = await res.json().catch(() => ({ success: false }))
+            if (!res.ok || !data?.success) {
+                showError('反馈提交失败', data?.error || '请稍后重试')
+                return
+            }
+            showSuccess('反馈已提交', '我们会尽快查看。')
+            setUpgradeFeedbackContent('')
+            setShowUpgradeFeedbackModal(false)
+        } catch {
+            showError('反馈提交失败', '网络错误')
+        } finally {
+            setUpgradeFeedbackSubmitting(false)
+        }
+    }
+    const upgradeBannerMessage = upgradeBannerPhase === 'maintenance'
+        ? `Haigoo 网站正在全新升级中，请尽量避免在${formatChinaMonthDayTime(HOME_UPGRADE_DEPLOY_AT)}-${formatChinaMonthDayTime(HOME_UPGRADE_MAINTENANCE_END_AT).replace(/^\d+月\d+日/, '')}之间申请或购买会员。`
+        : 'Haigoo 治愈系插画风 UI 全新上线，体验更友好。远程不孤单，我们一直都在^_^'
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
 
     // Form State
     const [jobDirection, setJobDirection] = useState('')
+    const [heroSearchTerm, setHeroSearchTerm] = useState('')
     const [positionType, setPositionType] = useState('full-time')
     const [resumeId, setResumeId] = useState<string | null>(null)
     const [resumeName, setResumeName] = useState<string | null>(null)
@@ -504,6 +742,11 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
     const [recommendationHistory, setRecommendationHistory] = useState<HeroRecommendationHistoryEntry[]>([])
     const [previewJobs, setPreviewJobs] = useState<any[]>([])
+    const [activeFeaturedTab, setActiveFeaturedTab] = useState(HOME_FEATURED_TABS[0].id)
+    const [featuredTabJobs, setFeaturedTabJobs] = useState<Job[]>([])
+    const [featuredTabLoading, setFeaturedTabLoading] = useState(false)
+    const [companyCoverImages, setCompanyCoverImages] = useState<Record<string, string>>({})
+    const companyCoverRequestedRef = useRef(new Set<string>())
     const autoRefreshAttemptKeyRef = useRef('')
     const pendingResumeSyncAttempted = useRef(false)
     const accountHeroHydratedForUser = useRef<string | null>(null)
@@ -531,6 +774,129 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             : positionType === 'freelance'
                 ? '自由职业'
                 : '实习'
+    const memberExpireLabel = isMember
+        ? (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString('zh-CN') : '长期有效')
+        : ''
+
+    useEffect(() => {
+        const links = [HOME_HERO_BG_SRC, HOME_HERO_LOVE_SRC].map((href) => {
+            const link = document.createElement('link')
+            link.rel = 'preload'
+            link.as = 'image'
+            link.href = href
+            link.setAttribute('fetchpriority', 'high')
+            document.head.appendChild(link)
+            return link
+        })
+
+        ;[HOME_HERO_BG_SRC, HOME_HERO_LOVE_SRC].forEach((src) => {
+            const img = new Image()
+            img.decoding = 'sync'
+            img.fetchPriority = 'high'
+            img.src = src
+        })
+
+        return () => {
+            links.forEach((link) => link.remove())
+        }
+    }, [])
+
+    useEffect(() => {
+        if (activeFeaturedTab === HOME_FEATURED_TABS[0].id) {
+            setFeaturedTabJobs(featuredJobs.slice(0, 6))
+            setFeaturedTabLoading(false)
+            return
+        }
+
+        let cancelled = false
+        setFeaturedTabLoading(true)
+        processedJobsService.getProcessedJobs(1, 24, {
+            isFeatured: true,
+            isApproved: true,
+            category: activeFeaturedTab,
+            sortBy: 'recent',
+            skipAggregations: true
+        }).then((res) => {
+            if (!cancelled) setFeaturedTabJobs(spreadJobsByCompany(res.jobs || [], 6, 2))
+        }).catch((error) => {
+            console.error('Failed to fetch home featured tab:', activeFeaturedTab, error)
+            if (!cancelled) setFeaturedTabJobs([])
+        }).finally(() => {
+            if (!cancelled) setFeaturedTabLoading(false)
+        })
+
+        return () => { cancelled = true }
+    }, [activeFeaturedTab, featuredJobs])
+
+    const curatedJobs = useMemo(() => {
+        const source = activeFeaturedTab === HOME_FEATURED_TABS[0].id
+            ? (featuredTabJobs.length > 0 ? featuredTabJobs : featuredJobs)
+            : featuredTabJobs
+        return spreadJobsByCompany(source, 6, 2)
+    }, [activeFeaturedTab, featuredJobs, featuredTabJobs])
+
+    const displayCompanies = useMemo(() => trustedCompanies.slice(0, 6), [trustedCompanies])
+
+    useEffect(() => {
+        let cancelled = false
+        const missingCoverCompanies = displayCompanies.filter((company) => company.id && !company.coverImage && !companyCoverRequestedRef.current.has(company.id))
+        if (missingCoverCompanies.length === 0) return
+
+        missingCoverCompanies.forEach((company) => {
+            companyCoverRequestedRef.current.add(company.id)
+            trustedCompaniesService.getCompanyCoverImage(company.id)
+                .then((result) => {
+                    if (cancelled) return
+                    setCompanyCoverImages((prev) => ({
+                        ...prev,
+                        [company.id]: result?.coverImage || ''
+                    }))
+                })
+                .catch(() => {
+                    if (cancelled) return
+                    setCompanyCoverImages((prev) => ({
+                        ...prev,
+                        [company.id]: ''
+                    }))
+                })
+        })
+
+        return () => { cancelled = true }
+    }, [displayCompanies])
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return
+        const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname)
+        if (!isLocalPreview || displayCompanies.length === 0) return
+
+        let cancelled = false
+        const loadOnlineCovers = async () => {
+            try {
+                const resp = await fetch('https://haigooremote.com/api/data?resource=companies&action=featured_home')
+                if (!resp.ok) return
+                const data = await resp.json()
+                const onlineCompanies = Array.isArray(data?.companies) ? data.companies : []
+                const byName = new Map(onlineCompanies.map((company: any) => [String(company?.name || '').trim().toLowerCase(), company]))
+                await Promise.all(displayCompanies.map(async (company) => {
+                    if (cancelled || company.coverImage || companyCoverImages[company.id]) return
+                    const onlineCompany: any = byName.get(String(company.name || '').trim().toLowerCase())
+                    if (!onlineCompany?.id) return
+                    const coverResp = await fetch(`https://haigooremote.com/api/data?resource=companies&action=cover_image&company_id=${encodeURIComponent(onlineCompany.id)}`)
+                    if (!coverResp.ok) return
+                    const coverData = await coverResp.json()
+                    const coverImage = coverData?.coverImage || ''
+                    if (!cancelled && coverImage) {
+                        setCompanyCoverImages((prev) => ({ ...prev, [company.id]: coverImage }))
+                    }
+                }))
+            } catch {
+                // 本地预览兜底失败时继续使用本地素材，不影响线上逻辑。
+            }
+        }
+        void loadOnlineCovers()
+        return () => { cancelled = true }
+    }, [displayCompanies, companyCoverImages])
+
     const formattedUpdatedAt = new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
         month: '2-digit',
@@ -575,6 +941,10 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             source: job?.source || 'hero',
             publishedAt: job?.publishedAt || job?.published_at || '',
             createdAt: job?.createdAt || job?.created_at || '',
+            category: job?.category || '',
+            companyRating: job?.companyRating || job?.company_rating || job?.trustedCompanyRating || job?.trusted_company_rating || '',
+            ratingSource: job?.ratingSource || job?.rating_source || job?.trustedRatingSource || job?.trusted_rating_source || '',
+            memberOnly: Boolean(job?.memberOnly ?? job?.member_only),
             logo_candidates: job?.logo_candidates || resolveLogoCandidates(
                 job?.logo || job?.company_logo,
                 company,
@@ -585,8 +955,17 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         }
     }
     const heroDetailJobs = useMemo(
-        () => displayRecommendations.map((job) => normalizeHeroJob(job)),
-        [displayRecommendations]
+        () => {
+            const seen = new Set<string>()
+            return [...displayRecommendations, ...curatedJobs]
+                .map((job) => normalizeHeroJob(job))
+                .filter((job) => {
+                    if (!job.id || seen.has(job.id)) return false
+                    seen.add(job.id)
+                    return true
+                })
+        },
+        [curatedJobs, displayRecommendations]
     )
     const currentHeroJobIndex = useMemo(() => {
         if (!selectedJobDetail?.id) return -1
@@ -1113,14 +1492,16 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
     }) => {
         const nextJobDirection = String(options?.direction ?? jobDirection).trim()
         const nextPositionType = String(options?.position ?? positionType).trim() || 'full-time'
-        const nextContextKey = buildHeroRecommendationContextKey(nextJobDirection, nextPositionType)
+        const hasResumeSignal = Boolean(resumeId || guestResumeFile || resumeName)
+        const requestJobDirection = nextJobDirection || (hasResumeSignal ? '远程工作' : '')
+        const nextContextKey = buildHeroRecommendationContextKey(requestJobDirection, nextPositionType)
         const recentRecommendationIds = getRecentRecommendationIds(recommendationHistory, nextContextKey)
 
-        if (!nextJobDirection) {
-            showWarning('信息不足', '请填写职业方向')
+        if (!requestJobDirection) {
+            showWarning('信息不足', '填写职业方向或上传简历，二选一即可。')
             return
         }
-        if (isInvalidJobDirectionInput(nextJobDirection)) {
+        if (nextJobDirection && isInvalidJobDirectionInput(nextJobDirection)) {
             showWarning('职业方向不完整', '请填写更具体的职业方向，例如“产品经理”“前端开发”或“HR”。')
             return
         }
@@ -1131,7 +1512,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
             page_key: 'home',
             module: 'copilot_hero',
             source_key: 'home_hero',
-            job_direction: nextJobDirection,
+            job_direction: requestJobDirection,
             position_type: nextPositionType,
             has_resume: Boolean(resumeId || guestResumeFile),
             is_authenticated: isAuthenticated,
@@ -1153,7 +1534,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 },
                 body: JSON.stringify({
                     action: 'hero-recommend',
-                    jobDirection: nextJobDirection,
+                    jobDirection: requestJobDirection,
                     positionType: nextPositionType,
                     resumeId,
                     resumeHints: authToken ? undefined : parsedResumeHints,
@@ -1185,7 +1566,7 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 page_key: 'home',
                 module: 'copilot_hero',
                 source_key: 'home_hero',
-                job_direction: nextJobDirection,
+                job_direction: requestJobDirection,
                 position_type: nextPositionType,
                 has_resume: Boolean(resumeId || guestResumeFile),
                 result_count: capped.length,
@@ -1293,372 +1674,643 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
         }
     }
 
+    const heroCategoryItems = [
+        {
+            label: '产品',
+            icon: '/pic_lists/Home_pics/PM-icon-transparent.webp',
+            categories: ['产品经理', '项目管理', '增长黑客', '产品设计', '营销设计', '视觉设计', '平面设计', '创意设计', 'UI/UX设计', '用户研究']
+        },
+        {
+            label: '开发',
+            icon: '/pic_lists/Home_pics/dev-icon-transparent.webp',
+            categories: ['前端开发', '后端开发', '全栈开发', '软件开发', '算法工程师', '测试/QA', '数据开发', '数据库工程师', '平台工程师', '移动开发', '运维/SRE', '架构师', '技术支持', '网络安全', '操作系统/内核', '服务器开发', '硬件开发', 'CTO/技术管理']
+        },
+        {
+            label: '职能',
+            icon: '/pic_lists/Home_pics/hr-icon-transparent.webp',
+            categories: ['人力资源', '招聘', '行政', '会计', '财务', '法务', '管理']
+        },
+        {
+            label: '市场',
+            icon: '/pic_lists/Home_pics/mkt-icon-transparent.webp',
+            categories: ['市场营销', '品牌营销', '销售', '客户经理', '商务拓展', '增长黑客']
+        },
+        {
+            label: '运营',
+            icon: '/pic_lists/Home_pics/operation-icon-transparent.webp',
+            categories: ['运营', '产品运营', '活动运营', '客户服务', '内容创作', '商务拓展']
+        },
+        {
+            label: '更多',
+            icon: '/pic_lists/Home_pics/more-icon-transparent.webp',
+            categories: ['数据分析', '商业分析', '数据科学', '教育培训', '咨询', '投资', '游戏', '其他']
+        },
+    ]
+    const heroPreviewJobs = (displayRecommendations.length > 0 ? displayRecommendations : PREVIEW_PM_RECOMMENDATIONS).slice(0, 3)
+    const heroCompanyCards = [
+        { name: 'Loom', desc: '视频协作工具', image: '/pic_lists/Jobs_pics/card_bg1.webp' },
+        { name: 'Automattic', desc: '开源与出版平台', image: '/pic_lists/Jobs_pics/card_bg2.webp' },
+        { name: 'Zapier', desc: '自动化工具', image: '/pic_lists/Home_pics/background03.webp' },
+    ]
+    const runHeroSearch = (value?: string) => {
+        const keyword = String(value || heroSearchTerm || '').trim()
+        const params = new URLSearchParams()
+        params.set('memberOnly', 'false')
+        if (keyword) params.set('search', keyword)
+        navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`)
+    }
+
+    const openHeroCategory = (categories: string[]) => {
+        const params = new URLSearchParams()
+        params.set('category', categories.join(','))
+        params.set('memberOnly', 'false')
+        params.set('source', 'home-hero')
+        navigate(`/jobs?${params.toString()}`)
+    }
+
+    const heroHighlightItems = [
+        { title: '远程友好', desc: '团队分布全球', icon: '/pic_lists/Home_pics/strength-remote.webp' },
+        { title: '全球福利', desc: '享受全球薪酬', icon: '/pic_lists/Home_pics/strength-global pay.webp' },
+        { title: '成长机会', desc: '持续发展空间', icon: '/pic_lists/Home_pics/strength-improvement.webp' },
+        { title: '热爱驱动', desc: '做你喜欢的事', icon: '/pic_lists/Home_pics/strength-passion.webp' },
+    ]
+    const companyFallbackImages = ['/pic_lists/Jobs_pics/card_bg1.webp', '/pic_lists/Jobs_pics/card_bg2.webp', '/pic_lists/Home_pics/background03.webp']
+    const heroCaseJobs = (displayRecommendations.length > 0
+        ? displayRecommendations
+        : curatedJobs.length > 0
+            ? curatedJobs
+            : PREVIEW_PM_RECOMMENDATIONS
+    ).slice(0, 3)
+    const canRequestRecommendations = Boolean(String(jobDirection).trim() || resumeId || resumeName || guestResumeFile)
     return (
-        <div className="relative flex min-h-[auto] flex-col items-center justify-center overflow-hidden bg-slate-50 pt-24 pb-12 sm:pt-28 sm:pb-14 md:min-h-screen md:pt-32 md:pb-20">
-            {/* ── Background ── */}
-            <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden bg-slate-50">
-                <div className="absolute inset-0 w-full h-full overflow-hidden">
-                    <img
-                        src="/background.webp?v=2"
-                        alt="Background"
-                        className="absolute inset-0 w-full h-full object-cover opacity-90"
-                        style={{ transform: `translate(${bgPosition.x - 50}px, ${bgPosition.y - 50}px)` }}
-                    />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-slate-50" />
-                <div className="absolute inset-0 bg-gradient-to-r from-white/20 via-transparent to-white/20" />
-                <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-slate-50 via-slate-50/50 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent" />
+        <div className="relative overflow-hidden bg-[#fbfaf6] pt-20 text-slate-950 md:pt-24">
+            <div className="pointer-events-none absolute inset-0">
+                <img
+                    src={HOME_HERO_BG_SRC}
+                    alt=""
+                    loading="eager"
+                    decoding="sync"
+                    className="absolute inset-x-0 top-[-18px] h-[800px] w-full origin-center scale-[1.08] object-cover object-[58%_center] opacity-95 saturate-[1.05] contrast-[1.04]"
+                />
+                <div className="absolute inset-x-0 top-0 h-[760px] bg-[linear-gradient(90deg,rgba(255,253,249,0.9)_0%,rgba(255,253,249,0.66)_31%,rgba(255,253,249,0.1)_64%,rgba(255,253,249,0.03)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.18),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.18)_70%,#fbfaf6_100%)]" />
+                <div className="absolute inset-x-0 top-[610px] h-[260px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,#fbfaf6_72%)]" />
+                <div className="absolute inset-x-0 top-[760px] h-20 bg-[radial-gradient(58%_70%_at_18%_90%,rgba(116,159,128,0.16),transparent_68%),radial-gradient(62%_80%_at_72%_94%,rgba(116,159,128,0.13),transparent_72%)]" />
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center">
-                
-                {/* ── Hero Text ── */}
-                <div className="text-center mb-3 sm:mb-4 w-full max-w-[1500px] mx-auto">
-                    <h1 className="text-[2.6rem] sm:text-5xl md:text-[68px] xl:text-[76px] font-extrabold text-slate-900 mb-5 sm:mb-6 leading-[1.05] tracking-tight drop-shadow-sm lg:whitespace-nowrap">
-                        Haigoo 帮你获得
-                        <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 to-blue-500">
-                            理想的远程工作
+            {upgradeBannerPhase && (
+                <div className="relative z-20 mx-auto max-w-[1560px] px-5 pt-2 lg:px-10">
+                    <div className={`relative flex w-fit max-w-full items-center gap-2 rounded-[20px] border border-[#e9ddc1] bg-[#fffdf8]/94 px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_16px_34px_-30px_rgba(116,90,44,0.46)] ring-1 ring-white/70 sm:max-w-[1080px] sm:rounded-full sm:px-3.5 ${
+                        isUpgradeBannerExpanded ? 'min-h-10' : 'h-10 overflow-hidden'
+                    }`}>
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white shadow-[0_10px_20px_-16px_rgba(116,90,44,0.55)]">
+                            <img
+                                src={HOME_UPGRADE_AVATAR_SRC}
+                                alt=""
+                                className="h-7 w-7 object-contain"
+                                loading="eager"
+                                decoding="async"
+                            />
+                        </div>
+                        <div
+                            ref={upgradeBannerTextRef}
+                            className={`min-w-0 flex-1 ${isUpgradeBannerExpanded ? 'leading-5' : 'truncate'}`}
+                        >
+                            <span className={isUpgradeBannerExpanded ? '' : 'truncate align-baseline'}>
+                                {upgradeBannerMessage}
+                            </span>
+                        </div>
+                        {isUpgradeBannerCollapsible && (
+                            <button
+                                type="button"
+                                onClick={() => setIsUpgradeBannerExpanded(prev => !prev)}
+                                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/88 text-[15px] font-black leading-none text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
+                                aria-label={isUpgradeBannerExpanded ? '收起提示' : '展开提示'}
+                                title={isUpgradeBannerExpanded ? '收起' : '展开'}
+                            >
+                                {isUpgradeBannerExpanded ? '⌃' : '⌄'}
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleUpgradeBannerFeedback}
+                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8] bg-white text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8] sm:w-auto sm:px-2.5 sm:py-1"
+                            aria-label="反馈"
+                        >
+                            <MessageCircle className="h-3.5 w-3.5" />
+                            <span className="hidden sm:inline">反馈</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={dismissUpgradeBanner}
+                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/86 text-slate-400 transition-colors hover:text-slate-700"
+                            aria-label="关闭提示"
+                        >
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 py-8 lg:min-h-[650px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
+                <div className="relative z-10 max-w-[620px]">
+                    <h1
+                        className="haigoo-hero-title relative text-[42px] font-semibold leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
+                        aria-label="用你喜欢的方式 工作和生活"
+                    >
+                        <span className="relative" aria-hidden="true">
+                            <span className="whitespace-nowrap">用你喜欢的方式</span>
+                            <br />
+                            <span className="inline-flex items-center">
+                                工作和生活
+                                <span className="-ml-0.5 relative inline-flex h-[0.82em] w-[0.88em] translate-y-[0.06em] overflow-hidden">
+                                    <img
+                                        src={HOME_HERO_LOVE_SRC}
+                                        alt=""
+                                        loading="eager"
+                                        decoding="sync"
+                                        className="absolute left-1/2 top-1/2 h-[1.42em] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain opacity-90"
+                                    />
+                                </span>
+                            </span>
                         </span>
                     </h1>
-                    <div className="mt-2 sm:mt-3 flex flex-wrap items-center justify-center gap-2.5 sm:gap-4">
-                        {['✓ 更适合国内用户申请', '✓ 所有岗位均经过人工筛选', '✓ 部分岗位可直连招聘方', '✓ 上传简历可获取每日推荐'].map((chip) => (
-                            <span key={chip} className="px-3.5 sm:px-4 py-1.5 text-[11px] sm:text-xs font-medium text-slate-700 bg-white/82 backdrop-blur-md border border-white/55 rounded-full shadow-sm">
-                                {chip}
-                            </span>
+                    <p className="mt-4 max-w-xl text-[16px] leading-7 text-[#6b7b90] sm:mt-5 sm:text-[18px] sm:leading-8">
+                        可以全球旅居，也可以居家办公。Haigoo 帮你获得全球优质远程工作，让生活和事业不再受限。
+                    </p>
+
+                    <div className="mt-5 flex max-w-xl items-center rounded-full border border-[#dce8f1] bg-white/88 p-1.5 shadow-[0_22px_54px_-38px_rgba(62,91,120,0.36)] sm:mt-7 sm:p-2">
+                        <input
+                            value={heroSearchTerm}
+                            onChange={(event) => setHeroSearchTerm(event.target.value)}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter') runHeroSearch()
+                            }}
+                            placeholder="想找什么样的远程工作呢？"
+                            className="min-w-0 flex-1 bg-transparent px-4 text-sm font-semibold text-slate-700 outline-none placeholder:text-slate-300 sm:px-5 sm:text-base"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => runHeroSearch()}
+                            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#e7edf3] bg-white text-[#5c708d] shadow-sm transition-all hover:-translate-y-0.5 hover:text-[#2f6ed8]"
+                            aria-label="搜索岗位"
+                        >
+                            <Search className="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <div className="mt-5 grid max-w-xl grid-cols-3 gap-2.5 sm:mt-6 sm:grid-cols-6 sm:gap-3">
+                        {heroCategoryItems.map((item) => (
+                            <button
+                                key={item.label}
+                                type="button"
+                                onClick={() => openHeroCategory(item.categories)}
+                                className="group flex h-[78px] flex-col items-center justify-center rounded-[18px] border border-[#eadfcf] bg-[#fffdf8] text-[13px] font-black text-[#40516a] shadow-[0_14px_32px_-30px_rgba(139,101,54,0.36)] transition-all hover:-translate-y-1 hover:border-[#dbcaa8] hover:bg-white sm:h-[92px] sm:rounded-[20px] sm:text-sm"
+                            >
+                                <img src={item.icon} alt="" loading="eager" decoding="async" className="mb-1.5 h-8 w-8 object-contain mix-blend-multiply drop-shadow-[0_5px_8px_rgba(139,101,54,0.14)] transition-transform group-hover:scale-105 sm:mb-2 sm:h-10 sm:w-10" />
+                                {item.label}
+                            </button>
                         ))}
                     </div>
                 </div>
 
-                {/* ── Marquee ── */}
-                {tickerJobs.length > 0 && (
-                    <div className="relative mx-auto mt-2 sm:mt-3 mb-3 sm:mb-4 h-[52px] sm:h-[60px] w-full max-w-5xl overflow-hidden rounded-full opacity-90 transition-opacity hover:opacity-100 [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
-                        <div 
-                            className="hero-marquee-track absolute top-0 left-0 pointer-events-none"
-                            style={{
-                                '--marquee-duration': `${Math.max(36, tickerJobs.length * 8)}s`,
-                                '--marquee-shift': `calc(-100% / ${Math.max(1, tickerRepeatCount)})`
-                            } as CSSProperties}
-                        >
-                            {tickerLoop.map((job, i) => (
-                                <div
-                                    key={`${job.id}-${i}`}
-                                    className="pointer-events-auto"
-                                    aria-hidden={i >= tickerJobs.length}
-                                >
-                                    <JobTickerItem job={job} onOpen={openTickerJobDetail} />
+                <div className="relative min-h-0 lg:min-h-[520px]">
+                    <div className="relative z-20 flex w-full min-w-0 flex-col rounded-[26px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:rounded-[34px] lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
+                        <div className="mb-3">
+                            <h2 className="text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
+                                {isAuthenticated ? '每日推荐5个与你匹配的岗位' : '每日推荐5个与你匹配的岗位（需登录）'}
+                            </h2>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <InputCard
+                                label="职业方向"
+                                icon={Target}
+                                value={jobDirection}
+                                onChange={(val) => {
+                                    setJobDirection(val)
+                                    localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection: val, positionType, timestamp: Date.now() }))
+                                }}
+                                placeholder="产品经理 / 数据分析 / 前端开发"
+                            />
+                            <InputCard
+                                label="岗位类型"
+                                icon={Briefcase}
+                                value={positionType}
+                                onChange={(val) => {
+                                    setPositionType(val)
+                                    localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection, positionType: val, timestamp: Date.now() }))
+                                }}
+                                options={[
+                                    { value: 'full-time', label: '全职远程' },
+                                    { value: 'contract', label: '合同/兼职' },
+                                    { value: 'freelance', label: '自由职业' },
+                                    { value: 'internship', label: '实习' },
+                                ]}
+                            />
+                        </div>
+
+                        <div className="mt-3 grid flex-1 content-start gap-2 overflow-hidden pr-0 sm:min-h-[190px] sm:pr-1">
+                            {heroCaseJobs.map((rawJob: any) => {
+                                const job = normalizeHeroJob(rawJob)
+                                const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
+                                const isVipJob = Boolean((job as any).memberOnly || (job as any).member_only)
+                                return (
+                                    <button
+                                        key={job.id}
+                                        type="button"
+                                        onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
+                                        className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-3 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8]"
+                                    >
+                                        <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6]">
+                                            {(job.company_name || job.company || 'HG').slice(0, 2).toUpperCase()}
+                                            {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-2 z-10 scale-90" /> : null}
+                                        </span>
+                                        <span className="min-w-0 flex-1">
+                                            <span className="flex min-w-0 items-center gap-1.5">
+                                                <span className="block truncate text-sm font-black text-slate-900">{job.title}</span>
+                                            </span>
+                                            <span className="block truncate text-xs font-semibold text-slate-500">{job.company_name || job.company || '远程企业'} · {job.location || 'Remote'}</span>
+                                        </span>
+                                        <span className="hidden shrink-0 rounded-full bg-[#fff8e8] px-2.5 py-1 text-xs font-black text-[#c48212] sm:inline-flex">
+                                            {salaryText}
+                                        </span>
+                                    </button>
+                                )
+                            })}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr]">
+                            <div
+                                className={`rounded-[20px] border border-dashed p-3.5 text-center transition-all ${
+                                    resumeName ? 'border-[#b9d9f5] bg-[#f6fbff]' : 'border-[#dfeaf1] bg-white/80 hover:border-[#b9d9f5]'
+                                }`}
+                                onClick={() => {
+                                    if (resumeName) return
+                                    if (!privacyAccepted) {
+                                        showWarning('请先同意简历隐私使用说明', '上传前请确认简历仅用于岗位匹配分析。')
+                                        setHighlightPrivacyConsent(true)
+                                        return
+                                    }
+                                    if (fileInputRef.current) fileInputRef.current.value = ''
+                                    fileInputRef.current?.click()
+                                }}
+                                onDragOver={e => e.preventDefault()}
+                                onDrop={e => {
+                                    e.preventDefault()
+                                    if (resumeName) return
+                                    if (!privacyAccepted) {
+                                        showWarning('请先同意简历隐私使用说明', '上传前请确认简历仅用于岗位匹配分析。')
+                                        setHighlightPrivacyConsent(true)
+                                        return
+                                    }
+                                    const f = e.dataTransfer.files?.[0]
+                                    if (f) handleResumeUpload(f)
+                                }}
+                            >
+                                {uploading ? (
+                                    <div className="flex items-center justify-center gap-2 text-sm font-bold text-[#6f63f6]">
+                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        上传中...
+                                    </div>
+                                ) : resumeName ? (
+                                    <div className="flex items-center justify-center gap-2 text-sm font-black text-[#2f6ed8]">
+                                        <span className="max-w-[260px] truncate">{resumeName}</span>
+                                        <button onClick={e => { e.stopPropagation(); handleRemoveResume() }} className="text-slate-400 hover:text-slate-600"><X className="h-3.5 w-3.5" /></button>
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-center gap-2 text-sm font-black text-slate-600">
+                                        <UploadCloud className="h-4 w-4 text-[#6f63f6]" />
+                                        上传简历，获得更贴近你的岗位
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => { void handleGetRecommendations() }}
+                                disabled={loading || !canRequestRecommendations}
+                                className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-[20px] bg-[#7b74ff] px-5 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(111,99,246,0.62)] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55"
+                            >
+                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                                {loading ? '正在推荐...' : '查看今日推荐'}
+                            </button>
+                        </div>
+
+                        <div className="mt-2">
+                            <label
+                                ref={privacyConsentRef}
+                                className={`flex cursor-pointer items-center gap-2 px-1 text-[10px] leading-4 text-slate-500 transition-all ${highlightPrivacyConsent ? 'rounded-lg bg-[#fff7dc] px-2 py-1 ring-2 ring-[#f0d37a]' : ''}`}
+                            >
+                                <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="h-3 w-3 shrink-0 accent-[#6f63f6]" />
+                                <span>我已阅读并同意 <a href="/privacy" target="_blank" className="font-black text-[#4f46e5] underline">简历隐私使用说明</a>，仅用于岗位匹配分析。</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="relative mx-auto max-w-[1560px] px-5 pb-14 lg:px-10">
+                <div className="rounded-[28px] border border-[#e4e9ff] bg-[linear-gradient(90deg,rgba(250,249,255,0.96),rgba(255,255,255,0.9))] p-5 shadow-[0_24px_70px_-58px_rgba(84,78,180,0.36)]">
+                    <div className="grid gap-4 md:grid-cols-[300px_1fr] md:items-center">
+                        <div>
+                            <div className="flex items-center gap-2 text-lg font-black tracking-normal text-slate-950">
+                                我们为你精挑细选 ✨
+                                <span className="group relative inline-flex">
+                                    <button
+                                        type="button"
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#dfe7ff] bg-white text-[#6f63f6] shadow-sm transition-all hover:-translate-y-0.5"
+                                        aria-label="查看筛选规则"
+                                    >
+                                        <ShieldCheck className="h-4 w-4" />
+                                    </button>
+                                    <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-3 w-[420px] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-[18px] border border-[#eadfcf] bg-[#fffdf8] p-4 text-left opacity-0 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.34)] transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                                        <span className="block text-sm font-black text-slate-950">Haigoo 俱乐部认证企业</span>
+                                        <span className="mt-1.5 block text-xs font-semibold leading-5 text-slate-600">只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：</span>
+                                        <span className="mt-2 grid gap-1.5">
+                                            {HAIGOO_VERIFICATION_STANDARDS.map((item) => (
+                                                <span key={item} className="flex gap-2 text-xs font-semibold leading-5 text-slate-700">
+                                                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
+                                                    <span>{item}</span>
+                                                </span>
+                                            ))}
+                                        </span>
+                                    </span>
+                                </span>
+                            </div>
+                            <p className="mt-2 text-sm leading-6 text-slate-500">所有岗位都经过人工严格筛选，请放心申请。</p>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            {heroHighlightItems.map((item) => (
+                                <div key={item.title} className="flex items-center gap-3 rounded-[20px] border border-white/80 bg-white/74 p-4">
+                                    <img src={item.icon} alt="" className="h-10 w-10 object-contain" />
+                                    <div>
+                                        <div className="text-sm font-black text-slate-900">{item.title}</div>
+                                        <div className="mt-1 text-xs font-semibold text-slate-500">{item.desc}</div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </div>
-                )}
+                </div>
 
-                {/* ── Copilot Card ── */}
-                <div className="w-full max-w-5xl bg-white/30 backdrop-blur-md border border-white/20 rounded-[28px] md:rounded-[32px] shadow-[0_24px_56px_-16px_rgba(0,0,0,0.1),_0_0_0_1px_rgba(255,255,255,0.2)] p-3 md:p-4 mt-1 sm:mt-2 relative lg:h-[640px]">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-white/10 to-transparent pointer-events-none rounded-[32px]" />
-                    <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
+                <div className="mt-6 rounded-[30px] border border-[#e3edf4] bg-white/84 p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.44)]">
+                    <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <h2 className="text-[32px] font-semibold leading-tight tracking-normal text-slate-950">人工精选</h2>
+                            <p className="mt-1 text-sm text-slate-500">不只帮你筛出国内可申的岗位，更帮你筛出靠谱的好机会</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            {HOME_FEATURED_TABS.map((tab) => (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveFeaturedTab(tab.id)}
+                                    className={`rounded-full border px-3.5 py-2 text-xs font-black transition-all ${
+                                        activeFeaturedTab === tab.id
+                                            ? 'border-[#8f8afe] bg-[#f0edff] text-[#6f63f6]'
+                                            : 'border-[#e1e9f1] bg-white/80 text-slate-500 hover:border-[#cfdff0] hover:text-slate-800'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
 
-                    <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 h-full">
-
-                        {/* ── Left Column ── */}
-                        <div className={`lg:col-span-5 backdrop-blur-xl rounded-[24px] border p-4 flex flex-col gap-3 h-full transition-all ${
-                            hasResults
-                                ? 'bg-white/60 border-white/40 shadow-sm'
-                                : 'bg-white/82 border-indigo-100 shadow-[0_24px_48px_-32px_rgba(79,70,229,0.35)]'
-                        }`}>
-                            {/* Shared title area with logo */}
-                            <div className="mb-1">
-                                <div>
-                                    <h2 className="text-[34px] md:text-[38px] font-bold text-slate-900 leading-[1.1] tracking-tight">看看今天有哪些<br/>适合你的岗位</h2>
-                                    {hasResults && (
-                                        <p className="text-xs text-slate-500 mt-1.5">今日推荐岗位已于 {formattedUpdatedAt} 更新</p>
-                                    )}
-                                </div>
-                            </div>
-
-                            {!hasResults ? (
-                                <div className="flex flex-col gap-3 h-full">
-                                    <InputCard label="职业方向 JOB DIRECTION" icon={Target} value={jobDirection}
-                                        onChange={(val) => { setJobDirection(val); localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection: val, positionType, timestamp: Date.now() })) }}
-                                        placeholder="如：产品经理 / 数据分析 / 前端开发" />
-                                    <InputCard label="职位类型 POSITION TYPE" icon={Briefcase} value={positionType}
-                                        onChange={(val) => { setPositionType(val); localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection, positionType: val, timestamp: Date.now() })) }}
-                                        options={[
-                                            { value: 'full-time', label: '全职远程 (Full-time)' },
-                                            { value: 'contract', label: '合同/兼职 (Contract)' },
-                                            { value: 'freelance', label: '自由职业 (Freelance)' },
-                                            { value: 'internship', label: '实习 (Internship)' },
-                                        ]} />
-                                    <div
-                                        className={`border-2 border-dashed rounded-2xl p-3.5 text-center transition-all ${
-                                            resumeName ? 'border-indigo-300 bg-indigo-50' : 'border-slate-200 bg-white hover:border-indigo-300 hover:bg-indigo-50/30'
-                                        }`}
-                                        onClick={() => {
-                                            if (resumeName) return
-                                            if (!privacyAccepted) {
-                                                showWarning('请同意隐私协议', '上传前请阅读并同意简历隐私使用说明')
-                                                setHighlightPrivacyConsent(true)
-                                                privacyConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                                return
-                                            }
-                                            if (fileInputRef.current) fileInputRef.current.value = ''
-                                            fileInputRef.current?.click()
-                                        }}
-                                        onDragOver={e => e.preventDefault()}
-                                        onDrop={e => {
-                                            e.preventDefault()
-                                            if (resumeName) return
-                                            if (!privacyAccepted) {
-                                                showWarning('请同意隐私协议', '上传前请阅读并同意简历隐私使用说明')
-                                                setHighlightPrivacyConsent(true)
-                                                privacyConsentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                                return
-                                            }
-                                            const f = e.dataTransfer.files?.[0]
-                                            if (f) handleResumeUpload(f)
-                                        }}
+                    {featuredTabLoading ? (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {[...Array(6)].map((_, index) => (
+                                <div key={index} className="h-[132px] animate-pulse rounded-[22px] border border-[#edf2f6] bg-[#f7fbff]" />
+                            ))}
+                        </div>
+                    ) : curatedJobs.length === 0 ? (
+                        <div className="rounded-[24px] border border-dashed border-[#dfeaf1] bg-[#f8fbff] px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                            这个分类暂时没有精选岗位，先看看其他方向。
+                        </div>
+                    ) : (
+                        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                            {curatedJobs.map((rawJob) => {
+                                const job = normalizeHeroJob(rawJob)
+                                const company = job.company_name || job.company || 'Company'
+                                const logoCandidates = job.logo_candidates || resolveLogoCandidates(
+                                    job.company_logo || job.logo || job.companyLogo,
+                                    company,
+                                    job.company_website || job.companyWebsite,
+                                    job.companyId || job.company_id,
+                                    job.cachedLogoUrl || job.cachedCompanyLogoUrl || job.cached_logo_url
+                                )
+                                const tags = Array.isArray(job.tags) ? job.tags : Array.isArray(job.skills) ? job.skills : []
+                                const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
+                                const ratingText = String(job.companyRating || job.company_rating || job.trustedCompanyRating || job.trusted_company_rating || job.rating || '').trim()
+                                const isVipJob = Boolean((job as any).memberOnly || (job as any).member_only)
+                                const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
+                                const displayTitle = translatedTitle || job.title
+                                const hasTranslatedTitle = Boolean(translatedTitle && translatedTitle !== job.title)
+                                return (
+                                    <button
+                                        key={job.id}
+                                        type="button"
+                                        onClick={() => openHeroJobDetail({ ...job, source: 'home_curated_tab' })}
+                                        className="group flex min-h-[132px] items-center gap-4 rounded-[22px] border border-[#e3edf4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,252,255,0.96))] p-4 text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0] hover:bg-white"
                                     >
-                                        {uploading ? (
-                                            <div className="flex items-center justify-center gap-2">
-                                                <Loader2 className="w-4 h-4 animate-spin text-indigo-500" />
-                                                <span className="text-sm text-indigo-600">上传中...</span>
+                                        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-[18px] border border-[#e6edf3] bg-white p-1 shadow-sm">
+                                            <CompanyLogo companyName={company} logoCandidates={logoCandidates} className="h-full w-full object-contain" />
+                                            {isVipJob ? <HomeVipBadge className="absolute -right-2 -top-2 z-10" /> : null}
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="flex min-w-0 items-center gap-1.5">
+                                                <div className="line-clamp-1 min-w-0 text-base font-black text-slate-950 group-hover:text-[#2f6ed8]" title={displayTitle}>{displayTitle}</div>
+                                                {hasTranslatedTitle ? (
+                                                    <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-black leading-none text-slate-500" title="已翻译">
+                                                        译
+                                                    </span>
+                                                ) : null}
                                             </div>
-                                        ) : resumeName ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <span className="text-sm font-semibold text-indigo-700 truncate max-w-[220px]">{resumeName}</span>
-                                                    <button onClick={e => { e.stopPropagation(); handleRemoveResume() }} className="text-slate-400 hover:text-slate-600"><X className="w-3.5 h-3.5" /></button>
-                                                </div>
-                                                <p className="text-[10px] text-slate-500">已关联简历。若需更换，请先手动删除后重新上传。</p>
+                                            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-500">
+                                                <span className="max-w-[13ch] truncate">{company}</span>
+                                                {ratingText ? (
+                                                    <span className="inline-flex items-center gap-0.5 font-black text-[#c48212]">
+                                                        <Star className="h-3.5 w-3.5 fill-current" />
+                                                        {ratingText}
+                                                    </span>
+                                                ) : null}
+                                                <span className="text-slate-300">·</span>
+                                                <span className="max-w-[13ch] truncate">{job.location}</span>
+                                                <span className="rounded-full bg-[#fff8e8] px-2 py-0.5 text-xs font-black text-[#c48212]">{salaryText}</span>
                                             </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex items-center justify-center gap-2 mb-1">
-                                                    <UploadCloud className="w-5 h-5 text-indigo-400" />
-                                                    <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-[10px] font-bold text-indigo-600 border border-indigo-100">简历可选</span>
-                                                </div>
-                                                <p className="text-xs font-semibold text-slate-600">拖拽简历到此 / 点击上传</p>
-                                                <p className="text-[10px] text-slate-400 mt-0.5">PDF / Word 格式，用于后续规划补充参考</p>
-                                            </>
-                                        )}
-                                    </div>
-                                    <label
-                                        ref={privacyConsentRef}
-                                        className={`flex items-start gap-2 cursor-pointer select-none rounded-xl transition-all ${
-                                            highlightPrivacyConsent ? 'ring-2 ring-amber-300 bg-amber-50/70 px-2 py-2 -mx-2' : ''
-                                        }`}
-                                    >
-                                        <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="mt-0.5 accent-indigo-600 w-3.5 h-3.5" />
-                                        <span className="text-[11px] text-slate-500 leading-relaxed">
-                                            我已阅读并同意{' '}<a href="/privacy" target="_blank" className="text-indigo-500 underline">简历隐私使用说明</a>，Haigoo 仅将简历用于岗位匹配分析
-                                        </span>
-                                    </label>
-                                    <button onClick={() => { void handleGetRecommendations() }} disabled={loading || !jobDirection}
-                                        className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white rounded-xl font-bold text-sm shadow-[0_8px_20px_rgba(79,70,229,0.30)] transition-all disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-auto">
-                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-                                        {loading ? '获取中...' : '查看今日推荐'}
+                                            <div className="mt-3 flex flex-wrap gap-1.5">
+                                                {tags.slice(0, 3).map((tag: any) => (
+                                                    <span key={String(tag)} className="rounded-full bg-[#eef7ff] px-2 py-1 text-[11px] font-bold text-[#2f6ed8]">{String(tag)}</span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-[#6f63f6]" />
                                     </button>
-                                </div>
-                            ) : (
-                                <div className="flex flex-col gap-3 flex-1">
-                                    {/* Quota card */}
-                                    <div className="bg-white rounded-2xl border border-indigo-100 shadow-sm p-5">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-xs">AI</div>
-                                            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">每日推荐数量</div>
-                                        </div>
-                                        <div className="text-[54px] font-black text-slate-900 leading-none">{Math.min(recommendations.length || 1, dailyLimit)}<span className="text-slate-300">/{dailyLimit}</span></div>
-                                        <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-                                            {isAuthenticated
-                                                ? '今日推荐已更新，可继续浏览 5 个精选岗位。'
-                                                : '游客模式每日可获得 1 个推荐，登录后每日 5 个。'}
-                                        </p>
-                                    </div>
-                                    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-4">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">当前偏好</div>
-                                            <button onClick={() => { setIsEditingPreferences(true); setHasResults(false); setActiveCard(0) }} className="px-2.5 py-1 rounded-lg border border-indigo-200 bg-indigo-50 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-100 transition-colors">修改偏好</button>
-                                        </div>
-                                        <div className="text-sm font-semibold text-indigo-600 truncate">{jobDirection || '未填写'} · {positionTypeLabel}</div>
-                                    </div>
-                                    <div className="h-[52px] mt-auto flex items-center justify-center">
-                                    </div>
-                                </div>
-                            )}
+                                )
+                            })}
                         </div>
+                    )}
+                </div>
 
-                        {/* ── Right Column ── */}
-                        <div className={`lg:col-span-7 backdrop-blur-2xl rounded-[24px] border border-white/50 flex min-h-[360px] flex-col shadow-sm overflow-hidden lg:min-h-0 h-full ${
-                            hasResults ? 'bg-white/50' : 'bg-white/30'
-                        }`}>
-                            <div className="flex items-center justify-between px-4 pt-4 pb-3 sm:px-5 sm:pt-5 border-b border-slate-100">
-                                <h3 className={`${hasResults ? 'text-[24px]' : 'text-[20px]'} font-bold text-slate-800 leading-none`}>{hasResults ? '今日推荐' : '每日推荐预览'}</h3>
-                                {hasResults && (
-                                    <div className="flex items-center gap-1.5 sm:gap-2">
-                                        <button onClick={() => setActiveCard(prev => Math.max(0, prev - 1))} disabled={activeCard === 0}
-                                            className="h-8 w-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
-                                            <ChevronLeft className="w-4 h-4 text-indigo-700" />
-                                        </button>
-                                        <span className="text-xs text-slate-500 font-semibold">{activeCard + 1} / {displayRecommendations.length}</span>
-                                        <button onClick={() => setActiveCard(prev => Math.min(displayRecommendations.length - 1, prev + 1))} disabled={activeCard >= displayRecommendations.length - 1}
-                                            className="h-8 w-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 border border-indigo-200 shadow-sm flex items-center justify-center disabled:opacity-30 hover:bg-indigo-100 transition-colors">
-                                            <ChevronRight className="w-4 h-4 text-indigo-700" />
-                                        </button>
-                                    </div>
-                                )}
+                <div className={`relative mt-6 overflow-hidden rounded-[30px] border p-5 shadow-[0_24px_70px_-58px_rgba(184,132,36,0.34)] ${
+                    isMember
+                        ? 'border-[#e5dccb] bg-[linear-gradient(105deg,#fff9ee_0%,#ffffff_56%,#fbf7ef_100%)]'
+                        : 'border-[#f2dfb7] bg-[linear-gradient(105deg,#fffaf0_0%,#ffffff_54%,#f5f2ff_100%)]'
+                }`}>
+                    {isMember ? (
+                        <>
+                            <img src="/pic_lists/About_pics/about_bg.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[36%] object-cover object-right opacity-[0.12] saturate-[0.86]" />
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_18%,rgba(246,213,151,0.22),transparent_23%)]" />
+                        </>
+                    ) : null}
+                    <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
+                        <div className="flex items-start gap-4">
+                            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-white shadow-sm ${isMember ? 'text-[#6f63f6]' : 'text-[#d9951f]'}`}>
+                                <Crown className="h-6 w-6" />
                             </div>
-
-                            <div className="flex-1 px-4 pt-4 pb-4 sm:px-5 sm:pt-5 flex flex-col min-h-0">
-                                {!hasResults ? (
-                                    <div className="flex-1 flex flex-col gap-4 relative min-h-0 overflow-hidden rounded-[28px] border border-white/40 bg-[linear-gradient(180deg,rgba(255,255,255,0.4)_0%,rgba(243,244,255,0.72)_100%)]">
-                                        <div className="absolute inset-0 z-[1] pointer-events-none bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.1),transparent_38%),radial-gradient(circle_at_bottom_left,rgba(56,189,248,0.08),transparent_36%)]" />
-                                        <div className="relative z-0 select-none pointer-events-none filter blur-[10px] saturate-[0.82] opacity-52 px-4 pt-4 pb-5">
-                                            {(previewDisplayJobs.length > 0 ? previewDisplayJobs : PREVIEW_PM_RECOMMENDATIONS).map((job, idx, arr) => (
-                                                <div key={job.id} className="relative bg-white rounded-2xl border border-slate-100 shadow-sm p-4 opacity-60">
-                                                    <div className="flex items-start gap-4">
-                                                        <div className="w-11 h-11 rounded-xl bg-white border border-slate-100 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                                                            <CompanyLogo
-                                                                companyName={job.company_name}
-                                                                logoCandidates={job.logo_candidates || resolveLogoCandidates(job.company_logo, job.company_name, job.company_website, job.companyId || job.company_id, job.cachedLogoUrl || job.cachedCompanyLogoUrl || job.cached_logo_url)}
-                                                                className="w-full h-full object-contain p-1.5"
-                                                            />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-start justify-between gap-3">
-                                                                <div className="font-bold text-slate-900 text-[15px] leading-tight">{job.title}</div>
-                                                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-100 whitespace-nowrap">Top Pick</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
-                                                                <span className="font-semibold text-slate-600">{job.company_name}</span>
-                                                                <span>•</span>
-                                                                <span>{job.location}</span>
-                                                                <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-semibold">Remote</span>
-                                                            </div>
-                                                            <div className="text-sm text-indigo-600 font-semibold mt-1">{job.salary}</div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <div className="absolute inset-0 z-[2] pointer-events-none bg-gradient-to-b from-white/34 via-white/70 to-[#f6f8ff]/94 backdrop-blur-[2px]" />
-                                        <div className="absolute inset-0 z-[3] pointer-events-none flex items-center justify-center px-6">
-                                            <div className="w-full max-w-[290px] rounded-2xl border border-white/90 bg-white/56 backdrop-blur-md shadow-[0_8px_24px_-20px_rgba(79,70,229,0.34)] px-4 py-3 text-center">
-                                                <p className="text-[18px] sm:text-[19px] font-semibold leading-tight tracking-tight text-slate-700">解锁你的专属推荐</p>
-                                                <div className="flex flex-wrap justify-center gap-1.5 mt-2">
-                                                    <span className="inline-flex items-center rounded-full border border-white/90 bg-white/84 px-2.5 py-1 text-[10px] font-medium text-slate-500">游客每日 1 个推荐</span>
-                                                    <span className="inline-flex items-center rounded-full border border-indigo-100 bg-indigo-50/82 px-2.5 py-1 text-[10px] font-medium text-indigo-600">登录后每日 5 个推荐</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    (() => {
-                                        const job = normalizeHeroJob(displayRecommendations[activeCard] || displayRecommendations[0])
-                                        const title = job?.translations?.title || job?.title || job?.role || '远程岗位'
-                                        const company = job?.company_name || job?.company || 'Company'
-                                        const location = job?.translations?.location || job?.location || job?.remote_location || '远程'
-                                        const timezone = job?.timezone || job?.remote_timezone || ''
-                                        const salary = getHeroDisplaySalary(job?.salary || job?.salary_range)
-                                        const translatedDetail = cleanHeroRichText(job?.translations?.description || '')
-                                        const canonicalCompanyIntro = cleanHeroRichText(job?.companyDescription || job?.company_intro || '')
-                                        const translatedCompanyIntro = cleanHeroRichText(job?.companyTranslations?.description || '')
-                                        const companyIntro = canonicalCompanyIntro || translatedCompanyIntro || cleanHeroRichText(job?.description || '')
-                                        const detail = translatedDetail || cleanHeroRichText(job?.description || '') || companyIntro || '点击查看完整岗位详情'
-                                        const openJobDetail = () => openHeroJobDetail({ ...job, source: 'hero_copilot' })
-                                        return (
-                                            <div className="flex-1 min-h-0 flex flex-col relative">
-                                                <div className="absolute inset-x-4 top-2 bottom-0 rounded-2xl border border-indigo-50 bg-white shadow-sm" />
-                                                <div className="absolute inset-x-8 top-4 bottom-0 rounded-2xl border border-indigo-50 bg-white shadow-sm" />
-                                                <div
-                                                    role="button"
-                                                    tabIndex={0}
-                                                    onClick={openJobDetail}
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === 'Enter' || e.key === ' ') {
-                                                            e.preventDefault()
-                                                            openJobDetail()
-                                                        }
-                                                    }}
-                                                    onTouchStart={(e) => { touchStartXRef.current = e.changedTouches[0].clientX }}
-                                                    onTouchEnd={(e) => {
-                                                        if (touchStartXRef.current === null) return
-                                                        const deltaX = e.changedTouches[0].clientX - touchStartXRef.current
-                                                        if (Math.abs(deltaX) > 40) {
-                                                            if (deltaX < 0) setActiveCard(prev => Math.min(displayRecommendations.length - 1, prev + 1))
-                                                            if (deltaX > 0) setActiveCard(prev => Math.max(0, prev - 1))
-                                                        }
-                                                        touchStartXRef.current = null
-                                                    }}
-                                                    className="bg-white rounded-2xl border border-slate-100 shadow-sm px-4 py-4 sm:p-5 flex-1 min-h-[280px] h-[42vh] max-h-[340px] sm:h-[420px] sm:max-h-none relative z-10 text-left hover:shadow-md hover:border-indigo-200 transition-all cursor-pointer flex flex-col"
-                                                >
-                                                    <h4 className="mb-2.5 text-[23px] sm:text-[30px] font-bold text-slate-900 leading-[1.12] line-clamp-2">{title}</h4>
-                                                    <div className="mb-3 flex flex-col gap-1.5">
-                                                        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-500">
-                                                            <Building2 className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                                                            <span className="truncate font-semibold text-indigo-600">{company}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-500">
-                                                            <MapPin className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                                                            <span className="truncate">{location}{timezone ? `，${timezone}` : ''}</span>
-                                                        </div>
-                                                        <div className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-500">
-                                                            <DollarSign className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                                                            <span className="truncate">{salary}</span>
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Company Intro */}
-                                                    <div className="mb-2.5 sm:mb-3">
-                                                        <div className="text-xs font-bold text-slate-500 mb-1.5">企业介绍</div>
-                                                        <p className="text-[13px] sm:text-sm text-slate-500 leading-relaxed line-clamp-2">{companyIntro || '点击查看详情，查看完整企业介绍。'}</p>
-                                                    </div>
-                                                    <div className="relative flex-1 overflow-hidden">
-                                                        <div className="text-xs font-bold text-slate-500 mb-1.5">岗位详情</div>
-                                                        <p className="text-[13px] sm:text-sm text-slate-500 leading-relaxed line-clamp-5 sm:line-clamp-none">{detail}</p>
-                                                        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-white via-white/90 to-transparent pointer-events-none" />
-                                                    </div>
-                                                    <div className="mt-3 pt-3 sm:mt-4 sm:pt-4 border-t border-slate-100 flex items-center justify-between gap-3 flex-shrink-0">
-                                                        {!isAuthenticated ? (
-                                                            <div className="text-[11px] leading-5 text-slate-500 inline-flex min-w-0 items-center gap-1.5">
-                                                                <span>登录后可继续浏览更多推荐。</span>
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation()
-                                                                        navigate('/login')
-                                                                    }}
-                                                                    className="text-indigo-600 font-semibold underline underline-offset-2 hover:text-indigo-700 transition-colors"
-                                                                >
-                                                                    去登录
-                                                                </button>
-                                                            </div>
-                                                        ) : <span />}
-                                                        <button
-                                                            type="button"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation()
-                                                                openJobDetail()
-                                                            }}
-                                                            className="inline-flex items-center gap-1 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-bold text-indigo-600 shadow-sm whitespace-nowrap hover:bg-indigo-100 transition-colors"
-                                                        >
-                                                            查看详情
-                                                            <span>→</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )
-                                    })()
-                                )}
+                            <div>
+                                <div className="text-xl font-black tracking-normal text-slate-950">
+                                    {isMember ? '欢迎回来，会员权益已为你开启' : '加入会员，申请效率提高3倍'}
+                                </div>
+                                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+                                    {isMember
+                                        ? `会员岗位、企业联系人、匹配分析和优先支持已解锁，当前有效期至 ${memberExpireLabel}。`
+                                        : '会员可以解锁更高价值的远程岗位信息、企业内部联系方式及更多求职工具，简历直达用人侧。'}
+                                </p>
+                                <div className="mt-3 flex flex-wrap gap-2">
+                                    {(isMember
+                                        ? ['会员岗位畅看', '联系人线索已解锁', '优先人工支持', '精选企业完整可见', '申请路径更顺畅']
+                                        : ['无限申请次数', '无限内推次数', '岗位匹配分析', '全站岗位解锁', '精选企业解锁']
+                                    ).map((item) => (
+                                        <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-white/90 bg-white/72 px-3 py-1.5 text-xs font-black text-slate-600">
+                                            <CheckCircle2 className="h-3.5 w-3.5 text-[#6f63f6]" />
+                                            {item}
+                                        </span>
+                                    ))}
+                                </div>
                             </div>
                         </div>
-
+                        <button
+                            type="button"
+                            onClick={() => navigate(isMember ? '/jobs' : '/profile?tab=membership')}
+                            className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(217,149,31,0.64)] transition-all hover:-translate-y-0.5 ${isMember ? 'bg-slate-950' : 'bg-[#f0a11f]'}`}
+                        >
+                            {isMember ? '继续查看会员岗位' : '查看会员权益'}
+                            <ArrowRight className="h-4 w-4" />
+                        </button>
                     </div>
                 </div>
 
-            </div>
+                <div className="mt-6 rounded-[30px] border border-[#e3edf4] bg-white/84 p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.44)]">
+                    <div className="mb-5 flex items-end justify-between gap-4">
+                        <div>
+                            <h2 className="inline-flex items-center gap-1 text-[32px] font-semibold leading-tight tracking-normal text-slate-950">
+                                心动的企业
+                                <span className="relative -ml-1 inline-flex h-[0.78em] w-[0.82em] translate-y-[0.02em] overflow-hidden">
+                                    <img src={HOME_HERO_LOVE_SRC} alt="" className="absolute left-1/2 top-1/2 h-[1.55em] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain" />
+                                </span>
+                            </h2>
+                            <p className="mt-1 text-sm text-slate-500">精选尊重员工、开放多元、持续成长的远程企业</p>
+                        </div>
+                        <button type="button" onClick={() => navigate('/trusted-companies')} className="hidden text-sm font-black text-[#6f63f6] md:inline-flex">
+                            探索更多优秀公司 →
+                        </button>
+                    </div>
 
-            {/* ── Copilot Plan Modal ── */}
+                    <div className="grid items-stretch gap-5 xl:grid-cols-[minmax(0,1fr)_300px]">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {companiesLoading ? (
+                            [...Array(6)].map((_, index) => (
+                                <div key={index} className="h-[250px] animate-pulse rounded-[22px] border border-[#edf2f6] bg-[#f7fbff]" />
+                            ))
+                        ) : displayCompanies.length === 0 ? (
+                            <div className="rounded-[22px] border border-dashed border-[#dfeaf1] bg-[#f8fbff] p-8 text-sm font-semibold text-slate-500 sm:col-span-2 lg:col-span-3">
+                                暂无企业数据。
+                            </div>
+                        ) : displayCompanies.map((company, index) => {
+                            const stats = companyJobStats[company.name]
+                            const fallbackImage = companyFallbackImages[index % companyFallbackImages.length]
+                            const coverImage = company.coverImage || companyCoverImages[company.id] || fallbackImage
+                            return (
+                                <button
+                                    key={company.id}
+                                    type="button"
+                                    onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                                    className="group overflow-hidden rounded-[20px] border border-[#e3edf4] bg-white text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0]"
+                                >
+                                    <div className="relative aspect-[16/9] overflow-hidden bg-[#f7fbff]">
+                                        <img src={coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                    </div>
+                                    <div className="p-3.5">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <div className="line-clamp-1 font-black text-slate-950">{company.name}</div>
+                                            {company.industry ? <span className="shrink-0 rounded-full bg-[#eef7ff] px-2 py-1 text-[11px] font-bold text-[#2f6ed8]">{company.industry}</span> : null}
+                                        </div>
+                                        <p className="mt-2 line-clamp-2 min-h-[40px] text-sm leading-5 text-slate-500">{company.description || company.translations?.description || '远程友好企业，持续开放全球机会。'}</p>
+                                        <div className="mt-3 flex items-center justify-between border-t border-[#edf2f6] pt-3 text-xs font-bold text-slate-500">
+                                            <span className="truncate">{formatHiringLine(stats?.total ?? company.jobCount ?? 0, stats?.categories)}</span>
+                                            <span className="text-[#6f63f6]">查看岗位 →</span>
+                                        </div>
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    <aside className="relative h-full overflow-hidden rounded-[24px] border border-[#e3edf4] bg-[#fffdf8] p-5 shadow-[0_18px_46px_-40px_rgba(62,91,120,0.28)]">
+                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.96)_0%,rgba(255,255,255,0.98)_100%)]" />
+                        <img src="/pic_lists/About_pics/sun-transparent.webp" alt="" className="pointer-events-none absolute right-5 top-5 h-14 w-14 object-contain opacity-20" />
+                        <img src="/pic_lists/About_pics/love-transparent.webp" alt="" className="pointer-events-none absolute right-16 top-16 h-7 w-7 object-contain opacity-30" />
+                        <div className="relative flex h-full flex-col">
+                            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-[#dbe9f2] bg-white/82 px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
+                                <Users className="h-3.5 w-3.5" />
+                                远程求职交流群
+                            </div>
+                            <h3 className="whitespace-nowrap text-[20px] font-black leading-tight text-slate-950 lg:text-[21px]">
+                                加入 Haigoo 远程交流群
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-slate-500">
+                                群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。
+                            </p>
+
+                            <div className="mt-4 grid gap-2">
+                                {[
+                                    { title: '每日精选岗位', desc: '固定同步重点机会', icon: Briefcase },
+                                    { title: '同行交流', desc: '讨论投递和面试节奏', icon: Users },
+                                    { title: '重点信息提醒', desc: '不错过重要更新', icon: Sparkles },
+                                ].map((item) => (
+                                    <div key={item.title} className="flex items-center gap-3 rounded-[18px] border border-[#edf2f6] bg-white/76 px-3 py-2.5">
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#f4f1ff] text-[#6f63f6]">
+                                            <item.icon className="h-[18px] w-[18px]" />
+                                        </span>
+                                        <span>
+                                            <span className="block text-sm font-black text-slate-900">{item.title}</span>
+                                            <span className="mt-0.5 block text-xs font-semibold text-slate-500">{item.desc}</span>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="mt-4 rounded-[22px] border border-[#e3edf4] bg-white/86 p-3 text-center shadow-sm">
+                                <img src="/Wechat_group.webp" alt="Haigoo 远程求职交流群二维码" className="mx-auto h-32 w-32 rounded-2xl object-contain" />
+                                <div className="mt-2 text-sm font-black text-slate-700">微信扫一扫加群</div>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => navigate('/jobs')}
+                                className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-slate-950 px-6 text-sm font-black text-white shadow-[0_18px_42px_-28px_rgba(15,23,42,0.44)] transition-all hover:-translate-y-0.5"
+                            >
+                                先看看今日岗位
+                                <ArrowRight className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </aside>
+                    </div>
+                </div>
+
+                <HaigooClubInfoCard className="mt-6" />
+            </section>
+
+            <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
             {(showPlanModal || keepPlanWorkerAlive) && (
                 <CopilotPlanModal
                     visible={showPlanModal}
@@ -1681,19 +2333,74 @@ export default function HomeHero({ stats: _stats }: HomeHeroProps) {
                 jobs={heroDetailJobs}
                 currentJobIndex={currentHeroJobIndex}
                 onNavigateJob={(direction) => {
-                    if (!heroDetailJobs.length || currentHeroJobIndex < 0) return
+                    if (!heroDetailJobs.length) return
+                    const safeCurrentIndex = currentHeroJobIndex >= 0 ? currentHeroJobIndex : 0
                     const nextIndex = direction === 'prev'
-                        ? Math.max(0, currentHeroJobIndex - 1)
-                        : Math.min(heroDetailJobs.length - 1, currentHeroJobIndex + 1)
+                        ? (safeCurrentIndex - 1 + heroDetailJobs.length) % heroDetailJobs.length
+                        : (safeCurrentIndex + 1) % heroDetailJobs.length
                     const nextJob = heroDetailJobs[nextIndex]
-                    if (nextJob) {
-                        openHeroJobDetail(nextJob)
-                    }
+                    if (nextJob) openHeroJobDetail(nextJob)
                 }}
             />
+            {showUpgradeFeedbackModal && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                    <button
+                        type="button"
+                        aria-label="关闭反馈弹窗"
+                        className="absolute inset-0 bg-slate-950/38 backdrop-blur-sm"
+                        onClick={() => setShowUpgradeFeedbackModal(false)}
+                    />
+                    <div className="relative w-full max-w-md rounded-[24px] border border-[#eadfc8] bg-[#fffdf8] p-5 shadow-[0_30px_80px_-42px_rgba(116,90,44,0.58)]">
+                        <button
+                            type="button"
+                            onClick={() => setShowUpgradeFeedbackModal(false)}
+                            className="absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfc8] bg-white/86 text-slate-400 transition-colors hover:text-slate-700"
+                            aria-label="关闭"
+                        >
+                            <X className="h-4 w-4" />
+                        </button>
+                        <div className="pr-10">
+                            <div className="haigoo-hand-bold font-haigoo-hand text-[22px] font-black tracking-normal text-[#a36b18]">
+                                反馈给 Haigoo
+                            </div>
+                            <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
+                                告诉我们你遇到的问题或建议。
+                            </p>
+                        </div>
+                        <textarea
+                            value={upgradeFeedbackContent}
+                            onChange={(event) => setUpgradeFeedbackContent(event.target.value)}
+                            rows={5}
+                            maxLength={500}
+                            className="mt-4 w-full resize-none rounded-[18px] border border-[#eadfc8] bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-colors placeholder:text-slate-300 focus:border-[#d2b574]"
+                            placeholder="写下你的反馈..."
+                            autoFocus
+                        />
+                        <div className="mt-4 flex items-center justify-end gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setShowUpgradeFeedbackModal(false)}
+                                className="rounded-full border border-[#eadfc8] bg-white px-4 py-2 text-sm font-black text-slate-500 transition-colors hover:bg-[#fff7e8]"
+                            >
+                                取消
+                            </button>
+                            <button
+                                type="button"
+                                disabled={upgradeFeedbackSubmitting}
+                                onClick={submitUpgradeFeedback}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-[#a36b18] px-5 py-2 text-sm font-black text-white shadow-[0_14px_34px_-24px_rgba(116,90,44,0.75)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {upgradeFeedbackSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                提交
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
+
 
 function CopilotPlanModal({
     visible,

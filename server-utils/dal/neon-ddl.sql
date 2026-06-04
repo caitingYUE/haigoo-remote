@@ -28,6 +28,12 @@ ALTER TABLE trusted_companies ADD COLUMN IF NOT EXISTS email_type VARCHAR(50) DE
 ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS company_name VARCHAR(255);
 ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS company_website VARCHAR(255);
 ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS recruitment_needs TEXT;
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT FALSE;
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS review_status VARCHAR(24) DEFAULT 'pending';
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS display_name VARCHAR(120);
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS display_title VARCHAR(120);
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;
+ALTER TABLE feedbacks ADD COLUMN IF NOT EXISTS reviewed_by VARCHAR(255);
 
 -- 2026-01-27: Optimize Trusted Companies Page Loading
 -- Add indexes for common sort and filter columns
@@ -191,3 +197,20 @@ CREATE TABLE IF NOT EXISTS admin_user_entitlement_audit (
 
 CREATE INDEX IF NOT EXISTS idx_admin_user_entitlement_audit_target_user
 ON admin_user_entitlement_audit(target_user_id, created_at DESC);
+
+-- 2026-06-04: Ensure membership payment records support manual claim metadata.
+CREATE TABLE IF NOT EXISTS payment_records (
+    id SERIAL PRIMARY KEY,
+    payment_id VARCHAR(255) UNIQUE NOT NULL,
+    user_id VARCHAR(255),
+    amount NUMERIC,
+    currency VARCHAR(16) DEFAULT 'CNY',
+    payment_method VARCHAR(64),
+    status VARCHAR(64) DEFAULT 'pending',
+    plan_id VARCHAR(255),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+ALTER TABLE payment_records
+ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;

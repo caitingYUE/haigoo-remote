@@ -28,6 +28,7 @@ export interface ProcessedJobData extends Job {
   isTrusted?: boolean; // Added for frontend compatibility
   canRefer?: boolean; // Added for frontend compatibility
   memberOnly?: boolean; // 企业统一会员申请权限
+  featuredReason?: string;
   editHistory: {
     field: string;
     oldValue: any;

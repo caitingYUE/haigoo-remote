@@ -76,7 +76,7 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                     {/* Unlock Overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
                         <button
-                            onClick={() => navigate('/membership')}
+                            onClick={() => navigate('/profile?tab=membership')}
                             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
                         >
                             <Lock className="w-5 h-5" />
