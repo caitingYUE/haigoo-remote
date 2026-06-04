@@ -610,12 +610,9 @@ export default function HomeHero({
             return phase
         }
     })
-    const [isUpgradeBannerExpanded, setIsUpgradeBannerExpanded] = useState(false)
-    const [isUpgradeBannerCollapsible, setIsUpgradeBannerCollapsible] = useState(false)
     const [showUpgradeFeedbackModal, setShowUpgradeFeedbackModal] = useState(false)
     const [upgradeFeedbackContent, setUpgradeFeedbackContent] = useState('')
     const [upgradeFeedbackSubmitting, setUpgradeFeedbackSubmitting] = useState(false)
-    const upgradeBannerTextRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         const refreshBannerPhase = () => {
@@ -635,25 +632,6 @@ export default function HomeHero({
         const timer = window.setInterval(refreshBannerPhase, 60 * 1000)
         return () => window.clearInterval(timer)
     }, [])
-
-    useEffect(() => {
-        setIsUpgradeBannerExpanded(false)
-    }, [upgradeBannerPhase])
-
-    useEffect(() => {
-        const updateCollapsibleState = () => {
-            const node = upgradeBannerTextRef.current
-            if (!node) {
-                setIsUpgradeBannerCollapsible(false)
-                return
-            }
-            setIsUpgradeBannerCollapsible(node.scrollWidth > node.clientWidth + 4)
-        }
-
-        updateCollapsibleState()
-        window.addEventListener('resize', updateCollapsibleState)
-        return () => window.removeEventListener('resize', updateCollapsibleState)
-    }, [upgradeBannerPhase])
 
     const dismissUpgradeBanner = () => {
         if (!upgradeBannerPhase) return
@@ -721,8 +699,8 @@ export default function HomeHero({
         }
     }
     const upgradeBannerMessage = upgradeBannerPhase === 'maintenance'
-        ? `Haigoo 网站正在全新升级中，请尽量避免在${formatChinaMonthDayTime(HOME_UPGRADE_DEPLOY_AT)}-${formatChinaMonthDayTime(HOME_UPGRADE_MAINTENANCE_END_AT).replace(/^\d+月\d+日/, '')}之间申请或购买会员。`
-        : 'Haigoo 治愈系插画风 UI 全新上线，体验更友好。远程不孤单，我们一直都在^_^'
+        ? `Haigoo 正在升级，请避开 ${formatChinaMonthDayTime(HOME_UPGRADE_DEPLOY_AT)}-${formatChinaMonthDayTime(HOME_UPGRADE_MAINTENANCE_END_AT).replace(/^\d+月\d+日/, '')} 申请或购买会员。`
+        : 'Haigoo 治愈系插画风 UI 全新上线，体验更友好。'
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -1787,66 +1765,47 @@ export default function HomeHero({
                     decoding="sync"
                     className="absolute inset-x-0 top-[-18px] h-[1040px] w-full origin-center scale-[1.08] object-cover object-[58%_center] opacity-95 saturate-[1.05] contrast-[1.04]"
                 />
-                <div className="absolute inset-x-0 top-0 h-[980px] bg-[linear-gradient(90deg,rgba(255,253,249,0.92)_0%,rgba(255,253,249,0.68)_31%,rgba(255,253,249,0.14)_64%,rgba(255,253,249,0.05)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.18),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.12)_68%,rgba(251,250,246,0.78)_92%,#fbfaf6_100%)]" />
-                <div className="absolute inset-x-0 top-[700px] h-[360px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,rgba(251,250,246,0.62)_64%,#fbfaf6_100%)]" />
-                <div className="absolute inset-x-0 top-[900px] h-32 bg-[radial-gradient(58%_70%_at_18%_90%,rgba(116,159,128,0.16),transparent_68%),radial-gradient(62%_80%_at_72%_94%,rgba(116,159,128,0.13),transparent_72%)]" />
+                <div className="absolute inset-x-0 top-0 h-[900px] bg-[linear-gradient(90deg,rgba(255,253,249,0.92)_0%,rgba(255,253,249,0.68)_31%,rgba(255,253,249,0.14)_64%,rgba(255,253,249,0.05)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.16),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.10)_64%,rgba(251,250,246,0.64)_86%,#fbfaf6_100%)]" />
+                <div className="absolute inset-x-0 top-[640px] h-[280px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,rgba(251,250,246,0.72)_58%,#fbfaf6_100%)]" />
             </div>
 
             <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
-                <div className="relative z-10 w-full min-w-0 max-w-[620px]">
-                    {upgradeBannerPhase && (
-                        <div className="mb-7">
-                            <div className={`relative flex w-fit max-w-full items-center gap-2 rounded-[20px] border border-[#e9ddc1] bg-[#fffdf8]/94 px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_16px_34px_-30px_rgba(116,90,44,0.46)] ring-1 ring-white/70 sm:max-w-[1080px] sm:rounded-full sm:px-3.5 ${
-                                isUpgradeBannerExpanded ? 'min-h-10' : 'h-10 overflow-hidden'
-                            }`}>
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white shadow-[0_10px_20px_-16px_rgba(116,90,44,0.55)]">
-                                    <img
-                                        src={HOME_UPGRADE_AVATAR_SRC}
-                                        alt=""
-                                        className="h-7 w-7 object-contain"
-                                        loading="eager"
-                                        decoding="async"
-                                    />
-                                </div>
-                                <div
-                                    ref={upgradeBannerTextRef}
-                                    className={`min-w-0 flex-1 ${isUpgradeBannerExpanded ? 'leading-5' : 'truncate'}`}
-                                >
-                                    <span className={isUpgradeBannerExpanded ? '' : 'truncate align-baseline'}>
-                                        {upgradeBannerMessage}
-                                    </span>
-                                </div>
-                                {isUpgradeBannerCollapsible && (
-                                    <button
-                                        type="button"
-                                        onClick={() => setIsUpgradeBannerExpanded(prev => !prev)}
-                                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/88 text-[15px] font-black leading-none text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
-                                        aria-label={isUpgradeBannerExpanded ? '收起提示' : '展开提示'}
-                                        title={isUpgradeBannerExpanded ? '收起' : '展开'}
-                                    >
-                                        {isUpgradeBannerExpanded ? '⌃' : '⌄'}
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={handleUpgradeBannerFeedback}
-                                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8] bg-white text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8] sm:w-auto sm:px-2.5 sm:py-1"
-                                    aria-label="反馈"
-                                >
-                                    <MessageCircle className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">反馈</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={dismissUpgradeBanner}
-                                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/86 text-slate-400 transition-colors hover:text-slate-700"
-                                    aria-label="关闭提示"
-                                >
-                                    <X className="h-3.5 w-3.5" />
-                                </button>
+                {upgradeBannerPhase && (
+                    <div className="absolute left-5 top-3 z-30 max-w-[calc(100%-2.5rem)] lg:left-10 lg:top-10 xl:max-w-[640px]">
+                        <div className="flex h-9 w-fit max-w-full items-center gap-2 rounded-full border border-[#eadfc8]/80 bg-[#fffdf8]/92 py-1 pl-1.5 pr-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_14px_34px_-30px_rgba(116,90,44,0.42)] ring-1 ring-white/60 backdrop-blur-sm">
+                            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white">
+                                <img
+                                    src={HOME_UPGRADE_AVATAR_SRC}
+                                    alt=""
+                                    className="h-6 w-6 object-contain"
+                                    loading="eager"
+                                    decoding="async"
+                                />
                             </div>
+                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap sm:overflow-visible sm:text-clip">
+                                {upgradeBannerMessage}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={handleUpgradeBannerFeedback}
+                                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8]/80 bg-white/88 px-2 text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
+                                aria-label="反馈"
+                            >
+                                <MessageCircle className="h-3.5 w-3.5" />
+                                <span className="hidden sm:inline">反馈</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={dismissUpgradeBanner}
+                                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/76 text-slate-400 transition-colors hover:text-slate-700"
+                                aria-label="关闭提示"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
                         </div>
-                    )}
+                    </div>
+                )}
+                <div className={`relative z-10 w-full min-w-0 max-w-[620px] ${upgradeBannerPhase ? 'pt-11 sm:pt-0' : ''}`}>
                     <h1
                         className="haigoo-hero-title haigoo-hand-bold relative font-haigoo-hand text-[38px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
                         aria-label="用你喜欢的方式 工作和生活"
@@ -2056,8 +2015,9 @@ export default function HomeHero({
                 </div>
             </section>
 
-            <section className="relative mx-auto max-w-[1560px] px-5 pb-14 lg:px-10">
-                <div className="rounded-[28px] border border-[#e4e9ff] bg-[linear-gradient(90deg,rgba(250,249,255,0.96),rgba(255,255,255,0.9))] p-5 shadow-[0_24px_70px_-58px_rgba(84,78,180,0.36)]">
+            <section className="relative isolate mx-auto max-w-[1560px] px-5 pb-14 lg:px-10">
+                <div className="pointer-events-none absolute left-1/2 top-[-110px] z-0 h-[calc(100%+110px)] w-screen -translate-x-1/2 bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,#fbfaf6_9%,#fbfaf6_100%)]" />
+                <div className="relative z-10 rounded-[28px] border border-[#e4e9ff] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(84,78,180,0.26)]">
                     <div className="grid gap-4 md:grid-cols-[300px_1fr] md:items-center">
                         <div>
                             <div className="flex items-center gap-2 text-lg font-black tracking-normal text-slate-950">
@@ -2100,7 +2060,7 @@ export default function HomeHero({
                     </div>
                 </div>
 
-                <div className="mt-6 rounded-[30px] border border-[#e3edf4] bg-white/84 p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.44)]">
+                <div className="relative z-10 mt-6 rounded-[30px] border border-[#e3edf4] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.34)]">
                     <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
                             <h2 className="haigoo-hand-bold font-haigoo-hand text-[32px] leading-tight tracking-normal text-slate-950">人工精选</h2>
@@ -2199,7 +2159,7 @@ export default function HomeHero({
                     )}
                 </div>
 
-                <div className={`relative mt-6 overflow-hidden rounded-[30px] border p-5 shadow-[0_24px_70px_-58px_rgba(184,132,36,0.34)] ${
+                <div className={`relative z-10 mt-6 overflow-hidden rounded-[30px] border p-5 shadow-[0_24px_70px_-58px_rgba(184,132,36,0.34)] ${
                     isMember
                         ? 'border-[#e5dccb] bg-[linear-gradient(105deg,#fff9ee_0%,#ffffff_56%,#fbf7ef_100%)]'
                         : 'border-[#f2dfb7] bg-[linear-gradient(105deg,#fffaf0_0%,#ffffff_54%,#f5f2ff_100%)]'
@@ -2248,7 +2208,7 @@ export default function HomeHero({
                     </div>
                 </div>
 
-                <div className="mt-6 rounded-[30px] border border-[#e3edf4] bg-white/84 p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.44)]">
+                <div className="relative z-10 mt-6 rounded-[30px] border border-[#e3edf4] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.34)]">
                     <div className="mb-5 flex items-end justify-between gap-4">
                         <div>
                             <h2 className="haigoo-hand-bold inline-flex items-center gap-1 font-haigoo-hand text-[32px] leading-tight tracking-normal text-slate-950">
