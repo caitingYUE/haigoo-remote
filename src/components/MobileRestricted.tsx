@@ -8,7 +8,10 @@ interface MobileRestrictedProps {
 
 export const MobileRestricted: React.FC<MobileRestrictedProps> = ({ children, allowContinue = false }) => {
   const [isMobile, setIsMobile] = useState(false);
-  const [bypassed, setBypassed] = useState(false);
+  const [bypassed, setBypassed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.sessionStorage.getItem('haigoo_mobile_continue') === 'true';
+  });
 
   useEffect(() => {
     const checkMobile = () => {
@@ -25,45 +28,43 @@ export const MobileRestricted: React.FC<MobileRestrictedProps> = ({ children, al
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  if (allowContinue && isMobile) {
-    return <>{children}</>;
-  }
-
   if (isMobile && !bypassed) {
     return (
-      <div className="fixed inset-0 z-[9999] bg-gradient-to-b from-slate-50 to-slate-100 flex flex-col items-center justify-center p-6 text-center">
-        <div className="bg-white p-8 rounded-3xl shadow-xl max-w-md w-full border border-slate-100">
-          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Monitor className="w-10 h-10 text-[#dc2626]" />
+      <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-[linear-gradient(180deg,#fffdf8_0%,#f4f8fb_100%)] p-6 text-center">
+        <div className="w-full max-w-md rounded-[28px] border border-[#dfe8ef] bg-white/88 p-7 shadow-[0_28px_80px_-58px_rgba(61,89,120,0.64)] backdrop-blur">
+          <div className="mx-auto mb-5 flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#eef5ff]">
+            <Monitor className="h-9 w-9 text-[#5f63f6]" />
           </div>
           
-          <h2 className="text-2xl font-bold text-slate-800 mb-4 font-serif">
-            请使用电脑访问
+          <h2 className="mb-3 text-2xl font-black text-slate-900">
+            电脑端体验更完整
           </h2>
           
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            为了获得最佳的视觉体验和功能交互，当前页面需要更大的屏幕空间。<br/>
-            建议您切换至电脑端浏览器打开。
+          <p className="mb-6 text-sm leading-7 text-slate-600">
+            岗位筛选和详情对比在大屏上更稳定。如果手机端加载较慢或显示拥挤，建议切换至电脑端浏览器打开。
           </p>
           
           <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-center gap-2 text-sm text-slate-400 bg-slate-50 py-3 rounded-xl border border-slate-100">
-              <Smartphone className="w-4 h-4" />
-              <span className="line-through decoration-slate-400">手机端体验受限</span>
+            <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 py-3 text-sm font-semibold text-slate-500">
+              <Smartphone className="h-4 w-4" />
+              <span>手机端将保留搜索和基础浏览</span>
             </div>
             
             {allowContinue && (
               <button 
-                onClick={() => setBypassed(true)}
-                className="mt-4 text-sm text-slate-500 hover:text-[#dc2626] underline decoration-dotted transition-colors"
+                onClick={() => {
+                  window.sessionStorage.setItem('haigoo_mobile_continue', 'true');
+                  setBypassed(true);
+                }}
+                className="rounded-2xl bg-[#5f63f6] px-5 py-3 text-sm font-black text-white shadow-[0_18px_42px_-28px_rgba(95,99,246,0.62)] transition hover:-translate-y-0.5"
               >
-                我依然想尝试手机版
+                继续访问手机版
               </button>
             )}
           </div>
         </div>
         
-        <div className="mt-8 text-xs text-slate-400 uppercase tracking-widest font-medium">
+        <div className="mt-8 text-xs font-medium uppercase tracking-widest text-slate-400">
           Haigoo Remote Club
         </div>
       </div>

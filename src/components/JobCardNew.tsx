@@ -456,12 +456,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[46%] object-cover object-right opacity-[0.1]" />
             ) : null}
             <div className="flex min-w-0 items-start gap-3">
-               <CompanyLogoSmall size="md" />
+               <div className="hidden sm:block">
+                  <CompanyLogoSmall size="md" />
+               </div>
 
                <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-1.5">
                      <h3
-                        className={`min-w-0 shrink truncate font-bold tracking-tight text-slate-950 transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.08rem]' : 'text-[18px] md:text-[20px]'}`}
+                        className={`min-w-0 shrink truncate font-bold tracking-tight text-slate-950 transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.08rem]' : 'text-[17px] sm:text-[18px] md:text-[20px]'}`}
                         style={{ ['--job-title-hover-color' as any]: hoverColor }}
                         title={job.translations?.title || job.title}
                      >
@@ -486,7 +488,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-slate-500 md:text-[13px]">
-                     <span className="min-w-0 max-w-[132px] truncate font-medium text-slate-700" title={job.translations?.company || job.company}>
+                     <span className="min-w-0 max-w-[172px] truncate font-medium text-slate-700 sm:max-w-[132px]" title={job.translations?.company || job.company}>
                         {job.translations?.company || job.company}
                      </span>
                      {companyRatingText ? (

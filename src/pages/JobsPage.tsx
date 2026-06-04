@@ -598,7 +598,9 @@ export default function JobsPage() {
       if (!loadMore && hasUsableAggregations(data.aggregations)) {
         const { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
 
-        setCategoryOptions(mergeFacetOptions(CATEGORY_OPTIONS, category, filters.category));
+        if (filters.category.length === 0) {
+          setCategoryOptions(mergeFacetOptions(CATEGORY_OPTIONS, category, filters.category));
+        }
         setIndustryOptions(mergeFacetOptions(INDUSTRY_OPTIONS, industry, filters.industry));
         setJobTypeOptions(mergeFacetOptions(JOB_TYPE_OPTIONS, jobType, filters.jobType));
         setExperienceLevelOptions(mergeFacetOptions(EXPERIENCE_OPTIONS, experienceLevel, filters.experienceLevel));
@@ -682,7 +684,22 @@ export default function JobsPage() {
       }
 
       if (hasUsableAggregations(data.aggregations)) {
-        const { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
+        let { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
+
+        if (isAuthenticated && filters.category.length > 0) {
+          const categoryFacetParams = new URLSearchParams(queryParams)
+          categoryFacetParams.delete('category')
+          try {
+            const categoryFacetData = await fetchJobsJsonWithDedupe(`/api/data/processed-jobs?${categoryFacetParams.toString()}`, { signal })
+            if (!signal.aborted && Array.isArray(categoryFacetData?.aggregations?.category)) {
+              category = categoryFacetData.aggregations.category
+            }
+          } catch (categoryFacetError) {
+            if (!(categoryFacetError instanceof Error && categoryFacetError.name === 'AbortError')) {
+              console.warn('[JobsPage] Failed to load category facet counts:', categoryFacetError)
+            }
+          }
+        }
 
         setCategoryOptions(mergeFacetOptions(CATEGORY_OPTIONS, category, filters.category));
         setIndustryOptions(mergeFacetOptions(INDUSTRY_OPTIONS, industry, filters.industry));
@@ -701,7 +718,7 @@ export default function JobsPage() {
       if (error instanceof Error && error.name === 'AbortError') return
       console.warn('[JobsPage] Failed to load jobs metadata:', error)
     }
-  }, [filters, pageSize, searchTerm, sortBy])
+  }, [filters, isAuthenticated, pageSize, searchTerm, sortBy])
 
   const refreshJobsIfResumeChanged = useCallback(() => {
     if (!isAuthenticated || !token) return

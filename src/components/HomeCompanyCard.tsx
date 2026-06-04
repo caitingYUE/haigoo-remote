@@ -91,10 +91,10 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
     return (
         <div
             onClick={onClick}
-            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[26px] border border-[#dfeaf1] bg-white/86 shadow-[0_18px_55px_-48px_rgba(61,89,120,0.6)] transition-all duration-300 hover:-translate-y-1 hover:border-[#c7dff0] hover:shadow-[0_24px_70px_-50px_rgba(61,89,120,0.68)]"
+            className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-[22px] border border-[#dfeaf1] bg-white/86 shadow-[0_18px_55px_-48px_rgba(61,89,120,0.6)] transition-all duration-300 hover:-translate-y-1 hover:border-[#c7dff0] hover:shadow-[0_24px_70px_-50px_rgba(61,89,120,0.68)] sm:rounded-[26px]"
         >
             {/* Cover Area - 16:9 Aspect Ratio */}
-            <div className="relative w-full pt-[56.25%] overflow-hidden bg-[#f7fbff]">
+            <div className="relative hidden w-full overflow-hidden bg-[#f7fbff] pt-[56.25%] sm:block">
                 {!isLoadingCover && (
                     coverImage ? (
                         <img
@@ -146,7 +146,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 </div>
 
                 {/* Updated At */}
-                <div className="mb-3 flex items-center gap-1.5 text-[11px] sm:text-xs text-slate-400">
+                <div className="mb-3 hidden items-center gap-1.5 text-[11px] text-slate-400 sm:flex sm:text-xs">
                     <Clock className="w-3 h-3" />
                     <span>企业信息更新于 {formatDate(company.updatedAt || new Date().toISOString())}</span>
                 </div>

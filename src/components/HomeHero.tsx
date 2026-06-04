@@ -1792,68 +1792,67 @@ export default function HomeHero({
                 <div className="absolute inset-x-0 top-[900px] h-32 bg-[radial-gradient(58%_70%_at_18%_90%,rgba(116,159,128,0.16),transparent_68%),radial-gradient(62%_80%_at_72%_94%,rgba(116,159,128,0.13),transparent_72%)]" />
             </div>
 
-            {upgradeBannerPhase && (
-                <div className="relative z-20 mx-auto max-w-[1560px] px-5 pt-2 lg:px-10">
-                    <div className={`relative flex w-fit max-w-full items-center gap-2 rounded-[20px] border border-[#e9ddc1] bg-[#fffdf8]/94 px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_16px_34px_-30px_rgba(116,90,44,0.46)] ring-1 ring-white/70 sm:max-w-[1080px] sm:rounded-full sm:px-3.5 ${
-                        isUpgradeBannerExpanded ? 'min-h-10' : 'h-10 overflow-hidden'
-                    }`}>
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white shadow-[0_10px_20px_-16px_rgba(116,90,44,0.55)]">
-                            <img
-                                src={HOME_UPGRADE_AVATAR_SRC}
-                                alt=""
-                                className="h-7 w-7 object-contain"
-                                loading="eager"
-                                decoding="async"
-                            />
+            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
+                <div className="relative z-10 w-full min-w-0 max-w-[620px]">
+                    {upgradeBannerPhase && (
+                        <div className="mb-7">
+                            <div className={`relative flex w-fit max-w-full items-center gap-2 rounded-[20px] border border-[#e9ddc1] bg-[#fffdf8]/94 px-2.5 py-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_16px_34px_-30px_rgba(116,90,44,0.46)] ring-1 ring-white/70 sm:max-w-[1080px] sm:rounded-full sm:px-3.5 ${
+                                isUpgradeBannerExpanded ? 'min-h-10' : 'h-10 overflow-hidden'
+                            }`}>
+                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white shadow-[0_10px_20px_-16px_rgba(116,90,44,0.55)]">
+                                    <img
+                                        src={HOME_UPGRADE_AVATAR_SRC}
+                                        alt=""
+                                        className="h-7 w-7 object-contain"
+                                        loading="eager"
+                                        decoding="async"
+                                    />
+                                </div>
+                                <div
+                                    ref={upgradeBannerTextRef}
+                                    className={`min-w-0 flex-1 ${isUpgradeBannerExpanded ? 'leading-5' : 'truncate'}`}
+                                >
+                                    <span className={isUpgradeBannerExpanded ? '' : 'truncate align-baseline'}>
+                                        {upgradeBannerMessage}
+                                    </span>
+                                </div>
+                                {isUpgradeBannerCollapsible && (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsUpgradeBannerExpanded(prev => !prev)}
+                                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/88 text-[15px] font-black leading-none text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
+                                        aria-label={isUpgradeBannerExpanded ? '收起提示' : '展开提示'}
+                                        title={isUpgradeBannerExpanded ? '收起' : '展开'}
+                                    >
+                                        {isUpgradeBannerExpanded ? '⌃' : '⌄'}
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={handleUpgradeBannerFeedback}
+                                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8] bg-white text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8] sm:w-auto sm:px-2.5 sm:py-1"
+                                    aria-label="反馈"
+                                >
+                                    <MessageCircle className="h-3.5 w-3.5" />
+                                    <span className="hidden sm:inline">反馈</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={dismissUpgradeBanner}
+                                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/86 text-slate-400 transition-colors hover:text-slate-700"
+                                    aria-label="关闭提示"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
                         </div>
-                        <div
-                            ref={upgradeBannerTextRef}
-                            className={`min-w-0 flex-1 ${isUpgradeBannerExpanded ? 'leading-5' : 'truncate'}`}
-                        >
-                            <span className={isUpgradeBannerExpanded ? '' : 'truncate align-baseline'}>
-                                {upgradeBannerMessage}
-                            </span>
-                        </div>
-                        {isUpgradeBannerCollapsible && (
-                            <button
-                                type="button"
-                                onClick={() => setIsUpgradeBannerExpanded(prev => !prev)}
-                                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/88 text-[15px] font-black leading-none text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
-                                aria-label={isUpgradeBannerExpanded ? '收起提示' : '展开提示'}
-                                title={isUpgradeBannerExpanded ? '收起' : '展开'}
-                            >
-                                {isUpgradeBannerExpanded ? '⌃' : '⌄'}
-                            </button>
-                        )}
-                        <button
-                            type="button"
-                            onClick={handleUpgradeBannerFeedback}
-                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8] bg-white text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8] sm:w-auto sm:px-2.5 sm:py-1"
-                            aria-label="反馈"
-                        >
-                            <MessageCircle className="h-3.5 w-3.5" />
-                            <span className="hidden sm:inline">反馈</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={dismissUpgradeBanner}
-                            className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#eadfc8] bg-white/86 text-slate-400 transition-colors hover:text-slate-700"
-                            aria-label="关闭提示"
-                        >
-                            <X className="h-3.5 w-3.5" />
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 py-8 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
-                <div className="relative z-10 max-w-[620px]">
+                    )}
                     <h1
-                        className="haigoo-hero-title haigoo-hand-bold relative font-haigoo-hand text-[42px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
+                        className="haigoo-hero-title haigoo-hand-bold relative font-haigoo-hand text-[38px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
                         aria-label="用你喜欢的方式 工作和生活"
                     >
                         <span className="relative" aria-hidden="true">
-                            <span className="whitespace-nowrap">用你喜欢的方式</span>
+                            <span className="sm:whitespace-nowrap">用你喜欢的方式</span>
                             <br />
                             <span className="inline-flex items-center">
                                 工作和生活
@@ -1869,11 +1868,11 @@ export default function HomeHero({
                             </span>
                         </span>
                     </h1>
-                    <p className="mt-4 max-w-xl text-[16px] leading-7 text-[#6b7b90] sm:mt-5 sm:text-[18px] sm:leading-8">
+                    <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#6b7b90] sm:mt-5 sm:text-[18px] sm:leading-8">
                         可以全球旅居，也可以居家办公。Haigoo 帮你获得全球优质远程工作，让生活和事业不再受限。
                     </p>
 
-                    <div className="mt-5 flex max-w-xl items-center rounded-full border border-[#dce8f1] bg-white/88 p-1.5 shadow-[0_22px_54px_-38px_rgba(62,91,120,0.36)] sm:mt-7 sm:p-2">
+                    <div className="mt-5 flex w-full max-w-xl items-center rounded-full border border-[#dce8f1] bg-white/88 p-1.5 shadow-[0_22px_54px_-38px_rgba(62,91,120,0.36)] sm:mt-7 sm:p-2">
                         <input
                             value={heroSearchTerm}
                             onChange={(event) => setHeroSearchTerm(event.target.value)}
@@ -1893,7 +1892,7 @@ export default function HomeHero({
                         </button>
                     </div>
 
-                    <div className="mt-5 grid max-w-xl grid-cols-3 gap-2.5 sm:mt-6 sm:grid-cols-6 sm:gap-3">
+                    <div className="mt-5 grid w-full max-w-xl grid-cols-2 gap-2.5 sm:mt-6 sm:grid-cols-6 sm:gap-3">
                         {heroCategoryItems.map((item) => (
                             <button
                                 key={item.label}
@@ -1908,7 +1907,7 @@ export default function HomeHero({
                     </div>
                 </div>
 
-                <div className="relative min-h-0 lg:min-h-[620px]">
+                <div className="relative hidden min-h-0 lg:block lg:min-h-[620px]">
                     <div className="relative z-20 flex w-full min-w-0 flex-col rounded-[26px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:rounded-[34px] lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
                         <div className="mb-3">
                             <h2 className="text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
@@ -2161,7 +2160,7 @@ export default function HomeHero({
                                         onClick={() => openHeroJobDetail({ ...job, source: 'home_curated_tab' })}
                                         className="group flex min-h-[132px] items-center gap-4 rounded-[22px] border border-[#e3edf4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,252,255,0.96))] p-4 text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0] hover:bg-white"
                                     >
-                                        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-[18px] border border-[#e6edf3] bg-white p-1 shadow-sm">
+                                        <div className="relative hidden h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-[18px] border border-[#e6edf3] bg-white p-1 shadow-sm sm:flex">
                                             <CompanyLogo companyName={company} logoCandidates={logoCandidates} className="h-full w-full object-contain" />
                                             {isVipJob ? <HomeVipBadge className="absolute -right-2 -top-2 z-10" /> : null}
                                         </div>
