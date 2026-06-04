@@ -33,6 +33,19 @@ function isAdminPayload(payload) {
     return Boolean(payload?.isAdmin || payload?.role === 'admin')
 }
 
+async function ensureFeedbackReviewColumns() {
+    if (!neonHelper.isConfigured) return
+    await neonHelper.query(`
+        ALTER TABLE feedbacks
+          ADD COLUMN IF NOT EXISTS is_public BOOLEAN DEFAULT FALSE,
+          ADD COLUMN IF NOT EXISTS review_status VARCHAR(24) DEFAULT 'pending',
+          ADD COLUMN IF NOT EXISTS display_name VARCHAR(120),
+          ADD COLUMN IF NOT EXISTS display_title VARCHAR(120),
+          ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ,
+          ADD COLUMN IF NOT EXISTS reviewed_by VARCHAR(255)
+    `)
+}
+
 export default async function handler(req, res) {
     // Basic CORS and headers
     res.setHeader('Access-Control-Allow-Origin', '*')
@@ -65,6 +78,68 @@ export default async function handler(req, res) {
     // Dispatch to Admin Messages Handler
     if (action === 'admin_messages' || action === 'admin_messages_delete') {
         return await adminMessagesHandler(req, res)
+    }
+
+    if (action === 'review_feedback' || action === 'reply_feedback' || action === 'delete_feedback') {
+        const token = extractToken(req)
+        const payload = token ? verifyToken(token) : null
+        if (!payload) {
+            return res.status(401).json({ success: false, error: 'Unauthorized' })
+        }
+        if (!isAdminPayload(payload)) {
+            return res.status(403).json({ success: false, error: 'Forbidden' })
+        }
+        if (!neonHelper.isConfigured) {
+            return res.status(200).json({ success: true })
+        }
+
+        if (action === 'review_feedback') {
+            if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+            const { feedbackId, reviewStatus } = req.body || {}
+            const status = ['approved', 'rejected', 'pending'].includes(reviewStatus) ? reviewStatus : 'pending'
+            if (!feedbackId) return res.status(400).json({ success: false, error: 'Missing feedbackId' })
+            await ensureFeedbackReviewColumns()
+            const result = await neonHelper.query(
+                `UPDATE feedbacks
+                 SET review_status = $1,
+                     is_public = $2,
+                     reviewed_at = NOW(),
+                     reviewed_by = $3
+                 WHERE feedback_id = $4
+                 RETURNING feedback_id`,
+                [status, status === 'approved', payload.userId || payload.email || 'admin', feedbackId]
+            )
+            if (!result || result.length === 0) {
+                return res.status(404).json({ success: false, error: 'Feedback not found' })
+            }
+            return res.status(200).json({ success: true })
+        }
+
+        if (action === 'reply_feedback') {
+            if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
+            const { feedbackId, replyContent } = req.body || {}
+            if (!feedbackId || !replyContent) return res.status(400).json({ success: false, error: 'Missing feedbackId or replyContent' })
+            const result = await neonHelper.query(
+                `UPDATE feedbacks
+                 SET reply_content = $1,
+                     replied_at = NOW()
+                 WHERE feedback_id = $2
+                 RETURNING feedback_id`,
+                [replyContent, feedbackId]
+            )
+            if (!result || result.length === 0) {
+                return res.status(404).json({ success: false, error: 'Feedback not found' })
+            }
+            return res.status(200).json({ success: true })
+        }
+
+        if (action === 'delete_feedback') {
+            if (req.method !== 'POST' && req.method !== 'DELETE') return res.status(405).json({ success: false, error: 'Method not allowed' })
+            const feedbackId = req.body?.id || req.query?.id
+            if (!feedbackId) return res.status(400).json({ success: false, error: 'Missing feedbackId' })
+            await neonHelper.query('DELETE FROM feedbacks WHERE feedback_id = $1', [feedbackId])
+            return res.status(200).json({ success: true })
+        }
     }
 
     // === Application Stats (Merged from admin-applications.js) ===

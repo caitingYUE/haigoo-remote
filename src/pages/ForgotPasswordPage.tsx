@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mail, CheckCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import logoPng from '../assets/logo.png'
+import logoPng from '../assets/logo.webp'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')

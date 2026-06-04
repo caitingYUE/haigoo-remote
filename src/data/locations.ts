@@ -631,6 +631,523 @@ export const LOCATION_DATABASE: Record<string, LocationData> = {
         lng: -71.0589,
         description: '美国东北部重要城市,教育和科技中心。拥有哈佛、MIT等顶尖大学,生物科技和软件产业发达。',
         aliases: ['bos']
+    },
+
+    'delaware': {
+        name: 'Delaware',
+        country: 'United States',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/New_York',
+        lat: 38.9108,
+        lng: -75.5277,
+        description: '美国东海岸州份，商业注册和金融服务发达，靠近费城、纽约和华盛顿等东部城市群。',
+        aliases: ['de state']
+    },
+
+    'wilmington': {
+        name: 'Wilmington',
+        country: 'United States',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/New_York',
+        lat: 39.7391,
+        lng: -75.5398,
+        description: '特拉华州最大城市，金融、商业服务和企业总部资源集中，位于美国东部时区。',
+        aliases: ['wilmington de', 'wilmington delaware']
+    },
+
+    'los angeles': {
+        name: 'Los Angeles',
+        country: 'United States',
+        timezone: 'UTC-8 (PST)',
+        ianaTimezone: 'America/Los_Angeles',
+        lat: 34.0522,
+        lng: -118.2437,
+        description: '美国西海岸重要城市，媒体、娱乐、科技和消费互联网产业活跃。',
+        aliases: ['la', 'lax']
+    },
+
+    'san diego': {
+        name: 'San Diego',
+        country: 'United States',
+        timezone: 'UTC-8 (PST)',
+        ianaTimezone: 'America/Los_Angeles',
+        lat: 32.7157,
+        lng: -117.1611,
+        description: '加州南部科技和生命科学城市，气候宜人，远程和混合办公机会较多。',
+        aliases: ['sd']
+    },
+
+    'san jose': {
+        name: 'San Jose',
+        country: 'United States',
+        timezone: 'UTC-8 (PST)',
+        ianaTimezone: 'America/Los_Angeles',
+        lat: 37.3382,
+        lng: -121.8863,
+        description: '硅谷核心城市之一，软件、硬件、云计算和半导体企业密集。',
+        aliases: ['sj', 'san jose ca']
+    },
+
+    'mountain view': {
+        name: 'Mountain View',
+        country: 'United States',
+        timezone: 'UTC-8 (PST)',
+        ianaTimezone: 'America/Los_Angeles',
+        lat: 37.3861,
+        lng: -122.0839,
+        description: '硅谷核心城市之一，拥有成熟的科技公司生态和工程人才密度。',
+        aliases: ['mountain view ca']
+    },
+
+    'palo alto': {
+        name: 'Palo Alto',
+        country: 'United States',
+        timezone: 'UTC-8 (PST)',
+        ianaTimezone: 'America/Los_Angeles',
+        lat: 37.4419,
+        lng: -122.1430,
+        description: '硅谷代表性城市，靠近斯坦福大学，创业和风险投资生态成熟。',
+        aliases: ['palo alto ca']
+    },
+
+    'portland': {
+        name: 'Portland',
+        country: 'United States',
+        timezone: 'UTC-8 (PST)',
+        ianaTimezone: 'America/Los_Angeles',
+        lat: 45.5152,
+        lng: -122.6784,
+        description: '美国西北部城市，软件、设计和创意产业活跃，远程工作文化友好。',
+        aliases: ['portland or', 'pdx']
+    },
+
+    'denver': {
+        name: 'Denver',
+        country: 'United States',
+        timezone: 'UTC-7 (MST)',
+        ianaTimezone: 'America/Denver',
+        lat: 39.7392,
+        lng: -104.9903,
+        description: '美国山地时区科技中心，云服务、企业软件和户外生活方式产业活跃。',
+        aliases: ['den']
+    },
+
+    'chicago': {
+        name: 'Chicago',
+        country: 'United States',
+        timezone: 'UTC-6 (CST)',
+        ianaTimezone: 'America/Chicago',
+        lat: 41.8781,
+        lng: -87.6298,
+        description: '美国中部最大城市，金融、企业服务、物流和软件产业基础深厚。',
+        aliases: ['chi']
+    },
+
+    'atlanta': {
+        name: 'Atlanta',
+        country: 'United States',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/New_York',
+        lat: 33.7490,
+        lng: -84.3880,
+        description: '美国东南部商业和科技中心，企业软件、金融科技和媒体产业活跃。',
+        aliases: ['atl']
+    },
+
+    'miami': {
+        name: 'Miami',
+        country: 'United States',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/New_York',
+        lat: 25.7617,
+        lng: -80.1918,
+        description: '美国东南部国际化城市，拉美业务、金融科技和远程工作社群活跃。',
+        aliases: ['mia']
+    },
+
+    'washington dc': {
+        name: 'Washington, DC',
+        country: 'United States',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/New_York',
+        lat: 38.9072,
+        lng: -77.0369,
+        description: '美国首都，政策、公共事务、非营利组织和政府科技生态集中。',
+        aliases: ['washington d.c.', 'dc', 'washington, dc']
+    },
+
+    'raleigh': {
+        name: 'Raleigh',
+        country: 'United States',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/New_York',
+        lat: 35.7796,
+        lng: -78.6382,
+        description: '北卡罗来纳州研究三角区核心城市，软件、生物科技和研发岗位集中。',
+        aliases: ['raleigh nc']
+    },
+
+    'minneapolis': {
+        name: 'Minneapolis',
+        country: 'United States',
+        timezone: 'UTC-6 (CST)',
+        ianaTimezone: 'America/Chicago',
+        lat: 44.9778,
+        lng: -93.2650,
+        description: '美国中北部商业中心，医疗、零售、金融服务和企业软件岗位较多。',
+        aliases: ['msp']
+    },
+
+    'salt lake city': {
+        name: 'Salt Lake City',
+        country: 'United States',
+        timezone: 'UTC-7 (MST)',
+        ianaTimezone: 'America/Denver',
+        lat: 40.7608,
+        lng: -111.8910,
+        description: '美国山地西部新兴科技中心，SaaS 和企业服务公司聚集。',
+        aliases: ['slc']
+    },
+
+    'phoenix': {
+        name: 'Phoenix',
+        country: 'United States',
+        timezone: 'UTC-7 (MST)',
+        ianaTimezone: 'America/Phoenix',
+        lat: 33.4484,
+        lng: -112.0740,
+        description: '美国西南部重要城市，半导体、运营中心和企业服务岗位持续增长。',
+        aliases: ['phx']
+    },
+
+    'montreal': {
+        name: 'Montreal',
+        country: 'Canada',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/Toronto',
+        lat: 45.5017,
+        lng: -73.5673,
+        description: '加拿大重要科技和人工智能中心，游戏、AI 和软件工程生态成熟。',
+        aliases: ['montréal', 'yul']
+    },
+
+    'ottawa': {
+        name: 'Ottawa',
+        country: 'Canada',
+        timezone: 'UTC-5 (EST)',
+        ianaTimezone: 'America/Toronto',
+        lat: 45.4215,
+        lng: -75.6972,
+        description: '加拿大首都，公共部门科技、通信和企业软件岗位较多。',
+        aliases: ['ott']
+    },
+
+    'calgary': {
+        name: 'Calgary',
+        country: 'Canada',
+        timezone: 'UTC-7 (MST)',
+        ianaTimezone: 'America/Edmonton',
+        lat: 51.0447,
+        lng: -114.0719,
+        description: '加拿大西部商业中心，能源科技、金融和企业软件机会增长明显。',
+        aliases: ['yyc']
+    },
+
+    'madrid': {
+        name: 'Madrid',
+        country: 'Spain',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Madrid',
+        lat: 40.4168,
+        lng: -3.7038,
+        description: '西班牙首都，金融、企业服务和科技公司欧洲岗位集中。',
+        aliases: ['mad']
+    },
+
+    'barcelona': {
+        name: 'Barcelona',
+        country: 'Spain',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Madrid',
+        lat: 41.3874,
+        lng: 2.1686,
+        description: '欧洲热门科技和数字游民城市，产品、设计和工程岗位活跃。',
+        aliases: ['bcn']
+    },
+
+    'lisbon': {
+        name: 'Lisbon',
+        country: 'Portugal',
+        timezone: 'UTC+0 (WET)',
+        ianaTimezone: 'Europe/Lisbon',
+        lat: 38.7223,
+        lng: -9.1393,
+        description: '葡萄牙首都，欧洲远程工作和创业生态热门城市。',
+        aliases: ['lisboa']
+    },
+
+    'stockholm': {
+        name: 'Stockholm',
+        country: 'Sweden',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Stockholm',
+        lat: 59.3293,
+        lng: 18.0686,
+        description: '北欧科技中心，音乐科技、金融科技、游戏和消费互联网企业活跃。',
+        aliases: ['sto']
+    },
+
+    'copenhagen': {
+        name: 'Copenhagen',
+        country: 'Denmark',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Copenhagen',
+        lat: 55.6761,
+        lng: 12.5683,
+        description: '丹麦首都，设计、可持续科技和企业软件生态成熟。',
+        aliases: ['københavn', 'cph']
+    },
+
+    'oslo': {
+        name: 'Oslo',
+        country: 'Norway',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Oslo',
+        lat: 59.9139,
+        lng: 10.7522,
+        description: '挪威首都，能源科技、金融科技和可持续产业岗位较多。',
+        aliases: ['osl']
+    },
+
+    'helsinki': {
+        name: 'Helsinki',
+        country: 'Finland',
+        timezone: 'UTC+2 (EET)',
+        ianaTimezone: 'Europe/Helsinki',
+        lat: 60.1699,
+        lng: 24.9384,
+        description: '芬兰首都，游戏、移动互联网和工程文化成熟。',
+        aliases: ['hel']
+    },
+
+    'zurich': {
+        name: 'Zurich',
+        country: 'Switzerland',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Zurich',
+        lat: 47.3769,
+        lng: 8.5417,
+        description: '瑞士金融和科技中心，AI、金融科技和高端工程岗位集中。',
+        aliases: ['zürich', 'zrh']
+    },
+
+    'vienna': {
+        name: 'Vienna',
+        country: 'Austria',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Vienna',
+        lat: 48.2082,
+        lng: 16.3738,
+        description: '奥地利首都，欧洲中部高生活质量城市，软件和国际组织岗位较多。',
+        aliases: ['wien']
+    },
+
+    'warsaw': {
+        name: 'Warsaw',
+        country: 'Poland',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Warsaw',
+        lat: 52.2297,
+        lng: 21.0122,
+        description: '波兰首都，中东欧重要软件研发和共享服务中心。',
+        aliases: ['warszawa', 'waw']
+    },
+
+    'prague': {
+        name: 'Prague',
+        country: 'Czech Republic',
+        timezone: 'UTC+1 (CET)',
+        ianaTimezone: 'Europe/Prague',
+        lat: 50.0755,
+        lng: 14.4378,
+        description: '中欧科技和共享服务中心，生活质量高，国际公司岗位较多。',
+        aliases: ['praha']
+    },
+
+    'melbourne': {
+        name: 'Melbourne',
+        country: 'Australia',
+        timezone: 'UTC+10 (AEST)',
+        ianaTimezone: 'Australia/Melbourne',
+        lat: -37.8136,
+        lng: 144.9631,
+        description: '澳大利亚重要科技和创意产业城市，产品、设计和工程岗位活跃。',
+        aliases: ['mel']
+    },
+
+    'brisbane': {
+        name: 'Brisbane',
+        country: 'Australia',
+        timezone: 'UTC+10 (AEST)',
+        ianaTimezone: 'Australia/Brisbane',
+        lat: -27.4698,
+        lng: 153.0251,
+        description: '澳大利亚东海岸城市，科技、运营和亚太协作岗位逐渐增长。',
+        aliases: ['bne']
+    },
+
+    'auckland': {
+        name: 'Auckland',
+        country: 'New Zealand',
+        timezone: 'UTC+12 (NZST)',
+        ianaTimezone: 'Pacific/Auckland',
+        lat: -36.8485,
+        lng: 174.7633,
+        description: '新西兰最大城市，科技创业、产品和工程岗位集中。',
+        aliases: ['akl']
+    },
+
+    'wellington': {
+        name: 'Wellington',
+        country: 'New Zealand',
+        timezone: 'UTC+12 (NZST)',
+        ianaTimezone: 'Pacific/Auckland',
+        lat: -41.2865,
+        lng: 174.7762,
+        description: '新西兰首都，公共部门科技、创意和软件岗位较多。',
+        aliases: ['wlg']
+    },
+
+    'seoul': {
+        name: 'Seoul',
+        country: 'South Korea',
+        timezone: 'UTC+9 (KST)',
+        ianaTimezone: 'Asia/Seoul',
+        lat: 37.5665,
+        lng: 126.9780,
+        description: '韩国首都，游戏、消费电子、内容平台和互联网产业成熟。',
+        aliases: ['sel', '서울']
+    },
+
+    'taipei': {
+        name: 'Taipei',
+        country: 'Taiwan',
+        timezone: 'UTC+8 (CST)',
+        ianaTimezone: 'Asia/Taipei',
+        lat: 25.0330,
+        lng: 121.5654,
+        description: '台湾科技和商业中心，半导体、硬件、软件和跨境岗位活跃。',
+        aliases: ['tpe', '台北']
+    },
+
+    'kuala lumpur': {
+        name: 'Kuala Lumpur',
+        country: 'Malaysia',
+        timezone: 'UTC+8 (MYT)',
+        ianaTimezone: 'Asia/Kuala_Lumpur',
+        lat: 3.1390,
+        lng: 101.6869,
+        description: '马来西亚首都，东南亚区域运营、客户支持和科技岗位集中。',
+        aliases: ['kl']
+    },
+
+    'ho chi minh city': {
+        name: 'Ho Chi Minh City',
+        country: 'Vietnam',
+        timezone: 'UTC+7 (ICT)',
+        ianaTimezone: 'Asia/Ho_Chi_Minh',
+        lat: 10.8231,
+        lng: 106.6297,
+        description: '越南最大商业城市，软件外包、产品和跨境运营岗位活跃。',
+        aliases: ['ho chi minh', 'saigon', 'hcmc']
+    },
+
+    'hanoi': {
+        name: 'Hanoi',
+        country: 'Vietnam',
+        timezone: 'UTC+7 (ICT)',
+        ianaTimezone: 'Asia/Ho_Chi_Minh',
+        lat: 21.0278,
+        lng: 105.8342,
+        description: '越南首都，工程、运营和区域协作岗位持续增长。',
+        aliases: ['han']
+    },
+
+    'manila': {
+        name: 'Manila',
+        country: 'Philippines',
+        timezone: 'UTC+8 (PHT)',
+        ianaTimezone: 'Asia/Manila',
+        lat: 14.5995,
+        lng: 120.9842,
+        description: '菲律宾首都，BPO、客户支持、运营和远程协作岗位集中。',
+        aliases: ['mnl']
+    },
+
+    'jakarta': {
+        name: 'Jakarta',
+        country: 'Indonesia',
+        timezone: 'UTC+7 (WIB)',
+        ianaTimezone: 'Asia/Jakarta',
+        lat: -6.2088,
+        lng: 106.8456,
+        description: '印度尼西亚首都，东南亚互联网、金融科技和运营岗位活跃。',
+        aliases: ['jkt']
+    },
+
+    'buenos aires': {
+        name: 'Buenos Aires',
+        country: 'Argentina',
+        timezone: 'UTC-3 (ART)',
+        ianaTimezone: 'America/Argentina/Buenos_Aires',
+        lat: -34.6037,
+        lng: -58.3816,
+        description: '阿根廷首都，拉美重要科技和创意城市，与美国工作时区重叠度较高。',
+        aliases: ['ba']
+    },
+
+    'bogota': {
+        name: 'Bogotá',
+        country: 'Colombia',
+        timezone: 'UTC-5 (COT)',
+        ianaTimezone: 'America/Bogota',
+        lat: 4.7110,
+        lng: -74.0721,
+        description: '哥伦比亚首都，拉美科技、金融科技和远程协作岗位增长明显。',
+        aliases: ['bogotá', 'bog']
+    },
+
+    'santiago': {
+        name: 'Santiago',
+        country: 'Chile',
+        timezone: 'UTC-4 (CLT)',
+        ianaTimezone: 'America/Santiago',
+        lat: -33.4489,
+        lng: -70.6693,
+        description: '智利首都，拉美稳定的商业和创业中心，科技生态持续发展。',
+        aliases: ['santiago chile', 'scl']
+    },
+
+    'cape town': {
+        name: 'Cape Town',
+        country: 'South Africa',
+        timezone: 'UTC+2 (SAST)',
+        ianaTimezone: 'Africa/Johannesburg',
+        lat: -33.9249,
+        lng: 18.4241,
+        description: '南非重要科技和创意产业城市，远程工作和国际协作岗位较多。',
+        aliases: ['cpt']
+    },
+
+    'lagos': {
+        name: 'Lagos',
+        country: 'Nigeria',
+        timezone: 'UTC+1 (WAT)',
+        ianaTimezone: 'Africa/Lagos',
+        lat: 6.5244,
+        lng: 3.3792,
+        description: '尼日利亚最大城市，非洲金融科技和创业生态中心之一。',
+        aliases: ['los']
     }
 }
 
@@ -649,6 +1166,15 @@ export function findLocation(query: string): LocationData | null {
         return LOCATION_DATABASE[normalized]
     }
 
+    // 优先匹配更具体的地点名称，例如 "California, San Francisco" 应命中 San Francisco。
+    const keyMatches = Object.entries(LOCATION_DATABASE)
+        .filter(([key]) => normalized.includes(key))
+        .sort(([a], [b]) => b.length - a.length)
+
+    if (keyMatches.length > 0) {
+        return keyMatches[0][1]
+    }
+
     // 别名匹配 (Use stricter matching)
     for (const [key, data] of Object.entries(LOCATION_DATABASE)) {
         if (data.aliases.some(alias => {
@@ -660,13 +1186,6 @@ export function findLocation(query: string): LocationData | null {
             // Longer aliases can use includes
             return normalized.includes(alias) || alias.includes(normalized);
         })) {
-            return data
-        }
-    }
-
-    // 模糊匹配(包含关系)
-    for (const [key, data] of Object.entries(LOCATION_DATABASE)) {
-        if (normalized.includes(key) || key.includes(normalized)) {
             return data
         }
     }

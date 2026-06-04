@@ -128,9 +128,9 @@ export default function HomeQuickSearch({
   return (
     <section className={`relative ${isEmbedded ? '' : 'pb-4'}`}>
       <div className={`${isEmbedded ? 'mx-auto max-w-5xl' : 'mx-auto max-w-7xl px-4 sm:px-6 lg:px-8'}`}>
-        <div className={`mx-auto max-w-5xl rounded-[30px] border px-5 py-5 backdrop-blur-xl sm:px-6 sm:py-6 ${
+        <div className={`mx-auto max-w-5xl rounded-[28px] border px-5 py-5 backdrop-blur-xl sm:px-6 sm:py-6 ${
           isEmbedded
-            ? 'border-slate-200/80 bg-white/82 shadow-[0_18px_48px_-36px_rgba(79,70,229,0.25)]'
+            ? 'border-[#dfeaf1] bg-white/82 shadow-[0_18px_48px_-38px_rgba(61,89,120,0.35)]'
             : 'border-white/80 bg-white/78 shadow-[0_24px_64px_-40px_rgba(79,70,229,0.35)]'
         }`}>
           <div className="flex flex-col gap-5">
@@ -143,8 +143,8 @@ export default function HomeQuickSearch({
             ) : null}
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
-              <label className="group flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm transition-all focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-100">
-                <Search className="h-5 w-5 flex-shrink-0 text-slate-400 transition-colors group-focus-within:text-indigo-500" />
+              <label className="group flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[#dfeaf1] bg-[#fbfdff] px-4 py-3 shadow-sm transition-all focus-within:border-[#bcd9f2] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#dceeff]">
+                <Search className="h-5 w-5 flex-shrink-0 text-slate-400 transition-colors group-focus-within:text-[#4f63f6]" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -155,7 +155,7 @@ export default function HomeQuickSearch({
 
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-500/25"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#4f63f6] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/18 transition-all hover:-translate-y-0.5 hover:bg-[#4052db] hover:shadow-xl hover:shadow-indigo-500/20"
               >
                 搜索岗位
                 <ArrowRight className="h-4 w-4" />

@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@font-face {
+  font-family: 'HaigooHand';
+  src: url('/pic_lists/Home_pics/PingFangSaTuoTi-2.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+.font-haigoo-hand {
+  font-family: 'HaigooHand', 'PingFang SC', 'Microsoft YaHei', cursive;
+  font-synthesis-weight: none;
+}
+
+.haigoo-hero-title {
+  font-weight: 400 !important;
+  -webkit-text-stroke: 0;
+  text-shadow: 0.28px 0 currentColor, 0 0.28px currentColor;
+}
+
+.haigoo-hand-bold {
+  font-weight: 400 !important;
+  -webkit-text-stroke: 0;
+  text-shadow: 0.26px 0 currentColor, 0 0.26px currentColor;
+}
+
 /* Defensive CSS Reset for Extension Conflicts */
 /* Force border-box to prevent extensions from breaking layout calculations */
 html, body, #root {

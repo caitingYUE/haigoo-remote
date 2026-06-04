@@ -1,10 +1,9 @@
-import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles } from 'lucide-react'
+import { Bell, User, Menu, ChevronDown, Trash2, Check, Crown, Sparkles, Search } from 'lucide-react'
+import type { FormEvent } from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import brandLogoPng from '../assets/brandlogo.png'
-
-const BRAND_LOGO = (import.meta as any).env?.VITE_BRAND_LOGO_URL || brandLogoPng
+import brandLogoPng from '../assets/brandlogo.webp'
 const BETA_END_DATE = new Date('2025-01-24').getTime()
 
 interface HeaderProps {
@@ -17,6 +16,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [showBeta, setShowBeta] = useState(false)
+  const [headerSearchTerm, setHeaderSearchTerm] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout, token, isMember, isTrialMember } = useAuth()
@@ -169,41 +169,57 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
     { id: 'profile-resume', label: '简历助手', href: '/profile?tab=resume' },
     { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' },
     { id: 'profile-community', label: '社群中心', href: '/profile?tab=community' },
-    { id: 'membership', label: '会员中心', href: '/membership' },
+    { id: 'membership', label: '会员中心', href: '/profile?tab=membership' },
     { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' }
   ]
 
   const isHome = location.pathname === '/'
+  const isJobsPage = location.pathname === '/jobs' || location.pathname.startsWith('/jobs/')
+  const submitHeaderSearch = (event: FormEvent) => {
+    event.preventDefault()
+    const keyword = headerSearchTerm.trim()
+    navigate(keyword ? `/jobs?search=${encodeURIComponent(keyword)}` : '/jobs')
+  }
 
   return (
     <header
       className={`fixed left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${showUpgradeNotice ? 'top-10' : 'top-0'}`}
       role="banner"
     >
-      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 pointer-events-auto transition-all duration-300 bg-white/70 backdrop-blur-2xl border-b border-white/20 shadow-sm shadow-white/10">
-        <div className="flex items-center h-16 w-full">
+      <div className="w-full pointer-events-auto border-b border-[#e5edf3] bg-[#fffdf8] shadow-[0_14px_42px_-38px_rgba(139,101,54,0.34)] transition-all duration-300">
+        <div className="mx-auto flex h-14 w-full max-w-[1620px] items-center px-4 sm:px-6 md:h-16">
           {/* Logo */}
           <div className="flex items-center group shrink-0">
             {/* Logo Image with Optical Adjustment */}
             <Link
               to="/"
-              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-3"
+              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-2"
               aria-label="Haigoo 首页"
             >
-              <img
-                src={BRAND_LOGO}
-                alt="Haigoo - 海外远程工作助手"
-                className="h-9 md:h-10 w-auto object-contain transition-all duration-300 group-hover:opacity-90"
-              />
-              <span className="hidden md:block text-sm font-bold text-slate-900 tracking-tight">海狗远程俱乐部</span>
+              <span className="flex h-9 w-[118px] items-center overflow-hidden">
+                <img src={brandLogoPng} alt="HaigooRemote" className="h-[52px] w-auto max-w-none -translate-x-2 -translate-y-[1px]" />
+              </span>
+              <span className="hidden md:block text-[14px] font-bold tracking-tight text-slate-900">海狗远程</span>
             </Link>
           </div>
 
-          {/* Center Navigation - Right aligned */}
-          <div className="hidden md:flex items-center gap-6 ml-auto mr-8">
+          <form onSubmit={submitHeaderSearch} className="ml-3 hidden xl:block">
+            <div className={`relative ${isJobsPage ? 'w-[360px] 2xl:w-[520px]' : 'w-[300px] 2xl:w-[360px]'}`}>
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={headerSearchTerm}
+                onChange={(event) => setHeaderSearchTerm(event.target.value)}
+                placeholder="搜索岗位、公司、技能..."
+                className="h-10 w-full rounded-full border border-[#dfeaf1] bg-white pl-9 pr-4 text-sm font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#b9d9f5] focus:bg-white focus:ring-2 focus:ring-[#9ecbf2]/20"
+              />
+            </div>
+          </form>
+
+          {/* Main Navigation */}
+          <div className="ml-auto mr-6 hidden items-center gap-5 lg:flex xl:gap-7 xl:mr-8">
             <Link
               to="/"
-              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/'
+              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/'
                   ? 'text-slate-900 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
@@ -213,17 +229,17 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
 
             <Link
               to="/jobs"
-              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/jobs'
+              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/jobs'
                   ? 'text-slate-900 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
             >
-              全部岗位
+              远程工作
             </Link>
 
             <Link
               to="/trusted-companies"
-              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
+              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
                   ? 'text-slate-900 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
@@ -232,8 +248,8 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
             </Link>
 
             <Link
-              to="/membership"
-              className={`text-sm transition-colors no-underline hover:no-underline flex items-center gap-1 ${location.pathname === '/membership'
+              to="/profile?tab=membership"
+              className={`flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
                   ? 'text-indigo-600 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
@@ -241,20 +257,10 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               <Crown className="w-4 h-4" />
               会员中心
             </Link>
-
-            <Link
-              to="/profile"
-              className={`text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
-            >
-              个人中心
-            </Link>
           </div>
 
           {/* Right side actions */}
-          <div className="flex items-center space-x-4" role="toolbar" aria-label="用户操作">
+          <div className="flex items-center space-x-3" role="toolbar" aria-label="用户操作">
             {/* 未登录：显示登录/注册按钮 */}
             {!isAuthenticated && (
               <>
@@ -493,7 +499,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav
-            className="md:hidden absolute top-full left-0 right-0 mt-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-xl border border-white/20 overflow-hidden"
+            className="md:hidden absolute left-3 right-3 top-full mt-3 overflow-hidden rounded-2xl border border-[#e5edf3] bg-[#fffdf8] shadow-[0_20px_48px_-36px_rgba(139,101,54,0.46)]"
             id="mobile-menu"
             role="navigation"
             aria-label="移动端导航"
@@ -530,8 +536,8 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 精选企业
               </Link>
               <Link
-                to="/about"
-                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/about'
+                to="/profile?tab=about"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${(location.pathname === '/about') || (location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') === 'about')
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
@@ -540,24 +546,15 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 关于我们
               </Link>
               <Link
-                to="/membership"
-                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/membership'
+                to="/profile?tab=membership"
+                className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/profile')
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
+                <Crown className="h-4 w-4" />
                 会员中心
-              </Link>
-              <Link
-                to="/profile"
-                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/profile')
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                个人中心
               </Link>
 
               {/* 移动端用户菜单 */}

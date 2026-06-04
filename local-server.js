@@ -3,7 +3,10 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 
-// Load environment variables
+// Load environment variables for local API preview.
+// `.env` contains Vercel-pulled shared service bindings such as Neon,
+// while `.env.local` contains local-only secrets and overrides.
+dotenv.config({ path: '.env' });
 dotenv.config({ path: '.env.local' });
 
 const app = express();

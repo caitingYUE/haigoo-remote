@@ -20,12 +20,20 @@ export interface ProcessedJobsFilters {
   search?: string
   location?: string
   type?: string
+  jobType?: string
+  salary?: string
+  experienceLevel?: string
+  industry?: string
+  regionType?: string
+  sourceType?: string
   skills?: string[]
   id?: string
   region?: 'domestic' | 'overseas'
   isFeatured?: boolean
   canRefer?: boolean
   memberOnly?: boolean
+  isTrusted?: boolean
+  isNew?: boolean
   sourceFilter?: string
   sortBy?: 'recent' | 'relevance'
   isApproved?: boolean
@@ -63,11 +71,19 @@ class ProcessedJobsService {
       if (filters.search) params.append('search', filters.search)
       if (filters.location) params.append('location', filters.location)
       if (filters.type) params.append('type', filters.type)
+      if (filters.jobType) params.append('jobType', filters.jobType)
+      if (filters.salary) params.append('salary', filters.salary)
+      if (filters.experienceLevel) params.append('experienceLevel', filters.experienceLevel)
+      if (filters.industry) params.append('industry', filters.industry)
+      if (filters.regionType) params.append('regionType', filters.regionType)
+      if (filters.sourceType) params.append('sourceType', filters.sourceType)
       if (filters.id) params.append('id', filters.id)
       if (filters.region) params.append('region', filters.region)
       if (filters.isFeatured !== undefined) params.append('isFeatured', filters.isFeatured.toString())
       if (filters.canRefer !== undefined) params.append('canRefer', filters.canRefer.toString())
       if (filters.memberOnly !== undefined) params.append('memberOnly', filters.memberOnly.toString())
+      if (filters.isTrusted !== undefined) params.append('isTrusted', filters.isTrusted.toString())
+      if (filters.isNew !== undefined) params.append('isNew', filters.isNew.toString())
       if (filters.isApproved !== undefined) params.append('isApproved', filters.isApproved.toString())
       if (filters.skipAggregations) params.append('skipAggregations', 'true')
       if (filters.sortBy) params.append('sortBy', filters.sortBy)
@@ -146,7 +162,7 @@ class ProcessedJobsService {
         logo: job.logo,
         location: job.location,
         region: job.region,
-        type: this.mapJobType(job.jobType),
+        type: this.mapJobType(job.jobType || job.type || job.job_type),
         salary: job.salary,
         description: job.description,
         requirements: job.requirements || [],
@@ -162,6 +178,9 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
+        role: job.role || job.role_type || job.roleType || undefined,
+        roleCategory: job.roleCategory || job.role_category || undefined,
+        jobDirection: job.jobDirection || job.job_direction || undefined,
         experienceLevel: job.experienceLevel || job.experience_level,
         recommendationScore: (job.displayMatchScore ?? job.display_match_score ?? job.matchScore ?? job.match_score) || 0,
         matchScore: (job.displayMatchScore ?? job.display_match_score ?? job.matchScore ?? job.match_score) || 0,
@@ -187,15 +206,22 @@ class ProcessedJobsService {
         canRefer: job.canRefer,
         memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
+        featuredReason: job.featuredReason || job.featured_reason || undefined,
         companyIndustry: job.companyIndustry,
         companyTags: job.companyTags,
         companyWebsite: job.companyWebsite,
         companyDescription: job.companyDescription,
-        hiringEmail: job.hiringEmail || job.trusted_hiring_email,
-        emailType: job.emailType || job.trusted_email_type,
+        companyAddress: job.companyAddress || job.company_address || job.trustedAddress || job.trusted_address || undefined,
+        companyRating: job.companyRating || job.company_rating || job.trustedCompanyRating || job.trusted_company_rating || undefined,
+        ratingSource: job.ratingSource || job.rating_source || job.trustedRatingSource || job.trusted_rating_source || undefined,
+        hiringEmail: job.hiringEmail || job.hiring_email || job.trusted_hiring_email,
+        emailType: job.emailType || job.email_type || job.trusted_email_type,
+        referralContactTypes: Array.isArray(job.referralContactTypes)
+          ? job.referralContactTypes
+          : (Array.isArray(job.referral_contact_types) ? job.referral_contact_types : []),
         referralContactMode: job.referralContactMode,
-        selectedReferralContactIds: job.selectedReferralContactIds,
-        effectiveReferralContactCount: job.effectiveReferralContactCount
+        selectedReferralContactIds: job.selectedReferralContactIds || job.selected_referral_contact_ids,
+        effectiveReferralContactCount: job.effectiveReferralContactCount ?? job.effective_referral_contact_count
       }))
 
       return {
@@ -269,7 +295,7 @@ class ProcessedJobsService {
         logo: job.logo || job.trusted_logo, // Use trusted logo if available
         location: job.location,
         region: job.region,
-        type: this.mapJobType(job.jobType),
+        type: this.mapJobType(job.jobType || job.type || job.job_type),
         salary: job.salary,
         description: job.description,
         requirements: job.requirements || [],
@@ -283,19 +309,38 @@ class ProcessedJobsService {
         status: job.status,
         isRemote: job.isRemote,
         category: job.category,
-        experienceLevel: job.experienceLevel,
+        role: job.role || job.role_type || job.roleType || undefined,
+        roleCategory: job.roleCategory || job.role_category || undefined,
+        jobDirection: job.jobDirection || job.job_direction || undefined,
+        experienceLevel: job.experienceLevel || job.experience_level,
+        recommendationScore: (job.displayMatchScore ?? job.display_match_score ?? job.matchScore ?? job.match_score) || 0,
+        matchScore: (job.displayMatchScore ?? job.display_match_score ?? job.matchScore ?? job.match_score) || 0,
+        trueMatchScore: (job.trueMatchScore ?? job.true_match_score) ?? undefined,
+        displayMatchScore: (job.displayMatchScore ?? job.display_match_score ?? job.matchScore ?? job.match_score) ?? undefined,
+        displayBand: job.displayBand || job.display_band || undefined,
+        matchLevel: job.matchLevel || job.match_level || undefined,
+        matchLabel: job.matchLabel || job.match_label || undefined,
         isTrusted: job.isTrusted,
         canRefer: job.canRefer,
         memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
+        featuredReason: job.featuredReason || job.featured_reason || undefined,
         companyIndustry: job.companyIndustry,
         companyWebsite: job.companyWebsite || job.trusted_website, // Use trusted website if available
+        companyAddress: job.companyAddress || job.company_address || job.trustedAddress || job.trusted_address || undefined,
+        companyRating: job.companyRating || job.company_rating || job.trustedCompanyRating || job.trusted_company_rating || undefined,
+        ratingSource: job.ratingSource || job.rating_source || job.trustedRatingSource || job.trusted_rating_source || undefined,
         companyId: job.companyId,
         sourceType: job.sourceType ? job.sourceType.toLowerCase() : undefined,
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,
         translatedAt: job.translatedAt || undefined,
-        hiringEmail: job.hiringEmail || job.trusted_hiring_email // Ensure hiring email is mapped
+        hiringEmail: job.hiringEmail || job.hiring_email || job.trusted_hiring_email, // Ensure hiring email is mapped
+        emailType: job.emailType || job.email_type || job.trusted_email_type,
+        referralContactTypes: Array.isArray(job.referralContactTypes)
+          ? job.referralContactTypes
+          : (Array.isArray(job.referral_contact_types) ? job.referral_contact_types : []),
+        effectiveReferralContactCount: job.effectiveReferralContactCount ?? job.effective_referral_contact_count
       }))
     } catch (error) {
       console.error('获取首页精选职位失败:', error)

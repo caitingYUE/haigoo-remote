@@ -6,29 +6,32 @@ import { WorldMap } from './WorldMap'
 interface LocationTooltipProps {
     location: string
     onClose: () => void
+    floating?: boolean
 }
 
-export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
+export function LocationTooltip({ location, onClose, floating = false }: LocationTooltipProps) {
     const data = findLocation(location)
     const [time, setTime] = useState<string>('')
+    const [beijingTime, setBeijingTime] = useState<string>('')
 
     useEffect(() => {
         if (!data?.ianaTimezone) return
 
+        const formatTime = (timeZone: string) => new Date().toLocaleTimeString('zh-CN', {
+            timeZone,
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        })
+
         const updateTime = () => {
             try {
-                const now = new Date()
-                const timeString = now.toLocaleTimeString('en-US', {
-                    timeZone: data.ianaTimezone,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit',
-                    hour12: true
-                })
-                setTime(timeString)
+                setTime(formatTime(data.ianaTimezone))
+                setBeijingTime(formatTime('Asia/Shanghai'))
             } catch (e) {
                 console.error('Error formatting time:', e)
                 setTime('')
+                setBeijingTime('')
             }
         }
 
@@ -40,12 +43,12 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
 
     if (!data) {
         return (
-            <div className="absolute z-50 bg-white rounded-lg shadow-xl p-4 border border-slate-200 w-80 animate-in fade-in zoom-in-95 duration-200 left-0">
+            <div className={`${floating ? 'relative' : 'absolute left-0'} z-50 bg-white rounded-lg shadow-xl p-4 border border-slate-200 w-80 animate-in fade-in zoom-in-95 duration-200`}>
                 <div className="flex justify-between items-start gap-3">
                     <div>
                         <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2 mb-2">
                             <MapPin className="w-4 h-4 text-indigo-500" />
-                            地点详情
+                            总部地址
                         </h3>
                         <p className="text-sm text-slate-600 break-words">{location}</p>
                     </div>
@@ -58,7 +61,7 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
     }
 
     return (
-        <div className="absolute z-50 bg-white rounded-lg shadow-xl border border-slate-200 w-80 animate-in fade-in zoom-in-95 duration-200 overflow-hidden left-0 mt-2">
+        <div className={`${floating ? 'relative' : 'absolute left-0 mt-2'} z-50 bg-white rounded-lg shadow-xl border border-slate-200 w-80 animate-in fade-in zoom-in-95 duration-200 overflow-hidden`}>
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-slate-50/50">
                 <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
@@ -83,17 +86,26 @@ export function LocationTooltip({ location, onClose }: LocationTooltipProps) {
 
             {/* Info */}
             <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between text-sm">
+                <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-indigo-500" />
                         <span className="text-slate-500">时区:</span>
                         <span className="font-medium text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded text-xs">{data.timezone}</span>
                     </div>
-                    {time && (
-                        <div className="font-mono text-indigo-600 font-semibold bg-indigo-50 px-2 py-0.5 rounded text-xs">
-                            {time}
-                        </div>
-                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                        {time && (
+                            <div className="rounded-lg bg-indigo-50 px-2 py-1.5">
+                                <div className="text-[10px] font-semibold text-slate-500">当地时间</div>
+                                <div className="font-mono text-xs font-semibold text-indigo-600">{time}</div>
+                            </div>
+                        )}
+                        {beijingTime && (
+                            <div className="rounded-lg bg-amber-50 px-2 py-1.5">
+                                <div className="text-[10px] font-semibold text-slate-500">北京时间</div>
+                                <div className="font-mono text-xs font-semibold text-amber-700">{beijingTime}</div>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Description */}

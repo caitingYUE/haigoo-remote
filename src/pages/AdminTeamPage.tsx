@@ -39,7 +39,7 @@ import '../components/AdminPanel.css';
 import { useAuth } from '../contexts/AuthContext';
 import { processedJobsService } from '../services/processed-jobs-service';
 
-import logoPng from '../assets/logo.png';
+import logoPng from '../assets/logo.webp';
 import { trackingService } from '../services/tracking-service';
 
 const DataManagementTabs = lazy(() => import('../components/DataManagementTabs'));

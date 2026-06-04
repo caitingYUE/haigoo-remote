@@ -30,6 +30,9 @@ export interface Job {
   // RSS数据扩展字段
   experienceLevel?: 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive'
   category?: string
+  role?: string
+  roleCategory?: string
+  jobDirection?: string
   isRemote?: boolean
   remoteLocationRestriction?: string
   // 推荐度得分 (0-100) - 只有真实数据才设置
@@ -63,6 +66,7 @@ export interface Job {
   companyTags?: string[]
   hiringEmail?: string
   emailType?: string
+  referralContactTypes?: string[]
   referralContactMode?: 'inherit_all' | 'custom'
   selectedReferralContactIds?: string[]
   effectiveReferralContactCount?: number
@@ -70,12 +74,16 @@ export interface Job {
   companyDescription?: string
   companyLogo?: string
   cachedCompanyLogoUrl?: string
+  companyAddress?: string
+  companyRating?: string
+  ratingSource?: string
 
   // AI-generated job summary (30-50 characters)
   summary?: string
 
   // Featured job flag for homepage display
   isFeatured?: boolean
+  featuredReason?: string
 
   // Language requirements
   languages?: string[]

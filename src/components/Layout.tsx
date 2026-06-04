@@ -33,8 +33,10 @@ export default function Layout({ children }: LayoutProps) {
   const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/') || pathname.startsWith('/companies/')
   const isAbout = pathname === '/about'
   const isBundle = pathname.startsWith('/job-bundles/')
+  const isJobDetailPage = pathname.startsWith('/job/')
   const isProfile = pathname.startsWith('/profile')
-  const hideFooter = pathname.startsWith('/resume') || isJobsPage || isProfile
+  const hideFooter = isHome || pathname.startsWith('/resume') || isJobsPage || isProfile || isAbout || isBundle
+  const showFooterMembershipCta = !(isCompanies || isBundle || (!isAuthenticated && isJobDetailPage))
   const lockViewport = isJobsPage && isDesktopViewport
 
   const showVerificationWarning = isAuthenticated && user && !user.emailVerified
@@ -108,7 +110,7 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       </main>
 
-      {!hideFooter && <Footer />}
+      {!hideFooter && <Footer showMembershipCta={showFooterMembershipCta} />}
 
       {showHappinessCard && (
         <HappinessCard onClose={() => setShowHappinessCard(false)} />

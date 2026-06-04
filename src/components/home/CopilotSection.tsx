@@ -162,7 +162,7 @@ export default function CopilotSection() {
       if (!res.ok) {
         if (res.status === 403) {
           showWarning('试用次数已用完', '请升级会员解锁无限次使用权限')
-          navigate('/membership')
+          navigate('/profile?tab=membership')
         } else {
           throw new Error(data.error || '生成失败')
         }

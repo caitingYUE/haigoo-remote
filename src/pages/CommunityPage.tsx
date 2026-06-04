@@ -1,4 +1,4 @@
-import { Crown, MessageSquare, Sparkles, Users } from 'lucide-react'
+import { Briefcase, MessageSquare, Sparkles, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import WeChatCommunityPanel from '../components/WeChatCommunityPanel'
 
@@ -39,9 +39,9 @@ export default function CommunityPage() {
               desc: '除了岗位本身，你还能看到大家对岗位、公司、投递方式和面试体验的讨论。'
             },
             {
-              icon: Crown,
-              title: '会员群更聚焦',
-              desc: '会员用户会看到单独的会员群入口，交流内容更集中，更适合求职冲刺阶段。'
+              icon: Briefcase,
+              title: '所有用户同群交流',
+              desc: '会员和非会员使用同一个交流群，岗位同步、求职讨论和产品更新都集中在这里。'
             }
           ].map((item) => (
             <div key={item.title} className="rounded-3xl border border-white/60 bg-white/85 p-6 shadow-sm backdrop-blur">

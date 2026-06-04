@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { CheckCircle2, XCircle, Loader2, ArrowRight } from 'lucide-react'
-import logoPng from '../assets/logo.png'
+import logoPng from '../assets/logo.webp'
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams()

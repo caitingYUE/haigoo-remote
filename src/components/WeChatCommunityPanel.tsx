@@ -12,22 +12,14 @@ interface WeChatCommunityPanelProps {
 }
 
 function getCommunityConfig(isMember = false) {
-  if (isMember) {
-    return {
-      title: '加入 Haigoo 远程交流群',
-      subtitle: '群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。',
-      qrSrc: '/Wechat_group_vip.png',
-      qrAlt: 'Haigoo 会员交流群二维码',
-      qrTitle: '交流入口',
-    }
-  }
-
   return {
     title: '加入 Haigoo 远程交流群',
-    subtitle: '群里会同步精选岗位、求职经验、投递反馈和产品更新，适合正在找远程工作的用户。',
-    qrSrc: '/Wechat_group.png',
+    subtitle: isMember
+      ? '群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。'
+      : '群里会同步精选岗位、求职经验、投递反馈和产品更新，适合正在找远程工作的用户。',
+    qrSrc: '/Wechat_group.webp',
     qrAlt: 'Haigoo 求职交流群二维码',
-      qrTitle: '交流入口',
+    qrTitle: '交流入口',
   }
 }
 

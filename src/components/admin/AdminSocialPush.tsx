@@ -867,7 +867,7 @@ const AdminSocialPush: React.FC = () => {
       id: 'community',
       label: '社群推送',
       icon: <Mail className="h-4 w-4" />,
-      description: '按自定义分组查看非会员群和会员群推荐结果。'
+      description: '按自定义分组查看交流群推荐结果。'
     },
     {
       id: 'xiaohongshu',

@@ -95,6 +95,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     benefits: job.benefits?.join('\n') || '',
     region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
     isFeatured: job.isFeatured || false,
+    featuredReason: (job as any).featuredReason || '',
     isApproved: (job as any).isApproved || false,
     url: job.url || '',
     referralContactMode: ((job as any).referralContactMode === 'custom' ? 'custom' : 'inherit_all') as 'inherit_all' | 'custom',
@@ -134,6 +135,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
       benefits: job.benefits?.join('\n') || '',
       region: (job.region as 'domestic' | 'overseas' | undefined) || undefined,
       isFeatured: job.isFeatured || false,
+      featuredReason: (job as any).featuredReason || '',
       isApproved: (job as any).isApproved || false,
       url: job.url || '',
       referralContactMode: ((job as any).referralContactMode === 'custom' ? 'custom' : 'inherit_all') as 'inherit_all' | 'custom',
@@ -759,17 +761,33 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </select>
             </div>
 
-            <div className="md:col-span-2">
-              <label className="flex items-center gap-2 cursor-pointer mt-1">
-                <input
-                  type="checkbox"
-                  checked={formData.isFeatured}
-                  onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                  className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
-                />
-                <span className="text-[13px] font-medium text-slate-700">设为精选岗位 (Featured)</span>
-                <Star className={`w-3.5 h-3.5 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
-              </label>
+            <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+              <div className="grid gap-3 md:grid-cols-[190px,minmax(0,1fr)] md:items-start">
+                <label className="flex items-center gap-2 cursor-pointer pt-2">
+                  <input
+                    type="checkbox"
+                    checked={formData.isFeatured}
+                    onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
+                    className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  />
+                  <span className="text-[13px] font-medium text-slate-700">设为精选岗位</span>
+                  <Star className={`w-3.5 h-3.5 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
+                </label>
+
+                <div>
+                  <div className="mb-1.5 flex items-center justify-between gap-2">
+                    <label className="text-[13px] font-medium text-slate-700">精选文案</label>
+                    <span className="text-[11px] text-slate-400">{formData.featuredReason.length}/120</span>
+                  </div>
+                  <textarea
+                    value={formData.featuredReason}
+                    maxLength={120}
+                    onChange={(e) => setFormData({ ...formData, featuredReason: e.target.value.slice(0, 120) })}
+                    className="min-h-[68px] w-full resize-y rounded-md border border-slate-300 bg-white px-2.5 py-2 text-[13px] leading-5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    placeholder="例如：适合想转向 B2B SaaS 的产品设计师，团队远程协作成熟。"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="md:col-span-2 mt-4 space-y-3 pt-4 border-t border-slate-100">
