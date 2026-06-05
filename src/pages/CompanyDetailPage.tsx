@@ -226,6 +226,12 @@ export default function CompanyDetailPage() {
     const displayCompanyName = companyInfo?.name || decodedCompanyName || '企业详情'
     const companyDescription = companyInfo?.description || '暂无简介'
     const isRemoteAddress = Boolean(companyInfo?.address && (companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')))
+    const companyTags = Array.isArray(companyInfo?.tags)
+        ? companyInfo.tags.map((tag) => String(tag).trim()).filter(Boolean)
+        : []
+    const companySpecialties = Array.isArray(companyInfo?.specialties)
+        ? companyInfo.specialties.map((specialty) => String(specialty).trim()).filter(Boolean)
+        : []
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f9fbff_46%,#fffdf8_100%)]">
@@ -255,14 +261,14 @@ export default function CompanyDetailPage() {
                     <div className="relative overflow-visible rounded-[30px] border border-[#eadfcf]/90 bg-[#fffdf8]/78 p-3 shadow-[0_26px_78px_-62px_rgba(139,101,54,0.34)] backdrop-blur-[2px] sm:p-4 lg:p-5">
 
                         <div className="relative">
-                            <section className="relative min-h-[164px] overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,rgba(255,253,248,0.88)_0%,rgba(255,255,255,0.68)_48%,rgba(249,252,255,0.46)_100%)] p-4 sm:p-5 lg:min-h-[188px]">
+                            <section className="relative overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,rgba(255,253,248,0.88)_0%,rgba(255,255,255,0.68)_48%,rgba(249,252,255,0.46)_100%)] p-4 sm:p-5 lg:min-h-[154px]">
                                 <img
                                     src={companyDecor.bg}
                                     alt=""
-                                    className="pointer-events-none absolute bottom-0 right-0 hidden h-[232px] w-[58%] object-cover object-[68%_62%] opacity-[0.58] lg:block"
+                                    className="pointer-events-none absolute bottom-0 right-0 hidden h-[190px] w-[52%] object-cover object-[68%_62%] opacity-[0.52] lg:block"
                                 />
-                                <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[232px] w-[72%] bg-[linear-gradient(90deg,rgba(255,253,248,0.9)_0%,rgba(255,253,248,0.46)_44%,rgba(255,253,248,0.2)_72%,rgba(255,253,248,0.56)_100%)] lg:block" />
-                                <div className="relative z-10 flex items-start gap-4 lg:items-center">
+                                <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[190px] w-[68%] bg-[linear-gradient(90deg,rgba(255,253,248,0.92)_0%,rgba(255,253,248,0.52)_42%,rgba(255,253,248,0.22)_72%,rgba(255,253,248,0.58)_100%)] lg:block" />
+                                <div className="relative z-10 flex items-start gap-4">
                                     {canShowCompanyDetails && (companyLogoSrc ? (
                                         <div className="h-[74px] w-[74px] flex-shrink-0 overflow-hidden rounded-[22px] border border-[#dfeaf1] bg-white/94 p-2 shadow-[0_22px_48px_-32px_rgba(62,91,120,0.62)] sm:h-20 sm:w-20 lg:h-[88px] lg:w-[88px]">
                                             <img
@@ -289,9 +295,9 @@ export default function CompanyDetailPage() {
                                         </div>
                                     ))}
 
-                                    <div className="min-w-0 flex-1">
-                                        <div className="flex max-h-[96px] flex-wrap items-center gap-x-3 gap-y-2 overflow-hidden">
-                                            <h1 className="min-w-0 max-w-full truncate text-[30px] font-black leading-tight tracking-normal text-slate-950 sm:text-[38px]">
+                                    <div className="min-w-0 flex-1 pt-0.5 lg:pt-2">
+                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                                            <h1 className="min-w-0 max-w-full truncate text-[30px] font-black leading-none tracking-normal text-slate-950 sm:text-[38px]">
                                                 {displayCompanyName}
                                             </h1>
                                             {companyInfo?.industry && (
@@ -304,11 +310,32 @@ export default function CompanyDetailPage() {
                                                 <Briefcase className="w-3.5 h-3.5 text-slate-500" />
                                                 <span className="max-w-[260px] truncate">{hiringLine}</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 rounded-full border border-[#dfeaf1] bg-white/88 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/30">
-                                                <MapPin className="w-3.5 h-3.5 text-slate-500" />
-                                                <span>远程优先</span>
-                                            </div>
                                         </div>
+
+                                        {(companyTags.length > 0 || companySpecialties.length > 0) && (
+                                            <div className="mt-3 space-y-2">
+                                                {companyTags.length > 0 && (
+                                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                                        <span className="shrink-0 text-xs font-black text-slate-500">标签</span>
+                                                        {companyTags.slice(0, 8).map((tag) => (
+                                                            <span key={tag} className="rounded-full border border-[#d7e8ee] bg-white/86 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/20">
+                                                                {tag}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                                {companySpecialties.length > 0 && (
+                                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                                        <span className="shrink-0 text-xs font-black text-slate-500">领域/专长</span>
+                                                        {companySpecialties.slice(0, 8).map((specialty) => (
+                                                            <span key={specialty} className="rounded-full border border-[#e2e9f0] bg-white/72 px-2.5 py-1 text-xs font-bold text-slate-600">
+                                                                {specialty}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </section>
@@ -449,20 +476,6 @@ export default function CompanyDetailPage() {
                                         </div>
                                     )}
                                 </div>
-                                {companyInfo?.specialties && companyInfo.specialties.length > 0 && (
-                                    <div className="mt-4 border-t border-[#edf2f6] pt-4">
-                                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                            <div className="shrink-0 text-sm font-black text-slate-700">企业领域 / 专长</div>
-                                            <div className="flex flex-wrap gap-2">
-                                                {companyInfo.specialties.slice(0, 8).map((spec, idx) => (
-                                                    <span key={idx} className="rounded-full border border-[#dfe8ef] bg-white/86 px-3 py-1 text-xs font-bold text-slate-600">
-                                                        {spec}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                         </section>
 
