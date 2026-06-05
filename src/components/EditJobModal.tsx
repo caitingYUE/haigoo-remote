@@ -104,6 +104,16 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const updateTranslationField = (field: 'title' | 'description', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      translations: {
+        ...((prev as any).translations || {}),
+        [field]: value
+      }
+    }));
+  };
+
   const salaryPreview = formData.salaryEditorMode === 'structured'
     ? formatSalaryForDisplay({
       min: formData.salaryMin ? Number(formData.salaryMin) : undefined,
@@ -191,9 +201,22 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           valueMode: formData.salaryValueMode
         })
         : String(formData.salary || '').trim();
+      const normalizedTranslations = { ...(((restFormData as any).translations || {}) as Record<string, any>) };
+      if (typeof normalizedTranslations.title === 'string') {
+        normalizedTranslations.title = normalizedTranslations.title.trim();
+      }
+      if (typeof normalizedTranslations.description === 'string') {
+        normalizedTranslations.description = normalizedTranslations.description.trim();
+      }
+      Object.keys(normalizedTranslations).forEach((key) => {
+        if (normalizedTranslations[key] === '') delete normalizedTranslations[key];
+      });
+      const hasAnyTranslation = Object.keys(normalizedTranslations).length > 0;
 
       await onSave({
         ...restFormData,
+        translations: normalizedTranslations,
+        isTranslated: hasAnyTranslation,
         salary: normalizedSalary,
         publishedAt: formData.publishedAt ? new Date(formData.publishedAt).toISOString() : undefined,
         tags: splitTagInput(formData.tags),
@@ -455,24 +478,6 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
-              {(formData as any).translations?.title && (
-                <div className="mt-1 flex items-center justify-between bg-slate-50 px-2 py-1 rounded border border-slate-200">
-                  <span className="text-[11px] text-slate-500 truncate mr-2" title={(formData as any).translations.title}>
-                    翻译: {(formData as any).translations.title}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newTrans = { ...(formData as any).translations };
-                      delete newTrans.title;
-                      setFormData({ ...formData, translations: newTrans });
-                    }}
-                    className="text-[10px] text-red-500 hover:text-red-700 font-medium whitespace-nowrap"
-                  >
-                    清除翻译
-                  </button>
-                </div>
-              )}
             </div>
 
             <div>
@@ -484,6 +489,37 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                 required
               />
+            </div>
+
+            <div className="md:col-span-2 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-[13px] font-semibold text-slate-900">前台中文翻译内容</div>
+                  <div className="mt-0.5 text-[11px] leading-5 text-slate-500">人工修改后会继续保存在当前岗位的 translations 字段，线上展示优先使用这里的内容。</div>
+                </div>
+                <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-indigo-600">可编辑</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label className="block text-[12px] font-medium text-slate-600 mb-1.5">翻译后标题</label>
+                  <input
+                    type="text"
+                    value={(formData as any).translations?.title || ''}
+                    onChange={(e) => updateTranslationField('title', e.target.value)}
+                    className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[13px] text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    placeholder="例如：高级产品经理"
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    type="button"
+                    onClick={() => updateTranslationField('title', formData.title)}
+                    className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[12px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                  >
+                    用原始标题填入
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div>
@@ -844,28 +880,6 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="md:col-span-2 mt-4 space-y-4 pt-4 border-t border-slate-100">
-              {(job as any).translations?.description && (
-                <div className="mb-3 bg-indigo-50/50 border border-indigo-100/50 rounded-lg p-3">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-2 text-indigo-700 font-medium">
-                      <span className="text-[10px] bg-indigo-100 px-1.5 py-0.5 rounded text-indigo-800">中文翻译 (参考)</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, description: (job as any).translations.description })}
-                      className="text-[10px] flex items-center gap-1 text-indigo-600 hover:text-indigo-800 transition-colors bg-white px-1.5 py-0.5 rounded shadow-sm border border-indigo-100"
-                      title="使用翻译替换当前描述"
-                    >
-                      <ArrowDown className="w-2.5 h-2.5" />
-                      填入描述
-                    </button>
-                  </div>
-                  <div className="text-[13px] text-slate-700 whitespace-pre-wrap leading-relaxed max-h-32 overflow-y-auto custom-scrollbar">
-                    {(job as any).translations.description}
-                  </div>
-                </div>
-              )}
-              
               <div>
                 <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位描述</label>
                 <textarea
@@ -873,6 +887,28 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                   className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                />
+              </div>
+
+              <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <label className="block text-[13px] font-medium text-slate-700">翻译后正文</label>
+                  <button
+                    type="button"
+                    onClick={() => updateTranslationField('description', formData.description)}
+                    className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-white px-2 py-1 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                    title="使用原始正文覆盖翻译正文"
+                  >
+                    <ArrowDown className="w-2.5 h-2.5" />
+                    用原始正文填入
+                  </button>
+                </div>
+                <textarea
+                  value={(formData as any).translations?.description || ''}
+                  onChange={(e) => updateTranslationField('description', e.target.value)}
+                  rows={5}
+                  className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[13px] leading-relaxed text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                  placeholder="这里填写人工修正后的中文岗位正文，前台详情页会优先展示。"
                 />
               </div>
 

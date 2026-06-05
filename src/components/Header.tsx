@@ -164,12 +164,13 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
     }
   }
 
-  // 用户菜单选项 - 恢复个人中心入口
+  // 用户菜单选项
   const userMenuItems: { id: string; label: string; href: string; danger?: boolean }[] = [
-    { id: 'profile-resume', label: '简历助手', href: '/profile?tab=resume' },
+    { id: 'profile-resume', label: '首页', href: '/profile?tab=resume' },
+    { id: 'membership', label: '会员权益', href: '/profile?tab=membership' },
+    { id: 'profile-about', label: '关于我们', href: '/profile?tab=about' },
     { id: 'profile-favorites', label: '我的收藏', href: '/profile?tab=favorites' },
-    { id: 'profile-community', label: '社群中心', href: '/profile?tab=community' },
-    { id: 'membership', label: '会员中心', href: '/profile?tab=membership' },
+    { id: 'profile-applications', label: '我的申请', href: '/profile?tab=applications' },
     { id: 'profile-feedback', label: '我要反馈', href: '/profile?tab=feedback' }
   ]
 

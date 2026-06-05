@@ -29,7 +29,7 @@ interface JobBundle {
 export default function JobBundleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, isMember } = useAuth();
+  const { user, isAuthenticated, isMember, isTrialMember } = useAuth();
 
   const [bundle, setBundle] = useState<JobBundle | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -164,6 +164,9 @@ export default function JobBundleDetailPage() {
 
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
+  const memberExpireAt = (user as any)?.memberExpireAt || (user as any)?.member_expire_at || null;
+  const memberExpireLabel = memberExpireAt ? new Date(memberExpireAt).toLocaleDateString('zh-CN') : '长期有效';
+  const memberStatusLabel = isTrialMember ? '体验会员权益生效中' : 'Haigoo 会员权益生效中';
   const pageBackground = '/pic_lists/About_pics/about_bg.webp';
   const assistantSupportPanel = (
     <div className="rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] p-3.5 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.22)]">
@@ -381,16 +384,22 @@ export default function JobBundleDetailPage() {
               </div>
               <div>
                 <div className="text-sm font-black text-[#49a982]">Haigoo 会员权益</div>
-                <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">想看更多高价值岗位和联系人？</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-500">解锁会员岗位、邮箱直申、内推线索和精选推荐，让申请推进更高效。</p>
+                <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">
+                  {isMember ? memberStatusLabel : '想看更多高价值岗位和联系人？'}
+                </h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">
+                  {isMember
+                    ? `你已解锁会员岗位、邮箱直申、内推线索和精选推荐，有效期至 ${memberExpireLabel}。`
+                    : '解锁会员岗位、邮箱直申、内推线索和精选推荐，让申请推进更高效。'}
+                </p>
               </div>
             </div>
             <button
               type="button"
-              onClick={() => navigate('/profile?tab=membership')}
+              onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership')}
               className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#49a982] px-6 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(73,169,130,0.6)] transition hover:-translate-y-0.5 sm:w-auto"
             >
-              了解会员权益
+              {isMember ? '继续查看会员岗位' : '了解会员权益'}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

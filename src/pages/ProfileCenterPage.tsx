@@ -2759,14 +2759,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }
 
   const MembershipTab = () => (
-    <div className="relative min-h-full overflow-hidden rounded-[30px] bg-[#fffdf8] px-4 py-5 sm:px-6">
+    <div className="relative min-h-full overflow-hidden rounded-[22px] bg-[#fffdf8] px-3 py-4 sm:rounded-[30px] sm:px-6 sm:py-5">
       <div className="pointer-events-none absolute inset-0">
         <img src="/pic_lists/About_pics/about_bg.webp" alt="" className="absolute inset-x-0 top-0 h-[520px] w-full object-cover object-[58%_36%] opacity-[0.18] saturate-[0.96]" />
         <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-x-0 bottom-0 h-[420px] w-full object-cover object-bottom opacity-[0.18]" />
         <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.94)_0%,rgba(251,253,255,0.9)_48%,rgba(255,253,248,0.95)_100%)]" />
       </div>
 
-      <section className="relative mb-7 overflow-hidden rounded-[30px] border border-[#eadfcf] bg-[#fffdf8] px-6 py-7 shadow-[0_28px_86px_-62px_rgba(139,101,54,0.46)] sm:px-8 lg:px-10 lg:py-9">
+      <section className="relative mb-5 overflow-hidden rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] px-4 py-5 shadow-[0_28px_86px_-62px_rgba(139,101,54,0.46)] sm:mb-7 sm:rounded-[30px] sm:px-8 lg:px-10 lg:py-9">
         <div className="pointer-events-none absolute inset-0">
           <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full scale-[1.04] object-cover object-[70%_55%] opacity-[0.54] saturate-[0.95]" />
           <img src="/pic_lists/About_pics/grass_icon-transparent.webp" alt="" className="absolute bottom-3 left-[54%] hidden h-24 w-24 object-contain opacity-24 xl:block" />
@@ -2779,13 +2779,13 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <Crown className="h-3.5 w-3.5" />
               会员权益中心
             </div>
-            <h1 className="haigoo-hand-bold max-w-[780px] font-haigoo-hand text-[38px] leading-[1.08] tracking-normal text-slate-950 sm:text-[52px] xl:text-[64px]">
+            <h1 className="haigoo-hand-bold max-w-[780px] font-haigoo-hand text-[30px] leading-[1.12] tracking-normal text-slate-950 sm:text-[52px] xl:text-[64px]">
               优中选优，更快拿到有效结果
             </h1>
-            <p className="mt-5 max-w-[680px] text-sm leading-7 text-slate-600 sm:text-base">
+            <p className="mt-4 max-w-[680px] text-sm leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-7">
               Haigoo 为你提供专属资源支持，会员类岗位优中选优，国内申请成功概率更高。
             </p>
-            <div className="mt-6 grid max-w-[640px] gap-3 sm:grid-cols-3">
+            <div className="mt-5 grid max-w-[640px] gap-2 sm:mt-6 sm:grid-cols-3 sm:gap-3">
               {[
                 ['会员岗位', '国内友好'],
                 ['企业联系人', '无限次数'],
@@ -2799,7 +2799,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[24px] border border-[#eadfcf] bg-white p-5 shadow-[0_24px_70px_-58px_rgba(139,101,54,0.36)]">
+          <div className="relative overflow-hidden rounded-[20px] border border-[#eadfcf] bg-white p-4 shadow-[0_24px_70px_-58px_rgba(139,101,54,0.36)] sm:rounded-[24px] sm:p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f0edff] text-[#6f63f6]">
                 <Crown className="h-6 w-6" />
@@ -2816,7 +2816,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="mt-1 text-xs font-bold text-[#6f63f6]">剩余 {Math.max(membershipDaysRemaining, 0)} 天</div>
               ) : null}
             </div>
-            <div className={`mt-4 grid gap-2 ${isMember ? 'grid-cols-2' : 'grid-cols-1'}`}>
+            <div className={`mt-4 grid gap-2 ${isMember ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
               <button
                 type="button"
                 onClick={openMembershipPlanChooser}
@@ -2841,8 +2841,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       </section>
 
       {isMember ? (
-        <section className="relative mb-7 grid items-stretch gap-5 xl:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
-          <div className="relative flex min-h-[460px] overflow-hidden rounded-[28px] border border-[#e5dccb] bg-white/88 p-5 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] xl:h-full xl:max-h-[560px]">
+        <section className="relative mb-5 grid items-stretch gap-4 sm:mb-7 sm:gap-5 xl:grid-cols-[minmax(320px,0.72fr)_minmax(0,1.28fr)]">
+          <div className="relative flex overflow-hidden rounded-[22px] border border-[#e5dccb] bg-white/88 p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] sm:min-h-[460px] sm:rounded-[28px] sm:p-5 xl:h-full xl:max-h-[560px]">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_85%_12%,rgba(244,173,50,0.1),transparent_28%),linear-gradient(180deg,rgba(255,253,249,0.62),rgba(255,255,255,0.92))]" />
             <div className="relative flex min-h-0 w-full flex-col">
               <div className="min-w-0">
@@ -2874,7 +2874,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </div>
           </div>
 
-          <div className="relative flex min-h-[460px] overflow-hidden rounded-[28px] border border-[#e1e8f4] bg-white/92 p-5 shadow-[0_24px_70px_-56px_rgba(64,78,102,0.32)] xl:max-h-[560px]">
+          <div className="relative flex overflow-hidden rounded-[22px] border border-[#e1e8f4] bg-white/92 p-4 shadow-[0_24px_70px_-56px_rgba(64,78,102,0.32)] sm:min-h-[460px] sm:rounded-[28px] sm:p-5 xl:max-h-[560px]">
             <div className="relative flex min-h-0 w-full flex-col">
               <div className="mb-4 flex items-center justify-between gap-4">
                 <div className="inline-flex items-center gap-2 rounded-full border border-[#e6dccb] bg-white/82 px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
@@ -2890,7 +2890,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
-              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
+              <div className="min-h-0 flex-1 space-y-3 overflow-visible sm:overflow-y-auto sm:pr-2">
                 {loadingMemberRecommendations ? (
                   <div className="flex min-h-[320px] flex-col items-center justify-center rounded-[22px] border border-dashed border-[#dfe8ef] bg-[#fbfdff]/80 text-center">
                     <Loader2 className="h-7 w-7 animate-spin text-[#7b74ff]" />
@@ -2927,7 +2927,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         </section>
       ) : null}
 
-      <section className="relative mb-7 grid overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white p-3 shadow-[0_26px_72px_-58px_rgba(64,78,102,0.28)] md:grid-cols-2 xl:grid-cols-5">
+      <section className="relative mb-5 grid overflow-hidden rounded-[20px] border border-[#e6edf3] bg-white p-2 shadow-[0_26px_72px_-58px_rgba(64,78,102,0.28)] sm:mb-7 sm:rounded-[24px] sm:p-3 md:grid-cols-2 xl:grid-cols-5">
         {[
           { title: '精准岗位推荐', desc: '智能匹配优质远程岗位', icon: Eye },
           { title: '无限机会与资源', desc: '优先获得全部稀缺岗位与企业联系人资源', icon: Send },
@@ -2948,8 +2948,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       </section>
 
       {shouldShowRenewalPlans ? (
-      <section className="relative grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="relative flex min-h-[380px] flex-col overflow-hidden rounded-[22px] border border-[#dfe8ef] bg-white p-6 shadow-[0_18px_48px_-42px_rgba(64,78,102,0.18)] transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_70px_-52px_rgba(64,78,102,0.24)]">
+      <section className="relative grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <article className="relative flex flex-col overflow-hidden rounded-[20px] border border-[#dfe8ef] bg-white p-5 shadow-[0_18px_48px_-42px_rgba(64,78,102,0.18)] transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_70px_-52px_rgba(64,78,102,0.24)] sm:min-h-[380px] sm:rounded-[22px] sm:p-6">
           <div className="mb-5">
             <div className="mb-4 inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-500">{membershipPlanTags.free}</div>
             <h3 className="text-2xl font-extrabold leading-tight text-slate-950">免费版</h3>
@@ -2985,7 +2985,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           return (
             <article
               key={plan.id}
-              className={`relative flex min-h-[380px] flex-col overflow-hidden rounded-[22px] border p-6 transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_70px_-52px_rgba(64,78,102,0.24)] ${
+              className={`relative flex flex-col overflow-hidden rounded-[20px] border p-5 transition-all hover:-translate-y-0.5 hover:shadow-[0_28px_70px_-52px_rgba(64,78,102,0.24)] sm:min-h-[380px] sm:rounded-[22px] sm:p-6 ${
                 isQuarter
                   ? 'border-[#cdc7ff] bg-[linear-gradient(180deg,rgba(250,249,255,0.98),rgba(255,255,255,0.98))] shadow-[0_24px_60px_-46px_rgba(123,116,255,0.24)]'
                   : plan.memberType === 'trial_week'
@@ -3000,8 +3000,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className={`mb-4 inline-flex rounded-full px-3 py-1 text-xs font-black ${plan.memberType === 'trial_week' ? 'bg-emerald-50 text-emerald-700' : isQuarter ? 'bg-[#f1efff] text-[#6f63f6]' : 'bg-[#fff5df] text-[#b47319]'}`}>
                   {membershipPlanTags[plan.memberType]}
                 </div>
-                <h3 className="max-w-[86%] text-2xl font-extrabold leading-tight text-slate-950">{planTitle}</h3>
-                <p className="mt-4 min-h-[52px] text-sm leading-6 text-slate-600">
+                <h3 className="max-w-[86%] text-xl font-extrabold leading-tight text-slate-950 sm:text-2xl">{planTitle}</h3>
+                <p className="mt-3 text-sm leading-6 text-slate-600 sm:mt-4 sm:min-h-[52px]">
                   {membershipPlanDescriptions[plan.memberType]}
                 </p>
               </div>
@@ -3009,7 +3009,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="mb-5 mt-1">
                   <div className="text-sm font-black text-slate-400 line-through decoration-2">¥399 /季度</div>
                   <div className="mt-1 flex min-w-0 items-center gap-2 whitespace-nowrap">
-                    <span className="shrink-0 text-[42px] font-extrabold leading-none tracking-tight text-slate-900">¥199</span>
+                    <span className="shrink-0 text-[36px] font-extrabold leading-none tracking-tight text-slate-900 sm:text-[42px]">¥199</span>
                     <span className="shrink-0 text-sm font-bold text-slate-400">/季度</span>
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#ffd6a6] bg-[#fff7e8] px-2.5 py-1 text-[11px] font-black text-[#c26b00]">
                       🔥 限时 5 折
@@ -3022,7 +3022,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     <span className="text-4xl font-extrabold tracking-tight text-slate-900">筹备中</span>
                   ) : (
                     <>
-                      <span className="text-4xl font-extrabold tracking-tight text-slate-900">{planPrice}</span>
+                      <span className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">{planPrice}</span>
                       <span className="pb-1 text-sm font-bold text-slate-400">{priceUnit}</span>
                     </>
                   )}
@@ -3040,7 +3040,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 type="button"
                 disabled={isCurrentPlan || isDisabled}
                 onClick={() => openMembershipPayment(plan)}
-                className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all ${
+                className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all sm:mt-7 ${
                   isCurrentPlan
                     ? 'cursor-not-allowed border border-slate-200 bg-slate-100 text-slate-400'
                     : isDisabled
@@ -3331,7 +3331,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   )
 
   return (
-    <div className="relative mt-16 h-[calc(100vh-64px)] overflow-hidden bg-[#fffdf9] font-haigoo-rounded">
+    <div className="relative mt-16 min-h-[calc(100vh-64px)] overflow-visible bg-[#fffdf9] font-haigoo-rounded lg:h-[calc(100vh-64px)] lg:overflow-hidden">
       <div className="pointer-events-none absolute inset-0">
         <img
           src="/pic_lists/About_pics/about_bg.webp"
@@ -3341,10 +3341,37 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         <div className="absolute inset-0 bg-[linear-gradient(90deg,#fffdf9_0%,rgba(255,253,249,0.9)_34%,rgba(255,253,249,0.72)_70%,#fffdf9_100%)]" />
         <div className="absolute inset-x-0 top-0 h-[360px] bg-[radial-gradient(circle_at_20%_20%,rgba(188,222,255,0.28),transparent_32%),radial-gradient(circle_at_78%_16%,rgba(255,222,158,0.2),transparent_34%),linear-gradient(180deg,#fff_0%,rgba(251,250,246,0)_100%)]" />
       </div>
-      <div className="relative mx-auto h-full max-w-[1600px] px-2 py-4 sm:px-3 lg:px-4">
-        <div className="flex h-full flex-col gap-5 lg:flex-row lg:overflow-hidden">
+      <div className="relative mx-auto min-h-full max-w-[1600px] px-2 py-3 sm:px-3 lg:h-full lg:px-4 lg:py-4">
+        <div className="flex min-h-full flex-col gap-4 lg:h-full lg:flex-row lg:gap-5 lg:overflow-hidden">
+          <nav className="lg:hidden" role="tablist" aria-label="会员中心移动端目录">
+            <div className="flex gap-2 overflow-x-auto rounded-[22px] border border-[#e1e9f1] bg-white/86 p-2 shadow-[0_18px_48px_-42px_rgba(61,89,120,0.52)]">
+              {[
+                { id: 'resume', label: '首页', icon: Home },
+                { id: 'membership', label: '会员权益', icon: Crown },
+                { id: 'about', label: '关于我们', icon: Building2 },
+                { id: 'favorites', label: '收藏', icon: Heart },
+                { id: 'applications', label: '申请', icon: Briefcase },
+                { id: 'feedback', label: '反馈', icon: MessageSquare }
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  className={`inline-flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-2 text-sm font-black transition-all ${
+                    tab === item.id
+                      ? 'bg-[#f0edff] text-[#6f63f6] shadow-sm'
+                      : 'text-slate-500 hover:bg-[#f7fbff] hover:text-slate-900'
+                  }`}
+                  role="tab"
+                  aria-selected={tab === item.id}
+                  onClick={() => switchTab(item.id as TabKey)}
+                >
+                  <item.icon className="h-4 w-4" />
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </nav>
           {/* Sidebar */}
-          <aside className={`relative flex-shrink-0 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-full lg:w-[96px]' : 'w-full lg:w-[248px]'} lg:h-full`}>
+          <aside className={`relative hidden flex-shrink-0 transition-all duration-300 ease-in-out lg:block ${isSidebarCollapsed ? 'w-full lg:w-[96px]' : 'w-full lg:w-[248px]'} lg:h-full`}>
             <div className="flex h-full min-h-0 flex-col gap-4 overflow-y-auto pr-1">
               <button
                 onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -3465,9 +3492,43 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
           {/* Main Content Area */}
           <main className="min-w-0 flex-1 transition-all duration-300 lg:h-full lg:min-h-0 lg:overflow-y-auto">
-            <div className="pr-1 pb-10 transition-all duration-300 lg:min-h-full">
+            <div className="pb-10 transition-all duration-300 lg:min-h-full lg:pr-1">
               {tab === 'resume' && (
                 <>
+                  <section className="relative mb-4 overflow-hidden rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] p-5 shadow-[0_20px_56px_-48px_rgba(139,101,54,0.42)] lg:hidden">
+                    <div className="pointer-events-none absolute inset-0">
+                      <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-[68%_58%] opacity-45" />
+                      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.98)_0%,rgba(255,253,248,0.9)_100%)]" />
+                    </div>
+                    <div className="relative">
+                      <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-[#f3e7c8] bg-white/86 px-3 py-1 text-xs font-black text-[#bd7a12]">
+                        <Sparkles className="h-3.5 w-3.5" />
+                        移动端轻量模式
+                      </div>
+                      <h1 className="text-2xl font-black leading-tight text-slate-950">{greeting}，{displayName}</h1>
+                      <p className="mt-3 text-sm leading-6 text-slate-500">
+                        简历解析、AI 优化和复杂预览建议在电脑端使用；手机端可优先查看会员权益、完成支付和管理申请记录。
+                      </p>
+                      <div className="mt-4 grid gap-2">
+                        <button
+                          type="button"
+                          onClick={() => switchTab('membership')}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-3 text-sm font-black text-white"
+                        >
+                          查看会员权益
+                          <ArrowRight className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => switchTab('applications')}
+                          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#dfe8ef] bg-white px-5 py-3 text-sm font-black text-slate-600"
+                        >
+                          查看我的申请
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+                  <div className="hidden lg:block">
                   <section className="relative mb-5 overflow-hidden rounded-[30px] border border-[#e1e9f1] bg-[#fffdf8]/78 p-6 shadow-[0_24px_70px_-60px_rgba(61,89,120,0.62)] backdrop-blur sm:p-8">
                     <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-0 h-full w-full scale-[1.08] object-cover object-[70%_58%] opacity-[0.62] saturate-[0.98]" />
                     <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.94)_0%,rgba(255,253,248,0.84)_40%,rgba(255,253,248,0.36)_72%,rgba(255,253,248,0.62)_100%),linear-gradient(180deg,rgba(255,255,255,0.16)_0%,rgba(255,253,248,0.72)_100%)]" />
@@ -3509,6 +3570,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       </button>
                     ))}
                   </section>
+                  </div>
                 </>
               )}
               {tab === 'custom-plan' && (
@@ -3588,7 +3650,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   )}
                 </div>
               )}
-              {tab === 'resume' && ResumeTab()}
+              {tab === 'resume' && <div className="hidden lg:block">{ResumeTab()}</div>}
               {tab === 'favorites' && <FavoritesTab />}
               {tab === 'applications' && <MyApplicationsTab />}
               {tab === 'feedback' && <FeedbackTab />}
@@ -3713,14 +3775,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </div>
           ), modalRoot)}
           {modalRoot && showMembershipPlanChooserModal && createPortal((
-            <div className="fixed inset-0 z-[10000] isolate flex items-center justify-center overflow-y-auto p-4">
+            <div className="fixed inset-0 z-[10000] isolate flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4">
               <button
                 type="button"
                 aria-label="关闭方案选择弹窗"
                 className="fixed inset-0 z-0 cursor-default bg-slate-950/62 backdrop-blur-md"
                 onClick={() => setShowMembershipPlanChooserModal(false)}
               />
-              <div className="relative z-10 my-4 w-full max-w-5xl overflow-hidden rounded-[30px] border border-white/20 bg-[#fffdf8] p-5 shadow-[0_34px_96px_-42px_rgba(15,23,42,0.74)] sm:p-6">
+              <div className="relative z-10 my-3 max-h-[calc(100dvh-1.5rem)] w-full max-w-5xl overflow-y-auto rounded-[24px] border border-white/20 bg-[#fffdf8] p-4 shadow-[0_34px_96px_-42px_rgba(15,23,42,0.74)] sm:my-4 sm:rounded-[30px] sm:p-6">
                 <div className="pointer-events-none absolute inset-0">
                   <img src="/pic_lists/About_pics/about_bg.webp" alt="" className="absolute inset-x-0 top-0 h-56 w-full object-cover object-[55%_38%] opacity-25" />
                   <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.82)_0%,rgba(255,253,248,0.98)_58%,#fffdf8_100%)]" />
@@ -3744,7 +3806,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   </p>
                 </div>
 
-                <div className="relative mt-6 grid gap-4 lg:grid-cols-3">
+                <div className="relative mt-5 grid gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
                   {displayMembershipPlans.map((plan) => {
                     const isQuarter = plan.memberType === 'quarter'
                     const isYear = plan.memberType === 'year'
@@ -3759,7 +3821,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     return (
                       <article
                         key={plan.id}
-                        className={`relative flex min-h-[320px] flex-col rounded-[24px] border p-5 transition-all hover:-translate-y-0.5 ${
+                        className={`relative flex flex-col rounded-[20px] border p-4 transition-all hover:-translate-y-0.5 sm:min-h-[320px] sm:rounded-[24px] sm:p-5 ${
                           isQuarter
                             ? 'border-[#cfc8ff] bg-[linear-gradient(180deg,#fbfaff_0%,#fff_100%)] shadow-[0_22px_54px_-40px_rgba(111,99,246,0.42)]'
                             : plan.memberType === 'trial_week'
@@ -3772,12 +3834,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                           {membershipPlanTags[plan.memberType]}
                         </div>
                         <h4 className="max-w-[86%] text-xl font-black leading-tight text-slate-950">{planTitle}</h4>
-                        <p className="mt-3 min-h-[48px] text-sm leading-6 text-slate-500">{membershipPlanDescriptions[plan.memberType]}</p>
+                        <p className="mt-3 text-sm leading-6 text-slate-500 sm:min-h-[48px]">{membershipPlanDescriptions[plan.memberType]}</p>
                         {isQuarter ? (
                           <div className="mt-4">
                             <div className="text-sm font-black text-slate-400 line-through decoration-2">¥399 /季度</div>
                             <div className="mt-1 flex items-center gap-2 whitespace-nowrap">
-                              <span className="text-[38px] font-black leading-none text-slate-950">¥199</span>
+                              <span className="text-[34px] font-black leading-none text-slate-950 sm:text-[38px]">¥199</span>
                               <span className="text-sm font-bold text-slate-400">/季度</span>
                               <span className="inline-flex items-center gap-1 rounded-full border border-[#ffd6a6] bg-[#fff7e8] px-2.5 py-0.5 text-[10px] font-black text-[#c26b00]">
                                 🔥 限时 5 折
@@ -3786,7 +3848,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                           </div>
                         ) : (
                           <div className="mt-4 flex items-end gap-1">
-                            <span className="text-[34px] font-black leading-none text-slate-950">{isYear ? '¥299-¥599' : `¥${plan.price}`}</span>
+                            <span className="text-[30px] font-black leading-none text-slate-950 sm:text-[34px]">{isYear ? '¥299-¥599' : `¥${plan.price}`}</span>
                             <span className="pb-1 text-sm font-bold text-slate-400">{getMembershipPlanUnit(plan.memberType)}</span>
                           </div>
                         )}
@@ -3860,8 +3922,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 className="fixed inset-0 z-0 cursor-default bg-slate-950/65 backdrop-blur-md"
                 onClick={closeMembershipPaymentToPlans}
               />
-              <div className="relative z-10 my-4 grid max-h-[calc(100dvh-2rem)] w-full max-w-4xl overflow-y-auto rounded-[30px] border border-white/10 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.75)] md:max-h-[620px] md:grid-cols-[0.9fr_1.1fr] md:overflow-hidden">
-                <div className="relative overflow-hidden border-b border-[#edf2f6] bg-[#fbfdff] p-6 md:border-b-0 md:border-r">
+              <div className="relative z-10 my-3 grid max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-[24px] border border-white/10 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.75)] sm:my-4 sm:rounded-[30px] md:max-h-[620px] md:grid-cols-[0.9fr_1.1fr] md:overflow-hidden">
+                <div className="relative overflow-hidden border-b border-[#edf2f6] bg-[#fbfdff] p-4 sm:p-6 md:border-b-0 md:border-r">
                   <img src="/pic_lists/Home_pics/background03.webp" alt="" className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full object-cover object-bottom opacity-35" />
                   <div className="relative">
                     <div className="mb-5 flex items-center justify-between gap-4">
@@ -3894,9 +3956,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         </span>
                       </div>
                     )}
-                    <p className="mt-4 text-sm leading-7 text-slate-500">{membershipPlanDescriptions[selectedMembershipPlan.memberType]}</p>
+                    <p className="mt-3 text-sm leading-6 text-slate-500 sm:mt-4 sm:leading-7">{membershipPlanDescriptions[selectedMembershipPlan.memberType]}</p>
 
-                    <div className="mt-6 space-y-2.5">
+                    <div className="mt-4 space-y-2 sm:mt-6 sm:space-y-2.5">
                       {membershipPlanFeatures[selectedMembershipPlan.memberType].map((feature) => (
                         <div key={feature} className="flex items-start gap-2 text-sm leading-5 text-slate-700">
                           <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#6f63f6]" strokeWidth={3} />
@@ -3905,7 +3967,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       ))}
                     </div>
 
-                    <div className="mt-8 grid grid-cols-2 gap-2">
+                    <div className="mt-5 grid grid-cols-1 gap-2 sm:mt-8 sm:grid-cols-2">
                       <button
                         type="button"
                         onClick={() => setMembershipPaymentMethod('alipay')}
@@ -3930,7 +3992,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   </div>
                 </div>
 
-                <div className="relative flex flex-col items-center justify-center p-6 text-center sm:p-8">
+                <div className="relative flex flex-col items-center justify-center p-4 text-center sm:p-8">
                   <button
                     type="button"
                     className="absolute right-5 top-5 hidden h-9 w-9 items-center justify-center rounded-full bg-[#f7fbff] text-slate-400 transition-colors hover:text-slate-700 md:flex"
@@ -3943,10 +4005,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     <img
                       src={currentMembershipPaymentInfo.imageUrl}
                       alt="支付二维码"
-                      className="h-44 w-44 rounded-2xl object-contain"
+                      className="h-40 w-40 rounded-2xl object-contain sm:h-44 sm:w-44"
                     />
                   </div>
-                  <h4 className="mt-5 text-xl font-black text-slate-950">{currentMembershipPaymentInfo.instruction}</h4>
+                  <h4 className="mt-4 text-lg font-black text-slate-950 sm:mt-5 sm:text-xl">{currentMembershipPaymentInfo.instruction}</h4>
                   <p className="mt-2 text-sm text-slate-500">付款备注请填写你的注册邮箱，便于自动核销。</p>
 
                   <button
@@ -3964,7 +4026,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <button
                     type="button"
                     onClick={handleMembershipPaymentComplete}
-                    className="mt-6 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-6 py-3.5 text-sm font-black text-white shadow-[0_18px_40px_-24px_rgba(95,99,246,0.58)] transition-all hover:-translate-y-0.5"
+                    className="mt-5 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-6 py-3.5 text-sm font-black text-white shadow-[0_18px_40px_-24px_rgba(95,99,246,0.58)] transition-all hover:-translate-y-0.5 sm:mt-6"
                   >
                     <CheckCircle className="h-5 w-5" />
                     我已完成支付

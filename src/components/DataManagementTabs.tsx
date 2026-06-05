@@ -401,12 +401,17 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       if (editingJob.id) {
         // 检查标题是否改变，如果改变则清除翻译
         if (updatedJob.title && updatedJob.title !== editingJob.title) {
-          console.log('[Frontend] Title changed, clearing translation title');
           const currentTranslations = (updatedJob as any).translations || editingJob.translations || {};
-          const newTranslations = { ...currentTranslations };
-          delete newTranslations.title;
-          (updatedJob as any).translations = newTranslations;
-          (updatedJob as any).isTranslated = false;
+          const previousTranslatedTitle = (editingJob as any).translations?.title || '';
+          const nextTranslatedTitle = currentTranslations?.title || '';
+          const hasManualTranslatedTitle = Boolean(nextTranslatedTitle && nextTranslatedTitle !== previousTranslatedTitle);
+          if (!hasManualTranslatedTitle) {
+            console.log('[Frontend] Title changed, clearing stale translation title');
+            const newTranslations = { ...currentTranslations };
+            delete newTranslations.title;
+            (updatedJob as any).translations = newTranslations;
+            (updatedJob as any).isTranslated = Object.keys(newTranslations).length > 0;
+          }
         }
 
         // 检查公司名是否改变，如果改变则清除翻译

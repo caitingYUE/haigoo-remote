@@ -700,7 +700,7 @@ export default function HomeHero({
     }
     const upgradeBannerMessage = upgradeBannerPhase === 'maintenance'
         ? `Haigoo 正在升级，请避开 ${formatChinaMonthDayTime(HOME_UPGRADE_DEPLOY_AT)}-${formatChinaMonthDayTime(HOME_UPGRADE_MAINTENANCE_END_AT).replace(/^\d+月\d+日/, '')} 申请或购买会员。`
-        : 'Haigoo 治愈系插画风 UI 全新上线，体验更友好。'
+        : 'Haigoo 治愈系插画风 UI 全新上线，守护你的远程梦。'
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -2017,7 +2017,7 @@ export default function HomeHero({
 
             <section className="relative isolate mx-auto max-w-[1560px] px-5 pb-14 lg:px-10">
                 <div className="pointer-events-none absolute left-1/2 top-[-110px] z-0 h-[calc(100%+110px)] w-screen -translate-x-1/2 bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,#fbfaf6_9%,#fbfaf6_100%)]" />
-                <div className="relative z-10 rounded-[28px] border border-[#e4e9ff] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(84,78,180,0.26)]">
+                <div className="relative z-30 rounded-[28px] border border-[#e4e9ff] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(84,78,180,0.26)]">
                     <div className="grid gap-4 md:grid-cols-[300px_1fr] md:items-center">
                         <div>
                             <div className="flex items-center gap-2 text-lg font-black tracking-normal text-slate-950">
@@ -2030,7 +2030,7 @@ export default function HomeHero({
                                     >
                                         <ShieldCheck className="h-4 w-4" />
                                     </button>
-                                    <span className="pointer-events-none absolute left-1/2 top-full z-30 mt-3 w-[420px] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-[18px] border border-[#eadfcf] bg-[#fffdf8] p-4 text-left opacity-0 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.34)] transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+                                    <span className="pointer-events-none absolute left-1/2 top-full z-[90] mt-3 w-[420px] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-[18px] border border-[#eadfcf] bg-[#fffdf8] p-4 text-left opacity-0 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.34)] transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
                                         <span className="block text-sm font-black text-slate-950">Haigoo 俱乐部认证企业</span>
                                         <span className="mt-1.5 block text-xs font-semibold leading-5 text-slate-600">只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：</span>
                                         <span className="mt-2 grid gap-1.5">
