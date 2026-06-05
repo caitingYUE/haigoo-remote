@@ -7,7 +7,6 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { trackingService } from '../services/tracking-service'
 import JobCardNew from '../components/JobCardNew'
-import { SingleLineTags } from '../components/SingleLineTags'
 import JobDetailModal from '../components/JobDetailModal'
 import { getCompanyLogoSources } from '../utils/company-logo'
 
@@ -37,18 +36,8 @@ export default function CompanyDetailPage() {
     }), [companyInfo?.id, companyInfo?.cachedLogoUrl, companyInfo?.logo, companyInfo?.updatedAt])
     const companyLogoSourceKey = useMemo(() => companyLogoSources.join('|'), [companyLogoSources])
     const hiringLine = useMemo(() => {
-        const counts = new Map<string, number>()
-        jobs.forEach((job) => {
-            const category = String(job.category || '').trim()
-            if (category) counts.set(category, (counts.get(category) || 0) + 1)
-        })
-        const categoryText = Array.from(counts.entries())
-            .sort(([, a], [, b]) => b - a)
-            .slice(0, 3)
-            .map(([name]) => name)
-            .join('/')
-        return categoryText ? `${jobs.length} 个在招 ${categoryText}` : `${jobs.length} 个在招岗位`
-    }, [jobs])
+        return jobs.length > 0 ? `${jobs.length} 个在招岗位` : '暂无在招岗位'
+    }, [jobs.length])
     const [companyLogoIndex, setCompanyLogoIndex] = useState(0)
     const companyLogoSrc = companyLogoSources[companyLogoIndex] || ''
 
@@ -233,13 +222,9 @@ export default function CompanyDetailPage() {
 
     const companyDecor = {
         bg: '/pic_lists/Home_pics/background04.webp',
-        grass: '/pic_lists/About_pics/grass_icon-transparent.webp',
     }
     const displayCompanyName = companyInfo?.name || decodedCompanyName || '企业详情'
     const companyDescription = companyInfo?.description || '暂无简介'
-    const companySlogan = companyInfo?.industry
-        ? `${companyInfo.industry} · 远程优先`
-        : '远程优先 · 多元化视角'
     const isRemoteAddress = Boolean(companyInfo?.address && (companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')))
 
     return (
@@ -267,8 +252,7 @@ export default function CompanyDetailPage() {
                 </div>
 
                 <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 pb-7">
-                    <div className="relative overflow-hidden rounded-[30px] border border-[#eadfcf]/90 bg-[#fffdf8]/78 p-3 shadow-[0_26px_78px_-62px_rgba(139,101,54,0.34)] backdrop-blur-[2px] sm:p-4 lg:p-5">
-                        <img src={companyDecor.grass} alt="" className="pointer-events-none absolute -left-3 bottom-0 hidden h-28 opacity-30 lg:block" />
+                    <div className="relative overflow-visible rounded-[30px] border border-[#eadfcf]/90 bg-[#fffdf8]/78 p-3 shadow-[0_26px_78px_-62px_rgba(139,101,54,0.34)] backdrop-blur-[2px] sm:p-4 lg:p-5">
 
                         <div className="relative">
                             <section className="relative min-h-[164px] overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,rgba(255,253,248,0.88)_0%,rgba(255,255,255,0.68)_48%,rgba(249,252,255,0.46)_100%)] p-4 sm:p-5 lg:min-h-[188px]">
@@ -306,11 +290,10 @@ export default function CompanyDetailPage() {
                                     ))}
 
                                     <div className="min-w-0 flex-1">
-                                        <h1 className="mb-1 text-[30px] font-black leading-tight tracking-normal text-slate-950 sm:text-[38px]">
-                                            {displayCompanyName}
-                                        </h1>
-
-                                        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm text-slate-600">
+                                        <div className="flex max-h-[96px] flex-wrap items-center gap-x-3 gap-y-2 overflow-hidden">
+                                            <h1 className="min-w-0 max-w-full truncate text-[30px] font-black leading-tight tracking-normal text-slate-950 sm:text-[38px]">
+                                                {displayCompanyName}
+                                            </h1>
                                             {companyInfo?.industry && (
                                                 <div className="flex items-center gap-1.5 rounded-full border border-[#dfd8ff] bg-[#f2efff]/86 px-2.5 py-1 text-xs font-bold text-[#6f63f6] shadow-sm shadow-slate-200/30">
                                                     <Building2 className="w-3.5 h-3.5" />
@@ -321,23 +304,17 @@ export default function CompanyDetailPage() {
                                                 <Briefcase className="w-3.5 h-3.5 text-slate-500" />
                                                 <span className="max-w-[260px] truncate">{hiringLine}</span>
                                             </div>
-                                        </div>
-
-                                        <p className="text-[16px] font-black leading-7 tracking-normal text-slate-700 sm:text-[18px]">
-                                            {companySlogan}
-                                        </p>
-
-                                        {companyInfo?.tags && companyInfo.tags.length > 0 && (
-                                            <div className="mt-2.5 max-w-3xl">
-                                                <SingleLineTags tags={companyInfo.tags} size="sm" />
+                                            <div className="flex items-center gap-1.5 rounded-full border border-[#dfeaf1] bg-white/88 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/30">
+                                                <MapPin className="w-3.5 h-3.5 text-slate-500" />
+                                                <span>远程优先</span>
                                             </div>
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
                             </section>
                         </div>
 
-                        <section className="mt-3 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white/76 shadow-[0_22px_56px_-44px_rgba(62,91,120,0.26)] backdrop-blur-[2px]">
+                        <section className="relative z-20 mt-3 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white/76 shadow-[0_22px_56px_-44px_rgba(62,91,120,0.26)] backdrop-blur-[2px]">
                             <div className="flex items-center gap-2 border-b border-[#edf2f6] bg-white/48 px-4 py-3">
                                 <Info className="w-4 h-4 text-[#6f63f6]" />
                                 <h2 className="text-sm font-black text-slate-900">企业简介与信息</h2>
@@ -412,10 +389,11 @@ export default function CompanyDetailPage() {
                                             </div>
                                         </div>
                                         {companyInfo?.address && showLocationTooltip && !isRemoteAddress && (
-                                            <div className="absolute left-0 top-full z-50 mt-2">
+                                            <div className="absolute left-0 top-full z-[80] mt-2">
                                                 <LocationTooltip
                                                     location={companyInfo.address}
                                                     onClose={() => setShowLocationTooltip(false)}
+                                                    floating
                                                 />
                                             </div>
                                         )}
@@ -489,7 +467,7 @@ export default function CompanyDetailPage() {
                         </section>
 
                     {/* Job Listings - Full Width */}
-                        <div className="mt-6 border-t border-[#e6edf3]/80 pt-5">
+                        <div className="relative z-0 mt-6 border-t border-[#e6edf3]/80 pt-5">
                             <div className="mb-4 flex items-center justify-between">
                             <h2 className="flex items-center gap-2 text-xl font-black text-slate-900">
                                 在招岗位
@@ -517,6 +495,7 @@ export default function CompanyDetailPage() {
                                         matchScore={job.displayMatchScore || job.matchScore || job.recommendationScore || undefined}
                                         showApplicationMethodIcons
                                         compactFeatured
+                                        hideMemberBackdrop
                                     />
                                 ))}
                             </div>

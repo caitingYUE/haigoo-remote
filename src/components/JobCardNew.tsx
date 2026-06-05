@@ -37,6 +37,7 @@ interface JobCardNewProps {
    applicationStatusNode?: React.ReactNode;
    showApplicationMethodIcons?: boolean;
    compactFeatured?: boolean;
+   hideMemberBackdrop?: boolean;
 }
 
 const BRAND_PASTEL_TOKENS = [
@@ -129,7 +130,7 @@ const GuestMaskedValue = ({ className = 'w-20' }: { className?: string }) => (
    />
 );
 
-export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, isSaved = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, isSaved = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false, hideMemberBackdrop = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const { isAuthenticated } = useAuth();
@@ -452,7 +453,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                ${className}
             `}
          >
-            {isMemberOnlyJob ? (
+            {isMemberOnlyJob && !hideMemberBackdrop ? (
                <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[46%] object-cover object-right opacity-[0.1]" />
             ) : null}
             <div className="flex min-w-0 items-start gap-3">
