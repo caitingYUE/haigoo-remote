@@ -17,19 +17,6 @@ import { readMatchScoreRefreshMarker } from '../utils/match-score-refresh'
 import { rememberLatestJobSearch } from '../utils/member-recommendations'
 import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
 
-// Industry Options - aligned with DB canonical values (trusted-companies.js DEFAULT_CONFIG)
-const INDUSTRY_OPTIONS = [
-  '互联网/软件', '人工智能', '大健康/医疗', '教育/文化', '金融/Fintech',
-  '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
-  '硬件/物联网', '消费生活', '其他', '大数据/云计算', '市场调研',
-  '半导体/制造业', '通信/5G', '人力资源服务', 'CRM', '房地产/物业',
-  '风险投资/私募', '零售/批发', '交通物流/运输', '汽车/新能源',
-  '广告/营销', '非营利组织/公益', '语言/翻译', '生物科学',
-  '设计工作室', '供应链', '教育', '咨询', '投资', '制造业',
-  '物流/供应链', '能源/环保', '房地产', '旅游/酒店', '非营利/公益',
-  '政府/公共服务'
-].map(v => ({ label: v, value: v }));
-
 // Job Type Options - Standardized
 const JOB_TYPE_OPTIONS = [
   { label: '全职', value: 'full-time' },
@@ -49,6 +36,9 @@ const EXPERIENCE_OPTIONS = [
 
 // Top Categories (Based on classification-service.js JOB_KEYWORDS)
 const CATEGORY_OPTIONS = JOB_CATEGORY_OPTIONS.map((v: string) => ({ label: v, value: v }));
+const CATEGORY_LABELS = new Map(CATEGORY_OPTIONS.map(option => [option.value, option.label]));
+const JOB_TYPE_LABELS = new Map(JOB_TYPE_OPTIONS.map(option => [option.value, option.label]));
+const EXPERIENCE_LABELS = new Map(EXPERIENCE_OPTIONS.map(option => [option.value, option.label]));
 
 // Location Options
 // const LOCATION_OPTIONS = [
@@ -185,47 +175,33 @@ function readCsvParam(params: URLSearchParams, key: string) {
   return value.split(',').map(item => item.trim()).filter(Boolean)
 }
 
-function mergeFacetOptions(staticOpts: { label: string; value: string; count?: number }[], dynamicOpts?: any[], selectedValues: string[] = []) {
-  if (!dynamicOpts) return staticOpts.map(opt => ({ ...opt, count: 0 }))
+function normalizeFacetKey(value: string) {
+  return value.trim().replace(/\s+/g, ' ').toLowerCase()
+}
 
-  const resultMap = new Map<string, { label: string; value: string; count?: number }>()
-  staticOpts.forEach(opt => {
-    resultMap.set(opt.value, { ...opt, count: 0 })
-  })
+function buildFacetOptions(dynamicOpts?: any[], labelMap?: Map<string, string>) {
+  if (!Array.isArray(dynamicOpts)) return []
 
+  const result = new Map<string, { label: string; value: string; count?: number }>()
   dynamicOpts.forEach((item: any) => {
     const value = String(item?.value || '').trim()
-    if (!value) return
-    if (resultMap.has(value)) {
-      resultMap.get(value)!.count = Number(item.count || 0)
-    } else {
-      resultMap.set(value, {
-        label: String(item?.label || value).trim() || value,
-        value,
-        count: Number(item.count || 0)
-      })
+    if (!value || value === 'Unspecified') return
+
+    const count = Number(item?.count || 0)
+    if (!Number.isFinite(count) || count <= 0) return
+
+    const key = normalizeFacetKey(value)
+    const label = labelMap?.get(value) || String(item?.label || value).trim() || value
+    const existing = result.get(key)
+    if (existing) {
+      existing.count = (existing.count || 0) + count
+      return
     }
+
+    result.set(key, { label, value, count })
   })
 
-  selectedValues.forEach(value => {
-    if (value && resultMap.has(value)) {
-      resultMap.get(value)!.count = resultMap.get(value)!.count ?? 0
-    }
-  })
-
-  const mergedArray: { label: string; value: string; count?: number }[] = []
-  staticOpts.forEach(opt => {
-    const item = resultMap.get(opt.value)
-    if (item) {
-      mergedArray.push(item)
-      resultMap.delete(opt.value)
-    }
-  })
-  for (const remaining of resultMap.values()) {
-    mergedArray.push(remaining)
-  }
-
-  return mergedArray
+  return Array.from(result.values())
 }
 
 function hasUsableAggregations(aggregations: any) {
@@ -318,24 +294,12 @@ export default function JobsPage() {
   })
 
   // Dynamic Filter Options State
-  const [categoryOptions, setCategoryOptions] = useState<{ label: string, value: string, count?: number }[]>(CATEGORY_OPTIONS);
-  const [industryOptions, setIndustryOptions] = useState<{ label: string, value: string, count?: number }[]>(INDUSTRY_OPTIONS);
-  const [jobTypeOptions, setJobTypeOptions] = useState<{ label: string, value: string, count?: number }[]>(JOB_TYPE_OPTIONS);
-  const [experienceLevelOptions, setExperienceLevelOptions] = useState<{ label: string, value: string, count?: number }[]>(EXPERIENCE_OPTIONS);
+  const [categoryOptions, setCategoryOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
+  const [industryOptions, setIndustryOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
+  const [jobTypeOptions, setJobTypeOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
+  const [experienceLevelOptions, setExperienceLevelOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
   const [locationOptions, setLocationOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
   const [timezoneOptions, setTimezoneOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
-
-  // P0 Fix: Reset options when search term changes or filters are cleared (to avoid getting stuck with empty options)
-  useEffect(() => {
-    if (!searchTerm && !filters.category.length && !filters.industry.length && !filters.location.length) {
-      // Reset to full list if no filters active
-      setCategoryOptions(CATEGORY_OPTIONS);
-      setIndustryOptions(INDUSTRY_OPTIONS);
-      setJobTypeOptions(JOB_TYPE_OPTIONS);
-      setExperienceLevelOptions(EXPERIENCE_OPTIONS);
-      // Location remains dynamic
-    }
-  }, [searchTerm, filters]);
 
   useEffect(() => {
     localStorage.setItem('haigoo_job_filters', JSON.stringify(filters))
@@ -355,6 +319,16 @@ export default function JobsPage() {
       setFilters(prev => normalizeJobFilters({ ...prev, category: [] }))
     }
   }, [filters.category.length, isAuthenticated])
+
+  useEffect(() => {
+    if (industryOptions.length === 0 || filters.industry.length === 0) return
+
+    const validIndustries = new Set(industryOptions.map(option => option.value))
+    const nextIndustryFilters = filters.industry.filter(value => validIndustries.has(value))
+    if (nextIndustryFilters.length !== filters.industry.length) {
+      setFilters(prev => normalizeJobFilters({ ...prev, industry: nextIndustryFilters }))
+    }
+  }, [filters.industry, industryOptions])
 
   const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -599,11 +573,11 @@ export default function JobsPage() {
         const { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
 
         if (filters.category.length === 0) {
-          setCategoryOptions(mergeFacetOptions(CATEGORY_OPTIONS, category, filters.category));
+          setCategoryOptions(buildFacetOptions(category, CATEGORY_LABELS));
         }
-        setIndustryOptions(mergeFacetOptions(INDUSTRY_OPTIONS, industry, filters.industry));
-        setJobTypeOptions(mergeFacetOptions(JOB_TYPE_OPTIONS, jobType, filters.jobType));
-        setExperienceLevelOptions(mergeFacetOptions(EXPERIENCE_OPTIONS, experienceLevel, filters.experienceLevel));
+        setIndustryOptions(buildFacetOptions(industry));
+        setJobTypeOptions(buildFacetOptions(jobType, JOB_TYPE_LABELS));
+        setExperienceLevelOptions(buildFacetOptions(experienceLevel, EXPERIENCE_LABELS));
 
         if (location) {
           setLocationOptions(location.map((l: any) => ({ label: l.value, value: l.value, count: l.count })));
@@ -701,10 +675,50 @@ export default function JobsPage() {
           }
         }
 
-        setCategoryOptions(mergeFacetOptions(CATEGORY_OPTIONS, category, filters.category));
-        setIndustryOptions(mergeFacetOptions(INDUSTRY_OPTIONS, industry, filters.industry));
-        setJobTypeOptions(mergeFacetOptions(JOB_TYPE_OPTIONS, jobType, filters.jobType));
-        setExperienceLevelOptions(mergeFacetOptions(EXPERIENCE_OPTIONS, experienceLevel, filters.experienceLevel));
+        const loadFacetWithout = async (paramName: string, aggregationKey: string) => {
+          const facetParams = new URLSearchParams(queryParams)
+          facetParams.delete(paramName)
+          if (paramName === 'jobType') facetParams.delete('type')
+          const facetData = await fetchJobsJsonWithDedupe(`/api/data/processed-jobs?${facetParams.toString()}`, { signal })
+          return !signal.aborted && Array.isArray(facetData?.aggregations?.[aggregationKey])
+            ? facetData.aggregations[aggregationKey]
+            : undefined
+        }
+
+        if (filters.industry.length > 0) {
+          try {
+            industry = await loadFacetWithout('industry', 'industry') || industry
+          } catch (industryFacetError) {
+            if (!(industryFacetError instanceof Error && industryFacetError.name === 'AbortError')) {
+              console.warn('[JobsPage] Failed to load industry facet counts:', industryFacetError)
+            }
+          }
+        }
+
+        if (filters.jobType.length > 0) {
+          try {
+            jobType = await loadFacetWithout('jobType', 'jobType') || jobType
+          } catch (jobTypeFacetError) {
+            if (!(jobTypeFacetError instanceof Error && jobTypeFacetError.name === 'AbortError')) {
+              console.warn('[JobsPage] Failed to load job type facet counts:', jobTypeFacetError)
+            }
+          }
+        }
+
+        if (filters.experienceLevel.length > 0) {
+          try {
+            experienceLevel = await loadFacetWithout('experienceLevel', 'experienceLevel') || experienceLevel
+          } catch (experienceFacetError) {
+            if (!(experienceFacetError instanceof Error && experienceFacetError.name === 'AbortError')) {
+              console.warn('[JobsPage] Failed to load experience facet counts:', experienceFacetError)
+            }
+          }
+        }
+
+        setCategoryOptions(buildFacetOptions(category, CATEGORY_LABELS));
+        setIndustryOptions(buildFacetOptions(industry));
+        setJobTypeOptions(buildFacetOptions(jobType, JOB_TYPE_LABELS));
+        setExperienceLevelOptions(buildFacetOptions(experienceLevel, EXPERIENCE_LABELS));
 
         if (location) {
           setLocationOptions(location.map((l: any) => ({ label: l.value, value: l.value, count: l.count })));
