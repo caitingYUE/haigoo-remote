@@ -251,32 +251,20 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
     return `${name}｜${title}｜${emailType}｜${email}`;
   };
 
-  // Tag suggestions based on category
-  const getSuggestedTags = (category: string) => {
-    const commonTags = ['Remote', 'English', 'Communication'];
-    const categoryTags: Record<string, string[]> = {
-      '前端开发': ['React', 'Vue', 'TypeScript', 'JavaScript', 'HTML/CSS', 'Next.js', 'TailwindCSS'],
-      '后端开发': ['Java', 'Python', 'Node.js', 'Go', 'Spring Boot', 'Django', 'SQL', 'Microservices'],
-      '全栈开发': ['React', 'Node.js', 'TypeScript', 'Full Stack', 'AWS', 'GraphQL'],
-      '移动开发': ['iOS', 'Android', 'Flutter', 'React Native', 'Swift', 'Kotlin'],
-      'UI/UX设计': ['Figma', 'Sketch', 'UI Design', 'UX Research', 'Prototyping', 'Adobe XD'],
-      '产品经理': ['Product Management', 'Agile', 'Scrum', 'User Stories', 'Roadmap', 'Jira'],
-      '数据分析': ['SQL', 'Python', 'Tableau', 'Power BI', 'Data Analysis', 'Excel'],
-      '运维/SRE': ['AWS', 'Docker', 'Kubernetes', 'CI/CD', 'Linux', 'Terraform'],
-      '市场营销': ['SEO', 'Content Marketing', 'Social Media', 'Growth Hacking', 'Google Analytics', 'Copywriting'],
-      '人工智能': ['Machine Learning', 'Deep Learning', 'PyTorch', 'TensorFlow', 'NLP', 'Computer Vision'],
-      'Web3/区块链': ['Solidity', 'Smart Contracts', 'Ethereum', 'DeFi', 'Web3.js', 'Rust']
-    };
-
-    return [...(categoryTags[category] || []), ...commonTags];
-  };
-
-  const currentSuggestedTags = getSuggestedTags(formData.category);
+  const jdSuggestedTags = extractJobSkillKeywords({
+    title: formData.title,
+    category: formData.category,
+    description: formData.description,
+    requirements: formData.requirements,
+    benefits: formData.benefits,
+    translations: (formData as any).translations,
+    limit: 10
+  });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="p-5 border-b border-slate-200 bg-slate-50/50 rounded-t-xl">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3">
+      <div className="bg-white rounded-xl shadow-xl max-w-6xl w-full max-h-[92vh] overflow-hidden flex flex-col">
+        <div className="shrink-0 p-4 border-b border-slate-200 bg-slate-50/70 rounded-t-xl">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <h2 className="text-lg font-semibold text-slate-900">编辑职位信息</h2>
@@ -341,18 +329,18 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto">
           {/* Approval Action Bar */}
-          <div className="flex items-center justify-between bg-indigo-50/50 p-3 rounded-lg border border-indigo-100">
+          <div className="flex items-center justify-between gap-4 bg-indigo-50/50 px-3 py-2.5 rounded-lg border border-indigo-100">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-                {formData.isApproved ? <CheckCircle className="w-6 h-6" /> : <Info className="w-6 h-6" />}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                {formData.isApproved ? <CheckCircle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
               </div>
               <div>
-                <h3 className="font-semibold text-slate-900">
+                <h3 className="text-[13px] font-semibold text-slate-900">
                   {formData.isApproved ? '已通过审核' : '待审核'}
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-[12px] text-slate-500">
                   {formData.isApproved ? '该岗位已对外展示' : '该岗位尚未通过人工审核，仅管理员可见'}
                 </p>
               </div>
@@ -372,13 +360,11 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </button>
           </div>
 
-          <div className="border border-slate-200 rounded-xl p-4 bg-white">
+          <div className="border border-slate-200 rounded-xl p-3 bg-white">
             <div className="flex items-start justify-between gap-4 mb-3">
               <div>
                 <h3 className="text-[14px] font-semibold text-slate-900">内推联系人关联</h3>
-                <p className="text-[12px] text-slate-500 mt-1">
-                  默认不指定时，该企业下全部联系人都对当前岗位生效；切换到自定义后可多选 0-N 个联系人。
-                </p>
+                <p className="text-[12px] text-slate-500 mt-1">默认全部通用，也可为当前岗位单独指定联系人。</p>
               </div>
               <span className="text-[11px] text-slate-400 whitespace-nowrap">
                 企业联系人 {availableReferralContacts.length} 个
@@ -386,7 +372,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className={`rounded-lg border px-3 py-3 cursor-pointer transition-colors ${formData.referralContactMode === 'inherit_all' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
+              <label className={`rounded-lg border px-3 py-2 cursor-pointer transition-colors ${formData.referralContactMode === 'inherit_all' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
                 <div className="flex items-start gap-3">
                   <input
                     type="radio"
@@ -397,12 +383,12 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   />
                   <div>
                     <div className="text-[13px] font-medium text-slate-900">默认全部通用</div>
-                    <div className="text-[12px] text-slate-500 mt-1">不额外指定时，企业当前所有联系人都可用于该岗位。</div>
+                    <div className="text-[12px] text-slate-500 mt-1">企业当前所有联系人都可用于该岗位。</div>
                   </div>
                 </div>
               </label>
 
-              <label className={`rounded-lg border px-3 py-3 cursor-pointer transition-colors ${formData.referralContactMode === 'custom' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
+              <label className={`rounded-lg border px-3 py-2 cursor-pointer transition-colors ${formData.referralContactMode === 'custom' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
                 <div className="flex items-start gap-3">
                   <input
                     type="radio"
@@ -413,7 +399,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   />
                   <div>
                     <div className="text-[13px] font-medium text-slate-900">自定义关联</div>
-                    <div className="text-[12px] text-slate-500 mt-1">仅让当前岗位使用选中的联系人，可多选，也可显式设置为 0 个。</div>
+                    <div className="text-[12px] text-slate-500 mt-1">仅使用选中的联系人，也可设置为 0 个。</div>
                   </div>
                 </div>
               </label>
@@ -433,7 +419,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         已选 {formData.selectedReferralContactIds.length} 个
                       </span>
                     </div>
-                    <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
                       {availableReferralContacts.map((contact) => {
                         const contactId = String(contact?.id || '').trim();
                         if (!contactId) return null;
@@ -468,8 +454,8 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
+            <div className="lg:col-span-4">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位名称</label>
               <input
                 type="text"
@@ -480,7 +466,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               />
             </div>
 
-            <div>
+            <div className="lg:col-span-4">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">企业名称</label>
               <input
                 type="text"
@@ -491,38 +477,18 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               />
             </div>
 
-            <div className="md:col-span-2 rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-[13px] font-semibold text-slate-900">前台中文翻译内容</div>
-                  <div className="mt-0.5 text-[11px] leading-5 text-slate-500">人工修改后会继续保存在当前岗位的 translations 字段，线上展示优先使用这里的内容。</div>
-                </div>
-                <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[10px] font-black text-indigo-600">可编辑</span>
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div>
-                  <label className="block text-[12px] font-medium text-slate-600 mb-1.5">翻译后标题</label>
-                  <input
-                    type="text"
-                    value={(formData as any).translations?.title || ''}
-                    onChange={(e) => updateTranslationField('title', e.target.value)}
-                    className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[13px] text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                    placeholder="例如：高级产品经理"
-                  />
-                </div>
-                <div className="flex items-end">
-                  <button
-                    type="button"
-                    onClick={() => updateTranslationField('title', formData.title)}
-                    className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[12px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
-                  >
-                    用原始标题填入
-                  </button>
-                </div>
-              </div>
+            <div className="lg:col-span-4">
+              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">翻译后标题</label>
+              <input
+                type="text"
+                value={(formData as any).translations?.title || ''}
+                onChange={(e) => updateTranslationField('title', e.target.value)}
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                placeholder="前台中文标题"
+              />
             </div>
 
-            <div>
+            <div className="lg:col-span-4">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">工作地点</label>
               <input
                 type="text"
@@ -544,7 +510,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">时区</label>
               <input
                 type="text"
@@ -555,7 +521,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               />
             </div>
 
-            <div>
+            <div className="lg:col-span-3">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">发布时间</label>
               <input
                 type="datetime-local"
@@ -565,13 +531,13 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               />
             </div>
 
-            <div>
+            <div className="lg:col-span-5 lg:row-span-3">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">薪资</label>
               <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-                <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2.5">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/80 px-3 py-2">
                   <div>
-                    <div className="text-[12px] font-semibold text-slate-800">薪资编辑模式</div>
-                    <div className="text-[11px] text-slate-500">优先使用规范格式，前台展示会更稳定。</div>
+                    <div className="text-[12px] font-semibold text-slate-800">薪资</div>
+                    <div className="text-[11px] text-slate-500">规范格式优先</div>
                   </div>
                   <div className="inline-flex rounded-full bg-white p-1 shadow-sm border border-slate-200">
                     <button
@@ -599,11 +565,11 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   </div>
                 </div>
 
-                <div className="p-3 space-y-3">
-                  <div className="rounded-lg border border-indigo-100 bg-[linear-gradient(135deg,rgba(238,242,255,0.72),rgba(248,250,252,0.92))] px-3 py-2.5 flex items-center justify-between gap-3">
+                <div className="p-3 space-y-2.5">
+                  <div className="rounded-lg border border-indigo-100 bg-[linear-gradient(135deg,rgba(238,242,255,0.72),rgba(248,250,252,0.92))] px-3 py-2 flex items-center justify-between gap-3">
                     <div>
                       <div className="text-[11px] font-medium text-slate-500">前台展示预览</div>
-                      <div className="mt-0.5 text-[16px] font-semibold text-slate-900">{salaryPreview}</div>
+                      <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{salaryPreview}</div>
                     </div>
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                       formData.salaryEditorMode === 'structured'
@@ -615,14 +581,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   </div>
 
                   {formData.salaryEditorMode === 'structured' ? (
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                         <div>
                           <label className="mb-1 block text-[11px] font-medium text-slate-500">货币单位</label>
                           <select
                             value={formData.salaryCurrency}
                             onChange={(e) => setFormData({ ...formData, salaryCurrency: e.target.value as SupportedSalaryCurrency })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                           >
                             {SALARY_CURRENCY_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>{option.label}</option>
@@ -634,7 +600,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                           <select
                             value={formData.salaryPeriod}
                             onChange={(e) => setFormData({ ...formData, salaryPeriod: e.target.value as SupportedSalaryPeriod })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                           >
                             {SALARY_PERIOD_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>{option.label}</option>
@@ -652,7 +618,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                                 key={option.value}
                                 type="button"
                                 onClick={() => setFormData({ ...formData, salaryValueMode: option.value as SupportedSalaryValueMode })}
-                                className={`rounded-md border px-2.5 py-2 text-[12px] font-semibold transition-colors ${
+                                className={`rounded-md border px-2 py-1.5 text-[12px] font-semibold transition-colors ${
                                   formData.salaryValueMode === option.value
                                     ? 'border-indigo-600 bg-indigo-600 text-white'
                                     : 'border-slate-200 bg-white text-slate-600'
@@ -665,7 +631,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         </div>
                       </div>
 
-                      <div className={`grid ${formData.salaryValueMode === 'fixed' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-3`}>
+                      <div className={`grid ${formData.salaryValueMode === 'fixed' ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'} gap-2`}>
                         <div>
                           <label className="mb-1 block text-[11px] font-medium text-slate-500">
                             {formData.salaryValueMode === 'fixed' ? '金额' : '最低值'}
@@ -675,7 +641,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                             min="0"
                             value={formData.salaryMin}
                             onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                             placeholder="例如 45000"
                           />
                         </div>
@@ -687,14 +653,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                               min="0"
                               value={formData.salaryMax}
                               onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
-                              className="w-full rounded-md border border-slate-300 px-2.5 py-2 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
                               placeholder="例如 65000"
                             />
                           </div>
                         )}
                       </div>
 
-                      <p className="text-[11px] leading-5 text-slate-500">
+                      <p className="text-[11px] leading-4 text-slate-500">
                         推荐用于新录入和人工修正。前台会自动展示为紧凑格式，例如 <span className="font-semibold text-slate-700">$45k–$65k/yr</span>。
                       </p>
                     </div>
@@ -716,7 +682,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
             </div>
 
-            <div>
+            <div className="lg:col-span-4">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">申请链接 (URL)</label>
               <input
                 type="url"
@@ -727,7 +693,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               />
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位类型</label>
               <select
                 value={formData.jobType}
@@ -755,7 +721,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </select>
             </div>
 
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位级别</label>
               <select
                 value={formData.experienceLevel}
@@ -770,7 +736,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </select>
             </div>
 
-            <div>
+            <div className="lg:col-span-4">
               <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位分类</label>
               <select
                 value={formData.category}
@@ -797,7 +763,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </select>
             </div>
 
-            <div className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
+            <div className="lg:col-span-12 rounded-lg border border-slate-200 bg-slate-50/70 p-3">
               <div className="grid gap-3 md:grid-cols-[190px,minmax(0,1fr)] md:items-start">
                 <label className="flex items-center gap-2 cursor-pointer pt-2">
                   <input
@@ -826,7 +792,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
             </div>
 
-            <div className="md:col-span-2 mt-4 space-y-3 pt-4 border-t border-slate-100">
+            <div className="lg:col-span-12 mt-1 space-y-3 pt-3 border-t border-slate-100">
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-[13px] font-medium text-slate-700 text-sm">技能标签 <span className="text-[11px] text-slate-400 font-normal">（用逗号分隔）</span></label>
                 <button
@@ -837,6 +803,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       category: formData.category,
                       description: formData.description,
                       requirements: formData.requirements,
+                      benefits: formData.benefits,
                       translations: (formData as any).translations
                     });
                     if (extractedTags.length === 0) return;
@@ -858,11 +825,10 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
                   placeholder="例如: React, TypeScript, Node.js"
                 />
-                {/* Use currentSuggestedTags instead of generic availableTags if available */}
-                {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).length > 0 && (
+                {jdSuggestedTags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1 items-center">
-                    <span className="text-[10px] text-slate-400 pr-1">推荐:</span>
-                    {(currentSuggestedTags.length > 0 ? currentSuggestedTags : availableTags).map(tag => (
+                    <span className="text-[10px] text-slate-400 pr-1">从 JD 识别:</span>
+                    {jdSuggestedTags.map(tag => (
                       <button
                         key={tag}
                         type="button"
@@ -879,59 +845,61 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
             </div>
 
-            <div className="md:col-span-2 mt-4 space-y-4 pt-4 border-t border-slate-100">
-              <div>
-                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位描述</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
-                />
-              </div>
-
-              <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
-                <div className="mb-2 flex items-center justify-between gap-2">
-                  <label className="block text-[13px] font-medium text-slate-700">翻译后正文</label>
-                  <button
-                    type="button"
-                    onClick={() => updateTranslationField('description', formData.description)}
-                    className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-white px-2 py-1 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
-                    title="使用原始正文覆盖翻译正文"
-                  >
-                    <ArrowDown className="w-2.5 h-2.5" />
-                    用原始正文填入
-                  </button>
+            <div className="lg:col-span-12 mt-1 pt-3 border-t border-slate-100">
+              <div className="grid gap-3 xl:grid-cols-2">
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位描述</label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={8}
+                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                  />
                 </div>
-                <textarea
-                  value={(formData as any).translations?.description || ''}
-                  onChange={(e) => updateTranslationField('description', e.target.value)}
-                  rows={5}
-                  className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[13px] leading-relaxed text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                  placeholder="这里填写人工修正后的中文岗位正文，前台详情页会优先展示。"
-                />
-              </div>
 
-              <div>
-                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位要求（每行一个）</label>
-                <textarea
-                  value={formData.requirements}
-                  onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                  rows={3}
-                  className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
-                  placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
-                />
-              </div>
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <label className="block text-[13px] font-medium text-slate-700">翻译后正文</label>
+                    <button
+                      type="button"
+                      onClick={() => updateTranslationField('description', formData.description)}
+                      className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-white px-2 py-1 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                      title="使用原始正文覆盖翻译正文"
+                    >
+                      <ArrowDown className="w-2.5 h-2.5" />
+                      用原始正文填入
+                    </button>
+                  </div>
+                  <textarea
+                    value={(formData as any).translations?.description || ''}
+                    onChange={(e) => updateTranslationField('description', e.target.value)}
+                    rows={8}
+                    className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[13px] leading-relaxed text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    placeholder="人工修正后的中文岗位正文"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-[13px] font-medium text-slate-700 mb-1.5">福利待遇（每行一个）</label>
-                <textarea
-                  value={formData.benefits}
-                  onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
-                  rows={3}
-                  className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
-                  placeholder="例如:&#10;Remote work&#10;Health insurance"
-                />
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位要求（每行一个）</label>
+                  <textarea
+                    value={formData.requirements}
+                    onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+                    rows={4}
+                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                    placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[13px] font-medium text-slate-700 mb-1.5">福利待遇（每行一个）</label>
+                  <textarea
+                    value={formData.benefits}
+                    onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
+                    rows={4}
+                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                    placeholder="例如:&#10;Remote work&#10;Health insurance"
+                  />
+                </div>
               </div>
             </div>
           </div>

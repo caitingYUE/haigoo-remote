@@ -8,7 +8,7 @@ type SkillSignal = {
 const ROLE_PATTERNS: Record<string, RegExp[]> = {
   product: [/产品经理|产品运营|product manager|product owner|产品规划|产品策略/i],
   marketing: [/市场|营销|增长|品牌|内容|投放|媒介|marketing|growth|brand|seo|sem/i],
-  operations: [/运营|operations|community|用户运营|活动运营|项目运营|交付/i],
+  operations: [/运营|客服|客户支持|operations|community|support|happiness engineer|用户运营|活动运营|项目运营|交付/i],
   business: [/商务|销售|渠道|客户成功|business development|sales|account manager|customer success|bd\b/i],
   data: [/数据分析|商业分析|data analyst|business analyst|analytics|bi\b/i],
   design: [/设计|designer|ux|ui|视觉|用户研究/i],
@@ -32,7 +32,7 @@ const SKILL_SIGNALS: SkillSignal[] = [
   { label: 'Excel', patterns: ['excel', '数据透视表', 'vlookup'], roles: ['data', 'operations', 'business'] },
   { label: 'Tableau', patterns: ['tableau'], roles: ['data'] },
   { label: 'Power BI', patterns: ['power bi', /\bbi\b/i], roles: ['data'] },
-  { label: 'Google Analytics', patterns: ['google analytics', 'ga4', /\bga\b/i], roles: ['marketing', 'data'] },
+  { label: 'Google Analytics', patterns: ['google analytics', 'ga4'], roles: ['marketing', 'data'] },
   { label: 'SEO', patterns: ['seo', '搜索优化'], roles: ['marketing'] },
   { label: 'SEM', patterns: ['sem', '搜索投放'], roles: ['marketing'] },
   { label: '内容营销', patterns: ['内容营销', 'content marketing', '内容策划'], roles: ['marketing'] },
@@ -55,7 +55,14 @@ const SKILL_SIGNALS: SkillSignal[] = [
   { label: 'HubSpot', patterns: ['hubspot'], roles: ['business', 'marketing'] },
   { label: '商务拓展', patterns: ['商务拓展', 'business development', /\bbd\b/i], roles: ['business'] },
   { label: '渠道拓展', patterns: ['渠道拓展', 'channel sales', 'partner'], roles: ['business', 'sales'] },
-  { label: '客户成功', patterns: ['客户成功', 'customer success'], roles: ['business', 'operations'] },
+  { label: '客户成功', patterns: ['客户成功', '客户支持与成功', 'customer success', 'customer support & success', 'customer support and success', 'customer experience'], roles: ['business', 'operations'] },
+  { label: '客户支持', patterns: ['客户支持', 'customer support', 'support specialist', 'support engineer', 'customer care', 'happiness engineer'], roles: ['operations', 'business'] },
+  { label: '客服系统', patterns: ['zendesk', 'intercom', 'freshdesk', 'helpscout', 'help scout', '客服系统'], roles: ['operations', 'business'] },
+  { label: '工单处理', patterns: ['工单', 'ticketing', 'support ticket', 'customer ticket', 'ticket queue'], roles: ['operations', 'business'] },
+  { label: '问题排查', patterns: ['问题排查', '排障', 'troubleshoot', 'troubleshooting', 'diagnose issues', 'resolve issues'], roles: ['operations', 'tech'] },
+  { label: '知识库', patterns: ['知识库', '帮助中心', 'help center', 'knowledge base', 'support documentation'], roles: ['operations', 'business'] },
+  { label: 'SLA', patterns: ['sla', 'response time', '响应时效', '服务等级'], roles: ['operations', 'business'] },
+  { label: '用户反馈', patterns: ['用户反馈', '客户反馈', 'user feedback', 'customer feedback'], roles: ['operations', 'product', 'business'] },
   { label: '线索转化', patterns: ['线索转化', 'lead generation', 'lead nurture'], roles: ['business', 'marketing'] },
   { label: '销售管理', patterns: ['销售管理', 'sales management', 'pipeline'], roles: ['business'] },
   { label: '项目管理', patterns: ['项目管理', 'project management', '项目推进'], roles: ['product', 'operations', 'business'] },
@@ -68,13 +75,27 @@ const SKILL_SIGNALS: SkillSignal[] = [
   { label: 'Figma', patterns: ['figma'], roles: ['design', 'product'] },
   { label: 'Notion', patterns: ['notion'], roles: ['product', 'operations'] },
   { label: 'Jira', patterns: ['jira'], roles: ['product', 'tech'] },
+  { label: 'HTML/CSS', patterns: ['html/css', 'html', 'css'], roles: ['tech'] },
   { label: 'Python', patterns: ['python'], roles: ['tech', 'data'] },
   { label: 'JavaScript', patterns: ['javascript'], roles: ['tech'] },
   { label: 'TypeScript', patterns: ['typescript'], roles: ['tech'] },
   { label: 'React', patterns: ['react'], roles: ['tech'] },
+  { label: 'Vue', patterns: ['vue.js', 'vuejs', 'vue'], roles: ['tech'] },
+  { label: 'Angular', patterns: ['angular'], roles: ['tech'] },
   { label: 'Node.js', patterns: ['node.js', 'nodejs'], roles: ['tech'] },
+  { label: 'Java', patterns: ['java'], roles: ['tech'] },
+  { label: 'Go', patterns: ['golang', /\bgo\b/i], roles: ['tech'] },
+  { label: 'Rust', patterns: ['rust'], roles: ['tech'] },
+  { label: 'PHP', patterns: ['php'], roles: ['tech'] },
+  { label: '.NET', patterns: ['.net', 'dotnet', 'c#'], roles: ['tech'] },
+  { label: 'AWS', patterns: ['aws', 'amazon web services'], roles: ['tech'] },
+  { label: 'GCP', patterns: ['gcp', 'google cloud'], roles: ['tech'] },
+  { label: 'Azure', patterns: ['azure'], roles: ['tech'] },
   { label: 'Docker', patterns: ['docker'], roles: ['tech'] },
   { label: 'Kubernetes', patterns: ['kubernetes', 'k8s'], roles: ['tech'] },
+  { label: 'CI/CD', patterns: ['ci/cd', 'continuous integration', 'continuous delivery'], roles: ['tech'] },
+  { label: 'GraphQL', patterns: ['graphql'], roles: ['tech'] },
+  { label: 'API', patterns: ['api', 'apis', 'rest api', 'rest apis', 'restful api', 'graphql api'], roles: ['tech', 'product'] },
   { label: '机器学习', patterns: ['机器学习', 'machine learning'], roles: ['tech', 'data'] },
   { label: '英语沟通', patterns: ['英语', '英文', 'english', 'bilingual'], roles: ['product', 'marketing', 'business', 'operations'], soft: true },
   { label: '沟通协作', patterns: ['沟通能力', '沟通协作', 'cross-functional', 'stakeholder'], roles: ['product', 'marketing', 'business', 'operations'], soft: true },
@@ -93,6 +114,14 @@ function normalizeText(value: string): string {
     .trim()
 }
 
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function isLatinPattern(value: string): boolean {
+  return /[a-z0-9]/i.test(value) && !/[\u4e00-\u9fa5]/.test(value)
+}
+
 function countOccurrences(text: string, pattern: string | RegExp): number {
   if (pattern instanceof RegExp) {
     const flags = pattern.flags.includes('g') ? pattern.flags : `${pattern.flags}g`
@@ -101,7 +130,16 @@ function countOccurrences(text: string, pattern: string | RegExp): number {
   }
 
   if (!pattern) return 0
-  return text.includes(pattern.toLowerCase()) ? 1 : 0
+  const normalizedPattern = normalizeText(pattern)
+  if (!normalizedPattern) return 0
+
+  if (isLatinPattern(normalizedPattern)) {
+    const escaped = escapeRegExp(normalizedPattern).replace(/\s+/g, '\\s+')
+    const regex = new RegExp(`(^|[^a-z0-9+#.])${escaped}([^a-z0-9+#.]|$)`, 'i')
+    return regex.test(text) ? 1 : 0
+  }
+
+  return text.includes(normalizedPattern) ? 1 : 0
 }
 
 function resolveRoleHints(text: string): string[] {
@@ -114,22 +152,24 @@ export function extractJobSkillKeywords(params: {
   title?: string
   description?: string
   requirements?: string[] | string
+  benefits?: string[] | string
   category?: string
-  translations?: { description?: string | null } | null
+  translations?: { title?: string | null; description?: string | null } | null
   limit?: number
 }): string[] {
-  const baseText = [
+  const evidenceText = [
     params.title,
-    params.category,
     params.description,
     Array.isArray(params.requirements) ? params.requirements.join('\n') : params.requirements,
+    Array.isArray(params.benefits) ? params.benefits.join('\n') : params.benefits,
+    params.translations?.title,
     params.translations?.description
   ].filter(Boolean).join('\n')
 
-  const normalizedText = normalizeText(baseText)
+  const normalizedText = normalizeText(evidenceText)
   if (!normalizedText) return []
 
-  const roleHints = resolveRoleHints(normalizedText)
+  const roleHints = resolveRoleHints(normalizeText(`${evidenceText}\n${params.category || ''}`))
   const scores = new Map<string, number>()
 
   for (const signal of SKILL_SIGNALS) {
