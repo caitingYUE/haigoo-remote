@@ -138,6 +138,38 @@ const DEFAULT_JOB_FILTERS = {
 
 type JobFiltersState = typeof DEFAULT_JOB_FILTERS
 
+const JOB_FILTER_URL_KEYS = [
+  'search',
+  'searchQuery',
+  'category',
+  'experienceLevel',
+  'industry',
+  'regionType',
+  'region',
+  'sourceType',
+  'location',
+  'type',
+  'jobType',
+  'salary',
+  'memberOnly',
+  'isTrusted',
+  'isNew',
+  'source',
+  'jobId'
+]
+
+const FILTER_ARRAY_URL_KEYS: Array<keyof Pick<JobFiltersState, 'category' | 'experienceLevel' | 'industry' | 'regionType' | 'sourceType' | 'location' | 'type' | 'jobType' | 'salary'>> = [
+  'category',
+  'experienceLevel',
+  'industry',
+  'regionType',
+  'sourceType',
+  'location',
+  'type',
+  'jobType',
+  'salary'
+]
+
 function normalizeJobFilters(value: unknown): JobFiltersState {
   if (!value || typeof value !== 'object') return DEFAULT_JOB_FILTERS
   const raw = value as Record<string, unknown>
@@ -173,6 +205,27 @@ function readCsvParam(params: URLSearchParams, key: string) {
   const value = params.get(key)
   if (!value) return []
   return value.split(',').map(item => item.trim()).filter(Boolean)
+}
+
+function buildJobsSearchParams(currentSearch: string, filters: JobFiltersState, searchTerm: string) {
+  const params = new URLSearchParams(currentSearch)
+  JOB_FILTER_URL_KEYS.forEach(key => params.delete(key))
+
+  const trimmedSearch = searchTerm.trim()
+  if (trimmedSearch) params.set('search', trimmedSearch)
+
+  FILTER_ARRAY_URL_KEYS.forEach((key) => {
+    const values = filters[key]
+    if (Array.isArray(values) && values.length > 0) {
+      params.set(key, values.join(','))
+    }
+  })
+
+  if (filters.memberOnly) params.set('memberOnly', 'true')
+  if (filters.isTrusted) params.set('isTrusted', 'true')
+  if (filters.isNew) params.set('isNew', 'true')
+
+  return params
 }
 
 function normalizeFacetKey(value: string) {
@@ -402,6 +455,15 @@ export default function JobsPage() {
   // 加载阶段状态
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
+
+  const syncJobListUrl = useCallback((nextFilters: JobFiltersState, nextSearchTerm: string) => {
+    const params = buildJobsSearchParams(location.search, nextFilters, nextSearchTerm)
+    const nextSearch = params.toString()
+    const normalizedCurrent = location.search.startsWith('?') ? location.search.slice(1) : location.search
+    if (nextSearch !== normalizedCurrent) {
+      navigate({ search: nextSearch }, { replace: true })
+    }
+  }, [location.search, navigate])
 
   // 加载岗位数据（使用新的后端API，支持筛选和分页）
   const loadJobsWithFilters = useCallback(async (page = 1, loadMore = false) => {
@@ -839,7 +901,7 @@ export default function JobsPage() {
     const search = params.get('search') || ''
     setSearchTerm(prev => (prev === search ? prev : search))
 
-    const paramKeys = ['category', 'experienceLevel', 'industry', 'regionType', 'region', 'sourceType', 'location', 'type', 'jobType', 'salary', 'memberOnly']
+    const paramKeys = ['category', 'experienceLevel', 'industry', 'regionType', 'region', 'sourceType', 'location', 'type', 'jobType', 'salary', 'memberOnly', 'isTrusted', 'isNew']
     const hasFilterParam = paramKeys.some(key => params.has(key))
     if (hasFilterParam) {
       setFilters(prev => {
@@ -861,7 +923,9 @@ export default function JobsPage() {
           ...(params.has('type') ? { type: readCsvParam(params, 'type') } : {}),
           ...(params.has('jobType') ? { jobType: readCsvParam(params, 'jobType') } : {}),
           ...(params.has('salary') ? { salary: readCsvParam(params, 'salary') } : {}),
-          ...(params.has('memberOnly') ? { memberOnly: params.get('memberOnly') === 'true' } : {})
+          ...(params.has('memberOnly') ? { memberOnly: params.get('memberOnly') === 'true' } : {}),
+          ...(params.has('isTrusted') ? { isTrusted: params.get('isTrusted') === 'true' } : {}),
+          ...(params.has('isNew') ? { isNew: params.get('isNew') === 'true' } : {})
         })
         return JSON.stringify(next) === JSON.stringify(prev) ? prev : next
       })
@@ -1094,9 +1158,11 @@ export default function JobsPage() {
 
 
   const clearAllFilters = () => {
+    const nextFilters = DEFAULT_JOB_FILTERS
     setSearchTerm('');
     hasManualJobSelectionRef.current = false
-    setFilters(DEFAULT_JOB_FILTERS);
+    setFilters(nextFilters);
+    syncJobListUrl(nextFilters, '')
     setListMode('jobs')
   }
 
@@ -1141,14 +1207,13 @@ export default function JobsPage() {
                     if (import.meta.env.DEV) {
                       console.debug('[JobsPage] onFilterChange triggered:', newFilters)
                     }
+                    const updated = normalizeJobFilters({ ...filters, ...newFilters })
                     hasManualJobSelectionRef.current = false
-                    setFilters((prev: any) => {
-                      const updated = normalizeJobFilters({ ...prev, ...newFilters })
-                      if (import.meta.env.DEV) {
-                        console.debug('[JobsPage] New filters state:', updated)
-                      }
-                      return updated
-                    });
+                    if (import.meta.env.DEV) {
+                      console.debug('[JobsPage] New filters state:', updated)
+                    }
+                    setFilters(updated);
+                    syncJobListUrl(updated, searchTermRef.current)
                   }}
                   categoryOptions={categoryOptions}
                   industryOptions={industryOptions}
@@ -1160,6 +1225,7 @@ export default function JobsPage() {
                   onSearchChange={(value) => {
                     hasManualJobSelectionRef.current = false
                     setSearchTerm(value)
+                    syncJobListUrl(filters, value)
                   }}
                   sortBy={sortBy}
                   listMode={listMode}
