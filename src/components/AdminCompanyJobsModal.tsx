@@ -250,17 +250,23 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         if (!editingJob) return;
 
         try {
+            const companyScopedUpdate = {
+                ...updatedJob,
+                company: company.name,
+                companyId: company.id
+            } as Partial<ProcessedJobData>;
+
             if (editingJob.id) {
                 // Update existing job
                 // Optimistic update
                 setJobs(prev => prev.map(job => 
-                    job.id === editingJob.id ? { ...job, ...updatedJob } as ProcessedJobData : job
+                    job.id === editingJob.id ? { ...job, ...companyScopedUpdate } as ProcessedJobData : job
                 ));
 
-                await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
+                await dataManagementService.updateProcessedJob(editingJob.id, companyScopedUpdate, 'admin');
             } else {
                 // Create new job
-                const newJob = { ...editingJob, ...updatedJob } as ProcessedJobData;
+                const newJob = { ...editingJob, ...companyScopedUpdate } as ProcessedJobData;
                 await dataManagementService.addProcessedJob(newJob);
                 // Refresh list to show new job (cannot optimistically update easily as we need ID)
                 fetchJobs();
