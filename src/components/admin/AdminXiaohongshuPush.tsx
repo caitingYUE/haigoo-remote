@@ -10,7 +10,7 @@ import {
   Search
 } from 'lucide-react';
 import { buildJobDetailSections, type JobDetailBlock } from '../../utils/job-detail-content';
-import { JOB_CATEGORY_OPTIONS as CATEGORY_OPTIONS } from '../../../lib/shared/job-categories.js';
+import { JOB_CATEGORY_OPTIONS as CATEGORY_FALLBACK_OPTIONS } from '../../../lib/shared/job-categories.js';
 
 const JOB_TYPE_OPTIONS = [
   { label: '全职', value: 'full-time' },
@@ -33,6 +33,11 @@ const INDUSTRY_OPTIONS = [
   '电子商务', 'Web3/区块链', '游戏', '媒体/娱乐', '企业服务/SaaS',
   '硬件/物联网', '消费生活', '其他'
 ];
+
+const SORT_OPTIONS = [
+  { label: '按评分', value: 'score' },
+  { label: '按日期', value: 'date' }
+] as const;
 
 const TEMPLATE_VERSION = 'xhs-v6';
 const EXPORT_WIDTH = 1080;
@@ -116,6 +121,15 @@ interface XhsJobsResponse {
   limit: number;
   total: number;
   hasMore: boolean;
+  sort?: XhsSortMode;
+  filterOptions?: XhsFilterOptions;
+}
+
+type XhsSortMode = 'score' | 'date';
+
+interface XhsFilterOptions {
+  categories?: string[];
+  industries?: string[];
 }
 
 interface XhsPosterDraft {
@@ -367,6 +381,11 @@ function getSelectedCategoryLabel(values: string[]) {
   if (values.length === 1) return values[0];
   if (values.length === 2) return `${values[0]}、${values[1]}`;
   return `已选 ${values.length} 个岗位角色`;
+}
+
+function buildOptionList(primary: string[] | undefined, fallback: string[], selected: string[] = []) {
+  const source = Array.isArray(primary) && primary.length > 0 ? primary : fallback;
+  return Array.from(new Set([...source, ...selected].map((item) => String(item || '').trim()).filter(Boolean)));
 }
 
 function normalizeEmailTypeLabel(value?: string) {
@@ -1070,6 +1089,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const [jobType, setJobType] = useState('');
   const [experienceLevel, setExperienceLevel] = useState('');
   const [industry, setIndustry] = useState('');
+  const [sortMode, setSortMode] = useState<XhsSortMode>('score');
+  const [filterOptions, setFilterOptions] = useState<XhsFilterOptions | null>(null);
   const [jobs, setJobs] = useState<XhsPushJobListItem[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [page, setPage] = useState(1);
@@ -1094,6 +1115,14 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
   const selectedThemeId = POSTER_THEME.id;
   const jobsRef = useRef<XhsPushJobListItem[]>([]);
   const categoryMenuRef = useRef<HTMLDivElement | null>(null);
+  const categoryOptions = useMemo(
+    () => buildOptionList(filterOptions?.categories, CATEGORY_FALLBACK_OPTIONS, selectedCategories),
+    [filterOptions?.categories, selectedCategories]
+  );
+  const industryOptions = useMemo(
+    () => buildOptionList(filterOptions?.industries, INDUSTRY_OPTIONS, industry ? [industry] : []),
+    [filterOptions?.industries, industry]
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => setSearchKeyword(searchInput.trim()), 300);
@@ -1152,7 +1181,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       const params = new URLSearchParams({
         page: String(nextPage),
         limit: '20',
-        sort: 'info_complete,recent'
+        sort: sortMode
       });
 
       if (searchKeyword) params.append('search', searchKeyword);
@@ -1175,6 +1204,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       setPage(data.page);
       setHasMore(Boolean(data.hasMore));
       setTotal(data.total || 0);
+      setFilterOptions(data.filterOptions || null);
       setSelectedJobId((current) => {
         if (current && nextItems.some((item) => item.id === current)) return current;
         return nextItems[0]?.id || null;
@@ -1191,7 +1221,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
       setLoading(false);
       setLoadingMore(false);
     }
-  }, [experienceLevel, industry, jobType, searchKeyword, selectedCategories, token]);
+  }, [experienceLevel, industry, jobType, searchKeyword, selectedCategories, sortMode, token]);
 
   useEffect(() => {
     fetchJobs(1, false);
@@ -1284,6 +1314,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
     setJobType('');
     setExperienceLevel('');
     setIndustry('');
+    setSortMode('score');
   };
 
   const handleCompanySummaryChange = (value: string) => {
@@ -1444,7 +1475,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
               {categoryMenuOpen ? (
                 <div className="absolute left-0 right-0 z-20 mt-2 rounded-2xl border border-rose-100 bg-white p-2 shadow-lg shadow-rose-100/40">
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
-                    {CATEGORY_OPTIONS.map((option: string) => {
+                    {categoryOptions.map((option: string) => {
                       const checked = selectedCategories.includes(option);
                       return (
                         <label
@@ -1496,7 +1527,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
 
             <select value={industry} onChange={(event) => setIndustry(event.target.value)} className="rounded-2xl border border-rose-100 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-rose-300 focus:ring-2 focus:ring-rose-100">
               <option value="">全部企业行业</option>
-              {INDUSTRY_OPTIONS.map((option) => <option key={option} value={option}>{option}</option>)}
+              {industryOptions.map((option) => <option key={option} value={option}>{option}</option>)}
             </select>
           </div>
 
@@ -1511,9 +1542,19 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
           </div>
         </div>
 
-        <div className="flex items-center justify-between text-sm text-slate-500">
-          <span>筛选结果</span>
-          <span>{loading ? '加载中...' : `${total} 个岗位`}</span>
+        <div className="flex items-center justify-between gap-3 text-sm text-slate-500">
+          <div>
+            <div className="font-medium text-slate-600">筛选结果</div>
+            <div className="mt-0.5 text-xs">{loading ? '加载中...' : `${total} 个岗位`}</div>
+          </div>
+          <select
+            value={sortMode}
+            onChange={(event) => setSortMode(event.target.value as XhsSortMode)}
+            className="rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 outline-none transition focus:border-rose-300 focus:ring-2 focus:ring-rose-100"
+            aria-label="筛选结果排序"
+          >
+            {SORT_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+          </select>
         </div>
 
         <div className="space-y-3">
