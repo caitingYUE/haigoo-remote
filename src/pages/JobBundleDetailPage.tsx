@@ -84,7 +84,12 @@ export default function JobBundleDetailPage() {
 
   const fetchJobs = async (ids: string[]) => {
     try {
-      const res = await fetch(`/api/data/processed-jobs?ids=${encodeURIComponent(ids.join(','))}`);
+      const params = new URLSearchParams({
+        ids: JSON.stringify(ids),
+        limit: String(Math.max(ids.length, 50)),
+        skipAggregations: 'true'
+      });
+      const res = await fetch(`/api/data/processed-jobs?${params.toString()}`);
       const data = await res.json();
       if (data.jobs) {
         const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
