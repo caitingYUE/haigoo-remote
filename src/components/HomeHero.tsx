@@ -1,5 +1,5 @@
 import { useNavigate, Link } from 'react-router-dom'
-import { useState, useEffect, useRef, useMemo, type CSSProperties } from 'react'
+import { lazy, Suspense, useState, useEffect, useRef, useMemo, type CSSProperties } from 'react'
 import {
     Sparkles, Target, Briefcase, Loader2, X, UploadCloud,
     ChevronLeft, ChevronRight, MapPin, DollarSign, Building2, Search, ArrowRight,
@@ -8,16 +8,12 @@ import {
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import JobTickerItem from './JobTickerItem'
-import GeneratedPlanView from './GeneratedPlanView'
-import JobDetailModal from './JobDetailModal'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { TrustedCompany, trustedCompaniesService } from '../services/trusted-companies-service'
-import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { stripMarkdown } from '../utils/text-formatter'
 import { formatSalaryForDisplay } from '../utils/salary-display'
 import { getCompanyLogoSources } from '../utils/company-logo'
-import HaigooClubInfoCard from './HaigooClubInfoCard'
 import {
     readPendingGuestResume,
     savePendingGuestResume,
@@ -35,12 +31,28 @@ const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
 const LOGIN_EVENT_KEY = 'haigoo_login_event_at'
 const HOME_HERO_BG_SRC = '/pic_lists/Home_pics/background05.webp'
 const HOME_HERO_LOVE_SRC = '/pic_lists/Home_pics/love-transparent.webp'
+const HOME_HERO_INLINE_LOVE_SRC = '/pic_lists/Home_pics/hero-love-inline.webp'
+const HOME_HERO_TITLE_SRC = '/pic_lists/Home_pics/haigoo-hero-title-680.webp'
+const HOME_HERO_TITLE_SRCSET = [
+    '/pic_lists/Home_pics/haigoo-hero-title-680.webp 680w',
+    '/pic_lists/Home_pics/haigoo-hero-title-1020.webp 1020w',
+    '/pic_lists/Home_pics/haigoo-hero-title-1360.webp 1360w',
+].join(', ')
 const HOME_UPGRADE_AVATAR_SRC = '/pic_lists/Home_pics/Haigoo_hi-transparent.webp'
 const HOME_UPGRADE_BANNER_DISMISS_KEY = 'haigoo_home_upgrade_banner_dismissed_v1'
 const HOME_UPGRADE_DEPLOY_AT = Date.parse(import.meta.env.VITE_HAIGOO_UPGRADE_DEPLOY_AT || '2026-06-05T00:00:00+08:00')
 const HOME_UPGRADE_MAINTENANCE_END_AT = HOME_UPGRADE_DEPLOY_AT + 30 * 60 * 1000
 const HOME_UPGRADE_LAUNCH_START_AT = Date.UTC(2026, 5, 4, 16, 0, 0)
 const HOME_UPGRADE_END_AT = Date.UTC(2026, 5, 11, 16, 0, 0)
+
+const LazyGeneratedPlanView = lazy(() => import('./GeneratedPlanView'))
+const LazyJobDetailModal = lazy(() => import('./JobDetailModal'))
+const LazyHaigooClubInfoCard = lazy(() => import('./HaigooClubInfoCard'))
+
+async function parseResumeFileOnDemand(file: File) {
+    const module = await import('../services/resume-parser-enhanced')
+    return module.parseResumeFileEnhanced(file)
+}
 
 type HomeUpgradeBannerPhase = 'maintenance' | 'launch'
 
@@ -651,7 +663,7 @@ export default function HomeHero({
             source_key: 'home_upgrade_banner'
         })
         if (!isAuthenticated) {
-            showWarning('请先登录后反馈', '登录后可以把问题直接提交到后台。')
+            showWarning('请先登录后留言', '登录后可以把你的想法直接留给海狗。')
             return
         }
         setShowUpgradeFeedbackModal(true)
@@ -659,7 +671,7 @@ export default function HomeHero({
     const submitUpgradeFeedback = async () => {
         const content = upgradeFeedbackContent.trim()
         if (!content) {
-            showError('请填写反馈内容')
+            showError('请填写留言内容')
             return
         }
         try {
@@ -686,21 +698,21 @@ export default function HomeHero({
             })
             const data = await res.json().catch(() => ({ success: false }))
             if (!res.ok || !data?.success) {
-                showError('反馈提交失败', data?.error || '请稍后重试')
+                showError('留言提交失败', data?.error || '请稍后重试')
                 return
             }
-            showSuccess('反馈已提交', '我们会尽快查看。')
+            showSuccess('留言已收到', '谢谢你告诉我们你的想法，我们会认真查看。')
             setUpgradeFeedbackContent('')
             setShowUpgradeFeedbackModal(false)
         } catch {
-            showError('反馈提交失败', '网络错误')
+            showError('留言提交失败', '网络错误')
         } finally {
             setUpgradeFeedbackSubmitting(false)
         }
     }
     const upgradeBannerMessage = upgradeBannerPhase === 'maintenance'
         ? `Haigoo 正在升级，请避开 ${formatChinaMonthDayTime(HOME_UPGRADE_DEPLOY_AT)}-${formatChinaMonthDayTime(HOME_UPGRADE_MAINTENANCE_END_AT).replace(/^\d+月\d+日/, '')} 申请或购买会员。`
-        : 'Haigoo 治愈系插画风 UI 全新上线，守护你的远程梦。'
+        : '嗨，我是海狗，你的远程工作探索伙伴。'
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -772,29 +784,6 @@ export default function HomeHero({
         : ''
 
     useEffect(() => {
-        const links = [HOME_HERO_BG_SRC, HOME_HERO_LOVE_SRC].map((href) => {
-            const link = document.createElement('link')
-            link.rel = 'preload'
-            link.as = 'image'
-            link.href = href
-            link.setAttribute('fetchpriority', 'high')
-            document.head.appendChild(link)
-            return link
-        })
-
-        ;[HOME_HERO_BG_SRC, HOME_HERO_LOVE_SRC].forEach((src) => {
-            const img = new Image()
-            img.decoding = 'sync'
-            img.fetchPriority = 'high'
-            img.src = src
-        })
-
-        return () => {
-            links.forEach((link) => link.remove())
-        }
-    }, [])
-
-    useEffect(() => {
         if (activeFeaturedTab === HOME_FEATURED_TABS[0].id) {
             setFeaturedTabJobs(featuredJobs.slice(0, 6))
             setFeaturedTabLoading(false)
@@ -835,60 +824,43 @@ export default function HomeHero({
         const missingCoverCompanies = displayCompanies.filter((company) => company.id && !company.coverImage && !companyCoverRequestedRef.current.has(company.id))
         if (missingCoverCompanies.length === 0) return
 
-        missingCoverCompanies.forEach((company) => {
-            companyCoverRequestedRef.current.add(company.id)
-            trustedCompaniesService.getCompanyCoverImage(company.id)
-                .then((result) => {
-                    if (cancelled) return
-                    setCompanyCoverImages((prev) => ({
-                        ...prev,
-                        [company.id]: result?.coverImage || ''
-                    }))
-                })
-                .catch(() => {
-                    if (cancelled) return
-                    setCompanyCoverImages((prev) => ({
-                        ...prev,
-                        [company.id]: ''
-                    }))
-                })
-        })
-
-        return () => { cancelled = true }
-    }, [displayCompanies])
-
-    useEffect(() => {
-        if (typeof window === 'undefined') return
-        const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostname)
-        if (!isLocalPreview || displayCompanies.length === 0) return
-
-        let cancelled = false
-        const loadOnlineCovers = async () => {
-            try {
-                const resp = await fetch('https://haigooremote.com/api/data?resource=companies&action=featured_home')
-                if (!resp.ok) return
-                const data = await resp.json()
-                const onlineCompanies = Array.isArray(data?.companies) ? data.companies : []
-                const byName = new Map(onlineCompanies.map((company: any) => [String(company?.name || '').trim().toLowerCase(), company]))
-                await Promise.all(displayCompanies.map(async (company) => {
-                    if (cancelled || company.coverImage || companyCoverImages[company.id]) return
-                    const onlineCompany: any = byName.get(String(company.name || '').trim().toLowerCase())
-                    if (!onlineCompany?.id) return
-                    const coverResp = await fetch(`https://haigooremote.com/api/data?resource=companies&action=cover_image&company_id=${encodeURIComponent(onlineCompany.id)}`)
-                    if (!coverResp.ok) return
-                    const coverData = await coverResp.json()
-                    const coverImage = coverData?.coverImage || ''
-                    if (!cancelled && coverImage) {
-                        setCompanyCoverImages((prev) => ({ ...prev, [company.id]: coverImage }))
+        const loadCovers = async () => {
+            for (let index = 0; index < missingCoverCompanies.length; index += 2) {
+                if (cancelled) return
+                const batch = missingCoverCompanies.slice(index, index + 2)
+                await Promise.all(batch.map(async (company) => {
+                    companyCoverRequestedRef.current.add(company.id)
+                    try {
+                        const result = await trustedCompaniesService.getCompanyCoverImage(company.id)
+                        if (cancelled) return
+                        setCompanyCoverImages((prev) => ({
+                            ...prev,
+                            [company.id]: result?.coverImage || ''
+                        }))
+                    } catch {
+                        if (cancelled) return
+                        setCompanyCoverImages((prev) => ({
+                            ...prev,
+                            [company.id]: ''
+                        }))
                     }
                 }))
-            } catch {
-                // 本地预览兜底失败时继续使用本地素材，不影响线上逻辑。
             }
         }
-        void loadOnlineCovers()
-        return () => { cancelled = true }
-    }, [displayCompanies, companyCoverImages])
+
+        const idleId = typeof window !== 'undefined' && 'requestIdleCallback' in window
+            ? (window as any).requestIdleCallback(loadCovers, { timeout: 2500 })
+            : globalThis.setTimeout(loadCovers, 900)
+
+        return () => {
+            cancelled = true
+            if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+                ;(window as any).cancelIdleCallback(idleId)
+            } else {
+                globalThis.clearTimeout(idleId)
+            }
+        }
+    }, [displayCompanies])
 
     const formattedUpdatedAt = new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
@@ -1018,16 +990,13 @@ export default function HomeHero({
         const authToken = token || localStorage.getItem('haigoo_auth_token')
         const baseParams = {
             id: normalized.id,
-            skipAggregations: 'true',
-            _t: Date.now().toString()
+            skipAggregations: 'true'
         }
 
         const requestDetail = async (url: string) => {
             const resp = await fetch(url, {
-                cache: 'no-store',
                 headers: {
-                    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-                    'cache-control': 'no-cache'
+                    ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
                 }
             })
             const data = await resp.json().catch(() => ({}))
@@ -1305,32 +1274,23 @@ export default function HomeHero({
         const loadTickerJobs = async () => {
             try {
                 const fetchLatestJobs = async () => {
+                    let resp = await fetch('/api/home?action=ticker_jobs&limit=48')
+                    let data = await resp.json().catch(() => ({}))
+                    if (resp.ok && Array.isArray(data.jobs)) return data.jobs
+
                     const baseParams = {
                         page: '1',
-                        limit: '120',
+                        limit: '48',
                         sortBy: 'recent',
-                        skipAggregations: 'true',
-                        _t: `${Date.now()}`
+                        skipAggregations: 'true'
                     }
 
-                    const directParams = new URLSearchParams(baseParams)
-                    let resp = await fetch(`/api/data/processed-jobs?${directParams.toString()}`, {
-                        cache: 'no-store',
-                        headers: { 'cache-control': 'no-cache' }
+                    const fallbackParams = new URLSearchParams({
+                        resource: 'processed-jobs',
+                        ...baseParams
                     })
-                    let data = await resp.json().catch(() => ({}))
-
-                    if (!resp.ok || !Array.isArray(data.jobs)) {
-                        const fallbackParams = new URLSearchParams({
-                            resource: 'processed-jobs',
-                            ...baseParams
-                        })
-                        resp = await fetch(`/api/data?${fallbackParams.toString()}`, {
-                            cache: 'no-store',
-                            headers: { 'cache-control': 'no-cache' }
-                        })
-                        data = await resp.json().catch(() => ({}))
-                    }
+                    resp = await fetch(`/api/data?${fallbackParams.toString()}`)
+                    data = await resp.json().catch(() => ({}))
 
                     if (!resp.ok || !Array.isArray(data.jobs)) return []
                     return data.jobs
@@ -1399,8 +1359,17 @@ export default function HomeHero({
                 }
             }
         }
-        loadTickerJobs()
-        return () => { mounted = false }
+        const idleId = typeof window !== 'undefined' && 'requestIdleCallback' in window
+            ? (window as any).requestIdleCallback(loadTickerJobs, { timeout: 3000 })
+            : globalThis.setTimeout(loadTickerJobs, 1200)
+        return () => {
+            mounted = false
+            if (typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+                ;(window as any).cancelIdleCallback(idleId)
+            } else {
+                globalThis.clearTimeout(idleId)
+            }
+        }
     }, [])
 
     const handleResumeUpload = async (file: File) => {
@@ -1419,7 +1388,7 @@ export default function HomeHero({
                 setGuestResumeFile(file)
                 let parsedHints: string[] = []
                 try {
-                    const parsed = await parseResumeFileEnhanced(file)
+                    const parsed = await parseResumeFileOnDemand(file)
                     parsedHints = extractParsedResumeHints(parsed)
                 } catch {
                     parsedHints = []
@@ -1522,7 +1491,7 @@ export default function HomeHero({
             const authToken = localStorage.getItem('haigoo_auth_token') || token
             let parsedResumeHints = guestResumeHints
             if (!authToken && guestResumeFile && parsedResumeHints.length === 0) {
-                const parsed = await parseResumeFileEnhanced(guestResumeFile)
+                const parsed = await parseResumeFileOnDemand(guestResumeFile)
                 parsedResumeHints = extractParsedResumeHints(parsed)
                 setGuestResumeHints(parsedResumeHints)
             }
@@ -1762,7 +1731,7 @@ export default function HomeHero({
                     src={HOME_HERO_BG_SRC}
                     alt=""
                     loading="eager"
-                    decoding="sync"
+                    decoding="async"
                     className="absolute inset-x-0 top-[-18px] h-[1040px] w-full origin-center scale-[1.08] object-cover object-[58%_center] opacity-95 saturate-[1.05] contrast-[1.04]"
                 />
                 <div className="absolute inset-x-0 top-0 h-[900px] bg-[linear-gradient(90deg,rgba(255,253,249,0.92)_0%,rgba(255,253,249,0.68)_31%,rgba(255,253,249,0.14)_64%,rgba(255,253,249,0.05)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.16),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.10)_64%,rgba(251,250,246,0.64)_86%,#fbfaf6_100%)]" />
@@ -1789,10 +1758,10 @@ export default function HomeHero({
                                 type="button"
                                 onClick={handleUpgradeBannerFeedback}
                                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8]/80 bg-white/88 px-2 text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
-                                aria-label="反馈"
+                                aria-label="给我留言"
                             >
                                 <MessageCircle className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">反馈</span>
+                                <span className="hidden sm:inline">给我留言</span>
                             </button>
                             <button
                                 type="button"
@@ -1805,27 +1774,35 @@ export default function HomeHero({
                         </div>
                     </div>
                 )}
-                <div className={`relative z-10 w-full min-w-0 max-w-[620px] ${upgradeBannerPhase ? 'pt-11 sm:pt-0' : ''}`}>
-                    <h1
-                        className="haigoo-hero-title haigoo-hand-bold relative font-haigoo-hand text-[38px] leading-[1.08] tracking-normal text-slate-950 sm:text-[60px] xl:text-[68px] 2xl:text-[74px]"
-                        aria-label="用你喜欢的方式 工作和生活"
-                    >
-                        <span className="relative" aria-hidden="true">
-                            <span className="sm:whitespace-nowrap">用你喜欢的方式</span>
-                            <br />
-                            <span className="inline-flex items-center">
-                                工作和生活
-                                <span className="-ml-0.5 relative inline-flex h-[0.82em] w-[0.88em] translate-y-[0.06em] overflow-hidden">
-                                    <img
-                                        src={HOME_HERO_LOVE_SRC}
-                                        alt=""
-                                        loading="eager"
-                                        decoding="sync"
-                                        className="absolute left-1/2 top-1/2 h-[1.42em] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain opacity-90"
-                                    />
-                                </span>
-                            </span>
-                        </span>
+                <div className={`relative z-10 w-full min-w-0 max-w-[640px] ${upgradeBannerPhase ? 'pt-11 sm:pt-0' : ''}`}>
+                    <h1 className="relative max-w-[640px]" aria-label="用你喜欢的方式 工作和生活">
+                        <span className="sr-only">用你喜欢的方式 工作和生活</span>
+                        <picture aria-hidden="true">
+                            <source
+                                type="image/webp"
+                                srcSet={HOME_HERO_TITLE_SRCSET}
+                                sizes="(min-width: 1280px) 640px, (min-width: 640px) 560px, calc(100vw - 40px)"
+                            />
+                            <img
+                                src={HOME_HERO_TITLE_SRC}
+                                alt=""
+                                width={680}
+                                height={208}
+                                loading="eager"
+                                decoding="async"
+                                className="-ml-2 block h-auto w-full max-w-[640px] select-none sm:-ml-3 lg:-ml-4"
+                                draggable={false}
+                            />
+                        </picture>
+                        <img
+                            src={HOME_HERO_INLINE_LOVE_SRC}
+                            alt=""
+                            aria-hidden="true"
+                            loading="eager"
+                            decoding="async"
+                            className="pointer-events-none absolute left-[64%] top-[72%] h-6 w-auto -translate-x-1/2 -translate-y-1/2 select-none object-contain sm:h-7 lg:h-8"
+                            draggable={false}
+                        />
                     </h1>
                     <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#6b7b90] sm:mt-5 sm:text-[18px] sm:leading-8">
                         可以全球旅居，也可以居家办公。Haigoo 帮你获得全球优质远程工作，让生活和事业不再受限。
@@ -2063,7 +2040,7 @@ export default function HomeHero({
                 <div className="relative z-10 mt-6 rounded-[30px] border border-[#e3edf4] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.34)]">
                     <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
-                            <h2 className="haigoo-hand-bold font-haigoo-hand text-[32px] leading-tight tracking-normal text-slate-950">人工精选</h2>
+                            <h2 className="text-[24px] font-black leading-tight tracking-normal text-slate-950 sm:text-[28px]">人工精选</h2>
                             <p className="mt-1 text-sm text-slate-500">不只帮你筛出国内可申的岗位，更帮你筛出靠谱的好机会</p>
                         </div>
                         <div className="flex flex-wrap gap-2">
@@ -2211,10 +2188,10 @@ export default function HomeHero({
                 <div className="relative z-10 mt-6 rounded-[30px] border border-[#e3edf4] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.34)]">
                     <div className="mb-5 flex items-end justify-between gap-4">
                         <div>
-                            <h2 className="haigoo-hand-bold inline-flex items-center gap-1 font-haigoo-hand text-[32px] leading-tight tracking-normal text-slate-950">
+                            <h2 className="inline-flex items-center gap-1 text-[24px] font-black leading-tight tracking-normal text-slate-950 sm:text-[28px]">
                                 心动的企业
                                 <span className="relative -ml-1 inline-flex h-[0.78em] w-[0.82em] translate-y-[0.02em] overflow-hidden">
-                                    <img src={HOME_HERO_LOVE_SRC} alt="" className="absolute left-1/2 top-1/2 h-[1.55em] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain" />
+                                    <img src={HOME_HERO_LOVE_SRC} alt="" loading="lazy" decoding="async" className="absolute left-1/2 top-1/2 h-[1.55em] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain" />
                                 </span>
                             </h2>
                             <p className="mt-1 text-sm text-slate-500">精选尊重员工、开放多元、持续成长的远程企业</p>
@@ -2246,7 +2223,7 @@ export default function HomeHero({
                                     className="group overflow-hidden rounded-[20px] border border-[#e3edf4] bg-white text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0]"
                                 >
                                     <div className="relative aspect-[16/9] overflow-hidden bg-[#f7fbff]">
-                                        <img src={coverImage} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <img src={coverImage} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
                                     </div>
                                     <div className="p-3.5">
                                         <div className="flex items-center justify-between gap-2">
@@ -2266,8 +2243,8 @@ export default function HomeHero({
 
                     <aside className="relative h-full overflow-hidden rounded-[24px] border border-[#e3edf4] bg-[#fffdf8] p-5 shadow-[0_18px_46px_-40px_rgba(62,91,120,0.28)]">
                         <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.96)_0%,rgba(255,255,255,0.98)_100%)]" />
-                        <img src="/pic_lists/About_pics/sun-transparent.webp" alt="" className="pointer-events-none absolute right-5 top-5 h-14 w-14 object-contain opacity-20" />
-                        <img src="/pic_lists/About_pics/love-transparent.webp" alt="" className="pointer-events-none absolute right-16 top-16 h-7 w-7 object-contain opacity-30" />
+                        <img src="/pic_lists/About_pics/sun-transparent.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-5 top-5 h-14 w-14 object-contain opacity-20" />
+                        <img src="/pic_lists/About_pics/love-transparent.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-16 top-16 h-7 w-7 object-contain opacity-30" />
                         <div className="relative flex h-full flex-col">
                             <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-[#dbe9f2] bg-white/82 px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
                                 <Users className="h-3.5 w-3.5" />
@@ -2315,7 +2292,9 @@ export default function HomeHero({
                     </div>
                 </div>
 
-                <HaigooClubInfoCard className="mt-6" />
+                <Suspense fallback={<div className="mt-6 h-40 rounded-[34px] border border-[#e3edf4] bg-white/70" />}>
+                    <LazyHaigooClubInfoCard className="mt-6" />
+                </Suspense>
             </section>
 
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
@@ -2333,28 +2312,32 @@ export default function HomeHero({
                     resumeId={resumeId}
                 />
             )}
-            <JobDetailModal
-                job={selectedJobDetail}
-                isOpen={Boolean(selectedJobDetail)}
-                onClose={() => setSelectedJobDetail(null)}
-                variant="center"
-                jobs={heroDetailJobs}
-                currentJobIndex={currentHeroJobIndex}
-                onNavigateJob={(direction) => {
-                    if (!heroDetailJobs.length) return
-                    const safeCurrentIndex = currentHeroJobIndex >= 0 ? currentHeroJobIndex : 0
-                    const nextIndex = direction === 'prev'
-                        ? (safeCurrentIndex - 1 + heroDetailJobs.length) % heroDetailJobs.length
-                        : (safeCurrentIndex + 1) % heroDetailJobs.length
-                    const nextJob = heroDetailJobs[nextIndex]
-                    if (nextJob) openHeroJobDetail(nextJob)
-                }}
-            />
+            {selectedJobDetail && (
+                <Suspense fallback={null}>
+                    <LazyJobDetailModal
+                        job={selectedJobDetail}
+                        isOpen={Boolean(selectedJobDetail)}
+                        onClose={() => setSelectedJobDetail(null)}
+                        variant="center"
+                        jobs={heroDetailJobs}
+                        currentJobIndex={currentHeroJobIndex}
+                        onNavigateJob={(direction) => {
+                            if (!heroDetailJobs.length) return
+                            const safeCurrentIndex = currentHeroJobIndex >= 0 ? currentHeroJobIndex : 0
+                            const nextIndex = direction === 'prev'
+                                ? (safeCurrentIndex - 1 + heroDetailJobs.length) % heroDetailJobs.length
+                                : (safeCurrentIndex + 1) % heroDetailJobs.length
+                            const nextJob = heroDetailJobs[nextIndex]
+                            if (nextJob) openHeroJobDetail(nextJob)
+                        }}
+                    />
+                </Suspense>
+            )}
             {showUpgradeFeedbackModal && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
                     <button
                         type="button"
-                        aria-label="关闭反馈弹窗"
+                        aria-label="关闭留言弹窗"
                         className="absolute inset-0 bg-slate-950/38 backdrop-blur-sm"
                         onClick={() => setShowUpgradeFeedbackModal(false)}
                     />
@@ -2369,10 +2352,10 @@ export default function HomeHero({
                         </button>
                         <div className="pr-10">
                             <div className="text-[22px] font-semibold tracking-normal text-[#a36b18]">
-                                反馈给 Haigoo
+                                给 Haigoo 留言
                             </div>
                             <p className="mt-1 text-sm font-semibold leading-6 text-slate-500">
-                                告诉我们你遇到的问题或建议。
+                                想聊聊远程求职体验、页面建议，或希望海狗优先完善什么，都可以写在这里。
                             </p>
                         </div>
                         <textarea
@@ -2381,7 +2364,7 @@ export default function HomeHero({
                             rows={5}
                             maxLength={500}
                             className="mt-4 w-full resize-none rounded-[18px] border border-[#eadfc8] bg-white px-4 py-3 text-sm leading-6 text-slate-700 outline-none transition-colors placeholder:text-slate-300 focus:border-[#d2b574]"
-                            placeholder="写下你的反馈..."
+                            placeholder="写下你的想法、建议、遇到的问题，或想对海狗说的话..."
                             autoFocus
                         />
                         <div className="mt-4 flex items-center justify-end gap-2">
@@ -2399,7 +2382,7 @@ export default function HomeHero({
                                 className="inline-flex items-center gap-1.5 rounded-full bg-[#a36b18] px-5 py-2 text-sm font-black text-white shadow-[0_14px_34px_-24px_rgba(116,90,44,0.75)] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {upgradeFeedbackSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                                提交
+                                提交留言
                             </button>
                         </div>
                     </div>
@@ -2828,13 +2811,15 @@ function CopilotPlanModal({
                             </button>
                         </div>
                     ) : (
-                        <GeneratedPlanView
-                            plan={normalizePlanForView(isAuthenticated ? planData : guestPlan)}
-                            isGuest={!isAuthenticated}
-                            openInNewTab
-                            showProfileCta={isAuthenticated}
-                            showSavedHint={isAuthenticated}
-                        />
+                        <Suspense fallback={<div className="rounded-2xl border border-slate-100 bg-slate-50 p-6 text-sm font-semibold text-slate-500">方案加载中...</div>}>
+                            <LazyGeneratedPlanView
+                                plan={normalizePlanForView(isAuthenticated ? planData : guestPlan)}
+                                isGuest={!isAuthenticated}
+                                openInNewTab
+                                showProfileCta={isAuthenticated}
+                                showSavedHint={isAuthenticated}
+                            />
+                        </Suspense>
                     )}
                 </div>
             </div>

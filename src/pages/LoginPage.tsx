@@ -8,6 +8,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.webp'
+import { loadGoogleIdentity } from '../utils/googleIdentity'
 
 // Google Client ID from environment
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
@@ -91,23 +92,17 @@ export default function LoginPage() {
       return
     }
 
-    const checkGoogleLoaded = setInterval(() => {
-      if (window.google?.accounts?.id) {
-        clearInterval(checkGoogleLoaded)
-        initializeGoogleSignIn()
-      }
-    }, 100)
-
-    const timeout = setTimeout(() => {
-      clearInterval(checkGoogleLoaded)
-      if (!window.google?.accounts?.id) {
-        console.error('[LoginPage] Google Identity Services failed to load')
-      }
-    }, 10000)
+    let cancelled = false
+    loadGoogleIdentity()
+      .then(() => {
+        if (!cancelled) initializeGoogleSignIn()
+      })
+      .catch((err) => {
+        if (!cancelled) console.error('[LoginPage] Google Identity Services failed to load', err)
+      })
 
     return () => {
-      clearInterval(checkGoogleLoaded)
-      clearTimeout(timeout)
+      cancelled = true
     }
   }, [initializeGoogleSignIn])
 

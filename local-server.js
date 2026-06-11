@@ -49,6 +49,11 @@ async function startServer() {
         app.all('/api/stats', async (req, res) => { req.url = '/api/data/stats'; await dataHandler(req, res); });
         console.log('Data handler imported.');
 
+        console.log('Importing home handler...');
+        const homeHandler = (await import('./api/home.js')).default;
+        app.all('/api/home', async (req, res) => { await homeHandler(req, res); });
+        console.log('Home handler imported.');
+
         console.log('Importing analytics-stats handler...');
         const analyticsStatsHandler = (await import('./api/analytics-stats.js')).default;
         app.all('/api/analytics-stats', async (req, res) => { await analyticsStatsHandler(req, res); });

@@ -524,7 +524,16 @@ export default function JobFilterBar({
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-5">
           <div className="min-w-0 xl:shrink-0">
             <div className="flex min-w-0 items-center gap-2">
-              <h2 className="haigoo-hand-bold font-haigoo-hand text-[30px] leading-none tracking-normal text-slate-950">远程工作</h2>
+              <h2 className="leading-none" aria-label="远程工作">
+                <span className="sr-only">远程工作</span>
+                <img
+                  src="/pic_lists/Handwriting/hand-remote-work.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-auto w-[118px] max-w-full"
+                />
+              </h2>
               {isMember ? (
                 <span className="pointer-events-none inline-flex h-5 shrink-0 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
                   <Crown className="h-2.5 w-2.5 fill-current" />

@@ -162,10 +162,9 @@ class TrustedCompaniesService {
     async getFeaturedCompanies(): Promise<{ companies: TrustedCompany[], stats: Record<string, { total: number, categories: Record<string, number> }> }> {
         try {
             const queryParams = new URLSearchParams();
-            queryParams.append('resource', 'companies');
-            queryParams.append('action', 'featured_home');
+            queryParams.append('action', 'featured_companies');
 
-            const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`);
+            const response = await fetch(`/api/home?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch featured companies');
             const data = await response.json();
 

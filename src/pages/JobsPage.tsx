@@ -1,12 +1,10 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { Suspense, lazy, useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { Search, Sparkles, Briefcase, Zap, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
 import { JobBundleCard } from '../components/JobBundleBanner'
-import JobDetailModal from '../components/JobDetailModal'
-import { JobDetailPanel } from '../components/JobDetailPanel'
 import JobFilterBar from '../components/JobFilterBar'
 import { Job } from '../types'
 
@@ -16,6 +14,9 @@ import { useDebounce } from '../hooks/useDebounce'
 import { readMatchScoreRefreshMarker } from '../utils/match-score-refresh'
 import { rememberLatestJobSearch } from '../utils/member-recommendations'
 import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
+
+const JobDetailModal = lazy(() => import('../components/JobDetailModal'))
+const JobDetailPanel = lazy(() => import('../components/JobDetailPanel').then((module) => ({ default: module.JobDetailPanel })))
 
 // Job Type Options - Standardized
 const JOB_TYPE_OPTIONS = [
@@ -503,6 +504,7 @@ export default function JobsPage() {
       queryParams.append('pageSize', pageSize.toString())
       queryParams.append('limit', pageSize.toString())
       queryParams.append('skipAggregations', 'true')
+      queryParams.append('listMode', 'compact')
 
       // Explicitly handle sortBy
       if (sortBy === 'recent') {
@@ -822,7 +824,9 @@ export default function JobsPage() {
   // P0 Fix: Use debouncedSearchTerm instead of searchTerm to reduce API calls
   useEffect(() => {
     loadJobsWithFilters(1, false)
-    void loadJobsMetadata()
+    const metadataTimer = window.setTimeout(() => {
+      void loadJobsMetadata()
+    }, 180)
 
     // Track search or filter change
     if (debouncedSearchTerm) {
@@ -845,6 +849,7 @@ export default function JobsPage() {
       })
     }
     // 注意: loadJobsWithFilters 故意不包含在依赖中，因为其内部使用的值已在依赖数组中
+    return () => window.clearTimeout(metadataTimer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearchTerm, filters, isAuthenticated, token, sortBy])
 
@@ -965,18 +970,22 @@ export default function JobsPage() {
 
   // 初始化拉取收藏集
   useEffect(() => {
-    ; (async () => {
+    if (!initialJobsSettled && listMode === 'jobs') return
+    const timer = window.setTimeout(() => {
+      ; (async () => {
       if (!token) return
       try {
         const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
         if (resp.ok) {
           const data = await resp.json()
           const ids: string[] = (data?.favorites || []).map((f: any) => f.id)
-          setSavedJobs(new Set(ids))
-        }
+        setSavedJobs(new Set(ids))
+      }
       } catch { }
-    })()
-  }, [token])
+      })()
+    }, listMode === 'jobs' ? 350 : 0)
+    return () => window.clearTimeout(timer)
+  }, [initialJobsSettled, listMode, token])
 
   // 地址分类加载已移除 - 不再需要关键词匹配
 
@@ -1022,8 +1031,12 @@ export default function JobsPage() {
   }, [mapApplicationJobs, token])
 
   useEffect(() => {
+    if (!initialJobsSettled && listMode === 'jobs') return
+    const timer = window.setTimeout(() => {
     void refreshApplicationSummary({ hydrateList: listMode === 'applications' })
-  }, [listMode, refreshApplicationSummary])
+    }, listMode === 'jobs' ? 450 : 0)
+    return () => window.clearTimeout(timer)
+  }, [initialJobsSettled, listMode, refreshApplicationSummary])
 
   useEffect(() => {
     const handleApplicationUpdated = () => {
@@ -1175,11 +1188,11 @@ export default function JobsPage() {
       >
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_18%_12%,rgba(255,239,198,0.5),transparent_32%),radial-gradient(circle_at_78%_6%,rgba(217,235,252,0.72),transparent_30%),linear-gradient(180deg,rgba(255,253,248,0.96),rgba(255,253,248,0))]" />
-          <img src={JOBS_PAGE_DECOR.sun} alt="" className="absolute right-12 top-20 hidden w-24 opacity-65 lg:block" />
-          <img src={JOBS_PAGE_DECOR.love} alt="" className="absolute left-[45%] top-[102px] hidden w-9 opacity-55 xl:block" />
-          <img src={JOBS_PAGE_DECOR.grass} alt="" className="absolute bottom-6 left-4 hidden w-40 opacity-50 lg:block" />
-          <img src={JOBS_PAGE_DECOR.grass2} alt="" className="absolute bottom-10 right-10 hidden w-32 opacity-40 xl:block" />
-          <img src={JOBS_PAGE_DECOR.tips} alt="" className="absolute bottom-0 left-0 hidden w-60 opacity-45 lg:block" />
+          <img src={JOBS_PAGE_DECOR.sun} alt="" loading="lazy" decoding="async" className="absolute right-12 top-20 hidden w-24 opacity-65 lg:block" />
+          <img src={JOBS_PAGE_DECOR.love} alt="" loading="lazy" decoding="async" className="absolute left-[45%] top-[102px] hidden w-9 opacity-55 xl:block" />
+          <img src={JOBS_PAGE_DECOR.grass} alt="" loading="lazy" decoding="async" className="absolute bottom-6 left-4 hidden w-40 opacity-50 lg:block" />
+          <img src={JOBS_PAGE_DECOR.grass2} alt="" loading="lazy" decoding="async" className="absolute bottom-10 right-10 hidden w-32 opacity-40 xl:block" />
+          <img src={JOBS_PAGE_DECOR.tips} alt="" loading="lazy" decoding="async" className="absolute bottom-0 left-0 hidden w-60 opacity-45 lg:block" />
         </div>
         {/* Hero / Header Section - Compact Version for Split View */}
         {/* Only show on mobile or if needed. For split view, maybe we don't need a huge hero? 
@@ -1199,7 +1212,7 @@ export default function JobsPage() {
           <div className="flex flex-col gap-3 min-h-0 mt-0 lg:flex-1 lg:flex-row lg:overflow-hidden">
             {/* Middle Column: Job List */}
             <div className="relative z-30 flex w-full flex-shrink-0 flex-col overflow-visible rounded-[20px] border border-[#dfe8ef] bg-white/90 shadow-[0_24px_56px_-46px_rgba(64,78,102,0.2)] backdrop-blur-sm sm:rounded-[24px] lg:w-[40%] lg:rounded-[28px] lg:shadow-[0_32px_80px_-58px_rgba(64,78,102,0.25)] xl:w-[40%]">
-              <img src={JOBS_PAGE_DECOR.sun} alt="" className="pointer-events-none absolute right-7 top-7 z-0 hidden h-12 w-12 opacity-55 md:block" />
+              <img src={JOBS_PAGE_DECOR.sun} alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-7 top-7 z-0 hidden h-12 w-12 opacity-55 md:block" />
               <div className="relative z-50 flex-shrink-0 border-b border-slate-100/90 bg-white/80 px-3 pb-1 pt-3">
                 <JobFilterBar
                   filters={filters}
@@ -1426,25 +1439,31 @@ export default function JobsPage() {
             <div className="relative z-10 hidden h-full flex-1 flex-col overflow-hidden rounded-[28px] border border-[#dfe8ef] bg-white/94 shadow-[0_32px_90px_-60px_rgba(64,78,102,0.28)] backdrop-blur-sm lg:flex">
               {selectedJob ? (
                 <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
-                  <JobDetailPanel
-                    job={selectedJob}
-                    onSave={(id) => selectedJob && toggleSaveJob(id, selectedJob)}
-                    isSaved={savedJobs.has(selectedJob.id)}
-                    onApply={() => { /* apply logic */ }}
-                    showCloseButton={false}
-                    onNavigateJob={(direction) => {
-                      const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(visibleJobs.length - 1, currentJobIndex + 1)
-                      handleJobSelect(visibleJobs[nextIndex], nextIndex)
-                    }}
-                    canNavigatePrev={currentJobIndex > 0}
-                    canNavigateNext={currentJobIndex < visibleJobs.length - 1}
-                  />
+                  <Suspense fallback={
+                    <div className="flex h-full min-h-[520px] items-center justify-center text-sm font-semibold text-slate-400">
+                      岗位详情加载中...
+                    </div>
+                  }>
+                    <JobDetailPanel
+                      job={selectedJob}
+                      onSave={(id) => selectedJob && toggleSaveJob(id, selectedJob)}
+                      isSaved={savedJobs.has(selectedJob.id)}
+                      onApply={() => { /* apply logic */ }}
+                      showCloseButton={false}
+                      onNavigateJob={(direction) => {
+                        const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(visibleJobs.length - 1, currentJobIndex + 1)
+                        handleJobSelect(visibleJobs[nextIndex], nextIndex)
+                      }}
+                      canNavigatePrev={currentJobIndex > 0}
+                      canNavigateNext={currentJobIndex < visibleJobs.length - 1}
+                    />
+                  </Suspense>
                 </div>
               ) : (
                 <div className="relative flex h-full flex-col items-center justify-center overflow-hidden text-slate-400 bg-[linear-gradient(180deg,rgba(255,253,249,0.86),rgba(255,255,255,0.96))]">
-                  <img src={JOBS_PAGE_DECOR.beach} alt="" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-24" />
+                  <img src={JOBS_PAGE_DECOR.beach} alt="" loading="lazy" decoding="async" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-24" />
                   <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,249,0.68)_0%,rgba(255,255,255,0.86)_72%,rgba(255,255,255,0.94)_100%)]" />
-                  <img src={JOBS_PAGE_DECOR.sun} alt="" className="pointer-events-none absolute right-12 top-12 h-24 w-24 opacity-65" />
+                  <img src={JOBS_PAGE_DECOR.sun} alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-12 top-12 h-24 w-24 opacity-65" />
                   <div className="relative z-10 flex flex-col items-center">
                   <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-100 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)]">
                     <Briefcase className="w-10 h-10 text-slate-300" />
@@ -1460,20 +1479,26 @@ export default function JobsPage() {
 
         {/* Job Detail Modal (Mobile Only) */}
         {isJobDetailOpen && selectedJob && (
-          <JobDetailModal
-            job={selectedJob}
-            isOpen={isJobDetailOpen}
-            onClose={() => { setIsJobDetailOpen(false); }}
-            onSave={() => selectedJob && toggleSaveJob(selectedJob.id, selectedJob)}
-            isSaved={savedJobs.has(selectedJob.id)}
-            jobs={visibleJobs}
-            currentJobIndex={currentJobIndex}
-            variant="center"
-            onNavigateJob={(direction: 'prev' | 'next') => {
-              const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(visibleJobs.length - 1, currentJobIndex + 1)
-              handleJobSelect(visibleJobs[nextIndex], nextIndex)
-            }}
-          />
+          <Suspense fallback={
+            <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-900/40 p-6 text-sm font-semibold text-white">
+              岗位详情加载中...
+            </div>
+          }>
+            <JobDetailModal
+              job={selectedJob}
+              isOpen={isJobDetailOpen}
+              onClose={() => { setIsJobDetailOpen(false); }}
+              onSave={() => selectedJob && toggleSaveJob(selectedJob.id, selectedJob)}
+              isSaved={savedJobs.has(selectedJob.id)}
+              jobs={visibleJobs}
+              currentJobIndex={currentJobIndex}
+              variant="center"
+              onNavigateJob={(direction: 'prev' | 'next') => {
+                const nextIndex = direction === 'prev' ? Math.max(0, currentJobIndex - 1) : Math.min(visibleJobs.length - 1, currentJobIndex + 1)
+                handleJobSelect(visibleJobs[nextIndex], nextIndex)
+              }}
+            />
+          </Suspense>
         )}
 
         {/* WeChat Community Modal */}

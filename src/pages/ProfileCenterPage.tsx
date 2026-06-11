@@ -2779,7 +2779,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <Crown className="h-3.5 w-3.5" />
               会员权益中心
             </div>
-            <h1 className="haigoo-hand-bold max-w-[780px] font-haigoo-hand text-[30px] leading-[1.12] tracking-normal text-slate-950 sm:text-[52px] xl:text-[64px]">
+            <h1 className="max-w-[760px] text-[28px] font-black leading-[1.16] tracking-normal text-slate-950 sm:text-[40px] xl:text-[48px]">
               优中选优，更快拿到有效结果
             </h1>
             <p className="mt-4 max-w-[680px] text-sm leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-7">
@@ -3204,14 +3204,27 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         <div className="relative grid gap-6 xl:min-h-[980px] xl:grid-cols-[minmax(660px,1.28fr)_minmax(360px,0.68fr)]">
           <article className="relative flex min-h-[760px] min-w-0 flex-col overflow-hidden p-3 sm:p-5 xl:h-[980px]">
             <div className="shrink-0">
-              <h1 className="haigoo-hand-bold flex flex-wrap items-center gap-1.5 font-haigoo-hand text-[34px] leading-[1.16] tracking-normal text-slate-950 sm:text-[44px]">
-                创始人的一封信
-                <span className="relative -ml-1 inline-flex h-[0.9em] w-[0.95em] translate-y-[0.05em] overflow-hidden">
-                  <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" className="absolute left-1/2 top-1/2 h-[1.45em] w-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-contain" />
-                </span>
+              <h1 className="leading-none" aria-label="创始人的一封信">
+                <span className="sr-only">创始人的一封信</span>
+                <img
+                  src="/pic_lists/Handwriting/hand-founder-letter.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-auto w-[250px] max-w-full sm:w-[310px]"
+                />
               </h1>
               <p className="mt-3 text-base font-bold leading-7 text-slate-600">来自 Haigoo Remote 的初心与坚持</p>
-              <div className="haigoo-hand-bold mt-7 font-haigoo-hand text-3xl text-slate-950">Hi，朋友们：</div>
+              <div className="mt-7" aria-label="Hi，朋友们：">
+                <span className="sr-only">Hi，朋友们：</span>
+                <img
+                  src="/pic_lists/Handwriting/hand-hi-friends.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-auto w-[190px] max-w-full"
+                />
+              </div>
             </div>
 
             <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-4">
@@ -3223,9 +3236,16 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </div>
 
             <div className="mt-5 shrink-0 border-t border-dashed border-[#eadfcf] pt-5">
-              <p className="haigoo-hand-bold flex items-center gap-3 font-haigoo-hand text-2xl text-slate-950">
+              <p className="flex items-center gap-3" aria-label="Good Day, Now and Future!">
                 <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="h-9 w-9 object-contain opacity-70" />
-                Good Day, Now and Future!
+                <span className="sr-only">Good Day, Now and Future!</span>
+                <img
+                  src="/pic_lists/Handwriting/hand-good-day.webp"
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  className="h-auto w-[280px] max-w-full"
+                />
               </p>
               <div className="mt-5 flex flex-wrap items-center gap-4">
                 <a
@@ -3243,7 +3263,16 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 text-sm text-slate-500">
                     <span>Haigoo Remote 创始人&CEO</span>
-                    <span className="haigoo-hand-bold font-haigoo-hand text-2xl text-slate-700">Caitlin Y.</span>
+                    <span aria-label="Caitlin Y.">
+                      <span className="sr-only">Caitlin Y.</span>
+                      <img
+                        src="/pic_lists/Handwriting/hand-caitlin-y.webp"
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="inline-block h-auto w-[120px] align-middle"
+                      />
+                    </span>
                     <span className="inline-flex h-8 w-8 items-center justify-center">
                       <img src="/pic_lists/About_pics/sun-transparent.webp" alt="" className="h-8 w-8 object-contain opacity-80" />
                     </span>

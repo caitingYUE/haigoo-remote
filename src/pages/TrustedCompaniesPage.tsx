@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Briefcase, Building, CheckCircle2, ChevronDown, Crown, Heart, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, Briefcase, Building, CheckCircle2, ChevronDown, Crown, Search, ShieldCheck, Sparkles } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import HomeCompanyCard from '../components/HomeCompanyCard'
@@ -199,11 +199,15 @@ export default function TrustedCompaniesPage() {
                 </div>
 
                 <div className="relative z-10 mx-auto max-w-[1360px] px-4 pb-10 text-center sm:px-6 lg:px-8">
-                    <h1 className="haigoo-hand-bold font-haigoo-hand text-[42px] leading-[1.18] tracking-normal text-slate-950 sm:text-[64px] lg:text-[76px]">
-                        发现全球顶尖
-                        <span className="mx-2 text-[#6f72ff]">远程友好</span>
-                        企业
-                        <Heart className="ml-2 inline h-9 w-9 text-[#8a86ff]" />
+                    <h1 className="mx-auto max-w-[900px]" aria-label="发现全球顶尖远程友好企业">
+                        <span className="sr-only">发现全球顶尖远程友好企业</span>
+                        <img
+                            src="/pic_lists/Handwriting/hand-trusted-companies-title.webp"
+                            alt=""
+                            loading="eager"
+                            decoding="async"
+                            className="mx-auto h-auto w-full max-w-[780px] sm:max-w-[860px]"
+                        />
                     </h1>
                     <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
                         Haigoo 严选全球远程工作机会，所有企业均经过人工审核，确保真实可靠。

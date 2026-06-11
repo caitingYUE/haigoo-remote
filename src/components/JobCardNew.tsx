@@ -361,6 +361,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   <img
                      src={resolvedLogoSrc}
                      alt={job.company}
+                     loading="lazy"
+                     decoding="async"
                      className="w-full h-full object-contain"
                      onError={(e) => {
                         if (logoSourceIndex < logoSources.length - 1) {
@@ -405,6 +407,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                <img
                   src={resolvedLogoSrc}
                   alt={job.company}
+                  loading="lazy"
+                  decoding="async"
                   className="h-full w-full rounded-[10px] object-contain"
                   onError={(e) => {
                      if (logoSourceIndex < logoSources.length - 1) {
@@ -454,7 +458,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             `}
          >
             {isMemberOnlyJob && !hideMemberBackdrop ? (
-               <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[46%] object-cover object-right opacity-[0.1]" />
+               <img src="/pic_lists/Home_pics/background04.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[46%] object-cover object-right opacity-[0.1]" />
             ) : null}
             <div className="flex min-w-0 items-start gap-3">
                <div className="hidden sm:block">

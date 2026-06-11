@@ -14,16 +14,16 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
     <div className={`relative overflow-hidden rounded-[34px] border border-[#e3edf4] bg-white p-7 shadow-[0_26px_76px_-60px_rgba(62,91,120,0.42)] lg:p-8 ${className}`}>
       <div className="pointer-events-none absolute inset-x-8 bottom-0 h-24 rounded-t-[100%] bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(231,244,222,0.34)_100%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(255,232,170,0.16),transparent_17%),radial-gradient(circle_at_52%_72%,rgba(206,236,247,0.18),transparent_18%)]" />
-      <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute inset-x-0 bottom-0 h-44 w-full object-cover object-bottom opacity-[0.13]" />
+      <img src="/pic_lists/Home_pics/background04.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute inset-x-0 bottom-0 h-44 w-full object-cover object-bottom opacity-[0.13]" />
       <div className="relative grid gap-8 lg:grid-cols-[1.08fr_0.92fr_0.9fr] lg:items-start lg:divide-x lg:divide-[#e5edf3]">
         <div className="lg:pr-8">
           <div className="flex items-center gap-4">
-            <img src={clubLogo} alt="海狗远程俱乐部" className="h-[92px] w-[92px] object-contain" />
+            <img src={clubLogo} alt="海狗远程俱乐部" loading="lazy" decoding="async" className="h-[92px] w-[92px] object-contain" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-2xl font-black text-slate-950">海狗远程俱乐部</h3>
                 <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
-                  <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" className="h-14 w-14 object-contain opacity-85" />
+                  <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" loading="lazy" decoding="async" className="h-14 w-14 object-contain opacity-85" />
                 </span>
               </div>
               <div className="mt-2 h-2 w-20 rounded-full bg-[linear-gradient(90deg,#a9a3ff,#d8d4ff)]" />
@@ -65,10 +65,17 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
         <div>
           <div>© 2026 Haigoo. All rights reserved.</div>
         </div>
-        <div className="haigoo-hand-bold flex items-center gap-2 font-haigoo-hand text-lg tracking-normal text-[#a9a3ff] md:justify-center md:text-center">
-          <span>Be free. Work anywhere. Live fully.</span>
+        <div className="flex items-center gap-2 md:justify-center md:text-center">
+          <span className="sr-only">Be free. Work anywhere. Live fully.</span>
+          <img
+            src="/pic_lists/Handwriting/hand-be-free.webp"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            className="h-auto w-[260px] max-w-full opacity-85"
+          />
           <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
-            <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" className="h-10 w-10 object-contain opacity-80" />
+            <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" loading="lazy" decoding="async" className="h-10 w-10 object-contain opacity-80" />
           </span>
         </div>
         <div className="flex items-center gap-3 md:justify-end">

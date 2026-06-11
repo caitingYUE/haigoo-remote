@@ -278,12 +278,10 @@ class ProcessedJobsService {
   async getFeaturedHomeJobs(): Promise<Job[]> {
     try {
       const params = new URLSearchParams({
-        resource: 'processed-jobs',
-        action: 'featured_home',
-        _t: Date.now().toString()
+        action: 'featured_jobs'
       })
 
-      const response = await fetch(`${this.baseUrl}/data?${params}`)
+      const response = await fetch(`${this.baseUrl}/home?${params}`)
       if (!response.ok) throw new Error('Failed to fetch featured jobs')
 
       const data = await response.json()

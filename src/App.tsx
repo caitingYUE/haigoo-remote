@@ -48,7 +48,6 @@ const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
 const BugLeaderboardPage = lazy(() => import('./pages/BugLeaderboardPage'))
 
 import PageLoadingSkeleton from './components/PageLoadingSkeleton'
-import { BugReportButton } from './components/BugReporter/BugReportButton'
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { trackingService } from './services/tracking-service'
@@ -76,7 +75,6 @@ function App() {
           <AppProvider>
             <NotificationProvider>
               <GlobalVerificationGuard>
-                <BugReportButton />
                 <PageViewTracker />
                 <Suspense fallback={<PageLoadingSkeleton />}>
                   <Routes>

@@ -560,8 +560,16 @@ const MembershipPage: React.FC = () => {
                   <div className="relative min-h-[250px] p-5">
                      <img src={MEMBERSHIP_DECOR.grass} alt="" className="absolute bottom-16 left-3 w-28 opacity-70" />
                      <img src={MEMBERSHIP_DECOR.tips} alt="" className="absolute bottom-0 left-0 w-52 opacity-75" />
-                     <div className="haigoo-hand-bold relative font-haigoo-hand text-base text-slate-900">Be free.</div>
-                     <div className="haigoo-hand-bold relative mt-1 font-haigoo-hand text-sm leading-relaxed text-slate-500">Work anywhere.<br />Live fully.</div>
+                     <div className="relative" aria-label="Be free. Work anywhere. Live fully.">
+                        <span className="sr-only">Be free. Work anywhere. Live fully.</span>
+                        <img
+                           src="/pic_lists/Handwriting/hand-be-free.webp"
+                           alt=""
+                           loading="lazy"
+                           decoding="async"
+                           className="h-auto w-[190px] max-w-full opacity-80"
+                        />
+                     </div>
                   </div>
                </aside>
 
