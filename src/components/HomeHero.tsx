@@ -14,6 +14,7 @@ import { TrustedCompany, trustedCompaniesService } from '../services/trusted-com
 import { stripMarkdown } from '../utils/text-formatter'
 import { formatSalaryForDisplay } from '../utils/salary-display'
 import { getCompanyLogoSources } from '../utils/company-logo'
+import { getCompanyDetailPath } from '../utils/share-link-helper'
 import {
     readPendingGuestResume,
     savePendingGuestResume,
@@ -2219,7 +2220,7 @@ export default function HomeHero({
                                 <button
                                     key={company.id}
                                     type="button"
-                                    onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                                    onClick={() => navigate(getCompanyDetailPath(company.name))}
                                     className="group overflow-hidden rounded-[20px] border border-[#e3edf4] bg-white text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0]"
                                 >
                                     <div className="relative aspect-[16/9] overflow-hidden bg-[#f7fbff]">

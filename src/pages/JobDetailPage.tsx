@@ -8,7 +8,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from '../components/ShareJobModal'
-import { decodeJobId, getJobDetailPath } from '../utils/share-link-helper'
+import { decodeJobId, getJobSharePath } from '../utils/share-link-helper'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -24,7 +24,8 @@ export default function JobDetailPage() {
   const [countdown, setCountdown] = useState<number | null>(null)
   const [showCopied, setShowCopied] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
-  const resolvedJobId = id ? decodeJobId(id) : ''
+  const isShortJobPath = location.pathname.startsWith('/j/')
+  const resolvedJobId = id ? decodeJobId(id, { allowBareToken: isShortJobPath }) : ''
 
   // Track visit source
   useEffect(() => {
@@ -132,7 +133,7 @@ export default function JobDetailPage() {
   const handleSave = async () => {
     if (!isAuthenticated || !token) {
       showWarning('请先登录', '登录后可以收藏职位')
-      navigate(`/login?redirect=${encodeURIComponent(getJobDetailPath(id || ''))}`)
+      navigate(`/login?redirect=${encodeURIComponent(getJobSharePath(resolvedJobId || id || ''))}`)
       return
     }
 

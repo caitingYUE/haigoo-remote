@@ -10,6 +10,7 @@ import HaigooClubInfoCard from '../components/HaigooClubInfoCard';
 import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { trackingService } from '../services/tracking-service';
+import { getBundleDetailLink, getBundleDetailPath } from '../utils/share-link-helper';
 
 interface JobBundle {
   id: number;
@@ -123,10 +124,11 @@ export default function JobBundleDetailPage() {
   };
 
   const handleShare = async () => {
-    try { await navigator.clipboard.writeText(window.location.href); }
+    const shareUrl = bundle?.id ? getBundleDetailLink(bundle.id) : window.location.href;
+    try { await navigator.clipboard.writeText(shareUrl); }
     catch {
       const el = document.createElement('textarea');
-      el.value = window.location.href;
+      el.value = shareUrl;
       document.body.appendChild(el);
       el.select();
       document.execCommand('copy');
@@ -212,7 +214,7 @@ export default function JobBundleDetailPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {!isAuthenticated ? (
                 <>
-                  <button onClick={() => navigate(`/login?redirect=/job-bundles/${bundle.id}`)}
+                  <button onClick={() => navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle.id))}`)}
                     className="px-6 py-3 rounded-xl bg-[#2b3448] text-white font-semibold hover:bg-slate-800 transition-colors text-sm">
                     登录账号
                   </button>

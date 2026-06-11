@@ -6,6 +6,10 @@
 
 const PREFIX = 'E-';
 
+interface DecodeJobIdOptions {
+  allowBareToken?: boolean;
+}
+
 const encodeBase64Url = (value: string): string => {
   const bytes = new TextEncoder().encode(value);
   let binary = '';
@@ -40,11 +44,29 @@ export const encodeJobId = (jobId: string): string => {
   }
 };
 
-export const decodeJobId = (encodedId: string): string => {
+export const encodeJobToken = (jobId: string): string => {
+  if (!jobId) return '';
+  try {
+    return encodeBase64Url(jobId);
+  } catch (e) {
+    console.error('Failed to encode job ID', e);
+    return jobId;
+  }
+};
+
+export const decodeJobId = (encodedId: string, options: DecodeJobIdOptions = {}): string => {
   if (!encodedId) return '';
   
-  // If it doesn't start with our prefix, assume it's a raw ID
+  // If it doesn't start with our legacy prefix, assume it's a raw ID unless
+  // the caller knows the current route uses a short encoded token.
   if (!encodedId.startsWith(PREFIX)) {
+    if (options.allowBareToken) {
+      try {
+        return decodeBase64Url(encodedId);
+      } catch (e) {
+        console.warn('Failed to decode short job token, falling back to original', e);
+      }
+    }
     return encodedId;
   }
 
@@ -57,8 +79,7 @@ export const decodeJobId = (encodedId: string): string => {
 };
 
 export const getShareLink = (jobId: string): string => {
-  const encodedId = encodeJobId(jobId);
-  return `${window.location.origin}/job/${encodedId}?source=share`;
+  return `${window.location.origin}${getJobSharePath(jobId)}`;
 };
 
 export const getJobDetailPath = (jobId: string): string => {
@@ -66,6 +87,23 @@ export const getJobDetailPath = (jobId: string): string => {
   return `/job/${encodedId}`;
 };
 
+export const getJobSharePath = (jobId: string): string => {
+  const encodedToken = encodeJobToken(jobId);
+  return `/j/${encodedToken}?source=share`;
+};
+
 export const getJobDetailLink = (jobId: string): string => {
   return `${window.location.origin}${getJobDetailPath(jobId)}`;
+};
+
+export const getBundleDetailPath = (bundleId: string | number): string => {
+  return `/b/${encodeURIComponent(String(bundleId))}`;
+};
+
+export const getBundleDetailLink = (bundleId: string | number): string => {
+  return `${window.location.origin}${getBundleDetailPath(bundleId)}`;
+};
+
+export const getCompanyDetailPath = (companyName: string): string => {
+  return `/c/${encodeURIComponent(companyName)}`;
 };

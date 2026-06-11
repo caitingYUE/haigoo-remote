@@ -6,6 +6,7 @@ import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import HomeCompanyCard from '../components/HomeCompanyCard'
 import { CompanyNominationModal } from '../components/CompanyNominationModal'
 import { useAuth } from '../contexts/AuthContext'
+import { getCompanyDetailPath } from '../utils/share-link-helper'
 
 const HAIGOO_VERIFICATION_STANDARDS = [
     '官网、LinkedIn等主页信息正常，近期有持续更新',
@@ -384,7 +385,7 @@ export default function TrustedCompaniesPage() {
                                         key={company.id}
                                         company={company}
                                         jobStats={jobCounts[company.id]}
-                                        onClick={() => navigate(`/companies/${encodeURIComponent(company.name)}`)}
+                                        onClick={() => navigate(getCompanyDetailPath(company.name))}
                                     />
                                 ))}
                             </div>

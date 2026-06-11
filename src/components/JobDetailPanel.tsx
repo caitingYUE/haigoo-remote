@@ -16,6 +16,7 @@ import { useNotificationHelpers } from './NotificationSystem'
 import { getJobSourceType } from '../utils/job-source-helper'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from './ShareJobModal'
+import { getCompanyDetailPath } from '../utils/share-link-helper'
 import { resolveMatchLevel } from '../utils/match-display'
 import { buildJobDetailSections, type JobDetailBlock } from '../utils/job-detail-content'
 import { formatSalaryForDisplay } from '../utils/salary-display'
@@ -1258,8 +1259,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             return
         }
         // Navigate to company detail page using company name as identifier
-        const companyName = encodeURIComponent(job.company || '')
-        navigate(`/companies/${companyName}`)
+        navigate(getCompanyDetailPath(job.company || ''))
     }
 
     const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || '未分类'

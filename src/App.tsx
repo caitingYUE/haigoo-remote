@@ -155,11 +155,14 @@ function App() {
                             <Route path="/about" element={<ProfileCenterPage publicAboutOnly />} />
                             <Route path="/privacy" element={<ResumePrivacyPage />} />
                             <Route path="/jobs" element={<JobsPage />} />
+                            <Route path="/b/:id" element={<JobBundleDetailPage />} />
                             <Route path="/job-bundles/:id" element={<JobBundleDetailPage />} />
+                            <Route path="/j/:id" element={<JobDetailPage />} />
                             <Route path="/job/:id" element={<JobDetailPage />} />
                             <Route path="/companies" element={<TrustedCompaniesPage />} />
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                             <Route path="/company/:id" element={<CompanyProfilePage />} />
+                            <Route path="/c/:companyName" element={<CompanyDetailPage />} />
                             <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
                             <Route path="/verify-email" element={<VerifyEmailPage />} />
                             <Route path="/admin/location-categories" element={

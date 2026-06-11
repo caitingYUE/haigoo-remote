@@ -38,11 +38,11 @@ function createUuid() {
 function derivePageKey(pathname = '/') {
   if (pathname === '/') return 'home';
   if (pathname === '/jobs') return 'jobs';
-  if (pathname.startsWith('/job/')) return 'job_detail';
-  if (pathname.startsWith('/job-bundles/')) return 'job_bundle_detail';
+  if (pathname.startsWith('/job/') || pathname.startsWith('/j/')) return 'job_detail';
+  if (pathname.startsWith('/job-bundles/') || pathname.startsWith('/b/')) return 'job_bundle_detail';
   if (pathname.startsWith('/profile')) return 'profile';
   if (pathname.startsWith('/membership')) return 'membership';
-  if (pathname.startsWith('/companies/')) return 'company_detail';
+  if (pathname.startsWith('/companies/') || pathname.startsWith('/c/')) return 'company_detail';
   if (pathname.startsWith('/trusted-companies')) return 'trusted_companies';
   if (pathname.startsWith('/login')) return 'login';
   if (pathname.startsWith('/register')) return 'register';

@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Crown, Lock, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { getBundleDetailPath } from '../utils/share-link-helper';
 
 interface JobBundle {
   id: number;
@@ -29,11 +30,12 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const jobCount = bundle.job_ids?.length || 0;
 
   const handleClick = () => {
+    const bundlePath = getBundleDetailPath(bundle.id);
     if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=/job-bundles/${bundle.id}` : '/profile?tab=membership');
+      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership');
       return;
     }
-    navigate(`/job-bundles/${bundle.id}`);
+    navigate(bundlePath);
   };
 
   return (
@@ -137,11 +139,12 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const jobCount = bundle.job_ids?.length || 0;
 
   const handleClick = () => {
+    const bundlePath = getBundleDetailPath(bundle.id);
     if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=/job-bundles/${bundle.id}` : '/profile?tab=membership');
+      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership');
       return;
     }
-    navigate(`/job-bundles/${bundle.id}`);
+    navigate(bundlePath);
   };
 
   const theme = getBundleTheme(bundle, colorIndex);

@@ -15,7 +15,7 @@ import {
   X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-import { encodeJobId } from '../../utils/share-link-helper';
+import { getJobSharePath } from '../../utils/share-link-helper';
 import AdminXiaohongshuPush from './AdminXiaohongshuPush';
 
 interface PreviewJob {
@@ -133,12 +133,13 @@ const EMPTY_GROUP_FORM: GroupFormState = {
 const DEFAULT_GROUP_NAME = '默认分组';
 
 const normalizeShareUrl = (jobId: string, shareUrl?: string) => {
-  const fallback = `https://haigooremote.com/job/${encodeJobId(jobId)}?source=share`;
+  const fallback = `https://haigooremote.com${getJobSharePath(jobId)}`;
   const normalized = String(shareUrl || '').trim();
   if (!normalized) return fallback;
-  if (/\/job\/E-[^/?#]+(?:\?source=share)?$/i.test(normalized)) {
+  if (/\/j\/[^/?#]+(?:\?source=share)?$/i.test(normalized)) {
     return normalized.includes('?source=share') ? normalized : `${normalized}?source=share`;
   }
+  if (/\/job\/E-[^/?#]+(?:\?source=share)?$/i.test(normalized)) return fallback;
   return fallback;
 };
 

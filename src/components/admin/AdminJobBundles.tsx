@@ -29,6 +29,14 @@ interface JobBundle {
   created_at: string;
 }
 
+const getDisplayJobTitle = (job: any) => {
+  return String(job?.translations?.title || job?.title || '未命名岗位').trim();
+};
+
+const getDisplayJobCompany = (job: any) => {
+  return String(job?.translations?.company || job?.company || '未知企业').trim();
+};
+
 const AdminJobBundles: React.FC = () => {
   const [bundles, setBundles] = useState<JobBundle[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +53,7 @@ const AdminJobBundles: React.FC = () => {
   const handleCopyAll = () => {
     if (selectedJobs.length === 0) return;
     const text = selectedJobs
-      .map((job, i) => `${i + 1}. ${job.title} - ${job.company}`)
+      .map((job, i) => `${i + 1}. ${getDisplayJobTitle(job)} - ${getDisplayJobCompany(job)}`)
       .join('\n');
     navigator.clipboard.writeText(text).then(() => {
       setIsCopied(true);
@@ -337,9 +345,9 @@ const AdminJobBundles: React.FC = () => {
                   {searchResults.map(job => (
                     <div key={job.id} className="search-item">
                       <div className="job-info">
-                        <div className="job-title">{job.title}</div>
+                        <div className="job-title">{getDisplayJobTitle(job)}</div>
                         <div className="job-company text-xs text-gray-500 font-medium flex items-center flex-wrap gap-2 mt-1">
-                          {job.company}
+                          {getDisplayJobCompany(job)}
                           {job.experienceLevel && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100">
                               {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
@@ -380,8 +388,8 @@ const AdminJobBundles: React.FC = () => {
                     <div key={job.id} className="selected-item">
                       <div className="item-order">{index + 1}</div>
                       <div className="job-info">
-                        <div className="job-title">{job.title}</div>
-                        <div className="job-company">{job.company}</div>
+                        <div className="job-title">{getDisplayJobTitle(job)}</div>
+                        <div className="job-company">{getDisplayJobCompany(job)}</div>
                       </div>
                       <div className="item-actions">
                         <button onClick={() => moveJob(index, 'up')} disabled={index === 0}>↑</button>

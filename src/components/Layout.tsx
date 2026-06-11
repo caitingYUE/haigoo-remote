@@ -30,10 +30,10 @@ export default function Layout({ children }: LayoutProps) {
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
   const isMembership = pathname === '/membership'
-  const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/') || pathname.startsWith('/companies/')
+  const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/') || pathname.startsWith('/companies/') || pathname.startsWith('/c/')
   const isAbout = pathname === '/about'
-  const isBundle = pathname.startsWith('/job-bundles/')
-  const isJobDetailPage = pathname.startsWith('/job/')
+  const isBundle = pathname.startsWith('/job-bundles/') || pathname.startsWith('/b/')
+  const isJobDetailPage = pathname.startsWith('/job/') || pathname.startsWith('/j/')
   const isProfile = pathname.startsWith('/profile')
   const hideFooter = isHome || pathname.startsWith('/resume') || isJobsPage || isProfile || isAbout || isBundle
   const showFooterMembershipCta = !(isCompanies || isBundle || (!isAuthenticated && isJobDetailPage))
