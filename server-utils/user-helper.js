@@ -250,6 +250,38 @@ function enrichEntitlementFields(user) {
     }
 }
 
+function mapAdminUserListRow(user) {
+    const mappedUser = enrichEntitlementFields({
+        ...user,
+        userId: user.user_id,
+        authProvider: user.auth_provider,
+        emailVerified: user.email_verified,
+        profile: (() => {
+            if (typeof user.profile !== 'string') return user.profile || {}
+            try {
+                return JSON.parse(user.profile || '{}')
+            } catch {
+                return {}
+            }
+        })(),
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        lastLoginAt: user.last_login_at,
+        memberStatus: user.member_status,
+        memberExpireAt: user.member_expire_at,
+        memberSince: user.member_since,
+        memberDisplayId: user.member_display_id,
+        memberType: user.member_type,
+        memberCycleStartAt: user.member_cycle_start_at
+    })
+
+    return {
+        ...mappedUser,
+        favorites: [],
+        favoritesCount: Number(user.favorites_count || 0) || 0
+    }
+}
+
 /**
  * 用户管理器
  * 提供用户CRUD操作和权限验证
@@ -559,6 +591,163 @@ const userHelper = {
             return usersWithFavorites
         } catch (error) {
             console.error('[user-helper] Error getting all users:', error.message)
+            return null
+        }
+    },
+
+    /**
+     * 管理后台用户列表分页查询。仅返回当前页必要字段，避免全量加载和 N+1 收藏查询。
+     */
+    async listUsersForAdmin({
+        page = 1,
+        pageSize = 25,
+        search = '',
+        status = 'all',
+        provider = 'all',
+        memberStatus = 'all',
+        exportMode = false
+    } = {}) {
+        try {
+            if (!neonHelper.isConfigured) {
+                const localUsers = Array.from(LOCAL_USERS.values()).map(user => ({
+                    ...enrichEntitlementFields(enrichUserFields(user)),
+                    favorites: [],
+                    favoritesCount: 0
+                }))
+                return {
+                    users: localUsers,
+                    total: localUsers.length,
+                    page: 1,
+                    pageSize: localUsers.length,
+                    stats: {
+                        total: localUsers.length,
+                        active: localUsers.filter(user => user.status === 'active').length,
+                        suspended: localUsers.filter(user => user.status === 'suspended').length,
+                        newToday: localUsers.length,
+                        newThisWeek: localUsers.length
+                    }
+                }
+            }
+
+            const normalizedPage = Math.max(1, Number.parseInt(page, 10) || 1)
+            const maxPageSize = exportMode ? 10000 : 100
+            const normalizedPageSize = Math.min(maxPageSize, Math.max(10, Number.parseInt(pageSize, 10) || 25))
+            const offset = (normalizedPage - 1) * normalizedPageSize
+            const whereParts = []
+            const params = []
+
+            const addParam = (value) => {
+                params.push(value)
+                return `$${params.length}`
+            }
+
+            const keyword = String(search || '').trim()
+            if (keyword) {
+                const searchParam = addParam(`%${keyword.toLowerCase()}%`)
+                whereParts.push(`(
+                    LOWER(u.email) LIKE ${searchParam}
+                    OR LOWER(u.username) LIKE ${searchParam}
+                    OR LOWER(u.user_id) LIKE ${searchParam}
+                )`)
+            }
+
+            if (status && status !== 'all') {
+                whereParts.push(`u.status = ${addParam(status)}`)
+            }
+
+            if (provider && provider !== 'all') {
+                whereParts.push(`u.auth_provider = ${addParam(provider)}`)
+            }
+
+            if (memberStatus && memberStatus !== 'all') {
+                if (memberStatus === 'active') {
+                    whereParts.push(`u.member_status = 'active'
+                        AND (u.member_cycle_start_at IS NULL OR u.member_cycle_start_at <= NOW())
+                        AND (u.member_expire_at IS NULL OR u.member_expire_at > NOW())`)
+                } else if (memberStatus === 'pending') {
+                    whereParts.push(`u.member_status = 'active'
+                        AND u.member_cycle_start_at IS NOT NULL
+                        AND u.member_cycle_start_at > NOW()`)
+                } else if (memberStatus === 'expired') {
+                    whereParts.push(`(
+                        u.member_status = 'expired'
+                        OR (u.member_expire_at IS NOT NULL AND u.member_expire_at <= NOW())
+                    )`)
+                } else if (memberStatus === 'free') {
+                    whereParts.push(`(
+                        COALESCE(NULLIF(u.member_type, ''), 'none') = 'none'
+                        OR COALESCE(NULLIF(u.member_status, ''), 'free') IN ('free', 'inactive')
+                    )`)
+                }
+            }
+
+            const whereSql = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : ''
+            const limitParam = addParam(normalizedPageSize)
+            const offsetParam = addParam(offset)
+
+            const listQuery = `
+                SELECT
+                    u.user_id, u.email, u.username, u.auth_provider, u.email_verified, u.profile,
+                    u.status, u.roles, u.created_at, u.updated_at, u.last_login_at,
+                    u.member_status, u.member_expire_at, u.member_since, u.member_display_id,
+                    u.member_type, u.member_cycle_start_at,
+                    u.free_company_info_count, u.free_email_apply_count, u.free_referral_count,
+                    u.free_unlocked_companies, u.free_website_apply_count, u.free_website_apply_job_ids,
+                    u.free_website_apply_limit, u.free_referral_limit,
+                    COALESCE(fav.favorites_count, 0)::int AS favorites_count
+                FROM users u
+                LEFT JOIN LATERAL (
+                    SELECT COUNT(*)::int AS favorites_count
+                    FROM favorites f
+                    WHERE f.user_id = u.user_id
+                ) fav ON true
+                ${whereSql}
+                ORDER BY u.created_at DESC, u.user_id DESC
+                LIMIT ${limitParam} OFFSET ${offsetParam}
+            `
+
+            const countParams = params.slice(0, params.length - 2)
+            const countQuery = `
+                SELECT COUNT(*)::int AS total
+                FROM users u
+                ${whereSql}
+            `
+
+            const statsQuery = `
+                SELECT
+                    COUNT(*)::int AS total,
+                    COUNT(*) FILTER (WHERE status = 'active')::int AS active,
+                    COUNT(*) FILTER (WHERE status = 'suspended')::int AS suspended,
+                    COUNT(*) FILTER (
+                        WHERE created_at >= (date_trunc('day', NOW() AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai')
+                    )::int AS new_today,
+                    COUNT(*) FILTER (
+                        WHERE created_at >= (date_trunc('week', NOW() AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai')
+                    )::int AS new_this_week
+                FROM users
+            `
+
+            const [rows, totalRows, statsRows] = await Promise.all([
+                neonHelper.query(listQuery, params),
+                neonHelper.query(countQuery, countParams),
+                neonHelper.query(statsQuery)
+            ])
+
+            return {
+                users: (rows || []).map(mapAdminUserListRow),
+                total: Number(totalRows?.[0]?.total || 0) || 0,
+                page: normalizedPage,
+                pageSize: normalizedPageSize,
+                stats: {
+                    total: Number(statsRows?.[0]?.total || 0) || 0,
+                    active: Number(statsRows?.[0]?.active || 0) || 0,
+                    suspended: Number(statsRows?.[0]?.suspended || 0) || 0,
+                    newToday: Number(statsRows?.[0]?.new_today || 0) || 0,
+                    newThisWeek: Number(statsRows?.[0]?.new_this_week || 0) || 0
+                }
+            }
+        } catch (error) {
+            console.error('[user-helper] Error listing admin users:', error.message)
             return null
         }
     },

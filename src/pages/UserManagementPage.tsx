@@ -50,6 +50,7 @@ const DEFAULT_FREE_REFERRAL_LIMIT = 3
 type EntitlementKey = 'website_apply' | 'referral'
 
 type EntitlementBaseline = Record<EntitlementKey, number>
+type MemberFilter = 'all' | 'free' | 'active' | 'pending' | 'expired'
 
 function formatDateTimeInputValue(value?: string | null) {
   if (!value) return ''
@@ -161,12 +162,16 @@ function isProtectedSuperAdmin(email?: string | null) {
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all')
   const [providerFilter, setProviderFilter] = useState<'all' | 'email' | 'google'>('all')
+  const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+  const [totalUsers, setTotalUsers] = useState(0)
   const [stats, setStats] = useState<UserStats>({
     total: 0,
     active: 0,
@@ -196,20 +201,38 @@ export default function UserManagementPage() {
   const fetchUsers = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await fetch('/api/users', {
+      const params = new URLSearchParams({
+        mode: 'list',
+        page: String(page),
+        pageSize: String(pageSize),
+        search: debouncedSearchTerm.trim(),
+        status: statusFilter,
+        provider: providerFilter,
+        memberStatus: memberFilter
+      })
+      const response = await fetch(`/api/users?${params.toString()}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined
       })
       const data = await response.json()
       if (data.success) {
-        setUsers(data.users)
-        calculateStats(data.users)
+        setUsers(Array.isArray(data.users) ? data.users : [])
+        setTotalUsers(Number(data.total || 0))
+        if (data.stats) {
+          setStats({
+            total: Number(data.stats.total || 0),
+            active: Number(data.stats.active || 0),
+            suspended: Number(data.stats.suspended || 0),
+            newToday: Number(data.stats.newToday || 0),
+            newThisWeek: Number(data.stats.newThisWeek || 0)
+          })
+        }
       }
     } catch (error) {
       console.error('[UserManagement] Failed to fetch users:', error)
     } finally {
       setLoading(false)
     }
-  }, [token])
+  }, [token, page, pageSize, debouncedSearchTerm, statusFilter, providerFilter, memberFilter])
 
   // 加载用户列表
   useEffect(() => {
@@ -243,49 +266,13 @@ export default function UserManagementPage() {
     })()
   }, [token])
 
-  // 过滤用户
   useEffect(() => {
-    let filtered = [...users]
-
-    // 搜索过滤
-    if (searchTerm) {
-      filtered = filtered.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.user_id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    }
-
-    // 状态过滤
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(user => user.status === statusFilter)
-    }
-
-    // 认证方式过滤
-    if (providerFilter !== 'all') {
-      filtered = filtered.filter(user => user.authProvider === providerFilter)
-    }
-
-    setFilteredUsers(filtered)
-  }, [users, searchTerm, statusFilter, providerFilter])
-
-
-
-  const calculateStats = (userList: User[]) => {
-    const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
-
-    const stats = {
-      total: userList.length,
-      active: userList.filter(u => u.status === 'active').length,
-      suspended: userList.filter(u => u.status === 'suspended').length,
-      newToday: userList.filter(u => new Date(u.createdAt) >= today).length,
-      newThisWeek: userList.filter(u => new Date(u.createdAt) >= weekAgo).length
-    }
-
-    setStats(stats)
-  }
+    const timer = window.setTimeout(() => {
+      setPage(1)
+      setDebouncedSearchTerm(searchTerm)
+    }, 300)
+    return () => window.clearTimeout(timer)
+  }, [searchTerm])
 
   const updateUserStatus = async (userId: string, nextStatus: 'active' | 'suspended') => {
     try {
@@ -310,9 +297,13 @@ export default function UserManagementPage() {
       })
       // 局部更新并重算统计
       setUsers(prev => {
-        const next = prev.map(u => (u.user_id === userId ? { ...u, status: nextStatus, updatedAt: new Date().toISOString() } : u))
-        calculateStats(next)
-        return next
+        return prev.map(u => (u.user_id === userId ? { ...u, status: nextStatus, updatedAt: new Date().toISOString() } : u))
+      })
+      setStats(prev => {
+        if (nextStatus === 'active') {
+          return { ...prev, active: prev.active + 1, suspended: Math.max(0, prev.suspended - 1) }
+        }
+        return { ...prev, active: Math.max(0, prev.active - 1), suspended: prev.suspended + 1 }
       })
     } catch (err) {
       console.error('[UserManagement] 调用 PATCH /api/users 失败:', err)
@@ -499,6 +490,7 @@ export default function UserManagementPage() {
 
   const deleteUser = async (userId: string) => {
     if (!confirm('确认删除该用户？')) return
+    const deletedUser = users.find(user => user.user_id === userId)
     try {
       setUpdatingId(userId)
       const resp = await fetch(`/api/users?id=${encodeURIComponent(userId)}`, {
@@ -515,23 +507,52 @@ export default function UserManagementPage() {
           entity_id: userId
         })
         setUsers(prev => prev.filter(u => u.user_id !== userId))
-        calculateStats(users.filter(u => u.user_id !== userId))
+        setTotalUsers(prev => Math.max(0, prev - 1))
+        setStats(prev => ({
+          ...prev,
+          total: Math.max(0, prev.total - 1),
+          active: deletedUser?.status === 'active' ? Math.max(0, prev.active - 1) : prev.active,
+          suspended: deletedUser?.status === 'suspended' ? Math.max(0, prev.suspended - 1) : prev.suspended
+        }))
       }
     } finally {
       setUpdatingId(null)
     }
   }
 
-  const exportUsers = () => {
+  const exportUsers = async () => {
     trackingService.track('admin_user_export', {
       page_key: 'admin_user_management',
       module: 'admin_user_management',
       source_key: 'admin_user_management',
-      result_count: filteredUsers.length
+      result_count: totalUsers
     })
+    let exportRows = users
+    try {
+      const params = new URLSearchParams({
+        mode: 'list',
+        export: 'true',
+        page: '1',
+        pageSize: String(Math.min(Math.max(totalUsers || pageSize, pageSize), 10000)),
+        search: debouncedSearchTerm.trim(),
+        status: statusFilter,
+        provider: providerFilter,
+        memberStatus: memberFilter
+      })
+      const response = await fetch(`/api/users?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      })
+      const data = await response.json().catch(() => ({}))
+      if (response.ok && data.success && Array.isArray(data.users)) {
+        exportRows = data.users
+      }
+    } catch (error) {
+      console.error('[UserManagement] Failed to fetch export users:', error)
+    }
+
     const csv = [
       ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '直申次数', '内推次数', '状态'].join(','),
-      ...filteredUsers.map(user => [
+      ...exportRows.map(user => [
         user.user_id,
         user.username,
         user.email,
@@ -693,7 +714,10 @@ export default function UserManagementPage() {
             {/* 状态过滤 */}
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              onChange={(e) => {
+                setPage(1)
+                setStatusFilter(e.target.value as any)
+              }}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             >
               <option value="all">全部状态</option>
@@ -704,12 +728,43 @@ export default function UserManagementPage() {
             {/* 认证方式过滤 */}
             <select
               value={providerFilter}
-              onChange={(e) => setProviderFilter(e.target.value as any)}
+              onChange={(e) => {
+                setPage(1)
+                setProviderFilter(e.target.value as any)
+              }}
               className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
             >
               <option value="all">全部方式</option>
               <option value="email">邮箱登录</option>
               <option value="google">Google</option>
+            </select>
+
+            <select
+              value={memberFilter}
+              onChange={(e) => {
+                setPage(1)
+                setMemberFilter(e.target.value as MemberFilter)
+              }}
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            >
+              <option value="all">全部会员</option>
+              <option value="free">普通用户</option>
+              <option value="active">生效会员</option>
+              <option value="pending">待生效</option>
+              <option value="expired">已过期</option>
+            </select>
+
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPage(1)
+                setPageSize(Number(e.target.value) || 25)
+              }}
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+            >
+              <option value={25}>25 条/页</option>
+              <option value={50}>50 条/页</option>
+              <option value={100}>100 条/页</option>
             </select>
 
             {/* 操作按钮 */}
@@ -745,7 +800,7 @@ export default function UserManagementPage() {
               <RefreshCw className="w-8 h-8 text-slate-400 animate-spin mx-auto mb-4" />
               <p className="text-slate-600">加载中...</p>
             </div>
-          ) : filteredUsers.length === 0 ? (
+          ) : users.length === 0 ? (
             <div className="p-12 text-center">
               <UserIcon className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600">暂无用户数据</p>
@@ -753,7 +808,7 @@ export default function UserManagementPage() {
           ) : (
             <>
             <div className="divide-y divide-slate-100 md:hidden">
-              {filteredUsers.map((user) => {
+              {users.map((user) => {
                 const member = getMemberPresentation(user)
                 const isBusy = updatingId === user.user_id || !isSuperAdmin
                 const isProtected = isProtectedSuperAdmin(user.email)
@@ -873,7 +928,7 @@ export default function UserManagementPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredUsers.map((user) => (
+                  {users.map((user) => (
                     <tr key={user.user_id} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -1020,8 +1075,32 @@ export default function UserManagementPage() {
         </div>
 
         {/* 分页信息 */}
-        <div className="mt-4 text-center text-sm text-slate-600">
-          显示 {filteredUsers.length} / {users.length} 个用户
+        <div className="mt-4 flex flex-col items-center justify-between gap-3 text-sm text-slate-600 sm:flex-row">
+          <div>
+            显示第 {totalUsers === 0 ? 0 : (page - 1) * pageSize + 1}-
+            {Math.min(page * pageSize, totalUsers)} 条 / 共 {totalUsers} 个匹配用户
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={page <= 1 || loading}
+              onClick={() => setPage(prev => Math.max(1, prev - 1))}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              上一页
+            </button>
+            <span className="rounded-lg bg-white px-3 py-2 text-slate-700">
+              {page} / {Math.max(1, Math.ceil(totalUsers / pageSize))}
+            </span>
+            <button
+              type="button"
+              disabled={page >= Math.ceil(totalUsers / pageSize) || loading}
+              onClick={() => setPage(prev => prev + 1)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              下一页
+            </button>
+          </div>
         </div>
       </div>
 
