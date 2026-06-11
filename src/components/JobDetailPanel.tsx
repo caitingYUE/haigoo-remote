@@ -33,7 +33,13 @@ interface JobDetailPanelProps {
     canNavigatePrev?: boolean
     canNavigateNext?: boolean
     showInlineNavigation?: boolean
+    trackingPageKey?: string
+    trackingSourceKey?: string
+    trackingModule?: string
+    trackingExtra?: Record<string, unknown>
 }
+
+const EMPTY_TRACKING_EXTRA: Record<string, unknown> = {}
 
 type PendingApplyWindow = Window | null
 
@@ -274,12 +280,22 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     onNavigateJob,
     canNavigatePrev = false,
     canNavigateNext = false,
-    showInlineNavigation = true
+    showInlineNavigation = true,
+    trackingPageKey = 'job_detail',
+    trackingSourceKey = 'job_detail',
+    trackingModule,
+    trackingExtra = EMPTY_TRACKING_EXTRA
 }) => {
     const navigate = useNavigate()
     const { isMember, isAuthenticated } = useAuth()
     const sourceType = getJobSourceType(job)
     const shouldMaskGuestMeta = !isAuthenticated
+    const trackingExtraSignature = JSON.stringify(trackingExtra)
+    const trackingBase = useMemo(() => ({
+        page_key: trackingPageKey,
+        source_key: trackingSourceKey,
+        ...trackingExtra
+    }), [trackingPageKey, trackingSourceKey, trackingExtraSignature])
 
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
     const [feedbackAccuracy, setFeedbackAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
@@ -380,9 +396,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [websiteApplyUsageReady, setWebsiteApplyUsageReady] = useState(false)
     const exposureKeysRef = React.useRef<Set<string>>(new Set())
 
-    const openUpgradeModal = (featureKey: string, sourceKey = 'job_detail') => {
+    const openUpgradeModal = (featureKey: string, sourceKey = trackingSourceKey) => {
         trackingService.track('upgrade_modal_view', {
-            page_key: 'job_detail',
+            ...trackingBase,
+            page_key: trackingPageKey,
             module: 'job_detail',
             feature_key: featureKey,
             source_key: sourceKey,
@@ -411,8 +428,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (job?.id) {
             exposureKeysRef.current = new Set()
             trackingService.track('view_job_detail', {
-                page_key: 'job_detail',
-                module: 'job_detail',
+                ...trackingBase,
+                module: trackingModule || 'job_detail',
                 entity_type: 'job',
                 entity_id: job.id,
                 job_id: job.id,
@@ -421,13 +438,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             })
         }
-    }, [job?.id, hasTranslation, translationPreferenceKey, sourceType, job?.title, job?.company])
+    }, [job?.id, hasTranslation, translationPreferenceKey, sourceType, job?.title, job?.company, trackingBase, trackingModule])
 
     useEffect(() => {
         if (!job?.id) return
         const baseProps = {
-            page_key: 'job_detail',
-            source_key: 'job_detail',
+            ...trackingBase,
             entity_type: 'job',
             entity_id: job.id,
         }
@@ -624,9 +640,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (!authToken) return
 
         trackingService.featureClick('match_analysis', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_match_analysis',
-            source_key: 'job_detail',
             entity_type: 'job',
             entity_id: job.id,
         })
@@ -640,8 +655,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 },
                 body: JSON.stringify({
                     jobId: String(job.id),
-                    page_key: 'job_detail',
-                    source_key: 'job_detail',
+                    page_key: trackingPageKey,
+                    source_key: trackingSourceKey,
                     entity_type: 'job',
                     entity_id: job.id,
                     flow_id: `match_analysis_${job.id}`
@@ -690,9 +705,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const handleApply = async () => {
         trackingService.track('click_apply_init', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_apply',
-            source_key: 'job_detail',
             entity_type: 'job',
             entity_id: job.id,
             job_id: job.id,
@@ -763,10 +777,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const executeApply = async (method: 'website' | 'email', pendingWindow: PendingApplyWindow = null) => {
         if (method === 'email' && resolvedHiringEmail) {
             trackingService.track('click_apply', {
-                page_key: 'job_detail',
+                ...trackingBase,
                 module: 'job_detail_footer',
                 feature_key: 'email_apply',
-                source_key: 'job_detail',
                 entity_type: 'job',
                 entity_id: job.id,
                 job_id: job.id,
@@ -778,10 +791,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
             window.location.href = `mailto:${resolvedHiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || ''}`)}`;
             trackingService.track('email_apply_success', {
-                page_key: 'job_detail',
+                ...trackingBase,
                 module: 'job_detail_footer',
                 feature_key: 'email_apply',
-                source_key: 'job_detail',
                 entity_type: 'job',
                 entity_id: job.id,
                 job_id: job.id,
@@ -824,6 +836,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         const url = job.url || job.sourceUrl;
 
         trackingService.track('click_apply', {
+            ...trackingBase,
+            module: 'job_detail_footer',
+            feature_key: 'website_apply',
+            entity_type: 'job',
+            entity_id: job.id,
             job_id: job.id,
             job_title: job.title,
             company: job.company,
@@ -833,6 +850,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         if (url) {
             trackingService.track('click_apply_external', {
+                ...trackingBase,
+                module: 'job_detail_footer',
+                feature_key: 'website_apply',
+                entity_type: 'job',
+                entity_id: job.id,
                 job_id: job.id,
                 job_title: job.title,
                 company: job.company,
@@ -933,8 +955,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
                     companyName,
-                    page_key: 'job_detail',
-                    source_key: 'job_detail_referral_preview',
+                    page_key: trackingPageKey,
+                    source_key: trackingSourceKey === 'job_detail' ? 'job_detail_referral_preview' : trackingSourceKey,
                     entity_type: 'company',
                     entity_id: companyName,
                     flow_id: `referral_preview_${job.id}`
@@ -956,7 +978,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const goToMembershipPayment = (featureKey = 'referral', sourceKey = 'job_detail_referral') => {
         trackingService.track('upgrade_cta_click', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_referral',
             feature_key: featureKey,
             source_key: sourceKey,
@@ -986,9 +1008,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         trackingService.featureClick('referral', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_referral',
-            source_key: 'job_detail',
             entity_type: 'company',
             entity_id: refCompanyName,
         })
@@ -1005,10 +1026,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const handleReferralEmailOpen = async (contact: ReferralContact, resumeId: string, resumeName: string) => {
         trackingService.track('click_apply', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_referral',
             feature_key: 'referral',
-            source_key: 'job_detail',
             entity_type: 'job',
             entity_id: job.id,
             job_id: job.id,
@@ -1060,8 +1080,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 },
                 body: JSON.stringify({
                     jobId,
-                    page_key: 'job_detail',
-                    source_key: 'job_detail',
+                    page_key: trackingPageKey,
+                    source_key: trackingSourceKey,
                     entity_type: 'job',
                     entity_id: jobId,
                     flow_id: `website_apply_${jobId}`
@@ -1124,10 +1144,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         trackingService.track('click_save_job', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_header',
             feature_key: 'favorite',
-            source_key: 'job_detail',
             entity_type: 'job',
             entity_id: job.id,
             job_id: job.id,
@@ -1188,7 +1207,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             localStorage.setItem(translationPreferenceKey, nextShowTranslation ? 'translated' : 'original')
         }
         trackingService.track('feature_click', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail',
             feature_key: 'translation',
             entity_type: 'job',
@@ -1395,9 +1414,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
     const handleApplyButtonClick = () => {
         trackingService.featureClick('website_apply', {
-            page_key: 'job_detail',
+            ...trackingBase,
             module: 'job_detail_header',
-            source_key: 'job_detail_top',
+            source_key: trackingSourceKey === 'job_detail' ? 'job_detail_top' : trackingSourceKey,
             entity_type: 'job',
             entity_id: job.id
         })

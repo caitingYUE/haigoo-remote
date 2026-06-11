@@ -15,6 +15,10 @@ interface JobDetailModalProps {
   currentJobIndex?: number
   onNavigateJob?: (direction: 'prev' | 'next') => void
   variant?: 'side' | 'center'
+  trackingPageKey?: string
+  trackingSourceKey?: string
+  trackingModule?: string
+  trackingExtra?: Record<string, unknown>
 }
 
 const JobDetailModal: React.FC<JobDetailModalProps> = ({
@@ -27,7 +31,11 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
   jobs = [],
   currentJobIndex = -1,
   onNavigateJob,
-  variant = 'side'
+  variant = 'side',
+  trackingPageKey,
+  trackingSourceKey,
+  trackingModule,
+  trackingExtra
 }) => {
   // 可访问性相关的 refs
   const modalRef = useRef<HTMLDivElement>(null)
@@ -138,6 +146,10 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
               canNavigatePrev={canNavigatePrev}
               canNavigateNext={canNavigateNext}
               showInlineNavigation={variant !== 'center'}
+              trackingPageKey={trackingPageKey}
+              trackingSourceKey={trackingSourceKey}
+              trackingModule={trackingModule}
+              trackingExtra={trackingExtra}
             />
           </div>
         </div>

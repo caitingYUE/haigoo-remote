@@ -428,6 +428,13 @@ export default function JobBundleDetailPage() {
           currentJobIndex={currentJobIndex}
           onNavigateJob={handleNavigateJob}
           variant="center"
+          trackingPageKey="job_bundle_detail"
+          trackingSourceKey="job_bundle_detail"
+          trackingModule="job_bundle_detail"
+          trackingExtra={{
+            bundle_id: bundle?.id,
+            bundle_title: bundle?.title,
+          }}
         />
       )}
     </div>

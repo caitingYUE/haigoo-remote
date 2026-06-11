@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Activity,
     Briefcase,
@@ -94,6 +94,12 @@ interface MembershipActivationItem {
 }
 
 interface DashboardData {
+    period?: Period;
+    view?: ViewKey;
+    dateRange?: {
+        label: string;
+        timeZone: string;
+    };
     overview: {
         totalUv: number;
         totalPv: number;
@@ -237,11 +243,17 @@ export default function AdminTrackingDashboard() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<DashboardData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const requestSeqRef = useRef(0);
 
-    const fetchData = async () => {
+    const fetchData = async ({ preserveData = false }: { preserveData?: boolean } = {}) => {
+        const requestSeq = requestSeqRef.current + 1;
+        requestSeqRef.current = requestSeq;
         try {
             setLoading(true);
             setError(null);
+            if (!preserveData) {
+                setData(null);
+            }
             const headers: Record<string, string> = {};
             if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -258,17 +270,21 @@ export default function AdminTrackingDashboard() {
                 throw new Error(json.error || 'Failed to load analytics dashboard');
             }
 
+            if (requestSeq !== requestSeqRef.current) return;
             setData(json.data);
         } catch (fetchError: any) {
+            if (requestSeq !== requestSeqRef.current) return;
             console.error('Failed to fetch analytics:', fetchError);
             setError(fetchError?.message || '数据加载失败');
         } finally {
-            setLoading(false);
+            if (requestSeq === requestSeqRef.current) {
+                setLoading(false);
+            }
         }
     };
 
     useEffect(() => {
-        fetchData();
+        fetchData({ preserveData: false });
     }, [period, segment, metricMode, activeView, token]);
 
     const overviewCards = useMemo(() => {
@@ -413,7 +429,7 @@ export default function AdminTrackingDashboard() {
 
                     <div className="flex flex-wrap items-center gap-3">
                         <button
-                            onClick={fetchData}
+                            onClick={() => fetchData({ preserveData: true })}
                             className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600"
                         >
                             <RefreshCcw className="h-4 w-4" />
@@ -421,7 +437,9 @@ export default function AdminTrackingDashboard() {
                         </button>
                         <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500">
                             <HelpCircle className="h-4 w-4 text-slate-400" />
-                            漏斗卡片的 UV / PV 均按同一链路口径统计，会员成功参考支付记录与用户会员状态
+                            {data?.dateRange
+                                ? `${data.dateRange.label} · ${data.dateRange.timeZone} 自然周期；漏斗 UV / PV 按同一链路口径统计`
+                                : '漏斗卡片的 UV / PV 均按同一链路口径统计，会员成功参考支付记录与用户会员状态'}
                         </div>
                     </div>
                 </div>
