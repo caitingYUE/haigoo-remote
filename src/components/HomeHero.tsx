@@ -1994,9 +1994,11 @@ export default function HomeHero({
                                         onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
                                         className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8]"
                                     >
-                                        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
-                                            <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
-                                            {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-2 z-10 scale-90" /> : null}
+                                        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
+                                            <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl">
+                                                <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
+                                            </span>
+                                            {isVipJob ? <HomeVipBadge className="absolute -right-1.5 -top-1.5 z-20 scale-[0.82]" /> : null}
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="flex min-w-0 items-center gap-1.5">
@@ -2196,7 +2198,7 @@ export default function HomeHero({
                                     >
                                         <div className="relative hidden h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-[18px] border border-[#e6edf3] bg-white p-1 shadow-sm sm:flex">
                                             <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain" />
-                                            {isVipJob ? <HomeVipBadge className="absolute -right-2 -top-2 z-10" /> : null}
+                                            {isVipJob ? <HomeVipBadge className="absolute -right-1.5 -top-1.5 z-20 scale-90" /> : null}
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex min-w-0 items-center gap-1.5">

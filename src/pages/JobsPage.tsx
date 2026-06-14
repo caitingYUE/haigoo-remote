@@ -61,6 +61,8 @@ const JOBS_PAGE_DECOR = {
 }
 
 const JOBS_REQUEST_CACHE_TTL_MS = 10 * 1000
+const GUEST_JOB_PREVIEW_LIMIT = 20
+const GUEST_MORE_PROMPT_COOLDOWN_MS = 3000
 const jobsRequestCache = new Map<string, { expiresAt: number; promise: Promise<any> }>()
 
 function fetchJobsJsonWithDedupe(url: string, init?: RequestInit) {
@@ -327,6 +329,7 @@ export default function JobsPage() {
   const hasRenderedJobsRef = useRef(false)
   const jobsRequestSeqRef = useRef(0)
   const hasManualJobSelectionRef = useRef(false)
+  const guestMorePromptedAtRef = useRef(0)
 
   useEffect(() => {
     searchTermRef.current = searchTerm
@@ -369,12 +372,6 @@ export default function JobsPage() {
   }, [filters.memberOnly, isAuthenticated])
 
   useEffect(() => {
-    if (!isAuthenticated && filters.category.length > 0) {
-      setFilters(prev => normalizeJobFilters({ ...prev, category: [] }))
-    }
-  }, [filters.category.length, isAuthenticated])
-
-  useEffect(() => {
     if (industryOptions.length === 0 || filters.industry.length === 0) return
 
     const validIndustries = new Set(industryOptions.map(option => option.value))
@@ -401,6 +398,7 @@ export default function JobsPage() {
   const [totalJobs, setTotalJobs] = useState(0)
   const [currentPage, setCurrentPage] = useState(1)
   const [pageSize, setPageSize] = useState(20)
+  const effectivePageSize = isAuthenticated ? pageSize : GUEST_JOB_PREVIEW_LIMIT
   const [sortBy, setSortBy] = useState<'relevance' | 'recent'>('relevance')
   const [listMode, setListMode] = useState<'jobs' | 'favorites' | 'applications'>('jobs')
   const [favoriteJobs, setFavoriteJobs] = useState<Job[]>([])
@@ -457,6 +455,13 @@ export default function JobsPage() {
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
+  const showGuestFullListLoginPrompt = useCallback(() => {
+    const now = Date.now()
+    if (now - guestMorePromptedAtRef.current < GUEST_MORE_PROMPT_COOLDOWN_MS) return
+    guestMorePromptedAtRef.current = now
+    showWarning('完整列表登录后可见', '登录后可以继续加载更多远程岗位。')
+  }, [showWarning])
+
   const syncJobListUrl = useCallback((nextFilters: JobFiltersState, nextSearchTerm: string) => {
     const params = buildJobsSearchParams(location.search, nextFilters, nextSearchTerm)
     const nextSearch = params.toString()
@@ -468,6 +473,11 @@ export default function JobsPage() {
 
   // 加载岗位数据（使用新的后端API，支持筛选和分页）
   const loadJobsWithFilters = useCallback(async (page = 1, loadMore = false) => {
+    if (!isAuthenticated && loadMore) {
+      showGuestFullListLoginPrompt()
+      return
+    }
+
     const requestSeq = ++jobsRequestSeqRef.current
     // P0 Fix: Cancel any pending request before starting a new one
     if (abortControllerRef.current) {
@@ -501,8 +511,8 @@ export default function JobsPage() {
       }
 
       queryParams.append('page', page.toString())
-      queryParams.append('pageSize', pageSize.toString())
-      queryParams.append('limit', pageSize.toString())
+      queryParams.append('pageSize', effectivePageSize.toString())
+      queryParams.append('limit', effectivePageSize.toString())
       queryParams.append('skipAggregations', 'true')
       queryParams.append('listMode', 'compact')
 
@@ -519,7 +529,7 @@ export default function JobsPage() {
       }
 
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
       if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
       if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
@@ -682,7 +692,7 @@ export default function JobsPage() {
         }
       }
     }
-  }, [token, isAuthenticated, showError, pageSize, filters, searchTerm, sortBy, location.search])
+  }, [token, isAuthenticated, showError, effectivePageSize, filters, searchTerm, sortBy, location.search, showGuestFullListLoginPrompt])
 
   const loadJobsMetadata = useCallback(async () => {
     if (metadataAbortControllerRef.current) {
@@ -695,13 +705,13 @@ export default function JobsPage() {
       const queryParams = new URLSearchParams()
       queryParams.append('metadataOnly', 'true')
       queryParams.append('page', '1')
-      queryParams.append('pageSize', pageSize.toString())
-      queryParams.append('limit', pageSize.toString())
+      queryParams.append('pageSize', effectivePageSize.toString())
+      queryParams.append('limit', effectivePageSize.toString())
       queryParams.append('sortBy', sortBy === 'recent' ? 'recent' : 'relevance')
       queryParams.append('isApproved', 'true')
 
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
       if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
       if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
@@ -724,7 +734,7 @@ export default function JobsPage() {
       if (hasUsableAggregations(data.aggregations)) {
         let { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
 
-        if (isAuthenticated && filters.category.length > 0) {
+        if (filters.category.length > 0) {
           const categoryFacetParams = new URLSearchParams(queryParams)
           categoryFacetParams.delete('category')
           try {
@@ -796,7 +806,7 @@ export default function JobsPage() {
       if (error instanceof Error && error.name === 'AbortError') return
       console.warn('[JobsPage] Failed to load jobs metadata:', error)
     }
-  }, [filters, isAuthenticated, pageSize, searchTerm, sortBy])
+  }, [filters, effectivePageSize, searchTerm, sortBy])
 
   const refreshJobsIfResumeChanged = useCallback(() => {
     if (!isAuthenticated || !token) return
@@ -812,6 +822,11 @@ export default function JobsPage() {
   // 加载更多数据
   const loadMoreJobs = async () => {
     if (loadingMore || jobsLoading) return
+
+    if (!isAuthenticated) {
+      showGuestFullListLoginPrompt()
+      return
+    }
 
     const nextPage = currentPage + 1
     const hasMore = jobs.length < totalJobs
@@ -919,7 +934,7 @@ export default function JobsPage() {
             : []
         const next = normalizeJobFilters({
           ...prev,
-          ...(params.has('category') && isAuthenticated ? { category: readCsvParam(params, 'category') } : {}),
+          ...(params.has('category') ? { category: readCsvParam(params, 'category') } : {}),
           ...(params.has('experienceLevel') ? { experienceLevel: readCsvParam(params, 'experienceLevel') } : {}),
           ...(params.has('industry') ? { industry: readCsvParam(params, 'industry') } : {}),
           ...(params.has('regionType') || params.has('region') ? { regionType: urlRegionType.length > 0 ? urlRegionType : legacyRegionType } : {}),
