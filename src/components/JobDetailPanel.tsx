@@ -703,6 +703,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }
 
+    const goToLogin = () => {
+        navigate('/login')
+    }
+
     const handleApply = async () => {
         trackingService.track('click_apply_init', {
             ...trackingBase,
@@ -719,7 +723,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         // 0. Enforce Login first
         if (!isAuthenticated) {
-            promptLogin()
+            goToLogin()
             return
         }
 
@@ -992,7 +996,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         const refCompanyName = job.company || companyInfo?.name || ''
         const isReferralUnlocked = isMember || unlockedCompanies.includes(refCompanyName)
         if (!isAuthenticated) {
-            promptLogin('登录后可查看联系人并继续申请\n\n是否前往登录？')
+            goToLogin()
             return
         }
 
@@ -1351,7 +1355,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         event?.preventDefault()
         event?.stopPropagation()
         if (referralAccessMode === 'guest') {
-            promptLogin('登录后可查看联系人并继续申请\n\n是否前往登录？')
+            goToLogin()
             return
         }
         if (referralAccessMode === 'member_only') {
@@ -1422,7 +1426,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         })
 
         if (websiteApplyState === 'login_required') {
-            promptLogin()
+            goToLogin()
             return
         }
 
@@ -1433,7 +1437,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         if (websiteApplyState === 'email_only') {
             if (!isAuthenticated) {
-                promptLogin('邮箱申请需要登录\n\n是否前往登录？')
+                goToLogin()
                 return
             }
             if (!showReferralModule && hasEmailApply) {
@@ -1884,7 +1888,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         event.preventDefault()
                                         event.stopPropagation()
                                         if (mode === 'guest') {
-                                            promptLogin('登录后可查看联系人并继续申请\n\n是否前往登录？')
+                                            goToLogin()
                                             return
                                         }
                                         if (mode === 'member_only') {

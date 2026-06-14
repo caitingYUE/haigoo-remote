@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Info, Mail } from 'lucide-react'
+import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Info, Mail, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -27,7 +27,7 @@ export default function CompanyDetailPage() {
     const [currentJobIndex, setCurrentJobIndex] = useState(0)
 
     const decodedCompanyName = decodeURIComponent(companyName || '')
-    const canShowCompanyDetails = true
+    const canShowCompanyDetails = isAuthenticated
     const companyLogoSources = useMemo(() => getCompanyLogoSources({
         companyId: companyInfo?.id,
         cachedLogoUrl: companyInfo?.cachedLogoUrl,
@@ -232,6 +232,15 @@ export default function CompanyDetailPage() {
     const companySpecialties = Array.isArray(companyInfo?.specialties)
         ? companyInfo.specialties.map((specialty) => String(specialty).trim()).filter(Boolean)
         : []
+    const LockedText = ({ className = 'w-24' }: { className?: string }) => (
+        <span className={`inline-block h-3 rounded-full bg-slate-300/75 blur-[3px] ${className}`} aria-hidden="true" />
+    )
+    const LockedField = ({ className = 'w-24' }: { className?: string }) => (
+        <>
+            <span className="sr-only">登录后可见</span>
+            <LockedText className={className} />
+        </>
+    )
 
     return (
         <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f9fbff_46%,#fffdf8_100%)]">
@@ -269,7 +278,7 @@ export default function CompanyDetailPage() {
                                 />
                                 <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[190px] w-[68%] bg-[linear-gradient(90deg,rgba(255,253,248,0.92)_0%,rgba(255,253,248,0.52)_42%,rgba(255,253,248,0.22)_72%,rgba(255,253,248,0.58)_100%)] lg:block" />
                                 <div className="relative z-10 flex items-start gap-4">
-                                    {canShowCompanyDetails && (companyLogoSrc ? (
+                                    {companyLogoSrc ? (
                                         <div className="h-[74px] w-[74px] flex-shrink-0 overflow-hidden rounded-[22px] border border-[#dfeaf1] bg-white/94 p-2 shadow-[0_22px_48px_-32px_rgba(62,91,120,0.62)] sm:h-20 sm:w-20 lg:h-[88px] lg:w-[88px]">
                                             <img
                                                 src={companyLogoSrc}
@@ -293,7 +302,7 @@ export default function CompanyDetailPage() {
                                                 {displayCompanyName.charAt(0)}
                                             </span>
                                         </div>
-                                    ))}
+                                    )}
 
                                     <div className="min-w-0 flex-1 pt-0.5 lg:pt-2">
                                         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -303,7 +312,7 @@ export default function CompanyDetailPage() {
                                             {companyInfo?.industry && (
                                                 <div className="flex items-center gap-1.5 rounded-full border border-[#dfd8ff] bg-[#f2efff]/86 px-2.5 py-1 text-xs font-bold text-[#6f63f6] shadow-sm shadow-slate-200/30">
                                                     <Building2 className="w-3.5 h-3.5" />
-                                                    <span>{companyInfo.industry}</span>
+                                                    {canShowCompanyDetails ? <span>{companyInfo.industry}</span> : <LockedField className="w-20" />}
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-1.5 rounded-full border border-[#dfeaf1] bg-white/88 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/30">
@@ -317,9 +326,9 @@ export default function CompanyDetailPage() {
                                                 {companyTags.length > 0 && (
                                                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                                                         <span className="shrink-0 text-xs font-black text-slate-500">标签</span>
-                                                        {companyTags.slice(0, 8).map((tag) => (
+                                                        {companyTags.slice(0, 8).map((tag, index) => (
                                                             <span key={tag} className="rounded-full border border-[#d7e8ee] bg-white/86 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/20">
-                                                                {tag}
+                                                                {canShowCompanyDetails ? tag : <LockedField className={index % 2 === 0 ? 'w-20' : 'w-16'} />}
                                                             </span>
                                                         ))}
                                                     </div>
@@ -327,9 +336,9 @@ export default function CompanyDetailPage() {
                                                 {companySpecialties.length > 0 && (
                                                     <div className="flex min-w-0 flex-wrap items-center gap-2">
                                                         <span className="shrink-0 text-xs font-black text-slate-500">领域/专长</span>
-                                                        {companySpecialties.slice(0, 8).map((specialty) => (
+                                                        {companySpecialties.slice(0, 8).map((specialty, index) => (
                                                             <span key={specialty} className="rounded-full border border-[#e2e9f0] bg-white/72 px-2.5 py-1 text-xs font-bold text-slate-600">
-                                                                {specialty}
+                                                                {canShowCompanyDetails ? specialty : <LockedField className={index % 2 === 0 ? 'w-28' : 'w-20'} />}
                                                             </span>
                                                         ))}
                                                     </div>
@@ -354,12 +363,24 @@ export default function CompanyDetailPage() {
                                         <span>关于我们</span>
                                     </div>
                                     <div className="mt-3 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
-                                        <p className="whitespace-pre-wrap text-sm leading-7 text-slate-600">{companyDescription}</p>
+                                        {canShowCompanyDetails ? (
+                                            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-600">{companyDescription}</p>
+                                        ) : (
+                                            <div className="space-y-3 py-1" aria-label="企业简介登录后可见">
+                                                <LockedText className="w-[92%]" />
+                                                <LockedText className="w-[86%]" />
+                                                <LockedText className="w-[76%]" />
+                                                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#dfe8ef] bg-white/80 px-2.5 py-1 text-xs font-black text-slate-500">
+                                                    <Lock className="h-3.5 w-3.5" />
+                                                    登录后查看企业信息
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
                                 <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                    {companyInfo?.website ? (
+                                    {canShowCompanyDetails && companyInfo?.website ? (
                                         <a
                                             href={companyInfo.website}
                                             target="_blank"
@@ -374,6 +395,16 @@ export default function CompanyDetailPage() {
                                                 <div className="truncate text-sm font-bold text-[#6f63f6]">点击访问</div>
                                             </div>
                                         </a>
+                                    ) : !canShowCompanyDetails && companyInfo?.website ? (
+                                        <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm">
+                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50">
+                                                <Globe className="w-5 h-5 text-[#6f63f6]" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="mb-0.5 text-xs font-medium text-slate-500">官方网站</div>
+                                                <div className="truncate text-sm font-bold text-[#6f63f6]"><LockedField className="w-20" /></div>
+                                            </div>
+                                        </div>
                                     ) : (
                                         <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/72 p-3">
                                             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-50">
@@ -392,7 +423,9 @@ export default function CompanyDetailPage() {
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="mb-0.5 text-xs font-medium text-slate-500">员工人数</div>
-                                            <div className="truncate text-sm font-bold text-slate-900">{companyInfo?.employeeCount || '规模未知'}</div>
+                                            <div className="truncate text-sm font-bold text-slate-900">
+                                                {canShowCompanyDetails ? (companyInfo?.employeeCount || '规模未知') : <LockedField className="w-24" />}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -411,11 +444,11 @@ export default function CompanyDetailPage() {
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="mb-0.5 text-xs font-medium text-slate-500">总部地址</div>
-                                            <div className="truncate text-sm font-bold text-slate-900" title={companyInfo?.address || '总部未知'}>
-                                                {companyInfo?.address || '总部未知'}
+                                            <div className="truncate text-sm font-bold text-slate-900" title={canShowCompanyDetails ? (companyInfo?.address || '总部未知') : '登录后可见'}>
+                                                {canShowCompanyDetails ? (companyInfo?.address || '总部未知') : <LockedField className="w-28" />}
                                             </div>
                                         </div>
-                                        {companyInfo?.address && showLocationTooltip && !isRemoteAddress && (
+                                        {canShowCompanyDetails && companyInfo?.address && showLocationTooltip && !isRemoteAddress && (
                                             <div className="absolute left-0 top-full z-[80] mt-2">
                                                 <LocationTooltip
                                                     location={companyInfo.address}
@@ -432,7 +465,9 @@ export default function CompanyDetailPage() {
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="mb-0.5 text-xs font-medium text-slate-500">成立年份</div>
-                                            <div className="truncate text-sm font-bold text-slate-900">{companyInfo?.foundedYear || '年份未知'}</div>
+                                            <div className="truncate text-sm font-bold text-slate-900">
+                                                {canShowCompanyDetails ? (companyInfo?.foundedYear || '年份未知') : <LockedField className="w-16" />}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -443,9 +478,9 @@ export default function CompanyDetailPage() {
                                         <div className="min-w-0 flex-1">
                                             <div className="mb-0.5 text-xs font-medium text-slate-500">企业评分</div>
                                             <div className="truncate text-sm font-bold text-slate-900">
-                                                {companyInfo?.companyRating || '暂无评分'}
+                                                {canShowCompanyDetails ? (companyInfo?.companyRating || '暂无评分') : <LockedField className="w-14" />}
                                             </div>
-                                            {companyInfo?.ratingSource && (
+                                            {canShowCompanyDetails && companyInfo?.ratingSource && (
                                                 <div className="truncate text-[10px] text-slate-400" title={`评分来源: ${companyInfo.ratingSource}`}>
                                                     来源: {companyInfo.ratingSource}
                                                 </div>

@@ -372,6 +372,12 @@ export default function JobsPage() {
   }, [filters.memberOnly, isAuthenticated])
 
   useEffect(() => {
+    if (!isAuthenticated && filters.category.length > 0) {
+      setFilters(prev => normalizeJobFilters({ ...prev, category: [] }))
+    }
+  }, [filters.category.length, isAuthenticated])
+
+  useEffect(() => {
     if (industryOptions.length === 0 || filters.industry.length === 0) return
 
     const validIndustries = new Set(industryOptions.map(option => option.value))
@@ -529,7 +535,7 @@ export default function JobsPage() {
       }
 
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
       if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
       if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
@@ -711,7 +717,7 @@ export default function JobsPage() {
       queryParams.append('isApproved', 'true')
 
       if (searchTerm) queryParams.append('search', searchTerm)
-      if (filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
+      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
       if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
       if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
       if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
@@ -734,7 +740,7 @@ export default function JobsPage() {
       if (hasUsableAggregations(data.aggregations)) {
         let { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
 
-        if (filters.category.length > 0) {
+        if (isAuthenticated && filters.category.length > 0) {
           const categoryFacetParams = new URLSearchParams(queryParams)
           categoryFacetParams.delete('category')
           try {
@@ -806,7 +812,7 @@ export default function JobsPage() {
       if (error instanceof Error && error.name === 'AbortError') return
       console.warn('[JobsPage] Failed to load jobs metadata:', error)
     }
-  }, [filters, effectivePageSize, searchTerm, sortBy])
+  }, [filters, isAuthenticated, effectivePageSize, searchTerm, sortBy])
 
   const refreshJobsIfResumeChanged = useCallback(() => {
     if (!isAuthenticated || !token) return
@@ -934,7 +940,7 @@ export default function JobsPage() {
             : []
         const next = normalizeJobFilters({
           ...prev,
-          ...(params.has('category') ? { category: readCsvParam(params, 'category') } : {}),
+          ...(params.has('category') && isAuthenticated ? { category: readCsvParam(params, 'category') } : {}),
           ...(params.has('experienceLevel') ? { experienceLevel: readCsvParam(params, 'experienceLevel') } : {}),
           ...(params.has('industry') ? { industry: readCsvParam(params, 'industry') } : {}),
           ...(params.has('regionType') || params.has('region') ? { regionType: urlRegionType.length > 0 ? urlRegionType : legacyRegionType } : {}),

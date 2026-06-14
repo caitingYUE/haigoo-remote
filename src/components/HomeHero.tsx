@@ -41,10 +41,6 @@ const HOME_HERO_TITLE_SRCSET = [
 ].join(', ')
 const HOME_UPGRADE_AVATAR_SRC = '/pic_lists/Home_pics/Haigoo_hi-transparent.webp'
 const HOME_UPGRADE_BANNER_DISMISS_KEY = 'haigoo_home_upgrade_banner_dismissed_v1'
-const HOME_UPGRADE_DEPLOY_AT = Date.parse(import.meta.env.VITE_HAIGOO_UPGRADE_DEPLOY_AT || '2026-06-05T00:00:00+08:00')
-const HOME_UPGRADE_MAINTENANCE_END_AT = HOME_UPGRADE_DEPLOY_AT + 30 * 60 * 1000
-const HOME_UPGRADE_LAUNCH_START_AT = Date.UTC(2026, 5, 4, 16, 0, 0)
-const HOME_UPGRADE_END_AT = Date.UTC(2026, 5, 11, 16, 0, 0)
 
 const LazyGeneratedPlanView = lazy(() => import('./GeneratedPlanView'))
 const LazyJobDetailModal = lazy(() => import('./JobDetailModal'))
@@ -53,28 +49,6 @@ const LazyHaigooClubInfoCard = lazy(() => import('./HaigooClubInfoCard'))
 async function parseResumeFileOnDemand(file: File) {
     const module = await import('../services/resume-parser-enhanced')
     return module.parseResumeFileEnhanced(file)
-}
-
-type HomeUpgradeBannerPhase = 'maintenance' | 'launch'
-
-function resolveHomeUpgradeBannerPhase(nowMs = Date.now()): HomeUpgradeBannerPhase | null {
-    if (nowMs < HOME_UPGRADE_MAINTENANCE_END_AT) return 'maintenance'
-    if (nowMs >= HOME_UPGRADE_LAUNCH_START_AT && nowMs < HOME_UPGRADE_END_AT) return 'launch'
-    return null
-}
-
-function formatChinaMonthDayTime(timestamp: number) {
-    const formatter = new Intl.DateTimeFormat('zh-CN', {
-        timeZone: 'Asia/Shanghai',
-        month: 'numeric',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: false,
-    })
-    const parts = formatter.formatToParts(new Date(timestamp))
-    const get = (type: string) => parts.find(part => part.type === type)?.value || ''
-    return `${get('month')}月${get('day')}日${get('hour')}:${get('minute')}`
 }
 
 const HomeVipBadge = ({ className = '' }: { className?: string }) => (
@@ -646,46 +620,24 @@ export default function HomeHero({
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
     const userId = user?.user_id || null
     const storedTargetRole = String(user?.profile?.targetRole || '').trim()
-    const [upgradeBannerPhase, setUpgradeBannerPhase] = useState<HomeUpgradeBannerPhase | null>(() => {
-        const phase = resolveHomeUpgradeBannerPhase()
-        if (!phase) return null
+    const [showUpgradeBanner, setShowUpgradeBanner] = useState(() => {
         try {
-            return localStorage.getItem(HOME_UPGRADE_BANNER_DISMISS_KEY) === phase ? null : phase
+            return localStorage.getItem(HOME_UPGRADE_BANNER_DISMISS_KEY) !== 'dismissed'
         } catch {
-            return phase
+            return true
         }
     })
     const [showUpgradeFeedbackModal, setShowUpgradeFeedbackModal] = useState(false)
     const [upgradeFeedbackContent, setUpgradeFeedbackContent] = useState('')
     const [upgradeFeedbackSubmitting, setUpgradeFeedbackSubmitting] = useState(false)
 
-    useEffect(() => {
-        const refreshBannerPhase = () => {
-            const nextPhase = resolveHomeUpgradeBannerPhase()
-            if (!nextPhase) {
-                setUpgradeBannerPhase(null)
-                return
-            }
-            try {
-                setUpgradeBannerPhase(localStorage.getItem(HOME_UPGRADE_BANNER_DISMISS_KEY) === nextPhase ? null : nextPhase)
-            } catch {
-                setUpgradeBannerPhase(nextPhase)
-            }
-        }
-
-        refreshBannerPhase()
-        const timer = window.setInterval(refreshBannerPhase, 60 * 1000)
-        return () => window.clearInterval(timer)
-    }, [])
-
     const dismissUpgradeBanner = () => {
-        if (!upgradeBannerPhase) return
         try {
-            localStorage.setItem(HOME_UPGRADE_BANNER_DISMISS_KEY, upgradeBannerPhase)
+            localStorage.setItem(HOME_UPGRADE_BANNER_DISMISS_KEY, 'dismissed')
         } catch {
             // ignore
         }
-        setUpgradeBannerPhase(null)
+        setShowUpgradeBanner(false)
     }
 
     const handleUpgradeBannerFeedback = () => {
@@ -743,9 +695,7 @@ export default function HomeHero({
             setUpgradeFeedbackSubmitting(false)
         }
     }
-    const upgradeBannerMessage = upgradeBannerPhase === 'maintenance'
-        ? `Haigoo 正在升级，请避开 ${formatChinaMonthDayTime(HOME_UPGRADE_DEPLOY_AT)}-${formatChinaMonthDayTime(HOME_UPGRADE_MAINTENANCE_END_AT).replace(/^\d+月\d+日/, '')} 申请或购买会员。`
-        : '嗨，我是海狗，你的远程工作探索伙伴。'
+    const upgradeBannerMessage = '嗨，我是海狗，你的远程工作探索伙伴。'
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -1832,7 +1782,7 @@ export default function HomeHero({
             </div>
 
             <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
-                {upgradeBannerPhase && (
+                {showUpgradeBanner && (
                     <div className="absolute left-5 top-3 z-30 max-w-[calc(100%-2.5rem)] lg:left-10 lg:top-10 xl:max-w-[640px]">
                         <div className="flex h-9 w-fit max-w-full items-center gap-2 rounded-full border border-[#eadfc8]/80 bg-[#fffdf8]/92 py-1 pl-1.5 pr-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_14px_34px_-30px_rgba(116,90,44,0.42)] ring-1 ring-white/60 backdrop-blur-sm">
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white">
@@ -1851,10 +1801,10 @@ export default function HomeHero({
                                 type="button"
                                 onClick={handleUpgradeBannerFeedback}
                                 className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8]/80 bg-white/88 px-2 text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
-                                aria-label="给我留言"
+                                aria-label="我要留言"
                             >
                                 <MessageCircle className="h-3.5 w-3.5" />
-                                <span className="hidden sm:inline">给我留言</span>
+                                <span>我要留言</span>
                             </button>
                             <button
                                 type="button"
@@ -1867,7 +1817,7 @@ export default function HomeHero({
                         </div>
                     </div>
                 )}
-                <div className={`relative z-10 w-full min-w-0 max-w-[640px] ${upgradeBannerPhase ? 'pt-11 sm:pt-0' : ''}`}>
+                <div className={`relative z-10 w-full min-w-0 max-w-[640px] ${showUpgradeBanner ? 'pt-11 sm:pt-0' : ''}`}>
                     <h1 className="relative max-w-[640px]" aria-label="用你喜欢的方式 工作和生活">
                         <span className="sr-only">用你喜欢的方式 工作和生活</span>
                         <picture aria-hidden="true">

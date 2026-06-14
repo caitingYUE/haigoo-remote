@@ -589,49 +589,55 @@ export default function JobFilterBar({
             icon={<Briefcase className="h-3.5 w-3.5" />}
             colorTheme="indigo"
           >
-            <div className="grid gap-3 md:grid-cols-[128px_minmax(0,1fr)]">
-              <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-1.5">
-                {groupedCategories.map((group, index) => (
-                  <button
-                    key={group.title}
-                    type="button"
-                    onClick={(event) => {
-                      event.preventDefault();
-                      event.stopPropagation();
-                      setRoleGroup(index);
-                    }}
-                    className={`rounded-xl px-2.5 py-2 text-left text-xs font-bold transition-colors ${
-                      activeRoleGroup === index ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
-                    }`}
-                  >
-                    {group.title.replace('类', '')}
-                  </button>
-                ))}
-              </div>
-              <div className="min-w-0">
-                <FilterSectionHeader title={groupedCategories[activeRoleGroup]?.title || '角色'} />
-                <div className="flex flex-wrap gap-2 px-2 pb-2">
-                  {groupedCategories[activeRoleGroup]?.options?.length ? (
-                    <FilterChip
-                      label={`全部${groupedCategories[activeRoleGroup].title.replace('类', '')}`}
-                      active={groupedCategories[activeRoleGroup].options.every(option => tempFilters.category?.includes(option.value))}
-                      tone="indigo"
-                      onClick={() => selectRoleGroup(activeRoleGroup)}
-                    />
-                  ) : null}
-                  {(groupedCategories[activeRoleGroup]?.options || []).map(option => (
-                    <FilterChip
-                      key={option.value}
-                      label={option.label}
-                      count={option.count}
-                      active={tempFilters.category?.includes(option.value) || false}
-                      tone="indigo"
-                      onClick={() => toggleRoleOption(option.value)}
-                    />
+            {isAuthenticated ? (
+              <div className="grid gap-3 md:grid-cols-[128px_minmax(0,1fr)]">
+                <div className="flex flex-col gap-1 rounded-2xl bg-slate-50 p-1.5">
+                  {groupedCategories.map((group, index) => (
+                    <button
+                      key={group.title}
+                      type="button"
+                      onClick={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setRoleGroup(index);
+                      }}
+                      className={`rounded-xl px-2.5 py-2 text-left text-xs font-bold transition-colors ${
+                        activeRoleGroup === index ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
+                      }`}
+                    >
+                      {group.title.replace('类', '')}
+                    </button>
                   ))}
                 </div>
+                <div className="min-w-0">
+                  <FilterSectionHeader title={groupedCategories[activeRoleGroup]?.title || '角色'} />
+                  <div className="flex flex-wrap gap-2 px-2 pb-2">
+                    {groupedCategories[activeRoleGroup]?.options?.length ? (
+                      <FilterChip
+                        label={`全部${groupedCategories[activeRoleGroup].title.replace('类', '')}`}
+                        active={groupedCategories[activeRoleGroup].options.every(option => tempFilters.category?.includes(option.value))}
+                        tone="indigo"
+                        onClick={() => selectRoleGroup(activeRoleGroup)}
+                      />
+                    ) : null}
+                    {(groupedCategories[activeRoleGroup]?.options || []).map(option => (
+                      <FilterChip
+                        key={option.value}
+                        label={option.label}
+                        count={option.count}
+                        active={tempFilters.category?.includes(option.value) || false}
+                        tone="indigo"
+                        onClick={() => toggleRoleOption(option.value)}
+                      />
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex min-h-[132px] items-center justify-center rounded-2xl border border-dashed border-[#dfe8ef] bg-slate-50/70 px-6 text-sm font-black text-slate-500">
+                登录后可见
+              </div>
+            )}
           </FilterDropdown>
 
           <FilterDropdown
