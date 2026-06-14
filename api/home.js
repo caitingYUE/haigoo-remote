@@ -12,16 +12,22 @@ function isLocalPreviewRequest(req) {
 }
 
 function mapHomeJob(row = {}) {
+  const company = row.trusted_company_name || row.company
+  const cachedLogoUrl = resolveCachedLogoUrlFromRow(row)
   return {
     id: row.job_id,
     title: row.title,
-    company: row.company,
+    company,
+    company_name: company,
     companyId: row.company_id,
     logo: row.company_logo || row.logo || row.trusted_logo || '',
-    cachedLogoUrl: resolveCachedLogoUrlFromRow(row),
+    companyLogo: row.trusted_logo || row.company_logo || row.logo || '',
+    cachedLogoUrl,
+    cachedCompanyLogoUrl: cachedLogoUrl,
     location: row.location,
     region: row.region,
     salary: row.salary,
+    description: row.description,
     url: row.url,
     sourceUrl: row.url,
     source: row.source,
@@ -37,8 +43,15 @@ function mapHomeJob(row = {}) {
     memberOnly: Boolean(row.member_only),
     isFeatured: row.is_featured,
     featuredReason: row.featured_reason,
+    sourceType: row.source_type,
+    timezone: row.timezone,
+    translations: row.translations,
+    isTranslated: row.is_translated,
+    translatedAt: row.translated_at,
     companyIndustry: row.company_industry || row.trusted_industry,
     companyWebsite: row.company_website || row.trusted_website,
+    companyDescription: row.company_description || row.trusted_description,
+    companyTranslations: row.company_translations || row.trusted_translations,
     companyAddress: row.company_address || row.trusted_address,
     companyRating: row.company_rating || row.trusted_company_rating,
     ratingSource: row.rating_source || row.trusted_rating_source,
@@ -107,10 +120,20 @@ async function getHomeTickerJobs(req, res) {
       j.title,
       j.company,
       j.company_id,
+      j.company_logo,
+      j.description,
       tc.logo as trusted_logo,
+      tc.name as trusted_company_name,
       tc.cached_logo_url as trusted_cached_logo_url,
       tc.logo_cache_status as trusted_logo_cache_status,
       tc.logo_cache_hash as trusted_logo_cache_hash,
+      tc.website as trusted_website,
+      tc.description as trusted_description,
+      tc.translations as trusted_translations,
+      tc.industry as trusted_industry,
+      tc.address as trusted_address,
+      tc.company_rating as trusted_company_rating,
+      tc.rating_source as trusted_rating_source,
       j.location,
       j.region,
       j.salary,
@@ -127,8 +150,12 @@ async function getHomeTickerJobs(req, res) {
       j.member_only,
       j.is_featured,
       j.featured_reason,
+      j.translations,
+      j.is_translated,
+      j.translated_at,
+      j.source_type,
+      j.timezone,
       j.published_at,
-      j.created_at,
       j.created_at
     FROM ${JOBS_TABLE} j
     LEFT JOIN trusted_companies tc ON j.company_id = tc.company_id
@@ -208,7 +235,7 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  res.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=1800')
+  res.setHeader('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=120')
 
   if (req.method === 'OPTIONS') return res.status(200).end()
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' })

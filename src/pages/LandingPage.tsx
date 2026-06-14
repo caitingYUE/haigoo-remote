@@ -19,8 +19,8 @@ import { trackingService } from '../services/tracking-service'
 
 const FEATURED_JOBS_CACHE_KEY = 'haigoo_home_featured_jobs'
 const TRUSTED_COMPANIES_CACHE_KEY = 'haigoo_home_trusted_companies'
-const FEATURED_JOBS_CACHE_TTL_MS = 24 * 60 * 60 * 1000
-const TRUSTED_COMPANIES_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+const FEATURED_JOBS_CACHE_TTL_MS = 5 * 60 * 1000
+const TRUSTED_COMPANIES_CACHE_TTL_MS = 5 * 60 * 1000
 
 const getFreshFeaturedJobsCache = (): Job[] => {
   try {
@@ -74,7 +74,7 @@ export default function LandingPage() {
   
   // Cache busting and version check
   useEffect(() => {
-    const CURRENT_VERSION = '2026.04.15.02' // Increment this to force cache clear
+    const CURRENT_VERSION = '2026.06.15.01' // Increment this to force cache clear
     const lastVersion = localStorage.getItem('haigoo_version')
     
     if (lastVersion !== CURRENT_VERSION) {

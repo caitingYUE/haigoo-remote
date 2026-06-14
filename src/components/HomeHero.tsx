@@ -318,6 +318,38 @@ function cleanHeroRichText(text?: string) {
     return stripMarkdown(decoded).replace(/\s+/g, ' ').trim()
 }
 
+function normalizeHeroTranslations(value: any) {
+    if (!value) return null
+    if (typeof value === 'string') {
+        try {
+            const parsed = JSON.parse(value)
+            return parsed && typeof parsed === 'object' ? parsed : null
+        } catch {
+            return null
+        }
+    }
+    return typeof value === 'object' ? value : null
+}
+
+function isFreshHomeJob(job: any) {
+    if (typeof job?.isNew === 'boolean') return job.isNew
+    if (typeof job?.is_new === 'boolean') return job.is_new
+    const rawDate = job?.publishedAt || job?.published_at || job?.createdAt || job?.created_at || ''
+    const time = rawDate ? new Date(rawDate).getTime() : 0
+    if (!Number.isFinite(time) || time <= 0) return false
+    return Date.now() - time <= 3 * 24 * 60 * 60 * 1000
+}
+
+const HomeNewBadge = () => (
+    <span
+        className="inline-flex h-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 px-2 text-[10px] font-black leading-none text-white shadow-[0_10px_18px_-14px_rgba(16,185,129,0.55)]"
+        aria-label="new"
+        title="最近 3 天内上新"
+    >
+        New
+    </span>
+)
+
 function normalizePlanCompareText(value?: string) {
     return String(value || '')
         .replace(/\s+/g, ' ')
@@ -754,6 +786,7 @@ export default function HomeHero({
     const [companyCoverImages, setCompanyCoverImages] = useState<Record<string, string>>({})
     const companyCoverRequestedRef = useRef(new Set<string>())
     const autoRefreshAttemptKeyRef = useRef('')
+    const recommendationsFreshSnapshotKeyRef = useRef('')
     const pendingResumeSyncAttempted = useRef(false)
     const accountHeroHydratedForUser = useRef<string | null>(null)
     const displayRecommendations = hasResults && recommendations.length > 0
@@ -882,10 +915,13 @@ export default function HomeHero({
     const tickerLoop = tickerRepeatCount > 0 ? Array.from({ length: tickerRepeatCount }, () => tickerJobs).flat() : []
 
     const normalizeHeroJob = (job: any) => {
-        const company = job?.company_name || job?.company || 'Company'
-        const originalLogo = job?.logo || job?.company_logo || job?.companyLogo || job?.originalLogoUrl || ''
-        const cachedLogo = job?.cachedLogoUrl || job?.cachedCompanyLogoUrl || job?.cached_logo_url || ''
+        const translations = normalizeHeroTranslations(job?.translations)
+        const companyTranslations = normalizeHeroTranslations(job?.companyTranslations || job?.company_translations)
+        const company = job?.company_name || job?.company || translations?.company || 'Company'
+        const originalLogo = job?.logo || job?.companyLogo || job?.company_logo || job?.originalLogoUrl || ''
+        const cachedLogo = job?.cachedLogoUrl || job?.cachedCompanyLogoUrl || job?.cached_logo_url || job?.cached_company_logo_url || ''
         const companyWebsite = job?.companyWebsite || job?.company_website || job?.website || ''
+        const updatedAt = job?.updatedAt || job?.updated_at || ''
         return {
             ...job,
             id: String(job?.id || job?.jobId || job?.job_id || ''),
@@ -898,8 +934,8 @@ export default function HomeHero({
             description: typeof job?.description === 'string' ? job.description : '',
             company_intro: cleanHeroRichText(job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || ''),
             companyDescription: cleanHeroRichText(job?.companyDescription || job?.company_description || job?.companyIntro || job?.company_intro || ''),
-            translations: job?.translations || null,
-            companyTranslations: job?.companyTranslations || job?.company_translations || null,
+            translations,
+            companyTranslations,
             companyId: job?.companyId || job?.company_id,
             cachedLogoUrl: cachedLogo,
             logo: originalLogo,
@@ -912,12 +948,14 @@ export default function HomeHero({
             source: job?.source || 'hero',
             publishedAt: job?.publishedAt || job?.published_at || '',
             createdAt: job?.createdAt || job?.created_at || '',
+            updatedAt,
             category: job?.category || '',
             jobType: job?.jobType || job?.job_type || job?.type || '',
             experienceLevel: job?.experienceLevel || job?.experience_level || '',
             companyRating: job?.companyRating || job?.company_rating || job?.trustedCompanyRating || job?.trusted_company_rating || '',
             ratingSource: job?.ratingSource || job?.rating_source || job?.trustedRatingSource || job?.trusted_rating_source || '',
             memberOnly: Boolean(job?.memberOnly ?? job?.member_only),
+            isNew: isFreshHomeJob(job),
             logo_candidates: job?.logo_candidates || resolveLogoCandidates(
                 originalLogo,
                 company,
@@ -1042,6 +1080,60 @@ export default function HomeHero({
     const openTickerJobDetail = (job: any) => {
         openHeroJobDetail({ ...job, source: job?.source || 'hero_ticker' })
     }
+
+    useEffect(() => {
+        if (!hasHydrated || recommendations.length === 0) return
+
+        const ids = Array.from(new Set(recommendations.map((job: any) => String(job?.id || '').trim()).filter(Boolean))).slice(0, dailyLimit)
+        if (ids.length === 0) return
+
+        const snapshotKey = ids.join('|')
+        if (recommendationsFreshSnapshotKeyRef.current === snapshotKey) return
+        recommendationsFreshSnapshotKeyRef.current = snapshotKey
+
+        let cancelled = false
+        const hydrateFreshSnapshots = async () => {
+            try {
+                const params = new URLSearchParams({
+                    resource: 'processed-jobs',
+                    ids: ids.join(','),
+                    limit: String(ids.length),
+                    skipAggregations: 'true',
+                    _t: Math.floor(Date.now() / 60000).toString()
+                })
+                const authToken = token || localStorage.getItem('haigoo_auth_token')
+                const resp = await fetch(`/api/data?${params.toString()}`, {
+                    headers: {
+                        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+                    }
+                })
+                const data = await resp.json().catch(() => ({}))
+                if (!resp.ok || !Array.isArray(data.jobs) || cancelled) return
+
+                const latestById = new Map<string, any>(data.jobs.map((job: any) => [String(job?.id || job?.job_id || ''), job]))
+                if (latestById.size === 0) return
+
+                setRecommendations((current) => current.map((job: any) => {
+                    const fresh = latestById.get(String(job?.id || ''))
+                    if (!fresh) return job
+                    return normalizeHeroJob({
+                        ...job,
+                        ...fresh,
+                        source: job?.source || fresh?.source,
+                        matchScore: job?.matchScore ?? fresh?.matchScore,
+                        recommendationScore: job?.recommendationScore ?? fresh?.recommendationScore,
+                        displayMatchScore: job?.displayMatchScore ?? fresh?.displayMatchScore,
+                        goalFitScore: job?.goalFitScore ?? fresh?.goalFitScore,
+                    })
+                }))
+            } catch {
+                // Keep cached recommendations if lightweight hydration fails.
+            }
+        }
+
+        void hydrateFreshSnapshots()
+        return () => { cancelled = true }
+    }, [dailyLimit, hasHydrated, recommendations, token])
 
     // Load saved form data from local storage for guest/returning users
     useEffect(() => {
@@ -1806,7 +1898,7 @@ export default function HomeHero({
                         />
                     </h1>
                     <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#6b7b90] sm:mt-5 sm:text-[18px] sm:leading-8">
-                        可以全球旅居，也可以居家办公。Haigoo 帮你获得全球优质远程工作，让生活和事业不再受限。
+                        可以全球旅居，也可以居家办公。Haigoo 帮你获得理想的远程工作，在喜欢的地方，做有价值的事。
                     </p>
 
                     <div className="mt-5 flex w-full max-w-xl items-center rounded-full border border-[#dce8f1] bg-white/88 p-1.5 shadow-[0_22px_54px_-38px_rgba(62,91,120,0.36)] sm:mt-7 sm:p-2">
@@ -1888,6 +1980,7 @@ export default function HomeHero({
                                 const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
                                 const displayTitle = translatedTitle || job.title
                                 const displayCompany = job.translations?.company || job.company_name || job.company || '远程企业'
+                                const isNewJob = isFreshHomeJob(job)
                                 const metaItems = [
                                     job.category,
                                     job.jobType,
@@ -1911,6 +2004,7 @@ export default function HomeHero({
                                                 {translatedTitle ? (
                                                     <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-black text-slate-500" title="已翻译">译</span>
                                                 ) : null}
+                                                {isNewJob ? <HomeNewBadge /> : null}
                                             </span>
                                             <span className="block truncate text-xs font-semibold text-slate-500">
                                                 {displayCompany}{metaItems.length ? ` · ${metaItems.slice(0, 2).join(' · ')}` : ''}
@@ -2090,7 +2184,9 @@ export default function HomeHero({
                                 const isVipJob = Boolean((job as any).memberOnly || (job as any).member_only)
                                 const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
                                 const displayTitle = translatedTitle || job.title
-                                const hasTranslatedTitle = Boolean(translatedTitle && translatedTitle !== job.title)
+                                const displayCompany = job.translations?.company || company
+                                const hasTranslatedTitle = Boolean(translatedTitle)
+                                const isNewJob = isFreshHomeJob(job)
                                 return (
                                     <button
                                         key={job.id}
@@ -2099,7 +2195,7 @@ export default function HomeHero({
                                         className="group flex min-h-[132px] items-center gap-4 rounded-[22px] border border-[#e3edf4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,252,255,0.96))] p-4 text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0] hover:bg-white"
                                     >
                                         <div className="relative hidden h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-[18px] border border-[#e6edf3] bg-white p-1 shadow-sm sm:flex">
-                                            <CompanyLogo companyName={company} logoCandidates={logoCandidates} className="h-full w-full object-contain" />
+                                            <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain" />
                                             {isVipJob ? <HomeVipBadge className="absolute -right-2 -top-2 z-10" /> : null}
                                         </div>
                                         <div className="min-w-0 flex-1">
@@ -2110,9 +2206,10 @@ export default function HomeHero({
                                                         译
                                                     </span>
                                                 ) : null}
+                                                {isNewJob ? <HomeNewBadge /> : null}
                                             </div>
                                             <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-500">
-                                                <span className="max-w-[13ch] truncate">{company}</span>
+                                                <span className="max-w-[13ch] truncate">{displayCompany}</span>
                                                 {ratingText ? (
                                                     <span className="inline-flex items-center gap-0.5 font-black text-[#c48212]">
                                                         <Star className="h-3.5 w-3.5 fill-current" />

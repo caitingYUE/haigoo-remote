@@ -72,6 +72,7 @@ export interface Job {
   effectiveReferralContactCount?: number
   companyWebsite?: string
   companyDescription?: string
+  companyTranslations?: { description?: string; [key: string]: any }
   companyLogo?: string
   cachedCompanyLogoUrl?: string
   companyAddress?: string
@@ -84,6 +85,7 @@ export interface Job {
   // Featured job flag for homepage display
   isFeatured?: boolean
   featuredReason?: string
+  isNew?: boolean
 
   // Language requirements
   languages?: string[]

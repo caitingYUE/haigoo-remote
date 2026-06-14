@@ -163,6 +163,7 @@ class TrustedCompaniesService {
         try {
             const queryParams = new URLSearchParams();
             queryParams.append('action', 'featured_companies');
+            queryParams.append('_t', Math.floor(Date.now() / 60000).toString());
 
             const response = await fetch(`/api/home?${queryParams.toString()}`);
             if (!response.ok) throw new Error('Failed to fetch featured companies');

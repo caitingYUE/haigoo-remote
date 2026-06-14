@@ -160,6 +160,7 @@ class ProcessedJobsService {
         title: job.title,
         company: job.company,
         logo: job.logo,
+        cachedLogoUrl: job.cachedLogoUrl || job.cached_logo_url || undefined,
         location: job.location,
         region: job.region,
         type: this.mapJobType(job.jobType || job.type || job.job_type),
@@ -200,6 +201,7 @@ class ProcessedJobsService {
         translations: job.translations || undefined,
         isTranslated: job.isTranslated || false,
         translatedAt: job.translatedAt || undefined,
+        isNew: Boolean(job.isNew ?? job.is_new),
         companyId: job.companyId,
         sourceType: job.sourceType ? job.sourceType.toLowerCase() : undefined,
         isTrusted: job.isTrusted,
@@ -211,6 +213,9 @@ class ProcessedJobsService {
         companyTags: job.companyTags,
         companyWebsite: job.companyWebsite,
         companyDescription: job.companyDescription,
+        companyLogo: job.companyLogo || job.company_logo || undefined,
+        cachedCompanyLogoUrl: job.cachedCompanyLogoUrl || job.cached_company_logo_url || undefined,
+        companyTranslations: job.companyTranslations || job.company_translations || undefined,
         companyAddress: job.companyAddress || job.company_address || job.trustedAddress || job.trusted_address || undefined,
         companyRating: job.companyRating || job.company_rating || job.trustedCompanyRating || job.trusted_company_rating || undefined,
         ratingSource: job.ratingSource || job.rating_source || job.trustedRatingSource || job.trusted_rating_source || undefined,
@@ -278,7 +283,8 @@ class ProcessedJobsService {
   async getFeaturedHomeJobs(): Promise<Job[]> {
     try {
       const params = new URLSearchParams({
-        action: 'featured_jobs'
+        action: 'featured_jobs',
+        _t: Math.floor(Date.now() / 60000).toString()
       })
 
       const response = await fetch(`${this.baseUrl}/home?${params}`)
@@ -291,6 +297,7 @@ class ProcessedJobsService {
         title: job.title,
         company: job.company,
         logo: job.logo || job.trusted_logo, // Use trusted logo if available
+        cachedLogoUrl: job.cachedLogoUrl || job.cached_logo_url || undefined,
         location: job.location,
         region: job.region,
         type: this.mapJobType(job.jobType || job.type || job.job_type),
@@ -323,8 +330,13 @@ class ProcessedJobsService {
         memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
         featuredReason: job.featuredReason || job.featured_reason || undefined,
+        isNew: Boolean(job.isNew ?? job.is_new),
         companyIndustry: job.companyIndustry,
         companyWebsite: job.companyWebsite || job.trusted_website, // Use trusted website if available
+        companyDescription: job.companyDescription || job.company_description || job.trusted_description || undefined,
+        companyLogo: job.companyLogo || job.company_logo || job.trusted_logo || undefined,
+        cachedCompanyLogoUrl: job.cachedCompanyLogoUrl || job.cached_company_logo_url || undefined,
+        companyTranslations: job.companyTranslations || job.company_translations || job.trusted_translations || undefined,
         companyAddress: job.companyAddress || job.company_address || job.trustedAddress || job.trusted_address || undefined,
         companyRating: job.companyRating || job.company_rating || job.trustedCompanyRating || job.trusted_company_rating || undefined,
         ratingSource: job.ratingSource || job.rating_source || job.trustedRatingSource || job.trusted_rating_source || undefined,
