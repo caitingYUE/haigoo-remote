@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import { Analytics } from '@vercel/analytics/react'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
@@ -76,6 +77,7 @@ function App() {
             <NotificationProvider>
               <GlobalVerificationGuard>
                 <PageViewTracker />
+                <Analytics />
                 <Suspense fallback={<PageLoadingSkeleton />}>
                   <Routes>
                     {/* Public: Christmas Campaign (Deprecated for New Year) */}
