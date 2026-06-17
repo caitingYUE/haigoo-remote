@@ -45,7 +45,6 @@ const ResumePrivacyPage = lazy(() => import('./pages/ResumePrivacyPage'))
 
 const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
 const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
-const BugLeaderboardPage = lazy(() => import('./pages/BugLeaderboardPage'))
 
 import PageLoadingSkeleton from './components/PageLoadingSkeleton'
 import { useEffect } from 'react'
@@ -174,7 +173,6 @@ function App() {
                             <Route path="/membership" element={<MembershipPage />} />
                             <Route path="/mock-payment-gateway" element={<MockPaymentGateway />} />
                             <Route path="/join-club-application" element={<JoinClubApplicationPage />} />
-                            {/* <Route path="/bug-leaderboard" element={<BugLeaderboardPage />} /> */}
 
                             {/* 需要登录的页面 */}
                             <Route path="/profile" element={<ProfileCenterPage />} />

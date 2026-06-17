@@ -4,14 +4,13 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { rawJobsService } from '../services/raw-jobs-service'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
-import { SubscriptionsTable } from './SubscriptionsTable';
 import './AdminPanel.css';
 
 interface AdminPanelProps {
   className?: string;
 }
 
-type TabType = 'raw' | 'processed' | 'stats' | 'retention' | 'subscriptions';
+type TabType = 'raw' | 'processed' | 'stats' | 'retention';
 
 interface SimpleUnifiedJob {
   id: string;
@@ -238,8 +237,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
         return <StatsPanel stats={stats} />;
       case 'retention':
         return <RetentionPanel stats={retentionStats} onCleanup={handleCleanup} loading={loading} />;
-      case 'subscriptions':
-        return <SubscriptionsTable />;
       default:
         return null;
     }
@@ -281,36 +278,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
             </Link>
             <Link to="/admin/applications" className="nav-item">
               <span className="material-symbols-outlined">assignment_ind</span>
-              会员申请
+              岗位申请
             </Link>
-            <a
-              href="#"
-              className={`nav-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
-              onClick={(e) => { e.preventDefault(); setActiveTab('subscriptions'); }}
-            >
-              <span className="material-symbols-outlined">mark_email_unread</span>
-              历史订阅
-            </a>
             <a href="#" className="nav-item">
               <span className="material-symbols-outlined">storage</span>
               数据保留
-            </a>
-            <a href="#" className="nav-item">
-              <span className="material-symbols-outlined">analytics</span>
-              数据分析
-            </a>
-            <a href="#" className="nav-item">
-              <span className="material-symbols-outlined">settings</span>
-              系统设置
             </a>
           </nav>
         </div>
 
         <div className="sidebar-footer">
-          <a href="#" className="nav-item">
-            <span className="material-symbols-outlined">help</span>
-            帮助中心
-          </a>
           <a href="#" className="nav-item">
             <span className="material-symbols-outlined">logout</span>
             退出登录
@@ -366,13 +343,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
                 onClick={(e) => { e.preventDefault(); setActiveTab('retention'); }}
               >
                 数据保留
-              </a>
-              <a
-                href="#"
-                className={`tab-item ${activeTab === 'subscriptions' ? 'active' : ''}`}
-                onClick={(e) => { e.preventDefault(); setActiveTab('subscriptions'); }}
-              >
-                历史邮件订阅
               </a>
             </nav>
           </div>

@@ -9,18 +9,14 @@ import {
   CheckCircle,
   XCircle,
   Clock,
-  TrendingUp,
   Users,
   Briefcase,
   Globe,
-  Settings,
   AlertCircle,
-  Info,
   Loader,
   Plus,
   X,
   BarChart3,
-  PieChart,
   Activity,
   Rss,
   ChevronLeft,
@@ -29,7 +25,8 @@ import {
   Tag,
   Building,
   FileText,
-  Mail
+  Mail,
+  BookOpen
 } from 'lucide-react';
 import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { rssService } from '../services/rss-service';
@@ -48,15 +45,12 @@ const AdminCompanyManagementPage = lazy(() => import('./AdminCompanyManagementPa
 const AdminTrustedCompaniesPage = lazy(() => import('./AdminTrustedCompaniesPage'));
 const AdminTagManagementPage = lazy(() => import('./AdminTagManagementPage'));
 const AdminApplicationsPage = lazy(() => import('./AdminApplicationsPage'));
-const AdminMemberApplicationsPage = lazy(() => import('./AdminMemberApplicationsPage'));
 const AdminFeedbackList = lazy(() => import('../components/AdminFeedbackList'));
-const SubscriptionsTable = lazy(() => import('../components/SubscriptionsTable').then((module) => ({ default: module.SubscriptionsTable })));
-const AdminSystemSettings = lazy(() => import('../components/admin/AdminSystemSettings'));
 const AdminTrackingManagement = lazy(() => import('../components/admin/AdminTrackingManagement'));
 const AdminTrackingDashboard = lazy(() => import('../components/admin/AdminTrackingDashboard'));
 const AdminJobBundles = lazy(() => import('../components/admin/AdminJobBundles'));
 const AdminSocialPush = lazy(() => import('../components/admin/AdminSocialPush'));
-const AdminContactMiningPage = lazy(() => import('./AdminContactMiningPage'));
+const AdminCorporateEnglishPage = lazy(() => import('./AdminCorporateEnglishPage'));
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -232,19 +226,15 @@ const AdminTeamPage: React.FC = () => {
       'rss',
       'jobs',
       'social-push',
+      'corporate-english',
       'job-bundles',
       'companies',
       'trusted-companies',
-      'contact-mining',
       'tag-management',
       'resumes',
-      'subscriptions',
       'users',
       'job-applications',
-      'member-applications',
-      'analytics',
       'feedback',
-      'settings',
       'tracking'
     ]);
     if (nextTab && allowedTabs.has(nextTab)) {
@@ -995,107 +985,21 @@ const AdminTeamPage: React.FC = () => {
     );
   };
 
-  // 渲染数据分析
-  const renderAnalytics = () => (
-    <div className="space-y-6">
-      {/* 趋势图表 */}
-      <div className="card">
-        <div className="card-header">
-          <h2>职位发布趋势</h2>
-          <div className="flex space-x-2">
-            <button className="btn-secondary">
-              <BarChart3 className="w-4 h-4" />
-              柱状图
-            </button>
-            <button className="btn-secondary">
-              <Activity className="w-4 h-4" />
-              折线图
-            </button>
-          </div>
-        </div>
-        <div className="card-content">
-          <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg">
-            <div className="text-center">
-              <PieChart className="w-12 h-12 mx-auto text-slate-400 mb-2" />
-              <p className="text-slate-500">图表功能开发中...</p>
-              <p className="text-sm text-slate-400 mt-1">将显示过去30天的职位发布趋势</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 分类统计 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card">
-          <div className="card-header">
-            <h2>职位分类分布</h2>
-          </div>
-          <div className="card-content">
-            <div className="space-y-3">
-              {['技术开发', '产品设计', '市场营销', '运营管理', '其他'].map((category) => (
-                <div key={category} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{category}</span>
-                  <div className="flex items-center space-x-2">
-                    <div className="w-20 h-2 bg-slate-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary"
-                        style={{ width: `${Math.random() * 80 + 20}%` }}
-                      />
-                    </div>
-                    <span className="text-sm text-slate-500 w-8">{Math.floor(Math.random() * 50 + 10)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="card">
-          <div className="card-header">
-            <h2>RSS源活跃度</h2>
-          </div>
-          <div className="card-content">
-            <div className="space-y-3">
-              {rssSources.slice(0, 5).map((source) => (
-                <div key={source.id} className="flex items-center justify-between">
-                  <span className="text-sm font-medium truncate">{source.name}</span>
-                  <div className="flex items-center space-x-2">
-                    <span className={`w-2 h-2 rounded-full ${source.isActive ? 'bg-green-500' : 'bg-slate-300'}`} />
-                    <span className="text-sm text-slate-500">{source.isActive ? '活跃' : '停用'}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  // 渲染系统设置
-  const renderSettings = () => (
-    <AdminSystemSettings />
-  );
-
   const tabs = [
     { id: 'dashboard', label: '数据概览', icon: BarChart3 },
     { id: 'core-metrics', label: '核心看板', icon: Activity },
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'social-push', label: '内容推送', icon: Mail },
+    { id: 'corporate-english', label: '外企英语', icon: BookOpen },
     { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
-    { id: 'contact-mining', label: '联系挖掘', icon: Search },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
-    { id: 'subscriptions', label: '历史订阅', icon: Mail },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
-    { id: 'member-applications', label: '会员申请', icon: FileText },
-    { id: 'analytics', label: '数据分析', icon: TrendingUp },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
-    { id: 'settings', label: '系统设置', icon: Settings },
     { id: 'tracking', label: '埋点管理', icon: Activity }
   ];
 
@@ -1103,7 +1007,6 @@ const AdminTeamPage: React.FC = () => {
     'dashboard',
     'core-metrics',
     'users',
-    'member-applications',
     'resumes',
     'feedback'
   ].includes(tab.id));
@@ -1153,10 +1056,6 @@ const AdminTeamPage: React.FC = () => {
         </div>
 
         <div className="sidebar-footer">
-          <a href="#" className="nav-item" title={sidebarCollapsed ? '帮助中心' : ''}>
-            <Info className="w-5 h-5" />
-            {!sidebarCollapsed && '帮助中心'}
-          </a>
           <a href="/" className="nav-item" title={sidebarCollapsed ? '返回前台' : ''}>
             <Globe className="w-5 h-5" />
             {!sidebarCollapsed && '返回前台'}
@@ -1230,7 +1129,6 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'dashboard' && renderDashboard()}
               {activeTab === 'rss' && renderRSSManagement()}
               {activeTab === 'resumes' && renderResumeLibrary()}
-              {activeTab === 'analytics' && renderAnalytics()}
               {activeTab === 'jobs' && (
                 <Suspense fallback={renderLazyFallback('正在加载职位数据...')}>
                   {renderJobDataManagement()}
@@ -1241,14 +1139,14 @@ const AdminTeamPage: React.FC = () => {
                   <AdminSocialPush />
                 </Suspense>
               )}
+              {activeTab === 'corporate-english' && (
+                <Suspense fallback={renderLazyFallback('正在加载外企英语...')}>
+                  <AdminCorporateEnglishPage />
+                </Suspense>
+              )}
               {activeTab === 'job-bundles' && (
                 <Suspense fallback={renderLazyFallback('正在加载职位组合...')}>
                   <AdminJobBundles />
-                </Suspense>
-              )}
-              {activeTab === 'subscriptions' && (
-                <Suspense fallback={renderLazyFallback('正在加载历史订阅...')}>
-                  <SubscriptionsTable />
                 </Suspense>
               )}
               {activeTab === 'users' && (
@@ -1259,11 +1157,6 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'job-applications' && (
                 <Suspense fallback={renderLazyFallback('正在加载岗位申请...')}>
                   <AdminApplicationsPage />
-                </Suspense>
-              )}
-              {activeTab === 'member-applications' && (
-                <Suspense fallback={renderLazyFallback('正在加载会员申请...')}>
-                  <AdminMemberApplicationsPage />
                 </Suspense>
               )}
               {activeTab === 'companies' && (
@@ -1286,19 +1179,9 @@ const AdminTeamPage: React.FC = () => {
                   <AdminTrackingDashboard />
                 </Suspense>
               )}
-              {activeTab === 'contact-mining' && (
-                <Suspense fallback={renderLazyFallback('正在加载联系挖掘...')}>
-                  <AdminContactMiningPage />
-                </Suspense>
-              )}
               {activeTab === 'feedback' && (
                 <Suspense fallback={renderLazyFallback('正在加载用户反馈...')}>
                   {renderFeedbackList()}
-                </Suspense>
-              )}
-              {activeTab === 'settings' && (
-                <Suspense fallback={renderLazyFallback('正在加载系统设置...')}>
-                  {renderSettings()}
                 </Suspense>
               )}
               {activeTab === 'tracking' && (
