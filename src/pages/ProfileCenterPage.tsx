@@ -818,7 +818,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
     ;(async () => {
       try {
-        const jobs = await fetchDailyMemberRecommendations(6)
+        const jobs = await fetchDailyMemberRecommendations(6, { hasResume: Boolean(latestResume?.id) })
         if (!cancelled) setMemberRecommendedJobs(jobs)
       } catch (error) {
         console.error('[ProfileCenter] Failed to fetch member recommendations:', error)
@@ -831,7 +831,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     return () => {
       cancelled = true
     }
-  }, [authUser?.user_id, isAuthenticated, isMember, tab, token])
+  }, [authUser?.user_id, isAuthenticated, isMember, latestResume?.id, tab, token])
 
   const activeMemberType = membershipStatus?.memberType || authUser?.memberType
   const activeMembershipExpireAt = membershipStatus?.expireAt || authUser?.memberExpireAt
@@ -3629,7 +3629,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               </div>
               {loadingMemberRecommendations ? (
                 <div className="grid gap-3 lg:grid-cols-2">
-                  {Array.from({ length: 4 }).map((_, index) => (
+                  {Array.from({ length: 6 }).map((_, index) => (
                     <div key={index} className="h-[150px] animate-pulse rounded-[22px] border border-[#edf2f6] bg-white/72" />
                   ))}
                 </div>
