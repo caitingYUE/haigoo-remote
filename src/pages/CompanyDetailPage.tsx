@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Info, Mail, Lock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
@@ -15,6 +15,7 @@ import { LocationTooltip } from '../components/LocationTooltip'
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
+    const location = useLocation()
     const { isAuthenticated, isMember } = useAuth()
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
@@ -25,6 +26,7 @@ export default function CompanyDetailPage() {
     const [selectedJob, setSelectedJob] = useState<Job | null>(null)
     const [isJobDetailOpen, setIsJobDetailOpen] = useState(false)
     const [currentJobIndex, setCurrentJobIndex] = useState(0)
+    const autoOpenedJobIdRef = useRef('')
 
     const decodedCompanyName = decodeURIComponent(companyName || '')
     const canShowCompanyDetails = isAuthenticated
@@ -50,6 +52,17 @@ export default function CompanyDetailPage() {
         loadSavedJobs()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [companyName])
+
+    useEffect(() => {
+        const requestedJobId = new URLSearchParams(location.search).get('jobId') || ''
+        if (!requestedJobId || autoOpenedJobIdRef.current === requestedJobId || jobs.length === 0) return
+        const index = jobs.findIndex((job) => job.id === requestedJobId)
+        if (index < 0) return
+        autoOpenedJobIdRef.current = requestedJobId
+        setSelectedJob(jobs[index])
+        setCurrentJobIndex(index)
+        setIsJobDetailOpen(true)
+    }, [jobs, location.search])
 
     useEffect(() => {
         if (!isAuthenticated || !companyInfo?.name || !companyInfo?.isTrusted) return

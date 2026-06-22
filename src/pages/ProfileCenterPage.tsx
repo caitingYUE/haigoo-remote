@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Users, Building2, Quote, Star, Globe2, Loader2, Calendar } from 'lucide-react'
+import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Users, Building2, Quote, Star, Globe2, Loader2, Calendar, Volume2, BookOpen, PlayCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
 import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
@@ -16,11 +16,117 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { fetchDailyMemberRecommendations } from '../utils/member-recommendations'
 import { LinkedInLogo } from '../components/SocialIcons'
+import { corporateEnglishPublicService, type CorporateEnglishPublicClip } from '../services/corporate-english-public-service'
 
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'about' | 'settings'
 
 interface ProfileCenterPageProps {
   publicAboutOnly?: boolean
+}
+
+function formatClipTime(ms?: number) {
+  const totalSeconds = Math.max(0, Math.floor(Number(ms || 0) / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+}
+
+function AudioFavoriteCard({
+  clip,
+  onError
+}: {
+  clip: CorporateEnglishPublicClip
+  onError: (message: string) => void
+}) {
+  const [audioUrl, setAudioUrl] = useState('')
+  const [loadingAudio, setLoadingAudio] = useState(false)
+  const [showScript, setShowScript] = useState(false)
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
+    }
+  }, [audioUrl])
+
+  const loadAudio = async () => {
+    if (audioUrl) return
+    try {
+      setLoadingAudio(true)
+      const blob = await corporateEnglishPublicService.downloadClipAudio(clip.clipId)
+      setAudioUrl(URL.createObjectURL(blob))
+    } catch (error) {
+      onError(error instanceof Error ? error.message : '音频加载失败')
+    } finally {
+      setLoadingAudio(false)
+    }
+  }
+
+  const subtitleRows = (clip.subtitleCues || []).length > 0
+    ? (clip.subtitleCues || []).map((cue) => ({
+      time: `${formatClipTime(cue.startMs)} - ${formatClipTime(cue.endMs)}`,
+      text: cue.subtitleText,
+      translation: cue.translationText
+    }))
+    : (clip.subtitleText || '').split('\n').map((line, index) => ({
+      time: '',
+      text: line,
+      translation: (clip.translationText || '').split('\n')[index] || ''
+    })).filter((row) => row.text || row.translation)
+
+  return (
+    <div className="rounded-[22px] border border-[#e1e9f1] bg-white/88 p-4 shadow-[0_18px_55px_-50px_rgba(61,89,120,0.52)]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#eadff8] bg-[#f5f2ff] px-2.5 py-1 text-[11px] font-black text-[#6251f5]">
+            <Volume2 className="h-3.5 w-3.5" />
+            外企英语音频
+          </div>
+          <h3 className="line-clamp-2 text-base font-black text-slate-950">{clip.clipTitle || clip.materialTitle || '跟读片段'}</h3>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{clip.companyName || '外企英语'} · {formatClipTime(clip.startMs)}</p>
+          {clip.materialTitle ? <p className="mt-1 line-clamp-1 text-xs text-slate-400">{clip.materialTitle}</p> : null}
+        </div>
+        <button
+          type="button"
+          onClick={loadAudio}
+          disabled={loadingAudio}
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-[#6f63f6] px-4 text-sm font-black text-white shadow-sm transition hover:bg-[#5d50df] disabled:cursor-wait disabled:opacity-70"
+        >
+          {loadingAudio ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+          {audioUrl ? '已加载' : '播放音频'}
+        </button>
+      </div>
+
+      {audioUrl ? (
+        <audio className="mt-4 w-full rounded-full" controls src={audioUrl}>
+          <track kind="captions" />
+        </audio>
+      ) : null}
+
+      <div className="mt-4">
+        <button
+          type="button"
+          onClick={() => setShowScript((value) => !value)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-[#dfe8ef] bg-white px-3 py-1.5 text-xs font-black text-slate-600 hover:border-[#cbbfff] hover:text-[#6251f5]"
+        >
+          <BookOpen className="h-3.5 w-3.5" />
+          {showScript ? '收起字幕' : '查看字幕'}
+        </button>
+        {showScript ? (
+          <div className="mt-3 max-h-72 space-y-2 overflow-y-auto rounded-2xl border border-[#edf2f6] bg-[#fffdf8] p-3">
+            {subtitleRows.length > 0 ? subtitleRows.map((row, index) => (
+              <div key={`${row.time}-${index}`} className="rounded-xl bg-white px-3 py-2 text-sm">
+                {row.time ? <div className="mb-1 font-mono text-xs font-bold text-[#6251f5]">{row.time}</div> : null}
+                {row.text ? <div className="font-semibold leading-6 text-slate-900">{row.text}</div> : null}
+                {row.translation ? <div className="mt-1 leading-6 text-slate-500">{row.translation}</div> : null}
+              </div>
+            )) : (
+              <div className="py-6 text-center text-sm text-slate-400">暂无字幕内容</div>
+            )}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 interface AiSuggestion {
@@ -599,6 +705,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
   const [favorites, setFavorites] = useState<any[]>([])
   const [loadingFavorites, setLoadingFavorites] = useState<boolean>(false)
+  const [favoriteSubTab, setFavoriteSubTab] = useState<'jobs' | 'audio'>('jobs')
+  const [audioFavorites, setAudioFavorites] = useState<CorporateEnglishPublicClip[]>([])
+  const [loadingAudioFavorites, setLoadingAudioFavorites] = useState<boolean>(false)
   const [applicationCount, setApplicationCount] = useState<number | null>(null)
   const [loadingApplicationCount, setLoadingApplicationCount] = useState<boolean>(false)
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
@@ -999,7 +1108,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
-    if (t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'about', 'settings'].includes(t)) setTab(t as TabKey)
+    if (t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'about', 'settings'].includes(t)) {
+      setTab(t as TabKey)
+      if (t === 'favorites') {
+        setFavoriteSubTab(sp.get('type') === 'audio' ? 'audio' : 'jobs')
+      }
+    }
   }, [location.search])
 
   useEffect(() => {
@@ -1415,6 +1529,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     navigate({ pathname: '/profile', search: `?${sp.toString()}` }, { replace: true })
   }
 
+  const switchFavoriteSubTab = (next: 'jobs' | 'audio') => {
+    setFavoriteSubTab(next)
+    const sp = new URLSearchParams(location.search)
+    sp.set('tab', 'favorites')
+    if (next === 'audio') {
+      sp.set('type', 'audio')
+    } else {
+      sp.delete('type')
+    }
+    navigate({ pathname: '/profile', search: `?${sp.toString()}` }, { replace: true })
+  }
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   useEffect(() => {
@@ -1450,6 +1576,25 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       } catch (e) {
         console.error('[ProfileCenter] Failed to fetch favorites:', e)
         setLoadingFavorites(false)
+      }
+    })()
+  }, [authUser?.user_id, token])
+
+  useEffect(() => {
+    ; (async () => {
+      try {
+        if (!authUser || !token) {
+          setAudioFavorites([])
+          return
+        }
+        setLoadingAudioFavorites(true)
+        const items = await corporateEnglishPublicService.listFavorites()
+        setAudioFavorites(items)
+      } catch (error) {
+        console.error('[ProfileCenter] Failed to fetch audio favorites:', error)
+        setAudioFavorites([])
+      } finally {
+        setLoadingAudioFavorites(false)
       }
     })()
   }, [authUser?.user_id, token])
@@ -2497,36 +2642,85 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">我的收藏</h2>
-          <p className="text-slate-500 mt-1">您收藏的职位列表。</p>
+          <p className="text-slate-500 mt-1">管理收藏的岗位和外企英语跟读音频。</p>
         </div>
-        <span className="text-xs font-normal text-gray-400">仅保留近1年的收藏记录</span>
+        <span className="text-xs font-normal text-gray-400">岗位收藏仅保留近1年记录</span>
+      </div>
+      <div className="rounded-[24px] border border-[#e1e9f1] bg-white/86 p-2 shadow-sm">
+        <div className="flex gap-2">
+          {[
+            { id: 'jobs', label: '岗位收藏', count: favoritesWithStatus.length, icon: Heart },
+            { id: 'audio', label: '音频收藏', count: audioFavorites.length, icon: Volume2 }
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => switchFavoriteSubTab(item.id as 'jobs' | 'audio')}
+              className={`inline-flex items-center gap-2 rounded-[18px] px-4 py-2.5 text-sm font-black transition ${
+                favoriteSubTab === item.id
+                  ? 'bg-[#f0edff] text-[#6f63f6] shadow-sm'
+                  : 'text-slate-500 hover:bg-[#f7fbff] hover:text-slate-900'
+              }`}
+            >
+              <item.icon className="h-4 w-4" />
+              {item.label}
+              <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs">{item.count}</span>
+            </button>
+          ))}
+        </div>
       </div>
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 min-h-[300px]">
-        {loadingFavorites ? (
+        {favoriteSubTab === 'jobs' ? (
+          loadingFavorites ? (
+            <div className="space-y-4">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="animate-pulse">
+                  <div className="h-24 rounded-xl bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          ) : favoritesWithStatus.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-[200px] text-center">
+              <Heart className="w-12 h-12 text-slate-300 mb-3" />
+              <p className="text-lg font-bold text-slate-900">还没有收藏职位</p>
+              <p className="text-sm text-slate-500 mt-1">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4">
+              {favoritesWithStatus.map((f: any) => (
+                <div key={f.id || f.jobId}>
+                  <JobCardNew
+                    job={f as Job}
+                    variant="list"
+                    onClick={() => { setSelectedJob(f as Job); setIsJobDetailOpen(true) }}
+                    onDelete={(jobId) => handleRemoveFavorite(jobId)}
+                  />
+                </div>
+              ))}
+            </div>
+          )
+        ) : loadingAudioFavorites ? (
           <div className="space-y-4">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="h-24 rounded-xl bg-slate-100" />
+                <div className="h-36 rounded-[22px] bg-slate-100" />
               </div>
             ))}
           </div>
-        ) : favoritesWithStatus.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-[200px] text-center">
-            <Heart className="w-12 h-12 text-slate-300 mb-3" />
-            <p className="text-lg font-bold text-slate-900">还没有收藏职位</p>
-            <p className="text-sm text-slate-500 mt-1">在首页点击收藏按钮后，这里将展示已收藏的职位</p>
+        ) : audioFavorites.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-[220px] text-center">
+            <Volume2 className="w-12 h-12 text-slate-300 mb-3" />
+            <p className="text-lg font-bold text-slate-900">还没有收藏音频</p>
+            <p className="text-sm text-slate-500 mt-1">在外企英语页面收藏跟读片段后，这里可以播放音频并查看字幕</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
-            {favoritesWithStatus.map((f: any) => (
-              <div key={f.id || f.jobId}>
-                <JobCardNew
-                  job={f as Job}
-                  variant="list"
-                  onClick={() => { setSelectedJob(f as Job); setIsJobDetailOpen(true) }}
-                  onDelete={(jobId) => handleRemoveFavorite(jobId)}
-                />
-              </div>
+            {audioFavorites.map((clip) => (
+              <AudioFavoriteCard
+                key={clip.clipId}
+                clip={clip}
+                onError={(message) => showError('音频加载失败', message)}
+              />
             ))}
           </div>
         )}

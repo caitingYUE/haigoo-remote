@@ -107,6 +107,7 @@ export interface CorporateEnglishCompanyDetail {
   jobs: Array<{
     id: string
     title: string
+    originalTitle?: string
     company?: string
     companyId?: string
     location?: string
@@ -115,6 +116,8 @@ export interface CorporateEnglishCompanyDetail {
     salary?: string
     url?: string
     createdAt?: string
+    isTranslated?: boolean
+    translatedAt?: string
   }>
   favorites: CorporateEnglishPublicClip[]
 }
@@ -150,6 +153,14 @@ export const corporateEnglishPublicService = {
       await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
     )
     return data
+  },
+
+  async listFavorites(): Promise<CorporateEnglishPublicClip[]> {
+    const query = new URLSearchParams({ resource: 'favorites' })
+    const data = await readJson<{ success: boolean; favorites: CorporateEnglishPublicClip[] }>(
+      await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
+    )
+    return data.favorites || []
   },
 
   async addFavorite(clipId: string) {

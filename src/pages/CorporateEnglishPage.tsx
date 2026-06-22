@@ -23,10 +23,8 @@ import {
   Video,
   Volume2
 } from 'lucide-react'
-import JobDetailModal from '../components/JobDetailModal'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
-import type { Job } from '../types'
 import {
   CorporateEnglishCompanyDetail,
   CorporateEnglishPublicClip,
@@ -36,6 +34,7 @@ import {
 } from '../services/corporate-english-public-service'
 import type { CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType } from '../services/corporate-english-service'
 import { trackingService } from '../services/tracking-service'
+import { getCompanyDetailPath } from '../utils/share-link-helper'
 
 const FALLBACK_COMPANY: CorporateEnglishPublicCompany = {
   companyId: 'corporate-english-coming-soon',
@@ -724,7 +723,6 @@ export default function CorporateEnglishPage() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false)
   const [activeClipId, setActiveClipId] = useState('')
-  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const trackedVideoIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
@@ -814,30 +812,7 @@ export default function CorporateEnglishPage() {
   }, [activeVideo, selectedCompanyId])
 
   const visibleCompanies = companies.length > 0 ? companies : [FALLBACK_COMPANY]
-  const modalJobs = useMemo<Job[]>(() => {
-    return (detail?.jobs || []).map((job) => ({
-      id: job.id,
-      title: job.title,
-      company: job.company || detail?.company.name || '',
-      companyId: job.companyId || detail?.company.companyId || '',
-      location: job.location || '',
-      type: 'remote',
-      jobType: job.jobType || '',
-      category: job.category || '',
-      salary: job.salary || '',
-      description: '',
-      requirements: [],
-      responsibilities: [],
-      benefits: [],
-      skills: [],
-      publishedAt: job.createdAt || '',
-      source: 'corporate_english',
-      sourceUrl: job.url || '',
-      url: job.url || '',
-      createdAt: job.createdAt || ''
-    }))
-  }, [detail])
-  const selectedJobIndex = selectedJob ? modalJobs.findIndex((job) => job.id === selectedJob.id) : -1
+  const companyDetailPath = detail?.company.name ? getCompanyDetailPath(detail.company.name) : ''
 
   const refreshDetail = useCallback(async () => {
     if (!selectedCompanyId) return
@@ -1211,21 +1186,33 @@ export default function CorporateEnglishPage() {
                     </span>
                   ) : null}
                 </div>
+                {companyDetailPath ? (
+                  <a
+                    href={companyDetailPath}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] no-underline hover:border-[#cbbfff] hover:bg-[#f6f2ff]"
+                  >
+                    进入企业页
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                ) : null}
                 {detail?.jobs.length ? (
                   <div className="space-y-2">
                     {detail.jobs.map((job) => (
-                      <button
+                      <a
                         key={job.id}
-                        type="button"
-                        onClick={() => {
-                          const nextJob = modalJobs.find((item) => item.id === job.id)
-                          if (nextJob) setSelectedJob(nextJob)
-                        }}
-                        className="block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline hover:border-[#d8ccff] hover:bg-[#f6f2ff] focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
+                        href={`${companyDetailPath}?jobId=${encodeURIComponent(job.id)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
                       >
-                        <div className="line-clamp-2 text-sm font-bold text-slate-900">{job.title}</div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="line-clamp-2 text-sm font-bold text-slate-900">{job.title}</div>
+                          <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[#6251f5]" />
+                        </div>
                         <div className="mt-1 text-xs text-slate-500">{job.location || '远程'} · {job.category || job.jobType || '岗位'}</div>
-                      </button>
+                      </a>
                     ))}
                   </div>
                 ) : (
@@ -1243,19 +1230,25 @@ export default function CorporateEnglishPage() {
                   </button>
                 ) : detail?.favorites.length ? (
                   <div className="space-y-2">
-                    {detail.favorites.map((clip) => (
+                    {detail.favorites.slice(0, 2).map((clip) => (
                       <button
                         key={clip.clipId}
                         type="button"
-                        onClick={() => {
-                          if (clip.companyId !== selectedCompanyId) setSelectedCompanyId(clip.companyId)
-                        }}
+                        onClick={() => navigate('/profile?tab=favorites&type=audio')}
                         className="w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left hover:border-[#d8ccff] hover:bg-[#f6f2ff]"
                       >
                         <div className="line-clamp-2 text-sm font-bold text-slate-900">{clip.clipTitle || clip.materialTitle}</div>
                         <div className="mt-1 text-xs text-slate-500">{clip.companyName} · {formatTime(clip.startMs)}</div>
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/profile?tab=favorites&type=audio')}
+                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] hover:border-[#cbbfff] hover:bg-[#f6f2ff]"
+                    >
+                      查看全部音频收藏
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 ) : (
                   <p className="text-sm leading-6 text-slate-500">收藏跟读片段后会显示在这里。</p>
@@ -1264,26 +1257,6 @@ export default function CorporateEnglishPage() {
             </aside>
           </div>
           </>
-        )}
-        {selectedJob && (
-          <JobDetailModal
-            job={selectedJob}
-            isOpen={!!selectedJob}
-            onClose={() => setSelectedJob(null)}
-            jobs={modalJobs}
-            currentJobIndex={selectedJobIndex}
-            onNavigateJob={(direction) => {
-              if (selectedJobIndex < 0) return
-              const nextIndex = direction === 'prev'
-                ? Math.max(0, selectedJobIndex - 1)
-                : Math.min(modalJobs.length - 1, selectedJobIndex + 1)
-              setSelectedJob(modalJobs[nextIndex] || selectedJob)
-            }}
-            variant="center"
-            trackingPageKey="corporate_english"
-            trackingSourceKey="corporate_english_jobs_panel"
-            trackingModule="corporate_english"
-          />
         )}
       </div>
     </div>

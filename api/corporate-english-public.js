@@ -19,6 +19,17 @@ function normalizeString(value) {
   return String(value || '').trim()
 }
 
+function parseJsonObject(value, fallback = {}) {
+  if (!value) return fallback
+  if (typeof value === 'object') return value
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' ? parsed : fallback
+  } catch {
+    return fallback
+  }
+}
+
 function mapSections(value) {
   return Array.isArray(value) ? value : []
 }
@@ -176,6 +187,11 @@ function mapClip(row, favoriteClipIds = new Set(), options = {}) {
   }
 }
 
+function pickTranslatedText(row, key, fallback = '') {
+  const translations = parseJsonObject(row?.translations)
+  return normalizeString(translations?.[key]) || normalizeString(fallback)
+}
+
 function mapMaterial(row, clips, permissions, options = {}) {
   const videoUnlocked = options.videoUnlocked ?? permissions.canViewVideos
   return {
@@ -328,6 +344,14 @@ async function getFavoriteItems(user, includeDrafts = false) {
     .filter(Boolean)
 }
 
+async function listFavoriteItems(req, res, user) {
+  const userId = getUserId(user)
+  if (!userId) return res.status(401).json({ success: false, error: '请先登录' })
+  const includeDrafts = isLocalPreviewRequest(req)
+  const favorites = await getFavoriteItems(user, includeDrafts)
+  return res.status(200).json({ success: true, favorites })
+}
+
 async function ensureFavoriteUserRow(user, req) {
   const userId = getUserId(user)
   if (!userId) return false
@@ -401,7 +425,8 @@ async function getCompany(req, res, user) {
       [companyId]
     ),
     neonHelper.query(
-      `SELECT job_id, title, company, company_id, location, job_type, category, salary, url, created_at
+      `SELECT job_id, title, company, company_id, location, job_type, category, salary, url, created_at,
+              translations, is_translated, translated_at
        FROM jobs
        WHERE company_id = $1 AND status = 'active'
        ORDER BY created_at DESC
@@ -461,15 +486,18 @@ async function getCompany(req, res, user) {
     }),
     jobs: (jobRows || []).map((job) => ({
       id: job.job_id,
-      title: job.title,
-      company: job.company,
+      title: pickTranslatedText(job, 'title', job.title),
+      originalTitle: job.title,
+      company: pickTranslatedText(job, 'company', job.company),
       companyId: job.company_id,
-      location: job.location,
-      jobType: job.job_type,
+      location: pickTranslatedText(job, 'location', job.location),
+      jobType: pickTranslatedText(job, 'type', job.job_type),
       category: job.category,
       salary: job.salary,
       url: job.url,
-      createdAt: job.created_at
+      createdAt: job.created_at,
+      isTranslated: Boolean(job.is_translated),
+      translatedAt: job.translated_at
     })),
     favorites: favoriteItems
   })
@@ -581,6 +609,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET' && resource === 'companies') return await listCompanies(req, res, user)
     if (req.method === 'GET' && resource === 'company') return await getCompany(req, res, user)
+    if (req.method === 'GET' && resource === 'favorites') return await listFavoriteItems(req, res, user)
     if (req.method === 'GET' && resource === 'clip-audio') return await downloadClipAudio(req, res, user)
     if (req.method === 'POST' && resource === 'favorite') return await updateFavorite(req, res, user, true)
     if (req.method === 'DELETE' && resource === 'favorite') return await updateFavorite(req, res, user, false)
