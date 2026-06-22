@@ -83,7 +83,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
             <span className="rounded-2xl border border-white/15 bg-white/10 p-2 backdrop-blur-sm">
                <Crown className="w-5 h-5 text-white" />
             </span>
-            申请加入 Haigoo Member
+            申请加入 Haigoo Remote Club
           </h3>
           <button 
             onClick={onClose}

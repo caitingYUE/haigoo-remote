@@ -9,7 +9,7 @@ VALUES (
     'test-member-uuid-001',
     'test_member@haigoo.com',
     '$2b$10$1xQE9SpQaFM94bEvBatXYe7qDT5YfKvKZi7fnWyFeNorEhjVQ6rYC',
-    'Test Member (VIP)',
+    'Test Member (Club)',
     true,
     'club_go',
     'active',

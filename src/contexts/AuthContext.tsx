@@ -19,7 +19,7 @@ interface AuthContextValue {
   isMember: boolean
   isTrialMember: boolean
   isFullMember: boolean
-  memberType: 'none' | 'trial_week' | 'quarter' | 'year'
+  memberType: 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
   membershipCapabilities: ReturnType<typeof deriveMembershipCapabilities>
   isLoading: boolean
   login: (email: string, password: string) => Promise<AuthResponse>
@@ -351,7 +351,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Calculate derived permissions
   const normalizedEmail = user?.email?.toLowerCase?.() || ''
-  const isSuperAdmin = !!normalizedEmail && SUPER_ADMIN_EMAILS.includes(normalizedEmail)
+  const isLocalTestSuperAdmin = import.meta.env.DEV && normalizedEmail === 'test_admin@haigoo.com'
+  const isSuperAdmin = !!normalizedEmail && (SUPER_ADMIN_EMAILS.includes(normalizedEmail) || isLocalTestSuperAdmin)
   const isAdmin = !!(user?.roles?.admin || isSuperAdmin)
   const membershipCapabilities = deriveMembershipCapabilities(user)
   const isMember = membershipCapabilities.isActive

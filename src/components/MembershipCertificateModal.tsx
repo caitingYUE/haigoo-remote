@@ -12,6 +12,10 @@ interface MembershipCertificateModalProps {
   user: User;
 }
 
+function formatCertificateName(name: string) {
+  return name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Member|Partner)\)\s*/gi, '').trim() || name;
+}
+
 export const MembershipCertificateModal: React.FC<MembershipCertificateModalProps> = ({
   isOpen,
   onClose,
@@ -51,10 +55,23 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
 
   // Format ID to 6 digits
   const displayId = (user.memberDisplayId || 0).toString().padStart(6, '0');
-  const memberName = user.username || user.email.split('@')[0];
+  const memberName = formatCertificateName(user.username || user.email.split('@')[0]);
   const joinDate = user.memberSince ? new Date(user.memberSince).toLocaleDateString() : new Date().toLocaleDateString();
   const capabilities = deriveMembershipCapabilities(user);
-  const certificateTitle = capabilities.isTrialMember ? 'Haigoo Member Lite' : 'Haigoo Member';
+  const isAnnualMember = capabilities.memberType === 'annual' || capabilities.memberType === 'year';
+  const isHalfYearMember = capabilities.memberType === 'half_year';
+  const isQuarterMember = capabilities.memberType === 'quarter';
+  const isDeepLegacyMember = capabilities.memberType === 'quarter_pro';
+  const certificateTitle = 'Haigoo Remote Club Member';
+  const memberLevelLabel = capabilities.isTrialMember
+    ? 'Trial'
+    : isAnnualMember
+      ? 'Partner'
+      : isHalfYearMember
+        ? 'Member'
+        : isQuarterMember || isDeepLegacyMember
+          ? 'VIP'
+          : 'Club';
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] isolate flex items-center justify-center p-4" role="dialog" aria-modal="true">
@@ -121,7 +138,12 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                         <div className="space-y-6 mt-2">
                             <div>
                                 <p className="text-indigo-200 text-xs font-medium uppercase tracking-wider mb-1">Member Name</p>
-                                <h2 className="text-4xl font-bold text-white tracking-wide">{memberName}</h2>
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <h2 className="text-4xl font-bold text-white tracking-wide">{memberName}</h2>
+                                    <span className="inline-flex rounded-full border border-white/24 bg-white/14 px-3 py-1 text-xs font-black tracking-[0.18em] text-white">
+                                        {memberLevelLabel}
+                                    </span>
+                                </div>
                             </div>
                             
                             <div className="flex items-center gap-12">

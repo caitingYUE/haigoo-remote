@@ -306,7 +306,7 @@ const AdminJobBundles: React.FC = () => {
                     style={{ padding: '6px', borderRadius: '4px', border: '1px solid #e2e8f0', minWidth: '120px' }}
                   >
                     <option value="public">公开可见</option>
-                    <option value="member">仅会员可见</option>
+                    <option value="member">Club 可申</option>
                     <option value="admin">仅管理员可见</option>
                   </select>
                 </div>
@@ -456,7 +456,7 @@ const AdminJobBundles: React.FC = () => {
                         <span className="status-badge low">停用</span>
                       )}
                       {bundle.visibility === 'member' && (
-                        <span className="status-badge medium ml-2">仅会员</span>
+                        <span className="status-badge medium ml-2">Club 可申</span>
                       )}
                       {bundle.visibility === 'admin' && (
                         <span className="status-badge medium ml-2">仅管理员</span>

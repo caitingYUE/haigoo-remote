@@ -93,7 +93,7 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
    if (compact) {
       return (
          <div
-            className={`flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'text-indigo-700 bg-indigo-50 border-indigo-100' : 'text-sky-700 bg-sky-50 border-sky-100'}`}
+            className={`flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6]' : 'border-[#d7e9ff] bg-[#f4f9ff] text-[#4f8fe8]'}`}
             title={title}
          >
             <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
@@ -103,11 +103,11 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
 
    return (
       <div className="flex flex-col items-end justify-center leading-none" title={title}>
-         <span className={`whitespace-nowrap text-[30px] font-bold tracking-tight ${isHigh ? 'text-indigo-600' : 'text-sky-600'}`}>
+         <span className={`whitespace-nowrap text-[30px] font-bold tracking-tight ${isHigh ? 'text-[#6f63f6]' : 'text-[#4f8fe8]'}`}>
             {safeScore}
             <span className="ml-0.5 text-[15px] font-semibold">%</span>
          </span>
-         <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-indigo-500' : 'text-sky-500'}`}>匹配</span>
+         <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-[#7b74ff]' : 'text-[#5f9bea]'}`}>匹配</span>
       </div>
    );
 };
@@ -143,7 +143,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const MemberBadge = () => (
       <div className="pointer-events-none absolute -right-1.5 -top-1.5 z-10 inline-flex h-5 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
          <Crown className="h-2.5 w-2.5 fill-current" />
-         <span className="text-[8px] font-black leading-none tracking-wide">VIP</span>
+         <span className="text-[8px] font-black leading-none tracking-wide">Club</span>
       </div>
    );
    const isNew = useMemo(() => {
@@ -481,7 +481,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      ) : null}
                      {isNew ? <FreshBadge /> : null}
                      {isSaved ? (
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#eaf3ff] text-[#2f6ed8]" title="已收藏">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]" title="已收藏">
                            <Bookmark className="h-3 w-3 fill-current" />
                         </span>
                      ) : null}
@@ -510,7 +510,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : salaryText}
                      </span>
                      {showMatchScore ? (
-                        <span className="inline-flex shrink-0 items-center rounded-full border border-[#d9eaf5] bg-[#f3fbff] px-2 py-0.5 text-[11px] font-bold text-[#3a6f92]">
+                        <span className="inline-flex shrink-0 items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[11px] font-bold text-[#6f63f6] shadow-[0_8px_18px_-16px_rgba(111,99,246,0.45)]">
                            {rawScoreNum}% 匹配
                         </span>
                      ) : null}
@@ -585,7 +585,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             }}
             className={`group relative bg-white rounded-xl p-5 border transition-all duration-200 cursor-pointer shadow-sm
             ${className || ''}
-            border-slate-200 hover:border-indigo-400 hover:shadow-xl h-full flex flex-col`}
+            border-slate-200 hover:border-[#d8d2ff] hover:shadow-xl h-full flex flex-col`}
          >
             {/* Header */}
             <div className="flex items-start gap-4 mb-4">

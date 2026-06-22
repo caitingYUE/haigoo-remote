@@ -88,7 +88,7 @@ function buildLegacyPlan(plan: any) {
                 || (level === 'ready'
                     ? '整体上适合开始尝试远程岗位，并尽快进入投递和面试节奏。'
                     : level === 'stretch'
-                        ? '当前更适合先补关键基础，再集中冲刺远程岗位。'
+                        ? '当前更适合先补关键基础，再短期推进远程岗位。'
                         : '可以开始尝试远程岗位，但要先处理几项关键短板。')
             ),
             summary: cleanPlanText(plan?.suitability?.summary || plan?.summary || 'AI 已根据你的背景生成远程求职分析。'),
@@ -359,7 +359,7 @@ export default function GeneratedPlanView({
                         {!isGuest && !isMember && (
                             <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700 flex items-start gap-2">
                                 <Crown className="w-3.5 h-3.5 mt-0.5 flex-none" />
-                                <span>当前可查看基础面试提纲。升级会员后可逐批拓展到 30 道，并生成每道题的回答草稿。</span>
+                                <span>当前可查看基础面试提纲。了解会员服务后可逐批拓展到 30 道，并生成每道题的回答草稿。</span>
                             </div>
                         )}
 

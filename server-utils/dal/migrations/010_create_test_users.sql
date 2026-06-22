@@ -1,13 +1,13 @@
 -- 2026-02-14: Create Test Users for Preview Environment
 -- Description: Creates 3 test accounts with password 'Haigoo2026!'
--- 1. test_member@haigoo.com (VIP Member)
+-- 1. test_member@haigoo.com (Club Member)
 -- 2. test_free@haigoo.com (Free User)
 -- 3. test_admin@haigoo.com (Admin User)
 
 -- Password Hash for 'Haigoo2026!'
 -- $2b$10$LnIuqFr/HbCu8PVjPip1POLH05pDvtxqVfjBBdpm4wLA33ZO/2H96
 
--- 1. Create/Update Member User (VIP)
+-- 1. Create/Update Member User (Club)
 INSERT INTO users (
     user_id, email, password_hash, username, email_verified, 
     membership_level, member_status, membership_expire_at, member_expire_at, 
@@ -16,7 +16,7 @@ INSERT INTO users (
     'test-member-uuid-001', 
     'test_member@haigoo.com', 
     '$2b$10$LnIuqFr/HbCu8PVjPip1POLH05pDvtxqVfjBBdpm4wLA33ZO/2H96', 
-    'Test Member (VIP)', 
+    'Test Member (Club)',
     true, 
     'club_go', 'active', NOW() + INTERVAL '1 year', NOW() + INTERVAL '1 year', 
     '{"user": true}'::jsonb, 

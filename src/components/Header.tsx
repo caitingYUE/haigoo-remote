@@ -4,10 +4,23 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import brandLogoPng from '../assets/brandlogo.webp'
-const BETA_END_DATE = new Date('2025-01-24').getTime()
 
 interface HeaderProps {
   showUpgradeNotice?: boolean
+}
+
+function formatHeaderDisplayName(name: string, memberType?: string | null) {
+  const normalized = name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Member|Partner)\)\s*/gi, '').trim()
+  if ((memberType === 'quarter' || memberType === 'quarter_pro') && normalized) {
+    return `${normalized}（VIP）`
+  }
+  if (memberType === 'half_year' && normalized) {
+    return `${normalized}（Member）`
+  }
+  if ((memberType === 'annual' || memberType === 'year') && normalized) {
+    return `${normalized}（Partner）`
+  }
+  return normalized || name
 }
 
 export default function Header({ showUpgradeNotice = false }: HeaderProps) {
@@ -15,11 +28,10 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
-  const [showBeta, setShowBeta] = useState(false)
   const [headerSearchTerm, setHeaderSearchTerm] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout, token, isMember, isTrialMember } = useAuth()
+  const { user, isAuthenticated, logout, token, isMember, isTrialMember, memberType } = useAuth()
 
 
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -45,6 +57,16 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   }, [isAuthenticated, token])
 
   const unreadCount = notifications.filter(n => !n.isRead).length
+  const isDeepLegacyMember = memberType === 'quarter_pro'
+  const isQuarterMember = memberType === 'quarter'
+  const shouldShowMemberTextBadge = isMember && isTrialMember && !isQuarterMember && !isDeepLegacyMember
+  const userDisplayName = formatHeaderDisplayName(user?.username || '用户', memberType)
+  const memberAvatarRingClass = isMember ? 'ring-2 ring-[#8f8afe] border-2 border-white' : ''
+  const memberBadgeBgClass = 'bg-[#f0edff]'
+  const memberBadgeIconClass = 'text-[#6f63f6] fill-[#6f63f6]'
+  const memberNameClass = isMember ? 'text-[#6f63f6]' : 'text-slate-700'
+  const memberTextBadge = 'Trial'
+  const memberTextBadgeClass = 'border-[#d8d2ff] bg-[#f0edff] text-[#5d50df]'
 
   const handleMarkRead = async (id?: string) => {
     try {
@@ -282,6 +304,19 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
             </Link>
 
             <Link
+              to="/corporate-english"
+              className={`relative inline-flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/corporate-english')
+                  ? 'text-slate-900 font-bold'
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
+            >
+              外企英语
+              <span className="rounded-full border border-[#c7c2ff] bg-[#f0edff] px-1.5 py-0.5 text-[10px] font-black leading-none text-[#6251f5]">
+                with CEO
+              </span>
+            </Link>
+
+            <Link
               to="/profile?tab=membership"
               className={`flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
                   ? 'text-indigo-600 font-bold'
@@ -289,7 +324,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 }`}
             >
               <Crown className="w-4 h-4" />
-              会员中心
+              Club 权益
             </Link>
           </div>
 
@@ -395,52 +430,50 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className={`flex items-center space-x-2 p-2 rounded-lg transition-all duration-200 focus:outline-none text-slate-700 hover:text-slate-900 hover:bg-slate-50`}
+                    className="flex max-w-[230px] items-center gap-2 rounded-lg p-2 text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900 focus:outline-none"
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
-                    aria-label={`用户菜单，当前用户：${user?.username || '用户'}`}
+                    aria-label={`用户菜单，当前用户：${userDisplayName}`}
                     id="user-menu-button"
                   >
                     {user?.avatar ? (
                       <div className="relative">
                         <img
                           src={user.avatar}
-                          alt={user.username}
-                          className={`w-8 h-8 rounded-full shadow-sm ${isMember
-                              ? isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white'
-                              : ''
-                            }`}
+                          alt={userDisplayName}
+                          className={`w-8 h-8 rounded-full shadow-sm ${memberAvatarRingClass}`}
                         />
                         {isMember && (
-                          <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${isTrialMember ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
-                            {isTrialMember ? <Sparkles className="w-3 h-3 text-emerald-500 fill-emerald-500" /> : <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />}
+                          <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${memberBadgeBgClass}`}>
+                            {isTrialMember ? <Sparkles className={`w-3 h-3 ${memberBadgeIconClass}`} /> : <Crown className={`w-3 h-3 ${memberBadgeIconClass}`} />}
                           </div>
                         )}
                       </div>
                     ) : (
                       <div className="relative">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-r from-haigoo-primary to-haigoo-secondary ${isMember
-                              ? isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white'
-                              : ''
-                            }`}
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-r from-haigoo-primary to-haigoo-secondary ${memberAvatarRingClass}`}
                           role="img"
                           aria-label="用户头像"
                         >
                           <User className="h-4 w-4 text-white" aria-hidden="true" />
                         </div>
                         {isMember && (
-                          <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${isTrialMember ? 'bg-emerald-100' : 'bg-indigo-100'}`}>
-                            {isTrialMember ? <Sparkles className="w-3 h-3 text-emerald-500 fill-emerald-500" /> : <Crown className="w-3 h-3 text-indigo-500 fill-indigo-500" />}
+                          <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${memberBadgeBgClass}`}>
+                            {isTrialMember ? <Sparkles className={`w-3 h-3 ${memberBadgeIconClass}`} /> : <Crown className={`w-3 h-3 ${memberBadgeIconClass}`} />}
                           </div>
                         )}
                       </div>
                     )}
-                    <span className={`text-sm font-medium hidden sm:block ${isMember ? (isTrialMember ? 'text-emerald-600' : 'text-indigo-600') : 'text-slate-700'
-                      }`}>
-                      {user?.username || '用户'}
+                    <span className={`hidden max-w-[118px] truncate text-sm font-medium sm:block xl:max-w-[142px] ${memberNameClass}`} title={userDisplayName}>
+                      {userDisplayName}
                     </span>
+                    {shouldShowMemberTextBadge && (
+                      <span className={`hidden sm:inline-flex h-5 items-center rounded-full border px-1.5 text-[10px] font-black leading-none ${memberTextBadgeClass}`}>
+                        {memberTextBadge}
+                      </span>
+                    )}
                     {!isMember && (
                       <span className="hidden sm:inline-flex h-5 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
                         FREE
@@ -466,7 +499,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                           {user?.avatar ? (
                             <img
                               src={user.avatar}
-                              alt={user.username}
+                              alt={userDisplayName}
                               className="w-10 h-10 rounded-full"
                             />
                           ) : (
@@ -480,7 +513,12 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                           )}
                           <div className="min-w-0 flex-1">
                             <div className="flex min-w-0 items-center gap-2">
-                              <p className="truncate text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                              <p className="truncate text-sm font-medium text-slate-900">{userDisplayName}</p>
+                              {shouldShowMemberTextBadge && (
+                                <span className={`inline-flex h-5 shrink-0 items-center rounded-full border px-1.5 text-[10px] font-black leading-none ${memberTextBadgeClass}`}>
+                                  {memberTextBadge}
+                                </span>
+                              )}
                               {!isMember && (
                                 <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
                                   FREE
@@ -570,6 +608,19 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 精选企业
               </Link>
               <Link
+                to="/corporate-english"
+                className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/corporate-english')
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                <span>外企英语</span>
+                <span className="rounded-full border border-[#c7c2ff] bg-[#f0edff] px-1.5 py-0.5 text-[10px] font-black leading-none text-[#6251f5]">
+                  with CEO
+                </span>
+              </Link>
+              <Link
                 to="/profile?tab=about"
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${(location.pathname === '/about') || (location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') === 'about')
                   ? 'bg-indigo-50 text-indigo-700'
@@ -588,7 +639,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <Crown className="h-4 w-4" />
-                会员中心
+                Club 权益
               </Link>
 
               {/* 移动端用户菜单 */}
@@ -599,12 +650,12 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                       {user?.avatar ? (
                         <img
                           src={user.avatar}
-                          alt={user.username}
-                          className={`w-8 h-8 rounded-full ${isMember ? (isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white') : ''}`}
+                          alt={userDisplayName}
+                          className={`w-8 h-8 rounded-full ${memberAvatarRingClass}`}
                         />
                       ) : (
                         <div
-                          className={`w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center ${isMember ? (isTrialMember ? 'ring-2 ring-emerald-400 border-2 border-white' : 'ring-2 ring-indigo-400 border-2 border-white') : ''}`}
+                          className={`w-8 h-8 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center ${memberAvatarRingClass}`}
                           role="img"
                           aria-label="用户头像"
                         >
@@ -613,7 +664,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                       )}
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-2">
-                          <p className="truncate text-sm font-medium text-slate-900">{user?.username || '用户'}</p>
+                          <p className="truncate text-sm font-medium text-slate-900">{userDisplayName}</p>
                           {!isMember && (
                             <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
                               FREE

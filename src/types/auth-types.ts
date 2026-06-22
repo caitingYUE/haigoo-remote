@@ -28,6 +28,14 @@ export interface User {
     targetRole?: string // 求职意向
     phone?: string // 电话
     bio?: string // 个人简介
+    memberServiceEntitlements?: Record<string, {
+      status?: string
+      appointmentAt?: string
+      completedAt?: string
+      expiredAt?: string
+      note?: string
+      updatedAt?: string
+    }>
   }
 
   // 时间戳
@@ -51,11 +59,11 @@ export interface User {
   memberExpireAt?: string;
   memberSince?: string;
   memberDisplayId?: number;
-  memberType?: 'none' | 'trial_week' | 'quarter' | 'year';
+  memberType?: 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual';
   memberCycleStartAt?: string;
   memberTier?: 'none' | 'trial' | 'full';
   membershipCapabilities?: {
-    memberType: 'none' | 'trial_week' | 'quarter' | 'year';
+    memberType: 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual';
     memberTier: 'none' | 'trial' | 'full';
     isActive: boolean;
     isTrialMember: boolean;
@@ -70,6 +78,10 @@ export interface User {
     canAccessCommunity: boolean;
     canUseMemberFavoritesBenefits: boolean;
     canAccessTrustedCompaniesPage: boolean;
+    canAccessCorporateEnglishVideos: boolean;
+    canAccessCorporateEnglishProfile: boolean;
+    canAccessCorporateEnglishClips: boolean;
+    canAccessCorporateEnglishResources: boolean;
   };
 
   // 免费用户权益次数（后台管理）

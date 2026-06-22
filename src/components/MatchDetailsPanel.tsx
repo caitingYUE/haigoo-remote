@@ -26,8 +26,6 @@ export function MatchDetailsPanel({
   onShowUpgrade,
   className = ''
 }: MatchDetailsPanelProps) {
-  if (matchLevel !== 'high') return null
-
   const [expanded, setExpanded] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
 
@@ -60,21 +58,23 @@ export function MatchDetailsPanel({
     { label: '偏好', value: Number(parsed.breakdown.preferenceMatch) || 0 }
   ] : []
 
+  if (matchLevel !== 'high') return null
+
   return (
-    <div className={`relative overflow-hidden rounded-[26px] border border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.96))] shadow-[0_22px_48px_-40px_rgba(15,23,42,0.18)] ${className}`}>
-      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-indigo-100/35 blur-3xl" />
+    <div className={`relative overflow-hidden rounded-[26px] border border-[#e1e8f4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,253,255,0.96))] shadow-[0_22px_54px_-44px_rgba(95,99,246,0.18)] ${className}`}>
+      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-[#d8d2ff]/30 blur-3xl" />
       <div className="relative z-10 p-5">
         <div className="mb-4 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-base font-bold tracking-tight text-slate-900">岗位匹配分析</h4>
-              <span className="inline-flex items-center rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              <span className="inline-flex items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-semibold text-[#6f63f6]">
                 高匹配
               </span>
               {matchDetailsLocked && (
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
                   <Crown className="h-3 w-3 text-amber-500" />
-                  VIP
+                  Club
                 </span>
               )}
             </div>
@@ -90,8 +90,8 @@ export function MatchDetailsPanel({
               </div>
               <p className="mt-0.5 leading-relaxed">
                 {canUseFreeTrial
-                  ? `该岗位支持完整匹配分析。当前账号还可免费体验 ${freeTrialRemaining} 次，VIP 可不限次数查看全部高匹配解析。`
-                  : '该岗位支持完整匹配分析，开通 VIP 后可查看完整匹配依据、风险判断和优化建议。'}
+                  ? `该岗位支持完整匹配分析。当前账号还可免费体验 ${freeTrialRemaining} 次，Club 权益可查看更多高匹配解析。`
+                  : '该岗位支持完整匹配分析，添加顾问了解后可查看完整匹配依据、风险判断和优化建议。'}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -99,16 +99,16 @@ export function MatchDetailsPanel({
                 <button
                   onClick={() => onUnlockFreeTrial?.()}
                   disabled={isUnlocking}
-                  className="w-full sm:w-auto rounded-xl border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="w-full sm:w-auto rounded-xl border border-[#d8d2ff] bg-white px-5 py-2.5 text-sm font-semibold text-[#6f63f6] shadow-sm transition-all hover:bg-[#f6f3ff] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isUnlocking ? '解锁中...' : `免费体验本次分析（剩 ${freeTrialRemaining} 次）`}
                 </button>
               )}
               <button
                 onClick={() => onShowUpgrade?.()}
-                className="w-full sm:w-auto rounded-xl bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(79,70,229,0.5)] transition-all hover:bg-indigo-700 active:scale-[0.98]"
+                className="w-full sm:w-auto rounded-xl bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition-all hover:brightness-[1.03] active:scale-[0.98]"
               >
-                {isMember ? '查看完整分析' : 'VIP 无限查看'}
+                {isMember ? '查看完整分析' : '了解 Club 权益'}
               </button>
             </div>
           </div>
@@ -124,9 +124,9 @@ export function MatchDetailsPanel({
                 {scoreItems.length > 0 && (
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
                     {scoreItems.map(item => (
-                      <div key={item.label} className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-center shadow-[0_10px_20px_-18px_rgba(15,23,42,0.22)]">
+                      <div key={item.label} className="rounded-xl border border-[#e3e9f6] bg-white/92 px-2.5 py-2 text-center shadow-[0_10px_20px_-18px_rgba(95,99,246,0.24)]">
                         <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{item.label}</div>
-                        <div className="mt-1 text-sm font-bold text-slate-800">{item.value}</div>
+                        <div className="mt-1 text-sm font-bold text-[#6f63f6]">{item.value}</div>
                       </div>
                     ))}
                   </div>
@@ -143,13 +143,13 @@ export function MatchDetailsPanel({
                       {parsed.evidence.length > 0 && (
                         <div>
                           <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                            <Target className="w-3.5 h-3.5 text-indigo-500" />
+                            <Target className="w-3.5 h-3.5 text-[#6f63f6]" />
                             核心依据
                           </h5>
                           <ul className="space-y-2">
                             {parsed.evidence.map((item: string, i: number) => (
                               <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
-                                <span className="text-indigo-500 font-bold mt-0.5">•</span>
+                                <span className="text-[#6f63f6] font-bold mt-0.5">•</span>
                                 <span>{item}</span>
                               </li>
                             ))}
@@ -224,10 +224,10 @@ export function MatchDetailsPanel({
             {isExpandable && (
               <button
                 onClick={() => setExpanded(v => !v)}
-                className="group mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-bold text-indigo-600 transition-colors hover:text-indigo-700 sm:justify-start"
+                className="group mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-bold text-[#6f63f6] transition-colors hover:text-[#5f55e8] sm:justify-start"
               >
                 {expanded ? '收起详情' : '展开完整分析'}
-                <div className={`w-4 h-4 rounded-full bg-indigo-50 flex items-center justify-center group-hover:bg-indigo-100 transition-colors ${expanded ? 'rotate-180' : ''}`}>
+                <div className={`w-4 h-4 rounded-full bg-[#f6f3ff] flex items-center justify-center transition-colors group-hover:bg-[#ece8ff] ${expanded ? 'rotate-180' : ''}`}>
                   <ChevronDown className="w-3 h-3" />
                 </div>
               </button>

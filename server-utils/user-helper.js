@@ -18,12 +18,37 @@ import {
 const DEFAULT_FREE_WEBSITE_APPLY_LIMIT = 20
 const DEFAULT_FREE_REFERRAL_LIMIT = 3
 const MAX_ENTITLEMENT_DELTA = 20
-const LOCAL_TEST_PASSWORD_HASH = '$2b$10$A1aJl03alRTYeGBoDveiD.1o03jnu1Fd5lbHEKNQvDnWNzDFvHHaG'
+const LOCAL_TEST_PASSWORD_HASH = '$2b$10$1xQE9SpQaFM94bEvBatXYe7qDT5YfKvKZi7fnWyFeNorEhjVQ6rYC'
+
+function getLocalQuarterExpireAt() {
+    const date = new Date()
+    const day = date.getDate()
+    date.setMonth(date.getMonth() + 3)
+    if (date.getDate() !== day) {
+        date.setDate(0)
+    }
+    return date.toISOString()
+}
+
+function getLocalExpireAtByMonths(months) {
+    const date = new Date()
+    const day = date.getDate()
+    date.setMonth(date.getMonth() + Number(months || 0))
+    if (date.getDate() !== day) {
+        date.setDate(0)
+    }
+    return date.toISOString()
+}
+
+function getLocalExpireAtByDays(days) {
+    return new Date(Date.now() + Number(days || 0) * 24 * 60 * 60 * 1000).toISOString()
+}
+
 const LOCAL_USERS = new Map([
     ['test_member@haigoo.com', {
         user_id: 'test-member-uuid-001',
         email: 'test_member@haigoo.com',
-        username: 'Test Member (VIP)',
+        username: 'Test Member (Old Quarter)',
         auth_provider: 'email',
         password_hash: LOCAL_TEST_PASSWORD_HASH,
         email_verified: true,
@@ -33,6 +58,69 @@ const LOCAL_USERS = new Map([
         member_status: 'active',
         member_expire_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
         member_type: 'quarter',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
+    ['test_weekly@haigoo.com', {
+        user_id: 'test-weekly-uuid-005',
+        email: 'test_weekly@haigoo.com',
+        username: 'Test Weekly Member',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: 'club_go',
+        member_status: 'active',
+        member_expire_at: getLocalExpireAtByDays(7),
+        member_type: 'trial_week',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
+    ['test_half@haigoo.com', {
+        user_id: 'test-half-uuid-006',
+        email: 'test_half@haigoo.com',
+        username: 'Test Half Member',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: 'club_go',
+        member_status: 'active',
+        member_expire_at: getLocalExpireAtByMonths(6),
+        member_type: 'half_year',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
+    ['test_annual@haigoo.com', {
+        user_id: 'test-annual-uuid-007',
+        email: 'test_annual@haigoo.com',
+        username: 'Test Annual Member',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: 'goo_plus',
+        member_status: 'active',
+        member_expire_at: getLocalExpireAtByMonths(12),
+        member_type: 'annual',
         free_website_apply_count: 0,
         free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
         free_referral_count: 0,
@@ -71,10 +159,31 @@ const LOCAL_USERS = new Map([
         email_verified: true,
         status: 'active',
         roles: { user: true, admin: true },
-        membership_level: 'club_go',
+        membership_level: 'goo_plus',
         member_status: 'active',
-        member_expire_at: new Date(Date.now() + 3650 * 24 * 60 * 60 * 1000).toISOString(),
-        member_type: 'year',
+        member_expire_at: getLocalExpireAtByMonths(12),
+        member_type: 'annual',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
+    ['test_pro@haigoo.com', {
+        user_id: 'test-pro-uuid-004',
+        email: 'test_pro@haigoo.com',
+        username: 'Test Pro Member',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: 'goo_plus',
+        member_status: 'active',
+        member_expire_at: getLocalQuarterExpireAt(),
+        member_type: 'quarter_pro',
         free_website_apply_count: 0,
         free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
         free_referral_count: 0,
@@ -87,6 +196,52 @@ const LOCAL_USERS = new Map([
 
 function clone(obj) {
     return JSON.parse(JSON.stringify(obj))
+}
+
+function isLocalAdminTestUsersEnabled() {
+    return process.env.NODE_ENV !== 'production' &&
+        process.env.VERCEL_ENV !== 'production' &&
+        process.env.ENABLE_LOCAL_ADMIN_TEST_USERS !== 'false'
+}
+
+function getLocalUserById(userId) {
+    return Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId) || null
+}
+
+function getLocalAdminUsers() {
+    return Array.from(LOCAL_USERS.values()).map(user => ({
+        ...enrichEntitlementFields(enrichUserFields(user)),
+        favorites: [],
+        favoritesCount: 0,
+        isLocalTestUser: true
+    }))
+}
+
+function matchesLocalAdminUserFilters(user, { search = '', status = 'all', provider = 'all', memberStatus = 'all' } = {}) {
+    const keyword = String(search || '').trim().toLowerCase()
+    if (keyword) {
+        const haystack = `${user.email || ''} ${user.username || ''} ${user.user_id || user.userId || ''}`.toLowerCase()
+        if (!haystack.includes(keyword)) return false
+    }
+
+    if (status && status !== 'all' && user.status !== status) return false
+    if (provider && provider !== 'all' && user.authProvider !== provider && user.auth_provider !== provider) return false
+
+    if (memberStatus && memberStatus !== 'all') {
+        const type = normalizeMemberType(user.memberType || user.member_type, user.membershipLevel || user.membership_level)
+        const statusValue = String(user.memberStatus || user.member_status || '').toLowerCase()
+        const startAt = user.memberCycleStartAt || user.member_cycle_start_at
+        const expireAt = user.memberExpireAt || user.member_expire_at
+        const startsInFuture = startAt && new Date(startAt) > new Date()
+        const expiresInPast = expireAt && new Date(expireAt) <= new Date()
+
+        if (memberStatus === 'active' && !(statusValue === 'active' && !startsInFuture && !expiresInPast)) return false
+        if (memberStatus === 'pending' && !(statusValue === 'active' && startsInFuture)) return false
+        if (memberStatus === 'expired' && !(statusValue === 'expired' || expiresInPast)) return false
+        if (memberStatus === 'free' && !(type === 'none' || ['free', 'inactive'].includes(statusValue))) return false
+    }
+
+    return true
 }
 
 function isSuperAdminEmail(email) {
@@ -462,7 +617,7 @@ const userHelper = {
                 await neonHelper.delete('recommendations', { user_id: userId })
                 await neonHelper.delete('bug_reports', { user_id: userId })
 
-                // 3. 会员与支付数据
+                // 3. 会员与权益数据
                 await neonHelper.delete('club_applications', { user_id: userId })
                 await neonHelper.delete('payment_records', { user_id: userId })
 
@@ -733,17 +888,28 @@ const userHelper = {
                 neonHelper.query(statsQuery)
             ])
 
+            const localUsers = isLocalAdminTestUsersEnabled()
+                ? getLocalAdminUsers().filter(user => matchesLocalAdminUserFilters(user, { search, status, provider, memberStatus }))
+                : []
+            const localUserIds = new Set(localUsers.map(user => user.userId || user.user_id))
+            const remoteUsers = (rows || [])
+                .map(mapAdminUserListRow)
+                .filter(user => !localUserIds.has(user.userId || user.user_id))
+            const total = (Number(totalRows?.[0]?.total || 0) || 0) + localUsers.length
+            const activeLocal = localUsers.filter(user => user.status === 'active').length
+            const suspendedLocal = localUsers.filter(user => user.status === 'suspended').length
+
             return {
-                users: (rows || []).map(mapAdminUserListRow),
-                total: Number(totalRows?.[0]?.total || 0) || 0,
+                users: [...localUsers, ...remoteUsers],
+                total,
                 page: normalizedPage,
                 pageSize: normalizedPageSize,
                 stats: {
-                    total: Number(statsRows?.[0]?.total || 0) || 0,
-                    active: Number(statsRows?.[0]?.active || 0) || 0,
-                    suspended: Number(statsRows?.[0]?.suspended || 0) || 0,
-                    newToday: Number(statsRows?.[0]?.new_today || 0) || 0,
-                    newThisWeek: Number(statsRows?.[0]?.new_this_week || 0) || 0
+                    total: (Number(statsRows?.[0]?.total || 0) || 0) + localUsers.length,
+                    active: (Number(statsRows?.[0]?.active || 0) || 0) + activeLocal,
+                    suspended: (Number(statsRows?.[0]?.suspended || 0) || 0) + suspendedLocal,
+                    newToday: (Number(statsRows?.[0]?.new_today || 0) || 0) + localUsers.length,
+                    newThisWeek: (Number(statsRows?.[0]?.new_this_week || 0) || 0) + localUsers.length
                 }
             }
         } catch (error) {
@@ -821,8 +987,9 @@ const userHelper = {
         }
 
         try {
-            if (!neonHelper.isConfigured) {
-                const local = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
+            const localTarget = getLocalUserById(userId)
+            if (!neonHelper.isConfigured || (isLocalAdminTestUsersEnabled() && localTarget)) {
+                const local = localTarget || getLocalUserById(userId)
                 if (!local) return { success: false, error: '用户不存在' }
 
                 const oldLimit = normalizeNonNegativeInteger(local[config.column], config.defaultLimit)
@@ -918,8 +1085,9 @@ const userHelper = {
      */
     async updateUser(userId, updates, options = {}) {
         try {
-            if (!neonHelper.isConfigured) {
-                const local = Array.from(LOCAL_USERS.values()).find(u => u.user_id === userId)
+            const localTarget = getLocalUserById(userId)
+            if (!neonHelper.isConfigured || (isLocalAdminTestUsersEnabled() && localTarget)) {
+                const local = localTarget || getLocalUserById(userId)
                 if (!local) return { success: false, error: '用户不存在' }
                 if (updates.passwordHash) local.password_hash = updates.passwordHash
                 if (updates.emailVerified === true || updates.emailVerified === false) local.email_verified = updates.emailVerified
@@ -1096,7 +1264,8 @@ const userHelper = {
                                 user,
                                 durationDays,
                                 new Date(),
-                                memberCycleStartAt || updates.member_cycle_start_at || null
+                                memberCycleStartAt || updates.member_cycle_start_at || null,
+                                nextMemberType
                             )
                             updateFields.member_status = updates.memberStatus || 'active'
                             updateFields.member_cycle_start_at = membershipWindow.startAtIso

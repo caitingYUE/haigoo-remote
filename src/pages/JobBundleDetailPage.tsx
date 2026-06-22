@@ -173,7 +173,7 @@ export default function JobBundleDetailPage() {
   const isLocked = isMemberBundle && !isMember;
   const memberExpireAt = (user as any)?.memberExpireAt || (user as any)?.member_expire_at || null;
   const memberExpireLabel = memberExpireAt ? new Date(memberExpireAt).toLocaleDateString('zh-CN') : '长期有效';
-  const memberStatusLabel = isTrialMember ? '体验会员权益生效中' : 'Haigoo 会员权益生效中';
+  const memberStatusLabel = isTrialMember ? '短期体验权益生效中' : 'Haigoo Club 权益生效中';
   const pageBackground = '/pic_lists/About_pics/about_bg.webp';
   const assistantSupportPanel = (
     <div className="rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] p-3.5 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.22)]">
@@ -218,15 +218,15 @@ export default function JobBundleDetailPage() {
                     className="px-6 py-3 rounded-xl bg-[#2b3448] text-white font-semibold hover:bg-slate-800 transition-colors text-sm">
                     登录账号
                   </button>
-                  <button onClick={() => navigate('/profile?tab=membership')}
+                  <button onClick={() => navigate('/profile?tab=membership#club-service-plans')}
                     className="px-6 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors text-sm">
-                    加入会员
+                    添加顾问了解
                   </button>
                 </>
               ) : (
-                <button onClick={() => navigate('/profile?tab=membership')}
+                <button onClick={() => navigate('/profile?tab=membership#club-service-plans')}
                   className="px-6 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors text-sm">
-                  升级会员，立即解锁
+                  咨询权益方案
                 </button>
               )}
             </div>
@@ -403,7 +403,7 @@ export default function JobBundleDetailPage() {
             </div>
             <button
               type="button"
-              onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership')}
+              onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership#club-service-plans')}
               className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#49a982] px-6 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(73,169,130,0.6)] transition hover:-translate-y-0.5 sm:w-auto"
             >
               {isMember ? '继续查看会员岗位' : '了解会员权益'}

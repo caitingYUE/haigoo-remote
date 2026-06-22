@@ -31,11 +31,12 @@ export default function Layout({ children }: LayoutProps) {
   const isHome = pathname === '/'
   const isMembership = pathname === '/membership'
   const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/') || pathname.startsWith('/companies/') || pathname.startsWith('/c/')
+  const isCorporateEnglish = pathname.startsWith('/corporate-english')
   const isAbout = pathname === '/about'
   const isBundle = pathname.startsWith('/job-bundles/') || pathname.startsWith('/b/')
   const isJobDetailPage = pathname.startsWith('/job/') || pathname.startsWith('/j/')
   const isProfile = pathname.startsWith('/profile')
-  const hideFooter = isHome || pathname.startsWith('/resume') || isJobsPage || isProfile || isAbout || isBundle
+  const hideFooter = isHome || pathname.startsWith('/resume') || isJobsPage || isProfile || isAbout || isBundle || isCorporateEnglish
   const showFooterMembershipCta = !(isCompanies || isBundle || (!isAuthenticated && isJobDetailPage))
   const lockViewport = isJobsPage && isDesktopViewport
 
@@ -105,7 +106,7 @@ export default function Layout({ children }: LayoutProps) {
       <Header showUpgradeNotice={showUpgradeNotice} />
 
       <main className={`flex-1 relative ${lockViewport ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
-        <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isAbout || isBundle || isProfile || isJobsPage) ? '' : 'pt-20'}`}`}>
+        <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isCorporateEnglish || isAbout || isBundle || isProfile || isJobsPage) ? '' : 'pt-20'}`}`}>
           {children}
         </div>
       </main>

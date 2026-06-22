@@ -38,11 +38,27 @@ interface UserStats {
   newThisWeek: number
 }
 
-const MEMBER_DURATION_DAYS: Record<'trial_week' | 'quarter' | 'year', number> = {
+type EditableMemberType = 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
+type PaidMemberType = Exclude<EditableMemberType, 'none'>
+
+const MEMBER_DURATION_DAYS: Record<PaidMemberType, number> = {
   trial_week: 7,
   quarter: 90,
-  year: 365
+  quarter_pro: 90,
+  year: 365,
+  half_year: 183,
+  annual: 365
 }
+
+const MEMBER_TYPE_OPTIONS: Array<{ value: EditableMemberType; label: string }> = [
+  { value: 'none', label: '普通用户' },
+  { value: 'half_year', label: 'Club Member' },
+  { value: 'annual', label: 'Club Partner' },
+  { value: 'trial_week', label: '体验会员（周）' },
+  { value: 'quarter', label: '季度会员' },
+  { value: 'quarter_pro', label: 'Pro会员' },
+  { value: 'year', label: '年度会员' }
+]
 
 const DEFAULT_FREE_WEBSITE_APPLY_LIMIT = 20
 const DEFAULT_FREE_REFERRAL_LIMIT = 3
@@ -51,6 +67,44 @@ type EntitlementKey = 'website_apply' | 'referral'
 
 type EntitlementBaseline = Record<EntitlementKey, number>
 type MemberFilter = 'all' | 'free' | 'active' | 'pending' | 'expired'
+type ServiceEntitlementKey =
+  | 'voice_consultation_30m'
+  | 'annual_career_planning'
+  | 'closed_member_event'
+  | 'co_builder_application'
+  | 'employer_branding_credit'
+type ServiceEntitlementStatus =
+  | 'not_scheduled'
+  | 'scheduled'
+  | 'completed'
+  | 'expired'
+  | 'available'
+  | 'registered'
+  | 'attended'
+  | 'not_applied'
+  | 'reviewing'
+  | 'approved'
+  | 'rejected'
+  | 'unused'
+  | 'requested'
+  | 'published'
+type ServiceEntitlementRecord = {
+  status: ServiceEntitlementStatus
+  appointmentAt?: string
+  completedAt?: string
+  expiredAt?: string
+  note?: string
+  updatedAt?: string
+}
+type ServiceEntitlementPreset = {
+  key: ServiceEntitlementKey
+  title: string
+  desc: string
+  defaultStatus: ServiceEntitlementStatus
+  quota: string
+  appliesTo: EditableMemberType[]
+  statuses: Array<{ value: ServiceEntitlementStatus; label: string }>
+}
 
 function formatDateTimeInputValue(value?: string | null) {
   if (!value) return ''
@@ -94,6 +148,16 @@ function getQuickMemberStart(kind: 'now' | 'tomorrow') {
   return date.toISOString()
 }
 
+function addCalendarMonths(date: Date, months: number) {
+  const result = new Date(date)
+  const day = result.getDate()
+  result.setMonth(result.getMonth() + months)
+  if (result.getDate() !== day) {
+    result.setDate(0)
+  }
+  return result
+}
+
 function getUserFreeWebsiteApplyLimit(user?: User | null) {
   return Math.max(0, Number(user?.freeWebsiteApplyLimit ?? DEFAULT_FREE_WEBSITE_APPLY_LIMIT) || 0)
 }
@@ -108,6 +172,105 @@ function getUserFreeReferralLimit(user?: User | null) {
 
 function getUserFreeReferralCount(user?: User | null) {
   return Math.max(0, Number(user?.freeReferralCount ?? 0) || 0)
+}
+
+const SERVICE_ENTITLEMENT_PRESETS: ServiceEntitlementPreset[] = [
+  {
+    key: 'voice_consultation_30m',
+    title: '语音 1V1 远程咨询',
+    desc: '30 分钟语音咨询，适合确认远程求职方向。',
+    defaultStatus: 'not_scheduled',
+    quota: '1 次',
+    appliesTo: ['half_year', 'annual', 'quarter_pro', 'year'],
+    statuses: [
+      { value: 'not_scheduled', label: '未预约' },
+      { value: 'scheduled', label: '已预约' },
+      { value: 'completed', label: '已完成' },
+      { value: 'expired', label: '已失效' }
+    ]
+  },
+  {
+    key: 'annual_career_planning',
+    title: '年度远程求职规划',
+    desc: '年度会员专属，用于制定长期求职目标和行动计划。',
+    defaultStatus: 'not_scheduled',
+    quota: '1 次',
+    appliesTo: ['annual', 'year'],
+    statuses: [
+      { value: 'not_scheduled', label: '未预约' },
+      { value: 'scheduled', label: '已预约' },
+      { value: 'completed', label: '已完成' },
+      { value: 'expired', label: '已失效' }
+    ]
+  },
+  {
+    key: 'closed_member_event',
+    title: '会员闭门交流',
+    desc: '记录会员闭门交流或活动参与次数。',
+    defaultStatus: 'available',
+    quota: '1 次',
+    appliesTo: ['annual'],
+    statuses: [
+      { value: 'available', label: '可参与' },
+      { value: 'registered', label: '已报名' },
+      { value: 'attended', label: '已参与' },
+      { value: 'expired', label: '已失效' }
+    ]
+  },
+  {
+    key: 'co_builder_application',
+    title: '共建伙伴权益',
+    desc: '年度会员入职远程企业后可申请，后台记录审核状态。',
+    defaultStatus: 'not_applied',
+    quota: '1 次',
+    appliesTo: ['annual'],
+    statuses: [
+      { value: 'not_applied', label: '未申请' },
+      { value: 'reviewing', label: '审核中' },
+      { value: 'approved', label: '已通过' },
+      { value: 'rejected', label: '未通过' }
+    ]
+  },
+  {
+    key: 'employer_branding_credit',
+    title: '岗位发布额度',
+    desc: '记录共建伙伴岗位发布与雇主品牌宣传额度。',
+    defaultStatus: 'unused',
+    quota: '每季度 1 次',
+    appliesTo: ['annual'],
+    statuses: [
+      { value: 'unused', label: '未使用' },
+      { value: 'requested', label: '已申请' },
+      { value: 'published', label: '已发布' },
+      { value: 'expired', label: '已失效' }
+    ]
+  }
+]
+
+function getServiceEntitlementPresets(memberType: EditableMemberType) {
+  if (memberType === 'none') return []
+  return SERVICE_ENTITLEMENT_PRESETS.filter(item => item.appliesTo.includes(memberType))
+}
+
+function getServiceEntitlementStatusLabel(key: ServiceEntitlementKey, status?: string) {
+  const preset = SERVICE_ENTITLEMENT_PRESETS.find(item => item.key === key)
+  return preset?.statuses.find(item => item.value === status)?.label || status || '-'
+}
+
+function buildServiceEntitlementDrafts(user: User, memberType: EditableMemberType): Record<ServiceEntitlementKey, ServiceEntitlementRecord> {
+  const existing = (user.profile?.memberServiceEntitlements || {}) as Record<string, Partial<ServiceEntitlementRecord>>
+  return getServiceEntitlementPresets(memberType).reduce((acc, preset) => {
+    const current = existing[preset.key] || {}
+    acc[preset.key] = {
+      status: (current.status as ServiceEntitlementStatus) || preset.defaultStatus,
+      appointmentAt: current.appointmentAt || '',
+      completedAt: current.completedAt || '',
+      expiredAt: current.expiredAt || '',
+      note: current.note || '',
+      updatedAt: current.updatedAt || ''
+    }
+    return acc
+  }, {} as Record<ServiceEntitlementKey, ServiceEntitlementRecord>)
 }
 
 function isActiveMemberUser(user?: User | null) {
@@ -129,7 +292,17 @@ function getMemberPresentation(user: User) {
   const label = isPendingMember
     ? '待生效'
     : user.memberStatus === 'active'
-      ? (user.memberType === 'trial_week' ? '体验会员' : user.memberType === 'year' ? '年度会员' : '季度会员')
+      ? (user.memberType === 'trial_week'
+          ? '体验会员（周）'
+          : user.memberType === 'half_year'
+            ? 'Club Member'
+            : user.memberType === 'annual'
+              ? 'Club Partner'
+              : user.memberType === 'quarter_pro'
+                ? 'Pro会员'
+                : user.memberType === 'year'
+                  ? '年度会员'
+                  : '季度会员')
       : user.memberStatus === 'expired'
         ? '已过期'
         : '普通用户'
@@ -184,7 +357,7 @@ export default function UserManagementPage() {
   const [editUsername, setEditUsername] = useState('')
   const [editAdmin, setEditAdmin] = useState(false)
   const [editMemberStatus, setEditMemberStatus] = useState<'free' | 'active' | 'expired'>('free')
-  const [editMemberType, setEditMemberType] = useState<'none' | 'trial_week' | 'quarter' | 'year'>('none')
+  const [editMemberType, setEditMemberType] = useState<EditableMemberType>('none')
   const [editMemberCycleStartAt, setEditMemberCycleStartAt] = useState('')
   const [editMemberExpireAt, setEditMemberExpireAt] = useState('')
   const [editMemberScheduleDirty, setEditMemberScheduleDirty] = useState(false)
@@ -197,6 +370,7 @@ export default function UserManagementPage() {
     referral: DEFAULT_FREE_REFERRAL_LIMIT
   })
   const [updatingEntitlementKey, setUpdatingEntitlementKey] = useState<EntitlementKey | null>(null)
+  const [serviceEntitlementDrafts, setServiceEntitlementDrafts] = useState<Record<string, ServiceEntitlementRecord>>({})
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -255,7 +429,7 @@ export default function UserManagementPage() {
           const nextDurations = { ...MEMBER_DURATION_DAYS }
           for (const plan of data.plans) {
             if (plan?.memberType && plan.memberType in nextDurations && Number(plan.duration_days) > 0) {
-              nextDurations[plan.memberType as 'trial_week' | 'quarter' | 'year'] = Number(plan.duration_days)
+              nextDurations[plan.memberType as PaidMemberType] = Number(plan.duration_days)
             }
           }
           setMemberPlanDurations(nextDurations)
@@ -312,19 +486,28 @@ export default function UserManagementPage() {
     }
   }
 
-  const calculateMemberExpireAt = useCallback((memberType: 'none' | 'trial_week' | 'quarter' | 'year', startAtIso: string) => {
+  const calculateMemberExpireAt = useCallback((memberType: EditableMemberType, startAtIso: string) => {
     if (memberType === 'none' || !startAtIso) return ''
     const startDate = new Date(startAtIso)
     if (Number.isNaN(startDate.getTime())) return ''
+    if (memberType === 'quarter' || memberType === 'quarter_pro') {
+      return addCalendarMonths(startDate, 3).toISOString()
+    }
+    if (memberType === 'half_year') {
+      return addCalendarMonths(startDate, 6).toISOString()
+    }
+    if (memberType === 'annual') {
+      return addCalendarMonths(startDate, 12).toISOString()
+    }
     const durationDays = memberPlanDurations[memberType]
     const expireAt = new Date(startDate.getTime() + durationDays * 24 * 60 * 60 * 1000)
     return expireAt.toISOString()
   }, [memberPlanDurations])
 
   const openEdit = (user: User) => {
-    const initialMemberType: 'none' | 'trial_week' | 'quarter' | 'year' =
+    const initialMemberType: EditableMemberType =
       user.memberStatus === 'active' || user.memberStatus === 'expired'
-        ? ((user.memberType as 'none' | 'trial_week' | 'quarter' | 'year') || 'none')
+        ? ((user.memberType as EditableMemberType) || 'none')
         : 'none'
     const initialStartAt =
       initialMemberType === 'none'
@@ -346,6 +529,7 @@ export default function UserManagementPage() {
       website_apply: getUserFreeWebsiteApplyLimit(user),
       referral: getUserFreeReferralLimit(user)
     })
+    setServiceEntitlementDrafts(buildServiceEntitlementDrafts(user, initialMemberType))
     setUpdatingEntitlementKey(null)
     trackingService.track('admin_user_edit_open', {
       page_key: 'admin_user_management',
@@ -381,6 +565,11 @@ export default function UserManagementPage() {
     setEditMemberExpireAt(calculateMemberExpireAt(editMemberType, editMemberCycleStartAt))
   }, [editingUser, editMemberType, editMemberCycleStartAt, editMemberScheduleDirty, calculateMemberExpireAt])
 
+  useEffect(() => {
+    if (!editingUser) return
+    setServiceEntitlementDrafts(buildServiceEntitlementDrafts(editingUser, editMemberType))
+  }, [editingUser, editMemberType])
+
   const saveEdit = async () => {
     if (!editingUser) return
     try {
@@ -393,6 +582,11 @@ export default function UserManagementPage() {
         memberType: editMemberType,
         memberCycleStartAt: editMemberType === 'none' ? null : (editMemberCycleStartAt || null),
         autoApplyMemberDuration: editMemberType !== 'none'
+      }
+
+      if (entitlementsUnlocked) {
+        payload.serviceEntitlements = serviceEntitlementDrafts
+        payload.unlockPassword = entitlementPassword
       }
 
       if (editMemberExpireAt) {
@@ -1165,17 +1359,12 @@ export default function UserManagementPage() {
               <div>
                 <label className="block text-sm text-slate-700 mb-2">会员类型</label>
                 <div className="mb-3 grid grid-cols-2 gap-2 sm:hidden">
-                  {[
-                    { value: 'none', label: '普通用户' },
-                    { value: 'trial_week', label: '体验会员' },
-                    { value: 'quarter', label: '季度会员' },
-                    { value: 'year', label: '年度会员' }
-                  ].map((option) => (
+                    {MEMBER_TYPE_OPTIONS.map((option) => (
                     <button
                       key={option.value}
                       type="button"
                       onClick={() => {
-                        const nextType = option.value as 'none' | 'trial_week' | 'quarter' | 'year'
+                        const nextType = option.value as EditableMemberType
                         setEditMemberScheduleDirty(true)
                         setEditMemberType(nextType)
                         setEditMemberStatus(nextType === 'none' ? 'free' : 'active')
@@ -1196,7 +1385,7 @@ export default function UserManagementPage() {
                 <select
                   value={editMemberType}
                   onChange={(e) => {
-                    const nextType = e.target.value as 'none' | 'trial_week' | 'quarter' | 'year'
+                    const nextType = e.target.value as EditableMemberType
                     setEditMemberScheduleDirty(true)
                     setEditMemberType(nextType)
                     setEditMemberStatus(nextType === 'none' ? 'free' : 'active')
@@ -1206,11 +1395,10 @@ export default function UserManagementPage() {
                   }}
                   className="hidden w-full px-4 py-2 border border-slate-300 rounded-lg mb-2 sm:block"
                 >
-                  <option value="none">普通用户</option>
-                  <option value="trial_week">体验会员（周）</option>
-                  <option value="quarter">季度会员</option>
-                  <option value="year">年度会员</option>
-                </select>
+                    {MEMBER_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 {editMemberType !== 'none' && (
                   <div>
                     <div className="text-xs text-indigo-600 mb-3">保存后将按生效时间和当前会员类型自动计算到期时间，避免人工计算错误。</div>
@@ -1317,6 +1505,126 @@ export default function UserManagementPage() {
                   {renderEntitlementControl('website_apply', '直申次数')}
                   {renderEntitlementControl('referral', '内推次数')}
                 </div>
+              </div>
+
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-900">会员权益管理</h4>
+                    <p className="mt-1 text-xs text-slate-500">仅记录需人工运营的服务权益状态，页面权限不在此处配置。</p>
+                  </div>
+                  <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
+                    {editMemberType === 'none' ? '未开通' : MEMBER_TYPE_OPTIONS.find(item => item.value === editMemberType)?.label}
+                  </span>
+                </div>
+                {getServiceEntitlementPresets(editMemberType).length > 0 ? (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    {getServiceEntitlementPresets(editMemberType).map((item) => {
+                      const draft = serviceEntitlementDrafts[item.key] || { status: item.defaultStatus }
+                      const canEditService = entitlementsUnlocked && isSuperAdmin
+                      const updateDraft = (updates: Partial<ServiceEntitlementRecord>) => {
+                        if (!canEditService) return
+                        setServiceEntitlementDrafts(prev => ({
+                          ...prev,
+                          [item.key]: {
+                            ...(prev[item.key] || { status: item.defaultStatus }),
+                            ...updates,
+                            updatedAt: new Date().toISOString()
+                          } as ServiceEntitlementRecord
+                        }))
+                      }
+                      return (
+                        <div key={item.key} className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-900">{item.title}</div>
+                              <div className="mt-1 text-xs leading-5 text-slate-500">{item.desc}</div>
+                            </div>
+                            <span className="shrink-0 rounded-full bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+                              {getServiceEntitlementStatusLabel(item.key, draft.status)}
+                            </span>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                            <div className="rounded-lg bg-white px-3 py-2">
+                              <div className="text-slate-400">权益键</div>
+                              <div className="mt-1 truncate font-mono text-slate-700">{item.key}</div>
+                            </div>
+                            <div className="rounded-lg bg-white px-3 py-2">
+                              <div className="text-slate-400">额度</div>
+                              <div className="mt-1 font-semibold text-slate-700">{item.quota}</div>
+                            </div>
+                          </div>
+                          <div className="mt-3 space-y-2">
+                            <label className="block text-xs font-medium text-slate-500">
+                              状态
+                              <select
+                                value={draft.status}
+                                disabled={!canEditService}
+                                onChange={(e) => updateDraft({ status: e.target.value as ServiceEntitlementStatus })}
+                                className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"
+                              >
+                                {item.statuses.map(status => (
+                                  <option key={status.value} value={status.value}>{status.label}</option>
+                                ))}
+                              </select>
+                            </label>
+                            {(draft.status === 'scheduled' || draft.appointmentAt) && (
+                              <label className="block text-xs font-medium text-slate-500">
+                                预约时间
+                                <input
+                                  type="datetime-local"
+                                  value={formatDateTimeInputValue(draft.appointmentAt)}
+                                  disabled={!canEditService}
+                                  onChange={(e) => updateDraft({ appointmentAt: toIsoFromDateTimeInput(e.target.value) })}
+                                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"
+                                />
+                              </label>
+                            )}
+                            {(draft.status === 'completed' || draft.status === 'attended' || draft.status === 'published' || draft.completedAt) && (
+                              <label className="block text-xs font-medium text-slate-500">
+                                完成时间
+                                <input
+                                  type="datetime-local"
+                                  value={formatDateTimeInputValue(draft.completedAt)}
+                                  disabled={!canEditService}
+                                  onChange={(e) => updateDraft({ completedAt: toIsoFromDateTimeInput(e.target.value) })}
+                                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"
+                                />
+                              </label>
+                            )}
+                            {(draft.status === 'expired' || draft.expiredAt) && (
+                              <label className="block text-xs font-medium text-slate-500">
+                                失效时间
+                                <input
+                                  type="datetime-local"
+                                  value={formatDateTimeInputValue(draft.expiredAt)}
+                                  disabled={!canEditService}
+                                  onChange={(e) => updateDraft({ expiredAt: toIsoFromDateTimeInput(e.target.value) })}
+                                  className="mt-1 w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"
+                                />
+                              </label>
+                            )}
+                            <label className="block text-xs font-medium text-slate-500">
+                              运营备注
+                              <textarea
+                                value={draft.note || ''}
+                                disabled={!canEditService}
+                                onChange={(e) => updateDraft({ note: e.target.value })}
+                                rows={2}
+                                className="mt-1 w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 disabled:bg-slate-100 disabled:text-slate-400"
+                                placeholder="可记录沟通情况、申请进度或特殊说明"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-5 text-sm text-slate-400">
+                    普通用户暂无会员服务权益配置。
+                  </div>
+                )}
               </div>
 
               {/* 求职期望展示 */}

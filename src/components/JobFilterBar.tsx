@@ -537,7 +537,7 @@ export default function JobFilterBar({
               {isMember ? (
                 <span className="pointer-events-none inline-flex h-5 shrink-0 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
                   <Crown className="h-2.5 w-2.5 fill-current" />
-                  <span className="text-[8px] font-black leading-none tracking-wide">VIP</span>
+                  <span className="text-[8px] font-black leading-none tracking-wide">Club</span>
                 </span>
               ) : (
                 <img src="/pic_lists/Jobs_pics/sun-transparent.webp" alt="" className="h-7 w-7 opacity-80" />
@@ -735,7 +735,7 @@ export default function JobFilterBar({
               <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${filters.memberOnly ? 'border-[#6f63ff] bg-[#6f63ff]' : 'border-slate-300 bg-white'}`}>
                 {filters.memberOnly ? <Check className="h-3 w-3 text-white" /> : null}
               </span>
-              仅会员
+              Club 权益
             </button>
           ) : null}
 

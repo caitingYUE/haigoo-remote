@@ -1289,15 +1289,15 @@ export default function JobsPage() {
               {/* List Header Info - Only show if there's a specific filter info to display like isTrusted */}
               {filters.isTrusted && (
                 <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-end items-center text-xs text-slate-500 font-medium">
-                  <span className="flex items-center gap-1 text-indigo-600">
-                    <Zap className="w-3 h-3 fill-indigo-600" />
+                  <span className="flex items-center gap-1 text-[#6f63f6]">
+                    <Zap className="w-3 h-3 fill-[#6f63f6]" />
                     已过滤精选企业
                   </span>
                 </div>
               )}
               {jobsRefreshing && listMode === 'jobs' && (
                 <div className="h-0.5 overflow-hidden bg-slate-100" aria-label="正在更新职位列表">
-                  <div className="h-full w-1/2 animate-[pulse_1.2s_ease-in-out_infinite] bg-indigo-400" />
+                  <div className="h-full w-1/2 animate-[pulse_1.2s_ease-in-out_infinite] bg-[#8b7cff]" />
                 </div>
               )}
 
@@ -1327,16 +1327,16 @@ export default function JobsPage() {
                         </div>
                         <p className="text-slate-900 font-medium mb-1">职位列表加载失败</p>
                         <p className="text-slate-500 text-xs mb-4 max-w-[240px]">网络或数据服务暂时不可用，请稍后重试。</p>
-                        <button onClick={() => loadJobsWithFilters(1, false)} className="text-indigo-600 text-sm hover:underline mb-8">重新加载</button>
+                        <button onClick={() => loadJobsWithFilters(1, false)} className="text-[#6f63f6] text-sm hover:underline mb-8">重新加载</button>
                       </>
                     ) : filters.aiRecommended ? (
                       <>
-                        <div className="w-12 h-12 bg-indigo-50 rounded-full flex items-center justify-center mb-3">
-                          <Sparkles className="w-6 h-6 text-indigo-400" />
+                        <div className="w-12 h-12 bg-[#f6f3ff] rounded-full flex items-center justify-center mb-3">
+                          <Sparkles className="w-6 h-6 text-[#8b7cff]" />
                         </div>
                         <p className="text-slate-900 font-medium mb-1">当前条件下暂未发现 AI 强推荐的职位</p>
                         <p className="text-slate-500 text-xs mb-4 max-w-[240px]">为了保证内推质量，AI 只会推荐与你高度匹配的优质机会。建议稍微放宽筛选条件，或稍后再来。</p>
-                        <button onClick={() => setFilters((prev: any) => ({ ...prev, aiRecommended: false }))} className="text-indigo-600 text-sm font-medium hover:underline mb-8 bg-indigo-50 px-4 py-2 rounded-lg">返回普通列表</button>
+                        <button onClick={() => setFilters((prev: any) => ({ ...prev, aiRecommended: false }))} className="text-[#6f63f6] text-sm font-medium hover:underline mb-8 bg-[#f6f3ff] px-4 py-2 rounded-lg">返回普通列表</button>
                       </>
                     ) : (
                       <>
@@ -1344,14 +1344,14 @@ export default function JobsPage() {
                           <Search className="w-6 h-6 text-slate-300" />
                         </div>
                         <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
-                        <button onClick={clearAllFilters} className="text-indigo-600 text-sm hover:underline mb-8">清除筛选</button>
+                        <button onClick={clearAllFilters} className="text-[#6f63f6] text-sm hover:underline mb-8">清除筛选</button>
                       </>
                     )}
 
                     {/* Community Promo for Empty State */}
                     <div className="w-full max-w-sm rounded-xl border border-[#dceadf] bg-[linear-gradient(120deg,#f3fbf6_0%,#ffffff_58%,#fff9ef_100%)] p-4 flex flex-col items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-indigo-600" />
+                        <Sparkles className="w-5 h-5 text-[#6f63f6]" />
                         <span className="font-bold text-slate-900 text-sm">获取每日精选岗位推荐</span>
                       </div>
                       <p className="text-xs text-slate-500 text-center">加入微信群，获取更及时的精选岗位推荐，并与同行交流经验。</p>
@@ -1440,11 +1440,11 @@ export default function JobsPage() {
                     {listMode === 'jobs' && <div className="p-4 text-center border-t border-slate-100">
                       {loadingMore ? (
                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                          <div className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-[#6f63f6] border-t-transparent rounded-full animate-spin"></div>
                           加载中...
                         </div>
                       ) : jobs.length < totalJobs ? (
-                        <button onClick={loadMoreJobs} className="text-xs text-indigo-600 hover:underline font-medium">
+                        <button onClick={loadMoreJobs} className="text-xs text-[#6f63f6] hover:underline font-medium">
                           加载更多
                         </button>
                       ) : (

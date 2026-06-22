@@ -21,12 +21,12 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
   const getIntroText = () => {
     if (context === 'company') {
       return isExpanded
-        ? 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：'
-        : 'Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业，让你放心探索远程工作世界。';
+        ? 'Haigoo 优先展示经过基础信息核验、远程文化友好、岗位信息清晰的企业，符合以下 5 项筛选标准：'
+        : 'Haigoo 优先展示经过基础信息核验、远程文化友好、岗位信息清晰的企业，帮助你更高效地了解远程机会。';
     }
     return isExpanded
-      ? '该岗位由企业官方直接发布，经过 Haigoo 严格审核，符合以下 5 项标准：'
-      : '该岗位由企业官方直接发布，经过 Haigoo 严格审核，信息真实可靠，您可以放心投递。';
+      ? '该岗位来自企业官方渠道或合作渠道，经过 Haigoo 基础信息核验，符合以下 5 项筛选标准：'
+      : '该岗位来自企业官方渠道或合作渠道，经过 Haigoo 基础信息核验，可作为远程求职参考。';
   };
 
   const handleToggle = () => {
@@ -53,7 +53,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
           <div className="flex items-center justify-between gap-2 mb-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="font-bold text-slate-900 text-base">
-                {context === 'company' ? 'Haigoo 俱乐部认证企业' : 'Haigoo 俱乐部已认证'}
+                {context === 'company' ? '海狗远程俱乐部企业筛选标准' : 'Haigoo 俱乐部已认证'}
               </h4>
               <span className="px-2 py-0.5 bg-white/60 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100 whitespace-nowrap">Verified</span>
             </div>

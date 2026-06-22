@@ -200,20 +200,16 @@ export default function TrustedCompaniesPage() {
                 </div>
 
                 <div className="relative z-10 mx-auto max-w-[1360px] px-4 pb-10 text-center sm:px-6 lg:px-8">
-                    <h1 className="mx-auto max-w-[900px]" aria-label="发现全球顶尖远程友好企业">
-                        <span className="sr-only">发现全球顶尖远程友好企业</span>
-                        <img
-                            src="/pic_lists/Handwriting/hand-trusted-companies-title.webp"
-                            alt=""
-                            loading="eager"
-                            decoding="async"
-                            className="mx-auto h-auto w-full max-w-[780px] sm:max-w-[860px]"
-                        />
-                    </h1>
+                    <h1 className="sr-only">发现更适合中国用户申请的远程友好企业</h1>
+                    <img
+                        src="/pic_lists/Handwriting/hand-trusted-companies-title.webp"
+                        alt="精选企业"
+                        className="mx-auto h-auto w-full max-w-[580px] object-contain sm:max-w-[720px] lg:max-w-[820px]"
+                        loading="eager"
+                        decoding="async"
+                    />
                     <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
-                        Haigoo 严选全球远程工作机会，所有企业均经过人工审核，确保真实可靠。
-                        <br className="hidden sm:block" />
-                        聚焦更适合中国用户申请的远程友好公司。
+                        Haigoo 持续筛选全球远程友好公司，优先展示信息清晰、岗位真实、对中国候选人更友好的企业，帮助你更高效地了解远程工作与企业文化。
                     </p>
 
                     <div className="relative z-40 mx-auto mt-8 flex max-w-5xl flex-col items-center justify-center gap-3 lg:flex-row lg:items-start">
@@ -232,7 +228,7 @@ export default function TrustedCompaniesPage() {
                                     }
                                 }}
                                 disabled={!canAccessTrustedCompaniesPage}
-                                placeholder={canAccessTrustedCompaniesPage ? '搜索公司、行业或关键词...' : '升级季度会员后可搜索精选企业'}
+                                placeholder={canAccessTrustedCompaniesPage ? '搜索精选企业、行业或岗位方向' : '加入 Club 后可搜索精选企业'}
                                 className="h-14 w-full rounded-full border border-[#dce8ef] bg-white/92 pl-14 pr-14 text-base font-semibold text-slate-800 shadow-[0_18px_48px_-40px_rgba(61,89,120,0.5)] outline-none transition placeholder:text-slate-300 focus:border-[#86b9e8] focus:bg-white focus:ring-4 focus:ring-[#dfeeff]/70 disabled:cursor-not-allowed disabled:bg-white/62 disabled:text-slate-400"
                             />
                             <button
@@ -255,7 +251,7 @@ export default function TrustedCompaniesPage() {
                                 selected={selectedIndustries}
                                 onChange={setSelectedIndustries}
                                 disabled={!canAccessTrustedCompaniesPage}
-                                disabledMessage="升级季度会员后可筛选行业"
+                                disabledMessage="加入 Club 后可筛选行业"
                             />
                             <MultiSelectDropdown
                                 label="在招岗位"
@@ -263,7 +259,7 @@ export default function TrustedCompaniesPage() {
                                 selected={selectedJobCategories}
                                 onChange={setSelectedJobCategories}
                                 disabled={!canAccessTrustedCompaniesPage}
-                                disabledMessage="升级季度会员后可筛选岗位"
+                                disabledMessage="加入 Club 后可筛选岗位"
                             />
                             {(selectedIndustries.length > 0 || selectedJobCategories.length > 0) && (
                                 <button
@@ -284,16 +280,16 @@ export default function TrustedCompaniesPage() {
                                 </span>
                                 <div className="min-w-0">
                                     <div className="flex items-center gap-2 text-lg font-black text-slate-950">
-                                        Haigoo 俱乐部认证企业
+                                        海狗远程俱乐部企业筛选标准
                                         <span className="rounded-full bg-[#eef0ff] px-2 py-0.5 text-xs font-bold text-[#6f72ff]">Verified</span>
                                     </div>
-                                    <p className="mt-2 text-sm leading-7 text-slate-500">Haigoo 只展示经过严格验证、真实存在、对中国人才友好的企业。</p>
+                                    <p className="mt-2 text-sm leading-7 text-slate-500">Haigoo 优先展示经过基础信息核验、远程文化友好、岗位信息清晰的企业。</p>
                                     <button
                                         type="button"
                                         onClick={() => setShowVerificationStandards((value) => !value)}
                                         className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#5f63f6] transition-colors hover:bg-white"
                                     >
-                                        {showVerificationStandards ? '收起认证标准' : '查看 5 项认证标准'}
+                                        {showVerificationStandards ? '收起筛选标准' : '查看筛选标准'}
                                         <ChevronDown className={`h-4 w-4 transition-transform ${showVerificationStandards ? 'rotate-180' : ''}`} />
                                     </button>
                                     {showVerificationStandards ? (
@@ -320,12 +316,12 @@ export default function TrustedCompaniesPage() {
                                 </span>
                                 <div>
                                     <div className="flex items-center gap-2 text-lg font-black text-slate-950">
-                                        我要招聘
+                                        企业合作 / 发布远程岗位
                                         <span className="rounded-full bg-[#f3ebff] px-2 py-0.5 text-xs font-bold text-[#8a63f6]">Hire Remote</span>
                                     </div>
-                                    <p className="mt-2 text-sm leading-7 text-slate-500">有远程招聘需求？提交企业信息和岗位要求，我们将为您对接优质人才。</p>
+                                    <p className="mt-2 text-sm leading-7 text-slate-500">有远程招聘需求？提交企业信息和岗位需求，我们将协助你触达中国远程人才。</p>
                                     <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[#8a63f6]">
-                                        立即发布 <ArrowRight className="h-4 w-4" />
+                                        了解企业合作 <ArrowRight className="h-4 w-4" />
                                     </span>
                                 </div>
                             </div>
@@ -393,11 +389,11 @@ export default function TrustedCompaniesPage() {
                             {!canAccessTrustedCompaniesPage && (
                                 <div className="mt-10 flex justify-center">
                                     <button
-                                        onClick={() => navigate('/profile?tab=membership')}
+                                        onClick={() => navigate('/profile?tab=membership#club-service-plans')}
                                         className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5f63f6] px-8 py-3.5 text-base font-bold text-white shadow-[0_20px_40px_-24px_rgba(95,99,246,0.5)] transition-all hover:-translate-y-0.5"
                                     >
                                         <Crown className="h-4.5 w-4.5" />
-                                        升级会员查看完整名单
+                                        加入 Club 解锁完整名单
                                     </button>
                                 </div>
                             )}

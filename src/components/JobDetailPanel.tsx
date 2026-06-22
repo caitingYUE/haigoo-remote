@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
 import { SingleLineTags } from './SingleLineTags'
-import { MembershipUpgradeModal } from './MembershipUpgradeModal'
 import { LocationTooltip } from './LocationTooltip'
 import { ReferralApplicationModal } from './ReferralApplicationModal'
 import { MatchDetailsPanel } from './MatchDetailsPanel'
@@ -309,8 +308,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [companyOpenJobsCount, setCompanyOpenJobsCount] = useState<number | null>(null)
     const [companyOpenJobs, setCompanyOpenJobs] = useState<Job[]>([])
     const [activeDetailTab, setActiveDetailTab] = useState<'description' | 'company' | 'jobs'>('description')
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false)
-    const [upgradeTriggerSource, setUpgradeTriggerSource] = useState<'referral' | 'ai_resume' | 'general'>('general')
     const [showHeadquartersLocationTooltip, setShowHeadquartersLocationTooltip] = useState(false)
     const [headquartersTooltipPosition, setHeadquartersTooltipPosition] = useState<{ left: number; top: number } | null>(null)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
@@ -406,8 +403,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'job',
             entity_id: job?.id,
         })
-        setUpgradeTriggerSource(featureKey === 'referral' ? 'referral' : 'general')
-        setShowUpgradeModal(true)
+        navigate('/profile?tab=membership#club-service-plans')
     }
 
     useEffect(() => {
@@ -971,7 +967,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 clearFreeUsageCache()
                 syncSharedFreeAccessState(data.usage, data.unlocked_companies || [], data.limit);
                 showSuccess('已解锁该企业人脉', `当前还可免费查看 ${Math.max(0, (Number(data.limit) || referralFreeLimit) - (Number(data.usage) || 0))} 次`)
-                if (data.remaining === 0) showInfo('免费次数已用完', '升级会员解锁全部人脉');
+                if (data.remaining === 0) showInfo('免费次数已用完', '了解会员服务后可解锁全部人脉');
             } else {
                 showError('解锁失败', data.error || '服务器错误');
             }
@@ -1118,7 +1114,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
             if (status === 403) {
                 openUpgradeModal('website_apply')
-                showInfo('前往申请次数已用完', '升级会员后可继续查看并申请更多岗位')
+                showInfo('前往申请次数已用完', '了解会员服务后可继续查看并申请更多岗位')
                 return false
             }
 
@@ -1346,7 +1342,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const showReferralLoadingPlaceholder = isAuthenticated && !showReferralModule && companyInfoLoading && mayHaveReferralPath
     const getUnifiedReferralUnlockLabel = () => {
         if (referralAccessMode === 'guest') return '帮我内推（需登录）'
-        if (referralAccessMode === 'member_only') return 'VIP 解锁'
+        if (referralAccessMode === 'member_only') return '了解解锁方式'
         if (referralAccessMode === 'free_available') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
         if (referralAccessMode === 'free_exhausted') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
         return ''
@@ -1378,18 +1374,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             case 'login_required':
                 return '前往申请（需登录）'
             case 'website_available':
-                if (isMemberRestrictedJob && !isMember) return '前往申请 · VIP'
+                if (isMemberRestrictedJob && !isMember) return '解锁申请入口'
                 if (isMemberRestrictedJob) return '前往申请'
                 if (websiteApplyUnlocked && !isMember) return '前往申请（已解锁）'
                 return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
                     ? `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
                     : '前往申请'
             case 'website_locked_member':
-                if (isMemberRestrictedJob && !isMember) return '前往申请 · VIP'
+                if (isMemberRestrictedJob && !isMember) return '解锁申请入口'
                 if (isMemberRestrictedJob) return '前往申请'
                 return `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
             case 'email_only':
-                if (isMemberRestrictedJob && !isMember) return '仅支持邮箱申请 · VIP'
+                if (isMemberRestrictedJob && !isMember) return '解锁申请入口'
                 if (isReferralCompanyUnlocked && !isMember) return '仅支持邮箱申请（已解锁）'
                 return '仅支持邮箱申请'
             default:
@@ -1398,20 +1394,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
     const getApplyButtonClassName = () => {
         if (isMemberRestrictedJob && !isMember && websiteApplyState !== 'unavailable') {
-            return 'border border-[#d8ddff] bg-[linear-gradient(135deg,#6d5dfc_0%,#4f46e5_100%)] text-white shadow-[0_20px_40px_-24px_rgba(79,70,229,0.55)] hover:shadow-[0_24px_46px_-24px_rgba(79,70,229,0.62)]'
+            return 'border border-[#d8d2ff] bg-[linear-gradient(135deg,#8b7cff_0%,#6f63f6_100%)] text-white shadow-[0_20px_40px_-24px_rgba(111,99,246,0.56)] hover:shadow-[0_24px_46px_-24px_rgba(111,99,246,0.64)] hover:brightness-[1.03]'
         }
 
         if (!isAuthenticated && websiteApplyState !== 'unavailable') {
-            return 'bg-[#2f6ed8] text-white shadow-[0_20px_36px_-24px_rgba(47,110,216,0.55)] hover:bg-[#285fc4] hover:shadow-[0_24px_40px_-22px_rgba(47,110,216,0.48)]'
+            return 'border border-[#d7dcff] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white shadow-[0_20px_38px_-24px_rgba(95,131,247,0.58)] hover:shadow-[0_24px_44px_-24px_rgba(111,99,246,0.54)] hover:brightness-[1.03]'
         }
 
         switch (websiteApplyState) {
             case 'login_required':
             case 'website_available':
             case 'website_locked_member':
-                return 'bg-[#2f6ed8] text-white shadow-[0_20px_36px_-24px_rgba(47,110,216,0.55)] hover:bg-[#285fc4] hover:shadow-[0_24px_40px_-22px_rgba(47,110,216,0.48)]'
+                return 'border border-[#d7dcff] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white shadow-[0_20px_38px_-24px_rgba(95,131,247,0.58)] hover:shadow-[0_24px_44px_-24px_rgba(111,99,246,0.54)] hover:brightness-[1.03]'
             case 'email_only':
-                return 'border border-slate-200 bg-slate-100 text-slate-500 hover:border-slate-300 hover:text-slate-700'
+                return 'border border-[#e1e8f4] bg-white/86 text-slate-500 hover:border-[#d8d2ff] hover:text-[#6f63f6]'
             default:
                 return 'border border-slate-200 bg-slate-50 text-slate-400'
         }
@@ -1633,7 +1629,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <button
                             onClick={handleSave}
                             className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
-                                isSaved ? 'border-[#b9d9f5] bg-white text-[#2f6ed8]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#b9d9f5] hover:text-[#2f6ed8]'
+                                isSaved ? 'border-[#d8d2ff] bg-white text-[#6f63f6]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#d8d2ff] hover:text-[#6f63f6]'
                             }`}
                         >
                             <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
@@ -1641,7 +1637,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </button>
                         <button
                             onClick={handleShare}
-                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#b9d9f5] hover:text-[#2f6ed8]"
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#d8d2ff] hover:text-[#6f63f6]"
                         >
                             <Share2 className="h-3.5 w-3.5" />
                             <span>分享</span>
@@ -1650,10 +1646,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 <div className="absolute right-8 top-6 z-30 hidden shrink-0 items-center gap-2 xl:flex">
-                    <button
-                        onClick={handleSave}
-                        className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
-                            isSaved ? 'border-[#b9d9f5] bg-white text-[#2f6ed8]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#b9d9f5] hover:text-[#2f6ed8]'
+                        <button
+                            onClick={handleSave}
+                            className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
+                            isSaved ? 'border-[#d8d2ff] bg-white text-[#6f63f6]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#d8d2ff] hover:text-[#6f63f6]'
                         }`}
                     >
                         <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
@@ -1661,7 +1657,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </button>
                     <button
                         onClick={handleShare}
-                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#b9d9f5] hover:text-[#2f6ed8]"
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#d8d2ff] hover:text-[#6f63f6]"
                     >
                         <Share2 className="h-3.5 w-3.5" />
                         <span>分享</span>
@@ -1710,7 +1706,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         {(hasWebsiteApply || hasAnyEmailPath || onApply) && (
                             <button
                                 onClick={handleApplyButtonClick}
-                            className={`inline-flex h-[44px] w-full items-center justify-center gap-2 rounded-[18px] px-4 text-[15px] font-bold transition-all duration-200 shadow-[0_16px_30px_-20px_rgba(47,110,216,0.55)] hover:-translate-y-0.5 active:translate-y-0 ${getApplyButtonClassName()}`}
+                            className={`inline-flex h-[44px] w-full items-center justify-center gap-2 rounded-[18px] px-4 text-[15px] font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${getApplyButtonClassName()}`}
                         >
                                 <span className="flex items-center gap-1.5">
                                     {getApplyButtonLabel()}
@@ -1769,11 +1765,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 key={tab.key}
                                 onClick={() => setActiveDetailTab(tab.key)}
                                 className={`relative whitespace-nowrap pb-2 text-sm font-semibold transition-colors ${
-                                    activeDetailTab === tab.key ? 'text-[#2f6ed8]' : 'text-slate-500 hover:text-slate-900'
+                                    activeDetailTab === tab.key ? 'text-[#6f63f6]' : 'text-slate-500 hover:text-slate-900'
                                 }`}
                             >
                                 {tab.label}
-                                {activeDetailTab === tab.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#2f6ed8]" />}
+                                {activeDetailTab === tab.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#6f63f6]" />}
                             </button>
                         ))}
                     </div>
@@ -1792,12 +1788,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <Lock className="h-4 w-4" />
                                     </span>
                                     <span className="min-w-0">
-                                        <span className="block truncate text-[13px] font-black text-slate-900">解锁联系人邮箱与直达申请入口</span>
-                                        <span className="block truncate text-[12px] font-semibold text-slate-500">体验会员 ¥29.9 起，简历直达用人侧</span>
+                                        <span className="block truncate text-[13px] font-black text-slate-900">Club 会员可解锁联系人与申请入口</span>
+                                        <span className="block truncate text-[12px] font-semibold text-slate-500">了解适合你的服务方案，加入后可开通网站对应权限。</span>
                                     </span>
                                 </div>
-                                <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-slate-950 px-3.5 text-[12px] font-black text-white transition-colors group-hover:bg-[#2f6ed8]">
-                                    升级会员解锁
+                                <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-slate-950 px-3.5 text-[12px] font-black text-white transition-colors group-hover:bg-[#6f63f6]">
+                                    了解解锁方式
                                 </span>
                             </button>
                     )}
@@ -1833,10 +1829,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <div className="min-w-0">
                                     <div className="flex items-start justify-between gap-3">
                                         <h3 className="min-w-0 text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
-                                            帮我内推 <span className="font-black text-[#2f6ed8]">@{job.company || companyInfo?.name || '该企业'}</span>
+                                            帮我内推 <span className="font-black text-[#6f63f6]">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
                                         {hasScrollableReferralContacts && (
-                                            <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-[#dce8ef] bg-[#f7fbff] px-2 py-0.5 text-[11px] font-black text-[#2f6ed8]">
+                                            <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[11px] font-black text-[#6f63f6]">
                                                 {displayReferralContacts.length} 位联系人
                                             </span>
                                         )}
@@ -1854,9 +1850,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             art: '/pic_lists/Jobs_pics/card_bg1.webp',
                                             shell: 'border-[#c9dcf6] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,251,255,0.96))]',
                                             glow: 'from-[#8eb8f0] via-[#5bb6e8] to-[#6cd4bd]',
-                                            avatar: 'border-[#b9d9f5] bg-[linear-gradient(135deg,#3f7ee8_0%,#35b6e8_100%)] text-white',
-                                            icon: 'border-[#c9dcf6] bg-[#eef7ff] text-[#2f6ed8]',
-                                            chip: 'border-[#c9dcf6] bg-[#eef7ff] text-[#2f6ed8]'
+                                            avatar: 'border-[#d8d2ff] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white',
+                                            icon: 'border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6]',
+                                            chip: 'border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6]'
                                         },
                                         {
                                             art: '/pic_lists/Jobs_pics/card_bg2.webp',
@@ -1920,7 +1916,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                             : referralAccessMode === 'guest'
                                                                 ? '帮我内推（需登录）'
                                                             : referralAccessMode === 'member_only'
-                                                                ? 'VIP 解锁'
+                                                                ? '了解解锁方式'
                                                                 : referralAccessMode === 'free_exhausted'
                                                                     ? `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
                                                                     : shouldShowReferralTrialCount
@@ -1980,7 +1976,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                         }}
                                                                         className={`flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[13px] font-bold shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[1] ${
                                                                             isUnlockedCard
-                                                                                ? 'border-[#2f6ed8] bg-[#2f6ed8] text-white shadow-[#2f6ed8]/20'
+                                                                                ? 'border-[#6f63f6] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)]'
                                                                                 : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
                                                                         }`}
                                                                 >
@@ -2104,7 +2100,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     <button
                                                         type="button"
                                                         onClick={() => window.open(toSafeExternalUrl(item.href), '_blank', 'noopener,noreferrer')}
-                                                        className="block max-w-full truncate text-left text-[14px] font-bold text-indigo-600 hover:text-indigo-700 hover:underline"
+                                                        className="block max-w-full truncate text-left text-[14px] font-bold text-[#6f63f6] hover:text-[#5f55e8] hover:underline"
                                                         title={item.value}
                                                     >
                                                         {item.value}
@@ -2172,15 +2168,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             }}
                                             className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
                                                 isCurrentJob
-                                                    ? 'border-[#b9d9f5] bg-[#eef7ff]/70'
-                                                    : 'border-slate-200 bg-white hover:border-indigo-200 hover:bg-indigo-50/40'
+                                                    ? 'border-[#d8d2ff] bg-[#f6f3ff]/70'
+                                                    : 'border-slate-200 bg-white hover:border-[#d8d2ff] hover:bg-[#f6f3ff]/45'
                                             }`}
                                         >
                                             <div className="min-w-0">
                                                 <div className="flex min-w-0 items-center gap-2">
                                                     <div className="truncate text-sm font-bold text-slate-900">{item.translations?.title || item.title}</div>
                                                     {isCurrentJob ? (
-                                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#2f6ed8]">当前</span>
+                                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">当前</span>
                                                     ) : null}
                                                 </div>
                                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -2244,7 +2240,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     <label className="block text-sm font-medium mb-2">反馈内容</label>
                                     <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
                                 </div>
-                                {feedbackMessage && <div className="text-sm text-indigo-600">{feedbackMessage}</div>}
+                                {feedbackMessage && <div className="text-sm text-[#6f63f6]">{feedbackMessage}</div>}
                                 <div className="flex justify-end gap-2">
                                     <button onClick={() => setIsFeedbackOpen(false)} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">取消</button>
                                     <button onClick={submitFeedback} disabled={feedbackSubmitting} className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white hover:shadow-lg disabled:opacity-50">提交</button>
@@ -2254,11 +2250,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 )
             }
-            <MembershipUpgradeModal
-                isOpen={showUpgradeModal}
-                onClose={() => setShowUpgradeModal(false)}
-                triggerSource={upgradeTriggerSource}
-            />
             <ReferralApplicationModal
                 isOpen={isReferralModalOpen}
                 onClose={() => setIsReferralModalOpen(false)}

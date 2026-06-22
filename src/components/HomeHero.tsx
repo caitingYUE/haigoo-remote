@@ -41,6 +41,7 @@ const HOME_HERO_TITLE_SRCSET = [
 ].join(', ')
 const HOME_UPGRADE_AVATAR_SRC = '/pic_lists/Home_pics/Haigoo_hi-transparent.webp'
 const HOME_UPGRADE_BANNER_DISMISS_KEY = 'haigoo_home_upgrade_banner_dismissed_v1'
+const HOME_SYSTEM_UPGRADE_END_AT = new Date('2026-06-22T20:40:00+08:00').getTime()
 
 const LazyGeneratedPlanView = lazy(() => import('./GeneratedPlanView'))
 const LazyJobDetailModal = lazy(() => import('./JobDetailModal'))
@@ -54,7 +55,7 @@ async function parseResumeFileOnDemand(file: File) {
 const HomeVipBadge = ({ className = '' }: { className?: string }) => (
     <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-white bg-[#6f63ff] px-1.5 py-0.5 text-[10px] font-black text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)] ${className}`}>
         <Crown className="h-3 w-3 fill-current" />
-        <span className="text-[8px] font-black leading-none tracking-wide">VIP</span>
+        <span className="text-[8px] font-black leading-none tracking-wide">Club</span>
     </span>
 )
 
@@ -91,7 +92,7 @@ const SAMPLE_RECOMMENDATIONS = [
         timezone: 'US time zones',
         salary: '$130k - $185k USD',
         matchScore: 87,
-        company_intro: 'MoneyGram 是全球汇款和支付领域的百年品牌，业务覆盖 200+ 国家，正积极推进数字化和区块链转型，数据团队在全球分布式协作。'
+        company_intro: 'MoneyGram 是全球跨境金融服务领域的百年品牌，业务覆盖 200+ 国家，正积极推进数字化和区块链转型，数据团队在全球分布式协作。'
     },
     {
         id: 'remotive-pexa-ux',
@@ -616,7 +617,7 @@ export default function HomeHero({
     companiesLoading = false
 }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { user, isAuthenticated, token, isMember, updateProfile, isLoading: authLoading } = useAuth()
+    const { user, isAuthenticated, token, isMember, memberType, updateProfile, isLoading: authLoading } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
     const userId = user?.user_id || null
     const storedTargetRole = String(user?.profile?.targetRole || '').trim()
@@ -630,6 +631,17 @@ export default function HomeHero({
     const [showUpgradeFeedbackModal, setShowUpgradeFeedbackModal] = useState(false)
     const [upgradeFeedbackContent, setUpgradeFeedbackContent] = useState('')
     const [upgradeFeedbackSubmitting, setUpgradeFeedbackSubmitting] = useState(false)
+    const [isSystemUpgradeNoticeActive, setIsSystemUpgradeNoticeActive] = useState(() => Date.now() < HOME_SYSTEM_UPGRADE_END_AT)
+
+    useEffect(() => {
+        if (!isSystemUpgradeNoticeActive) return
+        const timer = window.setInterval(() => {
+            if (Date.now() >= HOME_SYSTEM_UPGRADE_END_AT) {
+                setIsSystemUpgradeNoticeActive(false)
+            }
+        }, 30 * 1000)
+        return () => window.clearInterval(timer)
+    }, [isSystemUpgradeNoticeActive])
 
     const dismissUpgradeBanner = () => {
         try {
@@ -695,7 +707,10 @@ export default function HomeHero({
             setUpgradeFeedbackSubmitting(false)
         }
     }
-    const upgradeBannerMessage = '嗨，我是海狗，你的远程工作探索伙伴。'
+    const upgradeBannerMessage = isSystemUpgradeNoticeActive
+        ? '系统正在升级中，建议20:40后再使用网站。'
+        : '嗨，我是海狗，你的远程工作探索伙伴。'
+    const shouldShowUpgradeBanner = isSystemUpgradeNoticeActive || showUpgradeBanner
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -766,6 +781,55 @@ export default function HomeHero({
     const memberExpireLabel = isMember
         ? (user?.memberExpireAt ? new Date(user.memberExpireAt).toLocaleDateString('zh-CN') : '长期有效')
         : ''
+    const homeMemberEntitlement = memberType === 'trial_week'
+        ? {
+            title: '欢迎回来，体验权益已为你开启',
+            description: `短期冲刺求职权益已解锁，当前有效期至 ${memberExpireLabel}。`,
+            tags: ['岗位申请开放', '联系人限时开放', 'AI 简历工具', '7 天短期体验', '外企英语样例'],
+            iconText: 'text-[#6f63f6]',
+            iconBg: 'bg-[#f0edff]',
+            button: '进入远程工作',
+            ctaHref: '/jobs'
+        }
+        : memberType === 'annual'
+            ? {
+                title: '欢迎回来，Club Partner 权益已为你开启',
+                description: `岗位申请路径、外企英语材料、语音咨询、年度规划和共建申请权益已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '外企英语材料', '年度规划', '共建申请'],
+                iconText: 'text-[#6f63f6]',
+                iconBg: 'bg-[#f0edff]',
+                button: '查看 Partner 权益',
+                ctaHref: '/profile?tab=membership#member-benefits'
+            }
+        : memberType === 'half_year'
+            ? {
+                title: '欢迎回来，Club Member 权益已为你开启',
+                description: `岗位申请路径、外企英语材料和语音咨询权益已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '外企英语材料', 'AI 简历建议', '语音咨询'],
+                iconText: 'text-[#6f63f6]',
+                iconBg: 'bg-[#f0edff]',
+                button: '查看 Member 权益',
+                ctaHref: '/profile?tab=membership#member-benefits'
+            }
+        : memberType === 'quarter_pro' || memberType === 'year'
+            ? {
+                title: '欢迎回来，Pro权益已为你开启',
+                description: `全部求职权益、外企英语跟读素材和延伸资料已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '外企英语跟读', '更多资料开放', 'CEO 联系权限'],
+                iconText: 'text-[#6f63f6]',
+                iconBg: 'bg-[#f0edff]',
+                button: '继续学习与求职',
+                ctaHref: '/profile?tab=membership#member-benefits'
+            }
+            : {
+                title: '欢迎回来，季度权益已为你开启',
+                description: `远程求职权益、外企英语视频和企业文化内容已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '精选企业名单', '外企英语视频', 'CEO 商业思维'],
+                iconText: 'text-[#6f63f6]',
+                iconBg: 'bg-[#f0edff]',
+                button: '进入远程工作',
+                ctaHref: '/jobs'
+            }
 
     useEffect(() => {
         if (activeFeaturedTab === HOME_FEATURED_TABS[0].id) {
@@ -1782,7 +1846,7 @@ export default function HomeHero({
             </div>
 
             <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
-                {showUpgradeBanner && (
+                {shouldShowUpgradeBanner && (
                     <div className="absolute left-5 top-3 z-30 max-w-[calc(100%-2.5rem)] lg:left-10 lg:top-10 xl:max-w-[640px]">
                         <div className="flex h-9 w-fit max-w-full items-center gap-2 rounded-full border border-[#eadfc8]/80 bg-[#fffdf8]/92 py-1 pl-1.5 pr-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_14px_34px_-30px_rgba(116,90,44,0.42)] ring-1 ring-white/60 backdrop-blur-sm">
                             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white">
@@ -1797,27 +1861,31 @@ export default function HomeHero({
                             <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap sm:overflow-visible sm:text-clip">
                                 {upgradeBannerMessage}
                             </span>
-                            <button
-                                type="button"
-                                onClick={handleUpgradeBannerFeedback}
-                                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8]/80 bg-white/88 px-2 text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
-                                aria-label="我要留言"
-                            >
-                                <MessageCircle className="h-3.5 w-3.5" />
-                                <span>我要留言</span>
-                            </button>
-                            <button
-                                type="button"
-                                onClick={dismissUpgradeBanner}
-                                className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/76 text-slate-400 transition-colors hover:text-slate-700"
-                                aria-label="关闭提示"
-                            >
-                                <X className="h-3.5 w-3.5" />
-                            </button>
+                            {!isSystemUpgradeNoticeActive ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handleUpgradeBannerFeedback}
+                                        className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8]/80 bg-white/88 px-2 text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8]"
+                                        aria-label="我要留言"
+                                    >
+                                        <MessageCircle className="h-3.5 w-3.5" />
+                                        <span>我要留言</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={dismissUpgradeBanner}
+                                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/76 text-slate-400 transition-colors hover:text-slate-700"
+                                        aria-label="关闭提示"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </>
+                            ) : null}
                         </div>
                     </div>
                 )}
-                <div className={`relative z-10 w-full min-w-0 max-w-[640px] ${showUpgradeBanner ? 'pt-11 sm:pt-0' : ''}`}>
+                <div className={`relative z-10 w-full min-w-0 max-w-[640px] ${shouldShowUpgradeBanner ? 'pt-11 sm:pt-0' : ''}`}>
                     <h1 className="relative max-w-[640px]" aria-label="用你喜欢的方式 工作和生活">
                         <span className="sr-only">用你喜欢的方式 工作和生活</span>
                         <picture aria-hidden="true">
@@ -2055,8 +2123,8 @@ export default function HomeHero({
                                         <ShieldCheck className="h-4 w-4" />
                                     </button>
                                     <span className="pointer-events-none absolute left-1/2 top-full z-[90] mt-3 w-[420px] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-[18px] border border-[#eadfcf] bg-[#fffdf8] p-4 text-left opacity-0 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.34)] transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                                        <span className="block text-sm font-black text-slate-950">Haigoo 俱乐部认证企业</span>
-                                        <span className="mt-1.5 block text-xs font-semibold leading-5 text-slate-600">只展示经过严格验证、真实存在、对中国人才友好的企业，符合以下 5 项标准：</span>
+                                        <span className="block text-sm font-black text-slate-950">海狗远程俱乐部企业筛选标准</span>
+                                        <span className="mt-1.5 block text-xs font-semibold leading-5 text-slate-600">优先展示经过基础信息核验、远程文化友好、岗位信息清晰的企业，符合以下 5 项筛选标准：</span>
                                         <span className="mt-2 grid gap-1.5">
                                             {HAIGOO_VERIFICATION_STANDARDS.map((item) => (
                                                 <span key={item} className="flex gap-2 text-xs font-semibold leading-5 text-slate-700">
@@ -2186,38 +2254,38 @@ export default function HomeHero({
                     )}
                 </div>
 
-                <div className={`relative z-10 mt-6 overflow-hidden rounded-[30px] border p-5 shadow-[0_24px_70px_-58px_rgba(184,132,36,0.34)] ${
+                <div className={`relative z-10 mt-6 overflow-hidden rounded-[30px] border p-5 ${
                     isMember
-                        ? 'border-[#e5dccb] bg-[linear-gradient(105deg,#fff9ee_0%,#ffffff_56%,#fbf7ef_100%)]'
+                        ? 'border-[#ddd7ff] bg-[linear-gradient(105deg,#fbfaff_0%,#ffffff_54%,#f5f7ff_100%)] shadow-[0_24px_70px_-58px_rgba(95,99,246,0.34)]'
                         : 'border-[#f2dfb7] bg-[linear-gradient(105deg,#fffaf0_0%,#ffffff_54%,#f5f2ff_100%)]'
                 }`}>
                     {isMember ? (
                         <>
                             <img src="/pic_lists/About_pics/about_bg.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[36%] object-cover object-right opacity-[0.12] saturate-[0.86]" />
-                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_18%,rgba(246,213,151,0.22),transparent_23%)]" />
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_18%,rgba(216,210,255,0.28),transparent_24%),radial-gradient(circle_at_62%_90%,rgba(224,241,255,0.32),transparent_30%)]" />
                         </>
                     ) : null}
                     <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
                         <div className="flex items-start gap-4">
-                            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] bg-white shadow-sm ${isMember ? 'text-[#6f63f6]' : 'text-[#d9951f]'}`}>
+                            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-[20px] shadow-sm ${isMember ? `${homeMemberEntitlement.iconBg} ${homeMemberEntitlement.iconText}` : 'bg-white text-[#d9951f]'}`}>
                                 <Crown className="h-6 w-6" />
                             </div>
                             <div>
                                 <div className="text-xl font-black tracking-normal text-slate-950">
-                                    {isMember ? '欢迎回来，会员权益已为你开启' : '加入会员，申请效率提高3倍'}
+                                    {isMember ? homeMemberEntitlement.title : '加入 Haigoo Remote Club，获得更多求职支持'}
                                 </div>
                                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                                     {isMember
-                                        ? `会员岗位、企业联系人、匹配分析和优先支持已解锁，当前有效期至 ${memberExpireLabel}。`
-                                        : '会员可以解锁更高价值的远程岗位信息、企业内部联系方式及更多求职工具，简历直达用人侧。'}
+                                        ? homeMemberEntitlement.description
+                                        : 'Club 会员可获得更多岗位申请支持、联系人资源、外企文化资料和英语学习工具，帮助你更高效地准备远程求职。'}
                                 </p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     {(isMember
-                                        ? ['会员岗位畅看', '联系人线索已解锁', '优先人工支持', '精选企业完整可见', '申请路径更顺畅']
-                                        : ['无限申请次数', '无限内推次数', '岗位匹配分析', '全站岗位解锁', '精选企业解锁']
+                                        ? homeMemberEntitlement.tags
+                                        : ['岗位申请支持', '联系人资源', '外企英语学习', '精选企业资料', '求职工具权限']
                                     ).map((item) => (
                                         <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-white/90 bg-white/72 px-3 py-1.5 text-xs font-black text-slate-600">
-                                            <CheckCircle2 className="h-3.5 w-3.5 text-[#6f63f6]" />
+                                            <CheckCircle2 className={`h-3.5 w-3.5 ${isMember ? homeMemberEntitlement.iconText : 'text-[#6f63f6]'}`} />
                                             {item}
                                         </span>
                                     ))}
@@ -2226,10 +2294,10 @@ export default function HomeHero({
                         </div>
                         <button
                             type="button"
-                            onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership')}
-                            className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(217,149,31,0.64)] transition-all hover:-translate-y-0.5 ${isMember ? 'bg-slate-950' : 'bg-[#f0a11f]'}`}
+                            onClick={() => navigate(isMember ? homeMemberEntitlement.ctaHref : '/profile?tab=membership#club-service-plans')}
+                            className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${isMember ? 'bg-slate-950 shadow-[0_18px_42px_-26px_rgba(15,23,42,0.48)] hover:bg-[#6f63f6]' : 'bg-[#f0a11f] shadow-[0_18px_42px_-26px_rgba(217,149,31,0.64)]'}`}
                         >
-                            {isMember ? '继续查看会员岗位' : '查看会员权益'}
+                            {isMember ? homeMemberEntitlement.button : '了解 Club 权益'}
                             <ArrowRight className="h-4 w-4" />
                         </button>
                     </div>
@@ -2824,10 +2892,10 @@ function CopilotPlanModal({
                         ) : (
                             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
-                                    <div className="text-sm font-bold text-slate-900">开通会员可继续完善方案</div>
+                                    <div className="text-sm font-bold text-slate-900">添加顾问了解后可继续完善方案</div>
                                     <div className="text-xs text-slate-600 mt-1">会员可修改默认项，并获得更完整的建议</div>
                                 </div>
-                                <Link to="/membership" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看会员方案</Link>
+                                <Link to="/profile?tab=membership#club-service-plans" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看权益方案</Link>
                             </div>
                         )
                     ) : null}

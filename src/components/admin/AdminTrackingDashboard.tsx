@@ -176,15 +176,21 @@ const SEGMENT_LABELS: Record<Segment, string> = {
 };
 
 const PLAN_LABELS: Record<string, string> = {
-    trial_week_lite: '体验会员卡',
-    club_go_quarterly: '季度会员卡',
-    goo_plus_yearly: '年度会员卡',
+    trial_week_lite: '体验会员（周）',
+    club_go_quarterly: '季度会员',
+    quarter_pro_quarterly: 'Pro会员',
+    goo_plus_yearly: '年度会员',
+    club_half_year: 'Club Member',
+    club_annual: 'Club Partner',
 };
 
 const MEMBER_TYPE_LABELS: Record<string, string> = {
-    trial_week: '体验会员',
+    trial_week: '体验会员（周）',
     quarter: '季度会员',
+    quarter_pro: 'Pro会员',
     year: '年度会员',
+    half_year: 'Club Member',
+    annual: 'Club Partner',
 };
 
 const FUNNEL_DEFINITIONS: Record<string, string> = {
@@ -203,9 +209,9 @@ const FUNNEL_DEFINITIONS: Record<string, string> = {
     free_feature_click: '免费体验功能点击 UV。',
     consume_or_limit: '成功消耗免费额度，或触达免费上限的 UV。',
     upgrade_modal_view: '在免费体验链路中触发升级弹窗的 UV。',
-    membership_page_view: '沿升级链路进入会员中心页的 UV，不等于会员页总访问 UV；总访问请看会员体验里的“会员中心”。',
+    membership_page_view: '沿服务咨询链路进入 Club 权益页的 UV，不等于权益页总访问 UV；总访问请看会员体验里的“Club 权益页”。',
     membership_plan_click: '沿升级链路点击任一会员卡 CTA 的 UV。',
-    membership_payment_success: '支付完成真值，以 payment_records.completed 对账。',
+    membership_payment_success: '权益开通确认数据，以记录状态对账。',
 };
 
 const PERIOD_LABELS: Record<Period, string> = {
@@ -307,8 +313,8 @@ export default function AdminTrackingDashboard() {
             {
                 label: '会员成功用户',
                 value: formatNum(data.overview.paymentSuccessUv),
-                description: `支付订单 ${formatNum(data.overview.paymentSuccessOrders)} / 状态变更 ${formatNum(data.membershipActivation?.activatedUsers || 0)}`,
-                footnote: '支付记录与用户会员状态综合参考',
+                description: `开通记录 ${formatNum(data.overview.paymentSuccessOrders)} / 状态变更 ${formatNum(data.membershipActivation?.activatedUsers || 0)}`,
+                footnote: '权益记录与用户会员状态综合参考',
                 icon: <DollarSign className="w-4 h-4 text-emerald-600" />,
             },
         ];
@@ -339,10 +345,10 @@ export default function AdminTrackingDashboard() {
                 icon: <Target className="w-4 h-4 text-fuchsia-600" />,
             },
             {
-                label: '支付完成用户',
+                label: '权益确认用户',
                 value: formatNum(data.membershipExperience.summary.paymentCompletedUsers),
-                description: '免费体验后进入支付完成的人数',
-                footnote: '按 completed 订单对账',
+                description: '免费体验后完成权益确认的人数',
+                footnote: '按 completed 记录对账',
                 icon: <Crown className="w-4 h-4 text-amber-600" />,
             },
         ];
@@ -397,7 +403,7 @@ export default function AdminTrackingDashboard() {
                 label: '升级引导 UV',
                 value: formatNum(data.resumeAssistant.upgradeClickUv),
                 description: `锁卡曝光 ${formatNum(data.resumeAssistant.upgradeModalUv)}`,
-                footnote: `支付完成 ${formatNum(data.resumeAssistant.paymentSuccessUv)}`,
+                footnote: `权益确认 ${formatNum(data.resumeAssistant.paymentSuccessUv)}`,
                 icon: <Crown className="w-4 h-4 text-amber-600" />,
             },
         ];
@@ -439,7 +445,7 @@ export default function AdminTrackingDashboard() {
                             <HelpCircle className="h-4 w-4 text-slate-400" />
                             {data?.dateRange
                                 ? `${data.dateRange.label} · ${data.dateRange.timeZone} 自然周期；漏斗 UV / PV 按同一链路口径统计`
-                                : '漏斗卡片的 UV / PV 均按同一链路口径统计，会员成功参考支付记录与用户会员状态'}
+                                : '漏斗卡片的 UV / PV 均按同一链路口径统计，会员成功参考权益记录与用户会员状态'}
                         </div>
                     </div>
                 </div>
@@ -534,7 +540,7 @@ export default function AdminTrackingDashboard() {
 
                         <Panel
                             title="免费转会员漏斗"
-                            subtitle="固定统计免费用户；会员页总访问请看会员体验里的“会员中心”"
+                            subtitle="固定统计免费用户；权益页总访问请看会员体验里的“Club 权益页”"
                             icon={<Crown className="h-5 w-5 text-amber-600" />}
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -577,7 +583,7 @@ export default function AdminTrackingDashboard() {
 
                         <Panel
                             title="会员成功对账"
-                            subtitle="支付记录 + 用户会员状态变更，用于覆盖手动处理会员的场景"
+                            subtitle="权益记录 + 用户会员状态变更，用于覆盖手动处理会员的场景"
                             icon={<DollarSign className="h-5 w-5 text-emerald-600" />}
                         >
                             <div className="space-y-3">
@@ -623,7 +629,7 @@ export default function AdminTrackingDashboard() {
                                             </div>
                                             <div className="text-right">
                                                 <div className="text-lg font-bold text-slate-900">{formatNum(item.completedUsers)}</div>
-                                                <div className="text-xs text-slate-500">用户数 / 订单 {formatNum(item.completedOrders)}</div>
+                                                <div className="text-xs text-slate-500">用户数 / 开通记录 {formatNum(item.completedOrders)}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -756,7 +762,7 @@ export default function AdminTrackingDashboard() {
                                 { label: '模拟回答 UV', value: data.resumeAssistant.mockAnswerUv, note: '生成双语模拟回答' },
                                 { label: '锁卡曝光 UV', value: data.resumeAssistant.upgradeModalUv, note: '免费用户看到会员引导' },
                                 { label: '升级点击 UV', value: data.resumeAssistant.upgradeClickUv, note: '从简历助手触发升级' },
-                                { label: '支付完成 UV', value: data.resumeAssistant.paymentSuccessUv, note: '后续完成支付的人数' },
+                                { label: '权益确认 UV', value: data.resumeAssistant.paymentSuccessUv, note: '后续完成权益确认的人数' },
                             ].map((item) => (
                                 <div key={item.label} className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
                                     <div className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">{item.label}</div>
@@ -785,7 +791,7 @@ export default function AdminTrackingDashboard() {
                                         </th>
                                         <th className="px-4 py-3 text-right font-medium text-slate-500">触顶 UV</th>
                                         <th className="px-4 py-3 text-right font-medium text-slate-500">升级弹窗 UV</th>
-                                        <th className="px-4 py-3 text-right font-medium text-slate-500">支付点击 UV</th>
+                                        <th className="px-4 py-3 text-right font-medium text-slate-500">权益咨询 UV</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 bg-white">

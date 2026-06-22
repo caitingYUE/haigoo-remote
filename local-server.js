@@ -64,6 +64,8 @@ async function startServer() {
         app.all('/api/admin-ops', async (req, res) => { await adminOpsHandler(req, res); });
         const corporateEnglishHandler = (await import('./api/corporate-english.js')).default;
         app.all('/api/corporate-english', async (req, res) => { await corporateEnglishHandler(req, res); });
+        const corporateEnglishPublicHandler = (await import('./api/corporate-english-public.js')).default;
+        app.all('/api/corporate-english-public', async (req, res) => { await corporateEnglishPublicHandler(req, res); });
         const adminContentPushXhsJobsHandler = (await import('./api/admin/content-push/xiaohongshu/jobs.js')).default;
         const adminContentPushXhsSummaryHandler = (await import('./api/admin/content-push/xiaohongshu/summary.js')).default;
         const adminContentPushXhsDraftHandler = (await import('./api/admin/content-push/xiaohongshu/draft.js')).default;

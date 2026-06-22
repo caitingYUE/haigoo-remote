@@ -3,6 +3,7 @@ const CHUNK_SIZE = 1024 * 1024
 
 export type CorporateEnglishStatus = 'draft' | 'published' | 'archived'
 export type CorporateEnglishAssetKind = 'source_audio' | 'subtitle_csv' | 'clip_audio'
+export type CorporateEnglishAccessTier = 'free' | 'vip'
 
 export interface CorporateEnglishSubtitleRow {
   source_title?: string
@@ -12,9 +13,45 @@ export interface CorporateEnglishSubtitleRow {
   translation_text: string
 }
 
+export interface CorporateEnglishSubtitleCue {
+  startMs: number
+  endMs: number
+  subtitleText: string
+  translationText: string
+}
+
 export interface CorporateEnglishClipTag {
   title: string
   tags: string[]
+}
+
+export type CorporateEnglishPronunciationMarkType = 'stress' | 'weak' | 'linking' | 'keyword' | 'pause'
+
+export interface CorporateEnglishPronunciationMark {
+  type: CorporateEnglishPronunciationMarkType
+  text: string
+  note?: string
+}
+
+export interface CorporateEnglishContentSection {
+  title: string
+  body: string
+}
+
+export interface CorporateEnglishResourceLink {
+  title: string
+  url: string
+}
+
+export interface CorporateEnglishCompanyProfile {
+  companyId: string
+  cultureSections: CorporateEnglishContentSection[]
+  ceoThinkingSections: CorporateEnglishContentSection[]
+  otherResources: CorporateEnglishResourceLink[]
+  accessTier: CorporateEnglishAccessTier
+  status: CorporateEnglishStatus
+  sortOrder: number
+  updatedAt?: string
 }
 
 export interface CorporateEnglishAsset {
@@ -44,7 +81,9 @@ export interface CorporateEnglishClip {
   endMs: number
   subtitleText: string
   translationText: string
+  subtitleCues?: CorporateEnglishSubtitleCue[]
   clipTags?: CorporateEnglishClipTag[]
+  pronunciationMarks?: CorporateEnglishPronunciationMark[]
   status: CorporateEnglishStatus
 }
 
@@ -59,6 +98,11 @@ export interface CorporateEnglishMaterial {
   speakerRole: string
   speakerEmail?: string
   speakerLinkedin?: string
+  tencentVideoVid?: string
+  tencentVideoUrl?: string
+  videoSummary?: string
+  sequence?: number
+  publishedAt?: string
   sourceAudioAssetId?: string
   subtitleCsvAssetId?: string
   normalizedSubtitleRows: CorporateEnglishSubtitleRow[]
@@ -84,6 +128,10 @@ export interface SaveCorporateEnglishMaterialPayload {
   speakerRole: string
   speakerEmail?: string
   speakerLinkedin?: string
+  tencentVideoVid?: string
+  tencentVideoUrl?: string
+  videoSummary?: string
+  sequence?: number
   sourceAudioAssetId?: string | null
   subtitleCsvAssetId?: string | null
   normalizedSubtitleRows: CorporateEnglishSubtitleRow[]
@@ -150,6 +198,56 @@ export const corporateEnglishService = {
       page: number
       totalPages: number
     }>(await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() }))
+  },
+
+  async listCompanyGroups(params: {
+    page?: number
+    limit?: number
+    search?: string
+    status?: CorporateEnglishStatus | 'all'
+  }) {
+    const query = new URLSearchParams({ resource: 'company-groups' })
+    if (params.page) query.set('page', String(params.page))
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.search) query.set('search', params.search)
+    if (params.status && params.status !== 'all') query.set('status', params.status)
+
+    return readJson<{
+      success: boolean
+      companies: Array<{
+        companyId: string
+        companyName: string
+        companyWebsite?: string
+        status: CorporateEnglishStatus
+        videoCount: number
+        clipCount: number
+        latestUpdatedAt?: string
+        profile?: CorporateEnglishCompanyProfile | null
+        materials: CorporateEnglishMaterial[]
+      }>
+      total: number
+      page: number
+      totalPages: number
+    }>(await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() }))
+  },
+
+  async getCompanyProfile(companyId: string): Promise<CorporateEnglishCompanyProfile | null> {
+    const query = new URLSearchParams({ resource: 'company-profile', companyId })
+    const data = await readJson<{ success: boolean; profile: CorporateEnglishCompanyProfile | null }>(
+      await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
+    )
+    return data.profile
+  },
+
+  async saveCompanyProfile(payload: CorporateEnglishCompanyProfile) {
+    const data = await readJson<{ success: boolean; profile: CorporateEnglishCompanyProfile }>(
+      await fetch(`${API_BASE}?resource=company-profile`, {
+        method: 'PUT',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload)
+      })
+    )
+    return data.profile
   },
 
   async getMaterial(id: string): Promise<CorporateEnglishMaterialDetail> {

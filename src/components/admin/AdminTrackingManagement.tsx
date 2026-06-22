@@ -118,7 +118,7 @@ const AdminTrackingManagement: React.FC = () => {
               { id: 'signup_success', name: '注册成功', desc: '用户完成注册', params: 'method (email/google)' },
               { id: 'login_success', name: '登录成功', desc: '用户完成登录', params: 'method' },
               { id: 'click_subscribe', name: '点击订阅', desc: '点击具体的订阅计划按钮', params: 'plan_id, price' },
-              { id: 'payment_success', name: '支付成功', desc: '会员支付成功回调', params: 'order_id, amount, plan' }
+              { id: 'payment_success', name: '权益开通确认', desc: '会员权益开通确认回调', params: 'order_id, amount, plan' }
             ]}
           />
         </div>

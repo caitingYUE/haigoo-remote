@@ -30,7 +30,7 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
             </div>
           </div>
           <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600">
-            连接全球机遇，打开无限可能。Haigoo 帮助中国专业人才探索远程工作机会，实现工作与生活的更好平衡。
+            一个带你打开全球远程职业可能性的俱乐部。Haigoo 帮助中国专业人才探索远程工作机会，实现工作与生活的更好平衡。
           </p>
           <div className="mt-6 flex flex-wrap gap-3">
             <a href="/profile?tab=about" className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8e5f0] bg-white px-5 py-2.5 text-sm font-black text-slate-700 shadow-sm hover:text-[#2f6ed8]">
@@ -43,12 +43,11 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
           <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef7ff] text-[#65a15d]">
             <MapPin className="h-5 w-5" />
           </div>
-          <div className="text-lg font-black text-slate-950">公司地址</div>
+          <div className="text-lg font-black text-slate-950">运营主体</div>
           <div className="mt-2 h-2 w-14 rounded-full bg-[linear-gradient(90deg,#a9a3ff,#d8d4ff)]" />
           <p className="mt-6 text-sm leading-8 text-slate-600">
-            行渡科技（杭州）有限公司<br />
-            杭州市余杭区仓前街道景兴路999号<br />
-            10幢403-31室
+            行渡科技（杭州）有限责任公司<br />
+            杭州市余杭区
           </p>
         </div>
         <div className="lg:pl-8">
@@ -63,7 +62,7 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
       </div>
       <div className="relative mt-10 flex flex-col gap-4 border-t border-[#e5edf3] pt-5 text-sm font-semibold text-slate-500 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end">
         <div>
-          <div>© 2026 Haigoo. All rights reserved.</div>
+          <div>© 2026 行渡科技（杭州）有限责任公司 版权所有</div>
         </div>
         <div className="flex items-center gap-2 md:justify-center md:text-center">
           <span className="sr-only">Be free. Work anywhere. Live fully.</span>

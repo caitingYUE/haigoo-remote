@@ -131,20 +131,20 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     <div className="p-6 text-center">
                         <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">
                             <Crown className="w-3.5 h-3.5" />
-                            仅会员可申请
+                            Club 权益
                         </div>
 
                         <h3 className="text-xl font-bold text-slate-900 mb-2">
-                            这家公司当前仅向会员开放申请
+                            这家公司当前需加入 Club 后申请
                         </h3>
                         <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                            免费用户仍可浏览岗位详情。升级后即可继续申请，体验会员同样可用。
+                            免费用户仍可浏览岗位详情。加入 Club 后可开通对应网站权限。
                         </p>
 
                         <div className="grid grid-cols-3 gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 mb-6 text-left">
                             <div className="rounded-2xl bg-white p-3 border border-slate-100">
-                                <div className="text-sm font-semibold text-slate-900 mb-1">会员申请</div>
-                                <div className="text-xs text-slate-500">解锁会员岗位申请资格</div>
+                                <div className="text-sm font-semibold text-slate-900 mb-1">Club 申请支持</div>
+                                <div className="text-xs text-slate-500">开通对应岗位申请权限</div>
                             </div>
                             <div className="rounded-2xl bg-white p-3 border border-slate-100">
                                 <div className="text-sm font-semibold text-slate-900 mb-1">邮箱直申</div>

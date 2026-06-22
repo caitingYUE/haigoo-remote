@@ -32,7 +32,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const handleClick = () => {
     const bundlePath = getBundleDetailPath(bundle.id);
     if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership');
+      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership#club-service-plans');
       return;
     }
     navigate(bundlePath);
@@ -141,7 +141,7 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const handleClick = () => {
     const bundlePath = getBundleDetailPath(bundle.id);
     if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership');
+      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership#club-service-plans');
       return;
     }
     navigate(bundlePath);

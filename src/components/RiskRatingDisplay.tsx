@@ -76,7 +76,7 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                     {/* Unlock Overlay */}
                     <div className="absolute inset-0 flex items-center justify-center">
                         <button
-                            onClick={() => navigate('/profile?tab=membership')}
+                            onClick={() => navigate('/profile?tab=membership#club-service-plans')}
                             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
                         >
                             <Lock className="w-5 h-5" />
@@ -88,7 +88,7 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                 <div className="mt-4 pt-4 border-t border-indigo-200">
                     <p className="text-xs text-center text-indigo-700 flex items-center justify-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" />
-                        升级会员，获取企业友好度、回复率、风险提示等深度评估信息
+                        了解会员服务，获取企业友好度、回复率、风险提示等深度评估信息
                     </p>
                 </div>
             </div>

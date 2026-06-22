@@ -262,7 +262,7 @@ async function handleLogin(req, res) {
       needsUpdate = true
     }
 
-    // Ensure VIP membership
+    // Ensure Club membership
     const now = new Date()
     const nextYear = new Date(now.setFullYear(now.getFullYear() + 1))
 

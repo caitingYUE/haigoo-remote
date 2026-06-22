@@ -1,5 +1,5 @@
 import { Suspense, lazy } from 'react'
-import { Routes, Route } from 'react-router-dom'
+import { Navigate, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
@@ -31,7 +31,7 @@ const AdminApplicationsPage = lazy(() => import('./pages/AdminApplicationsPage')
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
-const MembershipPage = lazyRetry(() => import('./pages/MembershipPage'), 'MembershipPage')
+const CorporateEnglishPage = lazy(() => import('./pages/CorporateEnglishPage'))
 const MockPaymentGateway = lazy(() => import('./pages/MockPaymentGateway'))
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
@@ -160,6 +160,7 @@ function App() {
                             <Route path="/job/:id" element={<JobDetailPage />} />
                             <Route path="/companies" element={<TrustedCompaniesPage />} />
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
+                            <Route path="/corporate-english" element={<CorporateEnglishPage />} />
                             <Route path="/company/:id" element={<CompanyProfilePage />} />
                             <Route path="/c/:companyName" element={<CompanyDetailPage />} />
                             <Route path="/companies/:companyName" element={<CompanyDetailPage />} />
@@ -170,7 +171,7 @@ function App() {
                               </AdminRoute>
                             } />
                             <Route path="/remote-experience" element={<RemoteExperiencePage />} />
-                            <Route path="/membership" element={<MembershipPage />} />
+                            <Route path="/membership" element={<Navigate to="/profile?tab=membership" replace />} />
                             <Route path="/mock-payment-gateway" element={<MockPaymentGateway />} />
                             <Route path="/join-club-application" element={<JoinClubApplicationPage />} />
 

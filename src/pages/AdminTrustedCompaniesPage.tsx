@@ -629,7 +629,7 @@ export default function AdminTrustedCompaniesPage() {
                     className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm bg-white"
                 >
                     <option value="all">全部申请权限</option>
-                    <option value="yes">仅会员</option>
+                    <option value="yes">Club 可申</option>
                     <option value="no">全部用户</option>
                 </select>
             </div>
@@ -691,7 +691,7 @@ export default function AdminTrustedCompaniesPage() {
                                                         {company.name}
                                                         {company.memberOnly && (
                                                             <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200 whitespace-nowrap leading-none">
-                                                                仅会员
+                                                                Club 可申
                                                             </span>
                                                         )}
                                                     </div>
@@ -1212,7 +1212,7 @@ export default function AdminTrustedCompaniesPage() {
                                         onChange={e => setFormData({ ...formData, memberOnly: e.target.checked })}
                                         className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500"
                                     />
-                                    <span className="text-sm font-medium text-gray-700">仅会员</span>
+                                    <span className="text-sm font-medium text-gray-700">Club 可申</span>
                                 </label>
                             </div>
 

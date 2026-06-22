@@ -125,7 +125,7 @@ export async function sendVerificationEmail(to, username, token) {
     <p><a href="${verificationLink}" class="link">${verificationLink}</a></p>
     <p>此链接将在 24 小时后失效。</p>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p>
     </div>
   </div>
 </body>
@@ -168,7 +168,7 @@ export async function sendPasswordResetEmail(to, username, token) {
     <p><a href="${resetLink}" class="link">${resetLink}</a></p>
     <p>此链接将在 1 小时后失效。</p>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p>
     </div>
   </div>
 </body>
@@ -268,7 +268,7 @@ export async function sendMembershipActivatedEmail({
           ${benefits.map((item) => `<div class="benefit">${escapeHtml(item)}</div>`).join('')}
         </div>
 
-        <a class="cta" href="${siteUrl}/membership">前往海狗会员中心</a>
+        <a class="cta" href="${siteUrl}/membership">前往 Club 权益页</a>
 
         <div class="foot">
           如果您在使用过程中有任何问题，欢迎随时联系官方支持邮箱：
@@ -305,7 +305,7 @@ export async function sendMembershipExpiredEmail({
   const fallbackBenefits = [
     '您的账号权益已退回免费用户版本',
     '仍可继续浏览和使用免费用户可用功能',
-    '如需恢复会员权益，可前往会员中心重新开通'
+    '如需恢复 Club 权益，可前往 Club 权益页添加顾问了解恢复方式'
   ]
 
   const subject = `你的 ${plan?.shortLabel || 'Haigoo'} 会员已到期`
@@ -343,7 +343,7 @@ export async function sendMembershipExpiredEmail({
       <div class="hero">
         <div class="brand">Haigoo Remote Club</div>
         <h1 class="title">会员权益已失效</h1>
-        <p class="subtitle">Hi，${displayName}。您的会员已到期，账号权益已退回免费用户版本，如需恢复会员权益，可前往会员中心重新开通。</p>
+        <p class="subtitle">Hi，${displayName}。您的会员已到期，账号权益已退回免费用户版本，如需恢复 Club 权益，可前往 Club 权益页添加顾问了解恢复方式。</p>
       </div>
       <div class="content">
         <div class="panel">
@@ -370,10 +370,10 @@ export async function sendMembershipExpiredEmail({
           ${fallbackBenefits.map((item) => `<div class="benefit">${escapeHtml(item)}</div>`).join('')}
         </div>
 
-        <a class="cta" href="${siteUrl}/membership">前往会员中心重新开通</a>
+        <a class="cta" href="${siteUrl}/membership">前往 Club 权益页咨询恢复权益</a>
 
         <div class="foot">
-          如需恢复全部会员权益，可随时重新开通会员。若有疑问，欢迎联系：
+          如需恢复全部 Club 权益，可通过 Club 权益页添加顾问了解恢复方式。若有疑问，欢迎联系：
           <a class="support" href="mailto:hi@haigooremote.com">hi@haigooremote.com</a><br />
           海狗网站：<a class="support" href="${siteUrl}">${siteUrl}</a>
         </div>
@@ -417,7 +417,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
       <p>如果这不是您的操作，请忽略此邮件。</p>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p>
     </div>
   </div>
 </body>
@@ -482,7 +482,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
       </center>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Haigoo. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p>
       <p><a href="${siteUrl}/unsubscribe?email=${encodeURIComponent(to)}" style="color: #9ca3af;">管理订阅设置</a></p>
     </div>
   </div>
