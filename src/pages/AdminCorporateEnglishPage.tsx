@@ -27,6 +27,7 @@ import {
   CorporateEnglishPronunciationMark,
   CorporateEnglishPronunciationMarkType,
   CorporateEnglishStatus,
+  CorporateEnglishSubtitleCue,
   CorporateEnglishSubtitleRow,
   corporateEnglishService
 } from '../services/corporate-english-service'
@@ -140,6 +141,16 @@ function parseTimecode(value: string) {
   if (parts.length === 2) return Math.round((parts[0] * 60 + parts[1]) * 1000)
   if (parts.length === 3) return Math.round((parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000)
   return null
+}
+
+function formatSecondsInput(ms?: number | null) {
+  return (Math.max(0, Number(ms || 0)) / 1000).toFixed(2)
+}
+
+function secondsInputToMs(value: string) {
+  const seconds = Number(value)
+  if (!Number.isFinite(seconds) || seconds < 0) return 0
+  return Math.round(seconds * 1000)
 }
 
 function splitTagValues(value: string) {
@@ -1215,35 +1226,42 @@ export default function AdminCorporateEnglishPage() {
     throw new Error('当前没有可用于重新剪辑的原始音频；请重新上传原始音频后再生成剪辑。')
   }
 
-  const addClip = () => {
+  const addClip = (afterLocalId?: string) => {
     if (editor.clips.length >= MAX_CLIPS) {
       alert(`单个素材最多支持 ${MAX_CLIPS} 个剪辑段`)
       return
     }
-    const startMs = 0
-    const endMs = Math.min(editor.durationMs || 5000, 5000)
+    const insertIndex = afterLocalId
+      ? Math.max(0, editor.clips.findIndex((clip) => clip.localId === afterLocalId) + 1)
+      : editor.clips.length
+    const previousClip = insertIndex > 0 ? editor.clips[insertIndex - 1] : null
+    const durationMs = Number(editor.durationMs || 0)
+    const rawStartMs = previousClip ? previousClip.endMs : 0
+    const startMs = durationMs > 0 ? Math.min(rawStartMs, Math.max(0, durationMs - 5000)) : rawStartMs
+    const maxEndMs = durationMs > 0 ? durationMs : startMs + 5000
+    const desiredEndMs = Math.min(maxEndMs, startMs + 5000)
+    const endMs = durationMs > 0 ? Math.max(startMs, desiredEndMs) : Math.max(startMs + 1000, desiredEndMs)
     const text = extractSubtitle(editor.subtitleRows, startMs, endMs)
+    const nextClips = [...editor.clips]
+    nextClips.splice(insertIndex, 0, {
+      localId: crypto.randomUUID(),
+      sequence: insertIndex,
+      clipTitle: `片段 ${insertIndex + 1}`,
+      startMs,
+      endMs,
+      startTimecode: formatTime(startMs),
+      endTimecode: formatTime(endMs),
+      subtitleText: text.subtitleText,
+      translationText: text.translationText,
+      subtitleCues: text.subtitleCues,
+      clipTagInput: '',
+      clipTags: [],
+      pronunciationMarkInput: '',
+      pronunciationMarks: [],
+      status: editor.status
+    })
     updateEditor({
-      clips: [
-        ...editor.clips,
-        {
-          localId: crypto.randomUUID(),
-          sequence: editor.clips.length,
-          clipTitle: `片段 ${editor.clips.length + 1}`,
-          startMs,
-          endMs,
-          startTimecode: formatTime(startMs),
-          endTimecode: formatTime(endMs),
-          subtitleText: text.subtitleText,
-          translationText: text.translationText,
-          subtitleCues: text.subtitleCues,
-          clipTagInput: '',
-          clipTags: [],
-          pronunciationMarkInput: '',
-          pronunciationMarks: [],
-          status: editor.status
-        }
-      ]
+      clips: nextClips.map((clip, index) => ({ ...clip, sequence: index }))
     })
   }
 
@@ -1272,6 +1290,63 @@ export default function AdminCorporateEnglishPage() {
           next.subtitleCues = text.subtitleCues
         }
         return next
+      })
+    })
+  }
+
+  const rebuildClipTextFromCues = (clip: EditableClip, subtitleCues: CorporateEnglishSubtitleCue[]): EditableClip => ({
+    ...clip,
+    subtitleCues,
+    subtitleText: subtitleCues.map((cue) => String(cue.subtitleText || '').trim()).filter(Boolean).join('\n'),
+    translationText: subtitleCues.map((cue) => String(cue.translationText || '').trim()).filter(Boolean).join('\n')
+  })
+
+  const updateClipSubtitleCue = (localId: string, cueIndex: number, patch: Partial<CorporateEnglishSubtitleCue>) => {
+    updateEditor({
+      clips: editor.clips.map((clip) => {
+        if (clip.localId !== localId) return clip
+        const subtitleCues = [...(clip.subtitleCues || [])]
+        const current = subtitleCues[cueIndex] || { startMs: 0, endMs: 1000, subtitleText: '', translationText: '' }
+        const nextCue = {
+          ...current,
+          ...patch,
+          startMs: Math.max(0, Number(patch.startMs ?? current.startMs ?? 0)),
+          endMs: Math.max(0, Number(patch.endMs ?? current.endMs ?? 0)),
+          subtitleText: String(patch.subtitleText ?? current.subtitleText ?? ''),
+          translationText: String(patch.translationText ?? current.translationText ?? '')
+        }
+        if (nextCue.endMs <= nextCue.startMs) nextCue.endMs = nextCue.startMs + 500
+        subtitleCues[cueIndex] = nextCue
+        return rebuildClipTextFromCues(clip, subtitleCues)
+      })
+    })
+  }
+
+  const addClipSubtitleCue = (localId: string) => {
+    updateEditor({
+      clips: editor.clips.map((clip) => {
+        if (clip.localId !== localId) return clip
+        const subtitleCues = [...(clip.subtitleCues || [])]
+        const previousCue = subtitleCues[subtitleCues.length - 1]
+        const startMs = previousCue ? previousCue.endMs : 0
+        const endMs = Math.min(clip.endMs - clip.startMs, startMs + 1000)
+        subtitleCues.push({
+          startMs,
+          endMs: Math.max(startMs + 500, endMs),
+          subtitleText: '',
+          translationText: ''
+        })
+        return rebuildClipTextFromCues(clip, subtitleCues)
+      })
+    })
+  }
+
+  const removeClipSubtitleCue = (localId: string, cueIndex: number) => {
+    updateEditor({
+      clips: editor.clips.map((clip) => {
+        if (clip.localId !== localId) return clip
+        const subtitleCues = (clip.subtitleCues || []).filter((_, index) => index !== cueIndex)
+        return rebuildClipTextFromCues(clip, subtitleCues)
       })
     })
   }
@@ -1330,6 +1405,7 @@ export default function AdminCorporateEnglishPage() {
       const url = registerClipAudioObjectUrl(URL.createObjectURL(blob))
       const text = extractSubtitle(editor.subtitleRows, clip.startMs, clip.endMs)
       const subtitleText = clip.subtitleText || text.subtitleText
+      const subtitleCues = clip.subtitleCues?.length ? clip.subtitleCues : text.subtitleCues
       const pronunciationMarks = clip.pronunciationMarks?.length
         ? clip.pronunciationMarks
         : inferPronunciationMarks(subtitleText, editor.subtitleRows, clip.startMs, clip.endMs)
@@ -1341,7 +1417,7 @@ export default function AdminCorporateEnglishPage() {
         clipAudioAssetId: null,
         subtitleText,
         translationText: clip.translationText || text.translationText,
-        subtitleCues: text.subtitleCues,
+        subtitleCues,
         pronunciationMarks,
         pronunciationMarkInput: clip.pronunciationMarkInput || formatPronunciationMarks(pronunciationMarks)
       })
@@ -1919,10 +1995,6 @@ export default function AdminCorporateEnglishPage() {
             <div className="card">
               <div className="card-header">
                 <h2>第三、四步：配置和编辑剪辑</h2>
-                <button type="button" className="btn-secondary" onClick={addClip}>
-                  <Plus className="h-4 w-4" />
-                  新增剪辑段
-                </button>
               </div>
               <div className="card-content space-y-4">
                 {isEditing && !audioFile && (
@@ -1931,7 +2003,13 @@ export default function AdminCorporateEnglishPage() {
                   </div>
                 )}
                 {editor.clips.length === 0 ? (
-                  <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">还没有剪辑段，点击“新增剪辑段”开始配置。</div>
+                  <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
+                    <p>还没有剪辑段，添加第一段后即可配置时间、字幕和跟读标注。</p>
+                    <button type="button" className="btn-secondary mt-4" onClick={() => addClip()}>
+                      <Plus className="h-4 w-4" />
+                      新增剪辑段
+                    </button>
+                  </div>
                 ) : (
                   editor.clips.map((clip, index) => (
                     <div key={clip.localId} className="rounded-lg border border-slate-200 p-4">
@@ -2030,22 +2108,91 @@ export default function AdminCorporateEnglishPage() {
                           <span className="text-sm font-semibold text-slate-700">字幕翻译</span>
                           <textarea className="mt-1 h-32 w-full rounded-lg border border-slate-200 px-3 py-2" value={clip.translationText} onChange={(event) => updateClip(clip.localId, { translationText: event.target.value })} />
                         </label>
-                        {(clip.subtitleCues || []).length > 0 ? (
-                          <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <div className="text-sm font-semibold text-slate-700">剪辑相对字幕时间戳</div>
-                            <div className="mt-2 max-h-36 space-y-1 overflow-y-auto pr-1 text-xs leading-5 text-slate-600">
+                        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <div className="text-sm font-semibold text-slate-700">剪辑相对字幕时间戳</div>
+                              <div className="mt-1 text-xs text-slate-500">可人工校正开始/结束秒数、字幕原文和翻译，保存后前台跟读高亮同步生效。</div>
+                            </div>
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
+                              onClick={() => addClipSubtitleCue(clip.localId)}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                              新增字幕行
+                            </button>
+                          </div>
+                          {(clip.subtitleCues || []).length > 0 ? (
+                            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1 text-xs leading-5 text-slate-600">
                               {(clip.subtitleCues || []).map((cue, cueIndex) => (
-                                <div key={`${cue.startMs}-${cueIndex}`} className="grid gap-2 rounded-lg bg-white px-2 py-1.5 md:grid-cols-[120px_1fr]">
-                                  <span className="font-mono text-slate-500">{formatTime(cue.startMs)} - {formatTime(cue.endMs)}</span>
-                                  <span className="truncate">{cue.subtitleText || cue.translationText}</span>
+                                <div key={`${cue.startMs}-${cue.endMs}-${cueIndex}`} className="grid gap-2 rounded-lg bg-white p-2 md:grid-cols-[88px_88px_minmax(0,1fr)_minmax(0,1fr)_34px]">
+                                  <label className="block">
+                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">开始(s)</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs"
+                                      value={formatSecondsInput(cue.startMs)}
+                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { startMs: secondsInputToMs(event.target.value) })}
+                                    />
+                                  </label>
+                                  <label className="block">
+                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">结束(s)</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs"
+                                      value={formatSecondsInput(cue.endMs)}
+                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { endMs: secondsInputToMs(event.target.value) })}
+                                    />
+                                  </label>
+                                  <label className="block">
+                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">字幕原文</span>
+                                    <input
+                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                                      value={cue.subtitleText || ''}
+                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { subtitleText: event.target.value })}
+                                    />
+                                  </label>
+                                  <label className="block">
+                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">字幕翻译</span>
+                                    <input
+                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                                      value={cue.translationText || ''}
+                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { translationText: event.target.value })}
+                                    />
+                                  </label>
+                                  <button
+                                    type="button"
+                                    className="mt-5 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-rose-200 hover:text-rose-600"
+                                    onClick={() => removeClipSubtitleCue(clip.localId, cueIndex)}
+                                    aria-label="删除字幕行"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </button>
                                 </div>
                               ))}
                             </div>
-                          </div>
-                        ) : null}
+                          ) : (
+                            <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-xs text-slate-400">
+                              当前片段没有字幕时间戳，可点击“新增字幕行”手动补充。
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {clip.clipAudioUrl && <audio className="mt-4 w-full" controls src={clip.clipAudioUrl} />}
                       {clip.uploadProgress ? <div className="mt-2 text-sm text-indigo-600">片段上传 {clip.uploadProgress}%</div> : null}
+                      {index === editor.clips.length - 1 ? (
+                        <div className="mt-4 flex justify-end">
+                          <button type="button" className="btn-secondary" onClick={() => addClip(clip.localId)}>
+                            <Plus className="h-4 w-4" />
+                            新增剪辑段
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   ))
                 )}

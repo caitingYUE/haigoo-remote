@@ -355,7 +355,11 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 <div ref={notificationRef} className="relative">
                   <button
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className="p-3 relative focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 rounded-lg min-w-[44px] min-h-[44px] flex items-center justify-center text-slate-400 hover:text-slate-600"
+                    className={`p-3 relative rounded-[18px] border min-w-[44px] min-h-[44px] flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-[#d8d2ff] focus:ring-offset-2 ${
+                      isNotificationOpen
+                        ? 'border-[#d8d2ff] bg-[#f5f2ff] text-[#6251f5] shadow-[0_14px_30px_-22px_rgba(98,81,245,0.55)]'
+                        : 'border-transparent text-slate-400 hover:border-[#e6e0ff] hover:bg-[#faf8ff] hover:text-[#6251f5]'
+                    }`}
                     aria-label={`通知，有 ${unreadCount} 条新消息`}
                     title="通知"
                   >

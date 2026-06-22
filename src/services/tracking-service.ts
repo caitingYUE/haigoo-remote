@@ -42,6 +42,7 @@ function derivePageKey(pathname = '/') {
   if (pathname.startsWith('/job-bundles/') || pathname.startsWith('/b/')) return 'job_bundle_detail';
   if (pathname.startsWith('/profile')) return 'profile';
   if (pathname.startsWith('/membership')) return 'membership';
+  if (pathname.startsWith('/corporate-english')) return 'corporate_english';
   if (pathname.startsWith('/companies/') || pathname.startsWith('/c/')) return 'company_detail';
   if (pathname.startsWith('/trusted-companies')) return 'trusted_companies';
   if (pathname.startsWith('/login')) return 'login';

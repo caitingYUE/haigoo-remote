@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
     Activity,
+    BookOpen,
     Briefcase,
     Brain,
     Crown,
@@ -115,6 +116,7 @@ interface DashboardData {
     coreFunnels: {
         job: FunnelStep[];
         jobBundle: FunnelStep[];
+        corporateEnglish: FunnelStep[];
         monetization: FunnelStep[];
     };
     copilotDemand: {
@@ -205,6 +207,9 @@ const FUNNEL_DEFINITIONS: Record<string, string> = {
     bundle_detail_view: '从合集页打开岗位详情弹窗或详情视图的 UV/PV。',
     bundle_apply_click: '在合集链路内点击岗位申请入口的 UV/PV。',
     bundle_apply_success: '合集链路内产生外链跳转、邮箱直申或内推提交的 UV/PV。',
+    corporate_english_visit: '外企英语页面访问 UV/PV。',
+    corporate_english_video_play: '外企英语企业视频播放或打开 UV/PV。腾讯视频 iframe 无法直接读取内部播放状态，前台以已解锁视频打开作为播放信号。',
+    corporate_english_clip_play: '外企英语跟读音频播放 UV/PV。',
     free_feature_exposure: '免费体验功能入口曝光 UV。',
     free_feature_click: '免费体验功能点击 UV。',
     consume_or_limit: '成功消耗免费额度，或触达免费上限的 UV。',
@@ -533,6 +538,18 @@ export default function AdminTrackingDashboard() {
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                                 {data.coreFunnels.jobBundle.map((step) => (
+                                    <FunnelCard key={step.stepId} step={step} />
+                                ))}
+                            </div>
+                        </Panel>
+
+                        <Panel
+                            title="外企英语漏斗"
+                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 页面访问与播放`}
+                            icon={<BookOpen className="h-5 w-5 text-violet-600" />}
+                        >
+                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                                {(data.coreFunnels.corporateEnglish || []).map((step) => (
                                     <FunnelCard key={step.stepId} step={step} />
                                 ))}
                             </div>

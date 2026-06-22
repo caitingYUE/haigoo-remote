@@ -35,6 +35,7 @@ import {
   corporateEnglishPublicService
 } from '../services/corporate-english-public-service'
 import type { CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType } from '../services/corporate-english-service'
+import { trackingService } from '../services/tracking-service'
 
 const FALLBACK_COMPANY: CorporateEnglishPublicCompany = {
   companyId: 'corporate-english-coming-soon',
@@ -203,7 +204,7 @@ function CompanyLogo({ company }: { company: CorporateEnglishPublicCompany }) {
   )
 }
 
-function AccessBadge({ tier }: { tier?: 'free' | 'vip' }) {
+function AccessBadge({ tier, sampleLabel = false }: { tier?: 'free' | 'vip'; sampleLabel?: boolean }) {
   const isFree = tier === 'free'
   return (
     <span className={`inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-black tracking-wide ${
@@ -211,7 +212,15 @@ function AccessBadge({ tier }: { tier?: 'free' | 'vip' }) {
         ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
         : 'border-[#eadff8] bg-[#f5f2ff] text-[#6251f5]'
     }`}>
-      {isFree ? 'FREE' : 'Club'}
+      {isFree ? (sampleLabel ? '免费样例' : 'FREE') : 'Club'}
+    </span>
+  )
+}
+
+function MemberOnlyHint() {
+  return (
+    <span className="inline-flex h-6 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-black text-slate-500">
+      仅会员
     </span>
   )
 }
@@ -382,12 +391,14 @@ function ClipCard({
   clip,
   index,
   onToggleFavorite,
+  onPlay,
   onUpgrade,
   lockCtaLabel
 }: {
   clip: CorporateEnglishPublicClip
   index: number
   onToggleFavorite: (clip: CorporateEnglishPublicClip) => void
+  onPlay?: (clip: CorporateEnglishPublicClip) => void
   onUpgrade: () => void
   lockCtaLabel: string
 }) {
@@ -567,7 +578,10 @@ function ClipCard({
           const duration = event.currentTarget.duration
           setAudioDuration(Number.isFinite(duration) && duration > 0 ? duration : fallbackDuration)
         }}
-        onPlay={startProgressLoop}
+        onPlay={() => {
+          startProgressLoop()
+          onPlay?.(clip)
+        }}
         onPause={stopProgressLoop}
         onSeeked={syncAudioProgress}
         onTimeUpdate={syncAudioProgress}
@@ -711,6 +725,7 @@ export default function CorporateEnglishPage() {
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false)
   const [activeClipId, setActiveClipId] = useState('')
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const trackedVideoIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     let cancelled = false
@@ -784,6 +799,20 @@ export default function CorporateEnglishPage() {
     return activeVideo.clips.find((clip) => clip.clipId === activeClipId) || activeVideo.clips[0] || null
   }, [activeClipId, activeVideo])
 
+  useEffect(() => {
+    if (!activeVideo || activeVideo.isVideoLocked || !activeVideo.tencentVideoUrl) return
+    if (trackedVideoIdsRef.current.has(activeVideo.materialId)) return
+    trackedVideoIdsRef.current.add(activeVideo.materialId)
+    trackingService.track('corporate_english_video_play', {
+      page_key: 'corporate_english',
+      module: 'corporate_english_video',
+      feature_key: 'corporate_english_video_play',
+      entity_type: 'corporate_english_material',
+      entity_id: activeVideo.materialId,
+      company_id: selectedCompanyId
+    })
+  }, [activeVideo, selectedCompanyId])
+
   const visibleCompanies = companies.length > 0 ? companies : [FALLBACK_COMPANY]
   const modalJobs = useMemo<Job[]>(() => {
     return (detail?.jobs || []).map((job) => ({
@@ -827,6 +856,18 @@ export default function CorporateEnglishPage() {
     openMembershipModal('half_year')
   }, [isAuthenticated, navigate, openMembershipModal])
   const lockedCtaLabel = isAuthenticated ? '了解会员服务' : '需登录'
+
+  const trackClipPlay = useCallback((clip: CorporateEnglishPublicClip) => {
+    trackingService.track('corporate_english_clip_play', {
+      page_key: 'corporate_english',
+      module: 'corporate_english_clip',
+      feature_key: 'corporate_english_clip_play',
+      entity_type: 'corporate_english_clip',
+      entity_id: clip.clipId,
+      material_id: activeVideo?.materialId || '',
+      company_id: selectedCompanyId
+    })
+  }, [activeVideo?.materialId, selectedCompanyId])
 
   const toggleFavorite = async (clip: CorporateEnglishPublicClip) => {
     if (clip.isLocked) {
@@ -935,7 +976,7 @@ export default function CorporateEnglishPage() {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <h2 className="text-xl font-black text-slate-950">{detail.company.name}</h2>
-                            <AccessBadge tier={detail.company.accessTier} />
+                            <AccessBadge tier={detail.company.accessTier} sampleLabel />
                           </div>
                           <p className="text-sm text-slate-500">{detail.company.industry || '外企英语素材'} · {detail.videos.length} 个视频 · {activeVideo.clips.length} 个跟读片段</p>
                         </div>
@@ -1016,6 +1057,7 @@ export default function CorporateEnglishPage() {
                       <h3 className="text-lg font-black text-slate-950">{activeVideo.materialTitle}</h3>
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-6 text-slate-500">
                         <span>{activeVideo.speakerName} · {activeVideo.speakerRole}</span>
+                        {!detail.permissions?.canViewVideos ? <MemberOnlyHint /> : null}
                         {activeVideo.speakerEmail ? (
                           <a
                             href={`mailto:${activeVideo.speakerEmail}`}
@@ -1050,6 +1092,7 @@ export default function CorporateEnglishPage() {
                                 LinkedIn
                               </span>
                             ) : null}
+                            <MemberOnlyHint />
                           </span>
                         ) : null}
                       </div>
@@ -1106,6 +1149,7 @@ export default function CorporateEnglishPage() {
                             clip={activeClip}
                             index={Math.max(0, activeVideo.clips.findIndex((clip) => clip.clipId === activeClip.clipId))}
                             onToggleFavorite={toggleFavorite}
+                            onPlay={trackClipPlay}
                             onUpgrade={handleLockedAction}
                             lockCtaLabel={lockedCtaLabel}
                           />
