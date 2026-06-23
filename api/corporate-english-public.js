@@ -429,7 +429,9 @@ async function getCompany(req, res, user) {
       `SELECT job_id, title, company, company_id, location, job_type, category, salary, url, created_at,
               translations, is_translated, translated_at
        FROM jobs
-       WHERE company_id = $1 AND status = 'active'
+       WHERE company_id = $1
+         AND status = 'active'
+         AND COALESCE(is_approved, false) = true
        ORDER BY created_at DESC
        LIMIT 8`,
       [companyId]

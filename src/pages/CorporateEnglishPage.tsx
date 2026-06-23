@@ -306,7 +306,6 @@ function LearningSidePanel({
   ceoThinkingSections,
   resources,
   jobs,
-  jobCount,
   companyDetailPath,
   favorites,
   isAuthenticated,
@@ -321,7 +320,6 @@ function LearningSidePanel({
   ceoThinkingSections: Array<{ title: string; body: string }>
   resources: Array<{ title: string; url: string }>
   jobs: CorporateEnglishCompanyDetail['jobs']
-  jobCount?: number
   companyDetailPath: string
   favorites: CorporateEnglishCompanyDetail['favorites']
   isAuthenticated: boolean
@@ -365,7 +363,7 @@ function LearningSidePanel({
     {
       key: 'jobs',
       title: '在招岗位',
-      count: jobs.length || Number(jobCount || 0),
+      count: jobs.length,
       icon: <Briefcase className="h-4 w-4" />
     },
     {
@@ -1371,7 +1369,6 @@ export default function CorporateEnglishPage() {
                   ceoThinkingSections={detail.profile.ceoThinkingSections || []}
                   resources={detail.profile.otherResources || []}
                   jobs={detail.jobs || []}
-                  jobCount={detail.company.jobCount}
                   companyDetailPath={companyDetailPath}
                   favorites={detail.favorites || []}
                   isAuthenticated={isAuthenticated}
