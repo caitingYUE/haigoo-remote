@@ -281,16 +281,16 @@ function LearningPanelLockOverlay({
   onUpgrade: () => void
 }) {
   return (
-    <div className="absolute inset-0 z-10 flex items-start justify-center rounded-[inherit] bg-white/52 px-5 pt-24 backdrop-blur-[2px]">
-      <div className="w-full max-w-[260px] rounded-[22px] border border-[#ded6ff] bg-white/96 p-5 text-center shadow-[0_22px_60px_-34px_rgba(78,64,180,0.36)]">
-        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f2ff] text-[#6251f5]">
+    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-[#fbfcff] px-6">
+      <div className="w-full max-w-[250px] text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#ded6ff] bg-white text-[#6251f5] shadow-[0_12px_28px_-22px_rgba(78,64,180,0.45)]">
           <Lock className="h-4 w-4" />
         </div>
-        <h3 className="mt-3 text-base font-black leading-6 text-slate-950">企业文化、CEO商业思维等内容</h3>
+        <h3 className="mt-4 text-base font-black leading-6 text-slate-950">企业文化、CEO商业思维等内容</h3>
         <button
           type="button"
           onClick={onUpgrade}
-          className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-[#6d5dfc] px-5 text-sm font-black text-white transition hover:bg-[#5a49e8]"
+          className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[#6d5dfc] px-6 text-sm font-black text-white shadow-[0_16px_32px_-22px_rgba(109,93,252,0.72)] transition hover:bg-[#5a49e8]"
         >
           {ctaLabel}
         </button>
@@ -395,7 +395,7 @@ function LearningSidePanel({
     <section className="flex h-full min-h-0 overflow-hidden rounded-[24px] border border-[#efe5d8] bg-white/92 shadow-[0_18px_55px_rgba(122,92,56,0.07)] backdrop-blur">
       <div className="flex min-w-0 flex-1 flex-col">
         <div className={`relative min-h-0 flex-1 overflow-hidden ${currentTab.locked ? 'min-h-[320px]' : ''}`}>
-          <div className={`h-full overflow-y-auto px-4 py-4 ${currentTab.locked ? 'pointer-events-none select-none blur-[3px]' : ''}`}>
+          <div className={`h-full overflow-y-auto px-4 py-4 ${currentTab.locked ? 'pointer-events-none select-none opacity-0' : ''}`}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-lg font-black text-slate-950">{currentTab.title}</h3>
