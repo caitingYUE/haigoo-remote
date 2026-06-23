@@ -42,6 +42,8 @@ const ACCEPTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.web
 
 type Mode = 'list' | 'create' | 'edit' | 'profile'
 type ClipDownloadFormat = 'compressed' | 'wav' | 'm4a'
+type ProfileSectionKey = 'cultureSections' | 'ceoThinkingSections'
+type BulkApplyMode = 'append' | 'replace'
 
 interface EditableClip extends CorporateEnglishClip {
   localId: string
@@ -87,6 +89,17 @@ interface EditorState {
   durationMs?: number | null
   subtitleRows: CorporateEnglishSubtitleRow[]
   clips: EditableClip[]
+}
+
+interface ParsedBulkClipConfig {
+  startMs: number
+  endMs: number
+  title: string
+  clipTagInput: string
+  pronunciationMarkInput: string
+  subtitleText?: string
+  translationText?: string
+  subtitleCues?: CorporateEnglishSubtitleCue[]
 }
 
 const emptyEditorState = (): EditorState => ({
@@ -505,6 +518,109 @@ function extractSubtitle(rows: CorporateEnglishSubtitleRow[], startMs: number, e
   }
 }
 
+function parseBulkClipHeader(line: string) {
+  const parts = line.split(/[|｜]/g).map((part) => part.trim()).filter(Boolean)
+  if (parts.length < 2) return null
+  const timeMatch = parts[0].match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s*(?:-|–|—|~|至|到)\s*(\d{1,2}:\d{2}(?::\d{2})?)$/)
+  if (!timeMatch) return null
+  const startMs = parseTimecode(timeMatch[1])
+  const endMs = parseTimecode(timeMatch[2])
+  if (startMs === null || endMs === null || endMs <= startMs) {
+    throw new Error(`时间戳无效：${parts[0]}`)
+  }
+  return {
+    startMs,
+    endMs,
+    title: parts[1],
+    clipTagInput: parts.slice(2).join('；')
+  }
+}
+
+function isBulkClipHeaderLine(line: string) {
+  return Boolean(parseBulkClipHeader(line))
+}
+
+function parseBulkClipConfig(input: string, subtitleRows: CorporateEnglishSubtitleRow[]) {
+  const lines = String(input || '').split(/\r?\n/g)
+  const blocks: Array<{ header: string; lines: string[] }> = []
+  let currentBlock: { header: string; lines: string[] } | null = null
+
+  lines.forEach((rawLine) => {
+    const line = rawLine.trim()
+    if (!line) return
+    if (isBulkClipHeaderLine(line)) {
+      currentBlock = { header: line, lines: [] }
+      blocks.push(currentBlock)
+      return
+    }
+    if (currentBlock) currentBlock.lines.push(rawLine)
+  })
+
+  return blocks.map((block, index): ParsedBulkClipConfig => {
+    const header = parseBulkClipHeader(block.header)
+    if (!header) throw new Error(`第 ${index + 1} 段缺少有效标题行`)
+
+    const pronunciationLines: string[] = []
+    const textFields: Record<'subtitleText' | 'translationText', string[]> = {
+      subtitleText: [],
+      translationText: []
+    }
+    let activeTextField: 'subtitleText' | 'translationText' | '' = ''
+
+    block.lines.forEach((rawLine) => {
+      const line = rawLine.trim()
+      if (!line) return
+      const labelMatch = line.match(/^([^:：]{1,12})[:：]\s*(.*)$/)
+      const label = String(labelMatch?.[1] || '').trim()
+      const value = String(labelMatch?.[2] || '').trim()
+
+      if (['跟读原文', '原文', '英文原文', '字幕原文'].includes(label)) {
+        activeTextField = 'subtitleText'
+        if (value) textFields.subtitleText.push(value)
+        return
+      }
+      if (['参考译文', '译文', '翻译', '字幕翻译'].includes(label)) {
+        activeTextField = 'translationText'
+        if (value) textFields.translationText.push(value)
+        return
+      }
+      if (label && (pronunciationLabelToType[label] || pronunciationLabelToType[label.toLowerCase()])) {
+        pronunciationLines.push(`${label}：${value}`)
+        activeTextField = ''
+        return
+      }
+      if (activeTextField) {
+        textFields[activeTextField].push(line)
+      }
+    })
+
+    const extracted = extractSubtitle(subtitleRows, header.startMs, header.endMs)
+    return {
+      ...header,
+      pronunciationMarkInput: pronunciationLines.join('\n'),
+      subtitleText: textFields.subtitleText.join('\n') || extracted.subtitleText,
+      translationText: textFields.translationText.join('\n') || extracted.translationText,
+      subtitleCues: extracted.subtitleCues
+    }
+  })
+}
+
+function parseProfileBulkSections(input: string) {
+  return String(input || '')
+    .split(/\r?\n/g)
+    .map((rawLine, index) => {
+      const line = rawLine.trim()
+      if (!line) return null
+      const separatorIndex = line.search(/[|｜]/)
+      if (separatorIndex < 0) throw new Error(`第 ${index + 1} 行缺少「｜」分隔符`)
+      const title = line.slice(0, separatorIndex).trim()
+      const body = line.slice(separatorIndex + 1).trim()
+      if (!title || !body) throw new Error(`第 ${index + 1} 行标题或内容为空`)
+      return { title, body }
+    })
+    .filter((section): section is CorporateEnglishContentSection => Boolean(section))
+}
+
 function encodeWav(audioBuffer: AudioBuffer) {
   const channelCount = audioBuffer.numberOfChannels
   const sampleRate = audioBuffer.sampleRate
@@ -841,6 +957,11 @@ export default function AdminCorporateEnglishPage() {
   const [total, setTotal] = useState(0)
   const [editor, setEditor] = useState<EditorState>(() => emptyEditorState())
   const [profileDraft, setProfileDraft] = useState<CorporateEnglishCompanyProfile>(() => emptyProfile())
+  const [bulkClipInput, setBulkClipInput] = useState('')
+  const [profileBulkInputs, setProfileBulkInputs] = useState<Record<ProfileSectionKey, string>>({
+    cultureSections: '',
+    ceoThinkingSections: ''
+  })
   const [companySearch, setCompanySearch] = useState('')
   const [companyResults, setCompanyResults] = useState<TrustedCompany[]>([])
   const [companyLoading, setCompanyLoading] = useState(false)
@@ -995,6 +1116,8 @@ export default function AdminCorporateEnglishPage() {
       if (contextCompany) nextEditor.selectedCompany = contextCompany
       setEditor(nextEditor)
       setProfileDraft(emptyProfile())
+      setBulkClipInput('')
+      setProfileBulkInputs({ cultureSections: '', ceoThinkingSections: '' })
       setAudioFile(null)
       setCsvFile(null)
       setDecodedAudio(null)
@@ -1073,6 +1196,7 @@ export default function AdminCorporateEnglishPage() {
           subtitleRows: detail.material.normalizedSubtitleRows || [],
           clips
         })
+        setBulkClipInput('')
         setAudioFile(null)
         setCsvFile(null)
         setDecodedAudio(null)
@@ -1121,7 +1245,10 @@ export default function AdminCorporateEnglishPage() {
     let cancelled = false
     const loadProfile = async () => {
       const profile = await corporateEnglishService.getCompanyProfile(companyId).catch(() => null)
-      if (!cancelled) setProfileDraft(profile || emptyProfile(companyId))
+      if (!cancelled) {
+        setProfileDraft(profile || emptyProfile(companyId))
+        setProfileBulkInputs({ cultureSections: '', ceoThinkingSections: '' })
+      }
     }
     loadProfile()
     return () => {
@@ -1378,55 +1505,128 @@ export default function AdminCorporateEnglishPage() {
     })
   }
 
+  const applyBulkClipConfig = (mode: BulkApplyMode) => {
+    try {
+      const parsedClips = parseBulkClipConfig(bulkClipInput, editor.subtitleRows)
+      if (parsedClips.length === 0) {
+        alert('没有解析到剪辑片段，请检查时间戳标题行格式。')
+        return
+      }
+      const baseClips = mode === 'append' ? editor.clips : []
+      if (baseClips.length + parsedClips.length > MAX_CLIPS) {
+        alert(`单个素材最多支持 ${MAX_CLIPS} 个剪辑段，当前批量结果超出限制。`)
+        return
+      }
+      const nextClips: EditableClip[] = parsedClips.map((clip, index) => {
+        const clipTagInput = clip.clipTagInput || ''
+        const pronunciationMarkInput = clip.pronunciationMarkInput || ''
+        return {
+          localId: crypto.randomUUID(),
+          sequence: baseClips.length + index,
+          clipTitle: clip.title || `片段 ${baseClips.length + index + 1}`,
+          startMs: clip.startMs,
+          endMs: clip.endMs,
+          startTimecode: formatTime(clip.startMs),
+          endTimecode: formatTime(clip.endMs),
+          subtitleText: clip.subtitleText || '',
+          translationText: clip.translationText || '',
+          subtitleCues: clip.subtitleCues || [],
+          clipTagInput,
+          clipTags: parseClipTags(clipTagInput),
+          pronunciationMarkInput,
+          pronunciationMarks: parsePronunciationMarks(pronunciationMarkInput),
+          status: editor.status
+        }
+      })
+      updateEditor({
+        clips: [...baseClips, ...nextClips].map((clip, index) => ({ ...clip, sequence: index }))
+      })
+      alert(`已解析 ${nextClips.length} 个剪辑段，请校验后生成剪辑音频并保存。`)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '批量解析失败')
+    }
+  }
+
+  const buildGeneratedClipPatch = async (clip: EditableClip, source: AudioBuffer): Promise<Partial<EditableClip>> => {
+    if (clip.endMs <= clip.startMs) {
+      throw new Error(`「${clip.clipTitle || '未命名片段'}」结束时间必须晚于起始时间`)
+    }
+    if (editor.durationMs && clip.endMs > editor.durationMs + 500) {
+      throw new Error(`「${clip.clipTitle || '未命名片段'}」剪辑结束时间超过音频总时长`)
+    }
+    const { blob, mimeType, extension } = encodeSpeechWavClip(clipAudioBuffer(source, clip.startMs, clip.endMs))
+    if (blob.size > MAX_CLIP_BYTES) {
+      throw new Error(`「${clip.clipTitle || '未命名片段'}」音频超过 3MB，请缩短时间段。`)
+    }
+    if (blob.size <= 0) {
+      throw new Error(`「${clip.clipTitle || '未命名片段'}」剪辑音频为空，请检查起止时间或原始音频格式。`)
+    }
+    const url = registerClipAudioObjectUrl(URL.createObjectURL(blob))
+    const text = extractSubtitle(editor.subtitleRows, clip.startMs, clip.endMs)
+    const subtitleText = clip.subtitleText || text.subtitleText
+    const subtitleCues = clip.subtitleCues?.length ? clip.subtitleCues : text.subtitleCues
+    const pronunciationMarks = clip.pronunciationMarks?.length
+      ? clip.pronunciationMarks
+      : inferPronunciationMarks(subtitleText, editor.subtitleRows, clip.startMs, clip.endMs)
+
+    return {
+      clipBlob: blob,
+      clipAudioUrl: url,
+      clipMimeType: mimeType,
+      clipExtension: extension,
+      clipAudioAssetId: null,
+      subtitleText,
+      translationText: clip.translationText || text.translationText,
+      subtitleCues,
+      pronunciationMarks,
+      pronunciationMarkInput: clip.pronunciationMarkInput || formatPronunciationMarks(pronunciationMarks)
+    }
+  }
+
   const generateClip = async (localId: string) => {
     try {
       setGeneratingClipId(localId)
       const clip = editor.clips.find((item) => item.localId === localId)
       if (!clip) return
-      if (clip.endMs <= clip.startMs) {
-        alert('结束时间必须晚于起始时间')
-        return
-      }
-      if (editor.durationMs && clip.endMs > editor.durationMs + 500) {
-        alert('剪辑结束时间超过音频总时长')
-        return
-      }
       const source = await ensureDecodedAudio()
-      const { blob, mimeType, extension } = encodeSpeechWavClip(clipAudioBuffer(source, clip.startMs, clip.endMs))
-      if (blob.size > MAX_CLIP_BYTES) {
-        alert('单个剪辑音频不能超过 3MB，请缩短时间段。当前已按 24kHz 单声道语音格式处理。')
-        return
-      }
-      if (blob.size <= 0) {
-        alert('剪辑音频为空，请检查起止时间或原始音频格式')
-        return
-      }
+      const patch = await buildGeneratedClipPatch(clip, source)
       if (clip.clipAudioUrl) {
         URL.revokeObjectURL(clip.clipAudioUrl)
         clipAudioObjectUrlsRef.current = clipAudioObjectUrlsRef.current.filter((url) => url !== clip.clipAudioUrl)
       }
-      const url = registerClipAudioObjectUrl(URL.createObjectURL(blob))
-      const text = extractSubtitle(editor.subtitleRows, clip.startMs, clip.endMs)
-      const subtitleText = clip.subtitleText || text.subtitleText
-      const subtitleCues = clip.subtitleCues?.length ? clip.subtitleCues : text.subtitleCues
-      const pronunciationMarks = clip.pronunciationMarks?.length
-        ? clip.pronunciationMarks
-        : inferPronunciationMarks(subtitleText, editor.subtitleRows, clip.startMs, clip.endMs)
       updateClip(localId, {
-        clipBlob: blob,
-        clipAudioUrl: url,
-        clipMimeType: mimeType,
-        clipExtension: extension,
-        clipAudioAssetId: null,
-        subtitleText,
-        translationText: clip.translationText || text.translationText,
-        subtitleCues,
-        pronunciationMarks,
-        pronunciationMarkInput: clip.pronunciationMarkInput || formatPronunciationMarks(pronunciationMarks)
+        ...patch
       })
     } catch (error) {
       console.error('Failed to generate clip:', error)
       alert(error instanceof Error ? error.message : '生成剪辑失败')
+    } finally {
+      setGeneratingClipId('')
+    }
+  }
+
+  const generateAllClips = async () => {
+    if (editor.clips.length === 0) {
+      alert('请先添加或批量解析剪辑段')
+      return
+    }
+    try {
+      setGeneratingClipId('__all__')
+      const source = await ensureDecodedAudio()
+      const nextClips: EditableClip[] = []
+      for (const clip of editor.clips) {
+        const patch = await buildGeneratedClipPatch(clip, source)
+        if (clip.clipAudioUrl) {
+          URL.revokeObjectURL(clip.clipAudioUrl)
+          clipAudioObjectUrlsRef.current = clipAudioObjectUrlsRef.current.filter((url) => url !== clip.clipAudioUrl)
+        }
+        nextClips.push({ ...clip, ...patch })
+      }
+      updateEditor({ clips: nextClips.map((clip, index) => ({ ...clip, sequence: index })) })
+      alert(`已生成 ${nextClips.length} 个剪辑音频，请校验后保存。`)
+    } catch (error) {
+      console.error('Failed to generate all clips:', error)
+      alert(error instanceof Error ? error.message : '批量生成剪辑失败')
     } finally {
       setGeneratingClipId('')
     }
@@ -1651,6 +1851,23 @@ export default function AdminCorporateEnglishPage() {
     }))
   }
 
+  const applyProfileBulkSections = (key: ProfileSectionKey, mode: BulkApplyMode) => {
+    try {
+      const sections = parseProfileBulkSections(profileBulkInputs[key])
+      if (sections.length === 0) {
+        alert('没有解析到配置内容，请检查「标题｜内容」格式。')
+        return
+      }
+      setProfileDraft((prev) => ({
+        ...prev,
+        [key]: mode === 'append' ? [...prev[key], ...sections] : sections
+      }))
+      alert(`已解析 ${sections.length} 条，可继续校验后保存。`)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '批量解析失败')
+    }
+  }
+
   const updateResourceLink = (index: number, patch: Partial<CorporateEnglishResourceLink>) => {
     setProfileDraft((prev) => ({
       ...prev,
@@ -1743,6 +1960,28 @@ export default function AdminCorporateEnglishPage() {
                     <Plus className="h-4 w-4" />
                     添加
                   </button>
+                </div>
+                <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3">
+                  <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-bold text-slate-900">批量配置</div>
+                      <div className="text-xs text-slate-500">每行一条：标题｜内容</div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button type="button" className="btn-secondary" onClick={() => applyProfileBulkSections(group.key, 'append')}>
+                        追加
+                      </button>
+                      <button type="button" className="btn-secondary" onClick={() => applyProfileBulkSections(group.key, 'replace')}>
+                        替换
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    className="h-28 w-full rounded-lg border border-indigo-100 bg-white px-3 py-2 text-sm"
+                    value={profileBulkInputs[group.key]}
+                    onChange={(event) => setProfileBulkInputs((prev) => ({ ...prev, [group.key]: event.target.value }))}
+                    placeholder="开放是底层原则｜Automattic 和 WordPress 的核心文化不是“拥有一切”，而是尽可能开放..."
+                  />
                 </div>
                 <div className="space-y-3">
                   {profileDraft[group.key].length === 0 ? (
@@ -2016,6 +2255,33 @@ export default function AdminCorporateEnglishPage() {
                     已保存的剪辑音频会直接展示和下载；如需重新剪辑，请重新上传原始音频后点击“生成/更新剪辑”。
                   </div>
                 )}
+                <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold text-slate-900">批量配置剪辑段</h3>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        先上传字幕 CSV，再粘贴批量配置；跟读原文和译文会按时间戳从字幕自动提取。可选填重读、弱读、连读、关键词。
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" className="btn-secondary" onClick={() => applyBulkClipConfig('append')}>
+                        追加解析结果
+                      </button>
+                      <button type="button" className="btn-secondary" onClick={() => applyBulkClipConfig('replace')}>
+                        替换当前剪辑
+                      </button>
+                    </div>
+                  </div>
+                  <textarea
+                    className="h-44 w-full rounded-lg border border-indigo-100 bg-white px-3 py-2 font-mono text-sm leading-6"
+                    value={bulkClipInput}
+                    onChange={(event) => setBulkClipInput(event.target.value)}
+                    placeholder={'02:16–02:46 | Travel Keeps You Humble | B1-B2; #旅行与适应力 / #远程工作方式; #生活方式表达 / #CEO 日常表达\n重读：love / travel / humbling\n弱读：that’s / of / what / I\n连读：part of / what I / love about\n关键词：humbling / in control / productive\n\n06:37–07:08 | Finding the Right CEO Partner | B2-C1; #创始人合作 / #领导力; #创业故事 / #组织搭建'}
+                  />
+                  <div className="mt-2 text-xs leading-5 text-slate-500">
+                    标题行格式：时间戳｜片段标题｜适合英语水平；#素材关键词 / #素材关键词2；#适用场景1 / #适用场景2
+                  </div>
+                </div>
                 {editor.clips.length === 0 ? (
                   <div className="rounded-lg border border-dashed border-slate-300 p-8 text-center text-slate-500">
                     <p>还没有剪辑段，添加第一段后即可配置时间、字幕和跟读标注。</p>
@@ -2035,7 +2301,7 @@ export default function AdminCorporateEnglishPage() {
                           placeholder={`片段 ${index + 1}`}
                         />
                         <div className="flex flex-wrap gap-2">
-                          <button type="button" className="btn-secondary" onClick={() => generateClip(clip.localId)} disabled={generatingClipId === clip.localId}>
+                          <button type="button" className="btn-secondary" onClick={() => generateClip(clip.localId)} disabled={generatingClipId === clip.localId || generatingClipId === '__all__'}>
                             {generatingClipId === clip.localId ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
                             {generatingClipId === clip.localId ? '生成中...' : '生成/更新剪辑'}
                           </button>
@@ -2211,10 +2477,16 @@ export default function AdminCorporateEnglishPage() {
                   ))
                 )}
                 {editor.clips.length > 0 && (
-                  <button type="button" className="btn-secondary" onClick={() => copyText(clipSummaryText)}>
-                    <Copy className="h-4 w-4" />
-                    批量复制全部剪辑完整信息
-                  </button>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" className="btn-secondary" onClick={generateAllClips} disabled={generatingClipId === '__all__'}>
+                      {generatingClipId === '__all__' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                      {generatingClipId === '__all__' ? '批量生成中...' : '批量生成全部剪辑音频'}
+                    </button>
+                    <button type="button" className="btn-secondary" onClick={() => copyText(clipSummaryText)}>
+                      <Copy className="h-4 w-4" />
+                      批量复制全部剪辑完整信息
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
