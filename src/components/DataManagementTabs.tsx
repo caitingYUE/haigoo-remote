@@ -392,11 +392,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     if (!editingJob) return;
 
     try {
-      // 乐观更新：立即更新本地状态
-      const updatedData = processedData.map(job =>
-        job.id === editingJob.id ? { ...job, ...updatedJob } : job
-      );
-      setProcessedData(updatedData as ProcessedJobData[]);
+      let savedJob: ProcessedJobData | null = null;
 
       if (editingJob.id) {
         // 检查标题是否改变，如果改变则清除翻译
@@ -424,7 +420,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         }
 
         // 更新现有职位
-        await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
+        const saved = await dataManagementService.updateProcessedJob(editingJob.id, updatedJob, 'admin');
+        if (!saved) throw new Error('职位更新未成功写入');
+        savedJob = {
+          ...editingJob,
+          ...updatedJob,
+          isManuallyEdited: true,
+          updatedAt: new Date().toISOString()
+        } as ProcessedJobData;
       } else {
         // 新增职位 - 调用API保存
         const newJob: ProcessedJobData = {
@@ -437,13 +440,26 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           updatedAt: new Date().toISOString()
         } as ProcessedJobData;
 
-        await dataManagementService.addProcessedJob(newJob);
+        const saved = await dataManagementService.addProcessedJob(newJob);
+        if (!saved) throw new Error('职位新增未成功写入');
+        savedJob = newJob;
+      }
+
+      if (savedJob) {
+        setProcessedData(prev => {
+          const exists = prev.some(job => job.id === savedJob?.id);
+          if (exists) {
+            return prev.map(job => job.id === savedJob?.id ? savedJob : job) as ProcessedJobData[];
+          }
+          return [savedJob, ...prev] as ProcessedJobData[];
+        });
       }
 
       if (shouldClose) {
         setShowEditModal(false);
         setEditingJob(null);
       } else {
+        if (savedJob) setEditingJob(savedJob);
         showSuccess('保存成功', '职位信息已更新');
       }
 

@@ -53,9 +53,9 @@ async function parseResumeFileOnDemand(file: File) {
 }
 
 const HomeVipBadge = ({ className = '' }: { className?: string }) => (
-    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border border-white bg-[#6f63ff] px-1.5 py-0.5 text-[10px] font-black text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)] ${className}`}>
+    <span className={`inline-flex min-w-[46px] shrink-0 items-center justify-center gap-1 rounded-full border border-white bg-[#6f63ff] px-2 py-0.5 text-[10px] font-black text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)] ${className}`}>
         <Crown className="h-3 w-3 fill-current" />
-        <span className="text-[8px] font-black leading-none tracking-wide">Club</span>
+        <span className="text-[9px] font-black leading-none tracking-wide">Club</span>
     </span>
 )
 
@@ -306,9 +306,16 @@ function normalizeHeroTranslations(value: any) {
     return typeof value === 'object' ? value : null
 }
 
+function normalizeHeroBoolean(value: any) {
+    if (typeof value === 'boolean') return value
+    if (typeof value === 'number') return value === 1
+    if (typeof value === 'string') return ['true', '1', 'yes', 'y'].includes(value.trim().toLowerCase())
+    return false
+}
+
 function isFreshHomeJob(job: any) {
-    if (typeof job?.isNew === 'boolean') return job.isNew
-    if (typeof job?.is_new === 'boolean') return job.is_new
+    if (job?.isNew !== undefined && job?.isNew !== null) return normalizeHeroBoolean(job.isNew)
+    if (job?.is_new !== undefined && job?.is_new !== null) return normalizeHeroBoolean(job.is_new)
     const rawDate = job?.publishedAt || job?.published_at || job?.createdAt || job?.created_at || ''
     const time = rawDate ? new Date(rawDate).getTime() : 0
     if (!Number.isFinite(time) || time <= 0) return false
@@ -546,6 +553,31 @@ function extractParsedResumeHints(parsed: any) {
     )).slice(0, 12)
 }
 
+function isLikelyResumePayload(parsed: any, fileName = '') {
+    const lowerName = String(fileName || '').toLowerCase()
+    const extensionLooksValid = /\.(pdf|doc|docx)$/i.test(lowerName)
+    if (!extensionLooksValid) return false
+
+    const text = String(parsed?.text || parsed?.content || parsed?.textContent || '').trim()
+    const fields = [
+        parsed?.name,
+        parsed?.title,
+        parsed?.targetRole,
+        parsed?.summary,
+        parsed?.workExperience,
+        parsed?.experience,
+        parsed?.education,
+        parsed?.degree,
+        parsed?.skills
+    ].filter((item) => {
+        if (Array.isArray(item)) return item.length > 0
+        return String(item || '').trim().length >= 2
+    })
+    const resumeKeywords = /(resume|cv|curriculum vitae|简历|教育经历|教育背景|工作经历|项目经历|工作经验|求职意向|技能|experience|education|skills|employment)/i
+
+    return fields.length >= 2 || (text.length >= 180 && resumeKeywords.test(text)) || (fields.length >= 1 && resumeKeywords.test(`${lowerName}\n${text}`))
+}
+
 
 const TICKER_TARGET_MIN = 8
 const TICKER_TARGET_MAX = 10
@@ -723,6 +755,10 @@ export default function HomeHero({
     const [resumeName, setResumeName] = useState<string | null>(null)
     const [guestResumeFile, setGuestResumeFile] = useState<File | null>(null)
     const [guestResumeHints, setGuestResumeHints] = useState<string[]>([])
+    const [pendingHeroRecommendationRefresh, setPendingHeroRecommendationRefresh] = useState<null | {
+        resumeId: string | null
+        resumeHints?: string[]
+    }>(null)
     const [privacyAccepted, setPrivacyAccepted] = useState(false)
     const [highlightPrivacyConsent, setHighlightPrivacyConsent] = useState(false)
     const [uploading, setUploading] = useState(false)
@@ -968,7 +1004,7 @@ export default function HomeHero({
             experienceLevel: job?.experienceLevel || job?.experience_level || '',
             companyRating: job?.companyRating || job?.company_rating || job?.trustedCompanyRating || job?.trusted_company_rating || '',
             ratingSource: job?.ratingSource || job?.rating_source || job?.trustedRatingSource || job?.trusted_rating_source || '',
-            memberOnly: Boolean(job?.memberOnly ?? job?.member_only),
+            memberOnly: normalizeHeroBoolean(job?.memberOnly ?? job?.member_only),
             isNew: isFreshHomeJob(job),
             logo_candidates: job?.logo_candidates || resolveLogoCandidates(
                 originalLogo,
@@ -1494,11 +1530,20 @@ export default function HomeHero({
                 setResumeName(file.name)
                 setGuestResumeFile(file)
                 let parsedHints: string[] = []
+                let parsed: any = null
                 try {
-                    const parsed = await parseResumeFileOnDemand(file)
+                    parsed = await parseResumeFileOnDemand(file)
                     parsedHints = extractParsedResumeHints(parsed)
                 } catch {
                     parsedHints = []
+                }
+                if (!isLikelyResumePayload(parsed, file.name)) {
+                    setResumeId(null)
+                    setResumeName(null)
+                    setGuestResumeFile(null)
+                    setGuestResumeHints([])
+                    showWarning('请重新上传简历', '当前文件不像简历内容，请上传 PDF 或 Word 简历。')
+                    return
                 }
                 setGuestResumeHints(parsedHints)
                 await savePendingGuestResume(file, parsedHints)
@@ -1510,6 +1555,10 @@ export default function HomeHero({
                     updatedAt: Date.now(),
                 })
                 showSuccess('简历已保存', '未登录状态已保存，5分钟内登录会自动同步到个人中心')
+                setPendingHeroRecommendationRefresh({
+                    resumeId: 'guest-temp-id',
+                    resumeHints: parsedHints
+                })
                 return
             }
             const fd = new FormData()
@@ -1522,6 +1571,16 @@ export default function HomeHero({
             })
             const result = await resp.json()
             if (!resp.ok || !result.success) throw new Error(result.error || '上传失败')
+            if (!isLikelyResumePayload(result.data, file.name)) {
+                if (result.id) {
+                    fetch(`/api/resumes?id=${encodeURIComponent(result.id)}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${authToken}` }
+                    }).catch(() => undefined)
+                }
+                showWarning('请重新上传简历', '当前文件不像简历内容，请上传 PDF 或 Word 简历。')
+                return
+            }
             setResumeId(result.id)
             setResumeName(file.name)
             setGuestResumeFile(null)
@@ -1535,7 +1594,8 @@ export default function HomeHero({
                 updatedAt: Date.now(),
             })
             markMatchScoreRefresh('resume_upload')
-            showSuccess('简历上传成功', '岗位列表匹配度会在下次进入时自动刷新')
+            showSuccess('简历上传成功', '正在为你更新今日推荐')
+            setPendingHeroRecommendationRefresh({ resumeId: result.id })
         } catch (error: any) {
             showError('上传失败', error.message)
         } finally {
@@ -1565,10 +1625,14 @@ export default function HomeHero({
         position?: string
         silent?: boolean
         skipProfileSync?: boolean
+        resumeIdOverride?: string | null
+        resumeHintsOverride?: string[]
     }) => {
         const nextJobDirection = String(options?.direction ?? jobDirection).trim()
         const nextPositionType = String(options?.position ?? positionType).trim() || 'full-time'
-        const hasResumeSignal = Boolean(resumeId || guestResumeFile || resumeName)
+        const effectiveResumeId = options?.resumeIdOverride !== undefined ? options.resumeIdOverride : resumeId
+        const effectiveResumeHints = options?.resumeHintsOverride || guestResumeHints
+        const hasResumeSignal = Boolean(effectiveResumeId || guestResumeFile || resumeName || effectiveResumeHints.length > 0)
         const requestJobDirection = nextJobDirection || (hasResumeSignal ? '远程工作' : '')
         const nextContextKey = buildHeroRecommendationContextKey(requestJobDirection, nextPositionType)
         const recentRecommendationIds = getRecentRecommendationIds(recommendationHistory, nextContextKey)
@@ -1590,13 +1654,13 @@ export default function HomeHero({
             source_key: 'home_hero',
             job_direction: requestJobDirection,
             position_type: nextPositionType,
-            has_resume: Boolean(resumeId || guestResumeFile),
+            has_resume: Boolean(effectiveResumeId || guestResumeFile || effectiveResumeHints.length > 0),
             is_authenticated: isAuthenticated,
         })
 
         try {
             const authToken = localStorage.getItem('haigoo_auth_token') || token
-            let parsedResumeHints = guestResumeHints
+            let parsedResumeHints = effectiveResumeHints
             if (!authToken && guestResumeFile && parsedResumeHints.length === 0) {
                 const parsed = await parseResumeFileOnDemand(guestResumeFile)
                 parsedResumeHints = extractParsedResumeHints(parsed)
@@ -1612,7 +1676,7 @@ export default function HomeHero({
                     action: 'hero-recommend',
                     jobDirection: requestJobDirection,
                     positionType: nextPositionType,
-                    resumeId,
+                    resumeId: effectiveResumeId,
                     resumeHints: authToken ? undefined : parsedResumeHints,
                     recentRecommendationIds,
                     limit: dailyLimit
@@ -1644,7 +1708,7 @@ export default function HomeHero({
                 source_key: 'home_hero',
                 job_direction: requestJobDirection,
                 position_type: nextPositionType,
-                has_resume: Boolean(resumeId || guestResumeFile),
+                has_resume: Boolean(effectiveResumeId || guestResumeFile || parsedResumeHints.length > 0),
                 result_count: capped.length,
             })
             if (jobDirection !== nextJobDirection) setJobDirection(nextJobDirection)
@@ -1686,6 +1750,22 @@ export default function HomeHero({
             setLoading(false)
         }
     }
+
+    useEffect(() => {
+        if (!pendingHeroRecommendationRefresh) return
+        const pending = pendingHeroRecommendationRefresh
+        setPendingHeroRecommendationRefresh(null)
+        void handleGetRecommendations({
+            direction: jobDirection,
+            position: positionType,
+            silent: true,
+            skipProfileSync: true,
+            resumeIdOverride: pending.resumeId,
+            resumeHintsOverride: pending.resumeHints
+        })
+        // handleGetRecommendations intentionally reads current component state.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pendingHeroRecommendationRefresh])
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated) return
@@ -1994,7 +2074,7 @@ export default function HomeHero({
                             {heroCaseJobs.map((rawJob: any) => {
                                 const job = normalizeHeroJob(rawJob)
                                 const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
-                                const isVipJob = Boolean((job as any).memberOnly || (job as any).member_only)
+                                const isVipJob = normalizeHeroBoolean((job as any).memberOnly ?? (job as any).member_only)
                                 const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
                                 const displayTitle = translatedTitle || job.title
                                 const displayCompany = job.translations?.company || job.company_name || job.company || '远程企业'
@@ -2016,7 +2096,7 @@ export default function HomeHero({
                                             <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl">
                                                 <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
                                             </span>
-                                            {isVipJob ? <HomeVipBadge className="absolute -right-1.5 -top-1.5 z-20 scale-[0.82]" /> : null}
+                                            {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-1.5 z-20" /> : null}
                                         </span>
                                         <span className="min-w-0 flex-1">
                                             <span className="flex min-w-0 items-center gap-1.5">
@@ -2201,7 +2281,7 @@ export default function HomeHero({
                                 const tags = Array.isArray(job.tags) ? job.tags : Array.isArray(job.skills) ? job.skills : []
                                 const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
                                 const ratingText = String(job.companyRating || job.company_rating || job.trustedCompanyRating || job.trusted_company_rating || job.rating || '').trim()
-                                const isVipJob = Boolean((job as any).memberOnly || (job as any).member_only)
+                                const isVipJob = normalizeHeroBoolean((job as any).memberOnly ?? (job as any).member_only)
                                 const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
                                 const displayTitle = translatedTitle || job.title
                                 const displayCompany = job.translations?.company || company
@@ -2216,7 +2296,7 @@ export default function HomeHero({
                                     >
                                         <div className="relative hidden h-14 w-14 shrink-0 items-center justify-center overflow-visible rounded-[18px] border border-[#e6edf3] bg-white p-1 shadow-sm sm:flex">
                                             <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain" />
-                                            {isVipJob ? <HomeVipBadge className="absolute -right-1.5 -top-1.5 z-20 scale-90" /> : null}
+                                            {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-1.5 z-20" /> : null}
                                         </div>
                                         <div className="min-w-0 flex-1">
                                             <div className="flex min-w-0 items-center gap-1.5">
