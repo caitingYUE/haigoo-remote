@@ -273,114 +273,278 @@ function UpgradeLockOverlay({
   )
 }
 
-function SectionPanel({
-  title,
-  icon,
-  sections,
-  emptyText,
-  locked,
-  lockTitle,
-  lockText,
-  ctaLabel = '了解会员服务',
-  onUpgrade
-}: {
-  title: string
-  icon: ReactNode
-  sections: Array<{ title: string; body: string }>
-  emptyText: string
-  locked?: boolean
-  lockTitle?: string
-  lockText?: string
-  ctaLabel?: string
-  onUpgrade?: () => void
-}) {
-  return (
-    <section className="rounded-[22px] border border-[#efe5d8] bg-white/85 p-4 shadow-[0_14px_45px_rgba(122,92,56,0.07)] backdrop-blur">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#eadff8] bg-[#f4f0ff] text-[#6d5dfc]">{icon}</span>
-        <h2 className="text-sm font-black text-slate-900">{title}</h2>
-      </div>
-      <div className={`relative overflow-hidden rounded-2xl ${locked ? 'min-h-[190px]' : ''}`}>
-      <div className={locked ? 'pointer-events-none select-none blur-[3px]' : ''}>
-      {sections.length > 0 ? (
-        <div className="space-y-2.5">
-          {sections.map((section, index) => (
-            <article key={`${section.title}-${index}`} className="rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3">
-              <h3 className="text-sm font-bold text-slate-900">{section.title}</h3>
-              <p className="mt-1 whitespace-pre-line text-sm leading-6 text-slate-600">{section.body}</p>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="text-sm leading-6 text-slate-500">{emptyText}</p>
-      )}
-      </div>
-      {locked ? (
-        <UpgradeLockOverlay
-          title={lockTitle}
-          description={lockText || '外企英语材料为会员配套英语练习工具。'}
-          ctaLabel={ctaLabel}
-          onUpgrade={onUpgrade || (() => undefined)}
-        />
-      ) : null}
-      </div>
-    </section>
-  )
-}
+type LearningPanelTabKey = 'culture' | 'ceo' | 'resources' | 'jobs' | 'favorites'
 
-function ResourcePanel({
+function LearningSidePanel({
+  cultureSections,
+  ceoThinkingSections,
   resources,
-  locked,
+  jobs,
+  jobCount,
+  companyDetailPath,
+  favorites,
+  isAuthenticated,
+  profileLocked,
+  resourcesLocked,
+  ctaLabel,
   onUpgrade,
-  ctaLabel = '了解会员服务',
-  lockText = '企业/CEO相关的更多延伸阅读和材料。'
+  onNavigateLogin,
+  onNavigateFavorites
 }: {
+  cultureSections: Array<{ title: string; body: string }>
+  ceoThinkingSections: Array<{ title: string; body: string }>
   resources: Array<{ title: string; url: string }>
-  locked?: boolean
+  jobs: CorporateEnglishCompanyDetail['jobs']
+  jobCount?: number
+  companyDetailPath: string
+  favorites: CorporateEnglishCompanyDetail['favorites']
+  isAuthenticated: boolean
+  profileLocked?: boolean
+  resourcesLocked?: boolean
+  ctaLabel: string
   onUpgrade: () => void
-  ctaLabel?: string
-  lockText?: string
+  onNavigateLogin: () => void
+  onNavigateFavorites: () => void
 }) {
+  const [activeTab, setActiveTab] = useState<LearningPanelTabKey>('culture')
   const visibleResources = resources.filter((resource) => resource.url)
+  const tabs: Array<{
+    key: LearningPanelTabKey
+    title: string
+    count: number
+    icon: ReactNode
+    locked?: boolean
+    lockText: string
+  }> = [
+    {
+      key: 'culture',
+      title: '企业文化',
+      count: cultureSections.length,
+      icon: <Building2 className="h-4 w-4" />,
+      locked: profileLocked,
+      lockText: '企业文化、使命愿景、价值观和企业故事等。'
+    },
+    {
+      key: 'ceo',
+      title: 'CEO 商业思维',
+      count: ceoThinkingSections.length,
+      icon: <Sparkles className="h-4 w-4" />,
+      locked: profileLocked,
+      lockText: 'CEO 创业、增长、个人成长等商业思维内容。'
+    },
+    {
+      key: 'resources',
+      title: '其他资料',
+      count: visibleResources.length,
+      icon: <ExternalLink className="h-4 w-4" />,
+      locked: resourcesLocked,
+      lockText: '企业/CEO相关的更多延伸阅读和材料。'
+    },
+    {
+      key: 'jobs',
+      title: '在招岗位',
+      count: jobs.length || Number(jobCount || 0),
+      icon: <Briefcase className="h-4 w-4" />,
+      lockText: '企业当前开放岗位。'
+    },
+    {
+      key: 'favorites',
+      title: '个人收藏',
+      count: favorites.length,
+      icon: <BookmarkCheck className="h-4 w-4" />,
+      lockText: '收藏的跟读片段。'
+    }
+  ]
+  const currentTab = tabs.find((tab) => tab.key === activeTab) || tabs[0]
+  const activeSections = activeTab === 'culture' ? cultureSections : ceoThinkingSections
+  const totalInsightCount = cultureSections.length + ceoThinkingSections.length
+  const isResourceTab = activeTab === 'resources'
+  const isJobTab = activeTab === 'jobs'
+  const isFavoriteTab = activeTab === 'favorites'
+  const emptyText = isResourceTab
+    ? '更丰富的补充资料。'
+    : activeTab === 'culture'
+      ? '从视频里学习到的企业文化、愿景、使命、成长等内容。'
+      : activeTab === 'ceo'
+        ? '从视频里学习到的 CEO 商业思维和认知。'
+        : isJobTab
+          ? '暂无已同步在招岗位。'
+          : '收藏跟读片段后会显示在这里。'
+
   return (
-    <section className="rounded-[22px] border border-[#efe5d8] bg-white/85 p-4 shadow-[0_14px_45px_rgba(122,92,56,0.07)] backdrop-blur">
-      <div className="mb-3 flex items-center gap-2">
-        <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#fee6b8] bg-[#fff7e8] text-[#d68a1f]">
-          <ExternalLink className="h-4 w-4" />
-        </span>
-        <h2 className="text-sm font-black text-slate-900">其他资料</h2>
+    <section className="flex h-full min-h-0 overflow-hidden rounded-[24px] border border-[#efe5d8] bg-white/92 shadow-[0_18px_55px_rgba(122,92,56,0.07)] backdrop-blur">
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className={`relative min-h-0 flex-1 overflow-hidden ${currentTab.locked ? 'min-h-[320px]' : ''}`}>
+          <div className={`h-full overflow-y-auto px-4 py-4 ${currentTab.locked ? 'pointer-events-none select-none blur-[3px]' : ''}`}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-black text-slate-950">{currentTab.title}</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">
+                  {activeTab === 'culture' ? '使命、价值观与工作方式' : activeTab === 'ceo' ? '增长、管理与长期判断' : activeTab === 'resources' ? '可继续阅读的外部材料' : activeTab === 'jobs' ? '与公司页同步的在招岗位' : '已收藏的跟读片段'}
+                </p>
+              </div>
+              <span className="rounded-full border border-[#eadff8] bg-[#f7f4ff] px-3 py-1 text-xs font-black text-[#6251f5]">
+                {currentTab.count} 条
+              </span>
+            </div>
+
+            {isJobTab ? (
+              jobs.length ? (
+                <div className="space-y-2">
+                  {companyDetailPath ? (
+                    <a
+                      href={companyDetailPath}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] no-underline hover:border-[#cbbfff] hover:bg-[#f6f2ff] hover:no-underline"
+                    >
+                      进入企业页
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  ) : null}
+                  {jobs.map((job) => (
+                    <a
+                      key={job.id}
+                      href={`${companyDetailPath}?jobId=${encodeURIComponent(job.id)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="line-clamp-2 text-sm font-bold text-slate-900">{job.title}</div>
+                        <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[#6251f5]" />
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">{job.location || '远程'} · {job.category || job.jobType || '岗位'}</div>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-[#f0e8dc] bg-[#fffdf8] px-4 py-8 text-center text-sm leading-6 text-slate-500">{emptyText}</p>
+              )
+            ) : isFavoriteTab ? (
+              !isAuthenticated ? (
+                <button type="button" onClick={onNavigateLogin} className="w-full rounded-2xl border border-[#eadff8] bg-[#fffdf8] px-3 py-3 text-sm font-bold text-slate-700 hover:border-[#cbbfff] hover:text-[#6251f5]">
+                  登录后查看收藏片段
+                </button>
+              ) : favorites.length ? (
+                <div className="space-y-2">
+                  {favorites.map((clip) => (
+                    <button
+                      key={clip.clipId}
+                      type="button"
+                      onClick={onNavigateFavorites}
+                      className="w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left hover:border-[#d8ccff] hover:bg-[#f6f2ff]"
+                    >
+                      <div className="line-clamp-2 text-sm font-bold text-slate-900">{clip.clipTitle || clip.materialTitle}</div>
+                      <div className="mt-1 text-xs text-slate-500">{clip.companyName} · {formatTime(clip.startMs)}</div>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={onNavigateFavorites}
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] hover:border-[#cbbfff] hover:bg-[#f6f2ff]"
+                  >
+                    查看全部音频收藏
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-[#f0e8dc] bg-[#fffdf8] px-4 py-8 text-center text-sm leading-6 text-slate-500">{emptyText}</p>
+              )
+            ) : isResourceTab ? (
+              visibleResources.length ? (
+                <div className="space-y-2">
+                  {visibleResources.map((resource, index) => (
+                    <a
+                      key={`${resource.title}-${index}`}
+                      href={resource.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="group flex min-h-[92px] items-start justify-between gap-3 rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-sm font-bold text-[#6251f5] no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:text-[#4f46e5] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
+                    >
+                      <span className="flex min-w-0 gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#8a7bff]">
+                          <Link2 className="h-4 w-4" />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="line-clamp-2">{resource.title || resource.url}</span>
+                          <span className="mt-2 block truncate text-xs font-semibold text-slate-400">{normalizeExternalUrl(resource.url)}</span>
+                        </span>
+                      </span>
+                      <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-[#8a7bff] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <p className="rounded-2xl border border-dashed border-[#f0e8dc] bg-[#fffdf8] px-4 py-8 text-center text-sm leading-6 text-slate-500">{emptyText}</p>
+              )
+            ) : activeSections.length ? (
+              <div className="space-y-3">
+                {activeSections.map((section, index) => (
+                  <article
+                    key={`${section.title}-${index}`}
+                    className={`rounded-2xl border p-4 ${
+                      index === 0
+                        ? 'border-[#d7ccff] bg-[#f7f4ff]'
+                        : 'border-[#f0e8dc] bg-[#fffdf8]'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
+                        index === 0 ? 'bg-[#6d5dfc] text-white' : 'bg-white text-[#8a7bff]'
+                      }`}>
+                        {index + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="text-sm font-black text-slate-950">{section.title}</h4>
+                        <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{section.body}</p>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-2xl border border-dashed border-[#f0e8dc] bg-[#fffdf8] px-4 py-8 text-center text-sm leading-6 text-slate-500">{emptyText}</p>
+            )}
+          </div>
+          {currentTab.locked ? (
+            <UpgradeLockOverlay
+              description={currentTab.lockText}
+              ctaLabel={ctaLabel}
+              onUpgrade={onUpgrade}
+            />
+          ) : null}
+        </div>
       </div>
-      <div className={`relative overflow-hidden rounded-2xl ${locked ? 'min-h-[190px]' : ''}`}>
-      <div className={locked ? 'pointer-events-none select-none blur-[3px]' : ''}>
-      {visibleResources.length ? (
-      <div className="space-y-2">
-        {visibleResources.map((resource, index) => (
-          <a
-            key={`${resource.title}-${index}`}
-            href={resource.url}
-            target="_blank"
-            rel="noreferrer"
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] px-3 py-3 text-sm font-bold text-[#6251f5] underline decoration-[#cfc5ff] decoration-2 underline-offset-4 transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:text-[#4f46e5]"
-          >
-            <span className="flex min-w-0 items-center gap-2">
-              <Link2 className="h-4 w-4 shrink-0 text-[#8a7bff]" />
-              <span className="line-clamp-2">{resource.title || resource.url}</span>
-            </span>
-            <ExternalLink className="h-4 w-4 shrink-0 text-[#8a7bff] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-          </a>
-        ))}
-      </div>
-      ) : (
-        <p className="text-sm leading-6 text-slate-500">更丰富的补充资料。</p>
-      )}
-      </div>
-      {locked ? (
-        <UpgradeLockOverlay
-          description={lockText}
-          ctaLabel={ctaLabel}
-          onUpgrade={onUpgrade}
-        />
-      ) : null}
+      <div className="w-[74px] shrink-0 border-l border-[#e5eaf2] bg-[#f2f5fa] p-2" role="tablist" aria-label="外企英语资料分类">
+        <div className="space-y-2">
+          {tabs.map((tab) => {
+            const isActive = tab.key === activeTab
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setActiveTab(tab.key)}
+                className={`relative flex h-[70px] w-full flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] font-black transition ${
+                  isActive
+                    ? 'border-[#d7ccff] bg-white text-[#6251f5] shadow-[0_14px_30px_-24px_rgba(109,93,252,0.75)]'
+                    : 'border-transparent bg-transparent text-slate-500 hover:border-[#e3ddff] hover:bg-white/70 hover:text-[#6251f5]'
+                }`}
+                title={tab.title}
+              >
+                {tab.icon}
+                <span className="leading-none">{tab.title.replace('CEO ', '')}</span>
+                <span className={`absolute right-1.5 top-1.5 rounded-full px-1 text-[10px] leading-4 ${
+                  isActive ? 'bg-[#f3f0ff] text-[#6251f5]' : 'bg-white text-slate-400'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
     </section>
   )
@@ -876,30 +1040,24 @@ export default function CorporateEnglishPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fffdf8] pt-16 font-haigoo-rounded text-slate-900">
-      <div className="mx-auto max-w-[1620px] px-4 pb-10 sm:px-6 lg:px-8">
-        <div className="mb-5 flex flex-wrap items-center gap-4 border-b border-[#efe6da] py-5">
-          <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-4 gap-y-1">
-            <h1 className="text-2xl font-black tracking-tight text-slate-950 md:text-3xl">外企英语</h1>
-            <p className="max-w-3xl text-sm leading-6 text-slate-500 md:text-base">
-              跟着远程企业CEO学习，了解远程文化，提升商业认知，轻松搞定外企英语。
-            </p>
-          </div>
-        </div>
-
+    <div className="min-h-screen bg-[#f7f9fc] pt-16 font-haigoo-rounded text-slate-900 lg:h-screen lg:overflow-hidden">
+      <div className="mx-auto max-w-[1680px] px-3 py-3 sm:px-4 lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
         {loadingCompanies ? (
           <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-[#e5edf3] bg-white">
             <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
           </div>
         ) : (
           <>
-            <div className={`grid gap-5 lg:items-start ${isCompanyListCollapsed ? 'lg:grid-cols-[72px_minmax(0,980px)_340px]' : 'lg:grid-cols-[280px_minmax(0,980px)_340px]'}`}>
-            <aside className="sticky top-24 hidden max-h-[calc(100vh-7rem)] overflow-hidden rounded-[24px] border border-[#efe5d8] bg-white/90 shadow-[0_16px_48px_rgba(122,92,56,0.07)] backdrop-blur lg:block">
-              <div className={`flex items-center border-b border-[#f0e8dc] ${isCompanyListCollapsed ? 'justify-center p-3' : 'justify-between px-4 py-3'}`}>
+            <div className={`grid gap-3 lg:h-full lg:min-h-0 ${isCompanyListCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)_400px]' : 'lg:grid-cols-[320px_minmax(0,1fr)_400px]'}`}>
+            <aside className="hidden h-full min-h-0 overflow-hidden rounded-[24px] border border-[#e5eaf2] bg-white/94 shadow-[0_16px_48px_rgba(36,47,76,0.08)] backdrop-blur lg:flex lg:flex-col">
+              <div className={`shrink-0 border-b border-[#edf1f7] ${isCompanyListCollapsed ? 'p-3' : 'px-4 py-4'}`}>
+                <div className={`flex items-start ${isCompanyListCollapsed ? 'justify-center' : 'justify-between gap-3'}`}>
                 {!isCompanyListCollapsed ? (
-                  <div className="flex items-center gap-2 text-sm font-black text-slate-950">
-                    <Menu className="h-4 w-4 text-[#6251f5]" />
-                    企业列表
+                  <div className="min-w-0">
+                    <h1 className="text-2xl font-black tracking-tight text-slate-950">外企英语</h1>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                      看 CEO 访谈，了解企业文化、提升商业认知，轻松搞定外企英语。
+                    </p>
                   </div>
                 ) : null}
                 <button
@@ -911,8 +1069,15 @@ export default function CorporateEnglishPage() {
                 >
                   {isCompanyListCollapsed ? <Menu className="h-4 w-4" /> : <ChevronRight className="h-4 w-4 rotate-180" />}
                 </button>
+                </div>
               </div>
-              <div className={`max-h-[calc(100vh-11rem)] space-y-2 overflow-y-auto ${isCompanyListCollapsed ? 'p-2' : 'p-3'}`}>
+              <div className={`min-h-0 flex-1 space-y-2 overflow-y-auto ${isCompanyListCollapsed ? 'p-2' : 'p-3'}`}>
+                {!isCompanyListCollapsed ? (
+                  <div className="mb-1 flex items-center gap-2 px-1 text-xs font-black uppercase tracking-wide text-slate-400">
+                    <Menu className="h-3.5 w-3.5 text-[#6251f5]" />
+                    企业列表
+                  </div>
+                ) : null}
                 {visibleCompanies.map((company) => (
                   <button
                     key={company.companyId}
@@ -943,7 +1108,7 @@ export default function CorporateEnglishPage() {
                 ))}
               </div>
             </aside>
-            <main className="min-w-0 space-y-5">
+            <main className="min-w-0 space-y-4 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1">
               {loadingDetail ? (
                 <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-[#e5edf3] bg-white">
                   <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
@@ -1175,114 +1340,25 @@ export default function CorporateEnglishPage() {
               )}
             </main>
 
-            <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-              <SectionPanel
-                title="企业文化"
-                icon={<Building2 className="h-4 w-4" />}
-                sections={detail?.profile.cultureSections || []}
-                emptyText="从视频里学习到的企业文化、愿景、使命、成长等内容。"
-                locked={!!detail && !detail.permissions?.canViewProfile}
-                lockText="企业文化、使命愿景、价值观和企业故事等。"
-                ctaLabel={lockedCtaLabel}
-                onUpgrade={handleLockedAction}
-              />
-              <SectionPanel
-                title="CEO 商业思维"
-                icon={<Sparkles className="h-4 w-4" />}
-                sections={detail?.profile.ceoThinkingSections || []}
-                emptyText="从视频里学习到的CEO商业思维和认知。"
-                locked={!!detail && !detail.permissions?.canViewProfile}
-                lockText="CEO 创业、增长、个人成长等商业思维内容。"
-                ctaLabel={lockedCtaLabel}
-                onUpgrade={handleLockedAction}
-              />
-              <ResourcePanel
-                resources={detail?.profile.otherResources || []}
-                locked={!!detail && !detail.permissions?.canViewResources}
-                onUpgrade={handleLockedAction}
-                ctaLabel={lockedCtaLabel}
-                lockText="企业/CEO相关的更多延伸阅读和材料。"
-              />
-              <section className="rounded-[22px] border border-[#efe5d8] bg-white/85 p-4 shadow-[0_14px_45px_rgba(122,92,56,0.07)] backdrop-blur">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#eadff8] bg-[#f4f0ff] text-[#6d5dfc]"><Briefcase className="h-4 w-4" /></span>
-                    <h2 className="text-sm font-black text-slate-900">企业在招岗位</h2>
-                  </div>
-                  {detail?.company.jobCount ? (
-                    <span className="rounded-full bg-[#f5f2ff] px-2.5 py-1 text-xs font-bold text-[#6251f5]">
-                      共 {detail.company.jobCount}
-                    </span>
-                  ) : null}
-                </div>
-                {companyDetailPath ? (
-                  <a
-                    href={companyDetailPath}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] no-underline hover:border-[#cbbfff] hover:bg-[#f6f2ff] hover:no-underline"
-                  >
-                    进入企业页
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                ) : null}
-                {detail?.jobs.length ? (
-                  <div className="space-y-2">
-                    {detail.jobs.map((job) => (
-                      <a
-                        key={job.id}
-                        href={`${companyDetailPath}?jobId=${encodeURIComponent(job.id)}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="line-clamp-2 text-sm font-bold text-slate-900">{job.title}</div>
-                          <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[#6251f5]" />
-                        </div>
-                        <div className="mt-1 text-xs text-slate-500">{job.location || '远程'} · {job.category || job.jobType || '岗位'}</div>
-                      </a>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm leading-6 text-slate-500">暂无已同步在招岗位。</p>
-                )}
-              </section>
-              <section className="rounded-[22px] border border-[#efe5d8] bg-white/85 p-4 shadow-[0_14px_45px_rgba(122,92,56,0.07)] backdrop-blur">
-                <div className="mb-3 flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-2xl border border-[#fee6b8] bg-[#fff7e8] text-[#d68a1f]"><BookmarkCheck className="h-4 w-4" /></span>
-                  <h2 className="text-sm font-black text-slate-900">个人收藏</h2>
-                </div>
-                {!isAuthenticated ? (
-                  <button type="button" onClick={() => navigate('/login')} className="w-full rounded-2xl border border-[#eadff8] bg-[#fffdf8] px-3 py-3 text-sm font-bold text-slate-700 hover:border-[#cbbfff] hover:text-[#6251f5]">
-                    登录后查看收藏片段
-                  </button>
-                ) : detail?.favorites.length ? (
-                  <div className="space-y-2">
-                    {detail.favorites.slice(0, 2).map((clip) => (
-                      <button
-                        key={clip.clipId}
-                        type="button"
-                        onClick={() => navigate('/profile?tab=favorites&type=audio')}
-                        className="w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left hover:border-[#d8ccff] hover:bg-[#f6f2ff]"
-                      >
-                        <div className="line-clamp-2 text-sm font-bold text-slate-900">{clip.clipTitle || clip.materialTitle}</div>
-                        <div className="mt-1 text-xs text-slate-500">{clip.companyName} · {formatTime(clip.startMs)}</div>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => navigate('/profile?tab=favorites&type=audio')}
-                      className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] hover:border-[#cbbfff] hover:bg-[#f6f2ff]"
-                    >
-                      查看全部音频收藏
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                ) : (
-                  <p className="text-sm leading-6 text-slate-500">收藏跟读片段后会显示在这里。</p>
-                )}
-              </section>
+            <aside className="min-h-[520px] lg:h-full lg:min-h-0">
+              {detail ? (
+                <LearningSidePanel
+                  cultureSections={detail.profile.cultureSections || []}
+                  ceoThinkingSections={detail.profile.ceoThinkingSections || []}
+                  resources={detail.profile.otherResources || []}
+                  jobs={detail.jobs || []}
+                  jobCount={detail.company.jobCount}
+                  companyDetailPath={companyDetailPath}
+                  favorites={detail.favorites || []}
+                  isAuthenticated={isAuthenticated}
+                  profileLocked={!detail.permissions?.canViewProfile}
+                  resourcesLocked={!detail.permissions?.canViewResources}
+                  ctaLabel={lockedCtaLabel}
+                  onUpgrade={handleLockedAction}
+                  onNavigateLogin={() => navigate('/login')}
+                  onNavigateFavorites={() => navigate('/profile?tab=favorites&type=audio')}
+                />
+              ) : null}
             </aside>
           </div>
           </>
