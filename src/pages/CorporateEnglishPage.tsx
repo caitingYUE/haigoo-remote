@@ -273,6 +273,32 @@ function UpgradeLockOverlay({
   )
 }
 
+function LearningPanelLockOverlay({
+  ctaLabel,
+  onUpgrade
+}: {
+  ctaLabel: string
+  onUpgrade: () => void
+}) {
+  return (
+    <div className="absolute inset-0 z-10 flex items-start justify-center rounded-[inherit] bg-white/52 px-5 pt-24 backdrop-blur-[2px]">
+      <div className="w-full max-w-[260px] rounded-[22px] border border-[#ded6ff] bg-white/96 p-5 text-center shadow-[0_22px_60px_-34px_rgba(78,64,180,0.36)]">
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-[#f5f2ff] text-[#6251f5]">
+          <Lock className="h-4 w-4" />
+        </div>
+        <h3 className="mt-3 text-base font-black leading-6 text-slate-950">企业文化、CEO商业思维等内容</h3>
+        <button
+          type="button"
+          onClick={onUpgrade}
+          className="mt-4 inline-flex h-10 items-center justify-center rounded-full bg-[#6d5dfc] px-5 text-sm font-black text-white transition hover:bg-[#5a49e8]"
+        >
+          {ctaLabel}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 type LearningPanelTabKey = 'culture' | 'ceo' | 'resources' | 'jobs' | 'favorites'
 
 function LearningSidePanel({
@@ -314,45 +340,39 @@ function LearningSidePanel({
     count: number
     icon: ReactNode
     locked?: boolean
-    lockText: string
   }> = [
     {
       key: 'culture',
       title: '企业文化',
       count: cultureSections.length,
       icon: <Building2 className="h-4 w-4" />,
-      locked: profileLocked,
-      lockText: '企业文化、使命愿景、价值观和企业故事等。'
+      locked: profileLocked
     },
     {
       key: 'ceo',
       title: 'CEO 商业思维',
       count: ceoThinkingSections.length,
       icon: <Sparkles className="h-4 w-4" />,
-      locked: profileLocked,
-      lockText: 'CEO 创业、增长、个人成长等商业思维内容。'
+      locked: profileLocked
     },
     {
       key: 'resources',
       title: '其他资料',
       count: visibleResources.length,
       icon: <ExternalLink className="h-4 w-4" />,
-      locked: resourcesLocked,
-      lockText: '企业/CEO相关的更多延伸阅读和材料。'
+      locked: resourcesLocked
     },
     {
       key: 'jobs',
       title: '在招岗位',
       count: jobs.length || Number(jobCount || 0),
-      icon: <Briefcase className="h-4 w-4" />,
-      lockText: '企业当前开放岗位。'
+      icon: <Briefcase className="h-4 w-4" />
     },
     {
       key: 'favorites',
       title: '个人收藏',
       count: favorites.length,
-      icon: <BookmarkCheck className="h-4 w-4" />,
-      lockText: '收藏的跟读片段。'
+      icon: <BookmarkCheck className="h-4 w-4" />
     }
   ]
   const currentTab = tabs.find((tab) => tab.key === activeTab) || tabs[0]
@@ -508,8 +528,7 @@ function LearningSidePanel({
             )}
           </div>
           {currentTab.locked ? (
-            <UpgradeLockOverlay
-              description={currentTab.lockText}
+            <LearningPanelLockOverlay
               ctaLabel={ctaLabel}
               onUpgrade={onUpgrade}
             />
@@ -1054,7 +1073,12 @@ export default function CorporateEnglishPage() {
                 <div className={`flex items-start ${isCompanyListCollapsed ? 'justify-center' : 'justify-between gap-3'}`}>
                 {!isCompanyListCollapsed ? (
                   <div className="min-w-0">
-                    <h1 className="text-2xl font-black tracking-tight text-slate-950">外企英语</h1>
+                    <div className="flex items-start gap-2">
+                      <h1 className="text-2xl font-black tracking-tight text-slate-950">外企英语</h1>
+                      <span className="mt-0.5 rounded-full border border-[#cfc5ff] bg-[#f4f0ff] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#6251f5]">
+                        New
+                      </span>
+                    </div>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
                       看 CEO 访谈，了解企业文化、提升商业认知，轻松搞定外企英语。
                     </p>
