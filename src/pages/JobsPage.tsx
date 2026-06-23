@@ -565,7 +565,7 @@ export default function JobsPage() {
       }
 
       const data = await fetchJobsJsonWithDedupe(requestUrl, {
-        headers: shouldUseMatchScore && token ? { Authorization: `Bearer ${token}` } : {},
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
         signal
       })
 
