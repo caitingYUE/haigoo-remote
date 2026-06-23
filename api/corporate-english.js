@@ -125,6 +125,7 @@ function mapMaterialRow(row) {
     speakerLinkedin: row.speaker_linkedin,
     tencentVideoVid: row.tencent_video_vid || '',
     tencentVideoUrl: row.tencent_video_url || '',
+    sourceVideoUrl: row.source_video_url || '',
     videoSummary: row.video_summary || '',
     sequence: Number(row.sequence || 0),
     publishedAt: row.published_at,
@@ -193,6 +194,13 @@ async function ensureClipSubtitleCuesColumn() {
   await neonHelper.query(
     `ALTER TABLE ${CLIPS_TABLE}
        ADD COLUMN IF NOT EXISTS subtitle_cues JSONB NOT NULL DEFAULT '[]'::jsonb`
+  )
+}
+
+async function ensureMaterialSourceVideoUrlColumn() {
+  await neonHelper.query(
+    `ALTER TABLE ${MATERIALS_TABLE}
+       ADD COLUMN IF NOT EXISTS source_video_url TEXT`
   )
 }
 
@@ -669,6 +677,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
   const validation = validateMaterialPayload(body)
   if (validation.error) return res.status(400).json({ success: false, error: validation.error })
   await ensureClipSubtitleCuesColumn()
+  await ensureMaterialSourceVideoUrlColumn()
 
   const companyId = normalizeString(body.companyId || body.company_id)
   const company = await ensureTrustedCompany(companyId)
@@ -689,6 +698,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
     speakerEmail: normalizeString(body.speakerEmail || body.speaker_email) || null,
     speakerLinkedin: normalizeString(body.speakerLinkedin || body.speaker_linkedin) || null,
     tencentVideoVid: extractTencentVideoVid(body.tencentVideoVid || body.tencent_video_vid || body.tencentVideoUrl || body.tencent_video_url),
+    sourceVideoUrl: normalizeString(body.sourceVideoUrl || body.source_video_url) || null,
     videoSummary: normalizeString(body.videoSummary || body.video_summary) || null,
     sequence: toInt(body.sequence, 0),
     sourceAudioAssetId,
@@ -723,8 +733,9 @@ async function saveMaterial(req, res, admin, existingId = null) {
            updated_by = $16,
            tencent_video_vid = $17,
            tencent_video_url = $18,
-           video_summary = $19,
-           sequence = $20,
+           source_video_url = $19,
+           video_summary = $20,
+           sequence = $21,
            published_at = CASE WHEN $13::text = 'published' THEN COALESCE(published_at, NOW()) ELSE published_at END,
            updated_at = NOW()
        WHERE material_id = $1 AND deleted_at IS NULL
@@ -748,6 +759,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
         payload.actor,
         payload.tencentVideoVid || null,
         tencentVideoUrl || null,
+        payload.sourceVideoUrl,
         payload.videoSummary,
         payload.sequence
       ]
@@ -759,9 +771,9 @@ async function saveMaterial(req, res, admin, existingId = null) {
       `INSERT INTO ${MATERIALS_TABLE}
          (company_id, company_name_snapshot, company_website_snapshot, material_title, speaker_name, speaker_role,
           speaker_email, speaker_linkedin, source_audio_asset_id, subtitle_csv_asset_id, normalized_subtitle_rows,
-          status, clip_count, duration_ms, created_by, updated_by, tencent_video_vid, tencent_video_url, video_summary,
+          status, clip_count, duration_ms, created_by, updated_by, tencent_video_vid, tencent_video_url, source_video_url, video_summary,
           sequence, published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::varchar, $13, $14, $15, $15, $16, $17, $18, $19,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::varchar, $13, $14, $15, $15, $16, $17, $18, $19, $20, $21,
           CASE WHEN $12::text = 'published' THEN NOW() ELSE NULL END)
        RETURNING material_id`,
       [
@@ -782,6 +794,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
         payload.actor,
         payload.tencentVideoVid || null,
         tencentVideoUrl || null,
+        payload.sourceVideoUrl,
         payload.videoSummary,
         payload.sequence
       ]

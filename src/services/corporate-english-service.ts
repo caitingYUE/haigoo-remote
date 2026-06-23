@@ -100,6 +100,7 @@ export interface CorporateEnglishMaterial {
   speakerLinkedin?: string
   tencentVideoVid?: string
   tencentVideoUrl?: string
+  sourceVideoUrl?: string
   videoSummary?: string
   sequence?: number
   publishedAt?: string
@@ -130,6 +131,7 @@ export interface SaveCorporateEnglishMaterialPayload {
   speakerLinkedin?: string
   tencentVideoVid?: string
   tencentVideoUrl?: string
+  sourceVideoUrl?: string
   videoSummary?: string
   sequence?: number
   sourceAudioAssetId?: string | null

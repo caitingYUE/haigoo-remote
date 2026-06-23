@@ -392,7 +392,8 @@ function ClipCard({
   onToggleFavorite,
   onPlay,
   onUpgrade,
-  lockCtaLabel
+  lockCtaLabel,
+  showSampleLabel = false
 }: {
   clip: CorporateEnglishPublicClip
   index: number
@@ -400,6 +401,7 @@ function ClipCard({
   onPlay?: (clip: CorporateEnglishPublicClip) => void
   onUpgrade: () => void
   lockCtaLabel: string
+  showSampleLabel?: boolean
 }) {
   const tagGroups = (clip.clipTags || []).filter((group) => group.title && Array.isArray(group.tags) && group.tags.length > 0)
   const pronunciationMarks = useMemo(
@@ -529,7 +531,10 @@ function ClipCard({
             <Headphones className="h-4 w-4" />
             <span>{formatTime(clip.startMs)} - {formatTime(clip.endMs)}</span>
           </div>
-          <h3 className="mt-1 text-base font-black text-slate-900">{clip.clipTitle || `跟读片段 ${index + 1}`}</h3>
+          <h3 className="mt-1 flex flex-wrap items-center gap-2 text-base font-black text-slate-900">
+            <span>{clip.clipTitle || `跟读片段 ${index + 1}`}</span>
+            {showSampleLabel ? <AccessBadge tier="free" sampleLabel /> : null}
+          </h3>
         </div>
         <button
           type="button"
@@ -813,6 +818,7 @@ export default function CorporateEnglishPage() {
 
   const visibleCompanies = companies.length > 0 ? companies : [FALLBACK_COMPANY]
   const companyDetailPath = detail?.company.name ? getCompanyDetailPath(detail.company.name) : ''
+  const activeSourceVideoUrl = activeVideo && !activeVideo.isVideoLocked ? normalizeExternalUrl(activeVideo.sourceVideoUrl) : ''
 
   const refreshDetail = useCallback(async () => {
     if (!selectedCompanyId) return
@@ -1010,7 +1016,18 @@ export default function CorporateEnglishPage() {
                         />
                       </div>
                     ) : activeVideo.tencentVideoUrl ? (
-                      <div className="mx-auto aspect-video w-full max-w-[860px] overflow-hidden rounded-[22px] bg-slate-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+                      <div className="relative mx-auto aspect-video w-full max-w-[860px] overflow-hidden rounded-[22px] bg-slate-950 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]">
+                        {activeSourceVideoUrl ? (
+                          <a
+                            href={activeSourceVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-xs font-black text-[#6251f5] shadow-[0_12px_30px_rgba(15,23,42,0.16)] backdrop-blur transition hover:bg-white hover:text-[#4f46e5] hover:no-underline"
+                          >
+                            视频来源
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        ) : null}
                         <iframe
                           src={activeVideo.tencentVideoUrl}
                           title={activeVideo.materialTitle}
@@ -1020,7 +1037,18 @@ export default function CorporateEnglishPage() {
                         />
                       </div>
                     ) : (
-                      <div className="flex aspect-video items-center justify-center rounded-[22px] border border-dashed border-[#dccff7] bg-[#fffaf0] text-slate-500">
+                      <div className="relative flex aspect-video items-center justify-center rounded-[22px] border border-dashed border-[#dccff7] bg-[#fffaf0] text-slate-500">
+                        {activeSourceVideoUrl ? (
+                          <a
+                            href={activeSourceVideoUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-[#eadff8] bg-white px-3 py-1.5 text-xs font-black text-[#6251f5] shadow-sm transition hover:bg-[#f6f2ff] hover:text-[#4f46e5] hover:no-underline"
+                          >
+                            视频来源
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        ) : null}
                         <div className="text-center">
                           <PlayCircle className="mx-auto h-10 w-10 text-[#8a7bff]" />
                           <p className="mt-2 text-sm font-bold">该内容暂未配置腾讯视频</p>
@@ -1067,7 +1095,7 @@ export default function CorporateEnglishPage() {
                                 LinkedIn
                               </span>
                             ) : null}
-                            <MemberOnlyHint />
+                            {detail.permissions?.canViewVideos ? <MemberOnlyHint /> : null}
                           </span>
                         ) : null}
                       </div>
@@ -1127,6 +1155,7 @@ export default function CorporateEnglishPage() {
                             onPlay={trackClipPlay}
                             onUpgrade={handleLockedAction}
                             lockCtaLabel={lockedCtaLabel}
+                            showSampleLabel={detail.company.accessTier === 'free' && activeVideo.clips[0]?.clipId === activeClip.clipId}
                           />
                         ) : null}
                       </>
@@ -1191,7 +1220,7 @@ export default function CorporateEnglishPage() {
                     href={companyDetailPath}
                     target="_blank"
                     rel="noreferrer"
-                    className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] no-underline hover:border-[#cbbfff] hover:bg-[#f6f2ff]"
+                    className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] no-underline hover:border-[#cbbfff] hover:bg-[#f6f2ff] hover:no-underline"
                   >
                     进入企业页
                     <ExternalLink className="h-3.5 w-3.5" />
@@ -1205,7 +1234,7 @@ export default function CorporateEnglishPage() {
                         href={`${companyDetailPath}?jobId=${encodeURIComponent(job.id)}`}
                         target="_blank"
                         rel="noreferrer"
-                        className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
+                        className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
                       >
                         <div className="flex items-start justify-between gap-2">
                           <div className="line-clamp-2 text-sm font-bold text-slate-900">{job.title}</div>

@@ -22,6 +22,7 @@ ALTER TABLE corporate_english_company_profiles
 ALTER TABLE corporate_english_materials
   ADD COLUMN IF NOT EXISTS tencent_video_vid VARCHAR(64),
   ADD COLUMN IF NOT EXISTS tencent_video_url TEXT,
+  ADD COLUMN IF NOT EXISTS source_video_url TEXT,
   ADD COLUMN IF NOT EXISTS video_summary TEXT,
   ADD COLUMN IF NOT EXISTS sequence INTEGER NOT NULL DEFAULT 0,
   ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;

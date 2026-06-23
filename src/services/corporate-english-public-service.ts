@@ -61,6 +61,7 @@ export interface CorporateEnglishPublicVideo {
   hasSpeakerLinkedin?: boolean
   tencentVideoVid?: string
   tencentVideoUrl?: string
+  sourceVideoUrl?: string
   isVideoLocked?: boolean
   videoLockReason?: string
   videoSummary?: string

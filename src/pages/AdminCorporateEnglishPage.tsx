@@ -78,6 +78,7 @@ interface EditorState {
   speakerEmail: string
   speakerLinkedin: string
   tencentVideoInput: string
+  sourceVideoUrl: string
   videoSummary: string
   sequence: number
   status: CorporateEnglishStatus
@@ -96,6 +97,7 @@ const emptyEditorState = (): EditorState => ({
   speakerEmail: '',
   speakerLinkedin: '',
   tencentVideoInput: '',
+  sourceVideoUrl: '',
   videoSummary: '',
   sequence: 0,
   status: 'draft',
@@ -1061,6 +1063,7 @@ export default function AdminCorporateEnglishPage() {
           speakerEmail: detail.material.speakerEmail || '',
           speakerLinkedin: detail.material.speakerLinkedin || '',
           tencentVideoInput: detail.material.tencentVideoVid || detail.material.tencentVideoUrl || '',
+          sourceVideoUrl: detail.material.sourceVideoUrl || '',
           videoSummary: detail.material.videoSummary || '',
           sequence: detail.material.sequence || 0,
           status: detail.material.status,
@@ -1561,6 +1564,7 @@ export default function AdminCorporateEnglishPage() {
         speakerLinkedin: editor.speakerLinkedin.trim(),
         tencentVideoVid: editor.tencentVideoInput.trim(),
         tencentVideoUrl: editor.tencentVideoInput.trim(),
+        sourceVideoUrl: editor.sourceVideoUrl.trim(),
         videoSummary: editor.videoSummary.trim(),
         sequence: editor.sequence,
         sourceAudioAssetId,
@@ -1949,6 +1953,16 @@ export default function AdminCorporateEnglishPage() {
                       value={editor.sequence}
                       onChange={(event) => updateEditor({ sequence: Number(event.target.value) || 0 })}
                     />
+                  </label>
+                  <label className="block lg:col-span-2">
+                    <span className="text-sm font-semibold text-slate-700">原始视频地址</span>
+                    <input
+                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                      value={editor.sourceVideoUrl}
+                      onChange={(event) => updateEditor({ sourceVideoUrl: event.target.value })}
+                      placeholder="https://..."
+                    />
+                    <span className="mt-1 block text-xs text-slate-500">前台视频右上角“视频来源”会跳转到该地址，建议填写原视频发布页。</span>
                   </label>
                   <label className="block lg:col-span-2">
                     <span className="text-sm font-semibold text-slate-700">视频简介</span>

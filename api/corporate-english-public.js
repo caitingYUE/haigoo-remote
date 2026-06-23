@@ -207,6 +207,7 @@ function mapMaterial(row, clips, permissions, options = {}) {
     hasSpeakerLinkedin: Boolean(row.speaker_linkedin),
     tencentVideoVid: row.tencent_video_vid || '',
     tencentVideoUrl: row.tencent_video_url || '',
+    sourceVideoUrl: videoUnlocked ? (row.source_video_url || '') : '',
     isVideoLocked: !videoUnlocked,
     videoLockReason: videoUnlocked
       ? ''
