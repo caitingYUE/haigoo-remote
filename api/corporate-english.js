@@ -773,7 +773,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
           speaker_email, speaker_linkedin, source_audio_asset_id, subtitle_csv_asset_id, normalized_subtitle_rows,
           status, clip_count, duration_ms, created_by, updated_by, tencent_video_vid, tencent_video_url, source_video_url, video_summary,
           sequence, published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::varchar, $13, $14, $15, $15, $16, $17, $18, $19, $20, $21,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::varchar, $13, $14, $15, $15, $16, $17, $18, $19, $20,
           CASE WHEN $12::text = 'published' THEN NOW() ELSE NULL END)
        RETURNING material_id`,
       [
