@@ -971,6 +971,7 @@ export default function AdminCorporateEnglishPage() {
   const [audioObjectUrl, setAudioObjectUrl] = useState('')
   const [audioLoading, setAudioLoading] = useState(false)
   const [generatingClipId, setGeneratingClipId] = useState('')
+  const [expandedSubtitleCueClipIds, setExpandedSubtitleCueClipIds] = useState<Set<string>>(() => new Set())
   const audioInputRef = useRef<HTMLInputElement | null>(null)
   const csvInputRef = useRef<HTMLInputElement | null>(null)
   const audioObjectUrlRef = useRef('')
@@ -1478,6 +1479,18 @@ export default function AdminCorporateEnglishPage() {
         const subtitleCues = (clip.subtitleCues || []).filter((_, index) => index !== cueIndex)
         return rebuildClipTextFromCues(clip, subtitleCues)
       })
+    })
+  }
+
+  const toggleClipSubtitleCues = (localId: string) => {
+    setExpandedSubtitleCueClipIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(localId)) {
+        next.delete(localId)
+      } else {
+        next.add(localId)
+      }
+      return next
     })
   }
 
@@ -2339,17 +2352,14 @@ export default function AdminCorporateEnglishPage() {
                         </label>
                         <label className="block lg:col-span-2">
                           <span className="text-sm font-semibold text-slate-700">片段标签</span>
-                          <textarea
-                            className="mt-1 h-24 w-full rounded-lg border border-slate-200 px-3 py-2"
+                          <input
+                            className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 py-2"
                             value={clip.clipTagInput || ''}
                             onChange={(event) => updateClipTagInput(clip.localId, event.target.value)}
                             placeholder="B2-C1；企业文化 / 开源理念；技术公司表达 / CEO表达"
                           />
-                          <div className="mt-2 text-xs text-slate-500">
-                            标签跟随当前剪辑片段保存。可用三段式输入，也可逐行自定义：适用英语水平：B2-C1；适用场景：CEO表达 / 技术公司表达
-                          </div>
                           {normalizeClipTags(clip.clipTags).length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
+                            <div className="mt-2 flex flex-wrap gap-2">
                               {normalizeClipTags(clip.clipTags).map((group) => (
                                 <span key={group.title} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
                                   {group.title}：{group.tags.map((tag) => `#${tag}`).join(' ')}
@@ -2376,9 +2386,6 @@ export default function AdminCorporateEnglishPage() {
                             onChange={(event) => updatePronunciationMarkInput(clip.localId, event.target.value)}
                             placeholder={'重读：modestly / contributors / WordPress\n弱读：to / the / of\n连读：way to / get me\n关键词：open source / salary\n停顿：modestly / salary'}
                           />
-                          <div className="mt-2 text-xs leading-5 text-slate-500">
-                            标注保存到当前剪辑片段。5 类标记固定为：重读、弱读、连读、关键词、停顿。V1 可自动生成规则草稿，仍建议人工校准。
-                          </div>
                         </label>
                         <label className="block">
                           <span className="text-sm font-semibold text-slate-700">字幕原文</span>
@@ -2388,78 +2395,90 @@ export default function AdminCorporateEnglishPage() {
                           <span className="text-sm font-semibold text-slate-700">字幕翻译</span>
                           <textarea className="mt-1 h-32 w-full rounded-lg border border-slate-200 px-3 py-2" value={clip.translationText} onChange={(event) => updateClip(clip.localId, { translationText: event.target.value })} />
                         </label>
-                        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                        <div className="lg:col-span-2 rounded-xl border border-slate-200 bg-slate-50 p-2.5">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div>
-                              <div className="text-sm font-semibold text-slate-700">剪辑相对字幕时间戳</div>
-                              <div className="mt-1 text-xs text-slate-500">可人工校正开始/结束秒数、字幕原文和翻译，保存后前台跟读高亮同步生效。</div>
-                            </div>
                             <button
                               type="button"
-                              className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
-                              onClick={() => addClipSubtitleCue(clip.localId)}
+                              className="inline-flex items-center gap-2 text-left text-sm font-semibold text-slate-700 hover:text-indigo-700"
+                              onClick={() => toggleClipSubtitleCues(clip.localId)}
+                              aria-expanded={expandedSubtitleCueClipIds.has(clip.localId)}
                             >
-                              <Plus className="h-3.5 w-3.5" />
-                              新增字幕行
+                              {expandedSubtitleCueClipIds.has(clip.localId) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                              <div className="text-sm font-semibold text-slate-700">剪辑相对字幕时间戳</div>
+                              <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-bold text-slate-500">
+                                {(clip.subtitleCues || []).length} 行
+                              </span>
                             </button>
+                            {expandedSubtitleCueClipIds.has(clip.localId) && (
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
+                                onClick={() => addClipSubtitleCue(clip.localId)}
+                              >
+                                <Plus className="h-3.5 w-3.5" />
+                                新增字幕行
+                              </button>
+                            )}
                           </div>
-                          {(clip.subtitleCues || []).length > 0 ? (
-                            <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1 text-xs leading-5 text-slate-600">
-                              {(clip.subtitleCues || []).map((cue, cueIndex) => (
-                                <div key={`${cue.startMs}-${cue.endMs}-${cueIndex}`} className="grid gap-2 rounded-lg bg-white p-2 md:grid-cols-[88px_88px_minmax(0,1fr)_minmax(0,1fr)_34px]">
-                                  <label className="block">
-                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">开始(s)</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs"
-                                      value={formatSecondsInput(cue.startMs)}
-                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { startMs: secondsInputToMs(event.target.value) })}
-                                    />
-                                  </label>
-                                  <label className="block">
-                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">结束(s)</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      step="0.01"
-                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs"
-                                      value={formatSecondsInput(cue.endMs)}
-                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { endMs: secondsInputToMs(event.target.value) })}
-                                    />
-                                  </label>
-                                  <label className="block">
-                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">字幕原文</span>
-                                    <input
-                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
-                                      value={cue.subtitleText || ''}
-                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { subtitleText: event.target.value })}
-                                    />
-                                  </label>
-                                  <label className="block">
-                                    <span className="mb-1 block text-[11px] font-bold text-slate-400">字幕翻译</span>
-                                    <input
-                                      className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
-                                      value={cue.translationText || ''}
-                                      onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { translationText: event.target.value })}
-                                    />
-                                  </label>
-                                  <button
-                                    type="button"
-                                    className="mt-5 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-rose-200 hover:text-rose-600"
-                                    onClick={() => removeClipSubtitleCue(clip.localId, cueIndex)}
-                                    aria-label="删除字幕行"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-xs text-slate-400">
-                              当前片段没有字幕时间戳，可点击“新增字幕行”手动补充。
-                            </div>
+                          {expandedSubtitleCueClipIds.has(clip.localId) && (
+                            (clip.subtitleCues || []).length > 0 ? (
+                              <div className="mt-3 max-h-72 space-y-2 overflow-y-auto pr-1 text-xs leading-5 text-slate-600">
+                                {(clip.subtitleCues || []).map((cue, cueIndex) => (
+                                  <div key={`${cue.startMs}-${cue.endMs}-${cueIndex}`} className="grid gap-2 rounded-lg bg-white p-2 md:grid-cols-[88px_88px_minmax(0,1fr)_minmax(0,1fr)_34px]">
+                                    <label className="block">
+                                      <span className="mb-1 block text-[11px] font-bold text-slate-400">开始(s)</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs"
+                                        value={formatSecondsInput(cue.startMs)}
+                                        onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { startMs: secondsInputToMs(event.target.value) })}
+                                      />
+                                    </label>
+                                    <label className="block">
+                                      <span className="mb-1 block text-[11px] font-bold text-slate-400">结束(s)</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 font-mono text-xs"
+                                        value={formatSecondsInput(cue.endMs)}
+                                        onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { endMs: secondsInputToMs(event.target.value) })}
+                                      />
+                                    </label>
+                                    <label className="block">
+                                      <span className="mb-1 block text-[11px] font-bold text-slate-400">字幕原文</span>
+                                      <input
+                                        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                                        value={cue.subtitleText || ''}
+                                        onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { subtitleText: event.target.value })}
+                                      />
+                                    </label>
+                                    <label className="block">
+                                      <span className="mb-1 block text-[11px] font-bold text-slate-400">字幕翻译</span>
+                                      <input
+                                        className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                                        value={cue.translationText || ''}
+                                        onChange={(event) => updateClipSubtitleCue(clip.localId, cueIndex, { translationText: event.target.value })}
+                                      />
+                                    </label>
+                                    <button
+                                      type="button"
+                                      className="mt-5 inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 hover:border-rose-200 hover:text-rose-600"
+                                      onClick={() => removeClipSubtitleCue(clip.localId, cueIndex)}
+                                      aria-label="删除字幕行"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="mt-3 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-xs text-slate-400">
+                                当前片段没有字幕时间戳，可点击“新增字幕行”手动补充。
+                              </div>
+                            )
                           )}
                         </div>
                       </div>
