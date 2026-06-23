@@ -58,6 +58,11 @@ function normalizeExternalUrl(url?: string) {
   return `https://${value}`
 }
 
+function getVideoDisplayTitle(video: CorporateEnglishPublicVideo, index?: number) {
+  if (!video.isVideoLocked) return video.materialTitle
+  return typeof index === 'number' ? `会员视频 ${index + 1}` : '会员视频'
+}
+
 const pronunciationTypeMeta: Record<CorporateEnglishPronunciationMarkType, {
   label: string
   className: string
@@ -171,7 +176,7 @@ function renderMarkedLine(
           </span>
         </span>
         {shouldLinkAfter ? (
-          <span className="inline-flex translate-y-[-1px] px-0.5 text-[0.95em] font-black leading-none text-emerald-600" title="连读">
+          <span className="mx-0.5 inline-flex translate-y-[-2px] items-center justify-center rounded-full bg-rose-50 px-1.5 text-[1.2em] font-black leading-none text-rose-600 ring-1 ring-rose-200/80" title="连读">
             ‿
           </span>
         ) : null}
@@ -1170,7 +1175,7 @@ export default function CorporateEnglishPage() {
                             }`}
                         >
                           {isLoginLockedVideoTab ? <Lock className="h-3.5 w-3.5" /> : null}
-                          {video.materialTitle}
+                          {getVideoDisplayTitle(video, videoIndex)}
                         </button>
                       )})}
                     </div>
@@ -1181,7 +1186,7 @@ export default function CorporateEnglishPage() {
                           {activeVideo.tencentVideoUrl ? (
                             <iframe
                               src={activeVideo.tencentVideoUrl}
-                              title={activeVideo.materialTitle}
+                              title={getVideoDisplayTitle(activeVideo)}
                               className="h-full w-full"
                               frameBorder="0"
                               allowFullScreen
@@ -1217,7 +1222,7 @@ export default function CorporateEnglishPage() {
                         ) : null}
                         <iframe
                           src={activeVideo.tencentVideoUrl}
-                          title={activeVideo.materialTitle}
+                          title={getVideoDisplayTitle(activeVideo)}
                           className="h-full w-full"
                           frameBorder="0"
                           allowFullScreen
@@ -1244,7 +1249,9 @@ export default function CorporateEnglishPage() {
                     )}
 
                     <div className="mt-4">
-                      <h3 className="text-lg font-black text-slate-950">{activeVideo.materialTitle}</h3>
+                      {!activeVideo.isVideoLocked ? (
+                        <h3 className="text-lg font-black text-slate-950">{activeVideo.materialTitle}</h3>
+                      ) : null}
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-6 text-slate-500">
                         <span>{activeVideo.speakerName} · {activeVideo.speakerRole}</span>
                         {!detail.permissions?.canViewVideos ? <MemberOnlyHint /> : null}
