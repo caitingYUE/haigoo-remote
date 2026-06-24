@@ -154,6 +154,7 @@ interface HomeHeroProps {
 
 const HOME_FEATURED_TABS = [
     { id: 'all', label: '综合推荐' },
+    { id: 'freelance', label: '自由职业' },
     { id: '人力资源,招聘,财务,会计,法务,行政,管理,客户服务,HR,Recruiter,Talent Acquisition,Finance,Legal,Admin', label: '人事行政' },
     { id: '产品经理,产品设计,营销设计,网站和营销设计,视觉设计,平面设计,创意设计,UI/UX设计,用户研究,增长黑客,Product Manager,Product Designer,Marketing Designer,Visual Designer,Graphic Designer,Creative Designer,UI,UX,Growth', label: '产品设计' },
     { id: '前端开发,后端开发,全栈开发,软件开发,移动开发,算法工程师,测试/QA,数据开发,数据库工程师,平台工程师,服务器开发,运维/SRE,网络安全,架构师,技术支持,工程,开发,Engineer,Developer,Frontend,Backend,Full Stack,Software,QA,DevOps,Data Engineer', label: '技术研发' },
@@ -876,14 +877,18 @@ export default function HomeHero({
 
         let cancelled = false
         setFeaturedTabLoading(true)
-        processedJobsService.getProcessedJobs(1, 24, {
-            isFeatured: true,
-            isApproved: true,
-            category: activeFeaturedTab,
-            sortBy: 'recent',
-            skipAggregations: true
-        }).then((res) => {
-            if (!cancelled) setFeaturedTabJobs(spreadJobsByCompany(res.jobs || [], 6, 2))
+        const request = activeFeaturedTab === 'freelance'
+            ? processedJobsService.getFeaturedHomeFreelanceJobs()
+            : processedJobsService.getProcessedJobs(1, 24, {
+                isFeatured: true,
+                isApproved: true,
+                category: activeFeaturedTab,
+                sortBy: 'recent',
+                skipAggregations: true
+            }).then((res) => spreadJobsByCompany(res.jobs || [], 6, 2))
+
+        request.then((jobs) => {
+            if (!cancelled) setFeaturedTabJobs(jobs || [])
         }).catch((error) => {
             console.error('Failed to fetch home featured tab:', activeFeaturedTab, error)
             if (!cancelled) setFeaturedTabJobs([])
