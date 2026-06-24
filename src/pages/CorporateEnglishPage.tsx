@@ -176,7 +176,7 @@ function renderMarkedLine(
           </span>
         </span>
         {shouldLinkAfter ? (
-          <span className="mx-0.5 inline-flex translate-y-[-2px] items-center justify-center rounded-full bg-rose-50 px-1.5 text-[1.2em] font-black leading-none text-rose-600 ring-1 ring-rose-200/80" title="连读">
+          <span className="inline-flex translate-y-[-1px] px-0.5 text-[1.12em] font-black leading-none text-rose-600" title="连读">
             ‿
           </span>
         ) : null}
@@ -336,6 +336,7 @@ function LearningSidePanel({
   onNavigateFavorites: () => void
 }) {
   const [activeTab, setActiveTab] = useState<LearningPanelTabKey>('culture')
+  const [activeInsightIndexes, setActiveInsightIndexes] = useState({ culture: 0, ceo: 0 })
   const visibleResources = resources.filter((resource) => resource.url)
   const tabs: Array<{
     key: LearningPanelTabKey
@@ -380,6 +381,8 @@ function LearningSidePanel({
   ]
   const currentTab = tabs.find((tab) => tab.key === activeTab) || tabs[0]
   const activeSections = activeTab === 'culture' ? cultureSections : ceoThinkingSections
+  const activeInsightTab = activeTab === 'culture' || activeTab === 'ceo' ? activeTab : null
+  const activeInsightIndex = activeInsightTab ? Math.min(activeInsightIndexes[activeInsightTab] || 0, Math.max(activeSections.length - 1, 0)) : 0
   const totalInsightCount = cultureSections.length + ceoThinkingSections.length
   const isResourceTab = activeTab === 'resources'
   const isJobTab = activeTab === 'jobs'
@@ -504,17 +507,22 @@ function LearningSidePanel({
             ) : activeSections.length ? (
               <div className="space-y-3">
                 {activeSections.map((section, index) => (
-                  <article
+                  <button
                     key={`${section.title}-${index}`}
-                    className={`rounded-2xl border p-4 ${
-                      index === 0
+                    type="button"
+                    onClick={() => {
+                      if (!activeInsightTab) return
+                      setActiveInsightIndexes((prev) => ({ ...prev, [activeInsightTab]: index }))
+                    }}
+                    className={`w-full rounded-2xl border p-4 text-left transition hover:border-[#d7ccff] hover:bg-[#f7f4ff] focus:outline-none focus:ring-2 focus:ring-[#d8ccff] ${
+                      index === activeInsightIndex
                         ? 'border-[#d7ccff] bg-[#f7f4ff]'
                         : 'border-[#f0e8dc] bg-[#fffdf8]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-                        index === 0 ? 'bg-[#6d5dfc] text-white' : 'bg-white text-[#8a7bff]'
+                        index === activeInsightIndex ? 'bg-[#6d5dfc] text-white' : 'bg-white text-[#8a7bff]'
                       }`}>
                         {index + 1}
                       </span>
@@ -523,7 +531,7 @@ function LearningSidePanel({
                         <p className="mt-2 whitespace-pre-line text-sm leading-7 text-slate-600">{section.body}</p>
                       </div>
                     </div>
-                  </article>
+                  </button>
                 ))}
               </div>
             ) : (

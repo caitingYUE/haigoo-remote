@@ -280,10 +280,10 @@ class ProcessedJobsService {
     }
   }
 
-  async getFeaturedHomeJobs(): Promise<Job[]> {
+  async getFeaturedHomeJobs(action: 'featured_jobs' | 'featured_freelance_jobs' = 'featured_jobs'): Promise<Job[]> {
     try {
       const params = new URLSearchParams({
-        action: 'featured_jobs',
+        action,
         _t: Math.floor(Date.now() / 60000).toString()
       })
 
@@ -356,6 +356,10 @@ class ProcessedJobsService {
       console.error('获取首页精选职位失败:', error)
       return []
     }
+  }
+
+  async getFeaturedHomeFreelanceJobs(): Promise<Job[]> {
+    return this.getFeaturedHomeJobs('featured_freelance_jobs')
   }
 
   async getRecommendedJobs(limit: number = 6): Promise<Job[]> {

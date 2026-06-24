@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Sparkles, Code2, PenTool, TrendingUp, Megaphone, Layers } from 'lucide-react'
+import { ArrowRight, Sparkles, Code2, PenTool, TrendingUp, Megaphone, Layers, Briefcase } from 'lucide-react'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
 import JobCardNew from './JobCardNew'
@@ -17,6 +17,7 @@ interface FeaturedJobsSectionProps {
 
 const CATEGORIES = [
   { id: 'all', label: '综合推荐', icon: Sparkles },
+  { id: 'freelance', label: '自由职业', icon: Briefcase },
   { id: '人力资源,招聘,财务,会计,法务,行政,管理,客户服务,HR,Recruiter,Talent Acquisition,Finance,Legal,Admin', label: '人事行政', icon: PenTool },
   { id: '产品经理,产品设计,营销设计,网站和营销设计,视觉设计,平面设计,创意设计,UI/UX设计,用户研究,增长黑客,Product Manager,Product Designer,Marketing Designer,Visual Designer,Graphic Designer,Creative Designer,UI,UX,Growth', label: '产品设计', icon: Layers },
   { id: '前端开发,后端开发,全栈开发,软件开发,移动开发,算法工程师,测试/QA,数据开发,数据库工程师,平台工程师,服务器开发,运维/SRE,网络安全,架构师,技术支持,工程,开发,Engineer,Developer,Frontend,Backend,Full Stack,Software,QA,DevOps,Data Engineer', label: '技术研发', icon: Code2 },
@@ -72,6 +73,12 @@ export default function FeaturedJobsSection({
       setLoading(true)
       try {
         const fetchLimit = activeTab === 'all' ? 6 : 24;
+
+        if (activeTab === 'freelance') {
+          const freelanceJobs = await processedJobsService.getFeaturedHomeFreelanceJobs()
+          setJobs(freelanceJobs)
+          return
+        }
 
         const filters: any = {
           isFeatured: true, // Only fetch initially featured

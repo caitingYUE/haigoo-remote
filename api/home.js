@@ -1,5 +1,5 @@
 import neonHelper from '../server-utils/dal/neon-helper.js'
-import { getFeaturedHomeSelectedJobs } from '../lib/services/featured-home-jobs.js'
+import { getFeaturedHomeFreelanceJobs, getFeaturedHomeSelectedJobs } from '../lib/services/featured-home-jobs.js'
 import { resolveCachedLogoUrlFromRow } from '../lib/services/company-image-asset-service.js'
 import { getPreviewFeaturedJobs, getPreviewFeaturedCompaniesResponse } from '../lib/dev-preview-data.js'
 
@@ -97,6 +97,21 @@ async function getHomeFeaturedJobs(req, res) {
   }
 
   const selectedRows = await getFeaturedHomeSelectedJobs({
+    neonHelper,
+    jobsTable: JOBS_TABLE,
+    limit: 6
+  })
+
+  return res.status(200).json({ jobs: (selectedRows || []).map(mapHomeJob) })
+}
+
+async function getHomeFeaturedFreelanceJobs(req, res) {
+  if (!NEON_CONFIGURED) {
+    if (isLocalPreviewRequest(req)) return res.status(200).json({ jobs: getPreviewFeaturedJobs(6) })
+    return res.status(503).json({ error: 'Database not configured' })
+  }
+
+  const selectedRows = await getFeaturedHomeFreelanceJobs({
     neonHelper,
     jobsTable: JOBS_TABLE,
     limit: 6
@@ -243,6 +258,7 @@ export default async function handler(req, res) {
   try {
     const action = String(req.query?.action || '').trim()
     if (action === 'featured_jobs') return await getHomeFeaturedJobs(req, res)
+    if (action === 'featured_freelance_jobs') return await getHomeFeaturedFreelanceJobs(req, res)
     if (action === 'ticker_jobs') return await getHomeTickerJobs(req, res)
     if (action === 'featured_companies') return await getHomeFeaturedCompanies(req, res)
     return res.status(400).json({ error: 'Unsupported home action' })
