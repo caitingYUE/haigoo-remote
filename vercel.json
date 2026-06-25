@@ -44,10 +44,6 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/daily-ingest",
-      "schedule": "30 1 * * *"
-    },
-    {
       "path": "/api/cron/daily-enrich",
       "schedule": "50 1 * * *"
     },
