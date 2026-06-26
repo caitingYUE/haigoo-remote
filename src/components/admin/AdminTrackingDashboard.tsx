@@ -9,6 +9,7 @@ import {
     HelpCircle,
     MousePointerClick,
     RefreshCcw,
+    Search,
     Target,
     TrendingUp,
     Users,
@@ -112,6 +113,15 @@ interface DashboardData {
         paymentSuccessOrders: number;
         metricMode: MetricMode;
         segment: Segment;
+    };
+    experienceQuality: {
+        searchResultPv: number;
+        searchEmptyPv: number;
+        apiRequestPv: number;
+        apiFailedPv: number;
+        apiP95DurationMs: number;
+        clientErrorUv: number;
+        applicationBlockedPv: number;
     };
     coreFunnels: {
         job: FunnelStep[];
@@ -359,6 +369,34 @@ export default function AdminTrackingDashboard() {
         ];
     }, [data, metricMode]);
 
+    const experienceQualityCards = useMemo(() => {
+        if (!data) return [];
+        const quality = data.experienceQuality;
+        return [
+            {
+                label: '搜索无结果率',
+                value: formatPercent(quality.searchResultPv > 0 ? quality.searchEmptyPv / quality.searchResultPv : 0),
+                description: `无结果 ${formatNum(quality.searchEmptyPv)} / 搜索结果 ${formatNum(quality.searchResultPv)}`,
+                footnote: '用于识别搜索供给与筛选体验问题',
+                icon: <Search className="w-4 h-4 text-amber-600" />,
+            },
+            {
+                label: '核心接口失败率',
+                value: formatPercent(quality.apiRequestPv > 0 ? quality.apiFailedPv / quality.apiRequestPv : 0),
+                description: `失败/拦截 ${formatNum(quality.apiFailedPv)} / 请求 ${formatNum(quality.apiRequestPv)}`,
+                footnote: `P95 耗时 ${formatNum(quality.apiP95DurationMs)}ms`,
+                icon: <Activity className="w-4 h-4 text-rose-600" />,
+            },
+            {
+                label: '前端异常用户',
+                value: formatNum(quality.clientErrorUv),
+                description: `申请阻断 ${formatNum(quality.applicationBlockedPv)} 次`,
+                footnote: '可在用户管理的操作日志中按用户回溯',
+                icon: <Target className="w-4 h-4 text-violet-600" />,
+            },
+        ];
+    }, [data]);
+
     const copilotSummaryCards = useMemo(() => {
         if (!data) return [];
         const summary = data.copilotDemand.summary;
@@ -518,6 +556,17 @@ export default function AdminTrackingDashboard() {
 
             {activeView === 'core' && data && (
                 <div className="space-y-6">
+                    <Panel
+                        title="体验质量"
+                        subtitle="搜索、关键接口与申请阻断信号；单个用户的细节请从用户管理中的操作日志查看。"
+                        icon={<Activity className="h-5 w-5 text-rose-600" />}
+                    >
+                        <div className="grid gap-4 lg:grid-cols-3">
+                            {experienceQualityCards.map((card) => (
+                                <MetricCard key={card.label} {...card} />
+                            ))}
+                        </div>
+                    </Panel>
                     <div className="grid gap-6 xl:grid-cols-2">
                         <Panel
                             title="求职主漏斗"

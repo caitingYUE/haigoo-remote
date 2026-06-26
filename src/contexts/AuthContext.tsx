@@ -161,6 +161,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.warn('[AuthContext] Failed to bind guest resume after login:', e)
         }
+      } else {
+        trackingService.track('login_failed', {
+          event_family: 'account',
+          outcome: 'failed',
+          severity: 'warning',
+          error_code: 'AUTH_LOGIN_FAILED',
+          method: 'email'
+        })
       }
 
       return data
@@ -204,6 +212,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.warn('[AuthContext] Failed to bind guest resume after Google login:', e)
         }
+      } else {
+        trackingService.track('login_failed', {
+          event_family: 'account',
+          outcome: 'failed',
+          severity: 'warning',
+          error_code: 'AUTH_GOOGLE_LOGIN_FAILED',
+          method: 'google'
+        })
       }
 
       return data
@@ -240,6 +256,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } catch (e) {
           console.warn('[AuthContext] Failed to bind guest resume after register:', e)
         }
+      } else {
+        trackingService.track('signup_failed', {
+          event_family: 'account',
+          outcome: 'failed',
+          severity: 'warning',
+          error_code: 'AUTH_SIGNUP_FAILED',
+          method: 'email'
+        })
       }
 
       return data

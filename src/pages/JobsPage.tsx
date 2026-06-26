@@ -65,12 +65,15 @@ const GUEST_JOB_PREVIEW_LIMIT = 20
 const GUEST_MORE_PROMPT_COOLDOWN_MS = 3000
 const jobsRequestCache = new Map<string, { expiresAt: number; promise: Promise<any> }>()
 
-function fetchJobsJsonWithDedupe(url: string, init?: RequestInit) {
+function fetchJobsJsonWithDedupe(url: string, init?: RequestInit, trackingContext?: Record<string, unknown>) {
   const now = Date.now()
   const headers = new Headers(init?.headers || {})
   const { signal: _signal, ...safeInit } = init || {}
+  const request = () => trackingContext
+    ? trackingService.trackedFetch(url, safeInit, trackingContext)
+    : fetch(url, safeInit)
   if (headers.get('Authorization')) {
-    return fetch(url, safeInit).then(async (response) => {
+    return request().then(async (response) => {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
@@ -84,7 +87,7 @@ function fetchJobsJsonWithDedupe(url: string, init?: RequestInit) {
     return cached.promise
   }
 
-  const promise = fetch(url, safeInit).then(async (response) => {
+  const promise = request().then(async (response) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`)
     }
@@ -567,6 +570,10 @@ export default function JobsPage() {
       const data = await fetchJobsJsonWithDedupe(requestUrl, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         signal
+      }, {
+        feature_key: 'job_search',
+        source_key: 'jobs_list',
+        event_context: loadMore ? 'load_more' : 'search_results',
       })
 
       if (!isLatestRequest()) return
@@ -588,6 +595,14 @@ export default function JobsPage() {
         // 首次加载或筛选条件变化时，替换数据
         const newJobs = data.jobs || []
         setJobs(newJobs)
+        trackingService.track(newJobs.length > 0 ? 'search_result_rendered' : 'search_empty', {
+          event_family: 'search',
+          outcome: 'succeeded',
+          feature_key: 'job_search',
+          source_key: 'jobs_list',
+          result_count: Number(data.total ?? newJobs.length ?? 0),
+          is_empty_result: newJobs.length === 0,
+        })
         hasRenderedJobsRef.current = newJobs.length > 0
         setInitialJobsSettled(true)
 
@@ -851,7 +866,12 @@ export default function JobsPage() {
 
     // Track search or filter change
     if (debouncedSearchTerm) {
-      trackingService.track('search_job', { keyword: debouncedSearchTerm })
+      trackingService.track('search_submitted', {
+        event_family: 'search',
+        outcome: 'started',
+        feature_key: 'job_search',
+        keyword: debouncedSearchTerm,
+      })
       localStorage.setItem('haigoo_last_non_empty_job_search', debouncedSearchTerm)
     }
     rememberLatestJobSearch(debouncedSearchTerm)
@@ -864,7 +884,9 @@ export default function JobsPage() {
     })
 
     if (activeFilters.length > 0) {
-      trackingService.track('filter_job', {
+      trackingService.track('filter_applied', {
+        event_family: 'search',
+        outcome: 'succeeded',
         filters: activeFilters.map(f => f[0]),
         filter_count: activeFilters.length
       })

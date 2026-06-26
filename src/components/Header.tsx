@@ -310,10 +310,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
             >
-              外企英语
-              <span className="rounded-full border border-[#c7c2ff] bg-[#f0edff] px-1.5 py-0.5 text-[10px] font-black leading-none text-[#6251f5]">
-                with CEO
-              </span>
+              CEO 访谈
             </Link>
 
             <Link
@@ -619,10 +616,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <span>外企英语</span>
-                <span className="rounded-full border border-[#c7c2ff] bg-[#f0edff] px-1.5 py-0.5 text-[10px] font-black leading-none text-[#6251f5]">
-                  with CEO
-                </span>
+                <span>CEO 访谈</span>
               </Link>
               <Link
                 to="/profile?tab=about"

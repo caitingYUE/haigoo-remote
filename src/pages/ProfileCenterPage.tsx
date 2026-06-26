@@ -1888,12 +1888,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       formData.append('file', file)
       formData.append('metadata', JSON.stringify({ source: 'personal_center' }))
 
-      const uploadResp = await fetch('/api/resumes', {
+      const uploadResp = await trackingService.trackedFetch('/api/resumes', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
         },
         body: formData
+      }, {
+        event_family: 'resume',
+        feature_key: 'resume_upload',
+        source_key: 'profile_resume',
+        file_type: file.type,
+        file_size_bucket: file.size < 1024 * 1024 ? 'lt_1mb' : file.size < 5 * 1024 * 1024 ? '1_to_5mb' : 'gte_5mb',
       })
 
       if (uploadResp.ok) {
@@ -2025,7 +2031,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       const targetRole = authUser?.profile?.targetRole || ''
       const resumeIdToAnalyze = latestResume.id
 
-      const resp = await fetch('/api/resumes', {
+      const resp = await trackingService.trackedFetch('/api/resumes', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -2039,6 +2045,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           focusKey: extra.focusKey || '',
           question: extra.question || selectedInterviewQuestion || assistantFramework?.englishInterviewFramework?.questions?.[0]?.question || ''
         })
+      }, {
+        event_family: 'resume',
+        feature_key: featureKey,
+        source_key: 'profile_resume',
+        entity_type: 'resume',
+        entity_id: resumeIdToAnalyze,
       })
 
       const result = await resp.json()

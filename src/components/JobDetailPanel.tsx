@@ -803,7 +803,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             if (isAuthenticated) {
                 try {
                     const token = localStorage.getItem('haigoo_auth_token');
-                    await fetch('/api/user-profile?action=record_interaction', {
+                    await trackingService.trackedFetch('/api/user-profile?action=record_interaction', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -815,7 +815,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             notes: 'Applied via Email',
                             source: 'email'
                         })
-                    });
+                    }, {
+                        event_family: 'application',
+                        feature_key: 'email_apply',
+                        entity_type: 'job',
+                        entity_id: job.id,
+                    })
                     window.dispatchEvent(new CustomEvent('haigoo:applications-updated', { detail: { jobId: job.id } }));
                     showSuccess('已为你记录申请，可在「我的投递」查看');
                 } catch (error) {
@@ -873,7 +878,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 try {
                     const token = localStorage.getItem('haigoo_auth_token');
 
-                    await fetch('/api/user-profile?action=record_interaction', {
+                    await trackingService.trackedFetch('/api/user-profile?action=record_interaction', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -885,7 +890,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             notes: '',
                             source: sourceType
                         })
-                    });
+                    }, {
+                        event_family: 'application',
+                        feature_key: 'website_apply',
+                        entity_type: 'job',
+                        entity_id: job.id,
+                    })
                     window.dispatchEvent(new CustomEvent('haigoo:applications-updated', { detail: { jobId: job.id } }));
                     showSuccess('已为你记录申请，可在「我的投递」查看');
                 } catch (error) {
@@ -950,7 +960,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             return
         }
         try {
-            const res = await fetch('/api/users?resource=free-usage&type=referral', {
+            const res = await trackingService.trackedFetch('/api/users?resource=free-usage&type=referral', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({
@@ -961,6 +971,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     entity_id: companyName,
                     flow_id: `referral_preview_${job.id}`
                 })
+            }, {
+                event_family: 'application',
+                feature_key: 'referral',
+                entity_type: 'job',
+                entity_id: job.id,
             });
             const data = await res.json();
             if (data.success) {
@@ -1072,7 +1087,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (!token) return false
 
         try {
-            const data = await fetch('/api/users?resource=free-usage&type=website-apply', {
+            const data = await trackingService.trackedFetch('/api/users?resource=free-usage&type=website-apply', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -1086,6 +1101,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     entity_id: jobId,
                     flow_id: `website_apply_${jobId}`
                 })
+            }, {
+                event_family: 'application',
+                feature_key: 'website_apply',
+                entity_type: 'job',
+                entity_id: jobId,
             }).then(async (response) => {
                 const payload = await response.json()
                 if (!response.ok) {

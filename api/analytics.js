@@ -1,12 +1,14 @@
 
 import neonHelper from '../server-utils/dal/neon-helper.js';
+import userHelper from '../server-utils/user-helper.js';
+import { extractToken, verifyToken } from '../server-utils/auth-helpers.js';
 import { insertAnalyticsEvents, normalizeAnalyticsEvent } from '../lib/services/analytics-event-service.js';
 
 export default async function handler(req, res) {
   // CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Request-ID');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -23,12 +25,24 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true, message: 'No events to track' });
     }
 
+    if (events.length > 20) {
+      return res.status(400).json({ success: false, error: 'Too many events in one request' });
+    }
+
     if (!neonHelper.isConfigured) {
       console.warn('[Analytics] Neon DB not configured, skipping tracking');
       return res.status(200).json({ success: true, message: 'Tracking disabled (no DB)' });
     }
 
-    const normalizedEvents = events.map((event) => normalizeAnalyticsEvent(event));
+    const token = extractToken(req);
+    const payload = token ? verifyToken(token) : null;
+    const authenticatedUser = payload?.userId ? await userHelper.getUserById(payload.userId) : null;
+    const authenticatedUserId = authenticatedUser?.user_id || authenticatedUser?.userId || null;
+    const normalizedEvents = events.map((event) => normalizeAnalyticsEvent(event, {
+      user: authenticatedUser,
+      userId: authenticatedUserId,
+      enforceUserId: true,
+    }));
     await insertAnalyticsEvents(normalizedEvents);
 
     return res.status(200).json({ success: true, count: events.length });

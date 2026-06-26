@@ -1,5 +1,6 @@
 import { Component, ReactNode, ErrorInfo } from 'react'
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react'
+import { trackingService } from '../services/tracking-service'
 
 interface Props {
   children: ReactNode
@@ -24,6 +25,11 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught an error:', error, errorInfo)
+    trackingService.trackClientError('react_render_error', error, {
+      component: 'ErrorBoundary',
+      route: window.location.pathname,
+      event_context: errorInfo.componentStack?.slice(0, 240) || 'react_component_tree'
+    })
 
     const isChunkError = Boolean(error.message && (
       error.message.includes('Failed to fetch dynamically imported module') ||

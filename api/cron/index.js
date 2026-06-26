@@ -54,6 +54,10 @@ export default async function handler(req, res) {
         const { default: membershipLifecycleHandler } = await import('../../lib/cron-handlers/membership-lifecycle.js');
         return await membershipLifecycleHandler(req, res);
       }
+      case 'cleanup-analytics': {
+        const { default: cleanupAnalyticsHandler } = await import('../../lib/cron-handlers/cleanup-analytics.js');
+        return await cleanupAnalyticsHandler(req, res);
+      }
 
       case 'test-smtp': {
         const { sendTestEmail } = await import('../../server-utils/email-service.js');
@@ -94,6 +98,7 @@ export default async function handler(req, res) {
             'rotate-featured',
             'admin-daily-featured-email',
             'membership-lifecycle',
+            'cleanup-analytics',
             'daily-ingest',
             'daily-enrich'
           ],

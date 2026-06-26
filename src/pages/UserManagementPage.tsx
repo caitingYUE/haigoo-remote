@@ -333,6 +333,158 @@ function isProtectedSuperAdmin(email?: string | null) {
   return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
 }
 
+type UserActivityEvent = {
+  eventId: string
+  eventName: string
+  occurredAt: string
+  pageKey?: string | null
+  featureKey?: string | null
+  entityType?: string | null
+  entityId?: string | null
+  eventFamily: string
+  outcome: 'started' | 'succeeded' | 'failed' | 'blocked'
+  severity: string
+  requestId?: string | null
+  durationMs?: number | null
+  httpStatus?: number | null
+  errorCode?: string | null
+}
+
+type UserActivityResponse = {
+  summary: { lastActivityAt?: string | null; events7d: number; succeeded7d: number; failed7d: number }
+  events: UserActivityEvent[]
+  nextCursor?: string | null
+}
+
+function UserActivityModal({ user, token, onClose }: { user: User; token: string | null; onClose: () => void }) {
+  const [days, setDays] = useState(7)
+  const [onlyFailures, setOnlyFailures] = useState(false)
+  const [data, setData] = useState<UserActivityResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async (cursor: string | null = null) => {
+    const isMore = Boolean(cursor)
+    isMore ? setLoadingMore(true) : setLoading(true)
+    setError('')
+    try {
+      const from = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+      const params = new URLSearchParams({ email: user.email, from, limit: '50' })
+      if (onlyFailures) params.set('onlyFailures', 'true')
+      if (cursor) params.set('cursor', cursor)
+      const response = await fetch(`/api/admin/user-activity?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result.success) throw new Error(result.error || '用户日志加载失败')
+      setData((previous) => isMore
+        ? { ...result, events: [...(previous?.events || []), ...(result.events || [])] }
+        : result)
+    } catch (loadError: any) {
+      setError(loadError?.message || '用户日志加载失败')
+    } finally {
+      setLoading(false)
+      setLoadingMore(false)
+    }
+  }, [days, onlyFailures, token, user.email])
+
+  useEffect(() => {
+    void load()
+  }, [load])
+
+  const outcomeStyle: Record<string, string> = {
+    succeeded: 'bg-emerald-50 text-emerald-700',
+    started: 'bg-sky-50 text-sky-700',
+    blocked: 'bg-amber-50 text-amber-700',
+    failed: 'bg-red-50 text-red-700'
+  }
+
+  return (
+    <div className="fixed inset-0 z-[1000] overflow-y-auto bg-black/30 p-2 sm:p-4" onClick={onClose}>
+      <div className="flex min-h-full items-end justify-center sm:items-center">
+        <div className="flex w-full max-w-5xl max-h-[calc(100vh-1rem)] flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-h-[calc(100vh-2rem)] sm:rounded-2xl" onClick={(event) => event.stopPropagation()}>
+          <div className="border-b border-slate-200 px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">用户操作日志</h3>
+                <div className="mt-1 text-xs text-slate-500">{user.email} · 注册于 {formatCompactDateTime(user.createdAt)}</div>
+              </div>
+              <button type="button" onClick={onClose} className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm text-slate-600">关闭</button>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <select value={days} onChange={(event) => setDays(Number(event.target.value))} className="rounded-lg border border-slate-200 px-3 py-2 text-sm">
+                <option value={1}>最近 24 小时</option>
+                <option value={7}>最近 7 天</option>
+                <option value={30}>最近 30 天</option>
+              </select>
+              <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={onlyFailures} onChange={(event) => setOnlyFailures(event.target.checked)} />
+                仅看异常和拦截
+              </label>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4 sm:px-6">
+            {data && (
+              <div className="mb-4 grid gap-3 sm:grid-cols-4">
+                {[
+                  ['最后活跃', formatCompactDateTime(data.summary.lastActivityAt)],
+                  ['近 7 天事件', String(data.summary.events7d)],
+                  ['成功操作', String(data.summary.succeeded7d)],
+                  ['失败/拦截', String(data.summary.failed7d)]
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg border border-slate-200 bg-white px-3 py-3">
+                    <div className="text-xs text-slate-400">{label}</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-800">{value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {loading ? (
+              <div className="py-12 text-center text-sm text-slate-500">正在加载操作日志...</div>
+            ) : error ? (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
+            ) : data?.events.length ? (
+              <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                <div className="divide-y divide-slate-100">
+                  {data.events.map((event) => (
+                    <div key={event.eventId} className="grid gap-2 px-4 py-3 sm:grid-cols-[150px_1fr_auto] sm:items-center">
+                      <div className="text-xs text-slate-500">{formatCompactDateTime(event.occurredAt)}</div>
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-slate-800">{event.eventName.replace(/_/g, ' ')}</span>
+                          <span className="text-xs text-slate-400">{event.eventFamily}</span>
+                        </div>
+                        <div className="mt-1 truncate text-xs text-slate-500">
+                          {[event.pageKey, event.featureKey, event.entityId && `${event.entityType || 'entity'}:${event.entityId}`, event.errorCode].filter(Boolean).join(' · ') || '无附加上下文'}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 sm:justify-end">
+                        {event.durationMs != null && <span className="text-xs text-slate-400">{event.durationMs}ms</span>}
+                        {event.httpStatus != null && <span className="text-xs text-slate-400">HTTP {event.httpStatus}</span>}
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${outcomeStyle[event.outcome] || 'bg-slate-100 text-slate-700'}`}>{event.outcome}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-lg border border-dashed border-slate-300 bg-white px-4 py-12 text-center text-sm text-slate-500">该时间范围暂无日志。</div>
+            )}
+            {data?.nextCursor && !loading && !error && (
+              <div className="mt-4 text-center">
+                <button type="button" disabled={loadingMore} onClick={() => void load(data.nextCursor || null)} className="rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 disabled:opacity-50">
+                  {loadingMore ? '正在加载...' : '加载更多'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -371,6 +523,7 @@ export default function UserManagementPage() {
   })
   const [updatingEntitlementKey, setUpdatingEntitlementKey] = useState<EntitlementKey | null>(null)
   const [serviceEntitlementDrafts, setServiceEntitlementDrafts] = useState<Record<string, ServiceEntitlementRecord>>({})
+  const [activityUser, setActivityUser] = useState<User | null>(null)
 
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -1075,6 +1228,14 @@ export default function UserManagementPage() {
                       </button>
                       <button
                         disabled={isBusy}
+                        onClick={() => setActivityUser(user)}
+                        className="inline-flex min-h-[48px] items-center justify-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-medium text-slate-700"
+                      >
+                        <Activity className="h-4 w-4" />
+                        操作日志
+                      </button>
+                      <button
+                        disabled={isBusy}
                         onClick={() => updateUserStatus(user.user_id, user.status === 'active' ? 'suspended' : 'active')}
                         className={`inline-flex min-h-[48px] items-center justify-center rounded-xl border px-3 py-3 text-sm font-medium ${
                           isBusy
@@ -1248,6 +1409,13 @@ export default function UserManagementPage() {
                           >
                             <Eye className="w-4 h-4" /> 编辑
                           </button>
+                          <button
+                            disabled={updatingId === user.user_id}
+                            onClick={() => setActivityUser(user)}
+                            className="px-3 py-1.5 rounded-lg border text-sm flex items-center gap-1 hover:bg-slate-50"
+                          >
+                            <Activity className="w-4 h-4" /> 日志
+                          </button>
                           {!isProtectedSuperAdmin(user.email) && (
                             <button
                               disabled={updatingId === user.user_id || !isSuperAdmin}
@@ -1297,6 +1465,10 @@ export default function UserManagementPage() {
           </div>
         </div>
       </div>
+
+      {activityUser && (
+        <UserActivityModal user={activityUser} token={token} onClose={() => setActivityUser(null)} />
+      )}
 
       {editingUser && (
         <div

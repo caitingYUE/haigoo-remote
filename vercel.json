@@ -58,6 +58,10 @@
     {
       "path": "/api/cron/membership-lifecycle",
       "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/cleanup-analytics",
+      "schedule": "20 2 * * *"
     }
   ],
   "rewrites": [
