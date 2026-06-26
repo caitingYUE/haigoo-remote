@@ -47,6 +47,7 @@ interface AudienceCardPreview {
   key: 'public' | 'member';
   audienceLabel: string;
   title: string;
+  titleSuffix?: string;
   ruleSummary: string;
   repeatWindowDays: number;
   jobCount: number;
@@ -124,6 +125,12 @@ interface GroupFormState {
   selectedRoles: string[];
 }
 
+interface EditingSlotState {
+  groupId: number;
+  audienceKey: 'public' | 'member';
+  jobIndex: number;
+}
+
 const EMPTY_GROUP_FORM: GroupFormState = {
   internalName: '',
   isActive: true,
@@ -131,6 +138,10 @@ const EMPTY_GROUP_FORM: GroupFormState = {
 };
 
 const DEFAULT_GROUP_NAME = '默认分组';
+const COPY_TITLE_SUFFIX: Record<'public' | 'member', string> = {
+  public: '精选推送',
+  member: '会员推荐'
+};
 
 const normalizeShareUrl = (jobId: string, shareUrl?: string) => {
   const fallback = `https://haigooremote.com${getJobSharePath(jobId)}`;
@@ -164,6 +175,73 @@ const normalizeAudienceCard = (audience: AudienceCardPreview): AudienceCardPrevi
   };
 };
 
+const getAudienceBatchLabel = (preview: PreviewResponse | null) => (
+  preview?.schedule?.displayBatchLabel || preview?.batchLabel || preview?.batchDate || ''
+);
+
+const buildSocialPushCopyText = (
+  audience: Pick<AudienceCardPreview, 'key' | 'titleSuffix'>,
+  batchLabel: string,
+  jobs: PreviewJob[],
+  includeLinks: boolean
+) => {
+  const titleSuffix = audience.titleSuffix || COPY_TITLE_SUFFIX[audience.key];
+  const title = `海狗远程俱乐部 ${batchLabel} ${titleSuffix}`.trim();
+
+  if (jobs.length === 0) {
+    return `${title}\n\n今日暂无符合条件的岗位。`;
+  }
+
+  const blocks = jobs.map((job) => {
+    const referralInfoLines = Array.isArray(job.referralInfoLines) ? job.referralInfoLines : [];
+    const lines = [
+      `【${job.title}】`,
+      `【${job.company}】`,
+      job.metaLine || ''
+    ].filter(Boolean);
+
+    if (includeLinks) {
+      lines.push(`海狗链接：${normalizeShareUrl(job.id, job.shareUrl)}`);
+    }
+
+    if (audience.key === 'member') {
+      lines.push(`企业信息：${job.companyInfoLine || '待补充'}`);
+      if (referralInfoLines.length > 0) {
+        lines.push(...referralInfoLines.map((line) => `内推信息：${line}`));
+      }
+    }
+
+    return lines.join('\n');
+  });
+
+  return `${title}\n\n${blocks.join('\n\n')}`;
+};
+
+const replaceAudienceJob = (
+  audience: AudienceCardPreview,
+  jobIndex: number,
+  replacement: PreviewJob,
+  batchLabel: string
+): AudienceCardPreview => {
+  const jobs = audience.jobs.map((job, index) => (
+    index === jobIndex
+      ? {
+        ...replacement,
+        shareUrl: normalizeShareUrl(replacement.id, replacement.shareUrl),
+        referralInfoLines: Array.isArray(replacement.referralInfoLines) ? replacement.referralInfoLines : []
+      }
+      : job
+  ));
+
+  return {
+    ...audience,
+    jobs,
+    jobCount: jobs.length,
+    generatedAt: new Date().toISOString(),
+    copyText: buildSocialPushCopyText(audience, batchLabel, jobs, true)
+  };
+};
+
 const normalizePreviewResponse = (preview: PreviewResponse): PreviewResponse => ({
   ...preview,
   groups: preview.groups.map((group) => ({
@@ -183,14 +261,14 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [replacingKey, setReplacingKey] = useState<string | null>(null);
   const [groupForm, setGroupForm] = useState<GroupFormState>(EMPTY_GROUP_FORM);
-  const [manualQuery, setManualQuery] = useState('');
-  const [manualAudienceKey, setManualAudienceKey] = useState<'public' | 'member'>('public');
-  const [manualJobs, setManualJobs] = useState<ManualPreviewJob[]>([]);
-  const [manualSelectedJobId, setManualSelectedJobId] = useState<string | null>(null);
-  const [manualLoading, setManualLoading] = useState(false);
-  const [manualError, setManualError] = useState<string | null>(null);
+  const [includeLinksByCopyKey, setIncludeLinksByCopyKey] = useState<Record<string, boolean>>({});
+  const [editingSlot, setEditingSlot] = useState<EditingSlotState | null>(null);
+  const [slotQuery, setSlotQuery] = useState('');
+  const [slotJobs, setSlotJobs] = useState<ManualPreviewJob[]>([]);
+  const [slotSelectedJobId, setSlotSelectedJobId] = useState<string | null>(null);
+  const [slotLoading, setSlotLoading] = useState(false);
+  const [slotError, setSlotError] = useState<string | null>(null);
 
   const fetchPreview = useCallback(async (silent = false) => {
     try {
@@ -254,24 +332,24 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
   }, [fetchAll]);
 
   useEffect(() => {
-    const keyword = manualQuery.trim();
-    if (keyword.length < 2) {
-      setManualJobs([]);
-      setManualSelectedJobId(null);
-      setManualError(null);
-      setManualLoading(false);
+    const keyword = slotQuery.trim();
+    if (!editingSlot || keyword.length < 2) {
+      setSlotJobs([]);
+      setSlotSelectedJobId(null);
+      setSlotError(null);
+      setSlotLoading(false);
       return undefined;
     }
 
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       try {
-        setManualLoading(true);
-        setManualError(null);
+        setSlotLoading(true);
+        setSlotError(null);
         const params = new URLSearchParams({
           query: keyword,
-          audienceKey: manualAudienceKey,
-          limit: '6'
+          audienceKey: editingSlot.audienceKey,
+          limit: '8'
         });
         if (preview?.batchDate) params.set('batchDate', preview.batchDate);
 
@@ -285,19 +363,19 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
           throw new Error(data?.error || '搜索推荐岗位失败');
         }
         if (cancelled) return;
-        setManualJobs(data.jobs || []);
-        setManualSelectedJobId((current) => {
+        setSlotJobs(data.jobs || []);
+        setSlotSelectedJobId((current) => {
           if (current && data.jobs?.some((job) => job.id === current)) return current;
           return data.jobs?.[0]?.id || null;
         });
       } catch (err) {
         if (!cancelled) {
-          setManualJobs([]);
-          setManualSelectedJobId(null);
-          setManualError(err instanceof Error ? err.message : '搜索推荐岗位失败');
+          setSlotJobs([]);
+          setSlotSelectedJobId(null);
+          setSlotError(err instanceof Error ? err.message : '搜索推荐岗位失败');
         }
       } finally {
-        if (!cancelled) setManualLoading(false);
+        if (!cancelled) setSlotLoading(false);
       }
     }, 320);
 
@@ -305,7 +383,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [manualAudienceKey, manualQuery, preview?.batchDate, token]);
+  }, [editingSlot, preview?.batchDate, slotQuery, token]);
 
   useEffect(() => {
     if (!settingsOpen) return undefined;
@@ -323,9 +401,9 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
     [preview, selectedGroupId]
   );
 
-  const manualSelectedJob = useMemo(
-    () => manualJobs.find((job) => job.id === manualSelectedJobId) || manualJobs[0] || null,
-    [manualJobs, manualSelectedJobId]
+  const slotSelectedJob = useMemo(
+    () => slotJobs.find((job) => job.id === slotSelectedJobId) || slotJobs[0] || null,
+    [slotJobs, slotSelectedJobId]
   );
 
   const visibleSettingsGroups = useMemo(() => {
@@ -488,50 +566,55 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
     }
   };
 
-  const handleReplaceJob = async (groupId: number, audienceKey: 'public' | 'member', jobId: string) => {
-    const replaceKey = `${groupId}-${audienceKey}-${jobId}`;
-    try {
-      setReplacingKey(replaceKey);
-      setError(null);
+  const handleStartEditSlot = (
+    groupId: number,
+    audienceKey: 'public' | 'member',
+    jobIndex: number,
+    job: PreviewJob
+  ) => {
+    setEditingSlot({
+      groupId,
+      audienceKey,
+      jobIndex
+    });
+    setSlotQuery(job.title || job.company || '');
+    setSlotJobs([]);
+    setSlotSelectedJobId(null);
+    setSlotError(null);
+  };
 
-      const res = await fetch('/api/admin/content-push/social-push/replace', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          groupId,
-          audienceKey,
-          jobId,
-          batchDate: preview?.batchDate
+  const handleCancelEditSlot = () => {
+    setEditingSlot(null);
+    setSlotQuery('');
+    setSlotJobs([]);
+    setSlotSelectedJobId(null);
+    setSlotError(null);
+    setSlotLoading(false);
+  };
+
+  const handleApplySlotReplacement = () => {
+    if (!editingSlot || !slotSelectedJob) return;
+    const batchLabel = getAudienceBatchLabel(preview);
+
+    setPreview((current) => {
+      if (!current) return current;
+      return normalizePreviewResponse({
+        ...current,
+        groups: current.groups.map((group) => {
+          if (group.id !== editingSlot.groupId) return group;
+          const cardKey = editingSlot.audienceKey === 'public' ? 'publicCard' : 'memberCard';
+          const nextCard = replaceAudienceJob(group[cardKey], editingSlot.jobIndex, slotSelectedJob, batchLabel);
+
+          return {
+            ...group,
+            generatedAt: nextCard.generatedAt || group.generatedAt,
+            [cardKey]: nextCard
+          };
         })
       });
+    });
 
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || '更换岗位失败');
-      }
-
-      setPreview((current) => {
-        if (!current) return current;
-        return normalizePreviewResponse({
-          ...current,
-          groups: current.groups.map((group) => {
-            if (group.id !== groupId) return group;
-            return {
-              ...group,
-              generatedAt: data.card.generatedAt || group.generatedAt,
-              [audienceKey === 'public' ? 'publicCard' : 'memberCard']: data.card
-            };
-          })
-        });
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '更换岗位失败');
-    } finally {
-      setReplacingKey(null);
-    }
+    handleCancelEditSlot();
   };
 
   const renderAudienceCard = (
@@ -545,6 +628,8 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
     }
   ) => {
     const copyKey = `${groupId}-${audience.key}`;
+    const includeLinks = includeLinksByCopyKey[copyKey] ?? true;
+    const batchLabel = getAudienceBatchLabel(preview);
     const jobsShortage = audience.jobCount < 3;
 
     return (
@@ -570,14 +655,28 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleCopy(copyKey, audience.copyText)}
-              className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${accent.button}`}
-            >
-              {copiedKey === copyKey ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copiedKey === copyKey ? '已复制' : '一键复制'}
-            </button>
+            <div className="flex shrink-0 flex-col items-start gap-2 lg:items-end">
+              <button
+                type="button"
+                onClick={() => handleCopy(copyKey, buildSocialPushCopyText(audience, batchLabel, audience.jobs, includeLinks))}
+                className={`inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-colors ${accent.button}`}
+              >
+                {copiedKey === copyKey ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                {copiedKey === copyKey ? '已复制' : '一键复制'}
+              </button>
+              <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <input
+                  type="checkbox"
+                  checked={includeLinks}
+                  onChange={(event) => setIncludeLinksByCopyKey((current) => ({
+                    ...current,
+                    [copyKey]: event.target.checked
+                  }))}
+                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                带链接
+              </label>
+            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400">
@@ -596,39 +695,115 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
             <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-sm text-slate-500">
               当前没有符合条件的岗位。
             </div>
-          ) : audience.jobs.map((job) => {
-            const replaceKey = `${groupId}-${audience.key}-${job.id}`;
+          ) : audience.jobs.map((job, jobIndex) => {
+            const replaceKey = `${groupId}-${audience.key}-${job.id}-${jobIndex}`;
+            const isEditing = editingSlot?.groupId === groupId
+              && editingSlot.audienceKey === audience.key
+              && editingSlot.jobIndex === jobIndex;
+            const singleCopyKey = `single-${replaceKey}`;
             return (
               <article key={replaceKey} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0 space-y-2">
-                    <div>
-                      <h4 className="truncate text-base font-semibold text-slate-900">{job.title}</h4>
-                      <p className="mt-1 text-sm font-medium text-slate-700">{job.company}</p>
-                    </div>
-                    <p className="text-xs leading-6 text-slate-500">{job.metaLine}</p>
-                    <div className="space-y-1 text-xs leading-6 text-slate-600">
-                      {job.applicationUrl ? (
-                        <div className="truncate">原始申请链接：{job.applicationUrl}</div>
-                      ) : (
-                        <div>原始申请链接：待补充</div>
-                      )}
-                      {job.shareUrl ? (
-                        <div className="truncate">海狗分享链接：{job.shareUrl}</div>
-                      ) : null}
-                      {audience.key === 'member' ? (
-                        <>
-                          <div>企业信息：{job.companyInfoLine || '待补充'}</div>
-                          {(job.referralInfoLines || []).length > 0 ? (
-                            job.referralInfoLines?.map((line) => (
-                              <div key={`${replaceKey}-${line}`}>内推信息：{line}</div>
-                            ))
+                    {isEditing ? (
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                          <input
+                            value={slotQuery}
+                            onChange={(event) => setSlotQuery(event.target.value)}
+                            placeholder="输入岗位标题或公司名称"
+                            className="w-full rounded-2xl border border-indigo-200 bg-white py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                          />
+                          {slotLoading ? (
+                            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-indigo-500" />
+                          ) : null}
+                        </div>
+
+                        {slotError ? (
+                          <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-600">
+                            {slotError}
+                          </div>
+                        ) : null}
+
+                        {slotJobs.length > 0 ? (
+                          <div className="grid gap-2 sm:grid-cols-2">
+                            {slotJobs.map((candidate) => {
+                              const active = (slotSelectedJob?.id || slotJobs[0]?.id) === candidate.id;
+                              return (
+                                <button
+                                  key={candidate.id}
+                                  type="button"
+                                  onClick={() => setSlotSelectedJobId(candidate.id)}
+                                  className={`rounded-2xl border p-3 text-left transition ${
+                                    active
+                                      ? 'border-indigo-200 bg-indigo-50'
+                                      : 'border-slate-200 bg-white hover:border-slate-300'
+                                  }`}
+                                >
+                                  <div className="truncate text-sm font-bold text-slate-900">{candidate.title}</div>
+                                  <div className="mt-1 truncate text-xs font-semibold text-slate-500">{candidate.company}</div>
+                                  <div className="mt-1 truncate text-[11px] text-slate-400">{candidate.metaLine}</div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : slotQuery.trim().length >= 2 && !slotLoading ? (
+                          <div className="rounded-2xl border border-dashed border-slate-200 bg-white px-3 py-4 text-xs text-slate-500">
+                            没有匹配到可推荐岗位，可以换一个岗位标题或公司名。
+                          </div>
+                        ) : null}
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={handleApplySlotReplacement}
+                            disabled={!slotSelectedJob}
+                            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            确认更换
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEditSlot}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <h4 className="truncate text-base font-semibold text-slate-900">{job.title}</h4>
+                          <p className="mt-1 text-sm font-medium text-slate-700">{job.company}</p>
+                        </div>
+                        <p className="text-xs leading-6 text-slate-500">{job.metaLine}</p>
+                        <div className="space-y-1 text-xs leading-6 text-slate-600">
+                          {job.applicationUrl ? (
+                            <div className="truncate">原始申请链接：{job.applicationUrl}</div>
                           ) : (
-                            <div>内推信息：待补充</div>
+                            <div>原始申请链接：待补充</div>
                           )}
-                        </>
-                      ) : null}
-                    </div>
+                          {job.shareUrl ? (
+                            <div className="truncate">海狗分享链接：{job.shareUrl}</div>
+                          ) : null}
+                          {audience.key === 'member' ? (
+                            <>
+                              <div>企业信息：{job.companyInfoLine || '待补充'}</div>
+                              {(job.referralInfoLines || []).length > 0 ? (
+                                job.referralInfoLines?.map((line) => (
+                                  <div key={`${replaceKey}-${line}`}>内推信息：{line}</div>
+                                ))
+                              ) : (
+                                <div>内推信息：待补充</div>
+                              )}
+                            </>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="flex flex-col items-start gap-2 lg:items-end">
@@ -637,12 +812,20 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                     </span>
                     <button
                       type="button"
-                      onClick={() => handleReplaceJob(groupId, audience.key, job.id)}
-                      disabled={replacingKey === replaceKey}
+                      onClick={() => handleCopy(singleCopyKey, buildSocialPushCopyText(audience, batchLabel, [job], true))}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+                    >
+                      {copiedKey === singleCopyKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {copiedKey === singleCopyKey ? '已复制' : '复制'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditSlot(groupId, audience.key, jobIndex, job)}
+                      disabled={isEditing}
                       className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-rose-200 hover:text-rose-600 disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      <RefreshCw className={`h-3.5 w-3.5 ${replacingKey === replaceKey ? 'animate-spin' : ''}`} />
-                      {replacingKey === replaceKey ? '更换中...' : '更换'}
+                      <Search className="h-3.5 w-3.5" />
+                      {isEditing ? '编辑中' : '更换'}
                     </button>
                   </div>
                 </div>
@@ -709,129 +892,6 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
           </div>
         </div>
       </div>
-
-      <section className="rounded-3xl border border-indigo-100 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
-                <Plus className="h-3.5 w-3.5" />
-                手动添加推荐位
-              </span>
-              <span className="text-xs font-medium text-slate-400">输入岗位或公司名，自动补全申请链接和分享文案</span>
-            </div>
-
-            <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto]">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={manualQuery}
-                  onChange={(event) => setManualQuery(event.target.value)}
-                  placeholder="输入岗位标题或公司名称，例如 Product Manager / Canonical"
-                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-800 outline-none transition focus:border-indigo-300 focus:bg-white focus:ring-2 focus:ring-indigo-100"
-                />
-                {manualLoading ? (
-                  <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-indigo-500" />
-                ) : null}
-              </div>
-
-              <div className="inline-flex rounded-2xl border border-slate-200 bg-slate-50 p-1">
-                {[
-                  { key: 'public' as const, label: '交流群' },
-                  { key: 'member' as const, label: '会员岗位' }
-                ].map((item) => (
-                  <button
-                    key={item.key}
-                    type="button"
-                    onClick={() => setManualAudienceKey(item.key)}
-                    className={`rounded-xl px-3 py-2 text-xs font-semibold transition ${
-                      manualAudienceKey === item.key
-                        ? 'bg-indigo-600 text-white shadow-sm'
-                        : 'text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {manualError ? (
-              <div className="mt-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
-                {manualError}
-              </div>
-            ) : null}
-
-            {manualJobs.length > 0 ? (
-              <div className="mt-4 grid gap-3 lg:grid-cols-[280px,minmax(0,1fr)]">
-                <div className="space-y-2">
-                  {manualJobs.map((job) => {
-                    const active = (manualSelectedJob?.id || manualJobs[0]?.id) === job.id;
-                    return (
-                      <button
-                        key={job.id}
-                        type="button"
-                        onClick={() => setManualSelectedJobId(job.id)}
-                        className={`w-full rounded-2xl border p-3 text-left transition ${
-                          active
-                            ? 'border-indigo-200 bg-indigo-50'
-                            : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white'
-                        }`}
-                      >
-                        <div className="truncate text-sm font-bold text-slate-900">{job.title}</div>
-                        <div className="mt-1 truncate text-xs font-semibold text-slate-500">{job.company}</div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {manualSelectedJob ? (
-                  <article className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0 space-y-2">
-                        <div>
-                          <h3 className="text-base font-bold text-slate-900">{manualSelectedJob.title}</h3>
-                          <p className="mt-1 text-sm font-medium text-slate-700">{manualSelectedJob.company}</p>
-                        </div>
-                        <p className="text-xs leading-6 text-slate-500">{manualSelectedJob.metaLine}</p>
-                        <div className="space-y-1 text-xs leading-6 text-slate-600">
-                          <div className="truncate">原始申请链接：{manualSelectedJob.applicationUrl || '待补充'}</div>
-                          <div className="truncate">海狗分享链接：{manualSelectedJob.shareUrl || '待补充'}</div>
-                          {manualAudienceKey === 'member' ? (
-                            <>
-                              <div>企业信息：{manualSelectedJob.companyInfoLine || '待补充'}</div>
-                              {(manualSelectedJob.referralInfoLines || []).length > 0 ? (
-                                manualSelectedJob.referralInfoLines?.map((line) => (
-                                  <div key={`${manualSelectedJob.id}-${line}`}>内推信息：{line}</div>
-                                ))
-                              ) : (
-                                <div>内推信息：待补充</div>
-                              )}
-                            </>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => handleCopy(`manual-${manualSelectedJob.id}-${manualAudienceKey}`, manualSelectedJob.copyText)}
-                        className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                      >
-                        {copiedKey === `manual-${manualSelectedJob.id}-${manualAudienceKey}` ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-                        {copiedKey === `manual-${manualSelectedJob.id}-${manualAudienceKey}` ? '已复制' : '复制该推荐'}
-                      </button>
-                    </div>
-                  </article>
-                ) : null}
-              </div>
-            ) : manualQuery.trim().length >= 2 && !manualLoading ? (
-              <div className="mt-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
-                没有匹配到可推荐岗位，可以换一个岗位标题或公司名。
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </section>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
