@@ -340,6 +340,18 @@ export default async function handler(req, res) {
         }
         const aggregatedSortKey = aggregatedSortMap[sortBy] || 'updated_at'
         const aggregatedOrderClause = `ORDER BY ${aggregatedSortKey} ${safeSortDir}, job_title ASC`
+        const userSortMap = {
+            user_email: 'user_email',
+            username: 'username',
+            user_created_at: 'user_created_at',
+            total_applications: 'total_applications',
+            email_count: 'email_count',
+            official_count: 'official_count',
+            platform_count: 'platform_count',
+            updated_at: 'updated_at'
+        }
+        const userSortKey = userSortMap[sortBy] || 'updated_at'
+        const userOrderClause = `ORDER BY ${userSortKey} ${safeSortDir}, user_email ASC`
 
         // Case A: Member Applications
         if (type === 'member') {
@@ -363,6 +375,109 @@ export default async function handler(req, res) {
 
         // Case B: Job Applications (Referral, Official, Platform)
         let listQuery = '';
+
+        if (type === 'user') {
+            const userFilters = ["uji.interaction_type IN ('email', 'apply_redirect')"]
+            const userParams = []
+            if (searchPattern) {
+                userParams.push(searchPattern)
+                userFilters.push(`(
+                    LOWER(COALESCE(u.email, '')) LIKE $${userParams.length}
+                    OR LOWER(COALESCE(u.username, '')) LIKE $${userParams.length}
+                    OR LOWER(COALESCE(u.user_id, uji.user_id, '')) LIKE $${userParams.length}
+                    OR LOWER(COALESCE(j.title, uji.job_title_snapshot, '')) LIKE $${userParams.length}
+                    OR LOWER(COALESCE(j.company, uji.company_name_snapshot, '')) LIKE $${userParams.length}
+                    OR LOWER(COALESCE(uji.notes, '')) LIKE $${userParams.length}
+                )`)
+            }
+            const userWhereClause = `WHERE ${userFilters.join(' AND ')}`
+            const userBaseQuery = `
+                FROM user_job_interactions uji
+                LEFT JOIN users u ON uji.user_id = u.user_id
+                LEFT JOIN jobs j ON uji.job_id = j.job_id
+                LEFT JOIN resumes r ON uji.resume_id = r.resume_id
+                ${userWhereClause}
+            `
+
+            const countRes = await neonHelper.query(
+                `SELECT COUNT(*) as total
+                 FROM (
+                    SELECT COALESCE(uji.user_id, '') as user_key
+                    ${userBaseQuery}
+                    GROUP BY COALESCE(uji.user_id, '')
+                 ) t`,
+                userParams
+            )
+            const total = parseInt(countRes[0]?.total || 0)
+
+            const userListQuery = `
+                WITH filtered AS (
+                    SELECT
+                        uji.id,
+                        uji.user_id,
+                        COALESCE(u.email, '') as user_email,
+                        COALESCE(u.username, '') as username,
+                        u.created_at as user_created_at,
+                        uji.job_id,
+                        COALESCE(j.title, uji.job_title_snapshot, '职位已失效') as job_title,
+                        COALESCE(j.company, uji.company_name_snapshot, '未知企业') as job_company,
+                        uji.interaction_type,
+                        COALESCE(
+                            NULLIF(uji.application_source, ''),
+                            CASE
+                                WHEN j.is_trusted = true OR j.source_type = 'official' THEN 'official'
+                                ELSE 'trusted_platform'
+                            END
+                        ) as application_source,
+                        uji.status,
+                        uji.notes,
+                        uji.resume_id,
+                        r.file_name as resume_name,
+                        uji.created_at,
+                        uji.updated_at
+                    ${userBaseQuery}
+                )
+                SELECT
+                    user_id,
+                    MAX(user_email) as user_email,
+                    MAX(username) as username,
+                    MIN(user_created_at) as user_created_at,
+                    COUNT(*)::INTEGER as total_applications,
+                    COUNT(*) FILTER (WHERE interaction_type = 'email')::INTEGER as email_count,
+                    COUNT(*) FILTER (WHERE interaction_type = 'apply_redirect' AND application_source = 'official')::INTEGER as official_count,
+                    COUNT(*) FILTER (WHERE interaction_type = 'apply_redirect' AND application_source = 'trusted_platform')::INTEGER as platform_count,
+                    MAX(updated_at) as updated_at,
+                    jsonb_agg(
+                        jsonb_build_object(
+                            'id', id,
+                            'job_id', job_id,
+                            'job_title', job_title,
+                            'job_company', job_company,
+                            'interaction_type', interaction_type,
+                            'application_source', application_source,
+                            'status', status,
+                            'notes', notes,
+                            'resume_id', resume_id,
+                            'resume_name', resume_name,
+                            'created_at', created_at,
+                            'updated_at', updated_at
+                        )
+                        ORDER BY updated_at DESC
+                    ) as applications
+                FROM filtered
+                GROUP BY user_id
+                ${userOrderClause}
+                LIMIT $${userParams.length + 1} OFFSET $${userParams.length + 2}
+            `
+
+            const listRes = await neonHelper.query(userListQuery, [...userParams, limit, offset])
+
+            return res.status(200).json({
+                success: true,
+                data: listRes,
+                pagination: { total, page: parseInt(page), totalPages: Math.ceil(total / limit) }
+            })
+        }
 
         if (type === 'email') {
             // Email

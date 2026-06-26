@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react'
 import {
-    Search, FileText, Briefcase, Building2, Globe
+    Search, FileText, Briefcase, Building2, Globe, Users, ChevronDown, ChevronRight
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -30,12 +30,19 @@ interface Application {
     sourceType: string
     // Official/Platform Aggregated Stats
     total_applications?: number
+    email_count?: number
+    official_count?: number
+    platform_count?: number
     pending_interview?: number
     interviewing?: number
     success?: number
+    user_created_at?: string
+    user_email?: string
+    applications?: Application[]
+    application_source?: string
 }
 
-type TabType = 'email' | 'official' | 'trusted_platform'
+type TabType = 'user' | 'email' | 'official' | 'trusted_platform'
 
 export default function AdminApplicationsPage() {
     const { token, isSuperAdmin } = useAuth()
@@ -50,12 +57,20 @@ export default function AdminApplicationsPage() {
     const [totalPages, setTotalPages] = useState(1)
     const [stats, setStats] = useState({ email_count: 0, official_count: 0, platform_count: 0 })
     const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' }>({ key: 'updated_at', direction: 'desc' })
+    const [expandedUsers, setExpandedUsers] = useState<Record<string, boolean>>({})
 
     const aggregatedSortItems = [
         { key: 'total_applications', label: '总申请', tone: 'bg-blue-50 text-blue-700 border-blue-100' },
         { key: 'pending_interview', label: '待面试', tone: 'bg-amber-50 text-amber-700 border-amber-100' },
         { key: 'interviewing', label: '面试中', tone: 'bg-orange-50 text-orange-700 border-orange-100' },
         { key: 'success', label: '已录用', tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' }
+    ] as const
+
+    const userSortItems = [
+        { key: 'total_applications', label: '总申请', tone: 'bg-blue-50 text-blue-700 border-blue-100' },
+        { key: 'email_count', label: '邮箱', tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+        { key: 'official_count', label: '官网', tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
+        { key: 'platform_count', label: '三方', tone: 'bg-slate-50 text-slate-700 border-slate-100' }
     ] as const
 
     useEffect(() => {
@@ -72,6 +87,31 @@ export default function AdminApplicationsPage() {
         if (!raw) return ''
         if (raw.length <= 32) return raw
         return `${raw.slice(0, 18)}...${raw.slice(-6)}`
+    }
+
+    const formatDateTime = (value?: string) => {
+        if (!value) return '-'
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) return '-'
+        return (
+            <div className="flex flex-col">
+                <span>{date.toLocaleDateString()}</span>
+                <span className="text-xs text-gray-400">{date.toLocaleTimeString()}</span>
+            </div>
+        )
+    }
+
+    const getUserRowKey = (app: Application, idx: number) => app.user_id || app.user_email || app.email || `user-${idx}`
+
+    const getApplicationTypeLabel = (app: Application) => {
+        if (app.interaction_type === 'email') return '邮箱申请'
+        if (app.application_source === 'official') return '企业官网'
+        return '三方平台'
+    }
+
+    const getCountValue = (app: Application, key: keyof Application) => {
+        const value = app[key]
+        return typeof value === 'number' ? value : 0
     }
 
     const toggleSort = (key: string) => {
@@ -222,6 +262,16 @@ export default function AdminApplicationsPage() {
             {/* Tabs */}
             <div className="flex gap-1 mb-6 border-b border-gray-200">
                 <button
+                    onClick={() => { setActiveTab('user'); setPage(1); }}
+                    className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'user'
+                        ? 'border-indigo-600 text-indigo-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        }`}
+                >
+                    <Users className="w-4 h-4" />
+                    用户维度
+                </button>
+                <button
                     onClick={() => { setActiveTab('email'); setPage(1); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'email'
                         ? 'border-indigo-600 text-indigo-600'
@@ -259,7 +309,7 @@ export default function AdminApplicationsPage() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                         type="text"
-                        placeholder="搜索用户、公司、岗位..."
+                        placeholder={activeTab === 'user' ? '搜索注册邮箱、用户、公司、岗位...' : '搜索用户、公司、岗位...'}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
@@ -271,7 +321,58 @@ export default function AdminApplicationsPage() {
             <div className="bg-white rounded-lg shadow overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
-                        {activeTab === 'email' ? (
+                        {activeTab === 'user' ? (
+                            <tr>
+                                <th
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => toggleSort('user_email')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        用户
+                                        {sortConfig.key === 'user_email' && (
+                                            <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                        )}
+                                    </div>
+                                </th>
+                                <th
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => toggleSort('user_created_at')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        注册时间
+                                        {sortConfig.key === 'user_created_at' && (
+                                            <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                        )}
+                                    </div>
+                                </th>
+                                {userSortItems.map((item) => (
+                                    <th
+                                        key={item.key}
+                                        className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                        onClick={() => toggleSort(item.key)}
+                                    >
+                                        <div className="inline-flex items-center gap-1">
+                                            {item.label}
+                                            {sortConfig.key === item.key && (
+                                                <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                            )}
+                                        </div>
+                                    </th>
+                                ))}
+                                <th
+                                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                                    onClick={() => toggleSort('updated_at')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        最近申请
+                                        {sortConfig.key === 'updated_at' && (
+                                            <span className="text-xs">{sortConfig.direction === 'desc' ? '↓' : '↑'}</span>
+                                        )}
+                                    </div>
+                                </th>
+                                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">明细</th>
+                            </tr>
+                        ) : activeTab === 'email' ? (
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">申请用户</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">岗位/公司</th>
@@ -325,18 +426,110 @@ export default function AdminApplicationsPage() {
                     <tbody className="bg-white divide-y divide-gray-200">
                         {loading ? (
                             <tr>
-                                <td colSpan={activeTab === 'email' ? 6 : 7} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={activeTab === 'user' ? 8 : activeTab === 'email' ? 6 : 7} className="px-6 py-12 text-center text-gray-500">
                                     加载中...
                                 </td>
                             </tr>
                         ) : applications.length === 0 ? (
                             <tr>
-                                <td colSpan={activeTab === 'email' ? 6 : 7} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={activeTab === 'user' ? 8 : activeTab === 'email' ? 6 : 7} className="px-6 py-12 text-center text-gray-500">
                                     暂无申请记录
                                 </td>
                             </tr>
                         ) : (
-                            applications.map((app, idx) => (
+                            applications.map((app, idx) => {
+                                const userRowKey = getUserRowKey(app, idx)
+                                const isExpanded = !!expandedUsers[userRowKey]
+                                if (activeTab === 'user') {
+                                    return (
+                                        <React.Fragment key={userRowKey}>
+                                            <tr className="hover:bg-gray-50">
+                                                <td className="px-6 py-4">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-900">{app.username || app.userNickname || app.user_id || '未知用户'}</span>
+                                                        <span className="text-xs text-gray-500">{app.user_email || app.email || app.userEmail || '-'}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {formatDateTime(app.user_created_at)}
+                                                </td>
+                                                {userSortItems.map((item) => (
+                                                    <td key={item.key} className="px-4 py-4 whitespace-nowrap text-center">
+                                                        <span className={`inline-flex min-w-[52px] items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-semibold ${item.tone}`}>
+                                                            {getCountValue(app, item.key as keyof Application)}
+                                                        </span>
+                                                    </td>
+                                                ))}
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {formatDateTime(app.updated_at)}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                    <button
+                                                        onClick={() => setExpandedUsers(prev => ({ ...prev, [userRowKey]: !prev[userRowKey] }))}
+                                                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800"
+                                                    >
+                                                        {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                                                        {isExpanded ? '收起' : '查看'} {app.applications?.length || 0}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            {isExpanded && (
+                                                <tr className="bg-slate-50">
+                                                    <td colSpan={8} className="px-6 py-4">
+                                                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+                                                            <table className="min-w-full divide-y divide-slate-100">
+                                                                <thead className="bg-slate-50">
+                                                                    <tr>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">申请方式</th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">岗位/公司</th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">状态</th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">申请时间</th>
+                                                                        <th className="px-4 py-2 text-left text-xs font-medium text-slate-500">简历/备注</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody className="divide-y divide-slate-100">
+                                                                    {(app.applications || []).map((item, detailIdx) => (
+                                                                        <tr key={item.id || `${userRowKey}-${detailIdx}`}>
+                                                                            <td className="px-4 py-3 text-sm text-slate-600">{getApplicationTypeLabel(item)}</td>
+                                                                            <td className="px-4 py-3">
+                                                                                <div className="flex flex-col">
+                                                                                    <span className="text-sm font-medium text-slate-900">{item.job_title || item.jobTitle}</span>
+                                                                                    <span className="text-xs text-slate-500">{item.job_company || item.company}</span>
+                                                                                </div>
+                                                                            </td>
+                                                                            <td className="px-4 py-3 whitespace-nowrap">{getStatusBadge(item.status)}</td>
+                                                                            <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-500">{formatDateTime(item.updated_at || item.created_at)}</td>
+                                                                            <td className="px-4 py-3">
+                                                                                <div className="flex max-w-md flex-col gap-1">
+                                                                                    {(item.resume_name || item.resumeName) && (
+                                                                                        <a
+                                                                                            href={`/api/resumes/${item.resume_id}/download`}
+                                                                                            target="_blank"
+                                                                                            className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
+                                                                                        >
+                                                                                            <FileText className="w-3 h-3" />
+                                                                                            {item.resume_name || item.resumeName}
+                                                                                        </a>
+                                                                                    )}
+                                                                                    {item.notes && (
+                                                                                        <p className="text-xs text-gray-500 bg-gray-50 p-1 rounded">
+                                                                                            "{item.notes}"
+                                                                                        </p>
+                                                                                    )}
+                                                                                </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    ))}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    )
+                                }
+                                return (
                                 <tr key={app.id || idx} className="hover:bg-gray-50">
                                     <td className="px-6 py-4">
                                         {activeTab === 'email' ? (
@@ -383,7 +576,7 @@ export default function AdminApplicationsPage() {
                                     {activeTab !== 'email' && aggregatedSortItems.slice(1).map((item) => (
                                         <td key={item.key} className="px-4 py-4 whitespace-nowrap text-center">
                                             <span className={`inline-flex min-w-[52px] items-center justify-center rounded-lg border px-3 py-1.5 text-sm font-semibold ${item.tone}`}>
-                                                {app[item.key as keyof Application] || 0}
+                                                {getCountValue(app, item.key as keyof Application)}
                                             </span>
                                         </td>
                                     ))}
@@ -430,7 +623,7 @@ export default function AdminApplicationsPage() {
                                         </div>
                                     </td>
                                 </tr>
-                            ))
+                            )})
                         )}
                     </tbody>
                 </table>
