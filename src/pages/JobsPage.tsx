@@ -221,18 +221,33 @@ function buildJobsSearchParams(currentSearch: string, filters: JobFiltersState, 
   const trimmedSearch = searchTerm.trim()
   if (trimmedSearch) params.set('search', trimmedSearch)
 
-  FILTER_ARRAY_URL_KEYS.forEach((key) => {
-    const values = filters[key]
-    if (Array.isArray(values) && values.length > 0) {
-      params.set(key, values.join(','))
-    }
-  })
+  if (trimmedSearch) return params
 
-  if (filters.memberOnly) params.set('memberOnly', 'true')
-  if (filters.isTrusted) params.set('isTrusted', 'true')
-  if (filters.isNew) params.set('isNew', 'true')
+  appendJobFilterParams(params, filters, true)
 
   return params
+}
+
+function appendJobFilterParams(
+  params: URLSearchParams,
+  filters: JobFiltersState,
+  isAuthenticated: boolean,
+  includeFilters = true
+) {
+  if (!includeFilters) return
+
+  if (isAuthenticated && filters.category?.length > 0) params.append('category', filters.category.join(','))
+  if (filters.experienceLevel?.length > 0) params.append('experienceLevel', filters.experienceLevel.join(','))
+  if (filters.location?.length > 0) params.append('location', filters.location.join(','))
+  if (filters.industry?.length > 0) params.append('industry', filters.industry.join(','))
+  if (filters.regionType?.length > 0) params.append('regionType', filters.regionType.join(','))
+  if (filters.sourceType?.length > 0) params.append('sourceType', filters.sourceType.join(','))
+  if (filters.type?.length > 0) params.append('type', filters.type.join(','))
+  if (filters.jobType?.length > 0) params.append('jobType', filters.jobType.join(','))
+  if (filters.salary?.length > 0) params.append('salary', filters.salary.join(','))
+  if (filters.isTrusted) params.append('isTrusted', 'true')
+  if (filters.isNew) params.append('isNew', 'true')
+  if (filters.memberOnly) params.append('memberOnly', 'true')
 }
 
 function normalizeFacetKey(value: string) {
@@ -538,19 +553,9 @@ export default function JobsPage() {
         console.debug('[loadJobsWithFilters] Current filters state:', filters)
       }
 
-      if (searchTerm) queryParams.append('search', searchTerm)
-      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
-      if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
-      if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
-      if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
-      if (filters.regionType?.length > 0) queryParams.append('regionType', filters.regionType.join(','))
-      if (filters.sourceType?.length > 0) queryParams.append('sourceType', filters.sourceType.join(','))
-      if (filters.type?.length > 0) queryParams.append('type', filters.type.join(','))
-      if (filters.jobType?.length > 0) queryParams.append('jobType', filters.jobType.join(','))
-      if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
-      if (filters.isTrusted) queryParams.append('isTrusted', 'true')
-      if (filters.isNew) queryParams.append('isNew', 'true')
-      if ((filters as any).memberOnly) queryParams.append('memberOnly', 'true')
+      const hasKeywordSearch = Boolean(searchTerm.trim())
+      if (hasKeywordSearch) queryParams.append('search', searchTerm.trim())
+      appendJobFilterParams(queryParams, filters, isAuthenticated, !hasKeywordSearch)
       if (sortBy === 'relevance' && !hasCurrentJobIntent) {
         if (habitBoost) {
           Object.entries(habitBoost).forEach(([key, value]) => queryParams.append(key, value))
@@ -734,19 +739,9 @@ export default function JobsPage() {
       queryParams.append('sortBy', sortBy === 'recent' ? 'recent' : 'relevance')
       queryParams.append('isApproved', 'true')
 
-      if (searchTerm) queryParams.append('search', searchTerm)
-      if (isAuthenticated && filters.category?.length > 0) queryParams.append('category', filters.category.join(','))
-      if (filters.experienceLevel?.length > 0) queryParams.append('experienceLevel', filters.experienceLevel.join(','))
-      if (filters.location?.length > 0) queryParams.append('location', filters.location.join(','))
-      if (filters.industry?.length > 0) queryParams.append('industry', filters.industry.join(','))
-      if (filters.regionType?.length > 0) queryParams.append('regionType', filters.regionType.join(','))
-      if (filters.sourceType?.length > 0) queryParams.append('sourceType', filters.sourceType.join(','))
-      if (filters.type?.length > 0) queryParams.append('type', filters.type.join(','))
-      if (filters.jobType?.length > 0) queryParams.append('jobType', filters.jobType.join(','))
-      if (filters.salary?.length > 0) queryParams.append('salary', filters.salary.join(','))
-      if (filters.isTrusted) queryParams.append('isTrusted', 'true')
-      if (filters.isNew) queryParams.append('isNew', 'true')
-      if ((filters as any).memberOnly) queryParams.append('memberOnly', 'true')
+      const hasKeywordSearch = Boolean(searchTerm.trim())
+      if (hasKeywordSearch) queryParams.append('search', searchTerm.trim())
+      appendJobFilterParams(queryParams, filters, isAuthenticated, !hasKeywordSearch)
 
       const data = await fetchJobsJsonWithDedupe(`/api/data/processed-jobs?${queryParams.toString()}`, { signal })
       if (signal.aborted) return
@@ -955,6 +950,13 @@ export default function JobsPage() {
 
     const paramKeys = ['category', 'experienceLevel', 'industry', 'regionType', 'region', 'sourceType', 'location', 'type', 'jobType', 'salary', 'memberOnly', 'isTrusted', 'isNew']
     const hasFilterParam = paramKeys.some(key => params.has(key))
+    if (search.trim() && hasFilterParam) {
+      const nextFilters = DEFAULT_JOB_FILTERS
+      setFilters(nextFilters)
+      const cleanedParams = buildJobsSearchParams(location.search, nextFilters, search)
+      navigate({ search: cleanedParams.toString() }, { replace: true })
+      return
+    }
     if (hasFilterParam) {
       setFilters(prev => {
         const urlRegionType = readCsvParam(params, 'regionType')
@@ -982,7 +984,7 @@ export default function JobsPage() {
         return JSON.stringify(next) === JSON.stringify(prev) ? prev : next
       })
     }
-  }, [isAuthenticated, location.search])
+  }, [isAuthenticated, location.search, navigate])
 
   const toggleSaveJob = async (jobId: string, job?: Job) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
@@ -1285,7 +1287,12 @@ export default function JobsPage() {
                   onSearchChange={(value) => {
                     hasManualJobSelectionRef.current = false
                     setSearchTerm(value)
-                    syncJobListUrl(filters, value)
+                    const shouldClearFilters = Boolean(value.trim()) && hasActiveJobIntent('', filters)
+                    const nextFilters = shouldClearFilters ? DEFAULT_JOB_FILTERS : filters
+                    if (shouldClearFilters) {
+                      setFilters(nextFilters)
+                    }
+                    syncJobListUrl(nextFilters, value)
                   }}
                   sortBy={sortBy}
                   listMode={listMode}

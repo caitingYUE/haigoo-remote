@@ -3,7 +3,8 @@ import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
     Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
-    Globe as GlobeIcon, Briefcase as BriefcaseIcon, Linkedin as LinkedinIcon
+    Globe as GlobeIcon, Briefcase as BriefcaseIcon, Linkedin as LinkedinIcon,
+    ChevronDown, Check
 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany, ReferralContact } from '../services/trusted-companies-service'
 import { CompanyIndustry } from '../types/rss-types'
@@ -33,6 +34,7 @@ export default function AdminTrustedCompaniesPage() {
     const [selectedCompanyForJobs, setSelectedCompanyForJobs] = useState<TrustedCompany | null>(null)
     const [formData, setFormData] = useState<Partial<TrustedCompany>>({})
     const [saving, setSaving] = useState(false)
+    const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false)
 
     // New states for automation features
     const [crawlingId, setCrawlingId] = useState<string | null>(null)
@@ -52,6 +54,7 @@ export default function AdminTrustedCompaniesPage() {
     const [processingImage, setProcessingImage] = useState(false)
     const [coverUrlInput, setCoverUrlInput] = useState('')
     const fileInputRef = useRef<HTMLInputElement | null>(null)
+    const industryDropdownRef = useRef<HTMLDivElement | null>(null)
 
     const normalizeEmailType = (emailType?: string) => {
         const map: Record<string, string> = {
@@ -208,6 +211,16 @@ export default function AdminTrustedCompaniesPage() {
         loadTagConfig()
     }, [])
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (industryDropdownRef.current && !industryDropdownRef.current.contains(event.target as Node)) {
+                setIndustryDropdownOpen(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
     const handleSort = (field: string) => {
         if (sortBy === field) {
             setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
@@ -252,6 +265,7 @@ export default function AdminTrustedCompaniesPage() {
         }
 
         resetCropperState()
+        setIndustryDropdownOpen(false)
         setIsModalOpen(true)
     }
 
@@ -265,6 +279,7 @@ export default function AdminTrustedCompaniesPage() {
         })
         setCoverUrlInput('')
         resetCropperState()
+        setIndustryDropdownOpen(false)
         setIsModalOpen(true)
     }
 
@@ -874,16 +889,50 @@ export default function AdminTrustedCompaniesPage() {
                                             AI分析
                                         </button>
                                     </div>
-                                    <select
-                                        value={formData.industry || ''}
-                                        onChange={e => setFormData({ ...formData, industry: e.target.value as CompanyIndustry })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                    >
-                                        <option value="">选择行业</option>
-                                        {industries.map(ind => (
-                                            <option key={ind} value={ind}>{ind}</option>
-                                        ))}
-                                    </select>
+                                    <div className="relative" ref={industryDropdownRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIndustryDropdownOpen(open => !open)}
+                                            className={`flex w-full items-center justify-between gap-2 rounded border bg-white px-3 py-2 text-left text-gray-900 transition focus:outline-none focus:ring-2 focus:ring-indigo-500 ${industryDropdownOpen ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-gray-300'}`}
+                                        >
+                                            <span className={formData.industry ? 'truncate' : 'truncate text-gray-400'}>
+                                                {formData.industry || '选择行业'}
+                                            </span>
+                                            <ChevronDown className={`h-4 w-4 flex-shrink-0 text-gray-500 transition-transform ${industryDropdownOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+                                        {industryDropdownOpen && (
+                                            <div className="absolute left-0 right-0 top-full z-[80] mt-1 max-h-[min(48vh,360px)] overflow-y-auto rounded-lg border border-gray-200 bg-white p-1 shadow-xl">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setFormData({ ...formData, industry: '' as CompanyIndustry })
+                                                        setIndustryDropdownOpen(false)
+                                                    }}
+                                                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${!formData.industry ? 'bg-indigo-50 font-medium text-indigo-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                                                >
+                                                    <span>选择行业</span>
+                                                    {!formData.industry ? <Check className="h-4 w-4" /> : null}
+                                                </button>
+                                                {industries.map(ind => {
+                                                    const selected = formData.industry === ind
+                                                    return (
+                                                        <button
+                                                            key={ind}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setFormData({ ...formData, industry: ind as CompanyIndustry })
+                                                                setIndustryDropdownOpen(false)
+                                                            }}
+                                                            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm ${selected ? 'bg-indigo-50 font-medium text-indigo-700' : 'text-gray-700 hover:bg-gray-50'}`}
+                                                        >
+                                                            <span className="truncate">{ind}</span>
+                                                            {selected ? <Check className="h-4 w-4 flex-shrink-0" /> : null}
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
