@@ -28,7 +28,8 @@ import {
 type Period = 'day' | 'week' | 'month';
 type Segment = 'all' | 'guest' | 'free' | 'member';
 type MetricMode = 'total' | 'per_capita';
-type ViewKey = 'core' | 'copilot' | 'membership';
+type ViewKey = 'core' | 'search' | 'copilot' | 'membership';
+type SearchSort = 'searchPv' | 'searchUv' | 'emptyRate' | 'lastSearchedAt';
 
 interface FunnelStep {
     stepId: string;
@@ -57,6 +58,60 @@ interface TrendPoint {
     date: string;
     uv: number;
     pv: number;
+}
+
+interface SearchTrendPoint {
+    date: string;
+    searchPv: number;
+    searchUv: number;
+    emptyPv: number;
+}
+
+interface SearchTermInsight {
+    key: string;
+    term: string;
+    group: string;
+    normalized: string | null;
+    hash: string | null;
+    searchPv: number;
+    searchUv: number;
+    emptyPv: number;
+    emptyRate: number;
+    avgResultCount: number;
+    lastSearchedAt: string | null;
+    guestUv: number;
+    loggedInUv: number;
+    sampleFilters: string[];
+    recentSearches: Array<{
+        created_at?: string;
+        event_name?: string;
+        outcome?: string;
+        result_count?: number | null;
+    }>;
+    suggestion: string;
+}
+
+interface SearchInsightsData {
+    page: number;
+    limit: number;
+    total: number;
+    hasMore: boolean;
+    summary: {
+        searchPv: number;
+        searchUv: number;
+        emptyPv: number;
+        emptyRate: number;
+        termCount: number;
+        emptyTermCount: number;
+    };
+    terms: SearchTermInsight[];
+    trend: SearchTrendPoint[];
+    topEmptyTerms: Array<{
+        term: string;
+        group: string;
+        emptyPv: number;
+        searchPv: number;
+    }>;
 }
 
 interface CopilotTrendPoint {
@@ -176,6 +231,7 @@ interface DashboardData {
 
 const VIEW_OPTIONS: { key: ViewKey; label: string; description: string }[] = [
     { key: 'core', label: '核心漏斗', description: '求职链路 + 免费转会员漏斗' },
+    { key: 'search', label: '搜索洞察', description: '搜索词、无结果词和供给缺口' },
     { key: 'copilot', label: 'Copilot需求', description: '岗位方向与类型需求洞察' },
     { key: 'membership', label: '会员体验', description: '免费功能体验与付费转化' },
 ];
@@ -255,6 +311,18 @@ function formatDateLabel(value: string) {
     return `${date.getMonth() + 1}/${date.getDate()}`;
 }
 
+function formatDateTime(value?: string | null) {
+    if (!value) return '-';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '-';
+    return new Intl.DateTimeFormat('zh-CN', {
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+    }).format(date);
+}
+
 export default function AdminTrackingDashboard() {
     const { token } = useAuth();
     const [period, setPeriod] = useState<Period>('week');
@@ -264,7 +332,16 @@ export default function AdminTrackingDashboard() {
     const [loading, setLoading] = useState(true);
     const [data, setData] = useState<DashboardData | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [searchInsights, setSearchInsights] = useState<SearchInsightsData | null>(null);
+    const [searchInsightsLoading, setSearchInsightsLoading] = useState(false);
+    const [searchInsightsError, setSearchInsightsError] = useState<string | null>(null);
+    const [searchOnlyEmpty, setSearchOnlyEmpty] = useState(false);
+    const [searchSort, setSearchSort] = useState<SearchSort>('searchPv');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchPage, setSearchPage] = useState(1);
+    const [expandedSearchTerm, setExpandedSearchTerm] = useState<string | null>(null);
     const requestSeqRef = useRef(0);
+    const searchRequestSeqRef = useRef(0);
 
     const fetchData = async ({ preserveData = false }: { preserveData?: boolean } = {}) => {
         const requestSeq = requestSeqRef.current + 1;
@@ -282,7 +359,7 @@ export default function AdminTrackingDashboard() {
                 period,
                 segment,
                 metricMode,
-                view: activeView,
+                view: activeView === 'search' ? 'core' : activeView,
             });
             const res = await fetch(`/api/analytics-stats?${params.toString()}`, { headers });
             const json = await res.json();
@@ -307,6 +384,60 @@ export default function AdminTrackingDashboard() {
     useEffect(() => {
         fetchData({ preserveData: false });
     }, [period, segment, metricMode, activeView, token]);
+
+    const fetchSearchInsights = async ({ preserveData = false }: { preserveData?: boolean } = {}) => {
+        if (activeView !== 'search') return;
+        const requestSeq = searchRequestSeqRef.current + 1;
+        searchRequestSeqRef.current = requestSeq;
+        try {
+            setSearchInsightsLoading(true);
+            setSearchInsightsError(null);
+            if (!preserveData) {
+                setSearchInsights(null);
+            }
+            const headers: Record<string, string> = {};
+            if (token) headers.Authorization = `Bearer ${token}`;
+            const params = new URLSearchParams({
+                period,
+                segment,
+                sort: searchSort,
+                page: String(searchPage),
+                limit: '20',
+            });
+            if (searchOnlyEmpty) params.set('onlyEmpty', 'true');
+            if (searchQuery.trim()) params.set('q', searchQuery.trim());
+            const response = await fetch(`/api/admin/search-insights?${params.toString()}`, { headers });
+            const json = await response.json();
+            if (!response.ok || !json.success) {
+                throw new Error(json.error || '搜索洞察加载失败');
+            }
+            if (requestSeq !== searchRequestSeqRef.current) return;
+            setSearchInsights(json.data);
+        } catch (fetchError: any) {
+            if (requestSeq !== searchRequestSeqRef.current) return;
+            console.error('Failed to fetch search insights:', fetchError);
+            setSearchInsightsError(fetchError?.message || '搜索洞察加载失败');
+        } finally {
+            if (requestSeq === searchRequestSeqRef.current) {
+                setSearchInsightsLoading(false);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (activeView !== 'search') return;
+        fetchSearchInsights({ preserveData: false });
+    }, [activeView, period, segment, searchOnlyEmpty, searchSort, searchPage, token]);
+
+    useEffect(() => {
+        if (activeView !== 'search') return;
+        const timer = window.setTimeout(() => {
+            setSearchPage(1);
+            fetchSearchInsights({ preserveData: true });
+        }, 350);
+        return () => window.clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]);
 
     const overviewCards = useMemo(() => {
         if (!data) return [];
@@ -396,6 +527,41 @@ export default function AdminTrackingDashboard() {
             },
         ];
     }, [data]);
+
+    const searchInsightCards = useMemo(() => {
+        if (!searchInsights) return [];
+        const summary = searchInsights.summary;
+        return [
+            {
+                label: '搜索 UV',
+                value: formatNum(summary.searchUv),
+                description: `搜索 PV ${formatNum(summary.searchPv)}`,
+                footnote: `聚合词 ${formatNum(summary.termCount)} 个`,
+                icon: <Users className="w-4 h-4 text-sky-600" />,
+            },
+            {
+                label: '搜索 PV',
+                value: formatNum(summary.searchPv),
+                description: `${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]}`,
+                footnote: '仅统计已通过脱敏校验的搜索词',
+                icon: <Search className="w-4 h-4 text-indigo-600" />,
+            },
+            {
+                label: '无结果率',
+                value: formatPercent(summary.emptyRate),
+                description: `无结果 ${formatNum(summary.emptyPv)} 次`,
+                footnote: '用于判断岗位供给和搜索召回问题',
+                icon: <Activity className="w-4 h-4 text-amber-600" />,
+            },
+            {
+                label: '无结果词',
+                value: formatNum(summary.emptyTermCount),
+                description: '至少出现过一次无结果的词组',
+                footnote: '优先查看“无结果搜索”列表',
+                icon: <Target className="w-4 h-4 text-rose-600" />,
+            },
+        ];
+    }, [period, searchInsights, segment]);
 
     const copilotSummaryCards = useMemo(() => {
         if (!data) return [];
@@ -706,6 +872,160 @@ export default function AdminTrackingDashboard() {
                 </div>
             )}
 
+            {activeView === 'search' && (
+                <div className="space-y-6">
+                    <div className="flex flex-col gap-3 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_-20px_rgba(15,23,42,0.22)] xl:flex-row xl:items-center xl:justify-between">
+                        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2">
+                            <Search className="h-4 w-4 flex-shrink-0 text-slate-400" />
+                            <input
+                                value={searchQuery}
+                                onChange={(event) => setSearchQuery(event.target.value)}
+                                placeholder="搜索词组，例如 产品经理 / frontend"
+                                className="w-full bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                            />
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                            <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600">
+                                <input
+                                    type="checkbox"
+                                    checked={searchOnlyEmpty}
+                                    onChange={(event) => {
+                                        setSearchOnlyEmpty(event.target.checked);
+                                        setSearchPage(1);
+                                    }}
+                                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                />
+                                仅看无结果
+                            </label>
+                            <select
+                                value={searchSort}
+                                onChange={(event) => {
+                                    setSearchSort(event.target.value as SearchSort);
+                                    setSearchPage(1);
+                                }}
+                                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            >
+                                <option value="searchPv">按搜索次数</option>
+                                <option value="searchUv">按搜索人数</option>
+                                <option value="emptyRate">按无结果率</option>
+                                <option value="lastSearchedAt">按最近搜索</option>
+                            </select>
+                            <button
+                                onClick={() => fetchSearchInsights({ preserveData: true })}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                            >
+                                <RefreshCcw className="h-4 w-4" />
+                                刷新搜索
+                            </button>
+                        </div>
+                    </div>
+
+                    {searchInsightsError && (
+                        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {searchInsightsError}
+                        </div>
+                    )}
+
+                    {searchInsightsLoading && !searchInsights ? (
+                        <div className="flex h-48 items-center justify-center rounded-[28px] border border-slate-200 bg-white">
+                            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600"></div>
+                        </div>
+                    ) : searchInsights ? (
+                        <>
+                            <div className="grid gap-4 lg:grid-cols-4">
+                                {searchInsightCards.map((card) => (
+                                    <MetricCard key={card.label} {...card} />
+                                ))}
+                            </div>
+
+                            <div className="grid gap-6 xl:grid-cols-[minmax(0,1.35fr)_minmax(360px,0.65fr)]">
+                                <Panel
+                                    title="热门搜索方向"
+                                    subtitle="按规范化词组聚合，同义词已合并；用于判断用户正在关注的岗位方向。"
+                                    icon={<Search className="h-5 w-5 text-indigo-600" />}
+                                >
+                                    <SearchInsightTable
+                                        terms={searchInsights.terms}
+                                        expandedKey={expandedSearchTerm}
+                                        onToggle={(key) => setExpandedSearchTerm(expandedSearchTerm === key ? null : key)}
+                                    />
+                                    <SearchPagination
+                                        page={searchPage}
+                                        total={searchInsights.total}
+                                        limit={searchInsights.limit}
+                                        hasMore={searchInsights.hasMore}
+                                        onPageChange={setSearchPage}
+                                    />
+                                </Panel>
+
+                                <Panel
+                                    title="无结果搜索"
+                                    subtitle="优先关注高频且无结果率高的词，用于补岗位、调召回或检查标签。"
+                                    icon={<Target className="h-5 w-5 text-rose-600" />}
+                                >
+                                    <div className="space-y-3">
+                                        {searchInsights.topEmptyTerms.length === 0 && (
+                                            <EmptyState text="当前周期暂无无结果搜索词" />
+                                        )}
+                                        {searchInsights.topEmptyTerms.map((item, index) => (
+                                            <div key={`${item.group}-${index}`} className="rounded-2xl border border-rose-100 bg-rose-50/60 p-4">
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <div>
+                                                        <div className="font-semibold text-slate-900">{item.term}</div>
+                                                        <div className="mt-1 text-xs text-slate-500">{item.group}</div>
+                                                    </div>
+                                                    <div className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-rose-600">
+                                                        无结果 {formatNum(item.emptyPv)}
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 text-xs text-slate-500">
+                                                    总搜索 {formatNum(item.searchPv)} 次，建议优先检查岗位供给和标签召回。
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </Panel>
+                            </div>
+
+                            <Panel
+                                title="搜索趋势"
+                                subtitle="搜索 PV 与无结果 PV 的每日变化，可用于观察运营活动或岗位供给调整后的变化。"
+                                icon={<TrendingUp className="h-5 w-5 text-emerald-600" />}
+                            >
+                                <div className="h-[300px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={searchInsights.trend} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                                            <XAxis
+                                                dataKey="date"
+                                                tickFormatter={formatDateLabel}
+                                                tick={{ fontSize: 12, fill: '#64748b' }}
+                                                axisLine={false}
+                                                tickLine={false}
+                                            />
+                                            <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
+                                            <Tooltip
+                                                labelFormatter={(label) => new Date(label).toLocaleDateString()}
+                                                formatter={(value: any, name?: string) => [
+                                                    value,
+                                                    name === 'emptyPv' ? '无结果 PV' : name === 'searchUv' ? '搜索 UV' : '搜索 PV',
+                                                ]}
+                                                contentStyle={{ borderRadius: '16px', borderColor: '#e2e8f0' }}
+                                            />
+                                            <Line type="monotone" dataKey="searchPv" stroke="#4f46e5" strokeWidth={3} dot={false} />
+                                            <Line type="monotone" dataKey="searchUv" stroke="#0ea5e9" strokeWidth={2} dot={false} />
+                                            <Line type="monotone" dataKey="emptyPv" stroke="#f97316" strokeWidth={2} dot={false} />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            </Panel>
+                        </>
+                    ) : (
+                        <EmptyState text="暂无搜索洞察数据" />
+                    )}
+                </div>
+            )}
+
             {activeView === 'copilot' && data && (
                 <div className="space-y-6">
                     <div className="grid gap-4 lg:grid-cols-3">
@@ -987,6 +1307,172 @@ function FunnelCard({ step }: { step: FunnelStep }) {
                     <div className="mt-1 font-semibold text-slate-700">{formatNum(step.dropoffUv)}</div>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function SearchInsightTable({
+    terms,
+    expandedKey,
+    onToggle,
+}: {
+    terms: SearchTermInsight[];
+    expandedKey: string | null;
+    onToggle: (key: string) => void;
+}) {
+    if (!terms.length) {
+        return <EmptyState text="当前筛选下暂无搜索词数据" />;
+    }
+
+    return (
+        <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50">
+                    <tr>
+                        <th className="px-4 py-3 text-left font-medium text-slate-500">搜索词组</th>
+                        <th className="px-4 py-3 text-right font-medium text-slate-500">搜索 PV</th>
+                        <th className="px-4 py-3 text-right font-medium text-slate-500">UV</th>
+                        <th className="px-4 py-3 text-right font-medium text-slate-500">无结果率</th>
+                        <th className="px-4 py-3 text-right font-medium text-slate-500">平均结果</th>
+                        <th className="px-4 py-3 text-left font-medium text-slate-500">建议</th>
+                        <th className="px-4 py-3 text-right font-medium text-slate-500">最近搜索</th>
+                    </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 bg-white">
+                    {terms.map((term) => {
+                        const isExpanded = expandedKey === term.key;
+                        return (
+                            <React.Fragment key={term.key}>
+                                <tr
+                                    className="cursor-pointer hover:bg-slate-50"
+                                    onClick={() => onToggle(term.key)}
+                                >
+                                    <td className="px-4 py-3">
+                                        <div className="font-semibold text-slate-900">{term.term}</div>
+                                        <div className="mt-1 text-xs text-slate-500">
+                                            {term.normalized || term.group}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatNum(term.searchPv)}</td>
+                                    <td className="px-4 py-3 text-right text-slate-600">{formatNum(term.searchUv)}</td>
+                                    <td className="px-4 py-3 text-right">
+                                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${term.emptyRate >= 0.5
+                                            ? 'bg-rose-50 text-rose-600'
+                                            : term.emptyRate > 0
+                                                ? 'bg-amber-50 text-amber-600'
+                                                : 'bg-emerald-50 text-emerald-600'
+                                            }`}>
+                                            {formatPercent(term.emptyRate)}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-slate-600">{term.avgResultCount.toFixed(1)}</td>
+                                    <td className="px-4 py-3">
+                                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${term.suggestion === '补岗位'
+                                            ? 'bg-rose-50 text-rose-600'
+                                            : term.suggestion === '调搜索'
+                                                ? 'bg-amber-50 text-amber-600'
+                                                : term.suggestion === '检查标签'
+                                                    ? 'bg-sky-50 text-sky-600'
+                                                    : 'bg-slate-100 text-slate-500'
+                                            }`}>
+                                            {term.suggestion}
+                                        </span>
+                                    </td>
+                                    <td className="px-4 py-3 text-right text-slate-500">{formatDateTime(term.lastSearchedAt)}</td>
+                                </tr>
+                                {isExpanded && (
+                                    <tr>
+                                        <td colSpan={7} className="bg-slate-50 px-4 py-4">
+                                            <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                                                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">用户分布</div>
+                                                    <div className="mt-3 grid grid-cols-2 gap-3">
+                                                        <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                                            <div className="text-xs text-slate-400">游客 UV</div>
+                                                            <div className="mt-1 text-lg font-bold text-slate-900">{formatNum(term.guestUv)}</div>
+                                                        </div>
+                                                        <div className="rounded-xl bg-slate-50 px-3 py-2">
+                                                            <div className="text-xs text-slate-400">登录 UV</div>
+                                                            <div className="mt-1 text-lg font-bold text-slate-900">{formatNum(term.loggedInUv)}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="mt-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">关联筛选项</div>
+                                                    <div className="mt-2 flex flex-wrap gap-2">
+                                                        {term.sampleFilters.length === 0 ? (
+                                                            <span className="text-xs text-slate-400">暂无筛选项记录</span>
+                                                        ) : term.sampleFilters.map((filter, index) => (
+                                                            <span key={`${filter}-${index}`} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+                                                                {filter}
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                                                    <div className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">最近事件</div>
+                                                    <div className="mt-3 space-y-2">
+                                                        {term.recentSearches.length === 0 ? (
+                                                            <div className="text-xs text-slate-400">暂无最近事件</div>
+                                                        ) : term.recentSearches.map((event, index) => (
+                                                            <div key={`${event.created_at}-${index}`} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                                                                <div>
+                                                                    <div className="text-sm font-medium text-slate-800">{event.event_name || 'search_event'}</div>
+                                                                    <div className="text-xs text-slate-400">{formatDateTime(event.created_at)}</div>
+                                                                </div>
+                                                                <div className="text-right text-xs text-slate-500">
+                                                                    <div>{event.outcome || 'succeeded'}</div>
+                                                                    <div>结果 {event.result_count ?? '-'}</div>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function SearchPagination({
+    page,
+    total,
+    limit,
+    hasMore,
+    onPageChange,
+}: {
+    page: number;
+    total: number;
+    limit: number;
+    hasMore: boolean;
+    onPageChange: (page: number) => void;
+}) {
+    if (total <= limit && page <= 1) return null;
+    const totalPages = Math.max(1, Math.ceil(total / limit));
+    return (
+        <div className="mt-4 flex items-center justify-end gap-3 text-sm">
+            <button
+                onClick={() => onPageChange(Math.max(1, page - 1))}
+                disabled={page <= 1}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+                上一页
+            </button>
+            <span className="text-slate-500">
+                {page} / {totalPages}
+            </span>
+            <button
+                onClick={() => onPageChange(page + 1)}
+                disabled={!hasMore}
+                className="rounded-2xl border border-slate-200 bg-white px-4 py-2 font-medium text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+                下一页
+            </button>
         </div>
     );
 }

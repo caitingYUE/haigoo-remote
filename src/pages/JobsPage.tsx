@@ -13,6 +13,7 @@ import { trackingService } from '../services/tracking-service'
 import { useDebounce } from '../hooks/useDebounce'
 import { readMatchScoreRefreshMarker } from '../utils/match-score-refresh'
 import { rememberLatestJobSearch } from '../utils/member-recommendations'
+import { buildSearchTermTrackingProperties } from '../utils/search-term-insights'
 import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
 
 const JobDetailModal = lazy(() => import('../components/JobDetailModal'))
@@ -594,12 +595,14 @@ export default function JobsPage() {
       } else {
         // 首次加载或筛选条件变化时，替换数据
         const newJobs = data.jobs || []
+        const searchTermProperties = buildSearchTermTrackingProperties(searchTerm, 'jobs_page')
         setJobs(newJobs)
         trackingService.track(newJobs.length > 0 ? 'search_result_rendered' : 'search_empty', {
           event_family: 'search',
           outcome: 'succeeded',
           feature_key: 'job_search',
           source_key: 'jobs_list',
+          ...searchTermProperties,
           result_count: Number(data.total ?? newJobs.length ?? 0),
           is_empty_result: newJobs.length === 0,
         })
@@ -870,6 +873,7 @@ export default function JobsPage() {
         event_family: 'search',
         outcome: 'started',
         feature_key: 'job_search',
+        ...buildSearchTermTrackingProperties(debouncedSearchTerm, 'jobs_page'),
         keyword: debouncedSearchTerm,
       })
       localStorage.setItem('haigoo_last_non_empty_job_search', debouncedSearchTerm)

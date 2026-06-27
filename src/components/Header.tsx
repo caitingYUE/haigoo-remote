@@ -294,16 +294,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
             </Link>
 
             <Link
-              to="/trusted-companies"
-              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
-            >
-              精选企业
-            </Link>
-
-            <Link
               to="/corporate-english"
               className={`relative inline-flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/corporate-english')
                   ? 'text-slate-900 font-bold'
@@ -311,6 +301,16 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 }`}
             >
               CEO 访谈
+            </Link>
+
+            <Link
+              to="/trusted-companies"
+              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
+                  ? 'text-slate-900 font-bold'
+                  : 'text-slate-500 font-medium hover:text-indigo-600'
+                }`}
+            >
+              精选企业
             </Link>
 
             <Link
@@ -599,16 +599,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 全部岗位
               </Link>
               <Link
-                to="/trusted-companies"
-                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                精选企业
-              </Link>
-              <Link
                 to="/corporate-english"
                 className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/corporate-english')
                   ? 'bg-indigo-50 text-indigo-700'
@@ -617,6 +607,16 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span>CEO 访谈</span>
+              </Link>
+              <Link
+                to="/trusted-companies"
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
+                  ? 'bg-indigo-50 text-indigo-700'
+                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                精选企业
               </Link>
               <Link
                 to="/profile?tab=about"
