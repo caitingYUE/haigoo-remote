@@ -16,6 +16,8 @@ import {
 import { extractJobSkillKeywords } from '../utils/job-skill-extractor';
 import { appendTagInput, joinTagInput, splitTagInput } from '../utils/tag-input';
 
+const APPLICATION_GUIDE_LIMIT = 1200;
+
 interface EditJobModalProps {
   job: ProcessedJobData;
   onSave: (updatedJob: Partial<ProcessedJobData>, shouldClose?: boolean) => void;
@@ -103,6 +105,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isGuideEditorExpanded, setIsGuideEditorExpanded] = useState(false);
 
   const updateTranslationField = (field: 'title' | 'description', value: string) => {
     setFormData(prev => ({
@@ -772,21 +775,30 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
                     className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                   />
-                  <span className="text-[13px] font-medium text-slate-700">设为精选岗位</span>
+                  <span className="text-[13px] font-medium text-slate-700">首页精选展示</span>
                   <Star className={`w-3.5 h-3.5 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
                 </label>
 
                 <div>
                   <div className="mb-1.5 flex items-center justify-between gap-2">
-                    <label className="text-[13px] font-medium text-slate-700">精选文案</label>
-                    <span className="text-[11px] text-slate-400">{formData.featuredReason.length}/120</span>
+                    <label className="text-[13px] font-medium text-slate-700">岗位申请指南</label>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsGuideEditorExpanded(value => !value)}
+                        className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500 hover:border-indigo-200 hover:text-indigo-600"
+                      >
+                        {isGuideEditorExpanded ? '收起' : '展开'}
+                      </button>
+                      <span className="text-[11px] text-slate-400">{formData.featuredReason.length}/{APPLICATION_GUIDE_LIMIT}</span>
+                    </div>
                   </div>
                   <textarea
                     value={formData.featuredReason}
-                    maxLength={120}
-                    onChange={(e) => setFormData({ ...formData, featuredReason: e.target.value.slice(0, 120) })}
-                    className="min-h-[68px] w-full resize-y rounded-md border border-slate-300 bg-white px-2.5 py-2 text-[13px] leading-5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
-                    placeholder="例如：适合想转向 B2B SaaS 的产品设计师，团队远程协作成熟。"
+                    maxLength={APPLICATION_GUIDE_LIMIT}
+                    onChange={(e) => setFormData({ ...formData, featuredReason: e.target.value.slice(0, APPLICATION_GUIDE_LIMIT) })}
+                    className={`${isGuideEditorExpanded ? 'min-h-[180px]' : 'min-h-[72px]'} w-full resize-y rounded-md border border-slate-300 bg-white px-2.5 py-2 text-[13px] leading-5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500`}
+                    placeholder="填写投递重点、申请路径、邮件/官网申请注意事项。"
                   />
                 </div>
               </div>

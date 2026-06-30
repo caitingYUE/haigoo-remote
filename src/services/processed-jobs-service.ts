@@ -209,6 +209,8 @@ class ProcessedJobsService {
         memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
         featuredReason: job.featuredReason || job.featured_reason || undefined,
+        applicationCount: Number(job.applicationCount ?? job.application_count ?? 0),
+        isHotApplication: Boolean(job.isHotApplication ?? job.is_hot_application ?? (Number(job.applicationCount ?? job.application_count ?? 0) >= 10)),
         companyIndustry: job.companyIndustry,
         companyTags: job.companyTags,
         companyWebsite: job.companyWebsite,
@@ -330,6 +332,8 @@ class ProcessedJobsService {
         memberOnly: Boolean(job.memberOnly ?? job.member_only),
         isFeatured: job.isFeatured,
         featuredReason: job.featuredReason || job.featured_reason || undefined,
+        applicationCount: Number(job.applicationCount ?? job.application_count ?? 0),
+        isHotApplication: Boolean(job.isHotApplication ?? job.is_hot_application ?? (Number(job.applicationCount ?? job.application_count ?? 0) >= 10)),
         isNew: Boolean(job.isNew ?? job.is_new),
         companyIndustry: job.companyIndustry,
         companyWebsite: job.companyWebsite || job.trusted_website, // Use trusted website if available

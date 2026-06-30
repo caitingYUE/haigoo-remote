@@ -1,54 +1,30 @@
-import React, { useMemo, useState, useRef } from 'react'
-import { ChevronDown, Crown, Lock, CheckCircle2, Lightbulb, Target } from 'lucide-react'
+import React, { useMemo } from 'react'
+import { Upload } from 'lucide-react'
 
 interface MatchDetailsPanelProps {
   matchLevel?: string
   matchDetails?: any
-  matchDetailsLocked?: boolean
-  isMember?: boolean
-  canUseFreeTrial?: boolean
-  freeTrialRemaining?: number
-  isUnlocking?: boolean
-  onUnlockFreeTrial?: () => void
-  onShowUpgrade?: () => void
+  hasResume?: boolean
+  compactUploadPrompt?: boolean
+  onUploadResume?: () => void
   className?: string
 }
 
 export function MatchDetailsPanel({
   matchLevel,
   matchDetails,
-  matchDetailsLocked = false,
-  isMember = false,
-  canUseFreeTrial = false,
-  freeTrialRemaining = 0,
-  isUnlocking = false,
-  onUnlockFreeTrial,
-  onShowUpgrade,
+  hasResume = true,
+  compactUploadPrompt = false,
+  onUploadResume,
   className = ''
 }: MatchDetailsPanelProps) {
-  const [expanded, setExpanded] = useState(false)
-  const contentRef = useRef<HTMLDivElement>(null)
-
   const parsed = useMemo(() => {
     if (!matchDetails) return null
     const summary = String(matchDetails.summary || matchDetails.analysis || matchDetails.text || '').trim()
-    const strengths = Array.isArray(matchDetails.strengths) ? matchDetails.strengths.filter(Boolean).slice(0, 3) : []
-    const evidence = Array.isArray(matchDetails.evidence) ? matchDetails.evidence.filter(Boolean).slice(0, 3) : []
-    const risks = Array.isArray(matchDetails.risks) ? matchDetails.risks.filter(Boolean).slice(0, 2) : []
-    const suggestions = Array.isArray(matchDetails.suggestions) ? matchDetails.suggestions.filter(Boolean).slice(0, 2) : []
-    const verdict = String(matchDetails.verdict || '').trim()
-    const confidence = typeof matchDetails.confidence === 'object' ? matchDetails.confidence : null
     const breakdown = matchDetails.breakdown && typeof matchDetails.breakdown === 'object' ? matchDetails.breakdown : null
-
-    if (!summary && !strengths.length && !suggestions.length && !evidence.length && !risks.length) return null
-    return { summary, strengths, evidence, risks, suggestions, verdict, confidence, breakdown }
+    return { summary, breakdown }
   }, [matchDetails])
 
-  // If no details, fallback to string if possible, or default text
-  const fallbackText = typeof matchDetails === 'string' ? matchDetails : '该岗位与您的简历背景匹配度较高，建议优先投递。'
-
-  const hasRichContent = parsed && (parsed.strengths.length > 0 || parsed.suggestions.length > 0 || parsed.evidence.length > 0 || parsed.risks.length > 0 || !!parsed.breakdown)
-  const isExpandable = hasRichContent || (parsed && parsed.summary.length > 150) || fallbackText.length > 150
   const scoreItems = parsed?.breakdown ? [
     { label: '方向', value: Number(parsed.breakdown.titleMatch) || 0 },
     { label: '角色', value: Number(parsed.breakdown.roleTypeMatch) || 0 },
@@ -58,182 +34,70 @@ export function MatchDetailsPanel({
     { label: '偏好', value: Number(parsed.breakdown.preferenceMatch) || 0 }
   ] : []
 
-  if (matchLevel !== 'high') return null
+  if (!hasResume) {
+    if (compactUploadPrompt) {
+      return (
+        <button
+          type="button"
+          onClick={onUploadResume}
+          className={`flex w-full items-center justify-between gap-3 rounded-[18px] border border-[#dce8ef] bg-white/88 px-4 py-3 text-left shadow-[0_16px_36px_-32px_rgba(52,76,92,0.28)] transition hover:border-[#d8d2ff] hover:bg-white ${className}`}
+        >
+          <span className="min-w-0 text-[13px] font-bold text-slate-700">上传简历后可查看岗位匹配度</span>
+          <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[#6f63f6] px-3 text-[12px] font-black text-white">
+            <Upload className="h-3.5 w-3.5" />
+            上传简历
+          </span>
+        </button>
+      )
+    }
+
+    return (
+      <div className={`rounded-[22px] border border-[#dce8ef] bg-white/92 p-5 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.26)] ${className}`}>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h4 className="text-base font-black tracking-tight text-slate-900">岗位匹配分析</h4>
+            <p className="mt-2 text-sm leading-6 text-slate-600">上传简历后可获取该岗位的匹配度分析。</p>
+          </div>
+          <button
+            type="button"
+            onClick={onUploadResume}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#6f63f6] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition hover:brightness-[1.03]"
+          >
+            <Upload className="h-4 w-4" />
+            上传简历
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (matchLevel !== 'high' || !parsed) return null
 
   return (
-    <div className={`relative overflow-hidden rounded-[26px] border border-[#e1e8f4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,253,255,0.96))] shadow-[0_22px_54px_-44px_rgba(95,99,246,0.18)] ${className}`}>
-      <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-[#d8d2ff]/30 blur-3xl" />
-      <div className="relative z-10 p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <h4 className="text-base font-bold tracking-tight text-slate-900">岗位匹配分析</h4>
-              <span className="inline-flex items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-semibold text-[#6f63f6]">
-                高匹配
-              </span>
-              {matchDetailsLocked && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                  <Crown className="h-3 w-3 text-amber-500" />
-                  Club
-                </span>
-              )}
-            </div>
-          </div>
+    <div className={`relative overflow-hidden rounded-[22px] border border-[#e1e8f4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,253,255,0.96))] p-5 shadow-[0_22px_54px_-44px_rgba(95,99,246,0.18)] ${className}`}>
+      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-[#d8d2ff]/25 blur-3xl" />
+      <div className="relative">
+        <div className="mb-4 flex items-center gap-2">
+          <h4 className="text-base font-black tracking-tight text-slate-900">岗位匹配分析</h4>
+          <span className="inline-flex items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
+            高匹配
+          </span>
         </div>
 
-        {/* Content */}
-        {matchDetailsLocked ? (
-          <div className="rounded-2xl border border-slate-200 bg-white/88 p-4">
-            <div className="mb-3 flex items-start gap-3 text-sm text-slate-600">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-100 bg-slate-50">
-                <Lock className="w-4 h-4 text-slate-400" />
+        {parsed.summary ? (
+          <p className="mb-4 line-clamp-2 text-sm leading-7 text-slate-700">{parsed.summary}</p>
+        ) : null}
+
+        {scoreItems.length > 0 ? (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {scoreItems.map((item) => (
+              <div key={item.label} className="rounded-xl border border-[#e3e9f6] bg-white/92 px-2.5 py-2 text-center shadow-[0_10px_20px_-18px_rgba(95,99,246,0.24)]">
+                <div className="text-[10px] font-black text-slate-500">{item.label}</div>
+                <div className="mt-1 text-sm font-black text-[#6f63f6]">{item.value}</div>
               </div>
-              <p className="mt-0.5 leading-relaxed">
-                {canUseFreeTrial
-                  ? `该岗位支持完整匹配分析。当前账号还可免费体验 ${freeTrialRemaining} 次，Club 权益可查看更多高匹配解析。`
-                  : '该岗位支持完整匹配分析，添加顾问了解后可查看完整匹配依据、风险判断和优化建议。'}
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              {canUseFreeTrial && (
-                <button
-                  onClick={() => onUnlockFreeTrial?.()}
-                  disabled={isUnlocking}
-                  className="w-full sm:w-auto rounded-xl border border-[#d8d2ff] bg-white px-5 py-2.5 text-sm font-semibold text-[#6f63f6] shadow-sm transition-all hover:bg-[#f6f3ff] disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isUnlocking ? '解锁中...' : `免费体验本次分析（剩 ${freeTrialRemaining} 次）`}
-                </button>
-              )}
-              <button
-                onClick={() => onShowUpgrade?.()}
-                className="w-full sm:w-auto rounded-xl bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition-all hover:brightness-[1.03] active:scale-[0.98]"
-              >
-                {isMember ? '查看完整分析' : '了解 Club 权益'}
-              </button>
-            </div>
+            ))}
           </div>
-        ) : (
-          <div>
-            {parsed ? (
-              <div className="space-y-4">
-                {/* Summary (Always partially visible) */}
-                <div className={`text-sm leading-7 text-slate-700 ${!expanded && isExpandable ? 'line-clamp-3' : ''}`}>
-                  {parsed.summary}
-                </div>
-
-                {scoreItems.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-                    {scoreItems.map(item => (
-                      <div key={item.label} className="rounded-xl border border-[#e3e9f6] bg-white/92 px-2.5 py-2 text-center shadow-[0_10px_20px_-18px_rgba(95,99,246,0.24)]">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{item.label}</div>
-                        <div className="mt-1 text-sm font-bold text-[#6f63f6]">{item.value}</div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Collapsible details (Strengths & Suggestions) */}
-                <div
-                  ref={contentRef}
-                  className="grid transition-all duration-300 ease-in-out"
-                  style={{ gridTemplateRows: expanded ? '1fr' : '0fr' }}
-                >
-                  <div className="overflow-hidden">
-                    <div className="mt-1 space-y-4 border-t border-slate-100 pt-3">
-                      {parsed.evidence.length > 0 && (
-                        <div>
-                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                            <Target className="w-3.5 h-3.5 text-[#6f63f6]" />
-                            核心依据
-                          </h5>
-                          <ul className="space-y-2">
-                            {parsed.evidence.map((item: string, i: number) => (
-                              <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
-                                <span className="text-[#6f63f6] font-bold mt-0.5">•</span>
-                                <span>{item}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Strengths */}
-                      {parsed.strengths.length > 0 && (
-                        <div>
-                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                            核心优势
-                          </h5>
-                          <ul className="space-y-2">
-                            {parsed.strengths.map((str: string, i: number) => (
-                              <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
-                                <span className="text-emerald-500 font-bold mt-0.5">•</span>
-                                <span>{str}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {parsed.risks.length > 0 && (
-                        <div>
-                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                            <Lightbulb className="w-3.5 h-3.5 text-rose-500" />
-                            主要风险
-                          </h5>
-                          <ul className="space-y-2">
-                            {parsed.risks.map((risk: string, i: number) => (
-                              <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
-                                <span className="text-rose-500 font-bold mt-0.5">•</span>
-                                <span>{risk}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-
-                      {/* Suggestions */}
-                      {parsed.suggestions.length > 0 && (
-                        <div>
-                          <h5 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-700">
-                            <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                            优化建议
-                          </h5>
-                          <ul className="space-y-2">
-                            {parsed.suggestions.map((sug: string, i: number) => (
-                              <li key={i} className="text-sm text-slate-700 flex items-start gap-2 leading-relaxed">
-                                <span className="text-amber-500 font-bold mt-0.5">•</span>
-                                <span>{sug}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              // Fallback
-              <div className="text-sm text-slate-700 leading-relaxed">
-                {fallbackText}
-              </div>
-            )}
-
-            {/* Toggle Button */}
-            {isExpandable && (
-              <button
-                onClick={() => setExpanded(v => !v)}
-                className="group mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-bold text-[#6f63f6] transition-colors hover:text-[#5f55e8] sm:justify-start"
-              >
-                {expanded ? '收起详情' : '展开完整分析'}
-                <div className={`w-4 h-4 rounded-full bg-[#f6f3ff] flex items-center justify-center transition-colors group-hover:bg-[#ece8ff] ${expanded ? 'rotate-180' : ''}`}>
-                  <ChevronDown className="w-3 h-3" />
-                </div>
-              </button>
-            )}
-          </div>
-        )}
+        ) : null}
       </div>
     </div>
   )

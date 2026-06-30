@@ -122,6 +122,15 @@ const FreshBadge = () => (
    </span>
 );
 
+const HotApplicationBadge = ({ count }: { count: number }) => (
+   <span
+      className="inline-flex h-5 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-2 text-[10px] font-black leading-none text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
+      title={`${count} 位用户已申请`}
+   >
+      🔥 申请热
+   </span>
+);
+
 const GuestMaskedValue = ({ className = 'w-20' }: { className?: string }) => (
    <span
       className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
@@ -238,6 +247,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const rawScoreNum = Math.round(resolvedDisplayScore);
    const showMatchScore = rawScoreNum >= 80;
+   const applicationCount = Number(job.applicationCount || 0);
+   const isHotApplication = Boolean(job.isHotApplication || applicationCount >= 10);
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
    const isCompactFeaturedCard = variant === 'list' && compactFeatured;
    const listCardTone = isActive
@@ -480,6 +491,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </span>
                      ) : null}
                      {isNew ? <FreshBadge /> : null}
+                     {isHotApplication ? <HotApplicationBadge count={applicationCount} /> : null}
                      {isSaved ? (
                         <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]" title="已收藏">
                            <Bookmark className="h-3 w-3 fill-current" />
@@ -601,6 +613,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                               <FreshBadge />
                            </div>
                         )}
+                        {isHotApplication ? <HotApplicationBadge count={applicationCount} /> : null}
                {isFeatured && (
                   <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500" title="精选岗位">
                      <Star className="h-3 w-3 fill-current" />

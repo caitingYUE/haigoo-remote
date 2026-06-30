@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Bookmark,
   BookmarkCheck,
@@ -912,6 +912,7 @@ function ClipCard({
 
 export default function CorporateEnglishPage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated } = useAuth()
   const { showSuccess, showWarning, showError } = useNotificationHelpers()
   const [companies, setCompanies] = useState<CorporateEnglishPublicCompany[]>([])
@@ -922,7 +923,15 @@ export default function CorporateEnglishPage() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false)
   const [activeClipId, setActiveClipId] = useState('')
+  const videoSectionRef = useRef<HTMLElement | null>(null)
   const trackedVideoIdsRef = useRef<Set<string>>(new Set())
+  const queryTargets = useMemo(() => {
+    const params = new URLSearchParams(location.search)
+    return {
+      companyId: params.get('companyId') || params.get('company_id') || '',
+      materialId: params.get('materialId') || params.get('material_id') || ''
+    }
+  }, [location.search])
 
   useEffect(() => {
     let cancelled = false
@@ -932,7 +941,12 @@ export default function CorporateEnglishPage() {
         const nextCompanies = await corporateEnglishPublicService.listCompanies()
         if (cancelled) return
         setCompanies(nextCompanies)
-        setSelectedCompanyId((current) => current || nextCompanies[0]?.companyId || '')
+        setSelectedCompanyId((current) => {
+          if (queryTargets.companyId && nextCompanies.some((company) => company.companyId === queryTargets.companyId)) {
+            return queryTargets.companyId
+          }
+          return current || nextCompanies[0]?.companyId || ''
+        })
       } catch (error) {
         console.error('Failed to load corporate English companies:', error)
         showError('外企英语加载失败', error instanceof Error ? error.message : '请稍后重试')
@@ -944,7 +958,7 @@ export default function CorporateEnglishPage() {
     return () => {
       cancelled = true
     }
-  }, [showError])
+  }, [queryTargets.companyId, showError])
 
   useEffect(() => {
     if (!selectedCompanyId) {
@@ -958,7 +972,12 @@ export default function CorporateEnglishPage() {
         const nextDetail = await corporateEnglishPublicService.getCompany(selectedCompanyId)
         if (cancelled) return
         setDetail(nextDetail)
-        setActiveVideoId(nextDetail.videos[0]?.materialId || '')
+        setActiveVideoId(() => {
+          if (queryTargets.materialId && nextDetail.videos.some((video) => video.materialId === queryTargets.materialId)) {
+            return queryTargets.materialId
+          }
+          return nextDetail.videos[0]?.materialId || ''
+        })
       } catch (error) {
         console.error('Failed to load corporate English detail:', error)
         if (!cancelled) {
@@ -973,7 +992,7 @@ export default function CorporateEnglishPage() {
     return () => {
       cancelled = true
     }
-  }, [selectedCompanyId, showError])
+  }, [queryTargets.materialId, selectedCompanyId, showError])
 
   const activeVideo = useMemo<CorporateEnglishPublicVideo | null>(() => {
     if (!detail) return null
@@ -1009,6 +1028,14 @@ export default function CorporateEnglishPage() {
       company_id: selectedCompanyId
     })
   }, [activeVideo, selectedCompanyId])
+
+  useEffect(() => {
+    if (!queryTargets.companyId && !queryTargets.materialId) return
+    if (!detail || !activeVideo) return
+    window.setTimeout(() => {
+      videoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 120)
+  }, [activeVideo, detail, queryTargets.companyId, queryTargets.materialId])
 
   const visibleCompanies = companies.length > 0 ? companies : [FALLBACK_COMPANY]
   const companyDetailPath = detail?.company.name ? getCompanyDetailPath(detail.company.name) : ''
@@ -1150,7 +1177,7 @@ export default function CorporateEnglishPage() {
                 </div>
               ) : detail && activeVideo ? (
                 <>
-                  <section className="rounded-[28px] border border-[#efe5d8] bg-white/90 p-4 shadow-[0_18px_55px_rgba(122,92,56,0.08)]">
+                  <section ref={videoSectionRef} className="rounded-[28px] border border-[#efe5d8] bg-white/90 p-4 shadow-[0_18px_55px_rgba(122,92,56,0.08)]">
                     <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                       <div className="flex items-center gap-3">
                         <CompanyLogo company={detail.company} />

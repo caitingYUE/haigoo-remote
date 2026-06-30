@@ -86,6 +86,8 @@ export interface Job {
   isFeatured?: boolean
   featuredReason?: string
   isNew?: boolean
+  applicationCount?: number
+  isHotApplication?: boolean
 
   // Language requirements
   languages?: string[]

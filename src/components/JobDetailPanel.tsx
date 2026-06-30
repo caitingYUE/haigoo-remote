@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, X, ChevronRight, ChevronLeft, CheckCircle2, Mail, Linkedin, Calendar, Lock, Star, Leaf } from 'lucide-react'
+import { Share2, Bookmark, MapPin, DollarSign, Building2, Briefcase, X, ChevronRight, ChevronLeft, CheckCircle2, Mail, Linkedin, Calendar, Lock, Star, Leaf, BookOpen, ChevronDown, PlayCircle, Video } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Job } from '../types'
 import { useAuth } from '../contexts/AuthContext'
@@ -20,6 +20,7 @@ import { resolveMatchLevel } from '../utils/match-display'
 import { buildJobDetailSections, type JobDetailBlock } from '../utils/job-detail-content'
 import { formatSalaryForDisplay } from '../utils/salary-display'
 import { findLocation } from '../data/locations'
+import { corporateEnglishPublicService, type CorporateEnglishCompanyDetail, type CorporateEnglishPublicVideo } from '../services/corporate-english-public-service'
 
 interface JobDetailPanelProps {
     job: Job
@@ -151,6 +152,7 @@ const TECH_BACKGROUND = '/pic_lists/Jobs_pics/job-tech-bg.webp'
 const PRODUCT_BACKGROUND = '/pic_lists/Jobs_pics/job-product-bg.webp'
 const NON_TECH_BACKGROUND = '/pic_lists/Jobs_pics/job-nontech-bg.webp'
 const FREE_USAGE_CACHE_TTL_MS = 60 * 1000
+const APPLICATION_GUIDE_MAX_COLLAPSED_CHARS = 260
 
 function isConcreteLocationValue(location?: string | null) {
     const rawLocation = String(location || '').trim()
@@ -167,7 +169,6 @@ function isConcreteLocationValue(location?: string | null) {
 type FreeUsageSnapshot = {
     sharedData: any
     websiteApplyData: any
-    matchAnalysisData: any
 }
 
 let freeUsageCache: {
@@ -204,9 +205,8 @@ function loadFreeUsageSnapshot(token: string): Promise<FreeUsageSnapshot> {
     const promise = Promise.all([
         fetch('/api/users?resource=free-usage&type=referral', { headers }).then(r => r.json()),
         fetch('/api/users?resource=free-usage&type=website-apply', { headers }).then(r => r.json()),
-        fetch('/api/users?resource=free-usage&type=match-analysis', { headers }).then(r => r.json()),
-    ]).then(([sharedData, websiteApplyData, matchAnalysisData]) => {
-        const data = { sharedData, websiteApplyData, matchAnalysisData }
+    ]).then(([sharedData, websiteApplyData]) => {
+        const data = { sharedData, websiteApplyData }
         freeUsageCache = {
             token,
             expiresAt: Date.now() + FREE_USAGE_CACHE_TTL_MS,
@@ -269,6 +269,149 @@ function resolveDetailBackground(job: Job) {
     return DETAIL_BACKGROUND_FALLBACK
 }
 
+function HotApplicationBadge({ count }: { count: number }) {
+    return (
+        <span
+            className="inline-flex h-6 shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-black text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
+            title={`${count} 位用户已申请`}
+        >
+            🔥 申请热
+        </span>
+    )
+}
+
+type GuideAccessMode = 'unlocked' | 'guest' | 'member_only' | 'free_available' | 'free_exhausted'
+
+function ApplicationGuidePanel({
+    guide,
+    accessMode,
+    remaining,
+    limit,
+    isUnlocking,
+    onUnlock,
+    onUpgrade,
+    className = ''
+}: {
+    guide: string
+    accessMode: GuideAccessMode
+    remaining: number
+    limit: number
+    isUnlocking?: boolean
+    onUnlock?: () => void
+    onUpgrade?: () => void
+    className?: string
+}) {
+    const [expanded, setExpanded] = useState(false)
+    const isUnlocked = accessMode === 'unlocked'
+    const shouldCollapse = guide.length > APPLICATION_GUIDE_MAX_COLLAPSED_CHARS
+    const displayGuide = isUnlocked && shouldCollapse && !expanded
+        ? `${guide.slice(0, APPLICATION_GUIDE_MAX_COLLAPSED_CHARS).trim()}...`
+        : guide
+
+    const actionLabel = accessMode === 'guest'
+        ? '登录后查看'
+        : accessMode === 'member_only'
+            ? '了解 Club 权益'
+            : accessMode === 'free_exhausted'
+                ? `解锁指南 ${remaining}/${limit}`
+                : `解锁指南 ${remaining}/${limit}`
+
+    const handleAction = () => {
+        if (accessMode === 'free_available' || accessMode === 'guest') {
+            onUnlock?.()
+            return
+        }
+        onUpgrade?.()
+    }
+
+    return (
+        <section className={`rounded-[22px] border border-[#dce8ef] bg-white/92 p-5 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.26)] ${className}`}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                    <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#f1f8ff] text-[#5f83f7]">
+                        <BookOpen className="h-4 w-4" />
+                    </span>
+                    <h4 className="truncate text-base font-black tracking-tight text-slate-900">岗位申请指南</h4>
+                </div>
+                {!isUnlocked ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
+                        <Lock className="h-3 w-3" />
+                        Club
+                    </span>
+                ) : null}
+            </div>
+
+            {isUnlocked ? (
+                <>
+                    <p className="whitespace-pre-line text-sm leading-7 text-slate-700">{displayGuide}</p>
+                    {shouldCollapse ? (
+                        <button
+                            type="button"
+                            onClick={() => setExpanded((value) => !value)}
+                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-black text-[#6f63f6] transition hover:text-[#5f55e8]"
+                        >
+                            {expanded ? '收起' : '展开'}
+                            <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+                        </button>
+                    ) : null}
+                </>
+            ) : (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+                    <p className="text-sm leading-6 text-slate-600">解锁后查看该岗位的投递重点、申请路径和准备建议。</p>
+                    <button
+                        type="button"
+                        onClick={handleAction}
+                        disabled={isUnlocking}
+                        className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#6f63f6] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                        <Lock className="h-4 w-4" />
+                        {isUnlocking ? '解锁中...' : actionLabel}
+                    </button>
+                </div>
+            )}
+        </section>
+    )
+}
+
+function CorporateVideoShortcut({
+    video,
+    canAccess,
+    onClick
+}: {
+    video: CorporateEnglishPublicVideo
+    canAccess: boolean
+    onClick: () => void
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="group mt-5 flex w-full items-center gap-4 rounded-[20px] border border-[#e7ddfb] bg-[linear-gradient(135deg,rgba(250,247,255,0.98),rgba(246,251,255,0.96))] p-3 text-left shadow-[0_18px_42px_-36px_rgba(79,70,229,0.32)] transition hover:-translate-y-0.5 hover:border-[#d5c4ff] hover:bg-white"
+        >
+            <span className="relative flex aspect-video w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white sm:w-36">
+                <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(111,99,246,0.65),transparent_34%),linear-gradient(135deg,#111827,#312e81)]" />
+                <PlayCircle className="relative h-9 w-9 drop-shadow" />
+                {!canAccess ? (
+                    <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-[#6f63f6]">
+                        <Lock className="h-3.5 w-3.5" />
+                    </span>
+                ) : null}
+            </span>
+            <span className="min-w-0 flex-1">
+                <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
+                    <Video className="h-3 w-3" />
+                    CEO 访谈
+                </span>
+                <span className="block truncate text-sm font-black text-slate-950">{video.materialTitle || '企业 CEO 访谈'}</span>
+                <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">
+                    {canAccess ? '点击前往外企英语页面播放' : 'Club 权益解锁后可观看企业访谈视频'}
+                </span>
+            </span>
+            <ChevronRight className="h-5 w-5 shrink-0 text-slate-300 transition group-hover:text-[#6f63f6]" />
+        </button>
+    )
+}
+
 export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     job,
     onSave,
@@ -286,7 +429,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     trackingExtra = EMPTY_TRACKING_EXTRA
 }) => {
     const navigate = useNavigate()
-    const { isMember, isAuthenticated } = useAuth()
+    const { isMember, isAuthenticated, token } = useAuth()
     const sourceType = getJobSourceType(job)
     const shouldMaskGuestMeta = !isAuthenticated
     const trackingExtraSignature = JSON.stringify(trackingExtra)
@@ -315,6 +458,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [isEmailConnectOpen, setIsEmailConnectOpen] = useState(false)
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
     const [nestedJobIndex, setNestedJobIndex] = useState<number | null>(null)
+    const [hasResume, setHasResume] = useState<boolean | null>(null)
+    const [unlockingApplicationGuide, setUnlockingApplicationGuide] = useState(false)
+    const [corporateEnglishDetail, setCorporateEnglishDetail] = useState<CorporateEnglishCompanyDetail | null>(null)
     const { showSuccess, showError, showInfo } = useNotificationHelpers()
     const companyInfoRequestRef = useRef(0)
     const headquartersStatRef = useRef<HTMLDivElement | null>(null)
@@ -386,9 +532,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [websiteApplyUsageCount, setWebsiteApplyUsageCount] = useState(DEFAULT_WEBSITE_APPLY_FREE_LIMIT)
     const [websiteApplyFreeLimit, setWebsiteApplyFreeLimit] = useState(DEFAULT_WEBSITE_APPLY_FREE_LIMIT)
     const [unlockedWebsiteApplyJobIds, setUnlockedWebsiteApplyJobIds] = useState<string[]>([])
-    const [matchAnalysisUsageCount, setMatchAnalysisUsageCount] = useState(DEFAULT_FREE_FEATURE_LIMIT)
-    const [unlockedMatchAnalysisJobIds, setUnlockedMatchAnalysisJobIds] = useState<string[]>([])
-    const [unlockingMatchAnalysis, setUnlockingMatchAnalysis] = useState(false)
     const [sharedFreeUsageReady, setSharedFreeUsageReady] = useState(false)
     const [websiteApplyUsageReady, setWebsiteApplyUsageReady] = useState(false)
     const exposureKeysRef = React.useRef<Set<string>>(new Set())
@@ -437,6 +580,36 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [job?.id, hasTranslation, translationPreferenceKey, sourceType, job?.title, job?.company, trackingBase, trackingModule])
 
     useEffect(() => {
+        let cancelled = false
+
+        if (!isAuthenticated || !token) {
+            setHasResume(false)
+            return () => {
+                cancelled = true
+            }
+        }
+
+        fetch('/api/resumes', {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+            .then((response) => response.ok ? response.json() : null)
+            .then((data) => {
+                if (cancelled) return
+                const resumes = Array.isArray(data?.data)
+                    ? data.data
+                    : (Array.isArray(data?.resumes) ? data.resumes : [])
+                setHasResume(resumes.length > 0)
+            })
+            .catch(() => {
+                if (!cancelled) setHasResume(false)
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [isAuthenticated, token])
+
+    useEffect(() => {
         if (!job?.id) return
         const baseProps = {
             ...trackingBase,
@@ -478,7 +651,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         if (isAuthenticated && !isMember) {
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) return;
-            loadFreeUsageSnapshot(token).then(({ sharedData, websiteApplyData, matchAnalysisData }) => {
+            loadFreeUsageSnapshot(token).then(({ sharedData, websiteApplyData }) => {
                 if (sharedData.success) {
                     syncSharedFreeAccessState(sharedData.usage, sharedData.unlocked_companies || [], sharedData.limit);
                     setSharedFreeUsageReady(true)
@@ -487,17 +660,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     syncWebsiteApplyState(websiteApplyData.usage, websiteApplyData.unlocked_job_ids || [], websiteApplyData.limit)
                     setWebsiteApplyUsageReady(true)
                 }
-                if (matchAnalysisData.success) {
-                    setMatchAnalysisUsageCount(matchAnalysisData.usage);
-                    setUnlockedMatchAnalysisJobIds(Array.isArray(matchAnalysisData.unlocked_job_ids) ? matchAnalysisData.unlocked_job_ids.map((item: any) => String(item)) : []);
-                }
             }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
         } else if (isMember) {
             // Members have no limits
             syncSharedFreeAccessState(0, []);
             syncWebsiteApplyState(0, [])
-            setMatchAnalysisUsageCount(0);
-            setUnlockedMatchAnalysisJobIds([]);
             setSharedFreeUsageReady(true)
             setWebsiteApplyUsageReady(true)
         } else {
@@ -575,6 +742,34 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }, [activeDetailTab, job?.companyId, job?.company])
 
+    useEffect(() => {
+        let cancelled = false
+
+        if (activeDetailTab !== 'company' || !job?.companyId) {
+            setCorporateEnglishDetail(null)
+            return () => {
+                cancelled = true
+            }
+        }
+
+        corporateEnglishPublicService.getCompany(job.companyId)
+            .then((nextDetail) => {
+                if (cancelled) return
+                setCorporateEnglishDetail(nextDetail)
+            })
+            .catch(() => {
+                if (cancelled) return
+                setCorporateEnglishDetail(null)
+            })
+            .finally(() => {
+                // No loading UI is needed; this card is an optional shortcut.
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [activeDetailTab, job?.companyId])
+
     const matchLevel = useMemo(() => {
         return resolveMatchLevel(job?.matchScore, job?.matchLevel)
     }, [job])
@@ -582,10 +777,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const hasHighTrueScore = Number(job?.trueMatchScore || 0) >= 82
     const showHighMatchDetails = isHighDisplayBand && hasHighTrueScore && matchLevel === 'high'
     const matchDetails = job?.matchDetails
-    const isMatchAnalysisUnlocked = isMember || unlockedMatchAnalysisJobIds.includes(String(job?.id || ''))
-    const canUseMatchAnalysisTrial = isAuthenticated && !isMember && !isMatchAnalysisUnlocked && matchAnalysisUsageCount < DEFAULT_FREE_FEATURE_LIMIT
-    const matchDetailsLocked = Boolean(job?.matchDetailsLocked) && !isMatchAnalysisUnlocked
-
+    const hasUploadedResume = hasResume === true
+    const hasApplicationGuide = String(job?.featuredReason || '').trim().length > 0
+    const applicationGuide = String(job?.featuredReason || '').trim()
+    const showMatchDetails = hasUploadedResume && showHighMatchDetails
+    const showResumeUploadPrompt = hasResume === false && isSaved
     const syncSharedFreeAccessState = (usage: number, unlockedCompaniesList: string[] = [], limit?: number) => {
         const normalizedUsage = Math.max(0, Number(usage) || 0)
         const normalizedUnlocked = Array.isArray(unlockedCompaniesList) ? unlockedCompaniesList : []
@@ -627,51 +823,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         return popup
-    }
-
-    const handleUnlockMatchAnalysis = async () => {
-        if (!job?.id || !isAuthenticated || isMember || isMatchAnalysisUnlocked || !canUseMatchAnalysisTrial || unlockingMatchAnalysis) return
-
-        const authToken = localStorage.getItem('haigoo_auth_token')
-        if (!authToken) return
-
-        trackingService.featureClick('match_analysis', {
-            ...trackingBase,
-            module: 'job_detail_match_analysis',
-            entity_type: 'job',
-            entity_id: job.id,
-        })
-        setUnlockingMatchAnalysis(true)
-        try {
-            const res = await fetch('/api/users?resource=free-usage&type=match-analysis', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${authToken}`
-                },
-                body: JSON.stringify({
-                    jobId: String(job.id),
-                    page_key: trackingPageKey,
-                    source_key: trackingSourceKey,
-                    entity_type: 'job',
-                    entity_id: job.id,
-                    flow_id: `match_analysis_${job.id}`
-                })
-            })
-            const data = await res.json().catch(() => ({}))
-            if (!res.ok || !data.success) {
-                throw new Error(data.error || '解锁失败')
-            }
-
-            clearFreeUsageCache()
-            setMatchAnalysisUsageCount(Number(data.usage) || 0)
-            setUnlockedMatchAnalysisJobIds(Array.isArray(data.unlocked_job_ids) ? data.unlocked_job_ids.map((item: any) => String(item)) : [])
-            showSuccess('已解锁本次 AI 匹配分析', `本账号还可免费体验 ${Math.max(0, DEFAULT_FREE_FEATURE_LIMIT - (Number(data.usage) || 0))} 次`)
-        } catch (error: any) {
-            showError('解锁失败', error?.message || '请稍后重试')
-        } finally {
-            setUnlockingMatchAnalysis(false)
-        }
     }
 
     const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
@@ -1322,6 +1473,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const shouldShowWebsiteApplyTrialStatus = Boolean(job.url || job.sourceUrl) && isAuthenticated && !isMember && !isMemberRestrictedJob && websiteApplyUsageReady
     const refCompanyName = String(job.company || companyInfo?.name || '').trim()
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
+    const applicationGuideFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
+    const applicationGuideAccessMode: GuideAccessMode = isReferralCompanyUnlocked
+        ? 'unlocked'
+        : !isAuthenticated
+            ? 'guest'
+            : isMemberRestrictedJob
+                ? 'member_only'
+                : referralUsageCount < referralFreeLimit
+                    ? 'free_available'
+                    : 'free_exhausted'
+    const firstCorporateVideo = corporateEnglishDetail?.videos?.[0] || null
+    const canAccessCorporateVideo = Boolean(firstCorporateVideo && !firstCorporateVideo.isVideoLocked)
     const referralFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
     const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
     const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
@@ -1387,6 +1550,93 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
     }
     const companyRatingText = String(companyInfo?.companyRating || job.companyRating || '').trim()
+    const handleUploadResumeFromDetail = () => {
+        trackingService.featureClick('resume_upload', {
+            ...trackingBase,
+            module: 'job_detail_match_analysis',
+            source_key: 'job_detail_match_upload',
+            entity_type: 'job',
+            entity_id: job.id
+        })
+        navigate('/profile?tab=resume')
+    }
+    const handleUnlockApplicationGuide = async () => {
+        if (applicationGuideAccessMode === 'guest') {
+            goToLogin()
+            return
+        }
+        if (applicationGuideAccessMode === 'member_only' || applicationGuideAccessMode === 'free_exhausted') {
+            goToMembershipPayment('application_guide', 'job_detail_application_guide')
+            return
+        }
+        if (applicationGuideAccessMode !== 'free_available' || unlockingApplicationGuide) return
+
+        const authToken = localStorage.getItem('haigoo_auth_token')
+        if (!authToken) {
+            goToLogin()
+            return
+        }
+
+        setUnlockingApplicationGuide(true)
+        try {
+            const res = await trackingService.trackedFetch('/api/users?resource=free-usage&type=referral', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${authToken}` },
+                body: JSON.stringify({
+                    companyName: refCompanyName,
+                    page_key: trackingPageKey,
+                    source_key: 'job_detail_application_guide',
+                    entity_type: 'company',
+                    entity_id: refCompanyName,
+                    flow_id: `application_guide_${job.id}`
+                })
+            }, {
+                event_family: 'application',
+                feature_key: 'application_guide',
+                entity_type: 'job',
+                entity_id: job.id,
+            })
+            const data = await res.json().catch(() => ({}))
+            if (!res.ok || !data.success) {
+                if (res.status === 403) {
+                    syncSharedFreeAccessState(data.usage, data.unlocked_companies || [], data.limit)
+                    goToMembershipPayment('application_guide', 'job_detail_application_guide_exhausted')
+                    return
+                }
+                throw new Error(data.error || '解锁失败')
+            }
+
+            clearFreeUsageCache()
+            syncSharedFreeAccessState(data.usage, data.unlocked_companies || [], data.limit)
+            showSuccess('已解锁岗位申请指南', `当前还可免费解锁 ${Math.max(0, (Number(data.limit) || referralFreeLimit) - (Number(data.usage) || 0))} 次`)
+        } catch (error: any) {
+            showError('解锁失败', error?.message || '请稍后重试')
+        } finally {
+            setUnlockingApplicationGuide(false)
+        }
+    }
+    const handleCorporateVideoShortcut = () => {
+        if (!firstCorporateVideo || !job.companyId) return
+        trackingService.featureClick('corporate_english_video', {
+            ...trackingBase,
+            module: 'job_detail_company_video',
+            source_key: 'job_detail_company_video',
+            entity_type: 'corporate_english_material',
+            entity_id: firstCorporateVideo.materialId,
+            company_id: job.companyId
+        })
+
+        if (!canAccessCorporateVideo) {
+            openUpgradeModal('corporate_english_video', 'job_detail_company_video')
+            return
+        }
+
+        const query = new URLSearchParams({
+            companyId: job.companyId,
+            materialId: firstCorporateVideo.materialId
+        })
+        window.open(`/corporate-english?${query.toString()}`, '_blank', 'noopener,noreferrer')
+    }
     const getApplyButtonLabel = () => {
         if (!isAuthenticated) return '前往申请（需登录）'
 
@@ -1642,6 +1892,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     原
                                 </button>
                             </div>
+                        ) : null}
+                        {Number(job.applicationCount || 0) >= 10 || job.isHotApplication ? (
+                            <HotApplicationBadge count={Number(job.applicationCount || 0)} />
                         ) : null}
                     </div>
 
@@ -2038,19 +2291,37 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </section>
                     )}
 
-                    {showHighMatchDetails && (
+                    {(showMatchDetails || (showResumeUploadPrompt && !hasApplicationGuide)) && (
                         <div className="mb-6">
                             <MatchDetailsPanel
                                 matchLevel={matchLevel}
                                 matchDetails={matchDetails}
-                                matchDetailsLocked={matchDetailsLocked}
-                                isMember={isMember}
-                                canUseFreeTrial={canUseMatchAnalysisTrial}
-                                freeTrialRemaining={Math.max(0, DEFAULT_FREE_FEATURE_LIMIT - matchAnalysisUsageCount)}
-                                isUnlocking={unlockingMatchAnalysis}
-                                onUnlockFreeTrial={handleUnlockMatchAnalysis}
-                                onShowUpgrade={() => openUpgradeModal('match_analysis')}
+                                hasResume={hasUploadedResume}
+                                onUploadResume={handleUploadResumeFromDetail}
                             />
+                        </div>
+                    )}
+
+                    {hasApplicationGuide && (
+                        <div className="mb-6 space-y-3">
+                            <ApplicationGuidePanel
+                                guide={applicationGuide}
+                                accessMode={applicationGuideAccessMode}
+                                remaining={applicationGuideFreeRemaining}
+                                limit={referralFreeLimit}
+                                isUnlocking={unlockingApplicationGuide}
+                                onUnlock={handleUnlockApplicationGuide}
+                                onUpgrade={() => goToMembershipPayment('application_guide', 'job_detail_application_guide')}
+                            />
+                            {showResumeUploadPrompt && (
+                                <MatchDetailsPanel
+                                    matchLevel={matchLevel}
+                                    matchDetails={matchDetails}
+                                    hasResume={false}
+                                    compactUploadPrompt
+                                    onUploadResume={handleUploadResumeFromDetail}
+                                />
+                            )}
                         </div>
                     )}
 
@@ -2110,9 +2381,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 </div>
                             </div>
 
+                            {firstCorporateVideo && (
+                                <CorporateVideoShortcut
+                                    video={firstCorporateVideo}
+                                    canAccess={canAccessCorporateVideo}
+                                    onClick={handleCorporateVideoShortcut}
+                                />
+                            )}
+
                             {isAuthenticated ? (
                                 <>
-                                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                                    <div className={`${firstCorporateVideo ? 'mt-5' : ''} grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3`}>
                                         {companyFactCards.map((item) => (
                                             <div key={item.label} className="flex min-w-0 flex-col justify-center rounded-[18px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.06)] transition-colors hover:border-slate-200">
                                                 <div className="mb-1 text-[12px] font-medium text-slate-400">{item.label}</div>
