@@ -10,6 +10,42 @@ interface MatchDetailsPanelProps {
   className?: string
 }
 
+const MATCH_SUMMARY_MAX_CHARS = 150
+
+function buildCompactSummary(value: string) {
+  const text = String(value || '').replace(/\s+/g, ' ').trim()
+  if (!text) return ''
+  const sentences = text.match(/[^。！？.!?]+[。！？.!?]?/g) || [text]
+  const picked: string[] = []
+
+  for (const sentence of sentences) {
+    const next = [...picked, sentence.trim()].join('')
+    if (next.length > MATCH_SUMMARY_MAX_CHARS && picked.length > 0) break
+    picked.push(sentence.trim())
+    if (picked.length >= 3 || next.length >= MATCH_SUMMARY_MAX_CHARS * 0.8) break
+  }
+
+  let summary = picked.join('').trim()
+  if (!summary) summary = text
+  if (summary.length > MATCH_SUMMARY_MAX_CHARS) {
+    const cut = summary.slice(0, MATCH_SUMMARY_MAX_CHARS)
+    const punctuationIndex = Math.max(
+      cut.lastIndexOf('。'),
+      cut.lastIndexOf('！'),
+      cut.lastIndexOf('？'),
+      cut.lastIndexOf('.'),
+      cut.lastIndexOf('!'),
+      cut.lastIndexOf('?'),
+      cut.lastIndexOf('，'),
+      cut.lastIndexOf(','),
+      cut.lastIndexOf('；'),
+      cut.lastIndexOf(';')
+    )
+    summary = cut.slice(0, punctuationIndex > 72 ? punctuationIndex : MATCH_SUMMARY_MAX_CHARS).trim()
+  }
+  return /[。！？.!?]$/.test(summary) ? summary : `${summary}。`
+}
+
 export function MatchDetailsPanel({
   matchLevel,
   matchDetails,
@@ -22,7 +58,7 @@ export function MatchDetailsPanel({
     if (!matchDetails) return null
     const summary = String(matchDetails.summary || matchDetails.analysis || matchDetails.text || '').trim()
     const breakdown = matchDetails.breakdown && typeof matchDetails.breakdown === 'object' ? matchDetails.breakdown : null
-    return { summary, breakdown }
+    return { summary: buildCompactSummary(summary), breakdown }
   }, [matchDetails])
 
   const scoreItems = parsed?.breakdown ? [
@@ -85,7 +121,7 @@ export function MatchDetailsPanel({
         </div>
 
         {parsed.summary ? (
-          <p className="mb-4 line-clamp-2 text-sm leading-7 text-slate-700">{parsed.summary}</p>
+          <p className="mb-4 text-sm leading-7 text-slate-700">{parsed.summary}</p>
         ) : null}
 
         {scoreItems.length > 0 ? (

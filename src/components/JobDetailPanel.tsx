@@ -376,21 +376,40 @@ function ApplicationGuidePanel({
 function CorporateVideoShortcut({
     video,
     canAccess,
+    canShowTitle,
+    companyLogo,
+    companyName,
     onClick
 }: {
     video: CorporateEnglishPublicVideo
     canAccess: boolean
+    canShowTitle: boolean
+    companyLogo?: string
+    companyName?: string
     onClick: () => void
 }) {
+    const displayTitle = canShowTitle ? (video.materialTitle || '企业 CEO 访谈') : 'CEO 访谈'
+    const speakerName = String(video.speakerName || '').trim()
+    const speakerRole = String(video.speakerRole || '').trim()
+    const speakerInitial = (speakerName || companyName || 'CEO').slice(0, 2).toUpperCase()
+
     return (
         <button
             type="button"
             onClick={onClick}
-            className="group mt-5 flex w-full items-center gap-4 rounded-[20px] border border-[#e7ddfb] bg-[linear-gradient(135deg,rgba(250,247,255,0.98),rgba(246,251,255,0.96))] p-3 text-left shadow-[0_18px_42px_-36px_rgba(79,70,229,0.32)] transition hover:-translate-y-0.5 hover:border-[#d5c4ff] hover:bg-white"
+            className="group mt-5 flex w-full items-center gap-4 overflow-hidden rounded-[22px] border border-[#e2d7ff] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(246,248,255,0.98))] p-3 text-left shadow-[0_18px_42px_-36px_rgba(79,70,229,0.34)] transition hover:-translate-y-0.5 hover:border-[#cdbfff] hover:bg-white"
         >
-            <span className="relative flex aspect-video w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white sm:w-36">
-                <span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(111,99,246,0.65),transparent_34%),linear-gradient(135deg,#111827,#312e81)]" />
-                <PlayCircle className="relative h-9 w-9 drop-shadow" />
+            <span className="relative flex aspect-video w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white sm:w-40">
+                {companyLogo ? (
+                    <img src={companyLogo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45 blur-sm scale-110" loading="lazy" decoding="async" />
+                ) : null}
+                <span className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(139,124,255,0.72),transparent_32%),linear-gradient(135deg,rgba(15,23,42,0.94),rgba(49,46,129,0.92))]" />
+                <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/18 bg-white/12 text-sm font-black shadow-[0_18px_34px_-24px_rgba(0,0,0,0.65)] backdrop-blur">
+                    {speakerInitial}
+                </span>
+                <span className="absolute bottom-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#6251f5] shadow-sm">
+                    <PlayCircle className="h-6 w-6" />
+                </span>
                 {!canAccess ? (
                     <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-[#6f63f6]">
                         <Lock className="h-3.5 w-3.5" />
@@ -402,10 +421,12 @@ function CorporateVideoShortcut({
                     <Video className="h-3 w-3" />
                     CEO 访谈
                 </span>
-                <span className="block truncate text-sm font-black text-slate-950">{video.materialTitle || '企业 CEO 访谈'}</span>
-                <span className="mt-1 block line-clamp-2 text-xs leading-5 text-slate-500">
-                    {canAccess ? '点击前往外企英语页面播放' : 'Club 权益解锁后可观看企业访谈视频'}
-                </span>
+                <span className="block line-clamp-2 text-base font-black leading-6 text-slate-950">{displayTitle}</span>
+                {(speakerName || speakerRole) ? (
+                    <span className="mt-1 block truncate text-sm font-semibold text-slate-500">
+                        {[speakerName, speakerRole].filter(Boolean).join(' · ')}
+                    </span>
+                ) : null}
             </span>
             <ChevronRight className="h-5 w-5 shrink-0 text-slate-300 transition group-hover:text-[#6f63f6]" />
         </button>
@@ -2385,6 +2406,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <CorporateVideoShortcut
                                     video={firstCorporateVideo}
                                     canAccess={canAccessCorporateVideo}
+                                    canShowTitle={isAuthenticated}
+                                    companyLogo={String((companyInfo as any)?.logo || job.logo || '').trim()}
+                                    companyName={job.company || companyInfo?.name || ''}
                                     onClick={handleCorporateVideoShortcut}
                                 />
                             )}

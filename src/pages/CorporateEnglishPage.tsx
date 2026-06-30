@@ -58,8 +58,8 @@ function normalizeExternalUrl(url?: string) {
   return `https://${value}`
 }
 
-function getVideoDisplayTitle(video: CorporateEnglishPublicVideo, index?: number) {
-  if (!video.isVideoLocked) return video.materialTitle
+function getVideoDisplayTitle(video: CorporateEnglishPublicVideo, index?: number, canShowLockedTitle = false) {
+  if (!video.isVideoLocked || canShowLockedTitle) return video.materialTitle
   return typeof index === 'number' ? `会员视频 ${index + 1}` : '会员视频'
 }
 
@@ -1210,7 +1210,7 @@ export default function CorporateEnglishPage() {
                             }`}
                         >
                           {isLoginLockedVideoTab ? <Lock className="h-3.5 w-3.5" /> : null}
-                          {getVideoDisplayTitle(video, videoIndex)}
+                          {getVideoDisplayTitle(video, videoIndex, isAuthenticated)}
                         </button>
                       )})}
                     </div>
@@ -1221,7 +1221,7 @@ export default function CorporateEnglishPage() {
                           {activeVideo.tencentVideoUrl ? (
                             <iframe
                               src={activeVideo.tencentVideoUrl}
-                              title={getVideoDisplayTitle(activeVideo)}
+                              title={getVideoDisplayTitle(activeVideo, undefined, isAuthenticated)}
                               className="h-full w-full"
                               frameBorder="0"
                               allowFullScreen
@@ -1257,7 +1257,7 @@ export default function CorporateEnglishPage() {
                         ) : null}
                         <iframe
                           src={activeVideo.tencentVideoUrl}
-                          title={getVideoDisplayTitle(activeVideo)}
+                          title={getVideoDisplayTitle(activeVideo, undefined, isAuthenticated)}
                           className="h-full w-full"
                           frameBorder="0"
                           allowFullScreen
@@ -1284,7 +1284,7 @@ export default function CorporateEnglishPage() {
                     )}
 
                     <div className="mt-4">
-                      {!activeVideo.isVideoLocked ? (
+                      {(!activeVideo.isVideoLocked || isAuthenticated) ? (
                         <h3 className="text-lg font-black text-slate-950">{activeVideo.materialTitle}</h3>
                       ) : null}
                       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm leading-6 text-slate-500">
