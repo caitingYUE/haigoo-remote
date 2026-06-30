@@ -793,7 +793,7 @@ export default function HomeHero({
     const accountHeroHydratedForUser = useRef<string | null>(null)
     const displayRecommendations = hasResults && recommendations.length > 0
         ? (isAuthenticated ? recommendations : recommendations.slice(0, 1))
-        : SAMPLE_RECOMMENDATIONS
+        : []
     const dailyLimit = isAuthenticated ? 5 : 1
     const effectiveJobDirection = String(jobDirection || storedTargetRole || '').trim()
     const recommendationContextKey = useMemo(
@@ -960,9 +960,10 @@ export default function HomeHero({
     }).format(lastUpdatedAt)
     
     const previewDisplayJobs = (() => {
-        if (previewJobs.length >= 3) return previewJobs.slice(0, 3)
-        const filler = PREVIEW_PM_RECOMMENDATIONS.filter(p => !previewJobs.find(j => j.id === p.id))
-        return [...previewJobs, ...filler].slice(0, 3)
+        const source = previewJobs.length > 0 ? previewJobs : curatedJobs
+        if (source.length >= 3) return source.slice(0, 3)
+        const filler = PREVIEW_PM_RECOMMENDATIONS.filter(p => !source.find((j: any) => j.id === p.id))
+        return [...source, ...filler].slice(0, 3)
     })()
 
     const [tickerJobs, setTickerJobs] = useState<any[]>([])
@@ -1867,7 +1868,14 @@ export default function HomeHero({
             categories: ['数据分析', '商业分析', '数据科学', '教育培训', '咨询', '投资', '游戏', '其他']
         },
     ]
-    const heroPreviewJobs = (displayRecommendations.length > 0 ? displayRecommendations : PREVIEW_PM_RECOMMENDATIONS).slice(0, 3)
+    const heroPreviewJobs = (displayRecommendations.length > 0
+        ? displayRecommendations
+        : curatedJobs.length > 0
+            ? curatedJobs
+            : previewJobs.length > 0
+                ? previewJobs
+                : PREVIEW_PM_RECOMMENDATIONS
+    ).slice(0, 3)
     const heroCompanyCards = [
         { name: 'Loom', desc: '视频协作工具', image: '/pic_lists/Jobs_pics/card_bg1.webp' },
         { name: 'Automattic', desc: '开源与出版平台', image: '/pic_lists/Jobs_pics/card_bg2.webp' },
@@ -1901,7 +1909,9 @@ export default function HomeHero({
         ? displayRecommendations
         : curatedJobs.length > 0
             ? curatedJobs
-            : PREVIEW_PM_RECOMMENDATIONS
+            : previewJobs.length > 0
+                ? previewJobs
+                : SAMPLE_RECOMMENDATIONS
     const heroCaseJobs = (() => {
         const primary = heroCaseCandidates.slice(0, heroRecommendationPreviewLimit)
         if (primary.length >= heroRecommendationPreviewLimit) return primary

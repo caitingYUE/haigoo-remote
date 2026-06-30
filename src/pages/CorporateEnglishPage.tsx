@@ -35,6 +35,7 @@ import {
 import type { CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType } from '../services/corporate-english-service'
 import { trackingService } from '../services/tracking-service'
 import { getCompanyDetailPath } from '../utils/share-link-helper'
+import { getCompanyLogoSources } from '../utils/company-logo'
 
 const FALLBACK_COMPANY: CorporateEnglishPublicCompany = {
   companyId: 'corporate-english-coming-soon',
@@ -191,13 +192,26 @@ function renderMarkedLine(
 }
 
 function CompanyLogo({ company }: { company: CorporateEnglishPublicCompany }) {
-  if (company.logo) {
+  const logoSources = useMemo(() => getCompanyLogoSources({
+    companyId: company.companyId,
+    cachedLogoUrl: company.cachedLogoUrl,
+    originalLogoUrl: company.originalLogoUrl || company.logo,
+    version: company.latestUpdatedAt
+  }), [company.cachedLogoUrl, company.companyId, company.latestUpdatedAt, company.logo, company.originalLogoUrl])
+  const [logoIndex, setLogoIndex] = useState(0)
+  useEffect(() => {
+    setLogoIndex(0)
+  }, [logoSources.join('|')])
+  const activeLogo = logoSources[logoIndex] || ''
+
+  if (activeLogo) {
     return (
       <img
-        src={company.logo}
+        src={activeLogo}
         alt={company.name}
         className="h-11 w-11 rounded-2xl border border-[#eadff8] bg-white object-contain p-1.5 shadow-[0_8px_20px_rgba(105,82,190,0.08)]"
         loading="lazy"
+        onError={() => setLogoIndex((index) => index + 1)}
       />
     )
   }

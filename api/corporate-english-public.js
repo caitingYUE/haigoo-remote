@@ -2,6 +2,7 @@ import neonHelper from '../server-utils/dal/neon-helper.js'
 import userHelper from '../server-utils/user-helper.js'
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js'
 import { deriveMembershipCapabilities } from '../lib/shared/membership.js'
+import { resolveCachedLogoUrlFromRow } from '../lib/services/company-image-asset-service.js'
 
 const MATERIALS_TABLE = 'corporate_english_materials'
 const ASSETS_TABLE = 'corporate_english_assets'
@@ -246,6 +247,9 @@ async function listCompanies(req, res, user) {
        MAX(m.company_name_snapshot) AS company_name,
        MAX(m.company_website_snapshot) AS company_website,
        MAX(tc.logo) AS logo,
+       MAX(tc.cached_logo_url) AS cached_logo_url,
+       MAX(tc.logo_cache_status) AS logo_cache_status,
+       MAX(tc.logo_cache_hash) AS logo_cache_hash,
        MAX(tc.industry) AS industry,
        COUNT(DISTINCT m.material_id)::int AS video_count,
        COUNT(c.clip_id)::int AS clip_count,
@@ -272,7 +276,9 @@ async function listCompanies(req, res, user) {
       companyId: row.company_id,
       name: row.company_name,
       website: row.company_website,
-      logo: row.logo,
+      logo: resolveCachedLogoUrlFromRow(row) || row.logo,
+      originalLogoUrl: row.logo,
+      cachedLogoUrl: resolveCachedLogoUrlFromRow(row),
       industry: row.industry,
       videoCount: Number(row.video_count || 0),
       clipCount: Number(row.clip_count || 0),
@@ -394,7 +400,7 @@ async function getCompany(req, res, user) {
 
   const [companyRows, materialRows, clipRows, profileRows, jobRows, favoriteClipIds, favoriteItems] = await Promise.all([
     neonHelper.query(
-      `SELECT company_id, name, website, logo, industry, description, job_count
+      `SELECT company_id, name, website, logo, cached_logo_url, logo_cache_status, logo_cache_hash, industry, description, job_count
        FROM trusted_companies
        WHERE company_id = $1
        LIMIT 1`,
@@ -471,7 +477,9 @@ async function getCompany(req, res, user) {
       companyId: company.company_id,
       name: company.name,
       website: company.website,
-      logo: company.logo,
+      logo: resolveCachedLogoUrlFromRow(company) || company.logo,
+      originalLogoUrl: company.logo,
+      cachedLogoUrl: resolveCachedLogoUrlFromRow(company),
       industry: company.industry,
       description: company.description,
       jobCount: Number(company.job_count || 0),

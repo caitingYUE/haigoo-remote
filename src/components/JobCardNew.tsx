@@ -127,7 +127,7 @@ const HotApplicationBadge = ({ count }: { count: number }) => (
       className="inline-flex h-5 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-2 text-[10px] font-black leading-none text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
       title={`${count} 位用户已申请`}
    >
-      🔥 申请热
+      🔥热门
    </span>
 );
 

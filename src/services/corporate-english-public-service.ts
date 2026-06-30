@@ -7,6 +7,8 @@ export interface CorporateEnglishPublicCompany {
   name: string
   website?: string
   logo?: string
+  originalLogoUrl?: string
+  cachedLogoUrl?: string
   industry?: string
   description?: string
   jobCount?: number

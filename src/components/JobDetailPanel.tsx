@@ -21,6 +21,7 @@ import { buildJobDetailSections, type JobDetailBlock } from '../utils/job-detail
 import { formatSalaryForDisplay } from '../utils/salary-display'
 import { findLocation } from '../data/locations'
 import { corporateEnglishPublicService, type CorporateEnglishCompanyDetail, type CorporateEnglishPublicVideo } from '../services/corporate-english-public-service'
+import { getCompanyLogoSources } from '../utils/company-logo'
 
 interface JobDetailPanelProps {
     job: Job
@@ -275,7 +276,7 @@ function HotApplicationBadge({ count }: { count: number }) {
             className="inline-flex h-6 shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-black text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
             title={`${count} 位用户已申请`}
         >
-            🔥 申请热
+            🔥热门
         </span>
     )
 }
@@ -377,21 +378,28 @@ function CorporateVideoShortcut({
     video,
     canAccess,
     canShowTitle,
-    companyLogo,
+    logoCandidates,
     companyName,
     onClick
 }: {
     video: CorporateEnglishPublicVideo
     canAccess: boolean
     canShowTitle: boolean
-    companyLogo?: string
+    logoCandidates?: string[]
     companyName?: string
     onClick: () => void
 }) {
+    const sources = useMemo(() => Array.from(new Set((logoCandidates || []).map((item) => String(item || '').trim()).filter(Boolean))), [logoCandidates])
+    const [logoIndex, setLogoIndex] = useState(0)
+    useEffect(() => {
+        setLogoIndex(0)
+    }, [sources.join('|')])
+
     const displayTitle = canShowTitle ? (video.materialTitle || '企业 CEO 访谈') : 'CEO 访谈'
     const speakerName = String(video.speakerName || '').trim()
     const speakerRole = String(video.speakerRole || '').trim()
-    const speakerInitial = (speakerName || companyName || 'CEO').slice(0, 2).toUpperCase()
+    const activeLogo = sources[logoIndex] || ''
+    const companyInitial = String(companyName || speakerName || 'HG').slice(0, 2).toUpperCase()
 
     return (
         <button
@@ -400,12 +408,21 @@ function CorporateVideoShortcut({
             className="group mt-5 flex w-full items-center gap-4 overflow-hidden rounded-[22px] border border-[#e2d7ff] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(246,248,255,0.98))] p-3 text-left shadow-[0_18px_42px_-36px_rgba(79,70,229,0.34)] transition hover:-translate-y-0.5 hover:border-[#cdbfff] hover:bg-white"
         >
             <span className="relative flex aspect-video w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white sm:w-40">
-                {companyLogo ? (
-                    <img src={companyLogo} alt="" className="absolute inset-0 h-full w-full object-cover opacity-45 blur-sm scale-110" loading="lazy" decoding="async" />
-                ) : null}
-                <span className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(139,124,255,0.72),transparent_32%),linear-gradient(135deg,rgba(15,23,42,0.94),rgba(49,46,129,0.92))]" />
-                <span className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-white/18 bg-white/12 text-sm font-black shadow-[0_18px_34px_-24px_rgba(0,0,0,0.65)] backdrop-blur">
-                    {speakerInitial}
+                <span className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(139,124,255,0.72),transparent_32%),linear-gradient(135deg,rgba(18,24,56,0.96),rgba(48,45,126,0.94))]" />
+                <span className="absolute right-3 top-3 max-w-[72%] truncate text-xs font-black text-white/16 sm:text-sm">
+                    {companyName || 'Haigoo'}
+                </span>
+                <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/18 bg-white/94 text-sm font-black text-[#6251f5] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.65)] backdrop-blur sm:h-16 sm:w-16">
+                    {activeLogo ? (
+                        <img
+                            src={activeLogo}
+                            alt=""
+                            className="h-full w-full object-contain p-2"
+                            loading="lazy"
+                            decoding="async"
+                            onError={() => setLogoIndex((index) => index + 1)}
+                        />
+                    ) : companyInitial}
                 </span>
                 <span className="absolute bottom-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#6251f5] shadow-sm">
                     <PlayCircle className="h-6 w-6" />
@@ -1647,11 +1664,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             company_id: job.companyId
         })
 
-        if (!canAccessCorporateVideo) {
-            openUpgradeModal('corporate_english_video', 'job_detail_company_video')
-            return
-        }
-
         const query = new URLSearchParams({
             companyId: job.companyId,
             materialId: firstCorporateVideo.materialId
@@ -2407,7 +2419,25 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     video={firstCorporateVideo}
                                     canAccess={canAccessCorporateVideo}
                                     canShowTitle={isAuthenticated}
-                                    companyLogo={String((companyInfo as any)?.logo || job.logo || '').trim()}
+                                    logoCandidates={getCompanyLogoSources({
+                                        companyId: job.companyId,
+                                        cachedLogoUrl: String(
+                                            corporateEnglishDetail?.company?.cachedLogoUrl ||
+                                            (companyInfo as any)?.cachedLogoUrl ||
+                                            (job as any)?.cachedCompanyLogoUrl ||
+                                            (job as any)?.cachedLogoUrl ||
+                                            ''
+                                        ).trim(),
+                                        originalLogoUrl: String(
+                                            corporateEnglishDetail?.company?.originalLogoUrl ||
+                                            corporateEnglishDetail?.company?.logo ||
+                                            (companyInfo as any)?.logo ||
+                                            job.logo ||
+                                            job.companyLogo ||
+                                            ''
+                                        ).trim(),
+                                        version: String((companyInfo as any)?.updatedAt || job.updatedAt || job.publishedAt || '').trim()
+                                    })}
                                     companyName={job.company || companyInfo?.name || ''}
                                     onClick={handleCorporateVideoShortcut}
                                 />

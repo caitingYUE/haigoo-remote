@@ -437,29 +437,46 @@ function getReferralLines(job: XhsPushJobListItem, includeType = false) {
   return [includeType ? '通用邮箱：待补充｜待补充：待补充' : '待补充｜待补充：待补充'];
 }
 
-function hasXhsDirectApply(job: XhsPushJobListItem) {
-  return Boolean(String(job.applicationUrl || '').trim());
+function getXhsDirectEmailLabel(job: XhsPushJobListItem) {
+  const contact = Array.isArray(job.referralContacts)
+    ? job.referralContacts.find((item) => String(item?.hiringEmail || '').trim())
+    : null;
+  const rawType = String(contact?.emailType || job.emailType || '').trim();
+  const rawTitle = String(contact?.title || '').trim();
+  const normalized = rawType.toLowerCase();
+  const haystack = `${normalized} ${rawType} ${rawTitle}`;
+
+  if (/(boss|ceo|chief|founder|vp|head|director|executive|高管|老板|创始|负责人|企业领导)/i.test(haystack)) {
+    return '直连企业BOSS邮箱';
+  }
+  if (/(hr|human resources|people|人力|人事|hr邮箱|talent acquisition|talent partner)/i.test(haystack)) {
+    return '直连企业HR邮箱';
+  }
+  if (/(招聘|recruit|recruiter|hiring|career|talent)/i.test(haystack)) {
+    return '直连企业招聘邮箱';
+  }
+  if (/(员工|employee|staff|teammate|team)/i.test(haystack)) {
+    return '直连企业员工邮箱';
+  }
+  if (rawType && rawType.includes('邮箱')) {
+    return `直连企业${normalizeEmailTypeLabel(rawType)}`;
+  }
+  return '直连企业邮箱';
 }
 
-function hasXhsReferralApply(job: XhsPushJobListItem) {
-  return Array.isArray(job.referralContacts) && job.referralContacts.length > 0;
+function hasXhsEmailApply(job: XhsPushJobListItem) {
+  return Boolean(
+    String(job.hiringEmail || '').trim() ||
+    (Array.isArray(job.referralContacts) && job.referralContacts.some((item) => String(item?.hiringEmail || '').trim()))
+  );
 }
 
 function getPosterAvailabilityTags(job: XhsPushJobListItem): PosterAvailabilityTag[] {
   const tags: PosterAvailabilityTag[] = [];
 
-  if (hasXhsDirectApply(job)) {
+  if (hasXhsEmailApply(job)) {
     tags.push({
-      label: '可网申',
-      fill: '#eef5ff',
-      stroke: '#c7dbff',
-      text: '#355c9b'
-    });
-  }
-
-  if (hasXhsReferralApply(job)) {
-    tags.push({
-      label: '可内推',
+      label: getXhsDirectEmailLabel(job),
       fill: '#eef7ef',
       stroke: '#c8dfcb',
       text: '#41654a'
@@ -1842,7 +1859,7 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                           onChange={(event) => setShowAvailabilityTags(event.target.checked)}
                           className="h-3.5 w-3.5 rounded border-slate-300 text-rose-600 focus:ring-rose-200"
                         />
-                        <span>显示可网申/可内推标签</span>
+                        <span>显示联系邮箱</span>
                       </label>
                       <button type="button" onClick={handleDownloadPoster} disabled={downloadingPoster} className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
                         {downloadingPoster ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
