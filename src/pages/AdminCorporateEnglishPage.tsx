@@ -15,17 +15,21 @@ import {
   Search,
   Trash2,
   Upload,
-  Wand2
+  Wand2,
+  X
 } from 'lucide-react'
 import {
   CorporateEnglishClip,
   CorporateEnglishClipTag,
   CorporateEnglishCompanyProfile,
   CorporateEnglishContentSection,
+  CorporateEnglishModuleKey,
+  CorporateEnglishModuleVideo,
   CorporateEnglishResourceLink,
   CorporateEnglishMaterial,
   CorporateEnglishPronunciationMark,
   CorporateEnglishPronunciationMarkType,
+  SaveCorporateEnglishModuleVideoPayload,
   CorporateEnglishStatus,
   CorporateEnglishSubtitleCue,
   CorporateEnglishSubtitleRow,
@@ -41,6 +45,19 @@ const CLIP_AUDIO_BITRATE = 48000
 const ACCEPTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.webm', '.mp4']
 
 type Mode = 'list' | 'create' | 'edit' | 'profile'
+type AdminSubModule = 'ceo' | CorporateEnglishModuleKey
+
+const ADMIN_SUB_MODULES: Array<{
+  key: AdminSubModule
+  label: string
+  description: string
+  moduleKey?: CorporateEnglishModuleKey
+  categoryType?: 'jobCategories' | 'companyIndustries'
+}> = [
+  { key: 'ceo', label: 'CEO访谈', description: '按企业管理 CEO 访谈视频、跟读剪辑和企业文化配置。' },
+  { key: 'english_interview', label: '英语面试', moduleKey: 'english_interview', categoryType: 'jobCategories', description: '管理岗位方向相关的英文面试视频内容。' },
+  { key: 'foreign_meeting', label: '外企会议', moduleKey: 'foreign_meeting', categoryType: 'companyIndustries', description: '管理行业场景相关的外企会议视频内容。' }
+]
 type ClipDownloadFormat = 'compressed' | 'wav' | 'm4a'
 type ProfileSectionKey = 'cultureSections' | 'ceoThinkingSections'
 type BulkApplyMode = 'append' | 'replace'
@@ -940,7 +957,388 @@ function statusLabel(status: CorporateEnglishStatus) {
   return '草稿'
 }
 
+function shouldSilenceLocalDatabaseError(error: unknown) {
+  if (!import.meta.env.DEV) return false
+  const message = error instanceof Error ? error.message : String(error || '')
+  return /Error connecting to database|fetch failed|Database not configured|Connect Timeout|UND_ERR_CONNECT_TIMEOUT/i.test(message)
+}
+
+function formatDateTimeInput(value?: string) {
+  const date = value ? new Date(value) : new Date()
+  if (Number.isNaN(date.getTime())) return ''
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000)
+  return local.toISOString().slice(0, 16)
+}
+
+function formatSimpleTags(tags: string[]) {
+  return (tags || []).join('、')
+}
+
+function emptyModuleVideoForm(moduleKey: CorporateEnglishModuleKey): SaveCorporateEnglishModuleVideoPayload {
+  return {
+    moduleKey,
+    title: '',
+    description: '',
+    tencentIframeUrl: '',
+    videoSource: '',
+    category: '',
+    tags: [],
+    accessTier: 'vip',
+    status: 'draft',
+    sortOrder: 0,
+    publishedAt: formatDateTimeInput(new Date().toISOString())
+  }
+}
+
+function AdminModuleVideoManager({
+  moduleKey,
+  title,
+  description,
+  categoryType
+}: {
+  moduleKey: CorporateEnglishModuleKey
+  title: string
+  description: string
+  categoryType: 'jobCategories' | 'companyIndustries'
+}) {
+  const [videos, setVideos] = useState<CorporateEnglishModuleVideo[]>([])
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [editingVideo, setEditingVideo] = useState<CorporateEnglishModuleVideo | null>(null)
+  const [showForm, setShowForm] = useState(false)
+  const [form, setForm] = useState<SaveCorporateEnglishModuleVideoPayload>(() => emptyModuleVideoForm(moduleKey))
+  const [tagInput, setTagInput] = useState('')
+  const [search, setSearch] = useState('')
+  const [searchDraft, setSearchDraft] = useState('')
+  const [statusFilter, setStatusFilter] = useState<CorporateEnglishStatus | 'all'>('all')
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [total, setTotal] = useState(0)
+  const [categoryOptions, setCategoryOptions] = useState<string[]>([])
+
+  const loadVideos = useCallback(async () => {
+    try {
+      setLoading(true)
+      const data = await corporateEnglishService.listModuleVideos({
+        module: moduleKey,
+        page,
+        limit: 20,
+        search,
+        status: statusFilter
+      })
+      setVideos(data.videos)
+      setTotal(data.total)
+      setTotalPages(data.totalPages)
+    } catch (error) {
+      console.error('Failed to load module videos:', error)
+      setVideos([])
+      setTotal(0)
+      setTotalPages(1)
+      if (!shouldSilenceLocalDatabaseError(error)) {
+        alert(error instanceof Error ? error.message : '加载视频失败')
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [moduleKey, page, search, statusFilter])
+
+  useEffect(() => {
+    let cancelled = false
+    const loadTagConfig = async () => {
+      try {
+        const response = await fetch('/api/data/trusted-companies?target=tags')
+        const data = await response.json().catch(() => ({}))
+        if (!cancelled && data?.success) {
+          const options = data.config?.[categoryType]
+          setCategoryOptions(Array.isArray(options) ? options : [])
+        }
+      } catch (error) {
+        console.warn('Failed to load module video categories:', error)
+      }
+    }
+    loadTagConfig()
+    return () => {
+      cancelled = true
+    }
+  }, [categoryType])
+
+  useEffect(() => {
+    setForm(emptyModuleVideoForm(moduleKey))
+    setEditingVideo(null)
+    setShowForm(false)
+    setPage(1)
+    setSearch('')
+    setSearchDraft('')
+  }, [moduleKey])
+
+  useEffect(() => {
+    loadVideos()
+  }, [loadVideos])
+
+  const openCreate = () => {
+    setEditingVideo(null)
+    setForm(emptyModuleVideoForm(moduleKey))
+    setTagInput('')
+    setShowForm(true)
+  }
+
+  const openEdit = (video: CorporateEnglishModuleVideo) => {
+    setEditingVideo(video)
+    setForm({
+      moduleKey,
+      title: video.title,
+      description: video.description,
+      tencentIframeUrl: video.tencentIframeUrl,
+      videoSource: video.videoSource,
+      category: video.category,
+      tags: video.tags,
+      accessTier: video.accessTier,
+      status: video.status,
+      sortOrder: video.sortOrder,
+      publishedAt: formatDateTimeInput(video.publishedAt)
+    })
+    setTagInput(formatSimpleTags(video.tags))
+    setShowForm(true)
+  }
+
+  const saveVideo = async () => {
+    if (!form.title.trim()) {
+      alert('请填写视频标题')
+      return
+    }
+    if (!form.tencentIframeUrl.trim()) {
+      alert('请填写腾讯视频 iframe 地址')
+      return
+    }
+    try {
+      setSaving(true)
+      const payload: SaveCorporateEnglishModuleVideoPayload = {
+        ...form,
+        moduleKey,
+        tags: splitTagValues(tagInput),
+        sortOrder: Number(form.sortOrder || 0),
+        publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : new Date().toISOString()
+      }
+      await corporateEnglishService.saveModuleVideo(payload, editingVideo?.videoId)
+      setShowForm(false)
+      setEditingVideo(null)
+      await loadVideos()
+      alert('保存成功')
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '保存失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteVideo = async (video: CorporateEnglishModuleVideo) => {
+    if (!confirm(`确定删除「${video.title}」吗？`)) return
+    try {
+      await corporateEnglishService.deleteModuleVideo(video.videoId)
+      await loadVideos()
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '删除失败')
+    }
+  }
+
+  const runSearch = () => {
+    setSearch(searchDraft.trim())
+    setPage(1)
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-black text-slate-900">{title}</h2>
+          <p className="text-sm text-slate-500">{description}</p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="btn-secondary h-12 px-4" onClick={loadVideos} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            刷新
+          </button>
+          <button type="button" className="btn-primary h-12 px-5" onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            添加视频
+          </button>
+        </div>
+      </div>
+
+      {showForm ? (
+        <div className="card">
+          <div className="card-content space-y-4">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-lg font-black text-slate-900">{editingVideo ? '编辑视频' : '新增视频'}</h3>
+              <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
+                <X className="h-4 w-4" />
+                取消
+              </button>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">视频标题</span>
+                <input className="input" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">腾讯视频 iframe 地址 / vid</span>
+                <input className="input" value={form.tencentIframeUrl} onChange={(event) => setForm((prev) => ({ ...prev, tencentIframeUrl: event.target.value }))} />
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">视频来源</span>
+                <input className="input" value={form.videoSource || ''} onChange={(event) => setForm((prev) => ({ ...prev, videoSource: event.target.value }))} placeholder="可填写来源名称或链接" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">类别</span>
+                <select className="input" value={form.category || ''} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
+                  <option value="">请选择类别</option>
+                  {categoryOptions.map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">自定义标签</span>
+                <input className="input" value={tagInput} onChange={(event) => setTagInput(event.target.value)} placeholder="用顿号、逗号或分号分隔" />
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">视频权限</span>
+                <select className="input" value={form.accessTier} onChange={(event) => setForm((prev) => ({ ...prev, accessTier: event.target.value as 'free' | 'vip' }))}>
+                  <option value="free">免费</option>
+                  <option value="vip">会员</option>
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">状态</span>
+                <select className="input" value={form.status} onChange={(event) => setForm((prev) => ({ ...prev, status: event.target.value as CorporateEnglishStatus }))}>
+                  <option value="draft">草稿</option>
+                  <option value="published">已发布</option>
+                  <option value="archived">已归档</option>
+                </select>
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">发布时间</span>
+                <input type="datetime-local" className="input" value={form.publishedAt || ''} onChange={(event) => setForm((prev) => ({ ...prev, publishedAt: event.target.value }))} />
+              </label>
+              <label className="space-y-1">
+                <span className="text-sm font-bold text-slate-700">排序</span>
+                <input type="number" className="input" value={form.sortOrder || 0} onChange={(event) => setForm((prev) => ({ ...prev, sortOrder: Number(event.target.value || 0) }))} />
+              </label>
+            </div>
+            <label className="block space-y-1">
+              <span className="text-sm font-bold text-slate-700">简介</span>
+              <textarea className="input min-h-[110px]" value={form.description || ''} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
+            </label>
+            <button type="button" className="btn-primary" onClick={saveVideo} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}
+              {saving ? '保存中...' : '保存视频'}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="card">
+        <div className="card-content">
+          <div className="mb-4 grid grid-cols-1 items-stretch gap-3 xl:grid-cols-[minmax(260px,1fr)_180px]">
+            <div className="relative min-w-0">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                value={searchDraft}
+                onChange={(event) => setSearchDraft(event.target.value)}
+                onBlur={runSearch}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') runSearch()
+                }}
+                placeholder="搜索视频标题、简介、来源、标签"
+              />
+            </div>
+            <select className="h-12 rounded-lg border border-slate-200 px-3 py-2 text-slate-900" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as CorporateEnglishStatus | 'all'); setPage(1) }}>
+              <option value="all">全部状态</option>
+              <option value="draft">草稿</option>
+              <option value="published">已发布</option>
+              <option value="archived">已归档</option>
+            </select>
+          </div>
+
+          <div className="overflow-x-auto rounded-lg border border-slate-200">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-slate-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">视频</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">类别/标签</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">权限</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">状态</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">发布时间</th>
+                  <th className="px-4 py-3 text-right text-xs font-bold uppercase tracking-wide text-slate-500">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 bg-white">
+                {loading ? (
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-slate-500"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
+                ) : videos.length === 0 ? (
+                  <tr><td colSpan={6} className="px-4 py-12 text-center text-slate-500">暂无视频，点击右上角添加。</td></tr>
+                ) : videos.map((video) => (
+                  <tr key={video.videoId} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-900">{video.title}</div>
+                      <div className="mt-1 max-w-[420px] truncate text-sm text-slate-500">{video.description || video.tencentIframeUrl}</div>
+                      {video.videoSource ? (
+                        <div className="mt-1 max-w-[420px] truncate text-xs font-semibold text-slate-400">来源：{video.videoSource}</div>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-600">
+                      <div className="font-semibold text-slate-700">{video.category || '-'}</div>
+                      <div className="mt-1 max-w-[300px] truncate text-xs text-slate-400">{formatSimpleTags(video.tags) || '无标签'}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${video.accessTier === 'free' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                        {video.accessTier === 'free' ? '免费' : '会员'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{statusLabel(video.status)}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-slate-500">{video.publishedAt ? new Date(video.publishedAt).toLocaleString() : '-'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <button type="button" className="btn-secondary" onClick={() => openEdit(video)}>
+                          <Edit3 className="h-4 w-4" />
+                          编辑
+                        </button>
+                        <button type="button" className="btn-secondary text-red-600" onClick={() => deleteVideo(video)}>
+                          <Trash2 className="h-4 w-4" />
+                          删除
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-slate-500">
+            <span>共 {total} 条</span>
+            <div className="flex items-center gap-2">
+              <button className="btn-secondary" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>
+                <ChevronRight className="h-4 w-4 rotate-180" />
+                上一页
+              </button>
+              <span>{page} / {totalPages}</span>
+              <button className="btn-secondary" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>
+                下一页
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminCorporateEnglishPage() {
+  const [activeSubModule, setActiveSubModule] = useState<AdminSubModule>('ceo')
   const [mode, setMode] = useState<Mode>('list')
   const [editingId, setEditingId] = useState<string>('')
   const [contextCompanyId, setContextCompanyId] = useState<string>('')
@@ -979,6 +1377,7 @@ export default function AdminCorporateEnglishPage() {
 
   const isEditing = mode === 'edit'
   const isProfileMode = mode === 'profile'
+  const activeSubModuleMeta = ADMIN_SUB_MODULES.find((module) => module.key === activeSubModule) || ADMIN_SUB_MODULES[0]
 
   const contextCompany = useMemo(() => {
     if (!contextCompanyId) return null
@@ -1039,6 +1438,29 @@ export default function AdminCorporateEnglishPage() {
     refreshModeFromUrl()
   }, [refreshModeFromUrl])
 
+  const renderSubModuleTabs = () => (
+    <div className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+      {ADMIN_SUB_MODULES.map((module) => {
+        const active = activeSubModule === module.key
+        return (
+          <button
+            key={module.key}
+            type="button"
+            onClick={() => {
+              setActiveSubModule(module.key)
+              if (module.key !== 'ceo') setUrlMode('list')
+            }}
+            className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-black transition ${
+              active ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-700'
+            }`}
+          >
+            {module.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+
   const replaceAudioObjectUrl = useCallback((file: File | null) => {
     if (audioObjectUrlRef.current) URL.revokeObjectURL(audioObjectUrlRef.current)
     if (!file) {
@@ -1077,7 +1499,12 @@ export default function AdminCorporateEnglishPage() {
       setTotalPages(data.totalPages)
     } catch (error) {
       console.error('Failed to load corporate English materials:', error)
-      alert(error instanceof Error ? error.message : '加载外企英语素材失败')
+      setCompanyGroups([])
+      setTotal(0)
+      setTotalPages(1)
+      if (!shouldSilenceLocalDatabaseError(error)) {
+        alert(error instanceof Error ? error.message : '加载外企英语素材失败')
+      }
     } finally {
       setLoading(false)
     }
@@ -1204,7 +1631,9 @@ export default function AdminCorporateEnglishPage() {
         replaceAudioObjectUrl(null)
       } catch (error) {
         console.error('Failed to load material:', error)
-        alert(error instanceof Error ? error.message : '加载素材失败')
+        if (!shouldSilenceLocalDatabaseError(error)) {
+          alert(error instanceof Error ? error.message : '加载素材失败')
+        }
         setUrlMode('list')
       } finally {
         setLoading(false)
@@ -1902,6 +2331,20 @@ export default function AdminCorporateEnglishPage() {
     }))
   }
 
+  if (mode === 'list' && activeSubModuleMeta.moduleKey && activeSubModuleMeta.categoryType) {
+    return (
+      <div className="space-y-6">
+        {renderSubModuleTabs()}
+        <AdminModuleVideoManager
+          moduleKey={activeSubModuleMeta.moduleKey}
+          title={activeSubModuleMeta.label}
+          description={activeSubModuleMeta.description}
+          categoryType={activeSubModuleMeta.categoryType}
+        />
+      </div>
+    )
+  }
+
   if (isProfileMode) {
     const profileCompany = contextCompany || companyGroups.find((company) => company.companyId === contextCompanyId)
     const profileCompanyName = profileCompany
@@ -2075,7 +2518,7 @@ export default function AdminCorporateEnglishPage() {
               返回列表
             </button>
             <div>
-              <h2 className="text-2xl font-black text-slate-900">{isEditing ? '编辑外企英语视频' : '添加外企英语视频'}</h2>
+              <h2 className="text-2xl font-black text-slate-900">{isEditing ? '编辑CEO访谈视频' : '添加CEO访谈视频'}</h2>
               <p className="text-sm text-slate-500">按可信企业关联音频、字幕与跟读片段。</p>
             </div>
           </div>
@@ -2517,10 +2960,11 @@ export default function AdminCorporateEnglishPage() {
 
   return (
     <div className="space-y-6">
+      {renderSubModuleTabs()}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-black text-slate-900">外企英语</h2>
-          <p className="text-sm text-slate-500">按企业管理视频学习内容、跟读剪辑和企业文化配置。</p>
+          <h2 className="text-2xl font-black text-slate-900">CEO访谈</h2>
+          <p className="text-sm text-slate-500">按企业管理 CEO 访谈视频、跟读剪辑和企业文化配置。</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <button type="button" className="btn-secondary h-12 px-4" onClick={loadMaterials} disabled={loading}>
@@ -2575,7 +3019,7 @@ export default function AdminCorporateEnglishPage() {
                 {loading ? (
                   <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-500"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></td></tr>
                 ) : companyGroups.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">暂无外企英语企业内容，点击右上角添加。</td></tr>
+                  <tr><td colSpan={7} className="px-4 py-12 text-center text-slate-500">暂无CEO访谈企业内容，点击右上角添加。</td></tr>
                 ) : companyGroups.map((company) => (
                   <React.Fragment key={company.companyId}>
                     <tr className="hover:bg-slate-50">

@@ -4,6 +4,7 @@ const CHUNK_SIZE = 1024 * 1024
 export type CorporateEnglishStatus = 'draft' | 'published' | 'archived'
 export type CorporateEnglishAssetKind = 'source_audio' | 'subtitle_csv' | 'clip_audio'
 export type CorporateEnglishAccessTier = 'free' | 'vip'
+export type CorporateEnglishModuleKey = 'english_interview' | 'foreign_meeting'
 
 export interface CorporateEnglishSubtitleRow {
   source_title?: string
@@ -118,6 +119,38 @@ export interface CorporateEnglishMaterialDetail {
   material: CorporateEnglishMaterial
   clips: CorporateEnglishClip[]
   assets: CorporateEnglishAsset[]
+}
+
+export interface CorporateEnglishModuleVideo {
+  id: string
+  videoId: string
+  moduleKey: CorporateEnglishModuleKey
+  title: string
+  description: string
+  tencentIframeUrl: string
+  videoSource: string
+  category: string
+  tags: string[]
+  accessTier: CorporateEnglishAccessTier
+  status: CorporateEnglishStatus
+  sortOrder: number
+  publishedAt: string
+  createdAt?: string
+  updatedAt?: string
+}
+
+export interface SaveCorporateEnglishModuleVideoPayload {
+  moduleKey: CorporateEnglishModuleKey
+  title: string
+  description?: string
+  tencentIframeUrl: string
+  videoSource?: string
+  category?: string
+  tags?: string[]
+  accessTier: CorporateEnglishAccessTier
+  status: CorporateEnglishStatus
+  sortOrder?: number
+  publishedAt?: string
 }
 
 export interface SaveCorporateEnglishMaterialPayload {
@@ -258,6 +291,51 @@ export const corporateEnglishService = {
       await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
     )
     return { material: data.material, clips: data.clips || [], assets: data.assets || [] }
+  },
+
+  async listModuleVideos(params: {
+    module: CorporateEnglishModuleKey
+    page?: number
+    limit?: number
+    search?: string
+    status?: CorporateEnglishStatus | 'all'
+  }) {
+    const query = new URLSearchParams({ resource: 'module-videos', module: params.module })
+    if (params.page) query.set('page', String(params.page))
+    if (params.limit) query.set('limit', String(params.limit))
+    if (params.search) query.set('search', params.search)
+    if (params.status && params.status !== 'all') query.set('status', params.status)
+
+    return readJson<{
+      success: boolean
+      videos: CorporateEnglishModuleVideo[]
+      total: number
+      page: number
+      totalPages: number
+    }>(await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() }))
+  },
+
+  async saveModuleVideo(payload: SaveCorporateEnglishModuleVideoPayload, id?: string) {
+    const query = new URLSearchParams({ resource: 'module-video' })
+    if (id) query.set('id', id)
+    const data = await readJson<{ success: boolean; video: CorporateEnglishModuleVideo }>(
+      await fetch(`${API_BASE}?${query.toString()}`, {
+        method: id ? 'PUT' : 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload)
+      })
+    )
+    return data.video
+  },
+
+  async deleteModuleVideo(id: string) {
+    const query = new URLSearchParams({ resource: 'module-video', id })
+    await readJson<{ success: boolean }>(
+      await fetch(`${API_BASE}?${query.toString()}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+    )
   },
 
   async uploadAsset(params: {

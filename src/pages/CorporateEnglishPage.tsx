@@ -28,11 +28,13 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import {
   CorporateEnglishCompanyDetail,
   CorporateEnglishPublicClip,
+  CorporateEnglishPublicCategory,
   CorporateEnglishPublicCompany,
+  CorporateEnglishPublicModuleVideo,
   CorporateEnglishPublicVideo,
   corporateEnglishPublicService
 } from '../services/corporate-english-public-service'
-import type { CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType } from '../services/corporate-english-service'
+import type { CorporateEnglishModuleKey, CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType } from '../services/corporate-english-service'
 import { trackingService } from '../services/tracking-service'
 import { getCompanyDetailPath } from '../utils/share-link-helper'
 import { getCompanyLogoSources } from '../utils/company-logo'
@@ -43,6 +45,34 @@ const FALLBACK_COMPANY: CorporateEnglishPublicCompany = {
   industry: '企业英语学习',
   videoCount: 0,
   clipCount: 0
+}
+
+type CorporateEnglishPageModule = 'ceo' | 'interview' | 'meeting'
+
+const MODULE_TABS: Array<{ key: CorporateEnglishPageModule; label: string; moduleKey?: CorporateEnglishModuleKey; description: string }> = [
+  { key: 'ceo', label: 'CEO访谈', description: '看真实企业访谈，学习商业表达和企业文化。' },
+  { key: 'interview', label: '英语面试', moduleKey: 'english_interview', description: '刷外企面试视频，速通英文面试。' },
+  { key: 'meeting', label: '外企会议', moduleKey: 'foreign_meeting', description: '体验真实外企会议，提前适应远程工作。' }
+]
+
+function resolveModuleFromSearch(search: string): CorporateEnglishPageModule {
+  const value = new URLSearchParams(search).get('module') || ''
+  if (value === 'interview' || value === 'english_interview') return 'interview'
+  if (value === 'meeting' || value === 'foreign_meeting') return 'meeting'
+  return 'ceo'
+}
+
+function shouldSilenceLocalDatabaseError(error: unknown) {
+  if (!import.meta.env.DEV) return false
+  const message = error instanceof Error ? error.message : String(error || '')
+  return /Error connecting to database|fetch failed|Database not configured|Connect Timeout|UND_ERR_CONNECT_TIMEOUT/i.test(message)
+}
+
+function formatDateLabel(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 function formatTime(ms?: number) {
@@ -57,6 +87,10 @@ function normalizeExternalUrl(url?: string) {
   if (!value) return ''
   if (/^https?:\/\//i.test(value)) return value
   return `https://${value}`
+}
+
+function isExternalUrl(value?: string) {
+  return /^https?:\/\//i.test(String(value || '').trim())
 }
 
 function getVideoDisplayTitle(video: CorporateEnglishPublicVideo, index?: number, canShowLockedTitle = false) {
@@ -240,6 +274,279 @@ function MemberOnlyHint() {
     <span className="inline-flex h-6 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-black text-slate-500">
       仅会员
     </span>
+  )
+}
+
+function ModuleVideoCard({
+  video,
+  onLockedAction
+}: {
+  video: CorporateEnglishPublicModuleVideo
+  onLockedAction: (video: CorporateEnglishPublicModuleVideo) => void
+}) {
+  const isFree = video.accessTier === 'free'
+  const sourceUrl = isExternalUrl(video.videoSource) ? normalizeExternalUrl(video.videoSource) : ''
+  return (
+    <article className="overflow-hidden rounded-[24px] border border-[#e2e9f2] bg-white shadow-[0_18px_50px_rgba(36,47,76,0.08)] xl:grid xl:grid-cols-[minmax(520px,1.18fr)_minmax(320px,0.82fr)]">
+      <div className="relative aspect-video bg-slate-950 xl:h-full xl:min-h-[340px] xl:aspect-auto">
+        {!video.isLocked && video.tencentIframeUrl ? (
+          <iframe
+            src={video.tencentIframeUrl}
+            title={video.title}
+            className="h-full w-full"
+            frameBorder="0"
+            allowFullScreen
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => onLockedAction(video)}
+            className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#f5f2ff] text-center text-[#6251f5]"
+          >
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_12px_30px_rgba(98,81,245,0.16)]">
+              {video.loginRequired ? <Lock className="h-6 w-6" /> : <PlayCircle className="h-8 w-8" />}
+            </span>
+            <span className="px-5 text-base font-black text-slate-700">
+              {video.loginRequired ? '登录后播放' : '会员内容'}
+            </span>
+          </button>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-col gap-4 p-5 xl:p-6">
+        <div className="space-y-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`inline-flex h-7 items-center rounded-full border px-3 text-xs font-black ${
+              isFree
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-[#eadff8] bg-[#f5f2ff] text-[#6251f5]'
+            }`}>
+              {isFree ? '免费' : '会员'}
+            </span>
+            {video.category ? (
+              <span className="inline-flex h-7 items-center rounded-full bg-slate-100 px-3 text-xs font-black text-slate-600">
+                {video.category}
+              </span>
+            ) : null}
+            {video.publishedAt ? (
+              <span className="inline-flex h-7 items-center rounded-full bg-[#fff7e8] px-3 text-xs font-black text-[#8b6f42]">
+                {formatDateLabel(video.publishedAt)}
+              </span>
+            ) : null}
+          </div>
+          <h3 className="text-xl font-black leading-8 text-slate-950 xl:text-2xl xl:leading-9">{video.title}</h3>
+        </div>
+        {video.description ? (
+          <p className="text-sm leading-7 text-slate-600 xl:text-base">{video.description}</p>
+        ) : null}
+        {video.videoSource ? (
+          <div className="rounded-2xl border border-[#edf1f7] bg-[#f8fafc] p-3 text-sm leading-6">
+            <span className="font-black text-slate-700">视频来源</span>
+            {sourceUrl ? (
+              <a
+                href={sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 flex min-w-0 items-center gap-1 break-all font-semibold text-[#6251f5] hover:text-[#4f46e5]"
+              >
+                <span>{video.videoSource}</span>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            ) : (
+              <span className="mt-1 block break-words font-semibold text-slate-500">{video.videoSource}</span>
+            )}
+          </div>
+        ) : null}
+        {video.tags.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {video.tags.slice(0, 5).map((tag) => (
+              <span key={tag} className="rounded-full bg-[#fff7e8] px-2.5 py-1 text-xs font-bold text-[#8b6f42]">
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {video.isLocked ? (
+          <button
+            type="button"
+            onClick={() => onLockedAction(video)}
+            className="mt-auto inline-flex h-10 w-fit items-center justify-center rounded-full bg-[#6d5dfc] px-5 text-sm font-black text-white transition hover:bg-[#5847ee]"
+          >
+            {video.loginRequired ? '去登录' : '了解会员服务'}
+          </button>
+        ) : null}
+      </div>
+    </article>
+  )
+}
+
+function ModuleSwitcher({
+  activeModule,
+  onModuleChange
+}: {
+  activeModule: CorporateEnglishPageModule
+  onModuleChange: (module: CorporateEnglishPageModule) => void
+}) {
+  return (
+    <div className="grid w-full grid-cols-3 gap-2">
+      {MODULE_TABS.map((tab) => {
+        const active = activeModule === tab.key
+        return (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onModuleChange(tab.key)}
+            aria-pressed={active}
+            className={`inline-flex h-9 min-w-0 items-center justify-center rounded-[12px] px-1 text-[13px] font-black leading-none transition ${
+              active
+                ? 'bg-[#6d5dfc] text-white shadow-[0_8px_18px_rgba(109,93,252,0.18)]'
+                : 'bg-[#eef1f6] text-slate-700 hover:bg-white hover:text-[#6251f5] hover:shadow-[0_6px_16px_rgba(36,47,76,0.08)]'
+            }`}
+            title={tab.label}
+          >
+            {tab.label}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
+function ModuleVideoLibrary({
+  activeModule,
+  moduleTab,
+  videos,
+  categories,
+  activeCategory,
+  loading,
+  isCollapsed,
+  onCategoryChange,
+  onModuleChange,
+  onToggleCollapse,
+  onLockedAction
+}: {
+  activeModule: CorporateEnglishPageModule
+  moduleTab: typeof MODULE_TABS[number]
+  videos: CorporateEnglishPublicModuleVideo[]
+  categories: CorporateEnglishPublicCategory[]
+  activeCategory: string
+  loading: boolean
+  isCollapsed: boolean
+  onCategoryChange: (category: string) => void
+  onModuleChange: (module: CorporateEnglishPageModule) => void
+  onToggleCollapse: () => void
+  onLockedAction: (video: CorporateEnglishPublicModuleVideo) => void
+}) {
+  const countByCategory = useMemo(() => {
+    const map = new Map<string, number>()
+    categories.forEach((category) => map.set(category.value, category.count))
+    return map
+  }, [categories])
+  const visibleCategories = useMemo(() => {
+    const merged = categories.map((category) => category.value)
+      .map((value) => String(value || '').trim())
+      .filter((value) => value && value !== '全部')
+    return [...new Set(merged)]
+  }, [categories])
+  const categoryListTitle = activeModule === 'meeting' ? '行业类型' : '岗位类型'
+
+  useEffect(() => {
+    if (visibleCategories.length === 0) return
+    if (activeCategory !== '全部' && visibleCategories.includes(activeCategory)) return
+    onCategoryChange(visibleCategories[0])
+  }, [activeCategory, onCategoryChange, visibleCategories])
+
+  return (
+    <div className={`grid gap-3 lg:h-full lg:min-h-0 ${isCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)]' : 'lg:grid-cols-[320px_minmax(0,1fr)]'}`}>
+      <aside className="min-h-0 overflow-hidden rounded-[24px] border border-[#e5eaf2] bg-white/94 shadow-[0_16px_48px_rgba(36,47,76,0.08)] backdrop-blur lg:flex lg:flex-col">
+        <div className={`shrink-0 border-b border-[#edf1f7] ${isCollapsed ? 'p-3' : 'px-4 py-4'}`}>
+          {isCollapsed ? (
+            <div className="flex justify-center">
+              <button
+                type="button"
+                onClick={onToggleCollapse}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                aria-label="展开分类列表"
+                title="展开分类列表"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <ModuleSwitcher activeModule={activeModule} onModuleChange={onModuleChange} />
+                </div>
+                <button
+                  type="button"
+                  onClick={onToggleCollapse}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                  aria-label="收起分类列表"
+                  title="收起分类列表"
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180" />
+                </button>
+              </div>
+              <h1 className="mt-5 min-w-0 text-[22px] font-black leading-tight tracking-tight text-slate-950">{moduleTab.label}</h1>
+              <p className="mt-2 text-sm leading-6 text-slate-500">{moduleTab.description}</p>
+            </>
+          )}
+        </div>
+        <div className={`min-h-0 flex-1 space-y-2 overflow-y-auto ${isCollapsed ? 'p-2' : 'p-3'}`}>
+          {!isCollapsed ? (
+            <div className="mb-1 flex items-center gap-2 px-1 text-xs font-black uppercase tracking-wide text-slate-400">
+              <Menu className="h-3.5 w-3.5 text-[#6251f5]" />
+              {categoryListTitle}
+            </div>
+          ) : null}
+          {!isCollapsed && visibleCategories.length > 0 ? (
+            visibleCategories.map((category) => {
+              const active = activeCategory === category
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => onCategoryChange(category)}
+                  className={`flex w-full items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-sm font-bold transition ${
+                    active
+                      ? 'border-[#d7ccff] bg-[#f4f0ff] text-[#6251f5]'
+                      : 'border-transparent text-slate-600 hover:border-[#efe5d8] hover:bg-[#fffaf0]'
+                  }`}
+                >
+                  <span className="truncate">{category}</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs text-slate-400">{countByCategory.get(category) || 0}</span>
+                </button>
+              )
+            })
+          ) : !isCollapsed ? (
+            <div className="rounded-2xl border border-dashed border-[#d8e4ee] bg-white p-4 text-sm leading-6 text-slate-500">
+              暂无已上线分类
+            </div>
+          ) : null}
+        </div>
+      </aside>
+      <main className="min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1">
+        {loading ? (
+          <div className="flex min-h-[420px] items-center justify-center rounded-[24px] border border-[#e5edf3] bg-white">
+            <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+          </div>
+        ) : videos.length > 0 ? (
+          <div className="max-w-[1180px] space-y-5 pb-8">
+            {videos.map((video) => (
+              <ModuleVideoCard key={video.videoId} video={video} onLockedAction={onLockedAction} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[24px] border border-dashed border-[#d8e4ee] bg-white p-12 text-center">
+            <Video className="mx-auto h-10 w-10 text-indigo-500" />
+            <h2 className="mt-4 text-xl font-black text-slate-900">内容准备中</h2>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
+              后台发布 {moduleTab.label} 视频后，这里会按分类展示。
+            </p>
+          </div>
+        )}
+      </main>
+    </div>
   )
 }
 
@@ -937,8 +1244,15 @@ export default function CorporateEnglishPage() {
   const [loadingDetail, setLoadingDetail] = useState(false)
   const [isCompanyListCollapsed, setIsCompanyListCollapsed] = useState(false)
   const [activeClipId, setActiveClipId] = useState('')
+  const [moduleVideos, setModuleVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
+  const [moduleCategories, setModuleCategories] = useState<CorporateEnglishPublicCategory[]>([])
+  const [moduleLoading, setModuleLoading] = useState(false)
+  const [selectedModuleCategory, setSelectedModuleCategory] = useState('全部')
   const videoSectionRef = useRef<HTMLElement | null>(null)
   const trackedVideoIdsRef = useRef<Set<string>>(new Set())
+  const activeModule = useMemo(() => resolveModuleFromSearch(location.search), [location.search])
+  const activeModuleTab = useMemo(() => MODULE_TABS.find((tab) => tab.key === activeModule) || MODULE_TABS[0], [activeModule])
+  const moduleKey = activeModuleTab.moduleKey
   const queryTargets = useMemo(() => {
     const params = new URLSearchParams(location.search)
     return {
@@ -947,7 +1261,57 @@ export default function CorporateEnglishPage() {
     }
   }, [location.search])
 
+  const setActiveModule = useCallback((nextModule: CorporateEnglishPageModule) => {
+    const params = new URLSearchParams(location.search)
+    if (nextModule === 'ceo') params.delete('module')
+    else params.set('module', nextModule)
+    navigate({
+      pathname: location.pathname,
+      search: params.toString() ? `?${params.toString()}` : ''
+    }, { replace: false })
+  }, [location.pathname, location.search, navigate])
+
   useEffect(() => {
+    setSelectedModuleCategory('全部')
+  }, [activeModule])
+
+  useEffect(() => {
+    if (!moduleKey) return
+    let cancelled = false
+    const loadModuleVideos = async () => {
+      try {
+        setModuleLoading(true)
+        const data = await corporateEnglishPublicService.listModuleVideos({
+          module: moduleKey,
+          category: selectedModuleCategory
+        })
+        if (cancelled) return
+        setModuleVideos(data.videos)
+        setModuleCategories(data.categories)
+      } catch (error) {
+        console.error('Failed to load corporate English module videos:', error)
+        if (!cancelled) {
+          setModuleVideos([])
+          setModuleCategories([])
+          if (!shouldSilenceLocalDatabaseError(error)) {
+            showError('视频内容加载失败', error instanceof Error ? error.message : '请稍后重试')
+          }
+        }
+      } finally {
+        if (!cancelled) setModuleLoading(false)
+      }
+    }
+    loadModuleVideos()
+    return () => {
+      cancelled = true
+    }
+  }, [moduleKey, selectedModuleCategory, showError])
+
+  useEffect(() => {
+    if (activeModule !== 'ceo') {
+      setLoadingCompanies(false)
+      return
+    }
     let cancelled = false
     const loadCompanies = async () => {
       try {
@@ -963,7 +1327,13 @@ export default function CorporateEnglishPage() {
         })
       } catch (error) {
         console.error('Failed to load corporate English companies:', error)
-        showError('外企英语加载失败', error instanceof Error ? error.message : '请稍后重试')
+        if (!cancelled) {
+          setCompanies([])
+          setSelectedCompanyId('')
+          if (!shouldSilenceLocalDatabaseError(error)) {
+            showError('外企英语加载失败', error instanceof Error ? error.message : '请稍后重试')
+          }
+        }
       } finally {
         if (!cancelled) setLoadingCompanies(false)
       }
@@ -972,9 +1342,14 @@ export default function CorporateEnglishPage() {
     return () => {
       cancelled = true
     }
-  }, [queryTargets.companyId, showError])
+  }, [activeModule, queryTargets.companyId, showError])
 
   useEffect(() => {
+    if (activeModule !== 'ceo') {
+      setDetail(null)
+      setLoadingDetail(false)
+      return
+    }
     if (!selectedCompanyId) {
       setDetail(null)
       return
@@ -996,7 +1371,9 @@ export default function CorporateEnglishPage() {
         console.error('Failed to load corporate English detail:', error)
         if (!cancelled) {
           setDetail(null)
-          showError('企业内容加载失败', error instanceof Error ? error.message : '请稍后重试')
+          if (!shouldSilenceLocalDatabaseError(error)) {
+            showError('企业内容加载失败', error instanceof Error ? error.message : '请稍后重试')
+          }
         }
       } finally {
         if (!cancelled) setLoadingDetail(false)
@@ -1006,7 +1383,7 @@ export default function CorporateEnglishPage() {
     return () => {
       cancelled = true
     }
-  }, [queryTargets.materialId, selectedCompanyId, showError])
+  }, [activeModule, queryTargets.materialId, selectedCompanyId, showError])
 
   const activeVideo = useMemo<CorporateEnglishPublicVideo | null>(() => {
     if (!detail) return null
@@ -1073,6 +1450,16 @@ export default function CorporateEnglishPage() {
   }, [isAuthenticated, navigate, openMembershipModal])
   const lockedCtaLabel = isAuthenticated ? '了解会员服务' : '需登录'
 
+  const handleModuleVideoLockedAction = useCallback((video: CorporateEnglishPublicModuleVideo) => {
+    if (video.loginRequired || !isAuthenticated) {
+      showWarning('请先登录', '登录后可播放免费内容。')
+      navigate('/login')
+      return
+    }
+    showWarning('会员内容', video.lockReason || '升级会员后可播放该视频。')
+    openMembershipModal('half_year')
+  }, [isAuthenticated, navigate, openMembershipModal, showWarning])
+
   const trackClipPlay = useCallback((clip: CorporateEnglishPublicClip) => {
     trackingService.track('corporate_english_clip_play', {
       page_key: 'corporate_english',
@@ -1113,7 +1500,23 @@ export default function CorporateEnglishPage() {
   return (
     <div className="min-h-screen bg-[#f7f9fc] pt-16 font-haigoo-rounded text-slate-900 lg:h-screen lg:overflow-hidden">
       <div className="mx-auto max-w-[1680px] px-3 py-3 sm:px-4 lg:h-[calc(100vh-4rem)] lg:overflow-hidden">
-        {loadingCompanies ? (
+        {activeModule !== 'ceo' && moduleKey ? (
+          <div className="lg:h-full lg:min-h-0">
+            <ModuleVideoLibrary
+              activeModule={activeModule}
+              moduleTab={activeModuleTab}
+              videos={moduleVideos}
+              categories={moduleCategories}
+              activeCategory={selectedModuleCategory}
+              loading={moduleLoading}
+              isCollapsed={isCompanyListCollapsed}
+              onCategoryChange={setSelectedModuleCategory}
+              onModuleChange={setActiveModule}
+              onToggleCollapse={() => setIsCompanyListCollapsed((value) => !value)}
+              onLockedAction={handleModuleVideoLockedAction}
+            />
+          </div>
+        ) : loadingCompanies ? (
           <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-[#e5edf3] bg-white">
             <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
           </div>
@@ -1122,30 +1525,40 @@ export default function CorporateEnglishPage() {
             <div className={`grid gap-3 lg:h-full lg:min-h-0 ${isCompanyListCollapsed ? 'lg:grid-cols-[72px_minmax(0,1fr)_400px]' : 'lg:grid-cols-[320px_minmax(0,1fr)_400px]'}`}>
             <aside className="hidden h-full min-h-0 overflow-hidden rounded-[24px] border border-[#e5eaf2] bg-white/94 shadow-[0_16px_48px_rgba(36,47,76,0.08)] backdrop-blur lg:flex lg:flex-col">
               <div className={`shrink-0 border-b border-[#edf1f7] ${isCompanyListCollapsed ? 'p-3' : 'px-4 py-4'}`}>
-                <div className={`flex items-start ${isCompanyListCollapsed ? 'justify-center' : 'justify-between gap-3'}`}>
-                {!isCompanyListCollapsed ? (
-                  <div className="min-w-0">
-                    <div className="flex items-start gap-2">
-                      <h1 className="text-2xl font-black tracking-tight text-slate-950">外企英语</h1>
-                      <span className="mt-0.5 rounded-full border border-[#cfc5ff] bg-[#f4f0ff] px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#6251f5]">
-                        New
-                      </span>
+                {isCompanyListCollapsed ? (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setIsCompanyListCollapsed((value) => !value)}
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                      aria-label="展开企业列表"
+                      title="展开企业列表"
+                    >
+                      <Menu className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <ModuleSwitcher activeModule={activeModule} onModuleChange={setActiveModule} />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setIsCompanyListCollapsed((value) => !value)}
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                        aria-label="收起企业列表"
+                        title="收起企业列表"
+                      >
+                        <ChevronRight className="h-4 w-4 rotate-180" />
+                      </button>
                     </div>
+                    <h1 className="mt-5 min-w-0 text-[22px] font-black leading-tight tracking-tight text-slate-950">CEO访谈</h1>
                     <p className="mt-2 text-sm leading-6 text-slate-500">
                       看 CEO 访谈，了解企业文化、提升商业认知，轻松搞定外企英语。
                     </p>
-                  </div>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={() => setIsCompanyListCollapsed((value) => !value)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
-                  aria-label={isCompanyListCollapsed ? '展开企业列表' : '收起企业列表'}
-                  title={isCompanyListCollapsed ? '展开企业列表' : '收起企业列表'}
-                >
-                  {isCompanyListCollapsed ? <Menu className="h-4 w-4" /> : <ChevronRight className="h-4 w-4 rotate-180" />}
-                </button>
-                </div>
+                  </>
+                )}
               </div>
               <div className={`min-h-0 flex-1 space-y-2 overflow-y-auto ${isCompanyListCollapsed ? 'p-2' : 'p-3'}`}>
                 {!isCompanyListCollapsed ? (

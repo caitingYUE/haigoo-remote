@@ -1,4 +1,5 @@
 import type { CorporateEnglishClipTag, CorporateEnglishPronunciationMark } from './corporate-english-service'
+import type { CorporateEnglishAccessTier, CorporateEnglishModuleKey } from './corporate-english-service'
 
 const API_BASE = '/api/corporate-english-public'
 
@@ -75,6 +76,31 @@ export interface CorporateEnglishPublicVideo {
   clips: CorporateEnglishPublicClip[]
 }
 
+export interface CorporateEnglishPublicModuleVideo {
+  id: string
+  videoId: string
+  moduleKey: CorporateEnglishModuleKey
+  title: string
+  description: string
+  videoSource?: string
+  category: string
+  tags: string[]
+  accessTier: CorporateEnglishAccessTier
+  publishedAt?: string
+  sortOrder: number
+  tencentIframeUrl?: string
+  isLocked: boolean
+  loginRequired: boolean
+  upgradeRequired: boolean
+  lockReason?: string
+}
+
+export interface CorporateEnglishPublicCategory {
+  label: string
+  value: string
+  count: number
+}
+
 export interface CorporateEnglishPublicSection {
   title: string
   body: string
@@ -148,6 +174,23 @@ export const corporateEnglishPublicService = {
       await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
     )
     return data.companies || []
+  },
+
+  async listModuleVideos(params: {
+    module: CorporateEnglishModuleKey
+    category?: string
+  }) {
+    const query = new URLSearchParams({ resource: 'module-videos', module: params.module })
+    if (params.category) query.set('category', params.category)
+    const data = await readJson<{
+      success: boolean
+      categories: CorporateEnglishPublicCategory[]
+      videos: CorporateEnglishPublicModuleVideo[]
+    }>(await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() }))
+    return {
+      categories: data.categories || [],
+      videos: data.videos || []
+    }
   },
 
   async getCompany(companyId: string): Promise<CorporateEnglishCompanyDetail> {

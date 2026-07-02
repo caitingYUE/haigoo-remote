@@ -300,7 +300,10 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
             >
-              CEO 访谈
+              外企英语
+              <span className="absolute left-full top-0 ml-px -translate-y-1.5 text-[10px] font-black leading-none text-emerald-500">
+                新
+              </span>
             </Link>
 
             <Link
@@ -606,7 +609,12 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <span>CEO 访谈</span>
+                <span className="relative inline-flex items-center">
+                  外企英语
+                  <span className="ml-0.5 -translate-y-1 text-[10px] font-black leading-none text-emerald-500">
+                    新
+                  </span>
+                </span>
               </Link>
               <Link
                 to="/trusted-companies"

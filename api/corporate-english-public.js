@@ -9,6 +9,8 @@ const ASSETS_TABLE = 'corporate_english_assets'
 const CLIPS_TABLE = 'corporate_english_clips'
 const PROFILES_TABLE = 'corporate_english_company_profiles'
 const FAVORITES_TABLE = 'corporate_english_clip_favorites'
+const MODULE_VIDEOS_TABLE = 'corporate_english_module_videos'
+const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
 
 function sendCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -18,6 +20,11 @@ function sendCors(res) {
 
 function normalizeString(value) {
   return String(value || '').trim()
+}
+
+function normalizeModuleKey(value) {
+  const next = normalizeString(value)
+  return VALID_MODULE_KEYS.has(next) ? next : ''
 }
 
 function parseJsonObject(value, fallback = {}) {
@@ -54,6 +61,40 @@ function normalizeAccessTier(value) {
 
 function getUserId(user) {
   return user?.userId || user?.user_id || user?.id || ''
+}
+
+function canAccessModuleVideo(row, user) {
+  if (!user) return false
+  if (normalizeAccessTier(row.access_tier) === 'free') return true
+  return Boolean(deriveMembershipCapabilities(user).canAccessCorporateEnglishVideos)
+}
+
+function mapModuleVideo(row, user) {
+  const unlocked = canAccessModuleVideo(row, user)
+  const isAuthenticated = Boolean(user)
+  const accessTier = normalizeAccessTier(row.access_tier)
+  return {
+    id: row.video_id,
+    videoId: row.video_id,
+    moduleKey: row.module_key,
+    title: row.video_title,
+    description: row.description || '',
+    videoSource: row.video_source || '',
+    category: row.category || '',
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    accessTier,
+    publishedAt: row.published_at,
+    sortOrder: Number(row.sort_order || 0),
+    tencentIframeUrl: unlocked ? (row.tencent_iframe_url || '') : '',
+    isLocked: !unlocked,
+    loginRequired: !isAuthenticated,
+    upgradeRequired: isAuthenticated && accessTier === 'vip' && !unlocked,
+    lockReason: unlocked
+      ? ''
+      : isAuthenticated
+        ? '该视频为会员内容，升级后可播放。'
+        : '登录后可播放免费视频，会员视频需开通会员。'
+  }
 }
 
 function getPermissions(user, companyAccessTier = 'vip') {
@@ -285,6 +326,60 @@ async function listCompanies(req, res, user) {
       accessTier: normalizeAccessTier(row.access_tier),
       latestUpdatedAt: row.latest_updated_at
     }))
+  })
+}
+
+async function listModuleVideos(req, res, user) {
+  const moduleKey = normalizeModuleKey(req.query.module || req.query.moduleKey || req.query.module_key)
+  if (!moduleKey) return res.status(400).json({ success: false, error: 'Invalid module' })
+
+  const category = normalizeString(req.query.category)
+  const capabilities = deriveMembershipCapabilities(user)
+  const canViewMemberVideos = Boolean(capabilities.canAccessCorporateEnglishVideos)
+  const params = [moduleKey]
+  const conditions = ['module_key = $1', "status = 'published'", 'deleted_at IS NULL']
+  if (category && category !== '全部') {
+    params.push(category)
+    conditions.push(`category = $${params.length}`)
+  }
+
+  const rows = await neonHelper.query(
+    `SELECT *
+     FROM ${MODULE_VIDEOS_TABLE}
+     WHERE ${conditions.join(' AND ')}
+     ORDER BY
+       CASE WHEN $${params.length + 1}::boolean THEN 0 ELSE CASE WHEN access_tier = 'free' THEN 0 ELSE 1 END END ASC,
+       published_at DESC NULLS LAST,
+       sort_order ASC,
+       updated_at DESC
+     LIMIT 200`,
+    [...params, canViewMemberVideos]
+  )
+
+  const categoryRows = await neonHelper.query(
+    `SELECT category, COUNT(*)::int AS count
+     FROM ${MODULE_VIDEOS_TABLE}
+     WHERE module_key = $1
+       AND status = 'published'
+       AND deleted_at IS NULL
+       AND NULLIF(BTRIM(category), '') IS NOT NULL
+     GROUP BY category
+     ORDER BY MAX(published_at) DESC NULLS LAST, category ASC`,
+    [moduleKey]
+  )
+  const totalCount = (categoryRows || []).reduce((sum, row) => sum + Number(row.count || 0), 0)
+
+  return res.status(200).json({
+    success: true,
+    categories: [
+      { label: '全部', value: '全部', count: totalCount },
+      ...(categoryRows || []).map((row) => ({
+        label: row.category,
+        value: row.category,
+        count: Number(row.count || 0)
+      }))
+    ],
+    videos: (rows || []).map((row) => mapModuleVideo(row, user))
   })
 }
 
@@ -620,6 +715,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'GET' && resource === 'companies') return await listCompanies(req, res, user)
     if (req.method === 'GET' && resource === 'company') return await getCompany(req, res, user)
+    if (req.method === 'GET' && resource === 'module-videos') return await listModuleVideos(req, res, user)
     if (req.method === 'GET' && resource === 'favorites') return await listFavoriteItems(req, res, user)
     if (req.method === 'GET' && resource === 'clip-audio') return await downloadClipAudio(req, res, user)
     if (req.method === 'POST' && resource === 'favorite') return await updateFavorite(req, res, user, true)

@@ -8,6 +8,7 @@ const MATERIALS_TABLE = 'corporate_english_materials'
 const ASSETS_TABLE = 'corporate_english_assets'
 const CLIPS_TABLE = 'corporate_english_clips'
 const PROFILES_TABLE = 'corporate_english_company_profiles'
+const MODULE_VIDEOS_TABLE = 'corporate_english_module_videos'
 
 const MAX_CLIP_BYTES = 3 * 1024 * 1024
 const MAX_SOURCE_AUDIO_BYTES = 500 * 1024 * 1024
@@ -15,6 +16,7 @@ const MAX_CHUNK_BYTES = 1024 * 1024
 const MAX_CLIPS_PER_MATERIAL = 50
 const VALID_ASSET_KINDS = new Set(['source_audio', 'subtitle_csv', 'clip_audio'])
 const VALID_STATUSES = new Set(['draft', 'published', 'archived'])
+const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
 
 function sendCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -29,6 +31,11 @@ function normalizeString(value) {
 function normalizeStatus(status) {
   const next = normalizeString(status) || 'draft'
   return VALID_STATUSES.has(next) ? next : 'draft'
+}
+
+function normalizeModuleKey(value) {
+  const next = normalizeString(value)
+  return VALID_MODULE_KEYS.has(next) ? next : ''
 }
 
 function normalizeSections(sections) {
@@ -69,6 +76,38 @@ function extractTencentVideoVid(value) {
 
 function buildTencentVideoUrl(vid) {
   return vid ? `https://v.qq.com/txp/iframe/player.html?vid=${encodeURIComponent(vid)}` : ''
+}
+
+function normalizeTencentIframeUrl(value) {
+  const raw = normalizeString(value)
+  if (!raw) return ''
+  const iframeSrc = raw.match(/src=["']([^"']+)["']/i)?.[1]
+  const candidate = iframeSrc || raw
+  const vid = extractTencentVideoVid(candidate)
+  if (vid) return buildTencentVideoUrl(vid)
+
+  try {
+    const url = new URL(candidate)
+    const isTencentVideo = url.protocol === 'https:' && (url.hostname === 'v.qq.com' || url.hostname.endsWith('.v.qq.com'))
+    const isPlayerPath = url.pathname.includes('/txp/iframe/player.html')
+    const urlVid = normalizeString(url.searchParams.get('vid'))
+    if (isTencentVideo && isPlayerPath && /^[a-zA-Z0-9_-]{6,32}$/.test(urlVid)) {
+      return buildTencentVideoUrl(urlVid)
+    }
+  } catch {
+    return ''
+  }
+  return ''
+}
+
+function normalizeSimpleTags(tags) {
+  const source = Array.isArray(tags)
+    ? tags
+    : normalizeString(tags).split(/[,\n，、；;]+/g)
+  return [...new Set(source
+    .map((tag) => normalizeString(tag).replace(/^#+/, '').slice(0, 40))
+    .filter(Boolean))]
+    .slice(0, 20)
 }
 
 function normalizeClipTags(tags) {
@@ -142,6 +181,27 @@ function mapMaterialRow(row) {
   }
 }
 
+function mapModuleVideoRow(row) {
+  if (!row) return null
+  return {
+    id: row.video_id,
+    videoId: row.video_id,
+    moduleKey: row.module_key,
+    title: row.video_title,
+    description: row.description || '',
+    tencentIframeUrl: row.tencent_iframe_url || '',
+    videoSource: row.video_source || '',
+    category: row.category || '',
+    tags: Array.isArray(row.tags) ? row.tags : [],
+    accessTier: row.access_tier === 'free' ? 'free' : 'vip',
+    status: row.status || 'draft',
+    sortOrder: Number(row.sort_order || 0),
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at
+  }
+}
+
 function mapProfileRow(row) {
   if (!row) return null
   return {
@@ -201,6 +261,13 @@ async function ensureMaterialSourceVideoUrlColumn() {
   await neonHelper.query(
     `ALTER TABLE ${MATERIALS_TABLE}
        ADD COLUMN IF NOT EXISTS source_video_url TEXT`
+  )
+}
+
+async function ensureModuleVideoSourceColumn() {
+  await neonHelper.query(
+    `ALTER TABLE ${MODULE_VIDEOS_TABLE}
+       ADD COLUMN IF NOT EXISTS video_source TEXT NOT NULL DEFAULT ''`
   )
 }
 
@@ -885,6 +952,176 @@ async function deleteMaterial(req, res, admin) {
   return res.status(200).json({ success: true })
 }
 
+async function listModuleVideos(req, res) {
+  await ensureModuleVideoSourceColumn()
+  const moduleKey = normalizeModuleKey(req.query.module || req.query.moduleKey || req.query.module_key)
+  if (!moduleKey) return res.status(400).json({ success: false, error: 'Invalid module' })
+
+  const page = Math.max(toInt(req.query.page, 1), 1)
+  const limit = Math.min(Math.max(toInt(req.query.limit, 20), 1), 100)
+  const offset = (page - 1) * limit
+  const params = [moduleKey]
+  const conditions = ['module_key = $1', 'deleted_at IS NULL']
+
+  const status = normalizeString(req.query.status)
+  if (status && status !== 'all') {
+    params.push(normalizeStatus(status))
+    conditions.push(`status = $${params.length}`)
+  }
+
+  const search = normalizeString(req.query.search).toLowerCase()
+  if (search) {
+    params.push(`%${search}%`)
+    conditions.push(`(
+      LOWER(video_title) LIKE $${params.length}
+      OR LOWER(description) LIKE $${params.length}
+      OR LOWER(video_source) LIKE $${params.length}
+      OR LOWER(category) LIKE $${params.length}
+      OR LOWER(tags::text) LIKE $${params.length}
+    )`)
+  }
+
+  const where = `WHERE ${conditions.join(' AND ')}`
+  const countRows = await neonHelper.query(
+    `SELECT COUNT(*)::int AS total FROM ${MODULE_VIDEOS_TABLE} ${where}`,
+    params
+  )
+  const total = Number(countRows?.[0]?.total || 0)
+
+  params.push(limit, offset)
+  const rows = await neonHelper.query(
+    `SELECT *
+     FROM ${MODULE_VIDEOS_TABLE}
+     ${where}
+     ORDER BY published_at DESC NULLS LAST, sort_order ASC, updated_at DESC
+     LIMIT $${params.length - 1} OFFSET $${params.length}`,
+    params
+  )
+
+  return res.status(200).json({
+    success: true,
+    videos: (rows || []).map(mapModuleVideoRow),
+    total,
+    page,
+    totalPages: Math.max(1, Math.ceil(total / limit))
+  })
+}
+
+function validateModuleVideoPayload(body) {
+  const moduleKey = normalizeModuleKey(body.moduleKey || body.module_key || body.module)
+  if (!moduleKey) return { error: '请选择有效子模块' }
+
+  const title = normalizeString(body.title || body.videoTitle || body.video_title)
+  if (!title) return { error: '请填写视频标题' }
+
+  const tencentIframeUrl = normalizeTencentIframeUrl(body.tencentIframeUrl || body.tencent_iframe_url || body.tencentVideoUrl || body.tencent_video_url)
+  if (!tencentIframeUrl) return { error: '请填写有效的腾讯视频 iframe 地址或 vid' }
+
+  const accessTier = body.accessTier === 'free' || body.access_tier === 'free' ? 'free' : 'vip'
+  const publishedAtRaw = normalizeString(body.publishedAt || body.published_at)
+  const publishedAt = publishedAtRaw ? new Date(publishedAtRaw) : new Date()
+  if (Number.isNaN(publishedAt.getTime())) return { error: '发布时间格式无效' }
+
+  return {
+    error: null,
+    payload: {
+      moduleKey,
+      title: title.slice(0, 200),
+      description: normalizeString(body.description).slice(0, 2000),
+      tencentIframeUrl,
+      videoSource: normalizeString(body.videoSource || body.video_source).slice(0, 1000),
+      category: normalizeString(body.category).slice(0, 80),
+      tags: normalizeSimpleTags(body.tags),
+      accessTier,
+      status: normalizeStatus(body.status),
+      sortOrder: toInt(body.sortOrder || body.sort_order, 0),
+      publishedAt
+    }
+  }
+}
+
+async function saveModuleVideo(req, res, admin, existingId = '') {
+  await ensureModuleVideoSourceColumn()
+  const validation = validateModuleVideoPayload(req.body || {})
+  if (validation.error) return res.status(400).json({ success: false, error: validation.error })
+  const payload = validation.payload
+  const actor = admin.id || admin.email || 'admin'
+
+  if (existingId) {
+    const rows = await neonHelper.query(
+      `UPDATE ${MODULE_VIDEOS_TABLE}
+       SET module_key = $2,
+           video_title = $3,
+           description = $4,
+           tencent_iframe_url = $5,
+           video_source = $6,
+           category = $7,
+           tags = $8::jsonb,
+           access_tier = $9,
+           status = $10,
+           sort_order = $11,
+           published_at = $12,
+           updated_by = $13,
+           updated_at = NOW()
+       WHERE video_id = $1 AND deleted_at IS NULL
+       RETURNING *`,
+      [
+        existingId,
+        payload.moduleKey,
+        payload.title,
+        payload.description,
+        payload.tencentIframeUrl,
+        payload.videoSource,
+        payload.category,
+        JSON.stringify(payload.tags),
+        payload.accessTier,
+        payload.status,
+        payload.sortOrder,
+        payload.publishedAt,
+        actor
+      ]
+    )
+    if (!rows?.[0]) return res.status(404).json({ success: false, error: 'Video not found' })
+    return res.status(200).json({ success: true, video: mapModuleVideoRow(rows[0]) })
+  }
+
+  const rows = await neonHelper.query(
+    `INSERT INTO ${MODULE_VIDEOS_TABLE}
+       (module_key, video_title, description, tencent_iframe_url, video_source, category, tags, access_tier, status, sort_order, published_at, created_by, updated_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $12)
+     RETURNING *`,
+    [
+      payload.moduleKey,
+      payload.title,
+      payload.description,
+      payload.tencentIframeUrl,
+      payload.videoSource,
+      payload.category,
+      JSON.stringify(payload.tags),
+      payload.accessTier,
+      payload.status,
+      payload.sortOrder,
+      payload.publishedAt,
+      actor
+    ]
+  )
+  return res.status(201).json({ success: true, video: mapModuleVideoRow(rows?.[0]) })
+}
+
+async function deleteModuleVideo(req, res, admin) {
+  const id = normalizeString(req.query.id || req.body?.id || req.body?.videoId || req.body?.video_id)
+  if (!id) return res.status(400).json({ success: false, error: 'Missing video id' })
+  const rows = await neonHelper.query(
+    `UPDATE ${MODULE_VIDEOS_TABLE}
+     SET deleted_at = NOW(), updated_at = NOW(), updated_by = $2
+     WHERE video_id = $1 AND deleted_at IS NULL
+     RETURNING video_id`,
+    [id, admin.id || admin.email || 'admin']
+  )
+  if (!rows?.[0]) return res.status(404).json({ success: false, error: 'Video not found' })
+  return res.status(200).json({ success: true })
+}
+
 async function downloadAsset(req, res) {
   const id = normalizeString(req.query.id)
   if (!id) return res.status(400).json({ success: false, error: 'Missing asset id' })
@@ -922,13 +1159,17 @@ export default async function handler(req, res) {
     if (req.method === 'GET' && resource === 'company-profile') return await getCompanyProfile(req, res)
     if (req.method === 'GET' && resource === 'material') return await getMaterial(req, res)
     if (req.method === 'GET' && resource === 'asset') return await downloadAsset(req, res)
+    if (req.method === 'GET' && resource === 'module-videos') return await listModuleVideos(req, res)
     if (req.method === 'POST' && resource === 'asset-init') return await initAsset(req, res, admin)
     if (req.method === 'POST' && resource === 'asset-chunk') return await appendAssetChunk(req, res)
     if (req.method === 'POST' && resource === 'asset-complete') return await completeAsset(req, res)
     if (req.method === 'POST' && resource === 'material') return await saveMaterial(req, res, admin)
+    if (req.method === 'POST' && resource === 'module-video') return await saveModuleVideo(req, res, admin)
     if (req.method === 'PUT' && resource === 'material') return await saveMaterial(req, res, admin, normalizeString(req.query.id || req.body?.id))
+    if (req.method === 'PUT' && resource === 'module-video') return await saveModuleVideo(req, res, admin, normalizeString(req.query.id || req.body?.id || req.body?.videoId || req.body?.video_id))
     if (req.method === 'PUT' && resource === 'company-profile') return await saveCompanyProfile(req, res, admin)
     if (req.method === 'DELETE' && resource === 'material') return await deleteMaterial(req, res, admin)
+    if (req.method === 'DELETE' && resource === 'module-video') return await deleteModuleVideo(req, res, admin)
 
     return res.status(404).json({ success: false, error: 'Resource not found' })
   } catch (error) {
