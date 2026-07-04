@@ -200,8 +200,6 @@ export default function MemberEmailSubscriptionCard() {
       const aSelected = selectedSet.has(a.value) ? 0 : 1
       const bSelected = selectedSet.has(b.value) ? 0 : 1
       if (aSelected !== bSelected) return aSelected - bSelected
-      const countDiff = (b.count || 0) - (a.count || 0)
-      if (countDiff !== 0) return countDiff
       return a.label.localeCompare(b.label, 'zh-Hans-CN')
     })
   }, [activeTopicGroup, groupedTopicOptions, selectedTopics])
@@ -677,7 +675,6 @@ export default function MemberEmailSubscriptionCard() {
                                     {checked ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
                                   </span>
                                   <span className="min-w-0 flex-1 truncate">{topic.label}</span>
-                                  {typeof topic.count === 'number' ? <span className="text-xs font-semibold text-slate-400">{topic.count}</span> : null}
                                   {checked ? <span className="text-xs font-black text-[#7c70f4]">已选</span> : null}
                                 </button>
                               )
