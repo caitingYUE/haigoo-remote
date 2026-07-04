@@ -27,7 +27,6 @@ import neonHelper from '../server-utils/dal/neon-helper.js'
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
 import { subscriptionsService } from '../lib/services/subscriptions-service.js'
 import { isMembershipActive } from '../lib/shared/membership.js'
-import { JOB_CATEGORY_OPTIONS } from '../lib/shared/job-categories.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -55,8 +54,6 @@ const LEGACY_SUBSCRIPTION_TOPIC_MAP = {
   finance: '财务',
   legal: '法务'
 }
-const SUBSCRIPTION_TOPIC_VALUES = new Set([...JOB_CATEGORY_OPTIONS, 'other'])
-
 function isSuperAdminEmail(email) {
   return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
 }
@@ -70,7 +67,6 @@ function normalizeSubscriptionTopics(input, topic) {
     .map(item => String(item || '').trim())
     .map(item => LEGACY_SUBSCRIPTION_TOPIC_MAP[item] || item)
     .filter(Boolean)
-    .filter(item => SUBSCRIPTION_TOPIC_VALUES.has(item))
   )].slice(0, MAX_SUBSCRIPTION_TOPICS)
 }
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpDown, Briefcase, Check, ChevronDown, Crown, MapPin, SlidersHorizontal, X } from 'lucide-react';
+import { buildRoleOptionGroups } from '../constants/job-role-groups';
 
 interface FilterDropdownProps {
   label: string;
@@ -69,33 +70,6 @@ const EXPERIENCE_OPTIONS = [
   { label: '高级', value: 'Senior' },
   { label: '专家/负责人', value: 'Lead' },
   { label: '管理层', value: 'Executive' }
-];
-
-const ROLE_GROUPS = [
-  {
-    title: '技术研发类',
-    keywords: ['前端', '后端', '全栈', '移动', '算法', '数据开发', '测试', 'QA', '运维', 'SRE', '安全', '架构', '技术', '工程', '开发', 'CTO', '内核', '硬件', '数据库', '平台', '服务器']
-  },
-  {
-    title: '产品 / 项目类',
-    keywords: ['产品经理', '产品设计', '营销设计', '视觉设计', '平面设计', '创意设计', 'UI', 'UX', '项目', '增长', '用户研究']
-  },
-  {
-    title: '市场 / 销售类',
-    keywords: ['市场', '品牌', '销售', '商务', '客户经理', '营销']
-  },
-  {
-    title: '运营 / 客服类',
-    keywords: ['运营', '产品运营', '活动运营', '客户服务', '内容']
-  },
-  {
-    title: '职能 / 服务类',
-    keywords: ['人力', '招聘', '财务', '会计', '法务', '行政', '管理']
-  },
-  {
-    title: '数据 / 教育 / 其他',
-    keywords: ['数据分析', '商业分析', '数据科学', '教育', '培训', '投资', '游戏', '其他']
-  }
 ];
 
 const LOCATION_GROUPS = [
@@ -274,13 +248,6 @@ const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, 
   );
 };
 
-const normalizeText = (value: string) => value.toLowerCase().replace(/\s+/g, '');
-
-const optionMatches = (option: { label: string; value: string }, keywords: string[]) => {
-  const text = normalizeText(`${option.label} ${option.value}`);
-  return keywords.some(keyword => text.includes(normalizeText(keyword)));
-};
-
 export default function JobFilterBar({
   filters,
   onFilterChange,
@@ -310,18 +277,8 @@ export default function JobFilterBar({
   }, [filters, openDropdown]);
   const previousOpenDropdownRef = useRef<string | null>(null);
 
-  const groupedCategories = useMemo(() => {
-    const used = new Set<string>();
-    const groups = ROLE_GROUPS.map(group => {
-      const options = categoryOptions.filter(option => optionMatches(option, group.keywords));
-      options.forEach(option => used.add(option.value));
-      return { ...group, options };
-    }).filter(group => group.options.length > 0);
-
-    const remaining = categoryOptions.filter(option => !used.has(option.value));
-    if (remaining.length > 0) groups.push({ title: '更多角色', keywords: [], options: remaining });
-    return groups;
-  }, [categoryOptions]);
+  const groupedCategories = useMemo(() => buildRoleOptionGroups(categoryOptions), [categoryOptions]);
+  const showRoleCounts = Boolean(isMember);
 
   const visibleLocationGroups = LOCATION_GROUPS;
 
@@ -607,7 +564,7 @@ export default function JobFilterBar({
                       <FilterChip
                         key={option.value}
                         label={option.label}
-                        count={option.count}
+                        count={showRoleCounts ? option.count : undefined}
                         active={tempFilters.category?.includes(option.value) || false}
                         tone="indigo"
                         onClick={() => toggleRoleOption(option.value)}

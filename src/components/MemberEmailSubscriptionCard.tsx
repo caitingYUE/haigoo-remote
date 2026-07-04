@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { ArrowRight, Bell, CheckCircle2, ChevronDown, Loader2, Mail, PauseCircle, PlayCircle, Plus, Search, X } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronDown, Loader2, Mail, PauseCircle, PlayCircle, Plus, Search, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
+import { buildRoleOptionGroups, type RoleOption } from '../constants/job-role-groups'
 import {
   getSubscriptionTopicSearchText,
   MAX_SUBSCRIPTION_TOPICS,
@@ -21,17 +22,21 @@ interface UserSubscription {
   status: 'active' | 'inactive' | 'bounced'
 }
 
-const topicLabels: Map<string, string> = new Map(SUBSCRIPTION_TOPICS.map(item => [item.value, item.label]))
+interface SubscriptionTopicOption extends RoleOption {
+  aliases?: readonly string[]
+}
+
+const STATIC_SUBSCRIPTION_TOPIC_OPTIONS: SubscriptionTopicOption[] = SUBSCRIPTION_TOPICS
+  .filter(item => item.value !== '其他')
+  .map(item => ({
+    value: item.value,
+    label: item.label,
+    aliases: item.aliases || []
+  }))
+
 function normalizeSearchText(value: string) {
   return String(value || '').trim().toLowerCase().replace(/\s+/g, '')
 }
-
-const normalizedTopicLabels: Map<string, string> = new Map(
-  SUBSCRIPTION_TOPICS.flatMap(item => {
-    const aliases = 'aliases' in item && Array.isArray(item.aliases) ? item.aliases : []
-    return [item.value, item.label, ...aliases].map(value => [normalizeSearchText(value), item.value] as const)
-  })
-)
 
 const CUSTOM_TOPIC_VALUE = '__custom__'
 
@@ -45,7 +50,27 @@ function uniqueCustomTopics(values: string[]) {
       if (seen.has(key)) return false
       seen.add(key)
       return true
+  })
+}
+
+function buildNormalizedTopicMap(options: SubscriptionTopicOption[]) {
+  return new Map(
+    options.flatMap(item => {
+      const aliases = Array.isArray(item.aliases) ? item.aliases : []
+      return [item.value, item.label, ...aliases].map(value => [normalizeSearchText(value), item.value] as const)
     })
+  )
+}
+
+function normalizeTopicOption(value: string, count?: number): SubscriptionTopicOption | null {
+  const topicValue = normalizeSubscriptionTopicValue(String(value || '').trim())
+  if (!topicValue || topicValue === '其他' || topicValue === 'other' || topicValue === 'Unspecified') return null
+  return {
+    value: topicValue,
+    label: topicValue,
+    count,
+    aliases: []
+  }
 }
 
 function parseTopicState(subscription: UserSubscription | null) {
@@ -64,10 +89,15 @@ function parseTopicState(subscription: UserSubscription | null) {
     .map(item => String(item || '').trim())
     .map(item => normalizeSubscriptionTopicValue(item))
     .filter(Boolean)
-    .filter(item => topicLabels.has(item))
     .filter(item => item !== 'other')
     .slice(0, MAX_SUBSCRIPTION_TOPICS)
-  return { topics, customTopics }
+  const topicKeys = new Set(topics.map(item => normalizeSearchText(item)))
+  return {
+    topics,
+    customTopics: customTopics
+      .filter(item => !topicKeys.has(normalizeSearchText(item)))
+      .slice(0, Math.max(0, MAX_SUBSCRIPTION_TOPICS - topics.length))
+  }
 }
 
 export default function MemberEmailSubscriptionCard() {
@@ -78,20 +108,44 @@ export default function MemberEmailSubscriptionCard() {
   const [subscription, setSubscription] = useState<UserSubscription | null>(null)
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [customTopics, setCustomTopics] = useState<string[]>([])
+  const [categoryTopicOptions, setCategoryTopicOptions] = useState<SubscriptionTopicOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [activeTopicGroup, setActiveTopicGroup] = useState(0)
   const comboRef = useRef<HTMLDivElement | null>(null)
+  const previousDropdownOpenRef = useRef(false)
 
   const isActive = subscription?.status === 'active'
   const normalizedSearchTerm = normalizeSearchText(searchTerm)
   const selectedCount = selectedTopics.length + customTopics.length
+  const topicOptions = useMemo(() => {
+    const optionMap = new Map<string, SubscriptionTopicOption>()
+    const addOption = (option: SubscriptionTopicOption) => {
+      const value = normalizeSubscriptionTopicValue(option.value)
+      if (!value || value === '其他' || value === 'other') return
+      const existing = optionMap.get(value)
+      optionMap.set(value, {
+        value,
+        label: option.label || existing?.label || value,
+        aliases: option.aliases?.length ? option.aliases : existing?.aliases || [],
+        count: typeof option.count === 'number' ? option.count : existing?.count
+      })
+    }
+
+    STATIC_SUBSCRIPTION_TOPIC_OPTIONS.forEach(addOption)
+    categoryTopicOptions.forEach(addOption)
+    selectedTopics.forEach(value => addOption({ value, label: value }))
+    return Array.from(optionMap.values())
+  }, [categoryTopicOptions, selectedTopics])
+  const topicLabels = useMemo(() => new Map(topicOptions.map(item => [item.value, item.label])), [topicOptions])
+  const normalizedTopicLabels = useMemo(() => buildNormalizedTopicMap(topicOptions), [topicOptions])
   const selectedLabels = useMemo(() => (
     [
       ...selectedTopics.map(item => topicLabels.get(item) || item),
       ...customTopics
     ]
       .join('、')
-  ), [customTopics, selectedTopics])
+  ), [customTopics, selectedTopics, topicLabels])
   const selectedDisplayItems = useMemo(() => (
     [
       ...selectedTopics.map(item => ({
@@ -103,14 +157,13 @@ export default function MemberEmailSubscriptionCard() {
         label: item
       }))
     ]
-  ), [customTopics, selectedTopics])
+  ), [customTopics, selectedTopics, topicLabels])
   const exactMatchedTopic = useMemo(() => (
     normalizedSearchTerm ? normalizedTopicLabels.get(normalizedSearchTerm) || null : null
-  ), [normalizedSearchTerm])
+  ), [normalizedSearchTerm, normalizedTopicLabels])
   const visibleTopicOptions = useMemo(() => {
     const selectedSet = new Set(selectedTopics)
-    const scored = SUBSCRIPTION_TOPICS
-      .filter(topic => topic.value !== '其他')
+    const scored = topicOptions
       .map((topic, index) => {
         if (!normalizedSearchTerm) return { topic, score: 0, index }
         const labelText = normalizeSearchText(`${topic.label}${topic.value}`)
@@ -133,23 +186,47 @@ export default function MemberEmailSubscriptionCard() {
         return a.index - b.index
       })
     const matches = scored.map(item => item.topic)
-    const selectedOptions = SUBSCRIPTION_TOPICS
-      .filter(topic => topic.value !== '其他' && selectedSet.has(topic.value))
+    const selectedOptions = topicOptions
+      .filter(topic => selectedSet.has(topic.value))
       .filter(topic => !matches.some(item => item.value === topic.value))
     return [...selectedOptions, ...matches]
-  }, [normalizedSearchTerm, selectedTopics])
+  }, [normalizedSearchTerm, selectedTopics, topicOptions])
   const canCreateCustomTopic = Boolean(searchTerm.trim()) && !exactMatchedTopic
+  const groupedTopicOptions = useMemo(() => buildRoleOptionGroups(topicOptions), [topicOptions])
+  const currentTopicGroupOptions = useMemo(() => {
+    const groupOptions = groupedTopicOptions[activeTopicGroup]?.options || []
+    const selectedSet = new Set(selectedTopics)
+    return [...groupOptions].sort((a, b) => {
+      const aSelected = selectedSet.has(a.value) ? 0 : 1
+      const bSelected = selectedSet.has(b.value) ? 0 : 1
+      if (aSelected !== bSelected) return aSelected - bSelected
+      const countDiff = (b.count || 0) - (a.count || 0)
+      if (countDiff !== 0) return countDiff
+      return a.label.localeCompare(b.label, 'zh-Hans-CN')
+    })
+  }, [activeTopicGroup, groupedTopicOptions, selectedTopics])
+  const dropdownTopicOptions = normalizedSearchTerm ? visibleTopicOptions : currentTopicGroupOptions
+  const dropdownTitle = normalizedSearchTerm ? '匹配结果' : (groupedTopicOptions[activeTopicGroup]?.title || '岗位方向')
   const customTopicHint = useMemo(() => {
+    const hasFuzzyTopicMatch = (value: string) => {
+      const normalizedValue = normalizeSearchText(value)
+      if (!normalizedValue) return false
+      return topicOptions.some(topic => {
+        const labelText = normalizeSearchText(`${topic.label}${topic.value}`)
+        const searchText = normalizeSearchText(getSubscriptionTopicSearchText(topic))
+        return labelText.includes(normalizedValue) || searchText.includes(normalizedValue)
+      })
+    }
     const nextTerm = searchTerm.trim()
-    if (nextTerm && !exactMatchedTopic) {
+    if (nextTerm && !exactMatchedTopic && visibleTopicOptions.length === 0) {
       return `暂无「${nextTerm}」这类岗位，如后续新增该类型，会继续发送匹配岗位。`
     }
     const latestCustomTopic = customTopics[customTopics.length - 1]
-    if (latestCustomTopic && !normalizedTopicLabels.has(normalizeSearchText(latestCustomTopic))) {
+    if (latestCustomTopic && !normalizedTopicLabels.has(normalizeSearchText(latestCustomTopic)) && !hasFuzzyTopicMatch(latestCustomTopic)) {
       return `暂无「${latestCustomTopic}」这类岗位，如后续新增该类型，会继续发送匹配岗位。`
     }
     return ''
-  }, [customTopics, exactMatchedTopic, searchTerm])
+  }, [customTopics, exactMatchedTopic, normalizedTopicLabels, searchTerm, topicOptions, visibleTopicOptions.length])
 
   useEffect(() => {
     let mounted = true
@@ -178,6 +255,89 @@ export default function MemberEmailSubscriptionCard() {
     loadSubscription()
     return () => { mounted = false }
   }, [isAuthenticated, token, showError])
+
+  useEffect(() => {
+    let mounted = true
+    const loadTopicOptions = async () => {
+      if (!isAuthenticated || !isMember) return
+      try {
+        const metadataParams = new URLSearchParams({
+          metadataOnly: 'true',
+          page: '1',
+          pageSize: '1',
+          limit: '1',
+          sortBy: 'recent',
+          isApproved: 'true'
+        })
+        const jobsParams = new URLSearchParams({
+          page: '1',
+          pageSize: '500',
+          limit: '500',
+          sortBy: 'recent',
+          isApproved: 'true',
+          skipAggregations: 'true',
+          listMode: 'compact'
+        })
+        const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+        const [metadataResponse, jobsResponse] = await Promise.all([
+          fetch(`/api/data/processed-jobs?${metadataParams.toString()}`, { headers }),
+          fetch(`/api/data/processed-jobs?${jobsParams.toString()}`, { headers })
+        ])
+        const metadataData = await metadataResponse.json().catch(() => ({}))
+        const jobsData = await jobsResponse.json().catch(() => ({}))
+        if (!mounted) return
+
+        const optionMap = new Map<string, SubscriptionTopicOption>()
+        const addOption = (option: SubscriptionTopicOption | null) => {
+          if (!option) return
+          const existing = optionMap.get(option.value)
+          optionMap.set(option.value, {
+            ...option,
+            count: typeof option.count === 'number' ? option.count : existing?.count,
+            aliases: option.aliases?.length ? option.aliases : existing?.aliases || []
+          })
+        }
+
+        if (Array.isArray(metadataData?.aggregations?.category)) {
+          metadataData.aggregations.category.forEach((item: { value?: string; count?: number }) => {
+            addOption(normalizeTopicOption(item?.value || '', typeof item.count === 'number' ? item.count : Number(item.count) || undefined))
+          })
+        }
+
+        if (Array.isArray(jobsData?.jobs)) {
+          jobsData.jobs.forEach((job: { category?: string }) => {
+            addOption(normalizeTopicOption(job?.category || ''))
+          })
+        }
+
+        setCategoryTopicOptions(Array.from(optionMap.values()))
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.debug('[MemberEmailSubscriptionCard] Failed to load category facets:', error)
+        }
+      }
+    }
+    loadTopicOptions()
+    return () => { mounted = false }
+  }, [isAuthenticated, isMember, token])
+
+  useEffect(() => {
+    if (activeTopicGroup >= groupedTopicOptions.length) {
+      setActiveTopicGroup(0)
+    }
+  }, [activeTopicGroup, groupedTopicOptions.length])
+
+  useEffect(() => {
+    const wasOpen = previousDropdownOpenRef.current
+    previousDropdownOpenRef.current = dropdownOpen
+    if (!dropdownOpen || wasOpen || normalizedSearchTerm || selectedTopics.length === 0) return
+    const targetIndex = groupedTopicOptions.findIndex(group =>
+      group.options.some(option => selectedTopics.includes(option.value))
+    )
+    if (targetIndex >= 0 && targetIndex !== activeTopicGroup) {
+      setActiveTopicGroup(targetIndex)
+    }
+  }, [activeTopicGroup, dropdownOpen, groupedTopicOptions, normalizedSearchTerm, selectedTopics])
 
   useEffect(() => {
     const handlePointerDown = (event: MouseEvent) => {
@@ -334,15 +494,12 @@ export default function MemberEmailSubscriptionCard() {
   }
 
   return (
-    <div className="relative z-10 mt-6 overflow-visible rounded-[26px] border border-[#e3edf4] bg-white px-5 py-5 shadow-[0_18px_48px_-40px_rgba(62,91,120,0.28)] sm:px-6">
+    <div className="relative z-10 mt-6 isolate overflow-visible rounded-[26px] border border-[#dbe9f2] bg-[linear-gradient(135deg,#f7fcff_0%,#ffffff_48%,#fffaf1_100%)] px-5 py-5 shadow-[0_18px_48px_-40px_rgba(62,91,120,0.28)] sm:px-6">
+      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-[linear-gradient(90deg,rgba(111,99,246,0),rgba(111,99,246,0.35),rgba(240,161,31,0))]" />
       <div className="relative">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <div className="inline-flex items-center gap-2 rounded-full border border-[#dbe9f2] bg-white/82 px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
-              <Bell className="h-3.5 w-3.5" />
-              会员邮件订阅
-            </div>
-            <h2 className="mt-3 text-[22px] font-black leading-tight tracking-normal text-slate-950 sm:text-[26px]">
+            <h2 className="text-[22px] font-black leading-tight tracking-normal text-slate-950 sm:text-[26px]">
               订阅你感兴趣的方向，及时接收最新岗位通知
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
@@ -355,17 +512,6 @@ export default function MemberEmailSubscriptionCard() {
               <Mail className="h-3.5 w-3.5 text-[#6f63f6]" />
               {user?.email || '登录后使用注册邮箱'}
             </span>
-            <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white bg-white/80 px-3 shadow-sm">
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
-              最多 {MAX_SUBSCRIPTION_TOPICS} 个方向
-            </span>
-            {subscription ? (
-              <span className={`inline-flex h-9 items-center rounded-full border px-3 text-xs font-black shadow-sm ${
-                isActive ? 'border-emerald-100 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-slate-50 text-slate-500'
-              }`}>
-                {isActive ? 'Active' : 'Paused'}
-              </span>
-            ) : null}
           </div>
         </div>
 
@@ -387,7 +533,7 @@ export default function MemberEmailSubscriptionCard() {
           <div className="mt-5 flex flex-col gap-3 rounded-[20px] border border-[#f2dfb7] bg-[#fffaf0]/90 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-sm font-black text-slate-950">会员专属邮件订阅</div>
-              <p className="mt-1 text-sm leading-6 text-slate-600">升级会员后可按岗位方向订阅每日精选机会，减少反复刷新和手动筛选。</p>
+              <p className="mt-1 text-sm leading-6 text-slate-600">升级会员后可及时接收你关注的岗位更新，避免错过好机会。</p>
             </div>
             <Link
               to="/profile?tab=membership#club-service-plans"
@@ -410,7 +556,7 @@ export default function MemberEmailSubscriptionCard() {
 
                 <div ref={comboRef} className="relative">
                   <div
-                    className={`flex min-h-[48px] items-center gap-2 rounded-2xl border bg-white/92 px-3 py-2 transition-colors ${
+                    className={`flex min-h-[48px] items-center gap-2 rounded-2xl border bg-white/96 px-3 py-2 shadow-[0_12px_28px_-26px_rgba(51,65,85,0.45)] transition-colors ${
                       dropdownOpen ? 'border-[#bdb5ff] ring-2 ring-[#eeeaff]' : 'border-[#e3edf4]'
                     }`}
                     onClick={() => setDropdownOpen(true)}
@@ -466,54 +612,82 @@ export default function MemberEmailSubscriptionCard() {
                   </div>
 
                   {dropdownOpen ? (
-                    <div className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#dbe9f2] bg-white shadow-[0_24px_70px_-42px_rgba(45,64,92,0.42)]">
-                      <div className="max-h-[270px] overflow-y-auto p-2">
-                        {canCreateCustomTopic ? (
-                          <button
-                            type="button"
-                            onClick={() => addCustomTopic(searchTerm)}
-                            disabled={!customTopics.some(item => normalizeSearchText(item) === normalizeSearchText(searchTerm)) && selectedCount >= MAX_SUBSCRIPTION_TOPICS}
-                            className="mb-1 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-[#f7f9fc] disabled:cursor-not-allowed disabled:text-slate-300"
-                          >
-                            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]">
-                              <Plus className="h-3.5 w-3.5" />
-                            </span>
-                            <span className="min-w-0 flex-1 truncate">保留“{searchTerm.trim()}”</span>
-                            <span className="text-xs font-semibold text-slate-400">自定义</span>
-                          </button>
-                        ) : null}
-
-                        {visibleTopicOptions.length ? visibleTopicOptions.map(topic => {
-                          const checked = selectedTopics.includes(topic.value)
-                          const disabled = !checked && selectedCount >= MAX_SUBSCRIPTION_TOPICS
-                          return (
+                    <div
+                      className="absolute left-0 right-0 top-[calc(100%+8px)] z-20 overflow-hidden rounded-2xl border border-[#dbe9f2] bg-white shadow-[0_24px_70px_-42px_rgba(45,64,92,0.42)]"
+                      onMouseDown={event => event.stopPropagation()}
+                      onClick={event => event.stopPropagation()}
+                      onWheel={event => event.stopPropagation()}
+                    >
+                      <div className="grid h-[420px] max-h-[calc(100vh-220px)] min-h-[280px] grid-cols-[132px_minmax(0,1fr)] overflow-hidden">
+                        <div className="min-h-0 overflow-y-auto overscroll-contain border-r border-[#edf2f7] bg-slate-50/80 p-2 custom-scrollbar">
+                          {groupedTopicOptions.map((group, index) => (
                             <button
-                              key={topic.value}
+                              key={group.title}
                               type="button"
-                              onClick={() => toggleTopic(topic.value)}
-                              disabled={disabled}
-                              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
-                                checked
-                                  ? 'bg-[#f4f1ff] font-black text-[#5b50e6]'
-                                  : disabled
-                                    ? 'cursor-not-allowed text-slate-300'
-                                    : 'font-bold text-slate-700 hover:bg-[#f7f9fc]'
+                              onClick={event => {
+                                event.preventDefault()
+                                event.stopPropagation()
+                                setActiveTopicGroup(index)
+                                setSearchTerm('')
+                              }}
+                              className={`mb-1 w-full rounded-xl px-3 py-2.5 text-left text-xs font-black transition-colors ${
+                                !normalizedSearchTerm && activeTopicGroup === index
+                                  ? 'bg-white text-[#5b50e6] shadow-sm'
+                                  : 'text-slate-500 hover:bg-white/80 hover:text-slate-900'
                               }`}
                             >
-                              <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-                                checked ? 'border-[#6f63f6] bg-[#6f63f6] text-white' : 'border-[#cfdbe6] bg-white'
-                              }`}>
-                                {checked ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
-                              </span>
-                              <span className="min-w-0 flex-1 truncate">{topic.label}</span>
-                              {checked ? <span className="text-xs font-black text-[#7c70f4]">已选</span> : null}
+                              {group.title.replace('类', '')}
                             </button>
-                          )
-                        }) : (
-                          <div className="px-3 py-6 text-center text-sm font-semibold text-slate-400">
-                            没有匹配的内置方向
+                          ))}
+                        </div>
+
+                        <div className="min-h-0 min-w-0 overflow-y-auto overscroll-contain p-3 custom-scrollbar">
+                          <div className="mb-2 px-1 text-sm font-black text-slate-900">{dropdownTitle}</div>
+                          {canCreateCustomTopic ? (
+                            <button
+                              type="button"
+                              onClick={() => addCustomTopic(searchTerm)}
+                              className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-[#f7f9fc]"
+                            >
+                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]">
+                                <Plus className="h-3.5 w-3.5" />
+                              </span>
+                              <span className="min-w-0 flex-1 truncate">保留“{searchTerm.trim()}”</span>
+                              <span className="text-xs font-semibold text-slate-400">自定义</span>
+                            </button>
+                          ) : null}
+
+                          <div className="grid gap-1.5">
+                            {dropdownTopicOptions.length ? dropdownTopicOptions.map(topic => {
+                              const checked = selectedTopics.includes(topic.value)
+                              return (
+                                <button
+                                  key={topic.value}
+                                  type="button"
+                                  onClick={() => toggleTopic(topic.value)}
+                                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
+                                    checked
+                                      ? 'bg-[#f4f1ff] font-black text-[#5b50e6]'
+                                      : 'font-bold text-slate-700 hover:bg-[#f7f9fc]'
+                                  }`}
+                                >
+                                  <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+                                    checked ? 'border-[#6f63f6] bg-[#6f63f6] text-white' : 'border-[#cfdbe6] bg-white'
+                                  }`}>
+                                    {checked ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
+                                  </span>
+                                  <span className="min-w-0 flex-1 truncate">{topic.label}</span>
+                                  {typeof topic.count === 'number' ? <span className="text-xs font-semibold text-slate-400">{topic.count}</span> : null}
+                                  {checked ? <span className="text-xs font-black text-[#7c70f4]">已选</span> : null}
+                                </button>
+                              )
+                            }) : (
+                              <div className="px-3 py-6 text-center text-sm font-semibold text-slate-400">
+                                没有匹配的内置方向
+                              </div>
+                            )}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   ) : null}
