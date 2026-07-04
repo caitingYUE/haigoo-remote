@@ -50,6 +50,15 @@ export default async function handler(req, res) {
         const { default: adminDailyFeaturedEmailHandler } = await import('../../lib/cron-handlers/admin-daily-featured-email.js');
         return await adminDailyFeaturedEmailHandler(req, res);
       }
+      case 'daily-digest': {
+        const { sendDailyDigests } = await import('../../lib/cron-handlers/daily-digest.js');
+        res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('Transfer-Encoding', 'chunked');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        return await sendDailyDigests(req, res);
+      }
       case 'membership-lifecycle': {
         const { default: membershipLifecycleHandler } = await import('../../lib/cron-handlers/membership-lifecycle.js');
         return await membershipLifecycleHandler(req, res);
@@ -97,6 +106,7 @@ export default async function handler(req, res) {
             'stream-verify-links',
             'rotate-featured',
             'admin-daily-featured-email',
+            'daily-digest',
             'membership-lifecycle',
             'cleanup-analytics',
             'daily-ingest',

@@ -129,12 +129,15 @@ async function startServer() {
         console.log('Campaign handlers imported.');
 
         console.log('Importing cron handlers...');
+        const cronIndexHandler = (await import('./api/cron/index.js')).default;
         const crawlTrustedJobsHandler = (await import('./lib/cron-handlers/stream-crawl-trusted-jobs.js')).default;
         // sync-jobs usually refers to translate-jobs in this context or process-rss
         // But translate-jobs is the one user cares about
         // I'll map sync-jobs to translate-jobs.js as it seems most relevant
         const syncJobsHandler = (await import('./lib/cron-handlers/stream-translate-jobs.js')).default;
 
+        app.all('/api/cron', async (req, res) => { await cronIndexHandler(req, res); });
+        app.all('/api/cron/index', async (req, res) => { await cronIndexHandler(req, res); });
         app.all('/api/cron/crawl-trusted-jobs', async (req, res) => { await crawlTrustedJobsHandler(req, res); });
         app.all('/api/cron/sync-jobs', async (req, res) => { await syncJobsHandler(req, res); });
         console.log('Cron handlers imported.');

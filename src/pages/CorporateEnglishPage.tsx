@@ -55,6 +55,16 @@ const MODULE_TABS: Array<{ key: CorporateEnglishPageModule; label: string; modul
   { key: 'meeting', label: '外企会议', moduleKey: 'foreign_meeting', description: '体验真实外企会议，提前适应远程工作。' }
 ]
 
+const CORPORATE_ENGLISH_SECTION_KEYS: Record<CorporateEnglishPageModule, string> = {
+  ceo: 'ceo',
+  interview: 'english_interview',
+  meeting: 'foreign_meeting'
+}
+
+function getCorporateEnglishSectionKey(module: CorporateEnglishPageModule) {
+  return CORPORATE_ENGLISH_SECTION_KEYS[module] || 'ceo'
+}
+
 function resolveModuleFromSearch(search: string): CorporateEnglishPageModule {
   const value = new URLSearchParams(search).get('module') || ''
   if (value === 'interview' || value === 'english_interview') return 'interview'
@@ -279,15 +289,55 @@ function MemberOnlyHint() {
 
 function ModuleVideoCard({
   video,
+  activeModule,
   onLockedAction
 }: {
   video: CorporateEnglishPublicModuleVideo
+  activeModule: CorporateEnglishPageModule
   onLockedAction: (video: CorporateEnglishPublicModuleVideo) => void
 }) {
+  const cardRef = useRef<HTMLElement | null>(null)
+  const trackedRef = useRef(false)
   const isFree = video.accessTier === 'free'
   const sourceUrl = isExternalUrl(video.videoSource) ? normalizeExternalUrl(video.videoSource) : ''
+
+  useEffect(() => {
+    if (trackedRef.current || video.isLocked || !video.tencentIframeUrl) return
+    const element = cardRef.current
+    if (!element) return
+    const trackOpen = () => {
+      if (trackedRef.current) return
+      trackedRef.current = true
+      trackingService.track('corporate_english_video_play', {
+        page_key: 'corporate_english',
+        module: 'corporate_english_module_video',
+        feature_key: 'corporate_english_video_play',
+        entity_type: 'corporate_english_module_video',
+        entity_id: video.videoId,
+        corporate_english_section: getCorporateEnglishSectionKey(activeModule),
+        module_key: video.moduleKey,
+        category: video.category || ''
+      })
+    }
+
+    if (typeof IntersectionObserver === 'undefined') {
+      trackOpen()
+      return
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting && entry.intersectionRatio >= 0.35)) {
+        trackOpen()
+        observer.disconnect()
+      }
+    }, { threshold: [0.35] })
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [activeModule, video.category, video.isLocked, video.moduleKey, video.tencentIframeUrl, video.videoId])
+
   return (
-    <article className="overflow-hidden rounded-[24px] border border-[#e2e9f2] bg-white shadow-[0_18px_50px_rgba(36,47,76,0.08)] xl:grid xl:grid-cols-[minmax(520px,1.18fr)_minmax(320px,0.82fr)]">
+    <article ref={cardRef} className="overflow-hidden rounded-[24px] border border-[#e2e9f2] bg-white shadow-[0_18px_50px_rgba(36,47,76,0.08)] xl:grid xl:grid-cols-[minmax(520px,1.18fr)_minmax(320px,0.82fr)]">
       <div className="relative aspect-video bg-slate-950 xl:h-full xl:min-h-[340px] xl:aspect-auto">
         {!video.isLocked && video.tencentIframeUrl ? (
           <iframe
@@ -533,7 +583,7 @@ function ModuleVideoLibrary({
         ) : videos.length > 0 ? (
           <div className="max-w-[1180px] space-y-5 pb-8">
             {videos.map((video) => (
-              <ModuleVideoCard key={video.videoId} video={video} onLockedAction={onLockedAction} />
+              <ModuleVideoCard key={video.videoId} video={video} activeModule={activeModule} onLockedAction={onLockedAction} />
             ))}
           </div>
         ) : (
@@ -704,7 +754,6 @@ function LearningSidePanel({
   const activeSections = activeTab === 'culture' ? cultureSections : ceoThinkingSections
   const activeInsightTab = activeTab === 'culture' || activeTab === 'ceo' ? activeTab : null
   const activeInsightIndex = activeInsightTab ? Math.min(activeInsightIndexes[activeInsightTab] || 0, Math.max(activeSections.length - 1, 0)) : 0
-  const totalInsightCount = cultureSections.length + ceoThinkingSections.length
   const isResourceTab = activeTab === 'resources'
   const isJobTab = activeTab === 'jobs'
   const isFavoriteTab = activeTab === 'favorites'
@@ -1253,6 +1302,7 @@ export default function CorporateEnglishPage() {
   const activeModule = useMemo(() => resolveModuleFromSearch(location.search), [location.search])
   const activeModuleTab = useMemo(() => MODULE_TABS.find((tab) => tab.key === activeModule) || MODULE_TABS[0], [activeModule])
   const moduleKey = activeModuleTab.moduleKey
+  const activeSectionKey = useMemo(() => getCorporateEnglishSectionKey(activeModule), [activeModule])
   const queryTargets = useMemo(() => {
     const params = new URLSearchParams(location.search)
     return {
@@ -1274,6 +1324,17 @@ export default function CorporateEnglishPage() {
   useEffect(() => {
     setSelectedModuleCategory('全部')
   }, [activeModule])
+
+  useEffect(() => {
+    trackingService.track('corporate_english_section_view', {
+      page_key: 'corporate_english',
+      module: 'corporate_english_section',
+      feature_key: 'corporate_english_page',
+      corporate_english_section: activeSectionKey,
+      module_key: moduleKey || 'ceo',
+      path: location.pathname
+    })
+  }, [activeSectionKey, location.pathname, moduleKey])
 
   useEffect(() => {
     if (!moduleKey) return
@@ -1416,7 +1477,9 @@ export default function CorporateEnglishPage() {
       feature_key: 'corporate_english_video_play',
       entity_type: 'corporate_english_material',
       entity_id: activeVideo.materialId,
-      company_id: selectedCompanyId
+      company_id: selectedCompanyId,
+      corporate_english_section: 'ceo',
+      module_key: 'ceo'
     })
   }, [activeVideo, selectedCompanyId])
 
@@ -1468,7 +1531,9 @@ export default function CorporateEnglishPage() {
       entity_type: 'corporate_english_clip',
       entity_id: clip.clipId,
       material_id: activeVideo?.materialId || '',
-      company_id: selectedCompanyId
+      company_id: selectedCompanyId,
+      corporate_english_section: 'ceo',
+      module_key: 'ceo'
     })
   }, [activeVideo?.materialId, selectedCompanyId])
 

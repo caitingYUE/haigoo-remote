@@ -25,14 +25,74 @@ import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
 import neonHelper from '../server-utils/dal/neon-helper.js'
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
+import { subscriptionsService } from '../lib/services/subscriptions-service.js'
+import { isMembershipActive } from '../lib/shared/membership.js'
+import { JOB_CATEGORY_OPTIONS } from '../lib/shared/job-categories.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CONFIGURED = !!GOOGLE_CLIENT_ID
 const googleClient = GOOGLE_CONFIGURED ? new OAuth2Client(GOOGLE_CLIENT_ID) : null
+const MAX_SUBSCRIPTION_TOPICS = 3
+const LEGACY_SUBSCRIPTION_TOPIC_MAP = {
+  'full-stack': '全栈开发',
+  frontend: '前端开发',
+  backend: '后端开发',
+  mobile: '移动开发',
+  devops: '运维/SRE',
+  qa: '测试/QA',
+  security: '网络安全',
+  data: '数据分析',
+  'ai-ml': '算法工程师',
+  'product-management': '产品经理',
+  'project-management': '项目管理',
+  'ui-ux': 'UI/UX设计',
+  marketing: '市场营销',
+  sales: '销售',
+  content: '内容创作',
+  'customer-support': '客户服务',
+  hr: '人力资源',
+  finance: '财务',
+  legal: '法务'
+}
+const SUBSCRIPTION_TOPIC_VALUES = new Set([...JOB_CATEGORY_OPTIONS, 'other'])
 
 function isSuperAdminEmail(email) {
   return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
+}
+
+function normalizeSubscriptionTopics(input, topic) {
+  const source = Array.isArray(input)
+    ? input
+    : String(topic || '').split(',')
+
+  return [...new Set(source
+    .map(item => String(item || '').trim())
+    .map(item => LEGACY_SUBSCRIPTION_TOPIC_MAP[item] || item)
+    .filter(Boolean)
+    .filter(item => SUBSCRIPTION_TOPIC_VALUES.has(item))
+  )].slice(0, MAX_SUBSCRIPTION_TOPICS)
+}
+
+function normalizeSubscriptionCustomTopics(input, customTopic) {
+  const source = Array.isArray(input)
+    ? input
+    : String(customTopic || '').split(',')
+  const seen = new Set()
+
+  return source
+    .map(item => String(item || '').trim().replace(/\s+/g, ' '))
+    .filter(Boolean)
+    .filter(item => {
+      const key = item.toLowerCase().replace(/\s+/g, '')
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+}
+
+function countStandardSubscriptionTopics(topics) {
+  return (Array.isArray(topics) ? topics : []).filter(item => item !== 'other').length
 }
 
 // CORS headers
@@ -47,7 +107,7 @@ function setCorsHeaders(res, req) {
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, OPTIONS')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 }
 
@@ -591,14 +651,7 @@ async function handleGetSubscriptions(req, res) {
     const user = await getUserById(payload.userId)
     if (!user) return res.status(404).json({ success: false, error: '用户不存在' })
 
-    // 查询条件：user_id 匹配 或 identifier 匹配邮箱
-    // 注意：neonHelper.select 只能处理简单的 AND 条件，这里我们需要写原生 SQL 来处理 OR
-    const query = `
-      SELECT * FROM subscriptions 
-      WHERE user_id = $1 OR (channel = 'email' AND identifier = $2)
-      ORDER BY created_at DESC
-    `
-    const result = await neonHelper.query(query, [user.user_id, user.email])
+    const result = await subscriptionsService.getForUser(user)
 
     return res.status(200).json({ success: true, subscriptions: result || [] })
   } catch (error) {
@@ -617,7 +670,7 @@ async function handleUpdateSubscription(req, res) {
   const payload = verifyToken(token)
   if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
 
-  const { id, topic, status } = req.body
+  const { id, topic, topics, customTopic, customTopics, status } = req.body
   if (!id) return res.status(400).json({ success: false, error: '订阅ID不能为空' })
 
   try {
@@ -635,15 +688,46 @@ async function handleUpdateSubscription(req, res) {
       return res.status(403).json({ success: false, error: '无权修改此订阅' })
     }
 
-    const updates = { updated_at: new Date().toISOString() }
-    if (topic) updates.topic = topic
-    if (status) updates.status = status
+    if ((topic || topics || status === 'active') && !isMembershipActive(user)) {
+      return res.status(403).json({ success: false, error: '该功能仅对会员开放，请先升级会员' })
+    }
 
-    // 如果订阅没有 user_id，顺便关联上
-    if (!subscription.user_id) updates.user_id = user.user_id
+    const normalizedTopics = normalizeSubscriptionTopics(topics, topic)
+    const normalizedCustomTopics = normalizeSubscriptionCustomTopics(customTopics, customTopic)
+    const shouldUpdateTopic = Boolean(topic || topics || normalizedCustomTopics.length)
+    let nextTopic = null
+    let nextPreferences = null
+    if (shouldUpdateTopic) {
+      if (countStandardSubscriptionTopics(normalizedTopics) + normalizedCustomTopics.length === 0) {
+        return res.status(400).json({ success: false, error: '请至少选择一个岗位方向' })
+      }
+      if (countStandardSubscriptionTopics(normalizedTopics) + normalizedCustomTopics.length > MAX_SUBSCRIPTION_TOPICS) {
+        return res.status(400).json({ success: false, error: `最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向` })
+      }
+      nextTopic = [...normalizedTopics, ...normalizedCustomTopics].filter(Boolean).join(',')
+      nextPreferences = {
+        topics: normalizedTopics,
+        customTopic: normalizedCustomTopics[0] || null,
+        customTopics: normalizedCustomTopics,
+        source: 'home_member_email_subscription',
+        updatedBy: user.user_id
+      }
+    }
 
-    await neonHelper.update('subscriptions', updates, { subscription_id: id })
-    return res.status(200).json({ success: true, message: '更新成功' })
+    const nextStatus = status ? (status === 'active' ? 'active' : 'inactive') : null
+    const updated = await neonHelper.query(
+      `UPDATE subscriptions
+          SET topic = CASE WHEN $1::boolean THEN $2 ELSE topic END,
+              preferences = CASE WHEN $1::boolean THEN $3::jsonb ELSE preferences END,
+              status = COALESCE($4::text, status),
+              user_id = COALESCE(user_id, $5),
+              last_active_at = CASE WHEN $4::text = 'active' THEN NOW() ELSE last_active_at END,
+              updated_at = NOW()
+        WHERE subscription_id = $6
+        RETURNING *`,
+      [shouldUpdateTopic, nextTopic, JSON.stringify(nextPreferences || {}), nextStatus, user.user_id, id]
+    )
+    return res.status(200).json({ success: true, message: '更新成功', subscription: updated?.[0] || null })
   } catch (error) {
     console.error('[auth] Update subscription error:', error)
     return res.status(500).json({ success: false, error: '服务器错误' })
@@ -676,13 +760,7 @@ async function handleDeleteSubscription(req, res) {
       return res.status(403).json({ success: false, error: '无权删除此订阅' })
     }
 
-    // 物理删除? 还是标记删除? 题目说"取消"，通常可以物理删除或者 status='inactive'
-    // 这里选择物理删除，或者如果用户希望"取消"是暂时停止，可以用 status='inactive'
-    // 既然有 DELETE method，通常是物理删除。但如果是取消订阅，status='inactive' 更好保留记录。
-    // 但是 api/admin/subscriptions.js 支持 DELETE。
-    // 这里我们直接 DELETE 吧，简单。
-    const query = `DELETE FROM subscriptions WHERE subscription_id = $1`
-    await neonHelper.query(query, [id])
+    await subscriptionsService.softDelete(id)
 
     return res.status(200).json({ success: true, message: '已取消订阅' })
   } catch (error) {
@@ -697,12 +775,44 @@ async function handleDeleteSubscription(req, res) {
 async function handleSubscribe(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ success: false, error: 'Method not allowed' })
 
-  return res.status(410).json({
-    success: false,
-    error: '用户侧邮件订阅已停用',
-    message: '请改为加入企业微信群获取每日精选岗位推送和交流信息。',
-    redirect: '/community'
-  })
+  const token = extractToken(req)
+  if (!token) return res.status(401).json({ success: false, error: '未授权' })
+
+  const payload = verifyToken(token)
+  if (!payload) return res.status(401).json({ success: false, error: '无效令牌' })
+
+  try {
+    const user = await getUserById(payload.userId)
+    if (!user) return res.status(404).json({ success: false, error: '用户不存在' })
+    if (!isMembershipActive(user)) {
+      return res.status(403).json({ success: false, error: '该功能仅对会员开放，请先升级会员' })
+    }
+
+    const topics = normalizeSubscriptionTopics(req.body?.topics, req.body?.topic)
+    const customTopics = normalizeSubscriptionCustomTopics(req.body?.customTopics, req.body?.customTopic)
+    if (countStandardSubscriptionTopics(topics) + customTopics.length === 0) {
+      return res.status(400).json({ success: false, error: '请至少选择一个岗位方向' })
+    }
+    if (countStandardSubscriptionTopics(topics) + customTopics.length > MAX_SUBSCRIPTION_TOPICS) {
+      return res.status(400).json({ success: false, error: `最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向` })
+    }
+
+    const subscription = await subscriptionsService.upsertForUser(user, {
+      topics,
+      customTopic: customTopics[0] || '',
+      customTopics,
+      status: 'active'
+    })
+
+    return res.status(200).json({
+      success: true,
+      message: '订阅已保存',
+      subscription
+    })
+  } catch (error) {
+    console.error('[auth] Subscribe error:', error)
+    return res.status(500).json({ success: false, error: '服务器错误' })
+  }
 }
 
 // copilot analysis (baseline)
@@ -739,11 +849,22 @@ async function handleUnsubscribeByEmail(req, res) {
   const { email } = req.body
   if (!email) return res.status(400).json({ success: false, error: 'Email is required' })
 
-  return res.status(200).json({
-    success: true,
-    message: '用户侧邮件订阅已停用，无需额外退订。',
-    email
-  })
+  try {
+    if (neonHelper.isConfigured) {
+      await neonHelper.query(
+        `UPDATE subscriptions
+            SET status = 'inactive',
+                updated_at = NOW()
+          WHERE channel = 'email'
+            AND LOWER(identifier) = LOWER($1)`,
+        [email]
+      )
+    }
+  } catch (error) {
+    console.error('[auth] Unsubscribe by email error:', error)
+  }
+
+  return res.status(200).json({ success: true, message: '已取消邮件订阅', email })
 }
 
 /**

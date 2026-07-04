@@ -45,6 +45,7 @@ const AdminCompanyManagementPage = lazy(() => import('./AdminCompanyManagementPa
 const AdminTrustedCompaniesPage = lazy(() => import('./AdminTrustedCompaniesPage'));
 const AdminTagManagementPage = lazy(() => import('./AdminTagManagementPage'));
 const AdminApplicationsPage = lazy(() => import('./AdminApplicationsPage'));
+const AdminSubscriptionsPage = lazy(() => import('./AdminSubscriptionsPage'));
 const AdminFeedbackList = lazy(() => import('../components/AdminFeedbackList'));
 const AdminTrackingManagement = lazy(() => import('../components/admin/AdminTrackingManagement'));
 const AdminTrackingDashboard = lazy(() => import('../components/admin/AdminTrackingDashboard'));
@@ -59,9 +60,34 @@ interface ExtendedRSSSource extends RSSSource {
   lastSync: Date | null;
 }
 
+const ADMIN_TAB_IDS = new Set([
+  'dashboard',
+  'core-metrics',
+  'rss',
+  'jobs',
+  'social-push',
+  'corporate-english',
+  'job-bundles',
+  'companies',
+  'trusted-companies',
+  'tag-management',
+  'resumes',
+  'users',
+  'subscriptions',
+  'job-applications',
+  'feedback',
+  'tracking'
+]);
+
+function getInitialAdminTab() {
+  if (typeof window === 'undefined') return 'dashboard';
+  const nextTab = new URLSearchParams(window.location.search).get('tab');
+  return nextTab && ADMIN_TAB_IDS.has(nextTab) ? nextTab : 'dashboard';
+}
+
 const AdminTeamPage: React.FC = () => {
   // 主要状态管理
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(getInitialAdminTab);
   const [stats, setStats] = useState<JobStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
@@ -220,24 +246,7 @@ const AdminTeamPage: React.FC = () => {
 
   useEffect(() => {
     const nextTab = new URLSearchParams(window.location.search).get('tab');
-    const allowedTabs = new Set([
-      'dashboard',
-      'core-metrics',
-      'rss',
-      'jobs',
-      'social-push',
-      'corporate-english',
-      'job-bundles',
-      'companies',
-      'trusted-companies',
-      'tag-management',
-      'resumes',
-      'users',
-      'job-applications',
-      'feedback',
-      'tracking'
-    ]);
-    if (nextTab && allowedTabs.has(nextTab)) {
+    if (nextTab && ADMIN_TAB_IDS.has(nextTab)) {
       setActiveTab(nextTab);
     }
   }, []);
@@ -998,6 +1007,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'users', label: '用户管理', icon: Users },
+    { id: 'subscriptions', label: '邮件订阅', icon: Mail },
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'tracking', label: '埋点管理', icon: Activity }
@@ -1152,6 +1162,11 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'users' && (
                 <Suspense fallback={renderLazyFallback('正在加载用户管理...')}>
                   <UserManagementPage />
+                </Suspense>
+              )}
+              {activeTab === 'subscriptions' && (
+                <Suspense fallback={renderLazyFallback('正在加载邮件订阅...')}>
+                  <AdminSubscriptionsPage />
                 </Suspense>
               )}
               {activeTab === 'job-applications' && (

@@ -502,24 +502,7 @@ export default function JobFilterBar({
   }`;
 
   return (
-    <div className={`relative z-30 mb-2 overflow-visible rounded-[24px] border p-3.5 shadow-[0_22px_54px_-46px_rgba(64,78,102,0.28)] backdrop-blur-sm ${
-      isMember
-        ? 'border-[#e6d8bd] bg-white/88'
-        : 'border-[#dfe8ef] bg-white/88'
-    }`}>
-      {isMember ? (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-[24px]">
-          <img
-            src="/pic_lists/Home_pics/background04.webp"
-            alt=""
-            className="absolute inset-0 h-full w-full scale-[1.08] object-cover object-[74%_44%] opacity-[0.34] saturate-[0.86]"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,253,248,0.98)_0%,rgba(255,253,248,0.9)_58%,rgba(255,253,248,0.58)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-[linear-gradient(180deg,rgba(255,253,248,0)_0%,rgba(255,253,248,0.88)_100%)]" />
-        </div>
-      ) : (
-        <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="pointer-events-none absolute -bottom-5 right-6 h-20 w-20 opacity-20" />
-      )}
+    <div className="relative z-30 mb-2 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white p-3.5 shadow-[0_18px_48px_-40px_rgba(64,78,102,0.24)]">
       <div className="relative flex flex-col gap-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-5">
           <div className="min-w-0 xl:shrink-0">

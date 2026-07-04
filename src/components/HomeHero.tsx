@@ -24,6 +24,7 @@ import {
 } from '../services/guest-resume-bridge'
 import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { trackingService } from '../services/tracking-service'
+import MemberEmailSubscriptionCard from './MemberEmailSubscriptionCard'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
@@ -2504,6 +2505,8 @@ export default function HomeHero({
                     </aside>
                     </div>
                 </div>
+
+                <MemberEmailSubscriptionCard />
 
                 <Suspense fallback={<div className="mt-6 h-40 rounded-[34px] border border-[#e3edf4] bg-white/70" />}>
                     <LazyHaigooClubInfoCard className="mt-6" />

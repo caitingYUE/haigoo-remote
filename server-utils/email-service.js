@@ -429,30 +429,51 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
 /**
  * 发送每日岗位推荐邮件
  */
-export async function sendDailyDigestEmail(to, jobs, topic) {
+export async function sendDailyDigestEmail(to, jobs, topic, options = {}) {
   if (!jobs || jobs.length === 0) return false
 
   const label = getTopicLabel(topic)
-  const siteUrl = process.env.SITE_URL || 'https://haigooremote.com'
+  const siteUrl = String(process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
+  const primaryJobs = jobs.filter(job => job.matchTier !== 'related')
+  const relatedJobs = jobs.filter(job => job.matchTier === 'related')
 
-  const jobsHtml = jobs.map(job => `
+  const renderJobs = (items, accentColor) => items.map(job => `
     <div style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;">
       <h3 style="margin: 0 0 10px; font-size: 18px;">
-        <a href="${siteUrl}/job/${job.id}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${job.title}</a>
+        <a href="${siteUrl}/job/${encodeURIComponent(job.id)}" style="text-decoration: none; color: #1a1a1a; font-weight: 700;">${escapeHtml(job.title)}</a>
       </h3>
-      <div style="margin-bottom: 12px; font-weight: 600; color: #4F46E5; font-size: 15px;">${job.company}</div>
+      <div style="margin-bottom: 12px; font-weight: 600; color: ${accentColor}; font-size: 15px;">${escapeHtml(job.company)}</div>
       <div style="margin-bottom: 12px; color: #666; font-size: 14px;">
-        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px; margin-right: 8px;">📍 ${job.location || 'Remote'}</span>
-        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px;">💰 ${job.salary || '薪资面议'}</span>
+        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px; margin-right: 8px;">${escapeHtml(job.location || 'Remote')}</span>
+        <span style="background: #f3f4f6; padding: 4px 8px; border-radius: 6px;">${escapeHtml(job.salary || '薪资面议')}</span>
       </div>
-      <p style="margin: 0; color: #555; font-size: 14px; line-height: 1.6;">${(job.description || '').substring(0, 160)}...</p>
+      <p style="margin: 0; color: #555; font-size: 14px; line-height: 1.6;">${escapeHtml(truncateText(job.description, 160))}</p>
+      ${job.matchedTopic ? `<div style="margin-top: 12px; color: #6b7280; font-size: 13px;">匹配方向：${escapeHtml(job.matchedTopic)}</div>` : ''}
       <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0;">
-        <a href="${siteUrl}/job/${job.id}" style="text-decoration: none; color: #4F46E5; font-size: 14px; font-weight: 600;">查看详情 →</a>
+        <a href="${siteUrl}/job/${encodeURIComponent(job.id)}" style="text-decoration: none; color: ${accentColor}; font-size: 14px; font-weight: 600;">查看详情</a>
       </div>
     </div>
   `).join('')
 
-  const subject = `🔥 Haigoo 每日精选：${label} 相关远程机会`
+  const renderSection = (title, subtitle, items, accentColor) => {
+    if (!items.length) return ''
+    return `
+      <div style="margin-bottom: 26px;">
+        <div style="margin-bottom: 14px;">
+          <div style="font-size: 17px; font-weight: 700; color: #111827; margin-bottom: 4px;">${escapeHtml(title)}</div>
+          <div style="font-size: 13px; color: #6b7280;">${escapeHtml(subtitle)}</div>
+        </div>
+        ${renderJobs(items, accentColor)}
+      </div>
+    `
+  }
+
+  const jobsHtml = [
+    renderSection('订阅方向匹配', `与你关注的「${label}」方向直接相关`, primaryJobs, '#4F46E5'),
+    renderSection('相关岗位推荐', '与你关注方向相近，作为补充推荐', relatedJobs, '#0f766e')
+  ].join('')
+
+  const subject = options.subject || `你订阅的「${label}」方向有新岗位`
   const html = `
 <!DOCTYPE html>
 <html>
@@ -475,7 +496,7 @@ export async function sendDailyDigestEmail(to, jobs, topic) {
     </div>
     <div class="content">
       <div style="font-size: 18px; color: #1f2937; margin-bottom: 24px;">Hi,</div>
-      <div style="color: #4b5563; margin-bottom: 30px;">这是为您精选的 <strong>${label}</strong> 相关远程工作机会：</div>
+      <div style="color: #4b5563; margin-bottom: 30px;">这是根据您订阅的 <strong>${escapeHtml(label)}</strong> 方向筛选出的远程岗位上新通知。</div>
       ${jobsHtml}
       <center>
         <a href="${siteUrl}/jobs" class="btn-primary">查看更多机会</a>

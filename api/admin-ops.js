@@ -1,5 +1,6 @@
 import neonHelper from '../server-utils/dal/neon-helper.js'
 import { verifyToken, extractToken } from '../server-utils/auth-helpers.js'
+import userHelper from '../server-utils/user-helper.js'
 import subscriptionsHandler from '../lib/api-handlers/subscriptions.js'
 import bugReportsHandler from '../lib/api-handlers/bug-reports.js'
 import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
@@ -7,8 +8,6 @@ import adminMessagesHandler from '../lib/api-handlers/admin-messages.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
 import { getLegacyMembershipLevel, MEMBER_TYPES } from '../lib/shared/membership.js'
 
-const APPLY_STATUS_PENDING_SET = ['pending', 'pending_apply', 'applied', 'reviewed', 'referred']
-const APPLY_STATUS_SUCCESS_SET = ['success', 'offer']
 const APPLY_STATUS_PENDING_SQL = "'pending', 'pending_apply', 'applied', 'reviewed', 'referred'"
 const APPLY_STATUS_SUCCESS_SQL = "'success', 'offer'"
 
@@ -62,6 +61,10 @@ export default async function handler(req, res) {
 
     // Dispatch to Subscriptions Handler
     if (action === 'subscriptions') {
+        const adminCheck = await userHelper.validateAdminRequest(req)
+        if (!adminCheck.valid) {
+            return res.status(adminCheck.error === 'Forbidden' ? 403 : 401).json({ success: false, error: adminCheck.error || 'Unauthorized' })
+        }
         return await subscriptionsHandler(req, res)
     }
 
@@ -200,7 +203,7 @@ export default async function handler(req, res) {
 
         if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-        const { id, status, notes, userId, jobId, interactionType, startDate, endDate, type } = req.body;
+        const { id, status, notes, startDate, endDate, type } = req.body;
 
         // Member Application Update
         if (type === 'member') {
