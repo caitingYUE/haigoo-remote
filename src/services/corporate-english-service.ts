@@ -103,6 +103,12 @@ export interface CorporateEnglishMaterial {
   tencentVideoUrl?: string
   sourceVideoUrl?: string
   videoSummary?: string
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
+  coverImageHash?: string
+  coverImageWidth?: number
+  coverImageHeight?: number
+  coverImageUpdatedAt?: string
   sequence?: number
   publishedAt?: string
   sourceAudioAssetId?: string
@@ -129,6 +135,12 @@ export interface CorporateEnglishModuleVideo {
   description: string
   tencentIframeUrl: string
   videoSource: string
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
+  coverImageHash?: string
+  coverImageWidth?: number
+  coverImageHeight?: number
+  coverImageUpdatedAt?: string
   category: string
   tags: string[]
   accessTier: CorporateEnglishAccessTier
@@ -145,6 +157,8 @@ export interface SaveCorporateEnglishModuleVideoPayload {
   description?: string
   tencentIframeUrl: string
   videoSource?: string
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
   category?: string
   tags?: string[]
   accessTier: CorporateEnglishAccessTier
@@ -209,6 +223,10 @@ async function sha256Hex(blob: Blob): Promise<string> {
   return Array.from(new Uint8Array(digest))
     .map((byte) => byte.toString(16).padStart(2, '0'))
     .join('')
+}
+
+async function blobToSingleBase64(blob: Blob): Promise<string> {
+  return blobToBase64(blob)
 }
 
 export const corporateEnglishService = {
@@ -336,6 +354,40 @@ export const corporateEnglishService = {
         headers: getAuthHeaders()
       })
     )
+  },
+
+  async uploadCoverImage(params: {
+    ownerType: 'material' | 'module_video'
+    ownerId: string
+    file: File
+  }) {
+    const contentBase64 = await blobToSingleBase64(params.file)
+    const data = await readJson<{
+      success: boolean
+      cover: {
+        ownerType: 'material' | 'module_video'
+        ownerId: string
+        coverImageHash: string
+        coverImageWidth: number
+        coverImageHeight: number
+        coverImageUrl: string
+        coverThumbnailUrl: string
+      }
+    }>(
+      await fetch(`${API_BASE}?resource=cover-image`, {
+        method: 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({
+          ownerType: params.ownerType,
+          ownerId: params.ownerId,
+          filename: params.file.name,
+          mimeType: params.file.type || 'application/octet-stream',
+          sizeBytes: params.file.size,
+          contentBase64
+        })
+      })
+    )
+    return data.cover
   },
 
   async uploadAsset(params: {

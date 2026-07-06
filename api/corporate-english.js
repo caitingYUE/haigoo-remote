@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import sharp from 'sharp'
 import neonHelper from '../server-utils/dal/neon-helper.js'
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js'
 import userHelper from '../server-utils/user-helper.js'
@@ -9,14 +10,25 @@ const ASSETS_TABLE = 'corporate_english_assets'
 const CLIPS_TABLE = 'corporate_english_clips'
 const PROFILES_TABLE = 'corporate_english_company_profiles'
 const MODULE_VIDEOS_TABLE = 'corporate_english_module_videos'
+const COVER_ASSETS_TABLE = 'corporate_english_cover_assets'
 
 const MAX_CLIP_BYTES = 3 * 1024 * 1024
 const MAX_SOURCE_AUDIO_BYTES = 500 * 1024 * 1024
+const MAX_COVER_IMAGE_BYTES = 8 * 1024 * 1024
 const MAX_CHUNK_BYTES = 1024 * 1024
 const MAX_CLIPS_PER_MATERIAL = 50
 const VALID_ASSET_KINDS = new Set(['source_audio', 'subtitle_csv', 'clip_audio'])
 const VALID_STATUSES = new Set(['draft', 'published', 'archived'])
 const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
+const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
+
+function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
+  const id = normalizeString(ownerId)
+  if (!VALID_COVER_OWNER_TYPES.has(ownerType) || !id) return ''
+  const params = new URLSearchParams({ resource: 'cover-image', ownerType, ownerId: id, variant })
+  if (hash) params.set('v', String(hash).slice(0, 16))
+  return `/api/corporate-english-public?${params.toString()}`
+}
 
 function sendCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -166,6 +178,12 @@ function mapMaterialRow(row) {
     tencentVideoUrl: row.tencent_video_url || '',
     sourceVideoUrl: row.source_video_url || '',
     videoSummary: row.video_summary || '',
+    coverImageUrl: buildCoverImageUrl('material', row.material_id, 'large', row.cover_image_hash),
+    coverThumbnailUrl: buildCoverImageUrl('material', row.material_id, 'thumb', row.cover_image_hash),
+    coverImageHash: row.cover_image_hash || '',
+    coverImageWidth: row.cover_image_width,
+    coverImageHeight: row.cover_image_height,
+    coverImageUpdatedAt: row.cover_image_updated_at,
     sequence: Number(row.sequence || 0),
     publishedAt: row.published_at,
     sourceAudioAssetId: row.source_audio_asset_id,
@@ -191,6 +209,12 @@ function mapModuleVideoRow(row) {
     description: row.description || '',
     tencentIframeUrl: row.tencent_iframe_url || '',
     videoSource: row.video_source || '',
+    coverImageUrl: buildCoverImageUrl('module_video', row.video_id, 'large', row.cover_image_hash),
+    coverThumbnailUrl: buildCoverImageUrl('module_video', row.video_id, 'thumb', row.cover_image_hash),
+    coverImageHash: row.cover_image_hash || '',
+    coverImageWidth: row.cover_image_width,
+    coverImageHeight: row.cover_image_height,
+    coverImageUpdatedAt: row.cover_image_updated_at,
     category: row.category || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     accessTier: row.access_tier === 'free' ? 'free' : 'vip',
@@ -1143,6 +1167,129 @@ async function downloadAsset(req, res) {
   return res.status(200).send(content)
 }
 
+function normalizeCoverOwnerType(value) {
+  const next = normalizeString(value)
+  return VALID_COVER_OWNER_TYPES.has(next) ? next : ''
+}
+
+async function assertCoverOwnerExists(ownerType, ownerId) {
+  const table = ownerType === 'material' ? MATERIALS_TABLE : MODULE_VIDEOS_TABLE
+  const idColumn = ownerType === 'material' ? 'material_id' : 'video_id'
+  const rows = await neonHelper.query(
+    `SELECT ${idColumn} AS id FROM ${table} WHERE ${idColumn} = $1 AND deleted_at IS NULL LIMIT 1`,
+    [ownerId]
+  )
+  return Boolean(rows?.[0]?.id)
+}
+
+async function processCoverVariant(sourceBuffer, variant) {
+  const width = variant === 'thumb' ? 640 : 1280
+  const height = variant === 'thumb' ? 360 : 720
+  const outputBuffer = await sharp(sourceBuffer, { animated: false, limitInputPixels: 32_000_000 })
+    .rotate()
+    .resize(width, height, {
+      fit: 'cover',
+      position: 'attention',
+      withoutEnlargement: false
+    })
+    .webp({ quality: variant === 'thumb' ? 78 : 82, effort: 4 })
+    .toBuffer()
+  const metadata = await sharp(outputBuffer).metadata()
+  return {
+    buffer: outputBuffer,
+    width: metadata.width || width,
+    height: metadata.height || height,
+    sha256: crypto.createHash('sha256').update(outputBuffer).digest('hex')
+  }
+}
+
+async function uploadCoverImage(req, res, admin) {
+  const ownerType = normalizeCoverOwnerType(req.body?.ownerType || req.body?.owner_type)
+  const ownerId = normalizeString(req.body?.ownerId || req.body?.owner_id)
+  const contentBase64 = normalizeString(req.body?.contentBase64 || req.body?.content_base64)
+  const filename = normalizeString(req.body?.filename) || 'cover.webp'
+  if (!ownerType || !ownerId) return res.status(400).json({ success: false, error: 'Missing cover owner' })
+  if (!contentBase64) return res.status(400).json({ success: false, error: 'Missing image content' })
+  if (!(await assertCoverOwnerExists(ownerType, ownerId))) {
+    return res.status(404).json({ success: false, error: 'Content not found' })
+  }
+
+  const sourceBuffer = Buffer.from(contentBase64, 'base64')
+  if (!sourceBuffer.length || sourceBuffer.length > MAX_COVER_IMAGE_BYTES) {
+    return res.status(400).json({ success: false, error: '封面图片不能超过 8MB' })
+  }
+
+  let variants
+  try {
+    variants = await Promise.all(['large', 'thumb'].map(async (variant) => ({
+      variant,
+      ...(await processCoverVariant(sourceBuffer, variant))
+    })))
+  } catch (error) {
+    console.warn('[corporate-english] Failed to process cover image:', error?.message || error)
+    return res.status(400).json({ success: false, error: '封面图片解析失败，请上传 jpg、png 或 webp 图片' })
+  }
+
+  const primary = variants.find((item) => item.variant === 'large') || variants[0]
+  const actor = admin.id || admin.email || 'admin'
+  for (const item of variants) {
+    await neonHelper.query(
+      `INSERT INTO ${COVER_ASSETS_TABLE}
+         (owner_type, owner_id, variant, filename, mime_type, content, width, height, size_bytes, sha256, created_by, updated_at)
+       VALUES ($1, $2, $3, $4, 'image/webp', $5, $6, $7, $8, $9, $10, NOW())
+       ON CONFLICT (owner_type, owner_id, variant) DO UPDATE SET
+         filename = EXCLUDED.filename,
+         mime_type = EXCLUDED.mime_type,
+         content = EXCLUDED.content,
+         width = EXCLUDED.width,
+         height = EXCLUDED.height,
+         size_bytes = EXCLUDED.size_bytes,
+         sha256 = EXCLUDED.sha256,
+         created_by = EXCLUDED.created_by,
+         updated_at = NOW()`,
+      [
+        ownerType,
+        ownerId,
+        item.variant,
+        filename.replace(/\.[^.]+$/, '') + `-${item.variant}.webp`,
+        item.buffer,
+        item.width,
+        item.height,
+        item.buffer.length,
+        item.sha256,
+        actor
+      ]
+    )
+  }
+
+  const table = ownerType === 'material' ? MATERIALS_TABLE : MODULE_VIDEOS_TABLE
+  const idColumn = ownerType === 'material' ? 'material_id' : 'video_id'
+  await neonHelper.query(
+    `UPDATE ${table}
+     SET cover_image_hash = $2,
+         cover_image_width = $3,
+         cover_image_height = $4,
+         cover_image_updated_at = NOW(),
+         updated_by = $5,
+         updated_at = NOW()
+     WHERE ${idColumn} = $1 AND deleted_at IS NULL`,
+    [ownerId, primary.sha256, primary.width, primary.height, actor]
+  )
+
+  return res.status(200).json({
+    success: true,
+    cover: {
+      ownerType,
+      ownerId,
+      coverImageHash: primary.sha256,
+      coverImageWidth: primary.width,
+      coverImageHeight: primary.height,
+      coverImageUrl: buildCoverImageUrl(ownerType, ownerId, 'large', primary.sha256),
+      coverThumbnailUrl: buildCoverImageUrl(ownerType, ownerId, 'thumb', primary.sha256)
+    }
+  })
+}
+
 export default async function handler(req, res) {
   sendCors(res)
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -1163,6 +1310,7 @@ export default async function handler(req, res) {
     if (req.method === 'POST' && resource === 'asset-init') return await initAsset(req, res, admin)
     if (req.method === 'POST' && resource === 'asset-chunk') return await appendAssetChunk(req, res)
     if (req.method === 'POST' && resource === 'asset-complete') return await completeAsset(req, res)
+    if (req.method === 'POST' && resource === 'cover-image') return await uploadCoverImage(req, res, admin)
     if (req.method === 'POST' && resource === 'material') return await saveMaterial(req, res, admin)
     if (req.method === 'POST' && resource === 'module-video') return await saveModuleVideo(req, res, admin)
     if (req.method === 'PUT' && resource === 'material') return await saveMaterial(req, res, admin, normalizeString(req.query.id || req.body?.id))

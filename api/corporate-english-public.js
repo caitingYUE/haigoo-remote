@@ -10,7 +10,18 @@ const CLIPS_TABLE = 'corporate_english_clips'
 const PROFILES_TABLE = 'corporate_english_company_profiles'
 const FAVORITES_TABLE = 'corporate_english_clip_favorites'
 const MODULE_VIDEOS_TABLE = 'corporate_english_module_videos'
+const COVER_ASSETS_TABLE = 'corporate_english_cover_assets'
 const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
+const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
+const coverColumnSupportCache = new Map()
+
+function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
+  const id = normalizeString(ownerId)
+  if (!VALID_COVER_OWNER_TYPES.has(ownerType) || !id) return ''
+  const params = new URLSearchParams({ resource: 'cover-image', ownerType, ownerId: id, variant })
+  if (hash) params.set('v', String(hash).slice(0, 16))
+  return `/api/corporate-english-public?${params.toString()}`
+}
 
 function sendCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
@@ -55,6 +66,27 @@ function statusClause(alias, includeDrafts) {
   return includeDrafts ? `${alias}.status <> 'archived'` : `${alias}.status = 'published'`
 }
 
+function isMissingCoverColumnError(error) {
+  return error?.code === '42703' && String(error?.message || error).includes('cover_image')
+}
+
+async function hasCoverColumns(tableName) {
+  if (coverColumnSupportCache.has(tableName)) return coverColumnSupportCache.get(tableName)
+  const rows = await neonHelper.query(
+    `SELECT EXISTS (
+       SELECT 1
+       FROM information_schema.columns
+       WHERE table_schema = 'public'
+         AND table_name = $1
+         AND column_name = 'cover_image_hash'
+     ) AS has_cover`,
+    [tableName]
+  )
+  const hasCover = rows?.[0]?.has_cover === true
+  coverColumnSupportCache.set(tableName, hasCover)
+  return hasCover
+}
+
 function normalizeAccessTier(value) {
   return value === 'free' ? 'free' : 'vip'
 }
@@ -73,16 +105,24 @@ function mapModuleVideo(row, user) {
   const unlocked = canAccessModuleVideo(row, user)
   const isAuthenticated = Boolean(user)
   const accessTier = normalizeAccessTier(row.access_tier)
+  const canExposePublicDetails = isAuthenticated || unlocked
   return {
     id: row.video_id,
     videoId: row.video_id,
     moduleKey: row.module_key,
     title: row.video_title,
-    description: row.description || '',
+    description: canExposePublicDetails ? (row.description || '') : '',
     videoSource: row.video_source || '',
+    coverImageUrl: buildCoverImageUrl('module_video', row.video_id, 'large', row.cover_image_hash),
+    coverThumbnailUrl: buildCoverImageUrl('module_video', row.video_id, 'thumb', row.cover_image_hash),
+    coverImageHash: row.cover_image_hash || '',
+    coverImageWidth: row.cover_image_width,
+    coverImageHeight: row.cover_image_height,
+    coverImageUpdatedAt: row.cover_image_updated_at,
     category: row.category || '',
-    tags: Array.isArray(row.tags) ? row.tags : [],
+    tags: canExposePublicDetails && Array.isArray(row.tags) ? row.tags : [],
     accessTier,
+    durationMs: row.duration_ms,
     publishedAt: row.published_at,
     sortOrder: Number(row.sort_order || 0),
     tencentIframeUrl: unlocked ? (row.tencent_iframe_url || '') : '',
@@ -203,6 +243,30 @@ function mapClip(row, favoriteClipIds = new Set(), options = {}) {
   const unlocked = options.unlocked !== false
   const hasAudio = row.clip_audio_upload_status === 'ready' && Number(row.clip_audio_size_bytes || 0) > 0
   const storedSubtitleCues = normalizeSubtitleCues(row.subtitle_cues)
+  if (!unlocked) {
+    return {
+      id: row.clip_id,
+      clipId: row.clip_id,
+      materialId: row.material_id,
+      companyId: row.company_id,
+      sequence: Number(row.sequence || 0),
+      clipTitle: '跟读片段',
+      startMs: Number(row.start_ms || 0),
+      endMs: Number(row.end_ms || 0),
+      subtitleText: '',
+      translationText: '',
+      clipTags: [],
+      pronunciationMarks: [],
+      audioUrl: '',
+      hasAudio,
+      audioUnavailableReason: hasAudio ? '' : '该片段音频暂不可用，请稍后重试。',
+      isFavorited: false,
+      isLocked: true,
+      lockReason: options.lockReason || '人工精选和剪辑后的跟读音频、口语练习重点、字幕等内容。',
+      requiredPlan: options.requiredPlan || 'half_year',
+      subtitleCues: []
+    }
+  }
   return {
     id: row.clip_id,
     clipId: row.clip_id,
@@ -241,22 +305,28 @@ function mapMaterial(row, clips, permissions, options = {}) {
     materialId: row.material_id,
     companyId: row.company_id,
     materialTitle: row.material_title,
-    speakerName: row.speaker_name,
+    speakerName: permissions.isAuthenticated ? row.speaker_name : '',
     speakerRole: row.speaker_role,
     speakerEmail: permissions.canViewSpeakerContacts ? row.speaker_email : '',
     speakerLinkedin: permissions.canViewSpeakerContacts ? row.speaker_linkedin : '',
     hasSpeakerEmail: Boolean(row.speaker_email),
     hasSpeakerLinkedin: Boolean(row.speaker_linkedin),
     tencentVideoVid: row.tencent_video_vid || '',
-    tencentVideoUrl: row.tencent_video_url || '',
+    tencentVideoUrl: videoUnlocked ? (row.tencent_video_url || '') : '',
     sourceVideoUrl: videoUnlocked ? (row.source_video_url || '') : '',
+    coverImageUrl: buildCoverImageUrl('material', row.material_id, 'large', row.cover_image_hash),
+    coverThumbnailUrl: buildCoverImageUrl('material', row.material_id, 'thumb', row.cover_image_hash),
+    coverImageHash: row.cover_image_hash || '',
+    coverImageWidth: row.cover_image_width,
+    coverImageHeight: row.cover_image_height,
+    coverImageUpdatedAt: row.cover_image_updated_at,
     isVideoLocked: !videoUnlocked,
     videoLockReason: videoUnlocked
       ? ''
       : permissions.isAuthenticated
         ? '外企英语材料为会员配套英语练习工具。'
         : 'CEO 访谈视频',
-    videoSummary: row.video_summary || '',
+    videoSummary: videoUnlocked || permissions.canViewProfile ? (row.video_summary || '') : '',
     sequence: Number(row.sequence || 0),
     clipCount: Number(row.clip_count || clips.length || 0),
     durationMs: row.duration_ms,
@@ -329,6 +399,105 @@ async function listCompanies(req, res, user) {
   })
 }
 
+function mapCeoVideoListRow(row, user) {
+  const permissions = getPermissions(user, row.access_tier)
+  const videoUnlocked = permissions.isAuthenticated && (permissions.canViewVideos || permissions.accessTier === 'free')
+  const canExposePublicDetails = Boolean(user)
+  return {
+    id: row.material_id,
+    materialId: row.material_id,
+    companyId: row.company_id,
+    companyName: row.company_name_snapshot,
+    companyWebsite: row.company_website_snapshot || '',
+    companyLogo: resolveCachedLogoUrlFromRow(row) || row.logo || '',
+    companyIndustry: row.industry || '',
+    materialTitle: row.material_title,
+    speakerName: canExposePublicDetails ? row.speaker_name : '',
+    speakerRole: row.speaker_role,
+    videoSummary: canExposePublicDetails ? (row.video_summary || '') : '',
+    sequence: Number(row.sequence || 0),
+    clipCount: Number(row.clip_count || 0),
+    durationMs: row.duration_ms,
+    publishedAt: row.published_at,
+    updatedAt: row.updated_at,
+    accessTier: normalizeAccessTier(row.access_tier),
+    coverImageUrl: buildCoverImageUrl('material', row.material_id, 'large', row.cover_image_hash),
+    coverThumbnailUrl: buildCoverImageUrl('material', row.material_id, 'thumb', row.cover_image_hash),
+    coverImageHash: row.cover_image_hash || '',
+    tencentVideoUrl: videoUnlocked ? (row.tencent_video_url || '') : '',
+    sourceVideoUrl: videoUnlocked ? (row.source_video_url || '') : '',
+    isVideoLocked: !videoUnlocked,
+    loginRequired: !user,
+    upgradeRequired: Boolean(user) && !videoUnlocked,
+    lockReason: videoUnlocked
+      ? ''
+      : user
+        ? '外企英语材料为会员配套英语练习工具。'
+        : '登录后可播放 CEO 访谈视频。'
+  }
+}
+
+async function listCeoVideos(req, res, user) {
+  const includeDrafts = isLocalPreviewRequest(req)
+  const capabilities = deriveMembershipCapabilities(user)
+  const canViewMemberVideos = Boolean(capabilities.canAccessCorporateEnglishVideos)
+  const requestedLimit = Number(req.query.limit || 24)
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 48) : 24
+  const selectFields = `
+       m.material_id,
+       m.company_id,
+       m.company_name_snapshot,
+       m.company_website_snapshot,
+       m.material_title,
+       m.speaker_name,
+       m.speaker_role,
+       m.video_summary,
+       m.sequence,
+       m.clip_count,
+       m.duration_ms,
+       m.published_at,
+       m.updated_at,
+       m.tencent_video_url,
+       m.source_video_url,
+       tc.logo,
+       tc.cached_logo_url,
+       tc.logo_cache_status,
+       tc.logo_cache_hash,
+       tc.industry,
+       COALESCE(to_jsonb(p)->>'access_tier', 'vip') AS access_tier,
+       COALESCE(p.sort_order, 0) AS profile_sort_order`
+  const selectFieldsWithCover = `${selectFields},
+       m.cover_image_hash`
+  const buildQuery = (fields) => `SELECT
+       ${fields}
+     FROM ${MATERIALS_TABLE} m
+     JOIN trusted_companies tc ON tc.company_id = m.company_id
+     LEFT JOIN ${PROFILES_TABLE} p ON p.company_id = m.company_id
+     WHERE m.deleted_at IS NULL
+       AND ${statusClause('m', includeDrafts)}
+     ORDER BY
+       CASE WHEN $2::boolean THEN 0 ELSE CASE WHEN COALESCE(to_jsonb(p)->>'access_tier', 'vip') = 'free' THEN 0 ELSE 1 END END ASC,
+       m.published_at DESC NULLS LAST,
+       m.sequence ASC,
+       m.updated_at DESC
+     LIMIT $1`
+
+  const includeCoverFields = await hasCoverColumns(MATERIALS_TABLE)
+  let rows = []
+  try {
+    rows = await neonHelper.query(buildQuery(includeCoverFields ? selectFieldsWithCover : selectFields), [limit, canViewMemberVideos])
+  } catch (error) {
+    if (!isMissingCoverColumnError(error)) throw error
+    coverColumnSupportCache.set(MATERIALS_TABLE, false)
+    rows = await neonHelper.query(buildQuery(selectFields), [limit, canViewMemberVideos])
+  }
+
+  return res.status(200).json({
+    success: true,
+    videos: (rows || []).map((row) => mapCeoVideoListRow(row, user))
+  })
+}
+
 async function listModuleVideos(req, res, user) {
   const moduleKey = normalizeModuleKey(req.query.module || req.query.moduleKey || req.query.module_key)
   if (!moduleKey) return res.status(400).json({ success: false, error: 'Invalid module' })
@@ -342,9 +511,30 @@ async function listModuleVideos(req, res, user) {
     params.push(category)
     conditions.push(`category = $${params.length}`)
   }
+  const requestedLimit = Number(req.query.limit || 48)
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 96) : 48
 
-  const rows = await neonHelper.query(
-    `SELECT *
+  const selectFields = `
+       video_id,
+       module_key,
+       video_title,
+       description,
+       video_source,
+       category,
+       tags,
+       access_tier,
+       duration_ms,
+       published_at,
+       sort_order,
+       updated_at,
+       tencent_iframe_url`
+  const selectFieldsWithCover = `${selectFields},
+       cover_image_hash,
+       cover_image_width,
+       cover_image_height,
+       cover_image_updated_at`
+  const buildQuery = (fields) => `SELECT
+       ${fields}
      FROM ${MODULE_VIDEOS_TABLE}
      WHERE ${conditions.join(' AND ')}
      ORDER BY
@@ -352,9 +542,17 @@ async function listModuleVideos(req, res, user) {
        published_at DESC NULLS LAST,
        sort_order ASC,
        updated_at DESC
-     LIMIT 200`,
-    [...params, canViewMemberVideos]
-  )
+     LIMIT $${params.length + 2}`
+
+  const includeCoverFields = await hasCoverColumns(MODULE_VIDEOS_TABLE)
+  let rows = []
+  try {
+    rows = await neonHelper.query(buildQuery(includeCoverFields ? selectFieldsWithCover : selectFields), [...params, canViewMemberVideos, limit])
+  } catch (error) {
+    if (!isMissingCoverColumnError(error)) throw error
+    coverColumnSupportCache.set(MODULE_VIDEOS_TABLE, false)
+    rows = await neonHelper.query(buildQuery(selectFields), [...params, canViewMemberVideos, limit])
+  }
 
   const categoryRows = await neonHelper.query(
     `SELECT category, COUNT(*)::int AS count
@@ -381,6 +579,91 @@ async function listModuleVideos(req, res, user) {
     ],
     videos: (rows || []).map((row) => mapModuleVideo(row, user))
   })
+}
+
+async function getCeoVideo(req, res, user) {
+  const materialId = normalizeString(req.query.materialId || req.query.material_id || req.query.id)
+  if (!materialId) return res.status(400).json({ success: false, error: 'Missing material id' })
+  const includeDrafts = isLocalPreviewRequest(req)
+  const rows = await neonHelper.query(
+    `SELECT company_id
+     FROM ${MATERIALS_TABLE}
+     WHERE material_id = $1
+       AND deleted_at IS NULL
+       AND ${statusClause('corporate_english_materials', includeDrafts)}
+     LIMIT 1`,
+    [materialId]
+  )
+  const companyId = rows?.[0]?.company_id
+  if (!companyId) return res.status(404).json({ success: false, error: 'Video not found' })
+  return getCompany({ ...req, query: { ...req.query, companyId } }, res, user)
+}
+
+async function getModuleVideo(req, res, user) {
+  const videoId = normalizeString(req.query.videoId || req.query.video_id || req.query.id)
+  if (!videoId) return res.status(400).json({ success: false, error: 'Missing video id' })
+  const rows = await neonHelper.query(
+    `SELECT *
+     FROM ${MODULE_VIDEOS_TABLE}
+     WHERE video_id = $1
+       AND status = 'published'
+       AND deleted_at IS NULL
+     LIMIT 1`,
+    [videoId]
+  )
+  const video = rows?.[0]
+  if (!video) return res.status(404).json({ success: false, error: 'Video not found' })
+
+  const recommendationRows = await neonHelper.query(
+    `SELECT *
+     FROM ${MODULE_VIDEOS_TABLE}
+     WHERE module_key = $1
+       AND video_id <> $2
+       AND status = 'published'
+       AND deleted_at IS NULL
+     ORDER BY
+       CASE WHEN NULLIF(BTRIM(category), '') IS NOT NULL AND category = $3 THEN 0 ELSE 1 END,
+       published_at DESC NULLS LAST,
+       sort_order ASC,
+       updated_at DESC
+     LIMIT 8`,
+    [video.module_key, videoId, video.category || '']
+  )
+
+  return res.status(200).json({
+    success: true,
+    video: mapModuleVideo(video, user),
+    recommendations: (recommendationRows || []).map((row) => mapModuleVideo(row, user))
+  })
+}
+
+function normalizeCoverOwnerType(value) {
+  const next = normalizeString(value)
+  return VALID_COVER_OWNER_TYPES.has(next) ? next : ''
+}
+
+async function getCoverImage(req, res) {
+  const ownerType = normalizeCoverOwnerType(req.query.ownerType || req.query.owner_type)
+  const ownerId = normalizeString(req.query.ownerId || req.query.owner_id)
+  const variant = normalizeString(req.query.variant) === 'thumb' ? 'thumb' : 'large'
+  if (!ownerType || !ownerId) return res.status(404).json({ success: false, error: 'Asset not found' })
+  const rows = await neonHelper.query(
+    `SELECT content, mime_type, size_bytes, sha256
+     FROM ${COVER_ASSETS_TABLE}
+     WHERE owner_type = $1
+       AND owner_id = $2
+       AND variant = $3
+     LIMIT 1`,
+    [ownerType, ownerId, variant]
+  )
+  const asset = rows?.[0]
+  if (!asset?.content) return res.status(404).json({ success: false, error: 'Asset not found' })
+  const content = Buffer.isBuffer(asset.content) ? asset.content : Buffer.from(asset.content)
+  res.setHeader('Content-Type', asset.mime_type || 'image/webp')
+  res.setHeader('Content-Length', String(content.length))
+  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+  if (asset.sha256) res.setHeader('ETag', `"${asset.sha256}"`)
+  return res.status(200).send(content)
 }
 
 async function getFavorites(userId) {
@@ -544,6 +827,8 @@ async function getCompany(req, res, user) {
   const company = companyRows?.[0]
   if (!company || (materialRows || []).length === 0) return res.status(404).json({ success: false, error: 'Company content not found' })
   const permissions = getPermissions(user, profileRows?.[0]?.access_tier)
+  const canExposeCompanyProfile = permissions.canViewProfile
+  const canExposeJobs = permissions.canViewResources || permissions.canViewProfile
 
   const firstMaterialByCompany = (materialRows || [])[0]
   const freeSampleMaterialId = firstMaterialByCompany ? String(firstMaterialByCompany.material_id) : ''
@@ -581,16 +866,16 @@ async function getCompany(req, res, user) {
       accessTier: permissions.accessTier
     },
     profile: {
-      cultureSections: mapSections(profileRows?.[0]?.culture_sections),
-      ceoThinkingSections: mapSections(profileRows?.[0]?.ceo_thinking_sections),
-      otherResources: mapResourceLinks(profileRows?.[0]?.other_resources)
+      cultureSections: canExposeCompanyProfile ? mapSections(profileRows?.[0]?.culture_sections) : [],
+      ceoThinkingSections: canExposeCompanyProfile ? mapSections(profileRows?.[0]?.ceo_thinking_sections) : [],
+      otherResources: permissions.canViewResources ? mapResourceLinks(profileRows?.[0]?.other_resources) : []
     },
     permissions,
     videos: (materialRows || []).map((material) => {
       const videoUnlocked = canAccessMaterial(material, permissions, freeSampleMaterialId)
       return mapMaterial(material, clipsByMaterial.get(material.material_id) || [], permissions, { videoUnlocked })
     }),
-    jobs: (jobRows || []).map((job) => ({
+    jobs: canExposeJobs ? (jobRows || []).map((job) => ({
       id: job.job_id,
       title: pickTranslatedText(job, 'title', job.title),
       originalTitle: job.title,
@@ -604,7 +889,7 @@ async function getCompany(req, res, user) {
       createdAt: job.created_at,
       isTranslated: Boolean(job.is_translated),
       translatedAt: job.translated_at
-    })),
+    })) : [],
     favorites: favoriteItems
   })
 }
@@ -713,9 +998,13 @@ export default async function handler(req, res) {
     const resource = normalizeString(req.query.resource || 'companies')
     const user = await resolveUser(req)
 
+    if (req.method === 'GET' && resource === 'cover-image') return await getCoverImage(req, res)
     if (req.method === 'GET' && resource === 'companies') return await listCompanies(req, res, user)
+    if (req.method === 'GET' && resource === 'ceo-videos') return await listCeoVideos(req, res, user)
+    if (req.method === 'GET' && resource === 'ceo-video') return await getCeoVideo(req, res, user)
     if (req.method === 'GET' && resource === 'company') return await getCompany(req, res, user)
     if (req.method === 'GET' && resource === 'module-videos') return await listModuleVideos(req, res, user)
+    if (req.method === 'GET' && resource === 'module-video') return await getModuleVideo(req, res, user)
     if (req.method === 'GET' && resource === 'favorites') return await listFavoriteItems(req, res, user)
     if (req.method === 'GET' && resource === 'clip-audio') return await downloadClipAudio(req, res, user)
     if (req.method === 'POST' && resource === 'favorite') return await updateFavorite(req, res, user, true)

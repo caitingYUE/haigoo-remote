@@ -273,15 +273,18 @@ const FUNNEL_DEFINITIONS: Record<string, string> = {
     bundle_detail_view: '从合集页打开岗位详情弹窗或详情视图的 UV/PV。',
     bundle_apply_click: '在合集链路内点击岗位申请入口的 UV/PV。',
     bundle_apply_success: '合集链路内产生外链跳转、邮箱直申或内推提交的 UV/PV。',
-    corporate_english_visit: '外企英语页面访问 UV/PV。',
-    corporate_english_video_play: '外企英语企业视频播放或打开 UV/PV。腾讯视频 iframe 无法直接读取内部播放状态，前台以已解锁视频打开作为播放信号。',
+    corporate_english_visit: '外企英语页面访问 UV/PV，包含首页与详情页 page_view。',
+    corporate_english_video_play: '外企英语视频播放或打开 UV/PV。腾讯视频 iframe 无法直接读取内部播放状态，前台以已解锁视频打开作为播放信号。',
     corporate_english_clip_play: '外企英语跟读音频播放 UV/PV。',
-    corporate_english_ceo_visit: 'CEO访谈子页面访问 UV/PV。',
+    corporate_english_ceo_module_view: 'CEO访谈模块曝光 UV/PV，新 module_view 口径，兼容旧 section_view。',
+    corporate_english_ceo_detail_view: 'CEO访谈详情页访问 UV/PV，包含锁定详情页访问。',
     corporate_english_ceo_video_play: 'CEO访谈视频播放或打开 UV/PV。',
     corporate_english_ceo_clip_play: 'CEO访谈跟读音频播放 UV/PV。',
-    corporate_english_interview_visit: '英语面试子页面访问 UV/PV。',
+    corporate_english_interview_module_view: '英语面试模块曝光 UV/PV，新 module_view 口径，兼容旧 section_view。',
+    corporate_english_interview_detail_view: '英语面试详情页访问 UV/PV，包含锁定详情页访问。',
     corporate_english_interview_video_play: '英语面试视频播放或打开 UV/PV。',
-    corporate_english_meeting_visit: '外企会议子页面访问 UV/PV。',
+    corporate_english_meeting_module_view: '外企会议模块曝光 UV/PV，新 module_view 口径，兼容旧 section_view。',
+    corporate_english_meeting_detail_view: '外企会议详情页访问 UV/PV，包含锁定详情页访问。',
     corporate_english_meeting_video_play: '外企会议视频播放或打开 UV/PV。',
     free_feature_exposure: '免费体验功能入口曝光 UV。',
     free_feature_click: '免费体验功能点击 UV。',
@@ -766,13 +769,13 @@ export default function AdminTrackingDashboard() {
                         </Panel>
 
                         <Panel
-                            title="外企英语漏斗"
-                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 页面访问与播放`}
+                            title="外企英语模块与详情"
+                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 三个模块 UV、详情访问与播放`}
                             icon={<BookOpen className="h-5 w-5 text-violet-600" />}
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                                 {(data.coreFunnels.corporateEnglish || []).map((step) => (
-                                    <FunnelCard key={step.stepId} step={step} />
+                                    <CorporateEnglishMetricCard key={step.stepId} step={step} />
                                 ))}
                             </div>
                         </Panel>
@@ -1312,6 +1315,43 @@ function FunnelCard({ step }: { step: FunnelStep }) {
                 <div className="rounded-2xl bg-white px-3 py-2 shadow-sm">
                     <div className="text-slate-400">流失人数</div>
                     <div className="mt-1 font-semibold text-slate-700">{formatNum(step.dropoffUv)}</div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function CorporateEnglishMetricCard({ step }: { step: FunnelStep }) {
+    const tone = step.stepId.includes('_module_view')
+        ? 'bg-violet-50 text-violet-700 border-violet-100'
+        : step.stepId.includes('_detail_view')
+            ? 'bg-sky-50 text-sky-700 border-sky-100'
+            : 'bg-slate-50 text-slate-600 border-slate-100';
+    const tag = step.stepId.includes('_module_view')
+        ? '模块 UV'
+        : step.stepId.includes('_detail_view')
+            ? '详情访问'
+            : '互动事件';
+    return (
+        <div
+            className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22)] transition-colors hover:border-violet-200"
+            title={FUNNEL_DEFINITIONS[step.stepId] || step.label}
+        >
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <div className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{step.stepId}</div>
+                    <div className="mt-1 text-base font-semibold text-slate-900">{step.label}</div>
+                </div>
+                <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone}`}>{tag}</span>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <div className="text-xs text-slate-400">UV</div>
+                    <div className="mt-1 text-2xl font-bold text-slate-900">{formatNum(step.uv)}</div>
+                </div>
+                <div className="rounded-2xl bg-slate-50 px-3 py-3">
+                    <div className="text-xs text-slate-400">PV</div>
+                    <div className="mt-1 text-2xl font-bold text-slate-900">{formatNum(step.pv)}</div>
                 </div>
             </div>
         </div>

@@ -65,6 +65,13 @@ export interface CorporateEnglishPublicVideo {
   tencentVideoVid?: string
   tencentVideoUrl?: string
   sourceVideoUrl?: string
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
+  coverImageHash?: string
+  coverImageWidth?: number
+  coverImageHeight?: number
+  coverImageUpdatedAt?: string
+  accessTier?: CorporateEnglishAccessTier
   isVideoLocked?: boolean
   videoLockReason?: string
   videoSummary?: string
@@ -83,15 +90,51 @@ export interface CorporateEnglishPublicModuleVideo {
   title: string
   description: string
   videoSource?: string
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
+  coverImageHash?: string
+  coverImageWidth?: number
+  coverImageHeight?: number
+  coverImageUpdatedAt?: string
   category: string
   tags: string[]
   accessTier: CorporateEnglishAccessTier
+  durationMs?: number
   publishedAt?: string
   sortOrder: number
   tencentIframeUrl?: string
   isLocked: boolean
   loginRequired: boolean
   upgradeRequired: boolean
+  lockReason?: string
+}
+
+export interface CorporateEnglishPublicCeoVideo {
+  id: string
+  materialId: string
+  companyId: string
+  companyName: string
+  companyWebsite?: string
+  companyLogo?: string
+  companyIndustry?: string
+  materialTitle: string
+  speakerName: string
+  speakerRole: string
+  videoSummary?: string
+  sequence: number
+  clipCount: number
+  durationMs?: number
+  publishedAt?: string
+  updatedAt?: string
+  accessTier?: CorporateEnglishAccessTier
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
+  coverImageHash?: string
+  tencentVideoUrl?: string
+  sourceVideoUrl?: string
+  isVideoLocked?: boolean
+  loginRequired?: boolean
+  upgradeRequired?: boolean
   lockReason?: string
 }
 
@@ -176,6 +219,14 @@ export const corporateEnglishPublicService = {
     return data.companies || []
   },
 
+  async listCeoVideos() {
+    const query = new URLSearchParams({ resource: 'ceo-videos' })
+    const data = await readJson<{ success: boolean; videos: CorporateEnglishPublicCeoVideo[] }>(
+      await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
+    )
+    return data.videos || []
+  },
+
   async listModuleVideos(params: {
     module: CorporateEnglishModuleKey
     category?: string
@@ -190,6 +241,30 @@ export const corporateEnglishPublicService = {
     return {
       categories: data.categories || [],
       videos: data.videos || []
+    }
+  },
+
+  async getCeoVideo(materialId: string): Promise<CorporateEnglishCompanyDetail> {
+    const query = new URLSearchParams({ resource: 'ceo-video', materialId })
+    const data = await readJson<{ success: boolean } & CorporateEnglishCompanyDetail>(
+      await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
+    )
+    return data
+  },
+
+  async getModuleVideo(videoId: string): Promise<{
+    video: CorporateEnglishPublicModuleVideo
+    recommendations: CorporateEnglishPublicModuleVideo[]
+  }> {
+    const query = new URLSearchParams({ resource: 'module-video', videoId })
+    const data = await readJson<{
+      success: boolean
+      video: CorporateEnglishPublicModuleVideo
+      recommendations: CorporateEnglishPublicModuleVideo[]
+    }>(await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() }))
+    return {
+      video: data.video,
+      recommendations: data.recommendations || []
     }
   },
 

@@ -31,7 +31,8 @@ const AdminApplicationsPage = lazy(() => import('./pages/AdminApplicationsPage')
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
-const CorporateEnglishPage = lazy(() => import('./pages/CorporateEnglishPage'))
+const CorporateEnglishPage = lazy(() => import('./pages/CorporateEnglishTalksPage'))
+const CorporateEnglishWatchPage = lazy(() => import('./pages/CorporateEnglishWatchPage'))
 const MockPaymentGateway = lazy(() => import('./pages/MockPaymentGateway'))
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
@@ -161,6 +162,7 @@ function App() {
                             <Route path="/companies" element={<TrustedCompaniesPage />} />
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                             <Route path="/corporate-english" element={<CorporateEnglishPage />} />
+                            <Route path="/corporate-english/watch/:source/:id" element={<CorporateEnglishWatchPage />} />
                             <Route path="/company/:id" element={<CompanyProfilePage />} />
                             <Route path="/c/:companyName" element={<CompanyDetailPage />} />
                             <Route path="/companies/:companyName" element={<CompanyDetailPage />} />

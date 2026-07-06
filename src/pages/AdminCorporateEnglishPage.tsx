@@ -1,4 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import Cropper from 'react-easy-crop'
+import type { Area } from 'react-easy-crop'
 import {
   ArrowLeft,
   Building2,
@@ -40,9 +42,13 @@ import { trustedCompaniesService, TrustedCompany } from '../services/trusted-com
 const MAX_SOURCE_AUDIO_BYTES = 500 * 1024 * 1024
 const MAX_CSV_BYTES = 2 * 1024 * 1024
 const MAX_CLIP_BYTES = 3 * 1024 * 1024
+const MAX_COVER_IMAGE_BYTES = 8 * 1024 * 1024
 const MAX_CLIPS = 50
 const CLIP_AUDIO_BITRATE = 48000
 const ACCEPTED_AUDIO_EXTENSIONS = ['.mp3', '.wav', '.m4a', '.aac', '.ogg', '.webm', '.mp4']
+const COVER_ASPECT_RATIO = 16 / 9
+const COVER_OUTPUT_WIDTH = 1280
+const COVER_OUTPUT_HEIGHT = 720
 
 type Mode = 'list' | 'create' | 'edit' | 'profile'
 type AdminSubModule = 'ceo' | CorporateEnglishModuleKey
@@ -88,6 +94,132 @@ interface CompanyGroup {
   materials: CorporateEnglishMaterial[]
 }
 
+interface CoverCropDraft {
+  file: File
+  previewUrl: string
+}
+
+function loadImageForCrop(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('封面图片加载失败，请重新选择图片'))
+    image.src = src
+  })
+}
+
+async function createCroppedCoverFile(file: File, previewUrl: string, pixelCrop: Area): Promise<File> {
+  const image = await loadImageForCrop(previewUrl)
+  const canvas = document.createElement('canvas')
+  canvas.width = COVER_OUTPUT_WIDTH
+  canvas.height = COVER_OUTPUT_HEIGHT
+  const context = canvas.getContext('2d')
+  if (!context) throw new Error('当前浏览器不支持图片裁剪')
+  context.drawImage(
+    image,
+    pixelCrop.x,
+    pixelCrop.y,
+    pixelCrop.width,
+    pixelCrop.height,
+    0,
+    0,
+    COVER_OUTPUT_WIDTH,
+    COVER_OUTPUT_HEIGHT
+  )
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((nextBlob) => {
+      if (nextBlob) resolve(nextBlob)
+      else reject(new Error('封面裁剪失败，请重新选择图片'))
+    }, 'image/webp', 0.9)
+  })
+  const baseName = file.name.replace(/\.[^.]+$/, '') || 'cover'
+  return new File([blob], `${baseName}-16x9.webp`, { type: 'image/webp' })
+}
+
+function CoverCropModal({
+  draft,
+  onCancel,
+  onApply
+}: {
+  draft: CoverCropDraft
+  onCancel: () => void
+  onApply: (file: File) => void
+}) {
+  const [crop, setCrop] = useState({ x: 0, y: 0 })
+  const [zoom, setZoom] = useState(1)
+  const [croppedPixels, setCroppedPixels] = useState<Area | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  const applyCrop = async () => {
+    if (!croppedPixels) {
+      alert('请先调整封面裁剪范围')
+      return
+    }
+    try {
+      setSaving(true)
+      const croppedFile = await createCroppedCoverFile(draft.file, draft.previewUrl, croppedPixels)
+      onApply(croppedFile)
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '封面裁剪失败')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/56 px-4">
+      <div className="w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
+          <div>
+            <h3 className="text-lg font-black text-slate-900">裁剪视频封面</h3>
+            <p className="text-sm text-slate-500">固定 16:9 比例，可拖动图片并缩放，避免黑边和主体偏移。</p>
+          </div>
+          <button type="button" className="btn-secondary" onClick={onCancel} disabled={saving}>
+            <X className="h-4 w-4" />
+            取消
+          </button>
+        </div>
+        <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+          <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-950">
+            <Cropper
+              image={draft.previewUrl}
+              crop={crop}
+              zoom={zoom}
+              aspect={COVER_ASPECT_RATIO}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={(_, nextPixels) => setCroppedPixels(nextPixels)}
+              showGrid
+              objectFit="contain"
+            />
+          </div>
+          <div className="space-y-5">
+            <div>
+              <div className="mb-2 text-sm font-bold text-slate-700">缩放</div>
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.01}
+                value={zoom}
+                onChange={(event) => setZoom(Number(event.target.value))}
+                className="w-full"
+              />
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-500">
+              上传后会以当前裁剪范围生成 16:9 WebP 封面。前台列表、Hero 和详情页会使用同一套比例，建议主体尽量放在中间偏上位置。
+            </div>
+            <button type="button" className="btn-primary h-12 w-full" onClick={applyCrop} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+              {saving ? '裁剪中...' : '确认裁剪'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 interface EditorState {
   materialId?: string
   selectedCompany: TrustedCompany | null
@@ -99,6 +231,8 @@ interface EditorState {
   tencentVideoInput: string
   sourceVideoUrl: string
   videoSummary: string
+  coverImageUrl?: string
+  coverThumbnailUrl?: string
   sequence: number
   status: CorporateEnglishStatus
   sourceAudioAssetId?: string | null
@@ -129,6 +263,8 @@ const emptyEditorState = (): EditorState => ({
   tencentVideoInput: '',
   sourceVideoUrl: '',
   videoSummary: '',
+  coverImageUrl: '',
+  coverThumbnailUrl: '',
   sequence: 0,
   status: 'draft',
   sourceAudioAssetId: null,
@@ -720,16 +856,6 @@ function encodeSpeechWavClip(audioBuffer: AudioBuffer) {
   return { blob: encodeWav(speechBuffer), mimeType: 'audio/wav', extension: 'wav' }
 }
 
-function getCompressedAudioMimeType() {
-  if (typeof MediaRecorder === 'undefined') return null
-  const candidates = [
-    'audio/webm;codecs=opus',
-    'audio/webm',
-    'audio/ogg;codecs=opus'
-  ]
-  return candidates.find((mimeType) => MediaRecorder.isTypeSupported(mimeType)) || null
-}
-
 function getM4aAudioMimeType() {
   if (typeof MediaRecorder === 'undefined') return null
   const candidates = [
@@ -781,15 +907,6 @@ function clipAudioBuffer(source: AudioBuffer, startMs: number, endMs: number) {
   return clipped
 }
 
-async function encodeCompressedClip(audioBuffer: AudioBuffer): Promise<{ blob: Blob; mimeType: string; extension: string }> {
-  const mimeType = getCompressedAudioMimeType()
-  if (!mimeType) {
-    return { blob: encodeWav(audioBuffer), mimeType: 'audio/wav', extension: 'wav' }
-  }
-
-  return encodeAudioBufferWithMediaRecorder(audioBuffer, mimeType, mimeType.includes('ogg') ? 'ogg' : 'webm', CLIP_AUDIO_BITRATE)
-}
-
 async function encodeAudioBufferWithMediaRecorder(
   audioBuffer: AudioBuffer,
   mimeType: string,
@@ -835,110 +952,6 @@ async function encodeAudioBufferWithMediaRecorder(
         audioContext.close().catch(() => undefined)
         reject(error)
       })
-  })
-}
-
-async function encodeCompressedClipFromAudioFile(
-  file: File,
-  startMs: number,
-  endMs: number
-): Promise<{ blob: Blob; mimeType: string; extension: string }> {
-  const mimeType = getCompressedAudioMimeType()
-  if (!mimeType) {
-    const decoded = await decodeAudioBlob(file)
-    return encodeCompressedClip(clipAudioBuffer(decoded, startMs, endMs))
-  }
-
-  const objectUrl = URL.createObjectURL(file)
-  const durationSeconds = Math.max(0.1, (endMs - startMs) / 1000)
-
-  return new Promise((resolve, reject) => {
-    const audio = new Audio()
-    let recorder: MediaRecorder | null = null
-    let audioContext: AudioContext | null = null
-    let sourceNode: MediaElementAudioSourceNode | null = null
-    let destinationNode: MediaStreamAudioDestinationNode | null = null
-    let timeoutId: number | null = null
-    let started = false
-    const chunks: BlobPart[] = []
-
-    const cleanup = () => {
-      if (timeoutId) window.clearTimeout(timeoutId)
-      audio.pause()
-      audio.removeAttribute('src')
-      audio.load()
-      destinationNode?.stream.getTracks().forEach((track) => track.stop())
-      sourceNode?.disconnect()
-      destinationNode?.disconnect()
-      audioContext?.close().catch(() => undefined)
-      URL.revokeObjectURL(objectUrl)
-    }
-
-    const finish = () => {
-      cleanup()
-      const blob = new Blob(chunks, { type: mimeType })
-      resolve({
-        blob,
-        mimeType,
-        extension: mimeType.includes('ogg') ? 'ogg' : 'webm'
-      })
-    }
-
-    const fail = (error: unknown) => {
-      cleanup()
-      reject(error instanceof Error ? error : new Error('压缩剪辑音频失败'))
-    }
-
-    const startRecording = () => {
-      if (started) return
-      started = true
-      try {
-        audioContext = new AudioContext({ sampleRate: 48000 })
-        sourceNode = audioContext.createMediaElementSource(audio)
-        destinationNode = audioContext.createMediaStreamDestination()
-        sourceNode.connect(destinationNode)
-        recorder = new MediaRecorder(destinationNode.stream, {
-          mimeType,
-          audioBitsPerSecond: CLIP_AUDIO_BITRATE
-        })
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) chunks.push(event.data)
-        }
-        recorder.onerror = () => fail(new Error('压缩剪辑音频失败'))
-        recorder.onstop = finish
-        recorder.start(1000)
-        audioContext.resume()
-          .then(() => audio.play())
-          .catch(fail)
-        timeoutId = window.setTimeout(() => {
-          if (recorder?.state === 'recording') recorder.stop()
-        }, Math.ceil(durationSeconds * 1000) + 250)
-      } catch (error) {
-        fail(error)
-      }
-    }
-
-    audio.preload = 'auto'
-    audio.onloadedmetadata = () => {
-      if (!Number.isFinite(audio.duration) || audio.duration <= 0) {
-        fail(new Error('无法读取音频时长'))
-        return
-      }
-      const startSeconds = Math.min(startMs / 1000, Math.max(0, audio.duration - 0.05))
-      if (startSeconds <= 0.05) startRecording()
-      else audio.currentTime = startSeconds
-    }
-    audio.onseeked = startRecording
-    audio.ontimeupdate = () => {
-      if (audio.currentTime >= endMs / 1000 && recorder?.state === 'recording') {
-        recorder.stop()
-      }
-    }
-    audio.onended = () => {
-      if (recorder?.state === 'recording') recorder.stop()
-    }
-    audio.onerror = () => fail(new Error('音频解析失败，请确认文件格式可被当前浏览器播放'))
-    audio.src = objectUrl
   })
 }
 
@@ -1015,6 +1028,24 @@ function AdminModuleVideoManager({
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [categoryOptions, setCategoryOptions] = useState<string[]>([])
+  const [coverFile, setCoverFile] = useState<File | null>(null)
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState('')
+  const [coverCropDraft, setCoverCropDraft] = useState<CoverCropDraft | null>(null)
+  const coverInputRef = useRef<HTMLInputElement | null>(null)
+
+  const replaceCoverPreview = useCallback((file: File | null, existingUrl = '') => {
+    setCoverPreviewUrl((current) => {
+      if (current && current.startsWith('blob:')) URL.revokeObjectURL(current)
+      return file ? URL.createObjectURL(file) : existingUrl
+    })
+  }, [])
+
+  const closeCoverCropDraft = useCallback(() => {
+    setCoverCropDraft((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl)
+      return null
+    })
+  }, [])
 
   const loadVideos = useCallback(async () => {
     try {
@@ -1076,13 +1107,17 @@ function AdminModuleVideoManager({
   }, [loadVideos])
 
   const openCreate = () => {
+    closeCoverCropDraft()
     setEditingVideo(null)
     setForm(emptyModuleVideoForm(moduleKey))
     setTagInput('')
+    setCoverFile(null)
+    replaceCoverPreview(null, '')
     setShowForm(true)
   }
 
   const openEdit = (video: CorporateEnglishModuleVideo) => {
+    closeCoverCropDraft()
     setEditingVideo(video)
     setForm({
       moduleKey,
@@ -1098,7 +1133,28 @@ function AdminModuleVideoManager({
       publishedAt: formatDateTimeInput(video.publishedAt)
     })
     setTagInput(formatSimpleTags(video.tags))
+    setCoverFile(null)
+    replaceCoverPreview(null, video.coverThumbnailUrl || video.coverImageUrl || '')
     setShowForm(true)
+  }
+
+  const handleCoverFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('请上传 jpg、png 或 webp 图片')
+      return
+    }
+    if (file.size > MAX_COVER_IMAGE_BYTES) {
+      alert('封面图片不能超过 8MB')
+      return
+    }
+    const previewUrl = URL.createObjectURL(file)
+    setCoverCropDraft({ file, previewUrl })
+  }
+
+  const applyCroppedCover = (file: File) => {
+    setCoverFile(file)
+    replaceCoverPreview(file)
+    closeCoverCropDraft()
   }
 
   const saveVideo = async () => {
@@ -1119,9 +1175,18 @@ function AdminModuleVideoManager({
         sortOrder: Number(form.sortOrder || 0),
         publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : new Date().toISOString()
       }
-      await corporateEnglishService.saveModuleVideo(payload, editingVideo?.videoId)
+      const savedVideo = await corporateEnglishService.saveModuleVideo(payload, editingVideo?.videoId)
+      if (coverFile) {
+        await corporateEnglishService.uploadCoverImage({
+          ownerType: 'module_video',
+          ownerId: savedVideo.videoId,
+          file: coverFile
+        })
+      }
       setShowForm(false)
       setEditingVideo(null)
+      setCoverFile(null)
+      replaceCoverPreview(null, '')
       await loadVideos()
       alert('保存成功')
     } catch (error) {
@@ -1167,6 +1232,13 @@ function AdminModuleVideoManager({
 
       {showForm ? (
         <div className="card">
+          {coverCropDraft ? (
+            <CoverCropModal
+              draft={coverCropDraft}
+              onCancel={closeCoverCropDraft}
+              onApply={applyCroppedCover}
+            />
+          ) : null}
           <div className="card-content space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-lg font-black text-slate-900">{editingVideo ? '编辑视频' : '新增视频'}</h3>
@@ -1176,6 +1248,29 @@ function AdminModuleVideoManager({
               </button>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
+              <div className="space-y-2 lg:col-span-2">
+                <span className="text-sm font-bold text-slate-700">视频封面</span>
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    type="button"
+                    className="relative aspect-video w-full max-w-[320px] overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50 text-left transition hover:border-indigo-300"
+                    onClick={() => coverInputRef.current?.click()}
+                  >
+                    {coverPreviewUrl ? (
+                      <img src={coverPreviewUrl} alt="视频封面预览" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full flex-col items-center justify-center gap-2 text-sm font-bold text-slate-500">
+                        <Upload className="h-6 w-6 text-indigo-600" />
+                        上传 16:9 封面
+                      </span>
+                    )}
+                  </button>
+                  <div className="max-w-sm text-sm leading-6 text-slate-500">
+                    上传后先手动确认 16:9 裁剪范围，再压缩为 WebP，生成列表缩略图和播放页大图。
+                  </div>
+                </div>
+                <input ref={coverInputRef} type="file" className="hidden" accept="image/*" onChange={(event) => event.target.files?.[0] && handleCoverFile(event.target.files[0])} />
+              </div>
               <label className="space-y-1">
                 <span className="text-sm font-bold text-slate-700">视频标题</span>
                 <input className="input" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
@@ -1281,7 +1376,12 @@ function AdminModuleVideoManager({
                 ) : videos.map((video) => (
                   <tr key={video.videoId} className="hover:bg-slate-50">
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900">{video.title}</div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-slate-900">{video.title}</span>
+                        {!video.coverImageHash ? (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">缺封面</span>
+                        ) : null}
+                      </div>
                       <div className="mt-1 max-w-[420px] truncate text-sm text-slate-500">{video.description || video.tencentIframeUrl}</div>
                       {video.videoSource ? (
                         <div className="mt-1 max-w-[420px] truncate text-xs font-semibold text-slate-400">来源：{video.videoSource}</div>
@@ -1365,6 +1465,9 @@ export default function AdminCorporateEnglishPage() {
   const [companyLoading, setCompanyLoading] = useState(false)
   const [audioFile, setAudioFile] = useState<File | null>(null)
   const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [materialCoverFile, setMaterialCoverFile] = useState<File | null>(null)
+  const [materialCoverPreviewUrl, setMaterialCoverPreviewUrl] = useState('')
+  const [materialCoverCropDraft, setMaterialCoverCropDraft] = useState<CoverCropDraft | null>(null)
   const [decodedAudio, setDecodedAudio] = useState<AudioBuffer | null>(null)
   const [audioObjectUrl, setAudioObjectUrl] = useState('')
   const [audioLoading, setAudioLoading] = useState(false)
@@ -1372,7 +1475,9 @@ export default function AdminCorporateEnglishPage() {
   const [expandedSubtitleCueClipIds, setExpandedSubtitleCueClipIds] = useState<Set<string>>(() => new Set())
   const audioInputRef = useRef<HTMLInputElement | null>(null)
   const csvInputRef = useRef<HTMLInputElement | null>(null)
+  const materialCoverInputRef = useRef<HTMLInputElement | null>(null)
   const audioObjectUrlRef = useRef('')
+  const materialCoverObjectUrlRef = useRef('')
   const clipAudioObjectUrlsRef = useRef<string[]>([])
 
   const isEditing = mode === 'edit'
@@ -1474,6 +1579,28 @@ export default function AdminCorporateEnglishPage() {
     return nextUrl
   }, [])
 
+  const replaceMaterialCoverPreview = useCallback((file: File | null, existingUrl = '') => {
+    if (materialCoverObjectUrlRef.current) {
+      URL.revokeObjectURL(materialCoverObjectUrlRef.current)
+      materialCoverObjectUrlRef.current = ''
+    }
+    if (!file) {
+      setMaterialCoverPreviewUrl(existingUrl)
+      return existingUrl
+    }
+    const nextUrl = URL.createObjectURL(file)
+    materialCoverObjectUrlRef.current = nextUrl
+    setMaterialCoverPreviewUrl(nextUrl)
+    return nextUrl
+  }, [])
+
+  const closeMaterialCoverCropDraft = useCallback(() => {
+    setMaterialCoverCropDraft((current) => {
+      if (current?.previewUrl) URL.revokeObjectURL(current.previewUrl)
+      return null
+    })
+  }, [])
+
   const revokeClipAudioObjectUrls = useCallback(() => {
     clipAudioObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url))
     clipAudioObjectUrlsRef.current = []
@@ -1548,11 +1675,14 @@ export default function AdminCorporateEnglishPage() {
       setProfileBulkInputs({ cultureSections: '', ceoThinkingSections: '' })
       setAudioFile(null)
       setCsvFile(null)
+      setMaterialCoverFile(null)
+      closeMaterialCoverCropDraft()
+      replaceMaterialCoverPreview(null)
       setDecodedAudio(null)
       replaceAudioObjectUrl(null)
       revokeClipAudioObjectUrls()
     }
-  }, [contextCompany, mode, replaceAudioObjectUrl, revokeClipAudioObjectUrls])
+  }, [closeMaterialCoverCropDraft, contextCompany, mode, replaceAudioObjectUrl, replaceMaterialCoverPreview, revokeClipAudioObjectUrls])
 
   useEffect(() => {
     if (mode !== 'edit' || !editingId) return
@@ -1616,6 +1746,8 @@ export default function AdminCorporateEnglishPage() {
           tencentVideoInput: detail.material.tencentVideoVid || detail.material.tencentVideoUrl || '',
           sourceVideoUrl: detail.material.sourceVideoUrl || '',
           videoSummary: detail.material.videoSummary || '',
+          coverImageUrl: detail.material.coverImageUrl || '',
+          coverThumbnailUrl: detail.material.coverThumbnailUrl || '',
           sequence: detail.material.sequence || 0,
           status: detail.material.status,
           sourceAudioAssetId: detail.material.sourceAudioAssetId,
@@ -1627,6 +1759,9 @@ export default function AdminCorporateEnglishPage() {
         setBulkClipInput('')
         setAudioFile(null)
         setCsvFile(null)
+        setMaterialCoverFile(null)
+        closeMaterialCoverCropDraft()
+        replaceMaterialCoverPreview(null, detail.material.coverThumbnailUrl || detail.material.coverImageUrl || '')
         setDecodedAudio(null)
         replaceAudioObjectUrl(null)
       } catch (error) {
@@ -1643,7 +1778,7 @@ export default function AdminCorporateEnglishPage() {
     return () => {
       cancelled = true
     }
-  }, [editingId, mode, registerClipAudioObjectUrl, replaceAudioObjectUrl, revokeClipAudioObjectUrls, setUrlMode])
+  }, [closeMaterialCoverCropDraft, editingId, mode, registerClipAudioObjectUrl, replaceAudioObjectUrl, replaceMaterialCoverPreview, revokeClipAudioObjectUrls, setUrlMode])
 
   useEffect(() => {
     if (!companySearch.trim()) {
@@ -1700,6 +1835,25 @@ export default function AdminCorporateEnglishPage() {
     setPage(1)
     setSearch(searchDraft.trim())
   }, [searchDraft])
+
+  const handleMaterialCoverFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      alert('请上传 jpg、png 或 webp 图片')
+      return
+    }
+    if (file.size > MAX_COVER_IMAGE_BYTES) {
+      alert('封面图片不能超过 8MB')
+      return
+    }
+    const previewUrl = URL.createObjectURL(file)
+    setMaterialCoverCropDraft({ file, previewUrl })
+  }
+
+  const applyCroppedMaterialCover = (file: File) => {
+    setMaterialCoverFile(file)
+    replaceMaterialCoverPreview(file)
+    closeMaterialCoverCropDraft()
+  }
 
   const handleAudioFile = async (file: File) => {
     if (!isAcceptedAudioFile(file)) {
@@ -2216,9 +2370,17 @@ export default function AdminCorporateEnglishPage() {
         durationMs: editor.durationMs || null,
         clips: uploadedClips
       }, isEditing ? editor.materialId : undefined)
+      if (materialCoverFile) {
+        await corporateEnglishService.uploadCoverImage({
+          ownerType: 'material',
+          ownerId: materialId,
+          file: materialCoverFile
+        })
+      }
 
       alert('保存成功')
       setEditor((prev) => ({ ...prev, materialId, sourceAudioAssetId, subtitleCsvAssetId, clips: uploadedClips }))
+      setMaterialCoverFile(null)
       setUrlMode('list')
       loadMaterials()
     } catch (saveError) {
@@ -2581,9 +2743,25 @@ export default function AdminCorporateEnglishPage() {
             </div>
 
             <div className="card">
+              {materialCoverCropDraft ? (
+                <CoverCropModal
+                  draft={materialCoverCropDraft}
+                  onCancel={closeMaterialCoverCropDraft}
+                  onApply={applyCroppedMaterialCover}
+                />
+              ) : null}
               <div className="card-header"><h2>第二步：上传和配置素材</h2></div>
               <div className="card-content space-y-5">
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-indigo-300" onClick={() => materialCoverInputRef.current?.click()}>
+                    {materialCoverPreviewUrl ? (
+                      <img src={materialCoverPreviewUrl} alt="视频封面预览" className="mb-3 aspect-video w-full rounded-lg object-cover" />
+                    ) : (
+                      <Upload className="mb-3 h-6 w-6 text-indigo-600" />
+                    )}
+                    <div className="font-bold text-slate-900">{materialCoverFile?.name || (materialCoverPreviewUrl ? '已配置视频封面' : '上传视频封面')}</div>
+                    <div className="text-sm text-slate-500">支持 jpg、png、webp；选择后可手动调整 16:9 裁剪范围，最大 8MB。</div>
+                  </button>
                   <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-indigo-300" onClick={() => audioInputRef.current?.click()}>
                     <FileAudio className="mb-3 h-6 w-6 text-indigo-600" />
                     <div className="font-bold text-slate-900">{audioFile?.name || '上传原始音频用于本地剪辑'}</div>
@@ -2628,6 +2806,7 @@ export default function AdminCorporateEnglishPage() {
 
                 <input ref={audioInputRef} type="file" className="hidden" accept="audio/*,.mp3,.wav,.m4a,.aac,.mp4,.ogg,.webm" onChange={(event) => event.target.files?.[0] && handleAudioFile(event.target.files[0])} />
                 <input ref={csvInputRef} type="file" className="hidden" accept=".csv,text/csv" onChange={(event) => event.target.files?.[0] && handleCsvFile(event.target.files[0])} />
+                <input ref={materialCoverInputRef} type="file" className="hidden" accept="image/*" onChange={(event) => event.target.files?.[0] && handleMaterialCoverFile(event.target.files[0])} />
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <label className="block">
@@ -3073,7 +3252,12 @@ export default function AdminCorporateEnglishPage() {
                             {company.materials.map((material) => (
                               <div key={material.materialId} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
                                 <div>
-                                  <div className="font-semibold text-slate-900">{material.materialTitle}</div>
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-semibold text-slate-900">{material.materialTitle}</span>
+                                    {!material.coverImageHash ? (
+                                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">缺封面</span>
+                                    ) : null}
+                                  </div>
                                   <div className="text-sm text-slate-500">
                                     {material.speakerName} · {material.speakerRole} · {material.clipCount} 个片段
                                     {material.tencentVideoVid ? ` · vid ${material.tencentVideoVid}` : ''}

@@ -5,12 +5,7 @@ import {
   MousePointer,
   Eye,
   FileText,
-  CheckCircle,
-  AlertCircle,
-  User,
-  ShoppingBag,
-  Search,
-  Share2
+  User
 } from 'lucide-react';
 
 const AdminTrackingManagement: React.FC = () => {
@@ -47,7 +42,7 @@ const AdminTrackingManagement: React.FC = () => {
                 { label: '浏览岗位 (Engagement)', metric: '人均浏览量' },
                 { label: '简历/申请 (Action)', metric: '投递转化率' },
                 { label: '会员订阅 (Revenue)', metric: '付费转化率' }
-              ].map((step, index, arr) => (
+              ].map((step, index) => (
                 <div key={index} className="flex flex-col items-center relative z-10 bg-slate-50 px-2">
                   <div className="w-10 h-10 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center font-bold text-indigo-600 mb-2 shadow-sm">
                     {index + 1}
@@ -72,6 +67,9 @@ const AdminTrackingManagement: React.FC = () => {
               { id: 'view_job_detail', name: '浏览岗位详情', desc: '用户进入岗位详情页', params: 'job_id, job_title, company' },
               { id: 'view_company_detail', name: '浏览企业详情', desc: '用户查看企业信息页', params: 'company_id, company_name' },
               { id: 'view_job_bundle', name: '浏览岗位合集', desc: '用户访问岗位合集详情页 (UV/PV)', params: 'bundle_id, bundle_title, job_count' },
+              { id: 'corporate_english_module_view', name: '外企英语模块曝光', desc: '外企英语三个模块的 UV/PV 口径', params: 'module_key, module_label, video_count, audience_state' },
+              { id: 'corporate_english_detail_view', name: '外企英语详情访问', desc: 'CEO访谈/英语面试/外企会议详情页访问，含锁定页', params: 'module_key, entity_id, access_tier, is_locked' },
+              { id: 'corporate_english_video_open', name: '外企英语视频打开', desc: '点击列表卡片或进入可播放详情时的播放意图', params: 'module_key, entity_id, position, category' },
               { id: 'view_profile', name: '访问个人中心', desc: '用户进入个人中心', params: 'tab (resume/jobs/settings)' },
               { id: 'view_membership', name: '访问会员页', desc: '用户查看会员订阅方案', params: 'source (entry_point)' }
             ]}
@@ -167,13 +165,5 @@ const TrackingSection = ({ title, icon, color, events }: any) => {
     </div>
   );
 };
-
-const InfoIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10" />
-    <line x1="12" y1="16" x2="12" y2="12" />
-    <line x1="12" y1="8" x2="12.01" y2="8" />
-  </svg>
-);
 
 export default AdminTrackingManagement;
