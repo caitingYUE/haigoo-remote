@@ -13,7 +13,7 @@ const MODULE_VIDEOS_TABLE = 'corporate_english_module_videos'
 const COVER_ASSETS_TABLE = 'corporate_english_cover_assets'
 const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
 const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
-const coverColumnSupportCache = new Map()
+const columnSupportCache = new Map()
 
 function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
   const id = normalizeString(ownerId)
@@ -66,25 +66,38 @@ function statusClause(alias, includeDrafts) {
   return includeDrafts ? `${alias}.status <> 'archived'` : `${alias}.status = 'published'`
 }
 
-function isMissingCoverColumnError(error) {
-  return error?.code === '42703' && String(error?.message || error).includes('cover_image')
+function isMissingColumnError(error, columnName) {
+  return error?.code === '42703' && String(error?.message || error).includes(columnName)
 }
 
-async function hasCoverColumns(tableName) {
-  if (coverColumnSupportCache.has(tableName)) return coverColumnSupportCache.get(tableName)
+function isMissingCoverColumnError(error) {
+  return isMissingColumnError(error, 'cover_image')
+}
+
+function setTableColumnSupport(tableName, columnName, supported) {
+  columnSupportCache.set(`${tableName}:${columnName}`, supported)
+}
+
+async function hasTableColumn(tableName, columnName) {
+  const cacheKey = `${tableName}:${columnName}`
+  if (columnSupportCache.has(cacheKey)) return columnSupportCache.get(cacheKey)
   const rows = await neonHelper.query(
     `SELECT EXISTS (
        SELECT 1
        FROM information_schema.columns
        WHERE table_schema = 'public'
          AND table_name = $1
-         AND column_name = 'cover_image_hash'
-     ) AS has_cover`,
-    [tableName]
+         AND column_name = $2
+     ) AS has_column`,
+    [tableName, columnName]
   )
-  const hasCover = rows?.[0]?.has_cover === true
-  coverColumnSupportCache.set(tableName, hasCover)
-  return hasCover
+  const hasColumn = rows?.[0]?.has_column === true
+  columnSupportCache.set(cacheKey, hasColumn)
+  return hasColumn
+}
+
+async function hasCoverColumns(tableName) {
+  return hasTableColumn(tableName, 'cover_image_hash')
 }
 
 function normalizeAccessTier(value) {
@@ -488,7 +501,7 @@ async function listCeoVideos(req, res, user) {
     rows = await neonHelper.query(buildQuery(includeCoverFields ? selectFieldsWithCover : selectFields), [limit, canViewMemberVideos])
   } catch (error) {
     if (!isMissingCoverColumnError(error)) throw error
-    coverColumnSupportCache.set(MATERIALS_TABLE, false)
+    setTableColumnSupport(MATERIALS_TABLE, 'cover_image_hash', false)
     rows = await neonHelper.query(buildQuery(selectFields), [limit, canViewMemberVideos])
   }
 
@@ -514,6 +527,7 @@ async function listModuleVideos(req, res, user) {
   const requestedLimit = Number(req.query.limit || 48)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 96) : 48
 
+  const includeDurationField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'duration_ms')
   const selectFields = `
        video_id,
        module_key,
@@ -522,8 +536,8 @@ async function listModuleVideos(req, res, user) {
        video_source,
        category,
        tags,
-       access_tier,
-       duration_ms,
+       access_tier${includeDurationField ? `,
+       duration_ms` : ''},
        published_at,
        sort_order,
        updated_at,
@@ -550,7 +564,7 @@ async function listModuleVideos(req, res, user) {
     rows = await neonHelper.query(buildQuery(includeCoverFields ? selectFieldsWithCover : selectFields), [...params, canViewMemberVideos, limit])
   } catch (error) {
     if (!isMissingCoverColumnError(error)) throw error
-    coverColumnSupportCache.set(MODULE_VIDEOS_TABLE, false)
+    setTableColumnSupport(MODULE_VIDEOS_TABLE, 'cover_image_hash', false)
     rows = await neonHelper.query(buildQuery(selectFields), [...params, canViewMemberVideos, limit])
   }
 

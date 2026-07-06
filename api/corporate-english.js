@@ -218,6 +218,7 @@ function mapModuleVideoRow(row) {
     category: row.category || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     accessTier: row.access_tier === 'free' ? 'free' : 'vip',
+    durationMs: row.duration_ms,
     status: row.status || 'draft',
     sortOrder: Number(row.sort_order || 0),
     publishedAt: row.published_at,
@@ -291,7 +292,8 @@ async function ensureMaterialSourceVideoUrlColumn() {
 async function ensureModuleVideoSourceColumn() {
   await neonHelper.query(
     `ALTER TABLE ${MODULE_VIDEOS_TABLE}
-       ADD COLUMN IF NOT EXISTS video_source TEXT NOT NULL DEFAULT ''`
+       ADD COLUMN IF NOT EXISTS video_source TEXT NOT NULL DEFAULT '',
+       ADD COLUMN IF NOT EXISTS duration_ms INTEGER`
   )
 }
 
