@@ -39,6 +39,13 @@ interface FunnelStep {
     previousConversion: number;
     cumulativeConversion: number;
     dropoffUv: number;
+    moduleKey?: string;
+    moduleLabel?: string;
+    sourceLabel?: string;
+    entityId?: string;
+    detailUv?: number;
+    detailPv?: number;
+    metricKind?: string;
 }
 
 interface CopilotItem {
@@ -274,6 +281,7 @@ const FUNNEL_DEFINITIONS: Record<string, string> = {
     bundle_apply_click: '在合集链路内点击岗位申请入口的 UV/PV。',
     bundle_apply_success: '合集链路内产生外链跳转、邮箱直申或内推提交的 UV/PV。',
     corporate_english_visit: '外企英语页面访问 UV/PV，包含首页与详情页 page_view。',
+    corporate_english_detail_view: '外企英语三个详情页访问汇总 UV/PV，按 CEO访谈、英语面试、外企会议详情访问事件合并。',
     corporate_english_video_play: '外企英语视频播放或打开 UV/PV。腾讯视频 iframe 无法直接读取内部播放状态，前台以已解锁视频打开作为播放信号。',
     corporate_english_clip_play: '外企英语跟读音频播放 UV/PV。',
     corporate_english_ceo_module_view: 'CEO访谈模块曝光 UV/PV，新 module_view 口径，兼容旧 section_view。',
@@ -769,8 +777,8 @@ export default function AdminTrackingDashboard() {
                         </Panel>
 
                         <Panel
-                            title="外企英语模块与详情"
-                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 三个模块 UV、详情访问与播放`}
+                            title="外企英语视频播放"
+                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 按视频统计播放 UV/PV，兼看详情访问`}
                             icon={<BookOpen className="h-5 w-5 text-violet-600" />}
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -1322,16 +1330,23 @@ function FunnelCard({ step }: { step: FunnelStep }) {
 }
 
 function CorporateEnglishMetricCard({ step }: { step: FunnelStep }) {
-    const tone = step.stepId.includes('_module_view')
+    const isVideoCard = step.metricKind === 'video_play';
+    const tone = isVideoCard
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+        : step.stepId.includes('_module_view')
         ? 'bg-violet-50 text-violet-700 border-violet-100'
         : step.stepId.includes('_detail_view')
             ? 'bg-sky-50 text-sky-700 border-sky-100'
             : 'bg-slate-50 text-slate-600 border-slate-100';
-    const tag = step.stepId.includes('_module_view')
+    const tag = isVideoCard
+        ? (step.moduleLabel || '视频')
+        : step.stepId.includes('_module_view')
         ? '模块 UV'
         : step.stepId.includes('_detail_view')
             ? '详情访问'
             : '互动事件';
+    const title = isVideoCard ? `${step.label}` : step.label;
+    const meta = isVideoCard ? (step.sourceLabel || step.entityId || '') : step.stepId;
     return (
         <div
             className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22)] transition-colors hover:border-violet-200"
@@ -1339,21 +1354,27 @@ function CorporateEnglishMetricCard({ step }: { step: FunnelStep }) {
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{step.stepId}</div>
-                    <div className="mt-1 text-base font-semibold text-slate-900">{step.label}</div>
+                    <div className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{meta}</div>
+                    <div className="mt-1 line-clamp-2 text-base font-semibold leading-snug text-slate-900">{title}</div>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone}`}>{tag}</span>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
                 <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                    <div className="text-xs text-slate-400">UV</div>
+                    <div className="text-xs text-slate-400">{isVideoCard ? '播放 UV' : 'UV'}</div>
                     <div className="mt-1 text-2xl font-bold text-slate-900">{formatNum(step.uv)}</div>
                 </div>
                 <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                    <div className="text-xs text-slate-400">PV</div>
+                    <div className="text-xs text-slate-400">{isVideoCard ? '播放 PV' : 'PV'}</div>
                     <div className="mt-1 text-2xl font-bold text-slate-900">{formatNum(step.pv)}</div>
                 </div>
             </div>
+            {isVideoCard && (
+                <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-500">
+                    <span>详情 UV {formatNum(step.detailUv || 0)}</span>
+                    <span>详情 PV {formatNum(step.detailPv || 0)}</span>
+                </div>
+            )}
         </div>
     );
 }
