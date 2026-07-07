@@ -777,18 +777,6 @@ export default function AdminTrackingDashboard() {
                         </Panel>
 
                         <Panel
-                            title="外企英语视频播放"
-                            subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 按视频统计播放 UV/PV，兼看详情访问`}
-                            icon={<BookOpen className="h-5 w-5 text-violet-600" />}
-                        >
-                            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-                                {(data.coreFunnels.corporateEnglish || []).map((step) => (
-                                    <CorporateEnglishMetricCard key={step.stepId} step={step} />
-                                ))}
-                            </div>
-                        </Panel>
-
-                        <Panel
                             title="免费转会员漏斗"
                             subtitle="固定统计免费用户；权益页总访问请看会员体验里的“Club 权益页”"
                             icon={<Crown className="h-5 w-5 text-amber-600" />}
@@ -800,6 +788,14 @@ export default function AdminTrackingDashboard() {
                             </div>
                         </Panel>
                     </div>
+
+                    <Panel
+                        title="外企英语视频播放"
+                        subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 按视频统计播放 UV/PV，兼看详情访问`}
+                        icon={<BookOpen className="h-5 w-5 text-violet-600" />}
+                    >
+                        <CorporateEnglishVideoTable steps={data.coreFunnels.corporateEnglish || []} />
+                    </Panel>
 
                     <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
                         <Panel
@@ -1329,52 +1325,119 @@ function FunnelCard({ step }: { step: FunnelStep }) {
     );
 }
 
-function CorporateEnglishMetricCard({ step }: { step: FunnelStep }) {
-    const isVideoCard = step.metricKind === 'video_play';
-    const tone = isVideoCard
-        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-        : step.stepId.includes('_module_view')
-        ? 'bg-violet-50 text-violet-700 border-violet-100'
-        : step.stepId.includes('_detail_view')
-            ? 'bg-sky-50 text-sky-700 border-sky-100'
-            : 'bg-slate-50 text-slate-600 border-slate-100';
-    const tag = isVideoCard
-        ? (step.moduleLabel || '视频')
-        : step.stepId.includes('_module_view')
-        ? '模块 UV'
-        : step.stepId.includes('_detail_view')
-            ? '详情访问'
-            : '互动事件';
-    const title = isVideoCard ? `${step.label}` : step.label;
-    const meta = isVideoCard ? (step.sourceLabel || step.entityId || '') : step.stepId;
+function CorporateEnglishSummaryCard({ step }: { step: FunnelStep }) {
+    const tone = step.stepId.includes('_detail_view')
+        ? 'bg-sky-50 text-sky-700 border-sky-100'
+        : step.stepId.includes('_video_play')
+            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+            : step.stepId.includes('_clip_play')
+                ? 'bg-amber-50 text-amber-700 border-amber-100'
+                : 'bg-violet-50 text-violet-700 border-violet-100';
+    const tag = step.stepId.includes('_detail_view')
+        ? '详情'
+        : step.stepId.includes('_video_play')
+            ? '播放'
+            : step.stepId.includes('_clip_play')
+                ? '跟读'
+                : '访问';
     return (
         <div
-            className="rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.22)] transition-colors hover:border-violet-200"
+            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_10px_24px_-20px_rgba(15,23,42,0.25)]"
             title={FUNNEL_DEFINITIONS[step.stepId] || step.label}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <div className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{meta}</div>
-                    <div className="mt-1 line-clamp-2 text-base font-semibold leading-snug text-slate-900">{title}</div>
+                    <div className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">{step.stepId}</div>
+                    <div className="mt-1 text-sm font-semibold text-slate-900">{step.label}</div>
                 </div>
                 <span className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone}`}>{tag}</span>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-                <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                    <div className="text-xs text-slate-400">{isVideoCard ? '播放 UV' : 'UV'}</div>
-                    <div className="mt-1 text-2xl font-bold text-slate-900">{formatNum(step.uv)}</div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="text-xs text-slate-400">UV</div>
+                    <div className="mt-1 text-xl font-bold text-slate-900">{formatNum(step.uv)}</div>
                 </div>
-                <div className="rounded-2xl bg-slate-50 px-3 py-3">
-                    <div className="text-xs text-slate-400">{isVideoCard ? '播放 PV' : 'PV'}</div>
-                    <div className="mt-1 text-2xl font-bold text-slate-900">{formatNum(step.pv)}</div>
+                <div className="rounded-xl bg-slate-50 px-3 py-2">
+                    <div className="text-xs text-slate-400">PV</div>
+                    <div className="mt-1 text-xl font-bold text-slate-900">{formatNum(step.pv)}</div>
                 </div>
             </div>
-            {isVideoCard && (
-                <div className="mt-3 flex items-center justify-between rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs text-slate-500">
-                    <span>详情 UV {formatNum(step.detailUv || 0)}</span>
-                    <span>详情 PV {formatNum(step.detailPv || 0)}</span>
+        </div>
+    );
+}
+
+function CorporateEnglishVideoTable({ steps }: { steps: FunnelStep[] }) {
+    const summarySteps = steps.filter((step) => step.metricKind !== 'video_play');
+    const videoSteps = steps.filter((step) => step.metricKind === 'video_play');
+
+    if (!steps.length) {
+        return <EmptyState text="当前筛选下暂无外企英语统计数据" />;
+    }
+
+    return (
+        <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                {summarySteps.map((step) => (
+                    <CorporateEnglishSummaryCard key={step.stepId} step={step} />
+                ))}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
+                    <div>
+                        <div className="text-sm font-semibold text-slate-900">视频播放排行</div>
+                        <div className="mt-0.5 text-xs text-slate-500">按播放 UV、播放 PV 排序；最多展示前 12 条</div>
+                    </div>
+                    <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+                        {formatNum(videoSteps.length)} 条视频
+                    </div>
                 </div>
-            )}
+
+                {videoSteps.length ? (
+                    <div className="max-h-[460px] overflow-auto">
+                        <table className="min-w-full divide-y divide-slate-100 text-sm">
+                            <thead className="sticky top-0 z-10 bg-slate-50/95 text-left text-xs font-semibold uppercase tracking-[0.08em] text-slate-500 backdrop-blur">
+                                <tr>
+                                    <th className="px-4 py-3">视频</th>
+                                    <th className="px-4 py-3">模块</th>
+                                    <th className="px-4 py-3 text-right">播放 UV</th>
+                                    <th className="px-4 py-3 text-right">播放 PV</th>
+                                    <th className="px-4 py-3 text-right">详情 UV</th>
+                                    <th className="px-4 py-3 text-right">详情 PV</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {videoSteps.map((step, index) => (
+                                    <tr key={step.stepId} className="hover:bg-slate-50">
+                                        <td className="max-w-[360px] px-4 py-3">
+                                            <div className="flex items-start gap-3">
+                                                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                                                    {index + 1}
+                                                </span>
+                                                <div className="min-w-0">
+                                                    <div className="line-clamp-2 font-semibold leading-snug text-slate-900">{step.label}</div>
+                                                    <div className="mt-1 truncate text-xs text-slate-500">{step.sourceLabel || step.entityId || '外企英语'}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            <span className="inline-flex rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                                                {step.moduleLabel || '外企英语'}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-semibold text-slate-900">{formatNum(step.uv)}</td>
+                                        <td className="px-4 py-3 text-right text-slate-700">{formatNum(step.pv)}</td>
+                                        <td className="px-4 py-3 text-right text-slate-700">{formatNum(step.detailUv || 0)}</td>
+                                        <td className="px-4 py-3 text-right text-slate-700">{formatNum(step.detailPv || 0)}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <EmptyState text="当前筛选下暂无视频播放数据" />
+                )}
+            </div>
         </div>
     );
 }
