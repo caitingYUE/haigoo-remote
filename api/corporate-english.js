@@ -19,8 +19,9 @@ const MAX_CHUNK_BYTES = 1024 * 1024
 const MAX_CLIPS_PER_MATERIAL = 50
 const VALID_ASSET_KINDS = new Set(['source_audio', 'subtitle_csv', 'clip_audio'])
 const VALID_STATUSES = new Set(['draft', 'published', 'archived'])
-const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
+const VALID_MODULE_KEYS = new Set(['english_interview', 'remote_preparation', 'foreign_meeting'])
 const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
+const VALID_REMOTE_PREPARATION_LEVELS = new Set(['entry', 'junior', 'intermediate', 'advanced'])
 
 function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
   const id = normalizeString(ownerId)
@@ -48,6 +49,11 @@ function normalizeStatus(status) {
 function normalizeModuleKey(value) {
   const next = normalizeString(value)
   return VALID_MODULE_KEYS.has(next) ? next : ''
+}
+
+function normalizeDifficultyLevel(value) {
+  const next = normalizeString(value)
+  return VALID_REMOTE_PREPARATION_LEVELS.has(next) ? next : ''
 }
 
 function normalizeSections(sections) {
@@ -216,6 +222,7 @@ function mapModuleVideoRow(row) {
     coverImageHeight: row.cover_image_height,
     coverImageUpdatedAt: row.cover_image_updated_at,
     category: row.category || '',
+    difficultyLevel: row.difficulty_level || '',
     tags: Array.isArray(row.tags) ? row.tags : [],
     accessTier: row.access_tier === 'free' ? 'free' : 'vip',
     durationMs: row.duration_ms,
@@ -293,7 +300,8 @@ async function ensureModuleVideoSourceColumn() {
   await neonHelper.query(
     `ALTER TABLE ${MODULE_VIDEOS_TABLE}
        ADD COLUMN IF NOT EXISTS video_source TEXT NOT NULL DEFAULT '',
-       ADD COLUMN IF NOT EXISTS duration_ms INTEGER`
+       ADD COLUMN IF NOT EXISTS duration_ms INTEGER,
+       ADD COLUMN IF NOT EXISTS difficulty_level VARCHAR(24) NOT NULL DEFAULT ''`
   )
 }
 
@@ -1003,6 +1011,7 @@ async function listModuleVideos(req, res) {
       OR LOWER(description) LIKE $${params.length}
       OR LOWER(video_source) LIKE $${params.length}
       OR LOWER(category) LIKE $${params.length}
+      OR LOWER(difficulty_level) LIKE $${params.length}
       OR LOWER(tags::text) LIKE $${params.length}
     )`)
   }
@@ -1044,6 +1053,8 @@ function validateModuleVideoPayload(body) {
   if (!tencentIframeUrl) return { error: '请填写有效的腾讯视频 iframe 地址或 vid' }
 
   const accessTier = body.accessTier === 'free' || body.access_tier === 'free' ? 'free' : 'vip'
+  const difficultyLevel = normalizeDifficultyLevel(body.difficultyLevel || body.difficulty_level)
+  if (moduleKey === 'remote_preparation' && !difficultyLevel) return { error: '请选择远程准备级别' }
   const publishedAtRaw = normalizeString(body.publishedAt || body.published_at)
   const publishedAt = publishedAtRaw ? new Date(publishedAtRaw) : new Date()
   if (Number.isNaN(publishedAt.getTime())) return { error: '发布时间格式无效' }
@@ -1056,7 +1067,8 @@ function validateModuleVideoPayload(body) {
       description: normalizeString(body.description).slice(0, 2000),
       tencentIframeUrl,
       videoSource: normalizeString(body.videoSource || body.video_source).slice(0, 1000),
-      category: normalizeString(body.category).slice(0, 80),
+      category: moduleKey === 'remote_preparation' ? '' : normalizeString(body.category).slice(0, 80),
+      difficultyLevel: moduleKey === 'remote_preparation' ? difficultyLevel : '',
       tags: normalizeSimpleTags(body.tags),
       accessTier,
       status: normalizeStatus(body.status),
@@ -1082,12 +1094,13 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
            tencent_iframe_url = $5,
            video_source = $6,
            category = $7,
-           tags = $8::jsonb,
-           access_tier = $9,
-           status = $10,
-           sort_order = $11,
-           published_at = $12,
-           updated_by = $13,
+           difficulty_level = $8,
+           tags = $9::jsonb,
+           access_tier = $10,
+           status = $11,
+           sort_order = $12,
+           published_at = $13,
+           updated_by = $14,
            updated_at = NOW()
        WHERE video_id = $1 AND deleted_at IS NULL
        RETURNING *`,
@@ -1099,6 +1112,7 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
         payload.tencentIframeUrl,
         payload.videoSource,
         payload.category,
+        payload.difficultyLevel,
         JSON.stringify(payload.tags),
         payload.accessTier,
         payload.status,
@@ -1113,8 +1127,8 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
 
   const rows = await neonHelper.query(
     `INSERT INTO ${MODULE_VIDEOS_TABLE}
-       (module_key, video_title, description, tencent_iframe_url, video_source, category, tags, access_tier, status, sort_order, published_at, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7::jsonb, $8, $9, $10, $11, $12, $12)
+       (module_key, video_title, description, tencent_iframe_url, video_source, category, difficulty_level, tags, access_tier, status, sort_order, published_at, created_by, updated_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $13)
      RETURNING *`,
     [
       payload.moduleKey,
@@ -1123,6 +1137,7 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
       payload.tencentIframeUrl,
       payload.videoSource,
       payload.category,
+      payload.difficultyLevel,
       JSON.stringify(payload.tags),
       payload.accessTier,
       payload.status,

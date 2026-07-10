@@ -32,7 +32,13 @@ function formatDateLabel(value?: string) {
 const SECTION_LABEL: Record<string, string> = {
   ceo: 'CEO 访谈',
   english_interview: '英语面试',
-  foreign_meeting: '外企会议'
+  remote_preparation: '远程准备',
+  foreign_meeting: '远程会议'
+}
+
+function getModuleVideoMetaLabel(video: CorporateEnglishPublicModuleVideo) {
+  if (video.moduleKey === 'remote_preparation') return video.difficultyLevelLabel || SECTION_LABEL[video.moduleKey] || '远程准备'
+  return video.category || SECTION_LABEL[video.moduleKey] || '外企英语'
 }
 
 const SOFT_PANEL_CLASS = 'rounded-[24px] border border-[#dbe8f4] bg-white shadow-[0_10px_28px_rgba(70,93,125,0.06)]'
@@ -513,10 +519,11 @@ function ClipPracticeSection({
 function ModuleInfoPanel({ video }: { video: CorporateEnglishPublicModuleVideo }) {
   const section = video.moduleKey || 'english_interview'
   const sectionLabel = SECTION_LABEL[section] || '外企英语'
+  const metaLabel = getModuleVideoMetaLabel(video)
   return (
     <aside className={`${SOFT_PANEL_CLASS} flex h-full min-h-0 flex-col overflow-hidden`}>
       <div className="border-b border-[#dbe8f4] px-6 py-5">
-        <div className="text-sm font-black tracking-[0.08em] text-[#6251f5]">{video.category || sectionLabel}</div>
+        <div className="text-sm font-black tracking-[0.08em] text-[#6251f5]">{metaLabel}</div>
         <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950">{sectionLabel}</h2>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
@@ -919,11 +926,12 @@ function ModuleWatchContent({
   onBack: () => void
 }) {
   const section = video.moduleKey || 'english_interview'
+  const metaLabel = getModuleVideoMetaLabel(video)
   const detailViewTracker = (
     <TrackDetailView
       section={section}
       entityId={video.videoId}
-      category={video.category}
+      category={section === 'remote_preparation' ? video.difficultyLevel || '' : video.category}
       accessTier={video.accessTier}
       locked={video.isLocked}
     />
@@ -934,7 +942,7 @@ function ModuleWatchContent({
         {detailViewTracker}
         <LockedDetailGate
           title={video.title}
-          eyebrow={video.category || SECTION_LABEL[section] || '外企英语'}
+          eyebrow={metaLabel}
           message={video.loginRequired ? '登录后可播放外企英语内容。未登录状态下，视频简介、推荐和学习素材均不可见。' : '该视频为 Club 内容，开通后可查看完整视频和学习材料。'}
           actionLabel={video.loginRequired ? '登录后播放' : '开通 Club'}
           onAction={onLockedAction}
@@ -947,7 +955,7 @@ function ModuleWatchContent({
     <>
       {detailViewTracker}
       {!video.isLocked && video.tencentIframeUrl ? (
-        <TrackVideoView section={section} entityId={video.videoId} category={video.category} />
+        <TrackVideoView section={section} entityId={video.videoId} category={section === 'remote_preparation' ? video.difficultyLevel || '' : video.category} />
       ) : null}
       <div className="grid h-full min-h-0 gap-6 overflow-hidden xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
         <main className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto pr-1">

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import {
@@ -12,18 +12,20 @@ import {
 import type { CorporateEnglishModuleKey } from '../services/corporate-english-service'
 import { trackingService } from '../services/tracking-service'
 
-type TalkSectionKey = 'ceo' | 'english_interview' | 'foreign_meeting'
-type PosterTone = 'ceo' | 'interview' | 'meeting'
+type TalkSectionKey = 'ceo' | 'english_interview' | 'remote_preparation' | 'foreign_meeting'
+type PosterTone = 'ceo' | 'interview' | 'remote' | 'meeting'
 
 const SECTION_LABELS: Record<TalkSectionKey, string> = {
   ceo: 'CEO访谈',
   english_interview: '英语面试',
-  foreign_meeting: '外企会议'
+  remote_preparation: '远程准备',
+  foreign_meeting: '远程会议'
 }
 
 const SECTION_TONE: Record<TalkSectionKey, PosterTone> = {
   ceo: 'ceo',
   english_interview: 'interview',
+  remote_preparation: 'remote',
   foreign_meeting: 'meeting'
 }
 
@@ -39,6 +41,12 @@ const TONE_STYLES: Record<PosterTone, { tag: string; surface: string; title: str
     surface: 'bg-[linear-gradient(135deg,#fbfff8_0%,#f2faf1_58%,#ffffff_100%)]',
     title: 'text-slate-950',
     accent: 'bg-[#7fb069]'
+  },
+  remote: {
+    tag: 'text-[#9a5b1f]',
+    surface: 'bg-[linear-gradient(135deg,#fffaf0_0%,#fff4db_58%,#ffffff_100%)]',
+    title: 'text-slate-950',
+    accent: 'bg-[#f0a11f]'
   },
   meeting: {
     tag: 'text-[#2f6ed8]',
@@ -93,10 +101,18 @@ function sortForAudience<T extends { accessTier?: string; publishedAt?: string; 
 }
 
 function AccessPill({ locked, accessTier }: { locked?: boolean; accessTier?: string }) {
-  if (locked || accessTier !== 'free') {
+  if (locked) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-[#6251f5]/90 px-2.5 py-1 text-xs font-black text-white shadow-sm backdrop-blur">
         <Lock className="h-3 w-3" />
+        Club
+      </span>
+    )
+  }
+  if (accessTier !== 'free') {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/95 px-2.5 py-1 text-xs font-black text-white shadow-sm backdrop-blur">
+        <Check className="h-3 w-3" />
         Club
       </span>
     )
@@ -108,12 +124,14 @@ function AccessPill({ locked, accessTier }: { locked?: boolean; accessTier?: str
   )
 }
 
-function SectionHeader({ eyebrow, title }: { eyebrow: string; title: string }) {
+function SectionHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <div className="relative overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white px-6 py-5 shadow-[0_14px_32px_rgba(47,111,216,0.06)]">
       <span className="pointer-events-none absolute right-6 top-5 h-14 w-14 rounded-full bg-[#7fb069]/10" />
-      <div className="text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{eyebrow}</div>
-      <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{title}</h2>
+      <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-5">
+        <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{title}</h2>
+        {subtitle ? <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">{subtitle}</p> : null}
+      </div>
     </div>
   )
 }
@@ -183,6 +201,11 @@ function trackVideoOpen(section: TalkSectionKey, entityId: string, position: str
     position,
     category
   })
+}
+
+function getModuleVideoEyebrow(video: CorporateEnglishPublicModuleVideo, section: Exclude<TalkSectionKey, 'ceo'>) {
+  if (section === 'remote_preparation') return video.difficultyLevelLabel || SECTION_LABELS[section]
+  return video.category || SECTION_LABELS[section]
 }
 
 function trackModuleView(section: TalkSectionKey, videoCount: number, isAuthenticated: boolean, isMember: boolean) {
@@ -331,10 +354,12 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
 
   return (
     <section className="space-y-5">
-      <div className="flex items-end justify-between gap-4">
-        <div>
-          <div className="text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">Talks</div>
-          <h2 className="mt-1 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">更多 CEO 访谈</h2>
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-5">
+          <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">更多 CEO 访谈</h2>
+          <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">
+            了解远程企业，提升认知、口语与申请成功率
+          </p>
         </div>
         {!isGuest ? <div className="hidden items-center gap-3 md:flex">
           <button
@@ -384,7 +409,7 @@ function ModuleTalkCard({
   showDescription = false
 }: {
   video: CorporateEnglishPublicModuleVideo
-  section: 'english_interview' | 'foreign_meeting'
+  section: Exclude<TalkSectionKey, 'ceo'>
   index: number
   featured?: boolean
   isGuest: boolean
@@ -394,14 +419,14 @@ function ModuleTalkCard({
   return (
     <Link
       to={href}
-      onClick={() => !isGuest && trackVideoOpen(section, video.videoId, `${section}_${featured ? 'featured' : 'card'}_${index}`, video.category)}
+      onClick={() => !isGuest && trackVideoOpen(section, video.videoId, `${section}_${featured ? 'featured' : 'card'}_${index}`, section === 'remote_preparation' ? video.difficultyLevel || '' : video.category)}
       className={`group block min-w-0 rounded-[22px] border border-[#dbe8f4] bg-white p-3 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] transition hover:-translate-y-1 hover:no-underline ${featured ? '' : ''}`}
     >
       <div className={`relative overflow-hidden rounded-[18px] bg-white ${featured ? 'aspect-[16/9]' : 'aspect-video'}`}>
         <PosterFrame
           src={video.coverThumbnailUrl || video.coverImageUrl}
           title={video.title}
-          eyebrow={video.category || SECTION_LABELS[section]}
+          eyebrow={getModuleVideoEyebrow(video, section)}
           className={`transition duration-500 group-hover:scale-[1.04] ${isGuest ? 'blur-sm scale-[1.02]' : ''}`}
           loading={featured ? 'eager' : 'lazy'}
           tone={SECTION_TONE[section]}
@@ -412,14 +437,14 @@ function ModuleTalkCard({
         <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100"><PlayOverlay label={isGuest ? '登录后播放' : ''} /></div>
       </div>
       <div className={`${section === 'foreign_meeting' ? 'mt-3' : 'mt-4'} flex items-center justify-between gap-3`}>
-        <div className="min-w-0 truncate text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{video.category || SECTION_LABELS[section]}</div>
+        <div className="min-w-0 truncate text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{getModuleVideoEyebrow(video, section)}</div>
         {formatDuration(video.durationMs) ? (
           <span className="shrink-0 rounded-full bg-[#f4f7fb] px-2.5 py-1 text-xs font-black text-slate-500">{formatDuration(video.durationMs)}</span>
         ) : null}
       </div>
-      <h3 className={`${featured ? 'mt-2 text-2xl md:text-3xl' : section === 'foreign_meeting' ? 'mt-1.5 line-clamp-2 text-xl' : 'mt-2 line-clamp-2 min-h-[3.5rem] text-xl'} font-black leading-tight tracking-tight`}>{video.title}</h3>
-      {!isGuest && (featured || showDescription) ? <p className={`${featured ? 'mt-3 text-base' : section === 'foreign_meeting' ? 'mt-3 text-sm' : 'mt-3 text-sm'} line-clamp-3 max-w-full leading-7 text-slate-700`}>{video.description}</p> : null}
-      <p className={`${section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
+      <h3 className={`${featured ? 'mt-2 text-2xl md:text-3xl' : section === 'foreign_meeting' ? 'mt-1.5 line-clamp-2 text-xl' : section === 'remote_preparation' ? 'mt-2 line-clamp-2 text-xl' : 'mt-2 line-clamp-2 min-h-[3.5rem] text-xl'} font-black leading-tight tracking-tight`}>{video.title}</h3>
+      {!isGuest && (featured || showDescription) ? <p className={`${featured ? 'mt-3 text-base' : section === 'remote_preparation' ? 'mt-2 text-sm leading-6' : section === 'foreign_meeting' ? 'mt-3 text-sm' : 'mt-3 text-sm leading-7'} line-clamp-3 max-w-full text-slate-700`}>{video.description}</p> : null}
+      <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
     </Link>
   )
 }
@@ -513,7 +538,7 @@ function ModuleSection({
   loading = false,
   isGuest
 }: {
-  section: 'english_interview' | 'foreign_meeting'
+  section: Exclude<TalkSectionKey, 'ceo'>
   videos: CorporateEnglishPublicModuleVideo[]
   emptyText: string
   featuredLayout?: boolean
@@ -586,7 +611,7 @@ function ModuleSection({
         onPrev={() => setActivePage((page) => Math.max(0, page - 1))}
         onNext={() => setActivePage((page) => Math.min(pageCount - 1, page + 1))}
       />
-      <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+      <div className={section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'}>
         {(pages[currentPage] || []).map((video, index) => (
           <ModuleTalkCard
             key={video.videoId}
@@ -594,11 +619,72 @@ function ModuleSection({
             section={section}
             index={currentPage * pageSize + index}
             isGuest={isGuest}
-            showDescription={section === 'foreign_meeting' || !shouldUseFeaturedLayout}
+            showDescription={section !== 'foreign_meeting' && !shouldUseFeaturedLayout}
           />
         ))}
       </div>
     </div>
+  )
+}
+
+function RemotePreparationSection({
+  videos,
+  loading,
+  isGuest
+}: {
+  videos: CorporateEnglishPublicModuleVideo[]
+  loading: boolean
+  isGuest: boolean
+}) {
+  if (loading) {
+    return (
+      <section className="space-y-5">
+        <SectionHeader title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" />
+        <div className="flex gap-5 overflow-hidden">
+          {[0, 1, 2, 3].map((item) => (
+            <div key={item} className="h-[300px] min-w-[280px] flex-1 rounded-[22px] border border-[#f1dfbe] bg-white shadow-[0_10px_28px_rgba(240,161,31,0.08)]" />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  if (!videos.length) {
+    return (
+      <section className="space-y-5">
+        <SectionHeader title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" />
+        <div className="rounded-2xl border border-dashed border-[#e8d4ad] bg-white p-10 text-center text-slate-500">
+          后台发布远程准备视频后，这里会展示远程求职与协作准备内容。
+        </div>
+      </section>
+    )
+  }
+
+  return (
+    <section className="space-y-4">
+      <div className="relative overflow-hidden rounded-[26px] border border-[#ead8b9] bg-[linear-gradient(135deg,#fffaf0_0%,#ffffff_52%,#f6fbff_100%)] px-6 py-5 shadow-[0_16px_36px_rgba(151,101,34,0.08)]">
+        <span className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#f0a11f]/12" />
+        <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-5">
+          <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">远程准备</h2>
+          <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">
+            熟悉远程工作所需的一切，不打无准备的仗
+          </p>
+        </div>
+      </div>
+      <div className="flex gap-6 overflow-x-auto pb-3">
+        {(isGuest ? videos.slice(0, 6) : videos).map((video, index) => (
+          <div key={video.videoId} className="w-[78vw] min-w-[280px] shrink-0 md:w-[31%] md:min-w-[300px] lg:w-[30%] xl:w-[28.5%] 2xl:w-[28%]">
+            <ModuleTalkCard
+              video={video}
+              section="remote_preparation"
+              index={index}
+              isGuest={isGuest}
+              showDescription={!isGuest}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -608,10 +694,12 @@ export default function CorporateEnglishTalksPage() {
   const showErrorRef = useRef(showError)
   const [ceoLoading, setCeoLoading] = useState(true)
   const [interviewLoading, setInterviewLoading] = useState(true)
+  const [remoteLoading, setRemoteLoading] = useState(true)
   const [meetingLoading, setMeetingLoading] = useState(true)
   const [ceoVideos, setCeoVideos] = useState<CorporateEnglishPublicCeoVideo[]>([])
   const [interviewVideos, setInterviewVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [interviewCategories, setInterviewCategories] = useState<CorporateEnglishPublicCategory[]>([])
+  const [remoteVideos, setRemoteVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [meetingVideos, setMeetingVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [activeInterviewCategory, setActiveInterviewCategory] = useState('全部')
   const trackedModuleViewsRef = useRef<Set<TalkSectionKey>>(new Set())
@@ -671,13 +759,34 @@ export default function CorporateEnglishTalksPage() {
     let cancelled = false
     const load = async () => {
       try {
+        setRemoteLoading(true)
+        const remoteData = await loadModule('remote_preparation', '全部')
+        if (cancelled) return
+        setRemoteVideos(remoteData.videos)
+      } catch (error) {
+        console.error('Failed to load remote preparation videos:', error)
+        if (!cancelled) showErrorRef.current('远程准备加载失败', error instanceof Error ? error.message : '请稍后重试')
+      } finally {
+        if (!cancelled) setRemoteLoading(false)
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [loadModule])
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
         setMeetingLoading(true)
         const meetingData = await loadModule('foreign_meeting', '全部')
         if (cancelled) return
         setMeetingVideos(meetingData.videos)
       } catch (error) {
         console.error('Failed to load foreign meeting videos:', error)
-        if (!cancelled) showErrorRef.current('外企会议加载失败', error instanceof Error ? error.message : '请稍后重试')
+        if (!cancelled) showErrorRef.current('远程会议加载失败', error instanceof Error ? error.message : '请稍后重试')
       } finally {
         if (!cancelled) setMeetingLoading(false)
       }
@@ -696,6 +805,7 @@ export default function CorporateEnglishTalksPage() {
     }
     maybeTrack('ceo', ceoLoading, ceoVideos.length)
     maybeTrack('english_interview', interviewLoading, interviewVideos.length)
+    maybeTrack('remote_preparation', remoteLoading, remoteVideos.length)
     maybeTrack('foreign_meeting', meetingLoading, meetingVideos.length)
   }, [
     ceoLoading,
@@ -705,11 +815,14 @@ export default function CorporateEnglishTalksPage() {
     isAuthenticated,
     isMember,
     meetingLoading,
-    meetingVideos.length
+    meetingVideos.length,
+    remoteLoading,
+    remoteVideos.length
   ])
 
   const sortedCeoVideos = useMemo(() => sortForAudience(ceoVideos, isAuthenticated, isMember), [ceoVideos, isAuthenticated, isMember])
   const sortedInterviewVideos = useMemo(() => sortForAudience(interviewVideos, isAuthenticated, isMember), [interviewVideos, isAuthenticated, isMember])
+  const sortedRemoteVideos = useMemo(() => sortForAudience(remoteVideos, isAuthenticated, isMember), [remoteVideos, isAuthenticated, isMember])
   const sortedMeetingVideos = useMemo(() => sortForAudience(meetingVideos, isAuthenticated, isMember), [meetingVideos, isAuthenticated, isMember])
   const isGuest = !isAuthenticated
   const heroVideo = sortedCeoVideos[0]
@@ -718,7 +831,7 @@ export default function CorporateEnglishTalksPage() {
   return (
     <div className="min-h-screen bg-[#fbfaf6] font-haigoo-rounded text-slate-950">
       <div className="mx-auto max-w-[1640px] px-4 pb-10 pt-24 sm:px-8">
-        <div className="space-y-12">
+        <div className="space-y-10">
             {ceoLoading ? (
               <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-[#dbe8f4] bg-white shadow-[0_10px_28px_rgba(47,111,216,0.06)]">
                 <Loader2 className="h-7 w-7 animate-spin text-[#6251f5]" />
@@ -734,26 +847,33 @@ export default function CorporateEnglishTalksPage() {
               </div>
             )}
 
-            <CategoryRail
-              title="英语面试"
-              categories={interviewCategories}
-              activeCategory={activeInterviewCategory}
-              onChange={setActiveInterviewCategory}
-            />
-            <ModuleSection
-              section="english_interview"
-              videos={sortedInterviewVideos}
-              emptyText="后台发布英语面试视频后，这里会按岗位类型展示。"
-              featuredLayout={activeInterviewCategory === '全部'}
-              loading={interviewLoading}
+            <RemotePreparationSection
+              videos={sortedRemoteVideos}
+              loading={remoteLoading}
               isGuest={isGuest}
             />
 
-            <SectionHeader
-              eyebrow="Meetings"
-              title="外企会议"
-            />
-            <ModuleSection section="foreign_meeting" videos={sortedMeetingVideos} emptyText="后台发布外企会议视频后，这里会展示最新会议内容。" loading={meetingLoading} isGuest={isGuest} />
+            <section className="space-y-4">
+              <CategoryRail
+                title="英语面试"
+                categories={interviewCategories}
+                activeCategory={activeInterviewCategory}
+                onChange={setActiveInterviewCategory}
+              />
+              <ModuleSection
+                section="english_interview"
+                videos={sortedInterviewVideos}
+                emptyText="后台发布英语面试视频后，这里会按岗位类型展示。"
+                featuredLayout={activeInterviewCategory === '全部'}
+                loading={interviewLoading}
+                isGuest={isGuest}
+              />
+            </section>
+
+            <section className="space-y-4">
+              <SectionHeader title="远程会议" subtitle="提前适应远程工作环境，丝滑过渡" />
+              <ModuleSection section="foreign_meeting" videos={sortedMeetingVideos} emptyText="后台发布远程会议视频后，这里会展示最新会议内容。" loading={meetingLoading} isGuest={isGuest} />
+            </section>
           </div>
       </div>
     </div>

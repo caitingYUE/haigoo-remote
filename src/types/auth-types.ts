@@ -59,11 +59,11 @@ export interface User {
   memberExpireAt?: string;
   memberSince?: string;
   memberDisplayId?: number;
-  memberType?: 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual';
+  memberType?: 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual';
   memberCycleStartAt?: string;
   memberTier?: 'none' | 'trial' | 'full';
   membershipCapabilities?: {
-    memberType: 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual';
+    memberType: 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual';
     memberTier: 'none' | 'trial' | 'full';
     isActive: boolean;
     isTrialMember: boolean;

@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS corporate_english_module_videos (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   deleted_at TIMESTAMPTZ,
   CONSTRAINT corporate_english_module_videos_module_check
-    CHECK (module_key IN ('english_interview', 'foreign_meeting')),
+    CHECK (module_key IN ('english_interview', 'remote_preparation', 'foreign_meeting')),
   CONSTRAINT corporate_english_module_videos_access_tier_check
     CHECK (access_tier IN ('free', 'vip')),
   CONSTRAINT corporate_english_module_videos_status_check

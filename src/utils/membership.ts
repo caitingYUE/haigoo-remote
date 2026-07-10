@@ -1,4 +1,4 @@
-export type MemberType = 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
+export type MemberType = 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
 export type MemberTier = 'none' | 'trial' | 'full'
 
 export interface MembershipCapabilities {
@@ -28,6 +28,7 @@ function normalizeMemberType(type?: unknown, legacyLevel?: unknown): MemberType 
     const normalized = type.trim().toLowerCase()
     if (
       normalized === 'trial_week'
+      || normalized === 'starter'
       || normalized === 'quarter'
       || normalized === 'quarter_pro'
       || normalized === 'year'
@@ -42,6 +43,7 @@ function normalizeMemberType(type?: unknown, legacyLevel?: unknown): MemberType 
     const normalizedLevel = legacyLevel.trim().toLowerCase()
     if (normalizedLevel === 'goo_plus') return 'year'
     if (normalizedLevel === 'vip') return 'quarter_pro'
+    if (normalizedLevel === 'starter' || normalizedLevel === 'monthly' || normalizedLevel === 'club_starter') return 'starter'
     if (normalizedLevel === 'annual') return 'annual'
     if (normalizedLevel === 'half_year') return 'half_year'
     if (normalizedLevel === 'club_go' || normalizedLevel === 'haigoo_member') return 'quarter'
@@ -91,7 +93,7 @@ export function deriveMembershipCapabilities(user?: any): MembershipCapabilities
   const memberTier = deriveMemberTier(user)
   const isTrialMember = isActive && memberType === 'trial_week'
   const isFullMember = isActive && memberTier === 'full'
-  const isQuarterOrAbove = isActive && ['quarter', 'quarter_pro', 'year', 'half_year', 'annual'].includes(memberType)
+  const isQuarterOrAbove = isActive && ['starter', 'quarter', 'quarter_pro', 'year', 'half_year', 'annual'].includes(memberType)
   const canAccessTrustedCompaniesPage = isFullMember
 
   return {

@@ -19,7 +19,7 @@ interface AuthContextValue {
   isMember: boolean
   isTrialMember: boolean
   isFullMember: boolean
-  memberType: 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
+  memberType: 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
   membershipCapabilities: ReturnType<typeof deriveMembershipCapabilities>
   isLoading: boolean
   login: (email: string, password: string) => Promise<AuthResponse>

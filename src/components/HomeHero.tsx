@@ -823,17 +823,27 @@ export default function HomeHero({
         ? {
             title: '欢迎回来，体验权益已为你开启',
             description: `短期冲刺求职权益已解锁，当前有效期至 ${memberExpireLabel}。`,
-            tags: ['岗位申请开放', '联系人限时开放', 'AI 简历工具', '7 天短期体验', '外企英语样例'],
+            tags: ['岗位申请开放', '联系人限时开放', 'AI 简历工具', '7 天短期体验', '职业成长样例'],
             iconText: 'text-[#6f63f6]',
             iconBg: 'bg-[#f0edff]',
             button: '进入远程工作',
             ctaHref: '/jobs'
         }
+        : memberType === 'starter'
+            ? {
+                title: '欢迎回来，Club Starter 权益已为你开启',
+                description: `岗位申请路径、职业成长内容和网站工具权益已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '职业成长权益', 'AI 简历工具', '岗位订阅'],
+                iconText: 'text-[#6f63f6]',
+                iconBg: 'bg-[#f0edff]',
+                button: '查看 Starter 权益',
+                ctaHref: '/profile?tab=membership#member-benefits'
+            }
         : memberType === 'annual'
             ? {
                 title: '欢迎回来，Club Partner 权益已为你开启',
-                description: `岗位申请路径、外企英语材料、语音咨询、年度规划和共建申请权益已解锁，当前有效期至 ${memberExpireLabel}。`,
-                tags: ['全部岗位申请', '联系人信息开放', '外企英语材料', '年度规划', '共建申请'],
+                description: `岗位申请路径、完整远程职业成长权益、语音咨询、年度规划和共建申请权益已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '职业成长权益', '年度规划', '共建申请'],
                 iconText: 'text-[#6f63f6]',
                 iconBg: 'bg-[#f0edff]',
                 button: '查看 Partner 权益',
@@ -842,8 +852,8 @@ export default function HomeHero({
         : memberType === 'half_year'
             ? {
                 title: '欢迎回来，Club Member 权益已为你开启',
-                description: `岗位申请路径、外企英语材料和语音咨询权益已解锁，当前有效期至 ${memberExpireLabel}。`,
-                tags: ['全部岗位申请', '联系人信息开放', '外企英语材料', 'AI 简历建议', '语音咨询'],
+                description: `岗位申请路径、完整远程职业成长权益和语音咨询权益已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '职业成长权益', 'AI 简历建议', '语音咨询'],
                 iconText: 'text-[#6f63f6]',
                 iconBg: 'bg-[#f0edff]',
                 button: '查看 Member 权益',
@@ -852,8 +862,8 @@ export default function HomeHero({
         : memberType === 'quarter_pro' || memberType === 'year'
             ? {
                 title: '欢迎回来，Pro权益已为你开启',
-                description: `全部求职权益、外企英语跟读素材和延伸资料已解锁，当前有效期至 ${memberExpireLabel}。`,
-                tags: ['全部岗位申请', '联系人信息开放', '外企英语跟读', '更多资料开放', 'CEO 联系权限'],
+                description: `全部求职权益、职业成长跟读素材和延伸资料已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '职业成长跟读', '更多资料开放', 'CEO 联系权限'],
                 iconText: 'text-[#6f63f6]',
                 iconBg: 'bg-[#f0edff]',
                 button: '继续学习与求职',
@@ -861,8 +871,8 @@ export default function HomeHero({
             }
             : {
                 title: '欢迎回来，季度权益已为你开启',
-                description: `远程求职权益、外企英语视频和企业文化内容已解锁，当前有效期至 ${memberExpireLabel}。`,
-                tags: ['全部岗位申请', '联系人信息开放', '精选企业名单', '外企英语视频', 'CEO 商业思维'],
+                description: `远程求职权益、职业成长视频和企业文化内容已解锁，当前有效期至 ${memberExpireLabel}。`,
+                tags: ['全部岗位申请', '联系人信息开放', '精选企业名单', '职业成长视频', 'CEO 商业思维'],
                 iconText: 'text-[#6f63f6]',
                 iconBg: 'bg-[#f0edff]',
                 button: '进入远程工作',
@@ -2373,12 +2383,12 @@ export default function HomeHero({
                                 <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
                                     {isMember
                                         ? homeMemberEntitlement.description
-                                        : 'Club 会员可获得更多岗位申请支持、联系人资源、外企文化资料和英语学习工具，帮助你更高效地准备远程求职。'}
+                                        : 'Club 会员可获得更多岗位申请支持、联系人资源和远程职业成长权益，帮助你更高效地准备远程求职。'}
                                 </p>
                                 <div className="mt-3 flex flex-wrap gap-2">
                                     {(isMember
                                         ? homeMemberEntitlement.tags
-                                        : ['岗位申请支持', '联系人资源', '外企英语学习', '精选企业资料', '求职工具权限']
+                                        : ['岗位申请支持', '联系人资源', '职业成长权益', '精选企业资料', '求职工具权限']
                                     ).map((item) => (
                                         <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-white/90 bg-white/72 px-3 py-1.5 text-xs font-black text-slate-600">
                                             <CheckCircle2 className={`h-3.5 w-3.5 ${isMember ? homeMemberEntitlement.iconText : 'text-[#6f63f6]'}`} />

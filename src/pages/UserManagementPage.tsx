@@ -38,11 +38,12 @@ interface UserStats {
   newThisWeek: number
 }
 
-type EditableMemberType = 'none' | 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
+type EditableMemberType = 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
 type PaidMemberType = Exclude<EditableMemberType, 'none'>
 
 const MEMBER_DURATION_DAYS: Record<PaidMemberType, number> = {
   trial_week: 7,
+  starter: 31,
   quarter: 90,
   quarter_pro: 90,
   year: 365,
@@ -52,6 +53,7 @@ const MEMBER_DURATION_DAYS: Record<PaidMemberType, number> = {
 
 const MEMBER_TYPE_OPTIONS: Array<{ value: EditableMemberType; label: string }> = [
   { value: 'none', label: '普通用户' },
+  { value: 'starter', label: 'Club Starter' },
   { value: 'half_year', label: 'Club Member' },
   { value: 'annual', label: 'Club Partner' },
   { value: 'trial_week', label: '体验会员（周）' },
@@ -178,7 +180,7 @@ const SERVICE_ENTITLEMENT_PRESETS: ServiceEntitlementPreset[] = [
   {
     key: 'voice_consultation_30m',
     title: '语音 1V1 远程咨询',
-    desc: '30 分钟语音咨询，适合确认远程求职方向。',
+    desc: '30-60 分钟语音咨询，适合确认远程求职方向。',
     defaultStatus: 'not_scheduled',
     quota: '1 次',
     appliesTo: ['half_year', 'annual', 'quarter_pro', 'year'],
@@ -294,6 +296,8 @@ function getMemberPresentation(user: User) {
     : user.memberStatus === 'active'
       ? (user.memberType === 'trial_week'
           ? '体验会员（周）'
+          : user.memberType === 'starter'
+            ? 'Club Starter'
           : user.memberType === 'half_year'
             ? 'Club Member'
             : user.memberType === 'annual'
@@ -515,8 +519,6 @@ export default function UserManagementPage() {
   const [editMemberScheduleDirty, setEditMemberScheduleDirty] = useState(false)
   const [memberPlanDurations, setMemberPlanDurations] = useState(MEMBER_DURATION_DAYS)
   const [entitlementsUnlocked, setEntitlementsUnlocked] = useState(false)
-  const [entitlementPassword, setEntitlementPassword] = useState('')
-  const [entitlementUnlockError, setEntitlementUnlockError] = useState('')
   const [entitlementBaseline, setEntitlementBaseline] = useState<EntitlementBaseline>({
     website_apply: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
     referral: DEFAULT_FREE_REFERRAL_LIMIT
@@ -643,6 +645,9 @@ export default function UserManagementPage() {
     if (memberType === 'none' || !startAtIso) return ''
     const startDate = new Date(startAtIso)
     if (Number.isNaN(startDate.getTime())) return ''
+    if (memberType === 'starter') {
+      return addCalendarMonths(startDate, 1).toISOString()
+    }
     if (memberType === 'quarter' || memberType === 'quarter_pro') {
       return addCalendarMonths(startDate, 3).toISOString()
     }
@@ -676,8 +681,6 @@ export default function UserManagementPage() {
     setEditMemberExpireAt(user.memberExpireAt || '')
     setEditMemberScheduleDirty(false)
     setEntitlementsUnlocked(false)
-    setEntitlementPassword('')
-    setEntitlementUnlockError('')
     setEntitlementBaseline({
       website_apply: getUserFreeWebsiteApplyLimit(user),
       referral: getUserFreeReferralLimit(user)
@@ -739,7 +742,6 @@ export default function UserManagementPage() {
 
       if (entitlementsUnlocked) {
         payload.serviceEntitlements = serviceEntitlementDrafts
-        payload.unlockPassword = entitlementPassword
       }
 
       if (editMemberExpireAt) {
@@ -774,10 +776,6 @@ export default function UserManagementPage() {
   }
 
   const unlockEntitlementEditing = () => {
-    if (entitlementPassword !== '123') {
-      setEntitlementUnlockError('解锁密码错误')
-      return
-    }
     if (editingUser) {
       setEntitlementBaseline({
         website_apply: getUserFreeWebsiteApplyLimit(editingUser),
@@ -785,7 +783,6 @@ export default function UserManagementPage() {
       })
     }
     setEntitlementsUnlocked(true)
-    setEntitlementUnlockError('')
   }
 
   const updateEntitlementLimit = async (key: EntitlementKey, delta: number) => {
@@ -801,7 +798,6 @@ export default function UserManagementPage() {
           id: editingUser.user_id,
           entitlementKey: key,
           delta,
-          unlockPassword: entitlementPassword,
           reason: 'admin_user_management'
         })
       })
@@ -1643,17 +1639,10 @@ export default function UserManagementPage() {
                 </div>
 
                 {!entitlementsUnlocked && (
-                  <div className="mb-3 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center">
-                    <input
-                      type="password"
-                      value={entitlementPassword}
-                      onChange={(e) => {
-                        setEntitlementPassword(e.target.value)
-                        setEntitlementUnlockError('')
-                      }}
-                      placeholder="密码"
-                      className="min-w-0 flex-1 rounded-lg border border-amber-200 bg-white px-3 py-2 text-sm focus:border-amber-400 focus:outline-none"
-                    />
+                  <div className="mb-3 flex flex-col gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="text-xs leading-5 text-amber-800">
+                      仅超级管理员可解锁并调整用户权益次数，操作会记录审计。
+                    </div>
                     <button
                       type="button"
                       disabled={!isSuperAdmin}
@@ -1665,11 +1654,8 @@ export default function UserManagementPage() {
                       }`}
                     >
                       <Unlock className="h-4 w-4" />
-                      解锁
+                      确认解锁
                     </button>
-                    {entitlementUnlockError && (
-                      <div className="text-xs text-red-600">{entitlementUnlockError}</div>
-                    )}
                   </div>
                 )}
 

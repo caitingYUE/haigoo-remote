@@ -252,6 +252,7 @@ const SEGMENT_LABELS: Record<Segment, string> = {
 
 const PLAN_LABELS: Record<string, string> = {
     trial_week_lite: '体验会员（周）',
+    club_starter_monthly: 'Club Starter',
     club_go_quarterly: '季度会员',
     quarter_pro_quarterly: 'Pro会员',
     goo_plus_yearly: '年度会员',
@@ -261,6 +262,7 @@ const PLAN_LABELS: Record<string, string> = {
 
 const MEMBER_TYPE_LABELS: Record<string, string> = {
     trial_week: '体验会员（周）',
+    starter: 'Club Starter',
     quarter: '季度会员',
     quarter_pro: 'Pro会员',
     year: '年度会员',

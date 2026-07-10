@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { RefreshCw, Search, Mail, PauseCircle, PlayCircle } from 'lucide-react'
-import { subscriptionsService, type Subscription } from '../services/subscriptions-service'
+import { RefreshCw, Search, Mail, PauseCircle, PlayCircle, X } from 'lucide-react'
+import { subscriptionsService, type Subscription, type SubscriptionDeliveryRun } from '../services/subscriptions-service'
 import { normalizeSubscriptionTopicValue, SUBSCRIPTION_TOPICS } from '../constants/subscription-topics'
 
 const topicLabelMap: Map<string, string> = new Map(SUBSCRIPTION_TOPICS.map(item => [item.value, item.label]))
@@ -49,13 +49,32 @@ function statusBadgeClass(status: string) {
   return 'border-slate-200 bg-slate-50 text-slate-500'
 }
 
+function deliveryStatusBadgeClass(status: string) {
+  if (status === 'sent') return 'border-emerald-100 bg-emerald-50 text-emerald-700'
+  if (status === 'failed') return 'border-rose-100 bg-rose-50 text-rose-700'
+  if (status === 'skipped') return 'border-amber-100 bg-amber-50 text-amber-700'
+  return 'border-slate-200 bg-slate-50 text-slate-500'
+}
+
+function deliveryStatusLabel(status: string) {
+  if (status === 'sent') return '发送成功'
+  if (status === 'failed') return '发送失败'
+  if (status === 'skipped') return '已跳过'
+  if (status === 'processing') return '处理中'
+  return status || '-'
+}
+
 export default function AdminSubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([])
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('all')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [updatingId, setUpdatingId] = useState<number | null>(null)
+  const [updatingId, setUpdatingId] = useState<number | string | null>(null)
+  const [historySubscription, setHistorySubscription] = useState<Subscription | null>(null)
+  const [deliveryRuns, setDeliveryRuns] = useState<SubscriptionDeliveryRun[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyError, setHistoryError] = useState('')
 
   const stats = useMemo(() => {
     return subscriptions.reduce(
@@ -105,6 +124,21 @@ export default function AdminSubscriptionsPage() {
       setError(err instanceof Error ? err.message : '状态更新失败')
     } finally {
       setUpdatingId(null)
+    }
+  }
+
+  const openDeliveryHistory = async (subscription: Subscription) => {
+    setHistorySubscription(subscription)
+    setDeliveryRuns([])
+    setHistoryError('')
+    setHistoryLoading(true)
+    try {
+      const rows = await subscriptionsService.getDeliveryRuns(subscription.subscription_id)
+      setDeliveryRuns(rows)
+    } catch (err) {
+      setHistoryError(err instanceof Error ? err.message : '发送记录加载失败')
+    } finally {
+      setHistoryLoading(false)
     }
   }
 
@@ -183,7 +217,7 @@ export default function AdminSubscriptionsPage() {
             <table className="min-w-full divide-y divide-slate-100">
               <thead className="bg-slate-50">
                 <tr>
-                  {['用户', '岗位方向', '会员状态', '订阅状态', '创建/更新', '最近发送', '失败', '操作'].map(item => (
+                  {['用户', '岗位方向', '会员状态', '订阅状态', '创建/更新', '最近发送', '累计发送', '失败', '操作'].map(item => (
                     <th key={item} className="whitespace-nowrap px-5 py-3 text-left text-xs font-black text-slate-500">{item}</th>
                   ))}
                 </tr>
@@ -191,14 +225,16 @@ export default function AdminSubscriptionsPage() {
               <tbody className="divide-y divide-slate-100 bg-white">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-10 text-center text-sm font-semibold text-slate-500">加载中...</td>
+                    <td colSpan={9} className="px-5 py-10 text-center text-sm font-semibold text-slate-500">加载中...</td>
                   </tr>
                 ) : subscriptions.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-10 text-center text-sm font-semibold text-slate-500">暂无订阅数据</td>
+                    <td colSpan={9} className="px-5 py-10 text-center text-sm font-semibold text-slate-500">暂无订阅数据</td>
                   </tr>
                 ) : subscriptions.map(subscription => {
                   const isActive = subscription.status === 'active'
+                  const latestSentAt = subscription.latest_delivery_sent_at || subscription.last_sent_at
+                  const sentCount = Number(subscription.delivery_sent_count || 0)
                   return (
                     <tr key={subscription.subscription_id} className="hover:bg-slate-50/70">
                       <td className="px-5 py-4 align-top">
@@ -223,7 +259,24 @@ export default function AdminSubscriptionsPage() {
                         <div>{formatDate(subscription.created_at)}</div>
                         <div className="mt-1">{formatDate(subscription.updated_at)}</div>
                       </td>
-                      <td className="px-5 py-4 align-top text-xs text-slate-500">{formatDate(subscription.last_sent_at)}</td>
+                      <td className="px-5 py-4 align-top text-xs text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() => openDeliveryHistory(subscription)}
+                          className="text-left font-bold text-slate-600 underline-offset-4 hover:text-indigo-600 hover:underline"
+                        >
+                          {formatDate(latestSentAt)}
+                        </button>
+                      </td>
+                      <td className="px-5 py-4 align-top">
+                        <button
+                          type="button"
+                          onClick={() => openDeliveryHistory(subscription)}
+                          className="inline-flex rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700 hover:border-indigo-200 hover:bg-indigo-100"
+                        >
+                          {sentCount}
+                        </button>
+                      </td>
                       <td className="px-5 py-4 align-top text-sm font-bold text-slate-700">{subscription.fail_count || 0}</td>
                       <td className="px-5 py-4 align-top">
                         <button
@@ -248,6 +301,69 @@ export default function AdminSubscriptionsPage() {
           </div>
         </div>
       </div>
+      {historySubscription ? (
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-slate-950/45 p-4">
+          <div className="w-full max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+              <div>
+                <h2 className="text-lg font-black text-slate-950">发送记录</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {historySubscription.user_email || historySubscription.identifier} · {formatTopic(historySubscription)}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHistorySubscription(null)}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full text-slate-500 hover:bg-slate-100"
+                aria-label="关闭发送记录"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="max-h-[68vh] overflow-y-auto p-5">
+              {historyLoading ? (
+                <div className="flex min-h-[180px] items-center justify-center text-slate-500">
+                  <RefreshCw className="h-5 w-5 animate-spin" />
+                </div>
+              ) : historyError ? (
+                <div className="rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{historyError}</div>
+              ) : deliveryRuns.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-10 text-center text-sm font-semibold text-slate-500">
+                  暂无发送记录。保存订阅后，daily-digest 任务发送或跳过时会在这里留下记录。
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-slate-200">
+                  <table className="min-w-full divide-y divide-slate-100">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        {['日期', '状态', '岗位数', '原因'].map(item => (
+                          <th key={item} className="px-4 py-3 text-left text-xs font-black text-slate-500">{item}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 bg-white">
+                      {deliveryRuns.map(run => (
+                        <tr key={run.id}>
+                          <td className="px-4 py-3 text-sm font-semibold text-slate-700">{formatDate(run.sent_at || run.created_at)}</td>
+                          <td className="px-4 py-3">
+                            <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black ${deliveryStatusBadgeClass(run.status)}`}>
+                              {deliveryStatusLabel(run.status)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-slate-700">{run.job_count || 0}</td>
+                          <td className="max-w-[220px] px-4 py-3 text-sm text-slate-500">
+                            <div className="truncate">{run.error || '-'}</div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

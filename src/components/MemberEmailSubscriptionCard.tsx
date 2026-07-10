@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
-import { ArrowRight, CheckCircle2, ChevronDown, Loader2, Mail, PauseCircle, PlayCircle, Plus, Search, X } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronDown, Crown, Loader2, Mail, PauseCircle, PlayCircle, Plus, Search, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
@@ -497,9 +497,15 @@ export default function MemberEmailSubscriptionCard() {
       <div className="relative">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
-            <h2 className="text-[22px] font-black leading-tight tracking-normal text-slate-950 sm:text-[26px]">
-              订阅你感兴趣的方向，及时接收最新岗位通知
-            </h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-[22px] font-black leading-tight tracking-normal text-slate-950 sm:text-[26px]">
+                订阅你感兴趣的方向，及时接收最新岗位通知
+              </h2>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e4dfff] bg-[#f4f1ff] px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
+                <Crown className="h-3.5 w-3.5" />
+                Club 权益
+              </span>
+            </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
               选择 1-{MAX_SUBSCRIPTION_TOPICS} 个岗位方向，当有岗位上新时，我们会发到你的注册邮箱。
             </p>

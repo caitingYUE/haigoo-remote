@@ -79,10 +79,10 @@ function AudioFavoriteCard({
         <div className="min-w-0">
           <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-[#eadff8] bg-[#f5f2ff] px-2.5 py-1 text-[11px] font-black text-[#6251f5]">
             <Volume2 className="h-3.5 w-3.5" />
-            外企英语音频
+            职业成长音频
           </div>
           <h3 className="line-clamp-2 text-base font-black text-slate-950">{clip.clipTitle || clip.materialTitle || '跟读片段'}</h3>
-          <p className="mt-1 text-sm font-semibold text-slate-500">{clip.companyName || '外企英语'} · {formatClipTime(clip.startMs)}</p>
+          <p className="mt-1 text-sm font-semibold text-slate-500">{clip.companyName || '职业成长'} · {formatClipTime(clip.startMs)}</p>
           {clip.materialTitle ? <p className="mt-1 line-clamp-1 text-xs text-slate-400">{clip.materialTitle}</p> : null}
         </div>
         <button
@@ -229,7 +229,7 @@ interface AssistantProgressCard {
   }>
 }
 
-type EmbeddedMemberType = 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
+type EmbeddedMemberType = 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
 
 interface EmbeddedMembershipPlan {
   id: string
@@ -249,6 +249,18 @@ interface EmbeddedMembershipPlan {
 
 const EMBEDDED_STATIC_MEMBERSHIP_PLANS: EmbeddedMembershipPlan[] = [
   {
+    id: 'club_starter_monthly',
+    memberType: 'starter',
+    name: 'Club Starter',
+    shortLabel: 'Starter',
+    price: 99,
+    currency: 'CNY',
+    duration_days: 31,
+    discountLabel: '工具服务',
+    description: '适合远程入门或目标明确、希望通过网站信息和工具高效推进投递的人。',
+    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长权益', 'AI 简历优化、岗位订阅等工具', '不含语音咨询服务']
+  },
+  {
     id: 'quarter_pro_quarterly',
     memberType: 'quarter_pro',
     name: 'Pro会员',
@@ -259,8 +271,8 @@ const EMBEDDED_STATIC_MEMBERSHIP_PLANS: EmbeddedMembershipPlan[] = [
     discountLabel: 'Pro',
     alipay_qr: '/alipay_399.jpg',
     wechat_qr: '/wechatpay_399.png',
-    description: '适合同时准备口语、远程求职和深入了解企业文化的人。',
-    features: ['包含季度会员全部权益', '外企英语全部跟读音频片段', '更多企业资料', '跟读音频收藏&下载功能', '企业CEO联系方式']
+    description: '适合同时准备口语、远程求职和深入了解远程企业文化的人。',
+    features: ['包含季度会员全部权益', '职业成长全部跟读音频片段', '更多企业资料', '跟读音频收藏&下载功能', '企业CEO联系方式']
   },
   {
     id: 'trial_week_lite',
@@ -286,7 +298,7 @@ const EMBEDDED_STATIC_MEMBERSHIP_PLANS: EmbeddedMembershipPlan[] = [
     duration_days: 90,
     discountLabel: '季度会员',
     description: '适合持续推进远程求职、深入了解企业文化的人。',
-    features: ['远程求职权益完整开放', '精选企业页面权益开放', '外企英语全部视频内容', '企业文化与 CEO 商业思维', '跟读素材免费样例']
+    features: ['远程求职权益完整开放', '精选企业页面权益开放', '远程职业成长全部视频内容', '企业文化与 CEO 商业思维', '跟读素材免费样例']
   },
   {
     id: 'goo_plus_yearly',
@@ -307,7 +319,7 @@ const EMBEDDED_STATIC_MEMBERSHIP_PLANS: EmbeddedMembershipPlan[] = [
   }
 ]
 
-type ClubServicePlanId = 'half_year' | 'annual'
+type ClubServicePlanId = 'starter' | 'half_year' | 'annual'
 
 interface ClubServicePlan {
   id: ClubServicePlanId
@@ -323,6 +335,21 @@ interface ClubServicePlan {
 
 const CLUB_SERVICE_PLANS: ClubServicePlan[] = [
   {
+    id: 'starter',
+    title: 'Club Starter',
+    price: '¥99 / 月',
+    tag: '工具服务',
+    description: '适合远程入门或已经有明确目标的用户，通过网站上的岗位、内容和 AI 工具自主推进申请。',
+    cta: '了解 Club Starter',
+    features: [
+      '全部精选岗位资源',
+      '全部申请路径和联系人信息',
+      '完整远程职业成长权益',
+      'AI 简历优化、岗位订阅等工具',
+      '纯网站工具服务，不含语音咨询'
+    ]
+  },
+  {
     id: 'half_year',
     title: 'Club Member',
     price: '¥499 / 半年',
@@ -331,9 +358,9 @@ const CLUB_SERVICE_PLANS: ClubServicePlan[] = [
     features: [
       '全部精选岗位资源',
       '全部申请路径和联系人信息',
-      '全部外企英语/企业文化/CEO等材料',
-      'AI 简历优化等辅助建议',
-      '1 次 30 分钟语音 1V1 咨询'
+      '完整远程职业成长权益',
+      'AI 简历优化、岗位订阅等工具',
+      '30-60 分钟语音 1V1 咨询'
     ]
   },
   {
@@ -357,32 +384,59 @@ const CLUB_SERVICE_PLANS: ClubServicePlan[] = [
 const CLUB_VALUE_STRIP = [
   { title: '长期岗位资源', desc: '持续筛选适合中国用户申请的机会', icon: Eye },
   { title: '申请路径支持', desc: '联系人资源、申请入口与工具支持', icon: Send },
-  { title: '外企英语学习', desc: 'CEO 访谈、企业文化和口语素材', icon: Sparkles },
-  { title: '企业文化理解', desc: '理解使命、价值观和商业语境', icon: Users },
+  { title: '远程职业成长', desc: '远程求职准备、英文面试、远程会议等', icon: Sparkles },
+  { title: '企业文化理解', desc: '从CEO访谈里了解远程企业的使命、文化和商业模式', icon: Users },
   { title: '社群陪伴支持', desc: '资料更新、交流和远程求职咨询', icon: MessageSquare }
 ]
 
 const CLUB_SERVICE_COMPARISON_ROWS = [
-  { label: '全部精选岗位资源', free: '浏览/搜索/筛选', half_year: '开放', annual: '开放' },
-  { label: '全部申请路径和联系人信息', free: '20次直申/3次内推', half_year: '开放', annual: '开放' },
-  { label: '全部外企英语/企业文化/CEO等材料', free: '', half_year: '开放', annual: '开放' },
-  { label: 'AI 简历优化等辅助建议', free: '有限体验', half_year: '开放', annual: '开放' },
-  { label: '语音 1V1 远程咨询', free: '', half_year: '1 次', annual: '1 次' },
-  { label: '1 次远程求职规划', free: '', half_year: '', annual: '开放' }
+  { label: '全部精选岗位资源', free: '浏览/搜索/筛选', starter: '开放', half_year: '开放', annual: '开放' },
+  { label: '全部申请路径和联系人信息', free: '20次直申/3次内推', starter: '开放', half_year: '开放', annual: '开放' },
+  { label: '完整远程职业成长权益', free: '', starter: '开放', half_year: '开放', annual: '开放' },
+  { label: 'AI 简历优化、岗位订阅等工具', free: '有限体验', starter: '开放', half_year: '开放', annual: '开放' },
+  { label: '语音 1V1 远程咨询', free: '', starter: '', half_year: '30-60分钟', annual: '30-60分钟' },
+  { label: '1 次远程求职规划', free: '', starter: '', half_year: '', annual: '开放' }
 ] as const
 
 const CLUB_SERVICE_COMPARISON_FULL_ROWS = [
   ...CLUB_SERVICE_COMPARISON_ROWS,
-  { label: '会员闭门交流优先参与', free: '', half_year: '', annual: '开放' },
-  { label: '可申请成为共建伙伴', free: '', half_year: '', annual: '可申请' },
-  { label: '企业岗位发布与品牌传播支持额度', free: '', half_year: '', annual: '1季度1次' }
+  { label: '会员闭门交流优先参与', free: '', starter: '', half_year: '', annual: '开放' },
+  { label: '可申请成为共建伙伴', free: '', starter: '', half_year: '', annual: '可申请' },
+  { label: '企业岗位发布与品牌传播支持额度', free: '', starter: '', half_year: '', annual: '1季度1次' }
 ] as const
+
+const CLUB_MEMBERSHIP_FAQS = [
+  {
+    question: '为什么需要添加顾问才能开通？',
+    answer: 'Haigoo Remote Club 以咨询与社群服务为主，网站是配套工具。顾问会先了解你的阶段、目标与适配度，确认适合后再开通，避免盲目加入，对你和俱乐部都更负责。'
+  },
+  {
+    question: '这几项权益核心差别是什么？',
+    answer: 'Club Starter 是工具型网站服务，适合远程入门、已经有明确目标、希望自己高效查资料和投递的人；Club Member 是社群陪伴型服务，适合在职准备或方向还不够清晰的人，可结合 1V1 咨询梳理准备路径；Club Partner 更适合 HR、品牌、商务或市场等有资源协作需求的人，Haigoo 会作为你的资源辅助与职业背书，帮助你放大工作优势。'
+  },
+  {
+    question: '加入会员后发现不适合自己怎么办？',
+    answer: '如果投递一段时间效果不理想，建议先找顾问复盘方向、简历和投递策略；再次尝试仍无改善，可按剩余有效时间申请退款。Haigoo 更希望长期陪伴并真正帮到你，而不是做一次性服务。'
+  },
+  {
+    question: '语音咨询可以咨询哪些内容？',
+    answer: '可以咨询在职如何提前准备、适合哪些远程方向、需要补哪些技能、转行路径、远程工作的五险一金、税务和沟通方式等问题。'
+  },
+  {
+    question: '远程求职规划是什么？会包含哪些内容？',
+    answer: '我们会结合你的过往经历、能力优势、兴趣偏好和目标岗位，梳理适合发展的职业方向，并评估每个方向的落地性、成长性和可拓展性。报告通常包含核心定位、方向排序、适合岗位、人群/行业建议、简历优化重点、能力补充建议和阶段行动路径，帮助你判断适合往哪里走、怎么准备、下一步做什么。'
+  },
+  {
+    question: '成为共建伙伴最大的作用是什么？',
+    answer: 'Partner 可以更充分调用 Haigoo Remote Club 的网站、社媒、社群与合作资源，作为职业背书或求职优势。若有企业商务合作、岗位发布、品牌传播等需求，也会优先为 Partner 协同支持。'
+  }
+]
 
 const DEFAULT_CLUB_ADVISOR_COPY = {
   title: '添加顾问，了解 Club 服务',
   subtitle: '添加 Haigoo 顾问后，可了解会员方案、适合人群和开通方式。',
   steps: ['添加 Haigoo 顾问', '发送注册邮箱和想了解的会员方案', '顾问确认后开通对应网站权限'],
-  consultText: '会员权益、远程求职建议、外企英语、简历优化'
+  consultText: '会员权益、远程求职建议、职业成长、简历优化'
 }
 
 const MEMBER_BENEFIT_ADVISOR_COPY = {
@@ -396,7 +450,7 @@ const MEMBER_SUPPORT_ADVISOR_COPY = {
   title: '向小助手咨询会员权益或使用问题',
   subtitle: '如果您对会员权益、费用或使用体验等存在问题，可以向小助手反馈。',
   steps: ['添加/联系 Haigoo 小助手', '发送注册邮箱和想反馈的问题', '小助手为您解答'],
-  consultText: '会员权益、远程求职建议、外企英语、使用体验等'
+  consultText: '会员权益、远程求职建议、职业成长、使用体验等'
 }
 
 const ANNUAL_PLANNING_ADVISOR_COPY = {
@@ -532,9 +586,12 @@ function getAssistantConversationStorageKey(userKey?: string | null, resumeId?: 
 }
 
 function formatDisplayName(name: string, memberType?: string | null) {
-  const normalized = name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Member|Partner)\)\s*/gi, '').trim()
+  const normalized = name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Starter|Member|Partner)\)\s*/gi, '').trim()
   if ((memberType === 'quarter' || memberType === 'quarter_pro') && normalized) {
     return `${normalized}（VIP）`
+  }
+  if (memberType === 'starter' && normalized) {
+    return `${normalized}（Starter）`
   }
   if (memberType === 'half_year' && normalized) {
     return `${normalized}（Member）`
@@ -945,27 +1002,35 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const activeMemberType = membershipStatus?.memberType || authUser?.memberType
   const activeMembershipExpireAt = membershipStatus?.expireAt || authUser?.memberExpireAt
   const displayMembershipPlans = useMemo(() => {
-    return (['half_year', 'annual'] as EmbeddedMemberType[]).map((memberType) => {
+    return (['starter', 'half_year', 'annual'] as EmbeddedMemberType[]).map((memberType) => {
+      const clubPlan = CLUB_SERVICE_PLANS.find((item) => item.id === memberType)
       const plan = membershipPlans.find((plan) => plan.memberType === memberType)
         || ({
-          id: memberType === 'half_year' ? 'club_half_year' : 'club_annual',
+          id: memberType === 'starter' ? 'club_starter_monthly' : memberType === 'half_year' ? 'club_half_year' : 'club_annual',
           memberType,
-          name: memberType === 'half_year' ? 'Club Member' : 'Club Partner',
-          shortLabel: memberType === 'half_year' ? 'Club Member' : 'Club Partner',
-          price: memberType === 'half_year' ? 499 : 998,
+          name: clubPlan?.title || (memberType === 'half_year' ? 'Club Member' : 'Club Partner'),
+          shortLabel: memberType === 'starter' ? 'Starter' : memberType === 'half_year' ? 'Club Member' : 'Club Partner',
+          price: memberType === 'starter' ? 99 : memberType === 'half_year' ? 499 : 998,
           currency: 'CNY',
-          duration_days: memberType === 'half_year' ? 183 : 365,
-          discountLabel: memberType === 'half_year' ? '长期陪伴' : '推荐｜适合 HR / 品牌 / 市场 / 运营',
-          description: memberType === 'half_year' ? CLUB_SERVICE_PLANS[0].description : CLUB_SERVICE_PLANS[1].description,
-          features: memberType === 'half_year' ? CLUB_SERVICE_PLANS[0].features : CLUB_SERVICE_PLANS[1].features
+          duration_days: memberType === 'starter' ? 31 : memberType === 'half_year' ? 183 : 365,
+          discountLabel: memberType === 'starter' ? '工具服务' : memberType === 'half_year' ? '长期陪伴' : '推荐｜适合 HR / 品牌 / 市场 / 运营',
+          description: clubPlan?.description || '',
+          features: clubPlan?.features || []
         } as EmbeddedMembershipPlan)
       return plan
     })
   }, [membershipPlans])
+  const isCurrentClubServicePlan = (planId: ClubServicePlanId) => {
+    if (!isMember) return false
+    const normalizedActiveType = activeMemberType === 'year' ? 'annual' : activeMemberType
+    return normalizedActiveType === planId
+  }
 
   const openMembershipPayment = (plan: EmbeddedMembershipPlan, options?: { returnToPlansOnClose?: boolean }) => {
     if (plan.comingSoon) return
-    const planFeatureKey = plan.memberType === 'half_year'
+    const planFeatureKey = plan.memberType === 'starter'
+      ? 'membership_plan_starter'
+      : plan.memberType === 'half_year'
       ? 'membership_plan_half_year'
       : plan.memberType === 'annual'
         ? 'membership_plan_annual'
@@ -2654,7 +2719,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-slate-900">我的收藏</h2>
-          <p className="text-slate-500 mt-1">管理收藏的岗位和外企英语跟读音频。</p>
+          <p className="text-slate-500 mt-1">管理收藏的岗位和职业成长跟读音频。</p>
         </div>
         <span className="text-xs font-normal text-gray-400">岗位收藏仅保留近1年记录</span>
       </div>
@@ -2723,7 +2788,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           <div className="flex flex-col items-center justify-center h-[220px] text-center">
             <Volume2 className="w-12 h-12 text-slate-300 mb-3" />
             <p className="text-lg font-bold text-slate-900">还没有收藏音频</p>
-            <p className="text-sm text-slate-500 mt-1">在外企英语页面收藏跟读片段后，这里可以播放音频并查看字幕</p>
+            <p className="text-sm text-slate-500 mt-1">在职业成长页面收藏跟读片段后，这里可以播放音频并查看字幕</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
@@ -3022,6 +3087,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     ]
     const activeMemberLabel = activeMemberType === 'trial_week'
       ? 'Trial（体验）'
+      : activeMemberType === 'starter'
+        ? 'Club Starter（月度）'
       : activeMemberType === 'annual'
         ? 'Club Partner（年度）'
       : activeMemberType === 'half_year'
@@ -3051,7 +3118,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         ['公开内容', '开放岗位与部分企业信息可先查看'],
         ['顾问协助', '添加顾问了解适合自己的服务方案'],
         ['网站工具', '会员服务配套求职工具集中在这里'],
-        ['长期准备', '远程岗位、外企英语和企业文化同步推进']
+        ['长期准备', '远程岗位、职业成长和企业文化同步推进']
       ]
     }
     : activeMemberType === 'trial_week'
@@ -3072,10 +3139,31 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           ['岗位申请权益', '短期开放高价值岗位、联系人和直申入口'],
           ['AI 求职工具', '简历优化、匹配分析和申请辅助可集中使用'],
           ['精选企业入口', '可快速了解重点企业名单和申请方向'],
-          ['外企英语样例', '可先体验外企英语视频和跟读样例']
-      ]
-    }
-        : activeMemberType === 'year' || activeMemberType === 'annual'
+          ['职业成长样例', '可先体验职业成长视频和跟读样例']
+        ]
+      }
+    : activeMemberType === 'starter'
+      ? {
+        shortName: 'Club Starter（月度）',
+        iconText: 'text-[#6f63f6]',
+        iconBg: 'bg-[#f0edff]',
+        border: 'border-[#ddd7ff]',
+        softBorder: 'border-[#ebe7ff]',
+        cardBg: 'bg-white/92',
+        glow: 'bg-[#d8d2ff]/20',
+        statusBg: 'bg-[#f4f1ff]',
+        statusText: 'text-[#6f63f6]',
+        statusBorder: 'border-[#e5e0ff]',
+          title: 'Starter 网站工具权益已开启',
+          description: '全部岗位申请路径、远程职业成长权益和 AI 辅助工具已开放。',
+        items: [
+          ['网站工具权益', '全部精选岗位、联系人信息和直申入口已开放'],
+          ['内容资料', 'CEO访谈、企业文化、远程准备、英文面试等材料已开放'],
+          ['AI 辅助建议', '简历优化、匹配分析和求职辅助工具可使用'],
+          ['服务边界', 'Starter 不包含语音咨询、求职规划和共建伙伴服务']
+        ]
+      }
+    : activeMemberType === 'year' || activeMemberType === 'annual'
           ? {
             shortName: 'Club Partner（年度）',
         iconText: 'text-[#6f63f6]',
@@ -3088,10 +3176,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         statusText: 'text-[#6f63f6]',
         statusBorder: 'border-[#e5e0ff]',
           title: '年度会员权益已开启，长期资源持续沉淀',
-          description: '全部岗位申请路径、外企英语材料、语音咨询、年度规划、共建申请等权限已生效。',
+          description: '全部岗位申请路径、远程职业成长权益、语音咨询、年度规划、共建申请等权限已生效。',
         items: [
           ['全部求职权益', '高价值岗位、联系人信息、精选企业和直申入口完整开放'],
-          ['外企英语视频与文化', '跟着远程企业 CEO 了解真实商业语境和企业文化'],
+          ['远程职业成长权益', '跟着远程企业 CEO 了解真实商业语境和企业文化'],
           ['跟读音频与字幕素材', '完整跟读片段、字幕标签和口语训练素材已开放'],
           ['更多资料与 CEO 联系', '延伸阅读、收藏能力、CEO 邮箱和 LinkedIn 权限已开放']
         ]
@@ -3109,11 +3197,11 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         statusText: 'text-[#6f63f6]',
         statusBorder: 'border-[#e5e0ff]',
           title: '半年会员权益已开启，长期求职支持持续推进',
-          description: '远程求职权益、精选企业、外企英语完整资源、企业文化和 CEO 商业思维已开放。',
+          description: '远程求职权益、精选企业和完整远程职业成长权益已开放。',
         items: [
           ['远程求职权益', '全部岗位申请、联系人信息和直申入口已开放'],
           ['精选企业页面', '完整查看人工筛选企业名单和企业信息'],
-          ['外企英语视频与文化', '学习企业文化、使命愿景和真实商业表达'],
+          ['远程职业成长权益', '学习企业文化、使命愿景和真实商业表达'],
             ['CEO 商业思维', '视频、企业文化、CEO 思维和跟读素材已开放']
         ]
       }
@@ -3129,11 +3217,11 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         statusText: 'text-[#6f63f6]',
         statusBorder: 'border-[#e5e0ff]',
           title: '长期权益已解锁，申请和文化理解同步推进',
-          description: '远程求职权益、精选企业、外企英语完整资源、企业文化和 CEO 商业思维已开放。',
+          description: '远程求职权益、精选企业和完整远程职业成长权益已开放。',
         items: [
           ['远程求职权益', '全部岗位申请、联系人信息和直申入口已开放'],
           ['精选企业页面', '完整查看人工筛选企业名单和企业信息'],
-          ['外企英语视频与文化', '学习企业文化、使命愿景和真实商业表达'],
+          ['远程职业成长权益', '学习企业文化、使命愿景和真实商业表达'],
             ['CEO 商业思维', '视频、企业文化、CEO 思维和跟读素材已开放']
         ]
       }
@@ -3149,6 +3237,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const isQuarterMember = activeMemberType === 'quarter' || activeMemberType === 'quarter_pro'
   const isAnnualClubMember = activeMemberType === 'annual' || activeMemberType === 'year'
   const isHalfYearClubMember = activeMemberType === 'half_year'
+  const isStarterClubMember = activeMemberType === 'starter'
   const isTrialWeekMember = activeMemberType === 'trial_week'
   const membershipTone = !isMember
     ? 'guest'
@@ -3156,6 +3245,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       ? 'annual'
       : isHalfYearClubMember
         ? 'semester'
+        : isStarterClubMember
+          ? 'starter'
         : isQuarterMember
           ? 'quarter'
           : activeMemberType === 'trial_week'
@@ -3166,6 +3257,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const memberCardIconClass = 'bg-[#f4f1ff] text-[#6f63f6]'
   const memberIdentityLabel = activeMemberType === 'trial_week'
     ? 'Trial（体验）'
+    : activeMemberType === 'starter'
+      ? 'Club Starter（月度）'
     : activeMemberType === 'quarter'
       ? 'VIP'
     : activeMemberType === 'half_year'
@@ -3223,7 +3316,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const partnerApplicationStatus = isAnnualClubMember ? getServiceStatusLabel('co_builder_application', '未申请') : '不可用'
   const employerBrandingStatus = isAnnualClubMember ? getServiceStatusLabel('employer_branding_credit', '未使用') : '不可用'
   const hasVoiceConsultationBenefit = isHalfYearClubMember || isAnnualClubMember
-  const hasCorporateEnglishBenefit = isQuarterMember || isHalfYearClubMember || isAnnualClubMember
+  const hasCorporateEnglishBenefit = isStarterClubMember || isQuarterMember || isHalfYearClubMember || isAnnualClubMember
   const hasClosedDoorBenefit = isAnnualClubMember
   const voiceConsultationStatus = hasVoiceConsultationBenefit ? consultationStatus : '不可用'
   const getVoiceConsultationCta = (status: string) => {
@@ -3234,6 +3327,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }
   const memberHeroTitle = activeMemberType === 'half_year'
     ? 'Member 会员权益已开启'
+    : isStarterClubMember
+      ? 'Starter 网站工具权益已开启'
     : isAnnualClubMember
       ? 'Partner 会员权益已开启'
       : isQuarterMember
@@ -3242,11 +3337,13 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           ? 'Trial 体验权益已开启'
           : '会员权益已开启'
   const memberHeroSubtitle = activeMemberType === 'half_year'
-    ? '全部岗位申请路径、外企英语材料、语音咨询等权限已生效。'
+    ? '全部岗位申请路径、完整远程职业成长权益和语音咨询等权限已生效。'
+    : isStarterClubMember
+      ? '全部岗位申请路径、完整远程职业成长权益和 AI 辅助工具已生效。'
     : isAnnualClubMember
-      ? '全部岗位申请路径、外企英语材料、语音咨询、年度规划、共建申请等权限已生效。'
+      ? '全部岗位申请路径、完整远程职业成长权益、语音咨询、年度规划、共建申请等权限已生效。'
       : isQuarterMember
-        ? '岗位申请、企业资料和外企英语权益已开放，原季度权益在有效期内继续可用。'
+        ? '岗位申请、企业资料和职业成长权益已开放，原季度权益在有效期内继续可用。'
         : isTrialWeekMember
           ? '短期体验权益已开放，你可以集中使用岗位、申请路径和简历优化能力。'
           : memberVisual.description
@@ -3271,8 +3368,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     },
     {
       key: 'corporate_english',
-      title: '外企英语/企业文化/CEO材料',
-      desc: hasCorporateEnglishBenefit ? '外企英语、企业文化和 CEO 相关材料已开放。' : '当前会员类型暂不包含外企英语完整材料。',
+      title: '远程职业成长权益',
+      desc: hasCorporateEnglishBenefit ? 'CEO访谈、企业文化、远程准备、英文面试等材料已开放。' : '当前会员类型暂不包含完整远程职业成长权益。',
       status: hasCorporateEnglishBenefit ? '可使用' : '不可用',
       cta: hasCorporateEnglishBenefit ? '开始学习' : '不可用',
       icon: Sparkles,
@@ -3281,8 +3378,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     },
     {
       key: 'resume_ai_suggestion',
-      title: 'AI 简历优化等辅助建议',
-      desc: '让 AI 协助你分析简历、规划求职和面试。',
+      title: 'AI简历优化、岗位订阅等工具',
+      desc: '可使用 AI 简历分析/求职规划、订阅关注的岗位更新等工具。',
       status: '可使用',
       cta: '使用工具',
       icon: FileText,
@@ -3291,7 +3388,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     {
       key: 'voice_consultation_30m',
       title: '语音 1V1 远程咨询',
-      desc: hasVoiceConsultationBenefit ? '会员期内包含一次 30 分钟远程咨询。' : '当前会员类型暂不包含 30 分钟远程咨询。',
+      desc: hasVoiceConsultationBenefit ? '会员期内包含一次 30-60 分钟远程咨询。' : '当前会员类型暂不包含语音咨询。',
       status: voiceConsultationStatus,
       meta: getServiceMeta('voice_consultation_30m'),
       cta: getVoiceConsultationCta(voiceConsultationStatus),
@@ -3369,8 +3466,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     },
     {
       key: 'corporate_english',
-      title: '外企英语/企业文化/CEO材料',
-      desc: '完整外企英语、企业文化和 CEO 材料仅面向 Club Member / Partner 开放。',
+      title: '远程职业成长权益',
+      desc: '完整远程职业成长权益仅面向 Club Starter / Member / Partner 开放。',
       status: '不可用',
       cta: '不可用',
       icon: Sparkles,
@@ -3378,7 +3475,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     },
     {
       key: 'resume_ai_suggestion',
-      title: 'AI 简历优化等辅助建议',
+      title: 'AI简历优化、岗位订阅等工具',
       desc: '可体验有限功能和内容。',
       status: '有限体验',
       cta: '使用工具',
@@ -3388,7 +3485,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     {
       key: 'voice_consultation_30m',
       title: '语音 1V1 远程咨询',
-      desc: '30 分钟语音咨询为 Club Member / Partner 权益。',
+      desc: '30-60 分钟语音咨询为 Club Member / Partner 权益。',
       status: '不可用',
       cta: '不可用',
       icon: MessageSquare,
@@ -3438,15 +3535,20 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     copy = DEFAULT_CLUB_ADVISOR_COPY
   ) => {
     if (planId) {
+      const planMeta = planId === 'starter'
+        ? { id: 'club_starter_monthly', name: '月度会员', featureKey: 'membership_plan_starter' }
+        : planId === 'half_year'
+          ? { id: 'club_half_year', name: '半年会员', featureKey: 'membership_plan_half_year' }
+          : { id: 'club_annual', name: '年度会员', featureKey: 'membership_plan_annual' }
       trackingService.track('membership_plan_click', {
         page_key: 'membership',
         module: 'club_service',
         source_key: sourceKey,
         entity_type: 'plan',
-        entity_id: planId === 'half_year' ? 'club_half_year' : 'club_annual',
-        plan_id: planId === 'half_year' ? 'club_half_year' : 'club_annual',
-        plan_name: planId === 'half_year' ? '半年会员' : '年度会员',
-        feature_key: planId === 'half_year' ? 'membership_plan_half_year' : 'membership_plan_annual'
+        entity_id: planMeta.id,
+        plan_id: planMeta.id,
+        plan_name: planMeta.name,
+        feature_key: planMeta.featureKey
       })
     }
     trackingService.track('membership_club_advisor_open', {
@@ -3523,12 +3625,13 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }
 
     const membershipPlanFeatures: Record<EmbeddedMemberType, string[]> = {
-      trial_week: ['解锁全部高价值岗位信息', '企业联系人与直申入口', '会员推荐与 AI 简历优化', '外企英语免费样例体验'],
-      quarter: ['远程求职权益完整开放', '精选企业页面权益开放', '外企英语全部视频内容', '企业文化与 CEO 商业思维', '跟读素材免费样例'],
-      quarter_pro: ['包含长期权益全部内容', '外企英语全部跟读音频片段', '更多企业资料', '跟读音频收藏&下载功能', '企业CEO联系方式'],
+      trial_week: ['解锁全部高价值岗位信息', '企业联系人与直申入口', '会员推荐与 AI 简历优化', '职业成长免费样例体验'],
+      quarter: ['远程求职权益完整开放', '精选企业页面权益开放', '远程职业成长全部视频内容', '企业文化与 CEO 商业思维', '跟读素材免费样例'],
+      quarter_pro: ['包含长期权益全部内容', '职业成长全部跟读音频片段', '更多企业资料', '跟读音频收藏&下载功能', '企业CEO联系方式'],
       year: ['远程求职路径答疑', '个人背景与目标岗位分析', '英文简历 / 求职信定制', '职业路径规划与转型咨询'],
-      half_year: CLUB_SERVICE_PLANS[0].features,
-      annual: CLUB_SERVICE_PLANS[1].features
+      starter: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'starter')?.features || [],
+      half_year: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'half_year')?.features || [],
+      annual: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'annual')?.features || []
     }
 
   const membershipComparisonRows = [
@@ -3554,14 +3657,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       quarter_pro: '开放'
     },
     {
-      label: '外企英语视频 / 企业文化 / CEO 思维',
+      label: '远程职业成长视频 / 企业文化 / CEO 思维',
       free: '免费样例',
       trial_week: '免费样例',
       quarter: '开放',
       quarter_pro: '开放'
     },
     {
-      label: '外企英语跟读音频 / 字幕素材',
+      label: '职业成长跟读音频 / 字幕素材',
       free: '免费样例',
       trial_week: '免费样例',
       quarter: '免费样例',
@@ -3589,6 +3692,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       quarter: '在职友好',
       quarter_pro: '长期支持',
       year: '量身定制',
+      starter: '工具服务',
       half_year: '长期陪伴',
       annual: '推荐'
     }
@@ -3599,13 +3703,15 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       quarter: '适合持续推进远程求职、深入了解企业文化的人。',
       quarter_pro: '适合同时准备口语、远程求职和深入了解企业文化的人。',
       year: '适合精力有限、需要人工一对一服务的高效能人士。',
-      half_year: CLUB_SERVICE_PLANS[0].description,
-      annual: CLUB_SERVICE_PLANS[1].description
+      starter: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'starter')?.description || '',
+      half_year: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'half_year')?.description || '',
+      annual: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'annual')?.description || ''
     }
 
   const getMembershipPlanCta = (memberType: EmbeddedMemberType, current = false) => {
       if (current) return '当前方案'
       if (memberType === 'trial_week') return '添加顾问体验'
+      if (memberType === 'starter') return '了解 Club Starter'
       if (memberType === 'quarter') return '添加顾问开通'
       if (memberType === 'quarter_pro') return '咨询深度服务方案'
       if (memberType === 'half_year') return '了解 Club Member'
@@ -3615,6 +3721,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
   const getMembershipPlanTitle = (memberType: EmbeddedMemberType) => {
       if (memberType === 'trial_week') return '短期体验权益'
+      if (memberType === 'starter') return 'Club Starter'
       if (memberType === 'quarter') return '旧长期权益'
       if (memberType === 'quarter_pro') return '旧深度权益'
       if (memberType === 'half_year') return 'Club Member'
@@ -3624,6 +3731,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
   const getMembershipPlanUnit = (memberType: EmbeddedMemberType) => {
       if (memberType === 'trial_week') return '/ 7 天'
+      if (memberType === 'starter') return '/ 月'
       if (memberType === 'quarter') return '/ 季度'
       if (memberType === 'quarter_pro') return '/ 季度'
       if (memberType === 'half_year') return '/ 半年'
@@ -3657,10 +3765,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               {isMember ? `${memberIdentityLabel} · ${membershipStatusLabel}` : 'Haigoo Remote Club'}
             </div>
             <h1 className="max-w-[760px] text-[28px] font-black leading-[1.16] tracking-normal text-slate-950 sm:text-[40px] xl:text-[46px]">
-              {isMember ? memberHeroTitle : '远程求职，不再一个人摸索'}
+              {isMember ? memberHeroTitle : '成为远程专家，工作手拿把掐'}
             </h1>
             <p className="mt-4 max-w-[680px] text-sm leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-7">
-              {isMember ? memberHeroSubtitle : 'Haigoo 为会员提供远程岗位筛选、申请辅助、外企英语学习和企业文化资料支持，帮助你更高效地准备远程求职。'}
+              {isMember ? memberHeroSubtitle : '跟着 Haigoo 一起申请岗位、了解企业、提升口语，一步步升级全球通用的远程职业能力，小白也能变专家。'}
             </p>
           </div>
 
@@ -3773,7 +3881,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">
                       {isTrialWeekMember
                         ? '会员权益全新升级，原体验会员将不再开放。如需升级半年/年度会员可联系顾问。'
-                        : '会员权益全新升级，原季度会员将不再开放。为感谢您的支持，我们已特别赠送外企英语权益，如需升级半年/年度会员可联系顾问。'}
+                        : '会员权益全新升级，原季度会员将不再开放。为感谢您的支持，我们已特别赠送职业成长权益，如需升级半年/年度会员可联系顾问。'}
                     </p>
                   </div>
                   <button
@@ -3876,17 +3984,26 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <p className="mt-1 text-sm leading-6 text-slate-500">会员权益全新升级，从企业文化到英语练习到远程求职，我们陪你一起上岸。</p>
                 </div>
               </div>
-              <div className="relative grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-                {CLUB_SERVICE_PLANS.map((plan) => (
+              <div className="relative grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
+                {CLUB_SERVICE_PLANS.map((plan) => {
+                  const isCurrentPlan = isCurrentClubServicePlan(plan.id)
+                  return (
                   <article
                     key={plan.id}
                     className={`relative flex min-h-[430px] min-w-0 flex-col overflow-hidden rounded-[24px] border p-5 transition-all hover:-translate-y-0.5 sm:p-6 ${
-                      plan.highlighted
-                        ? 'border-[#b9afff] bg-[#fbfaff] shadow-[0_30px_78px_-56px_rgba(111,99,246,0.42)]'
-                        : 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_24px_66px_-54px_rgba(139,101,54,0.22)]'
+                          plan.highlighted
+                            ? 'border-[#b9afff] bg-[#fbfaff] shadow-[0_30px_78px_-56px_rgba(111,99,246,0.42)]'
+                            : plan.id === 'starter'
+                              ? 'border-[#dfe8ef] bg-white shadow-[0_22px_60px_-50px_rgba(64,78,102,0.24)]'
+                              : 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_24px_66px_-54px_rgba(139,101,54,0.22)]'
                     }`}
                   >
-                    <div className={`absolute inset-x-0 top-0 h-1.5 ${plan.highlighted ? 'bg-[#6f63f6]' : 'bg-[#c79a55]'}`} />
+                    <div className={`absolute inset-x-0 top-0 h-1.5 ${plan.highlighted ? 'bg-[#6f63f6]' : plan.id === 'starter' ? 'bg-[#8aa4ff]' : 'bg-[#c79a55]'}`} />
+                    {isCurrentPlan ? (
+                      <div className="absolute right-5 top-5 z-10 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white shadow-[0_12px_28px_-18px_rgba(95,99,246,0.65)]">
+                        生效中
+                      </div>
+                    ) : null}
                     <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
                     <div className="relative flex min-w-0 flex-1 flex-col">
                       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -3909,7 +4026,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         <div className="grid content-start gap-3">
                           {plan.features.map((feature) => (
                             <div key={feature} className="flex items-start gap-3 text-sm font-semibold leading-6 text-slate-700">
-                              <Check className={`mt-1 h-[18px] w-[18px] shrink-0 ${plan.highlighted ? 'text-[#6f63f6]' : 'text-[#9a6a2d]'}`} strokeWidth={3} />
+                              <Check className={`mt-1 h-[18px] w-[18px] shrink-0 ${plan.highlighted || plan.id === 'starter' ? 'text-[#6f63f6]' : 'text-[#9a6a2d]'}`} strokeWidth={3} />
                               <span>{feature}</span>
                             </div>
                           ))}
@@ -3920,8 +4037,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         onClick={() => openClubServiceAdvisor('member_plan_upgrade_card', plan.id)}
                         className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${
                           plan.highlighted
-                            ? 'bg-[#6f63f6] shadow-[0_18px_38px_-24px_rgba(95,99,246,0.58)] hover:bg-[#5d50df]'
-                            : 'bg-slate-900 shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
+                              ? 'bg-[#6f63f6] shadow-[0_18px_38px_-24px_rgba(95,99,246,0.58)] hover:bg-[#5d50df]'
+                              : plan.id === 'starter'
+                                ? 'bg-[#30426b] shadow-[0_18px_38px_-24px_rgba(48,66,107,0.34)] hover:bg-[#6f63f6]'
+                                : 'bg-slate-900 shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
                         }`}
                       >
                         {plan.cta}
@@ -3929,7 +4048,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       </button>
                     </div>
                   </article>
-                ))}
+                  )
+                })}
               </div>
             </section>
 
@@ -3948,17 +4068,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 </button>
               </div>
               <div className="overflow-x-auto">
-                <div className="min-w-[820px]">
-                  <div className="grid grid-cols-[1.5fr_repeat(3,minmax(150px,0.85fr))] border-b border-[#eef3f7] bg-[#fbfdff] px-5 py-3 text-xs font-black text-slate-500">
+                <div className="min-w-[980px]">
+                  <div className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] border-b border-[#eef3f7] bg-[#fbfdff] px-5 py-3 text-xs font-black text-slate-500">
                     <span>服务权益</span>
                     <span className="text-center">免费用户</span>
+                    <span className="text-center">Club Starter</span>
                     <span className="text-center">Club Member</span>
                     <span className="text-center">Club Partner</span>
                   </div>
                   {visibleClubComparisonRows.map((row) => (
-                    <div key={row.label} className="grid grid-cols-[1.5fr_repeat(3,minmax(150px,0.85fr))] items-center border-b border-[#eef3f7] px-5 py-3 last:border-b-0">
+                    <div key={row.label} className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] items-center border-b border-[#eef3f7] px-5 py-3 last:border-b-0">
                       <div className="pr-4 text-sm font-bold leading-6 text-slate-800">{row.label}</div>
-                      {(['free', 'half_year', 'annual'] as const).map((key) => {
+                      {(['free', 'starter', 'half_year', 'annual'] as const).map((key) => {
                         const value = row[key]
                         return (
                           <div key={key} className="flex justify-center">
@@ -4011,6 +4132,21 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               </div>
             </section>
 
+            <section className="relative overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white/92 p-5 shadow-[0_24px_64px_-54px_rgba(64,78,102,0.24)] sm:p-6">
+              <div className="mb-4">
+                <h3 className="text-lg font-black text-slate-950">会员 QA</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">关于开通方式、服务边界和退款规则的常见问题。</p>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {CLUB_MEMBERSHIP_FAQS.map((item) => (
+                  <div key={item.question} className="rounded-[18px] border border-[#edf2f6] bg-[#fbfdff] p-4">
+                    <div className="text-sm font-black leading-6 text-slate-900">{item.question}</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{item.answer}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
             <section className="relative overflow-hidden rounded-[28px] border border-[#ddd7ff] bg-[#fffdf8] p-5 shadow-[0_22px_62px_-54px_rgba(111,99,246,0.28)] sm:p-6">
               <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-32 w-48 object-cover object-right-bottom opacity-[0.12]" />
               <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -4043,17 +4179,26 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <p className="mt-1 text-sm leading-6 text-slate-500">本网站为 Haigoo Remote Club 会员配套求职工具，核心功能仅面向会员开放。</p>
             </div>
           </div>
-          <div className="relative grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            {CLUB_SERVICE_PLANS.map((plan) => (
+          <div className="relative grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
+            {CLUB_SERVICE_PLANS.map((plan) => {
+              const isCurrentPlan = isCurrentClubServicePlan(plan.id)
+              return (
               <article
                 key={plan.id}
                 className={`relative flex min-h-[430px] min-w-0 flex-col overflow-hidden rounded-[24px] border p-5 transition-all hover:-translate-y-0.5 sm:p-6 ${
                   plan.highlighted
                     ? 'border-[#b9afff] bg-[#fbfaff] shadow-[0_30px_78px_-56px_rgba(111,99,246,0.42)]'
-                    : 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_24px_66px_-54px_rgba(139,101,54,0.22)]'
+                    : plan.id === 'starter'
+                      ? 'border-[#dfe8ef] bg-white shadow-[0_22px_60px_-50px_rgba(64,78,102,0.24)]'
+                      : 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_24px_66px_-54px_rgba(139,101,54,0.22)]'
                 }`}
               >
-                <div className={`absolute inset-x-0 top-0 h-1.5 ${plan.highlighted ? 'bg-[#6f63f6]' : 'bg-[#c79a55]'}`} />
+                <div className={`absolute inset-x-0 top-0 h-1.5 ${plan.highlighted ? 'bg-[#6f63f6]' : plan.id === 'starter' ? 'bg-[#8aa4ff]' : 'bg-[#c79a55]'}`} />
+                {isCurrentPlan ? (
+                  <div className="absolute right-5 top-5 z-10 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white shadow-[0_12px_28px_-18px_rgba(95,99,246,0.65)]">
+                    生效中
+                  </div>
+                ) : null}
                 <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
                   <div className="relative flex min-w-0 flex-1 flex-col">
                   <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
@@ -4076,7 +4221,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <div className="grid content-start gap-3">
                     {plan.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-3 text-sm font-semibold leading-6 text-slate-700">
-                          <Check className={`mt-1 h-[18px] w-[18px] shrink-0 ${plan.highlighted ? 'text-[#6f63f6]' : 'text-[#9a6a2d]'}`} strokeWidth={3} />
+                          <Check className={`mt-1 h-[18px] w-[18px] shrink-0 ${plan.highlighted || plan.id === 'starter' ? 'text-[#6f63f6]' : 'text-[#9a6a2d]'}`} strokeWidth={3} />
                         <span>{feature}</span>
                       </div>
                     ))}
@@ -4088,7 +4233,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     className={`mt-7 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${
                       plan.highlighted
                           ? 'bg-[#6f63f6] shadow-[0_18px_38px_-24px_rgba(95,99,246,0.58)] hover:bg-[#5d50df]'
-                          : 'bg-slate-900 shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
+                          : plan.id === 'starter'
+                            ? 'bg-[#30426b] shadow-[0_18px_38px_-24px_rgba(48,66,107,0.34)] hover:bg-[#6f63f6]'
+                            : 'bg-slate-900 shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
                     }`}
                   >
                     {plan.cta}
@@ -4096,7 +4243,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   </button>
                 </div>
               </article>
-            ))}
+              )
+            })}
           </div>
         </section>
 
@@ -4147,17 +4295,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </button>
           </div>
           <div className="overflow-x-auto">
-            <div className="min-w-[820px]">
-              <div className="grid grid-cols-[1.5fr_repeat(3,minmax(150px,0.85fr))] border-b border-[#eef3f7] bg-[#fbfdff] px-5 py-3 text-xs font-black text-slate-500">
+            <div className="min-w-[980px]">
+              <div className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] border-b border-[#eef3f7] bg-[#fbfdff] px-5 py-3 text-xs font-black text-slate-500">
                 <span>服务权益</span>
                 <span className="text-center">免费用户</span>
+                <span className="text-center">Club Starter</span>
                 <span className="text-center">Club Member</span>
                 <span className="text-center">Club Partner</span>
               </div>
               {visibleClubComparisonRows.map((row) => (
-                <div key={row.label} className="grid grid-cols-[1.5fr_repeat(3,minmax(150px,0.85fr))] items-center border-b border-[#eef3f7] px-5 py-3 last:border-b-0">
+                <div key={row.label} className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] items-center border-b border-[#eef3f7] px-5 py-3 last:border-b-0">
                   <div className="pr-4 text-sm font-bold leading-6 text-slate-800">{row.label}</div>
-                  {(['free', 'half_year', 'annual'] as const).map((key) => {
+                  {(['free', 'starter', 'half_year', 'annual'] as const).map((key) => {
                     const value = row[key]
                     return (
                       <div key={key} className="flex justify-center">
@@ -4178,6 +4327,21 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           </div>
         </section>
 
+        <section className="relative mb-5 overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white/92 p-5 shadow-[0_24px_64px_-54px_rgba(64,78,102,0.24)] sm:p-6">
+          <div className="mb-4">
+            <h3 className="text-lg font-black text-slate-950">会员 QA</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-500">关于开通方式、服务边界和退款规则的常见问题。</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {CLUB_MEMBERSHIP_FAQS.map((item) => (
+              <div key={item.question} className="rounded-[18px] border border-[#edf2f6] bg-[#fbfdff] p-4">
+                <div className="text-sm font-black leading-6 text-slate-900">{item.question}</div>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{item.answer}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
       <section className="relative mt-5 grid items-stretch gap-4 xl:grid-cols-[1fr_340px] 2xl:hidden">
         <div className="relative flex min-h-[260px] overflow-hidden rounded-[26px] border border-[#e6d7b9] bg-[#fffdf8] p-5 shadow-[0_24px_66px_-52px_rgba(139,101,54,0.32)]">
           <div className="pointer-events-none absolute inset-0">
@@ -4191,7 +4355,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="grid gap-3 sm:grid-cols-3">
                   {[
                     { title: '信息安全', desc: '简历与个人信息仅用于岗位匹配和会员服务支持。', icon: ShieldCheck },
-                    { title: '持续更新', desc: '持续筛选远程岗位、企业资料和外企英语内容。', icon: Sparkles },
+                    { title: '持续更新', desc: '持续筛选远程岗位、企业资料和职业成长内容。', icon: Sparkles },
                     { title: '透明可靠', desc: '明确展示服务边界，不过度或虚假承诺录用结果。', icon: CheckCircle }
                   ].map((item) => {
                   const ItemIcon = item.icon
@@ -4283,7 +4447,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="mt-4 space-y-4">
                   {[
                     { title: '信息安全', desc: '简历与个人信息仅用于岗位匹配和会员服务支持。', icon: ShieldCheck },
-                    { title: '持续更新', desc: '持续筛选远程岗位、企业资料和外企英语内容。', icon: Sparkles },
+                    { title: '持续更新', desc: '持续筛选远程岗位、企业资料和职业成长内容。', icon: Sparkles },
                     { title: '透明可靠', desc: '明确展示服务边界，不过度或虚假承诺录用结果。', icon: CheckCircle }
                   ].map((item) => {
                     const ItemIcon = item.icon
@@ -4388,7 +4552,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <div className="mt-4 space-y-4">
                 {[
                   { title: '信息安全', desc: '简历与个人信息仅用于岗位匹配和会员服务支持。', icon: ShieldCheck },
-                  { title: '持续更新', desc: '持续筛选远程岗位、企业资料和外企英语内容。', icon: Sparkles },
+                  { title: '持续更新', desc: '持续筛选远程岗位、企业资料和职业成长内容。', icon: Sparkles },
                   { title: '透明可靠', desc: '明确展示服务边界，不过度或虚假承诺录用结果。', icon: CheckCircle }
                 ].map((item) => {
                   const ItemIcon = item.icon
@@ -4736,7 +4900,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       <div className="rounded-2xl border border-[#edf2f6] bg-white/78 px-3.5 py-3 shadow-sm">
                         <div className="text-base font-black text-slate-950">添加顾问了解</div>
                         <div className="mt-2 text-sm leading-6 text-slate-500">
-                          解锁全部岗位申请、联系人信息和外企英语材料。
+                          解锁全部岗位申请、联系人信息和职业成长权益。
                         </div>
                       </div>
                     )}
@@ -5121,22 +5285,30 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   </p>
                 </div>
 
-                <div className="relative mt-5 grid gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-2">
+                <div className="relative mt-5 grid gap-3 sm:mt-6 sm:gap-4 lg:grid-cols-3">
                   {displayMembershipPlans.map((plan) => {
+                    const isStarter = plan.memberType === 'starter'
                     const isHalfYear = plan.memberType === 'half_year'
                     const isAnnual = plan.memberType === 'annual'
+                    const isCurrentPlan = isCurrentClubServicePlan(plan.memberType as ClubServicePlanId)
                     const planTitle = getMembershipPlanTitle(plan.memberType)
-                    const ctaText = getMembershipPlanCta(plan.memberType, isMember && activeMemberType === plan.memberType)
+                    const ctaText = getMembershipPlanCta(plan.memberType, isCurrentPlan)
                     return (
                       <article
                         key={plan.id}
                         className={`relative flex flex-col rounded-[20px] border p-4 transition-all hover:-translate-y-0.5 sm:min-h-[320px] sm:rounded-[24px] sm:p-5 ${
-                          isHalfYear
-                            ? 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_20px_50px_-42px_rgba(139,101,54,0.22)]'
-                            : 'border-[#cfc8ff] bg-[#fbfaff] shadow-[0_22px_54px_-40px_rgba(111,99,246,0.3)]'
+                          isAnnual
+                            ? 'border-[#cfc8ff] bg-[#fbfaff] shadow-[0_22px_54px_-40px_rgba(111,99,246,0.3)]'
+                            : isStarter
+                              ? 'border-[#dfe8ef] bg-white shadow-[0_20px_50px_-42px_rgba(64,78,102,0.22)]'
+                              : 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_20px_50px_-42px_rgba(139,101,54,0.22)]'
                         }`}
                       >
-                        {isAnnual ? <div className="absolute right-5 top-5 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white">推荐</div> : null}
+                        {isCurrentPlan ? (
+                          <div className="absolute right-5 top-5 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white">生效中</div>
+                        ) : isAnnual ? (
+                          <div className="absolute right-5 top-5 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white">推荐</div>
+                        ) : null}
                         <div className={`mb-4 inline-flex w-fit rounded-full px-3 py-1 text-xs font-black ${isHalfYear ? 'border border-[#eadfcf] bg-white/82 text-[#9a6a2d]' : 'bg-[#f1efff] text-[#6f63f6]'}`}>
                           {membershipPlanTags[plan.memberType]}
                         </div>
@@ -5161,9 +5333,11 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                           className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all ${
                             plan.comingSoon
                               ? 'cursor-not-allowed border border-slate-200 bg-white text-slate-400'
-                              : isHalfYear
-                                ? 'bg-slate-900 text-white shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
-                                : 'bg-[#6f63f6] text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] hover:bg-[#5d50df]'
+                              : isAnnual
+                                ? 'bg-[#6f63f6] text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] hover:bg-[#5d50df]'
+                                : isStarter
+                                  ? 'bg-[#30426b] text-white shadow-[0_18px_38px_-24px_rgba(48,66,107,0.34)] hover:bg-[#6f63f6]'
+                                  : 'bg-slate-900 text-white shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
                           }`}
                         >
                           {plan.comingSoon ? '即将开放' : ctaText}

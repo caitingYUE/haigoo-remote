@@ -13,7 +13,7 @@ interface MembershipUpgradeModalProps {
 
 interface Plan {
   id: string
-  memberType: 'trial_week' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
+  memberType: 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
   name: string
   shortLabel?: string
   price: number
@@ -30,6 +30,18 @@ interface Plan {
 
 const FALLBACK_PLANS: Plan[] = [
   {
+    id: 'club_starter_monthly',
+    memberType: 'starter',
+    name: 'Club Starter',
+    shortLabel: 'Starter',
+    price: 99,
+    currency: 'CNY',
+    duration_days: 31,
+    discountLabel: '工具服务',
+    description: '适合远程入门或目标明确、希望通过网站信息和工具高效推进投递的用户。',
+    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长权益', 'AI 简历优化、岗位订阅等工具', '纯网站工具服务，不含语音咨询']
+  },
+  {
     id: 'club_half_year',
     memberType: 'half_year',
     name: 'Club Member',
@@ -39,7 +51,7 @@ const FALLBACK_PLANS: Plan[] = [
     duration_days: 183,
     discountLabel: '长期陪伴',
     description: '适合正在认真探索远程工作，希望获得长期岗位资源和求职支持的用户。',
-    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '全部外企英语/企业文化/CEO等材料', 'AI 简历优化等辅助建议', '1 次 30 分钟语音 1V1 咨询']
+    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长权益', 'AI 简历优化、岗位订阅等工具', '30-60 分钟语音 1V1 咨询']
   },
   {
     id: 'club_annual',
@@ -56,6 +68,11 @@ const FALLBACK_PLANS: Plan[] = [
 ]
 
 const PLAN_COPY: Record<string, { title: string; hint: string; badge: string }> = {
+  starter: {
+    title: 'Club Starter',
+    hint: '适合远程入门或目标明确、希望通过网站信息和工具高效推进投递的用户。',
+    badge: '工具服务'
+  },
   half_year: {
     title: 'Club Member',
     hint: '适合正在认真探索远程工作，希望获得长期岗位资源和求职支持的用户。',
@@ -69,12 +86,19 @@ const PLAN_COPY: Record<string, { title: string; hint: string; badge: string }> 
 }
 
 const PLAN_FEATURE_COPY: Partial<Record<Plan['memberType'], string[]>> = {
+  starter: [
+    '全部精选岗位资源',
+    '全部申请路径和联系人信息',
+    '完整远程职业成长权益',
+    'AI 简历优化、岗位订阅等工具',
+    '纯网站工具服务，不含语音咨询'
+  ],
   half_year: [
     '全部精选岗位资源',
     '全部申请路径和联系人信息',
-    '全部外企英语/企业文化/CEO等材料',
-    'AI 简历优化等辅助建议',
-    '1 次 30 分钟语音 1V1 咨询'
+    '完整远程职业成长权益',
+    'AI 简历优化、岗位订阅等工具',
+    '30-60 分钟语音 1V1 咨询'
   ],
   annual: [
     'Club Member 全部权益',
@@ -126,8 +150,9 @@ const getVisibleFeatures = (plan: Plan) => {
   const priority = [
     '全部精选岗位资源',
     '全部申请路径和联系人信息',
-    '全部外企英语/企业文化/CEO等材料',
-    'AI 简历优化等辅助建议',
+    '完整远程职业成长权益',
+    'AI 简历优化、岗位订阅等工具',
+    '纯网站工具服务，不含语音咨询',
     'Club Member 全部权益',
     '1 次远程求职规划',
     '优先参与会员闭门交流',
@@ -138,7 +163,7 @@ const getVisibleFeatures = (plan: Plan) => {
     'AI 简历优化（无限次）',
     '精选岗位与申请路径',
     '联系人资源支持',
-    '外企英语学习工具',
+    '远程职业成长工具',
     '企业文化与 CEO 访谈资料'
   ]
   const unique = Array.from(new Set(normalized))
@@ -151,12 +176,14 @@ const getVisibleFeatures = (plan: Plan) => {
 }
 
 const getPlanAdvisorCta = (memberType: Plan['memberType']) => {
+  if (memberType === 'starter') return '了解 Club Starter'
   if (memberType === 'annual') return '了解 Club Partner'
   return '了解 Club Member'
 }
 
 const normalizePreferredMemberType = (memberType?: Plan['memberType']) => {
   if (memberType === 'annual' || memberType === 'year' || memberType === 'quarter_pro') return 'annual'
+  if (memberType === 'starter') return 'starter'
   return 'half_year'
 }
 
@@ -187,7 +214,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
       .then((data) => {
         if (cancelled) return
         const rawPlans = Array.isArray(data?.plans) ? data.plans : Array.isArray(data?.data?.plans) ? data.data.plans : []
-        const allowedTypes = ['half_year', 'annual']
+        const allowedTypes = ['starter', 'half_year', 'annual']
         const preferredType = normalizePreferredMemberType(preferredMemberType)
         const usefulPlans = rawPlans
           .filter((plan: Plan) => allowedTypes.includes(plan.memberType) && plan.enabled !== false)
@@ -214,7 +241,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
       })
       .catch(() => {
         if (cancelled) return
-        const allowedTypes = ['half_year', 'annual']
+        const allowedTypes = ['starter', 'half_year', 'annual']
         const preferredType = normalizePreferredMemberType(preferredMemberType)
         const fallback = FALLBACK_PLANS.filter((plan) => allowedTypes.includes(plan.memberType))
         setPlans(fallback)
@@ -254,9 +281,9 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
       description: '加入 Club 后，可获得更多岗位申请路径、联系人资源和求职支持。'
     },
     corporate_english: {
-      eyebrow: '外企英语',
-      title: '了解外企英语会员工具',
-      description: '外企英语是 Haigoo Remote Club 会员专属学习工具，帮助你通过 CEO 访谈和企业文化资料练习口语表达、理解外企文化，更好准备远程岗位申请。'
+      eyebrow: '职业成长',
+      title: '了解远程职业成长权益',
+      description: '远程职业成长是 Haigoo Remote Club 会员专属内容权益，帮助你通过 CEO 访谈、企业文化、远程准备和英文面试材料提升认知、口语与申请成功率。'
     }
   }[triggerSource]
 
@@ -310,7 +337,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
           <div className="space-y-4">
           <div className={`grid gap-3 ${planGridClass}`}>
             {isLoadingPlans ? (
-              <div className="flex h-[240px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white/70 text-sm text-slate-500 md:col-span-2">
+              <div className="flex h-[240px] items-center justify-center rounded-[24px] border border-dashed border-slate-200 bg-white/70 text-sm text-slate-500 md:col-span-3">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 正在读取会员方案
               </div>
@@ -337,7 +364,11 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                           entity_id: plan.id,
                           plan_id: plan.id,
                           plan_name: plan.name,
-                          feature_key: plan.memberType === 'annual' ? 'membership_plan_annual' : 'membership_plan_half_year'
+                          feature_key: plan.memberType === 'starter'
+                            ? 'membership_plan_starter'
+                            : plan.memberType === 'annual'
+                              ? 'membership_plan_annual'
+                              : 'membership_plan_half_year'
                         })
                       }}
                     className={`w-full rounded-[22px] border p-4 text-left transition-all sm:rounded-[24px] sm:p-5 ${
@@ -432,7 +463,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
               </div>
               <div className="grid grid-cols-[64px_1fr] gap-3 py-1">
                 <span className="font-black text-slate-500">可咨询</span>
-                <span className="font-semibold text-slate-700">会员权益、远程求职建议、外企英语、简历优化</span>
+                <span className="font-semibold text-slate-700">会员权益、远程求职建议、职业成长、简历优化</span>
               </div>
             </div>
 

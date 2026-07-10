@@ -52,16 +52,25 @@ const COVER_OUTPUT_HEIGHT = 720
 
 type Mode = 'list' | 'create' | 'edit' | 'profile'
 type AdminSubModule = 'ceo' | CorporateEnglishModuleKey
+type ModuleCategoryType = 'jobCategories' | 'companyIndustries'
+
+const REMOTE_PREPARATION_LEVEL_OPTIONS = [
+  { value: 'entry', label: '入门' },
+  { value: 'junior', label: '初级' },
+  { value: 'intermediate', label: '中级' },
+  { value: 'advanced', label: '高级' }
+]
 
 const ADMIN_SUB_MODULES: Array<{
   key: AdminSubModule
   label: string
   description: string
   moduleKey?: CorporateEnglishModuleKey
-  categoryType?: 'jobCategories' | 'companyIndustries'
+  categoryType?: ModuleCategoryType
 }> = [
   { key: 'ceo', label: 'CEO访谈', description: '按企业管理 CEO 访谈视频、跟读剪辑和企业文化配置。' },
   { key: 'english_interview', label: '英语面试', moduleKey: 'english_interview', categoryType: 'jobCategories', description: '管理岗位方向相关的英文面试视频内容。' },
+  { key: 'remote_preparation', label: '远程准备', moduleKey: 'remote_preparation', description: '管理远程求职、远程协作和入职准备相关视频内容。' },
   { key: 'foreign_meeting', label: '外企会议', moduleKey: 'foreign_meeting', categoryType: 'companyIndustries', description: '管理行业场景相关的外企会议视频内容。' }
 ]
 type ClipDownloadFormat = 'compressed' | 'wav' | 'm4a'
@@ -995,6 +1004,7 @@ function emptyModuleVideoForm(moduleKey: CorporateEnglishModuleKey): SaveCorpora
     tencentIframeUrl: '',
     videoSource: '',
     category: '',
+    difficultyLevel: '',
     tags: [],
     accessTier: 'vip',
     status: 'draft',
@@ -1012,7 +1022,7 @@ function AdminModuleVideoManager({
   moduleKey: CorporateEnglishModuleKey
   title: string
   description: string
-  categoryType: 'jobCategories' | 'companyIndustries'
+  categoryType?: ModuleCategoryType
 }) {
   const [videos, setVideos] = useState<CorporateEnglishModuleVideo[]>([])
   const [loading, setLoading] = useState(false)
@@ -1038,6 +1048,11 @@ function AdminModuleVideoManager({
       if (current && current.startsWith('blob:')) URL.revokeObjectURL(current)
       return file ? URL.createObjectURL(file) : existingUrl
     })
+  }, [])
+
+  const isRemotePreparation = moduleKey === 'remote_preparation'
+  const getDifficultyLevelLabel = useCallback((value?: string) => {
+    return REMOTE_PREPARATION_LEVEL_OPTIONS.find((option) => option.value === value)?.label || ''
   }, [])
 
   const closeCoverCropDraft = useCallback(() => {
@@ -1076,6 +1091,10 @@ function AdminModuleVideoManager({
   useEffect(() => {
     let cancelled = false
     const loadTagConfig = async () => {
+      if (!categoryType) {
+        setCategoryOptions([])
+        return
+      }
       try {
         const response = await fetch('/api/data/trusted-companies?target=tags')
         const data = await response.json().catch(() => ({}))
@@ -1126,6 +1145,7 @@ function AdminModuleVideoManager({
       tencentIframeUrl: video.tencentIframeUrl,
       videoSource: video.videoSource,
       category: video.category,
+      difficultyLevel: video.difficultyLevel || '',
       tags: video.tags,
       accessTier: video.accessTier,
       status: video.status,
@@ -1164,6 +1184,10 @@ function AdminModuleVideoManager({
     }
     if (!form.tencentIframeUrl.trim()) {
       alert('请填写腾讯视频 iframe 地址')
+      return
+    }
+    if (isRemotePreparation && !form.difficultyLevel) {
+      alert('请选择远程准备级别')
       return
     }
     try {
@@ -1284,13 +1308,22 @@ function AdminModuleVideoManager({
                 <input className="input" value={form.videoSource || ''} onChange={(event) => setForm((prev) => ({ ...prev, videoSource: event.target.value }))} placeholder="可填写来源名称或链接" />
               </label>
               <label className="space-y-1">
-                <span className="text-sm font-bold text-slate-700">类别</span>
-                <select className="input" value={form.category || ''} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
-                  <option value="">请选择类别</option>
-                  {categoryOptions.map((category) => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
+                <span className="text-sm font-bold text-slate-700">{isRemotePreparation ? '级别' : '类别'}</span>
+                {isRemotePreparation ? (
+                  <select className="input" value={form.difficultyLevel || ''} onChange={(event) => setForm((prev) => ({ ...prev, difficultyLevel: event.target.value, category: '' }))}>
+                    <option value="">请选择级别</option>
+                    {REMOTE_PREPARATION_LEVEL_OPTIONS.map((level) => (
+                      <option key={level.value} value={level.value}>{level.label}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <select className="input" value={form.category || ''} onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}>
+                    <option value="">请选择类别</option>
+                    {categoryOptions.map((category) => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                )}
               </label>
               <label className="space-y-1">
                 <span className="text-sm font-bold text-slate-700">自定义标签</span>
@@ -1361,7 +1394,7 @@ function AdminModuleVideoManager({
               <thead className="bg-slate-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">视频</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">类别/标签</th>
+                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">{isRemotePreparation ? '级别/标签' : '类别/标签'}</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">权限</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">状态</th>
                   <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-500">发布时间</th>
@@ -1388,7 +1421,7 @@ function AdminModuleVideoManager({
                       ) : null}
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-600">
-                      <div className="font-semibold text-slate-700">{video.category || '-'}</div>
+                      <div className="font-semibold text-slate-700">{isRemotePreparation ? (getDifficultyLevelLabel(video.difficultyLevel) || '-') : (video.category || '-')}</div>
                       <div className="mt-1 max-w-[300px] truncate text-xs text-slate-400">{formatSimpleTags(video.tags) || '无标签'}</div>
                     </td>
                     <td className="px-4 py-3">
@@ -2493,7 +2526,7 @@ export default function AdminCorporateEnglishPage() {
     }))
   }
 
-  if (mode === 'list' && activeSubModuleMeta.moduleKey && activeSubModuleMeta.categoryType) {
+  if (mode === 'list' && activeSubModuleMeta.moduleKey) {
     return (
       <div className="space-y-6">
         {renderSubModuleTabs()}

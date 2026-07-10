@@ -4,7 +4,7 @@ const CHUNK_SIZE = 1024 * 1024
 export type CorporateEnglishStatus = 'draft' | 'published' | 'archived'
 export type CorporateEnglishAssetKind = 'source_audio' | 'subtitle_csv' | 'clip_audio'
 export type CorporateEnglishAccessTier = 'free' | 'vip'
-export type CorporateEnglishModuleKey = 'english_interview' | 'foreign_meeting'
+export type CorporateEnglishModuleKey = 'english_interview' | 'remote_preparation' | 'foreign_meeting'
 
 export interface CorporateEnglishSubtitleRow {
   source_title?: string
@@ -142,6 +142,8 @@ export interface CorporateEnglishModuleVideo {
   coverImageHeight?: number
   coverImageUpdatedAt?: string
   category: string
+  difficultyLevel?: string
+  difficultyLevelLabel?: string
   tags: string[]
   accessTier: CorporateEnglishAccessTier
   status: CorporateEnglishStatus
@@ -160,6 +162,7 @@ export interface SaveCorporateEnglishModuleVideoPayload {
   coverImageUrl?: string
   coverThumbnailUrl?: string
   category?: string
+  difficultyLevel?: string
   tags?: string[]
   accessTier: CorporateEnglishAccessTier
   status: CorporateEnglishStatus

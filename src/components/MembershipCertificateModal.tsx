@@ -13,7 +13,7 @@ interface MembershipCertificateModalProps {
 }
 
 function formatCertificateName(name: string) {
-  return name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Member|Partner)\)\s*/gi, '').trim() || name;
+  return name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Starter|Member|Partner)\)\s*/gi, '').trim() || name;
 }
 
 export const MembershipCertificateModal: React.FC<MembershipCertificateModalProps> = ({
@@ -60,38 +60,51 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
   const capabilities = deriveMembershipCapabilities(user);
   const isAnnualMember = capabilities.memberType === 'annual' || capabilities.memberType === 'year';
   const isHalfYearMember = capabilities.memberType === 'half_year';
+  const isStarterMember = capabilities.memberType === 'starter';
   const isQuarterMember = capabilities.memberType === 'quarter';
   const isDeepLegacyMember = capabilities.memberType === 'quarter_pro';
-  const certificateTitle = 'Haigoo Remote Club Member';
   const memberLevelLabel = capabilities.isTrialMember
     ? 'Trial'
     : isAnnualMember
       ? 'Partner'
       : isHalfYearMember
         ? 'Member'
-        : isQuarterMember || isDeepLegacyMember
-          ? 'VIP'
-          : 'Club';
+        : isStarterMember
+          ? 'Starter'
+          : isQuarterMember || isDeepLegacyMember
+            ? 'VIP'
+            : 'Club';
+  const certificateTitle = `Haigoo Remote Club ${memberLevelLabel}`;
+  const levelToneClass = isAnnualMember
+    ? 'border-[#e2d7ff] bg-[#f3efff] text-[#6f63f6]'
+    : isHalfYearMember
+      ? 'border-[#f0dfbf] bg-[#fff7e8] text-[#9a6a2d]'
+      : isStarterMember
+        ? 'border-[#dce7ff] bg-[#f2f6ff] text-[#4669d8]'
+        : 'border-[#dcebdd] bg-[#f2fbf3] text-[#4f8a59]';
 
   return createPortal(
     <div className="fixed inset-0 z-[10000] isolate flex items-center justify-center p-4" role="dialog" aria-modal="true">
       <button
         type="button"
         aria-label="关闭会员证书弹窗"
-        className="fixed inset-0 z-0 cursor-default bg-slate-950/70 backdrop-blur-md"
+        className="fixed inset-0 z-0 cursor-default bg-slate-950/50 backdrop-blur-md"
         onClick={onClose}
       />
 
       <div className="relative z-10 w-full max-w-2xl transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.75)]">
+        <div className="overflow-hidden rounded-[28px] border border-[#e4edf5] bg-[#fffdf8] shadow-[0_30px_90px_-52px_rgba(64,78,102,0.36)]">
             {/* Toolbar */}
-            <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
-                <h3 className="font-bold text-slate-800">您的会员证书</h3>
+            <div className="flex items-center justify-between border-b border-[#edf2f6] bg-white/88 px-6 py-4">
+                <div>
+                    <h3 className="text-lg font-black text-slate-950">您的会员证书</h3>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-500">再颠簸的生活，也要闪亮地过！</p>
+                </div>
                 <div className="flex items-center gap-2">
                     <button
                         onClick={handleDownload}
                         disabled={downloading}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-lg transition-colors shadow-sm disabled:opacity-70"
+                        className="flex items-center gap-2 rounded-full bg-[#6f63f6] px-4 py-2 text-sm font-black text-white shadow-[0_14px_32px_-18px_rgba(95,99,246,0.72)] transition-colors hover:bg-[#5d50df] disabled:opacity-70"
                     >
                         {downloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         保存证书
@@ -99,7 +112,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-700"
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-[#edf2f6] bg-white text-slate-400 shadow-sm transition-colors hover:bg-slate-50 hover:text-slate-700"
                         aria-label="关闭"
                     >
                         <X className="h-5 w-5" />
@@ -108,74 +121,90 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
             </div>
 
             {/* Certificate Preview Area */}
-            <div className="p-8 bg-slate-100 flex justify-center overflow-auto">
+            <div className="flex justify-center overflow-auto bg-[linear-gradient(180deg,#f7fbff_0%,#fffdf8_100%)] p-6 sm:p-8">
                 {/* The Certificate Card */}
                 <div 
                     ref={certificateRef}
-                    className="relative w-[600px] h-[350px] bg-gradient-to-br from-[#1a237e] via-[#0d47a1] to-[#006064] rounded-xl shadow-2xl overflow-hidden text-white flex-shrink-0"
+                    className="relative h-[350px] w-[600px] flex-shrink-0 overflow-hidden rounded-[28px] border border-[#dbe8f4] bg-[#fffdf8] text-slate-950 shadow-[0_24px_70px_-46px_rgba(64,78,102,0.42)]"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                 >
-                    {/* Background Pattern */}
-                    <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_50%_120%,#ffffff_0%,transparent_50%)]" />
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16" />
-                    <div className="absolute bottom-0 left-0 w-48 h-48 bg-teal-500/10 rounded-full blur-3xl -ml-12 -mb-12" />
+                    {/* Site illustration background */}
+                    <div className="absolute inset-0">
+                        <img
+                            src="/pic_lists/About_pics/background03.webp"
+                            alt=""
+                            className="absolute inset-0 h-full w-full object-cover object-bottom opacity-70"
+                            crossOrigin="anonymous"
+                        />
+                        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,253,248,0.9)_0%,rgba(248,252,255,0.82)_48%,rgba(244,241,255,0.78)_100%)]" />
+                        <img
+                            src="/pic_lists/About_pics/sun-transparent.webp"
+                            alt=""
+                            className="absolute -right-5 top-8 h-20 w-20 object-contain opacity-75"
+                            crossOrigin="anonymous"
+                        />
+                        <img
+                            src="/pic_lists/About_pics/grass_icon-transparent.webp"
+                            alt=""
+                            className="absolute bottom-[74px] right-14 h-12 w-12 object-contain opacity-28"
+                            crossOrigin="anonymous"
+                        />
+                        <div className="absolute left-0 right-0 top-0 h-24 bg-[linear-gradient(180deg,rgba(239,248,255,0.86)_0%,rgba(255,255,255,0)_100%)]" />
+                    </div>
                     
                     {/* Content */}
-                    <div className="relative z-10 h-full flex flex-col justify-between p-8">
+                    <div className="relative z-10 flex h-full flex-col justify-between p-8">
                         {/* Header */}
                         <div className="flex justify-between items-start">
                             <div>
-                                <h1 className="text-3xl font-bold tracking-tight mb-1 text-white">{certificateTitle}</h1>
-                                <p className="text-white/60 text-xs tracking-widest uppercase">Global Remote Work Club</p>
+                                <h1 className="max-w-[410px] text-3xl font-black tracking-tight text-slate-950">{certificateTitle}</h1>
                             </div>
-                            {/* Top-Right Large Logo */}
-                            <div className="w-24 h-24 opacity-80">
-                                <img src={brandLogoPng} alt="Haigoo Logo" className="w-full h-full object-contain brightness-0 invert" crossOrigin="anonymous" />
+                            <div className="h-12 w-40 overflow-hidden">
+                                <img
+                                    src={brandLogoPng}
+                                    alt="HaigooRemote"
+                                    className="h-full w-full scale-[1.34] object-contain object-center"
+                                    crossOrigin="anonymous"
+                                />
                             </div>
                         </div>
 
                         {/* Middle - Member Info */}
-                        <div className="space-y-6 mt-2">
+                        <div className="mt-2 space-y-5">
                             <div>
-                                <p className="text-indigo-200 text-xs font-medium uppercase tracking-wider mb-1">Member Name</p>
+                                <p className="mb-1 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Member Name</p>
                                 <div className="flex flex-wrap items-center gap-3">
-                                    <h2 className="text-4xl font-bold text-white tracking-wide">{memberName}</h2>
-                                    <span className="inline-flex rounded-full border border-white/24 bg-white/14 px-3 py-1 text-xs font-black tracking-[0.18em] text-white">
+                                    <h2 className="text-4xl font-black tracking-wide text-slate-950">{memberName}</h2>
+                                    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-black tracking-[0.16em] ${levelToneClass}`}>
                                         {memberLevelLabel}
                                     </span>
                                 </div>
                             </div>
                             
-                            <div className="flex items-center gap-12">
-                                <div>
-                                    <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-wider mb-0.5">Member ID</p>
-                                    <p className="text-xl font-mono font-bold text-teal-300 tracking-wider">NO.{displayId}</p>
+                            <div className="flex items-center gap-4">
+                                <div className="rounded-2xl border border-[#edf2f6] bg-white/70 px-4 py-3 shadow-sm">
+                                    <p className="mb-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Member ID</p>
+                                    <p className="font-mono text-xl font-black tracking-wider text-[#6f63f6]">NO.{displayId}</p>
                                 </div>
-                                <div>
-                                    <p className="text-indigo-200 text-[10px] font-medium uppercase tracking-wider mb-0.5">Member Since</p>
-                                    <p className="text-lg font-medium text-white/90">{joinDate}</p>
+                                <div className="rounded-2xl border border-[#edf2f6] bg-white/70 px-4 py-3 shadow-sm">
+                                    <p className="mb-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">Member Since</p>
+                                    <p className="text-lg font-black text-slate-800">{joinDate}</p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Footer */}
-                        <div className="flex justify-between items-end border-t border-white/10 pt-6 mt-auto">
-                            <div>
-                                <p className="text-[10px] text-white/40 leading-relaxed">
-                                    This certificate verifies the membership status within the Haigoo Remote Club.<br/>
-                                    Access to exclusive global opportunities and premium resources.
-                                </p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-sm font-bold text-white/90 tracking-wide mb-0.5">Haigoo Remote</p>
-                                <p className="text-[10px] text-white/50 tracking-wider font-medium">haigooremote.com</p>
-                            </div>
+                        <div className="mt-auto flex items-end justify-between gap-6 border-t border-[#e6edf3] pt-4">
+                            <p className="text-[11px] font-semibold leading-relaxed text-slate-500">用你喜欢的方式过一生。</p>
+                            <p className="text-right text-[10px] font-bold tracking-[0.08em] text-slate-400">
+                                Be free. Work anywhere. Live fully.
+                            </p>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div className="bg-white p-4 text-center text-sm text-slate-500">
+            <div className="bg-white p-4 text-center text-sm font-semibold text-slate-500">
                 点击上方"保存证书"按钮下载图片
             </div>
         </div>

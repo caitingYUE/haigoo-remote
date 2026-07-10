@@ -11,7 +11,13 @@ const PROFILES_TABLE = 'corporate_english_company_profiles'
 const FAVORITES_TABLE = 'corporate_english_clip_favorites'
 const MODULE_VIDEOS_TABLE = 'corporate_english_module_videos'
 const COVER_ASSETS_TABLE = 'corporate_english_cover_assets'
-const VALID_MODULE_KEYS = new Set(['english_interview', 'foreign_meeting'])
+const VALID_MODULE_KEYS = new Set(['english_interview', 'remote_preparation', 'foreign_meeting'])
+const REMOTE_PREPARATION_LEVEL_LABELS = {
+  entry: '入门',
+  junior: '初级',
+  intermediate: '中级',
+  advanced: '高级'
+}
 const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
 const columnSupportCache = new Map()
 
@@ -133,6 +139,8 @@ function mapModuleVideo(row, user) {
     coverImageHeight: row.cover_image_height,
     coverImageUpdatedAt: row.cover_image_updated_at,
     category: row.category || '',
+    difficultyLevel: row.difficulty_level || '',
+    difficultyLevelLabel: REMOTE_PREPARATION_LEVEL_LABELS[row.difficulty_level] || '',
     tags: canExposePublicDetails && Array.isArray(row.tags) ? row.tags : [],
     accessTier,
     durationMs: row.duration_ms,
@@ -155,7 +163,7 @@ function getPermissions(user, companyAccessTier = 'vip') {
   const isAuthenticated = Boolean(user)
   const isFreeCompany = normalizeAccessTier(companyAccessTier) === 'free'
   const hasFullCorporateEnglish = capabilities.isActive && (
-    ['quarter', 'quarter_pro', 'year', 'half_year', 'annual'].includes(capabilities.memberType) ||
+    ['starter', 'quarter', 'quarter_pro', 'year', 'half_year', 'annual'].includes(capabilities.memberType) ||
     capabilities.canAccessCorporateEnglishVideos ||
     capabilities.canAccessCorporateEnglishProfile ||
     capabilities.canAccessCorporateEnglishClips ||
@@ -170,10 +178,10 @@ function getPermissions(user, companyAccessTier = 'vip') {
     canViewResources: isAuthenticated && (isFreeCompany || capabilities.canAccessCorporateEnglishResources),
     canViewSpeakerContacts: hasFullCorporateEnglish,
     canUseFreeSample: isAuthenticated && isFreeCompany,
-    requiredForVideos: 'half_year',
-    requiredForProfile: 'half_year',
-    requiredForClips: 'half_year',
-    requiredForResources: 'half_year'
+    requiredForVideos: 'starter',
+    requiredForProfile: 'starter',
+    requiredForClips: 'starter',
+    requiredForResources: 'starter'
   }
 }
 
@@ -276,7 +284,7 @@ function mapClip(row, favoriteClipIds = new Set(), options = {}) {
       isFavorited: false,
       isLocked: true,
       lockReason: options.lockReason || '人工精选和剪辑后的跟读音频、口语练习重点、字幕等内容。',
-      requiredPlan: options.requiredPlan || 'half_year',
+      requiredPlan: options.requiredPlan || 'starter',
       subtitleCues: []
     }
   }
@@ -299,7 +307,7 @@ function mapClip(row, favoriteClipIds = new Set(), options = {}) {
     isFavorited: unlocked && favoriteClipIds.has(String(row.clip_id)),
     isLocked: !unlocked,
     lockReason: unlocked ? '' : (options.lockReason || '人工精选和剪辑后的跟读音频、口语练习重点、字幕等内容。'),
-    requiredPlan: unlocked ? '' : (options.requiredPlan || 'half_year'),
+    requiredPlan: unlocked ? '' : (options.requiredPlan || 'starter'),
     subtitleCues: storedSubtitleCues.length > 0
       ? storedSubtitleCues
       : (Array.isArray(options.subtitleCues) ? options.subtitleCues : [])
@@ -516,13 +524,19 @@ async function listModuleVideos(req, res, user) {
   if (!moduleKey) return res.status(400).json({ success: false, error: 'Invalid module' })
 
   const category = normalizeString(req.query.category)
+  const difficultyLevel = normalizeString(req.query.difficultyLevel || req.query.difficulty_level || req.query.level)
   const capabilities = deriveMembershipCapabilities(user)
   const canViewMemberVideos = Boolean(capabilities.canAccessCorporateEnglishVideos)
   const params = [moduleKey]
   const conditions = ['module_key = $1', "status = 'published'", 'deleted_at IS NULL']
+  const includeDifficultyLevelField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'difficulty_level')
   if (category && category !== '全部') {
     params.push(category)
     conditions.push(`category = $${params.length}`)
+  }
+  if (includeDifficultyLevelField && moduleKey === 'remote_preparation' && difficultyLevel && difficultyLevel !== '全部') {
+    params.push(difficultyLevel)
+    conditions.push(`difficulty_level = $${params.length}`)
   }
   const requestedLimit = Number(req.query.limit || 48)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 96) : 48
@@ -534,7 +548,8 @@ async function listModuleVideos(req, res, user) {
        video_title,
        description,
        video_source,
-       category,
+       category${includeDifficultyLevelField ? `,
+       difficulty_level` : ''},
        tags,
        access_tier${includeDurationField ? `,
        duration_ms` : ''},
@@ -568,17 +583,36 @@ async function listModuleVideos(req, res, user) {
     rows = await neonHelper.query(buildQuery(selectFields), [...params, canViewMemberVideos, limit])
   }
 
-  const categoryRows = await neonHelper.query(
-    `SELECT category, COUNT(*)::int AS count
-     FROM ${MODULE_VIDEOS_TABLE}
-     WHERE module_key = $1
-       AND status = 'published'
-       AND deleted_at IS NULL
-       AND NULLIF(BTRIM(category), '') IS NOT NULL
-     GROUP BY category
-     ORDER BY MAX(published_at) DESC NULLS LAST, category ASC`,
-    [moduleKey]
-  )
+  const categoryRows = includeDifficultyLevelField && moduleKey === 'remote_preparation'
+    ? await neonHelper.query(
+      `SELECT difficulty_level AS category, COUNT(*)::int AS count
+       FROM ${MODULE_VIDEOS_TABLE}
+       WHERE module_key = $1
+         AND status = 'published'
+         AND deleted_at IS NULL
+         AND NULLIF(BTRIM(difficulty_level), '') IS NOT NULL
+       GROUP BY difficulty_level
+       ORDER BY
+         CASE difficulty_level
+           WHEN 'entry' THEN 10
+           WHEN 'junior' THEN 20
+           WHEN 'intermediate' THEN 30
+           WHEN 'advanced' THEN 40
+           ELSE 999
+         END`,
+      [moduleKey]
+    )
+    : await neonHelper.query(
+      `SELECT category, COUNT(*)::int AS count
+       FROM ${MODULE_VIDEOS_TABLE}
+       WHERE module_key = $1
+         AND status = 'published'
+         AND deleted_at IS NULL
+         AND NULLIF(BTRIM(category), '') IS NOT NULL
+       GROUP BY category
+       ORDER BY MAX(published_at) DESC NULLS LAST, category ASC`,
+      [moduleKey]
+    )
   const totalCount = (categoryRows || []).reduce((sum, row) => sum + Number(row.count || 0), 0)
 
   return res.status(200).json({
@@ -586,7 +620,7 @@ async function listModuleVideos(req, res, user) {
     categories: [
       { label: '全部', value: '全部', count: totalCount },
       ...(categoryRows || []).map((row) => ({
-        label: row.category,
+        label: moduleKey === 'remote_preparation' ? (REMOTE_PREPARATION_LEVEL_LABELS[row.category] || row.category) : row.category,
         value: row.category,
         count: Number(row.count || 0)
       }))
@@ -860,7 +894,7 @@ async function getCompany(req, res, user) {
         lockReason: permissions.isAuthenticated
           ? '人工精选和剪辑后的跟读音频、口语练习重点、字幕等内容。'
           : '跟读音频、翻译等口语练习素材。',
-          requiredPlan: permissions.isAuthenticated ? 'half_year' : ''
+          requiredPlan: permissions.isAuthenticated ? 'starter' : ''
       }))
     clipsByMaterial.set(clip.material_id, list)
   }

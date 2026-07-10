@@ -65,6 +65,10 @@
     {
       "path": "/api/cron/cleanup-analytics",
       "schedule": "20 2 * * *"
+    },
+    {
+      "path": "/api/cron/daily-digest",
+      "schedule": "30 2 * * *"
     }
   ],
   "rewrites": [

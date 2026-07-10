@@ -44,7 +44,7 @@ export interface CorporateEnglishPublicClip {
   isFavorited: boolean
   isLocked?: boolean
   lockReason?: string
-  requiredPlan?: 'half_year' | 'annual' | ''
+  requiredPlan?: 'starter' | 'half_year' | 'annual' | ''
   materialTitle?: string
   companyName?: string
   speakerName?: string
@@ -97,6 +97,8 @@ export interface CorporateEnglishPublicModuleVideo {
   coverImageHeight?: number
   coverImageUpdatedAt?: string
   category: string
+  difficultyLevel?: string
+  difficultyLevelLabel?: string
   tags: string[]
   accessTier: CorporateEnglishAccessTier
   durationMs?: number
@@ -165,10 +167,10 @@ export interface CorporateEnglishCompanyDetail {
     canViewResources: boolean
     canViewSpeakerContacts: boolean
     canUseFreeSample: boolean
-      requiredForVideos: 'half_year'
-      requiredForProfile: 'half_year'
-      requiredForClips: 'half_year'
-      requiredForResources: 'half_year'
+      requiredForVideos: 'starter'
+      requiredForProfile: 'starter'
+      requiredForClips: 'starter'
+      requiredForResources: 'starter'
     }
   profile: {
     cultureSections: CorporateEnglishPublicSection[]
@@ -230,9 +232,11 @@ export const corporateEnglishPublicService = {
   async listModuleVideos(params: {
     module: CorporateEnglishModuleKey
     category?: string
+    limit?: number
   }) {
     const query = new URLSearchParams({ resource: 'module-videos', module: params.module })
     if (params.category) query.set('category', params.category)
+    if (params.limit) query.set('limit', String(params.limit))
     const data = await readJson<{
       success: boolean
       categories: CorporateEnglishPublicCategory[]

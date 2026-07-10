@@ -10,9 +10,12 @@ interface HeaderProps {
 }
 
 function formatHeaderDisplayName(name: string, memberType?: string | null) {
-  const normalized = name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Member|Partner)\)\s*/gi, '').trim()
+  const normalized = name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Starter|Member|Partner)\)\s*/gi, '').trim()
   if ((memberType === 'quarter' || memberType === 'quarter_pro') && normalized) {
     return `${normalized}（VIP）`
+  }
+  if (memberType === 'starter' && normalized) {
+    return `${normalized}（Starter）`
   }
   if (memberType === 'half_year' && normalized) {
     return `${normalized}（Member）`
@@ -300,7 +303,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
             >
-              外企英语
+              职业成长
               <span className="absolute left-full top-0 ml-px -translate-y-1.5 text-[10px] font-black leading-none text-emerald-500">
                 新
               </span>
@@ -610,7 +613,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 <span className="relative inline-flex items-center">
-                  外企英语
+                  职业成长
                   <span className="ml-0.5 -translate-y-1 text-[10px] font-black leading-none text-emerald-500">
                     新
                   </span>

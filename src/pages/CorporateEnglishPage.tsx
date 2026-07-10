@@ -52,7 +52,7 @@ type CorporateEnglishPageModule = 'ceo' | 'interview' | 'meeting'
 const MODULE_TABS: Array<{ key: CorporateEnglishPageModule; label: string; moduleKey?: CorporateEnglishModuleKey; description: string }> = [
   { key: 'ceo', label: 'CEO访谈', description: '看真实企业访谈，学习商业表达和企业文化。' },
   { key: 'interview', label: '英语面试', moduleKey: 'english_interview', description: '刷外企面试视频，速通英文面试。' },
-  { key: 'meeting', label: '外企会议', moduleKey: 'foreign_meeting', description: '体验真实外企会议，提前适应远程工作。' }
+  { key: 'meeting', label: '远程会议', moduleKey: 'foreign_meeting', description: '提前适应远程工作环境，丝滑过渡。' }
 ]
 
 const CORPORATE_ENGLISH_SECTION_KEYS: Record<CorporateEnglishPageModule, string> = {
@@ -1501,7 +1501,7 @@ export default function CorporateEnglishPage() {
     setDetail(nextDetail)
   }, [selectedCompanyId])
 
-  const openMembershipModal = useCallback((_preferredPlan: 'half_year' | 'annual' = 'half_year') => {
+  const openMembershipModal = useCallback((_preferredPlan: 'starter' | 'half_year' | 'annual' = 'starter') => {
     navigate('/profile?tab=membership#club-service-plans')
   }, [navigate])
   const handleLockedAction = useCallback(() => {
@@ -1509,7 +1509,7 @@ export default function CorporateEnglishPage() {
       navigate('/login')
       return
     }
-    openMembershipModal('half_year')
+    openMembershipModal('starter')
   }, [isAuthenticated, navigate, openMembershipModal])
   const lockedCtaLabel = isAuthenticated ? '了解会员服务' : '需登录'
 
@@ -1520,7 +1520,7 @@ export default function CorporateEnglishPage() {
       return
     }
     showWarning('会员内容', video.lockReason || '升级会员后可播放该视频。')
-    openMembershipModal('half_year')
+    openMembershipModal('starter')
   }, [isAuthenticated, navigate, openMembershipModal, showWarning])
 
   const trackClipPlay = useCallback((clip: CorporateEnglishPublicClip) => {
