@@ -85,11 +85,10 @@ function getPublishedTime(value?: string) {
 
 function sortForAudience<T extends { accessTier?: string; publishedAt?: string; updatedAt?: string; sortOrder?: number }>(
   videos: T[],
-  isAuthenticated: boolean,
-  isMember: boolean
+  canViewMemberVideos: boolean
 ) {
   const nextVideos = [...videos]
-  if (!isAuthenticated || isMember) {
+  if (canViewMemberVideos) {
     return nextVideos.sort((a, b) => getPublishedTime(b.publishedAt || b.updatedAt) - getPublishedTime(a.publishedAt || a.updatedAt))
   }
   return nextVideos.sort((a, b) => {
@@ -420,9 +419,9 @@ function ModuleTalkCard({
     <Link
       to={href}
       onClick={() => !isGuest && trackVideoOpen(section, video.videoId, `${section}_${featured ? 'featured' : 'card'}_${index}`, section === 'remote_preparation' ? video.difficultyLevel || '' : video.category)}
-      className={`group block min-w-0 rounded-[22px] border border-[#dbe8f4] bg-white p-3 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] transition hover:-translate-y-1 hover:no-underline ${featured ? '' : ''}`}
+      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white p-3 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] transition hover:-translate-y-1 hover:no-underline ${featured ? '' : ''}`}
     >
-      <div className={`relative overflow-hidden rounded-[18px] bg-white ${featured ? 'aspect-[16/9]' : 'aspect-video'}`}>
+      <div className={`relative shrink-0 overflow-hidden rounded-[18px] bg-white ${featured ? 'aspect-[16/9]' : 'aspect-video'}`}>
         <PosterFrame
           src={video.coverThumbnailUrl || video.coverImageUrl}
           title={video.title}
@@ -444,7 +443,16 @@ function ModuleTalkCard({
       </div>
       <h3 className={`${featured ? 'mt-2 text-2xl md:text-3xl' : section === 'foreign_meeting' ? 'mt-1.5 line-clamp-2 text-xl' : section === 'remote_preparation' ? 'mt-2 line-clamp-2 text-xl' : 'mt-2 line-clamp-2 min-h-[3.5rem] text-xl'} font-black leading-tight tracking-tight`}>{video.title}</h3>
       {!isGuest && (featured || showDescription) ? <p className={`${featured ? 'mt-3 text-base' : section === 'remote_preparation' ? 'mt-2 text-sm leading-6' : section === 'foreign_meeting' ? 'mt-3 text-sm' : 'mt-3 text-sm leading-7'} line-clamp-3 max-w-full text-slate-700`}>{video.description}</p> : null}
-      <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
+      <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500 ${featured ? '' : 'mt-auto pt-1'}`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
+      {!isGuest ? (
+        <div className="pointer-events-none absolute inset-0 z-20 flex min-h-0 translate-y-6 flex-col overflow-hidden bg-white p-5 opacity-0 shadow-[inset_0_0_0_1px_rgba(219,232,244,0.9)] transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+          <div className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{video.title}</div>
+          <div className="mt-2 shrink-0 truncate text-sm font-semibold text-[#e11d48]">{getModuleVideoEyebrow(video, section)} · {formatDateLabel(video.publishedAt) || '精选视频'}</div>
+          <p className="mt-4 line-clamp-8 min-h-0 max-h-[11.6rem] text-[13px] leading-[1.45rem] text-slate-700">
+            {video.description || `${SECTION_LABELS[section]}精选视频，帮助你理解真实远程工作场景和表达方式。`}
+          </p>
+        </div>
+      ) : null}
     </Link>
   )
 }
@@ -671,7 +679,7 @@ function RemotePreparationSection({
           </p>
         </div>
       </div>
-      <div className="flex gap-6 overflow-x-auto pb-3">
+      <div className="flex items-stretch gap-6 overflow-x-auto pb-3">
         {(isGuest ? videos.slice(0, 6) : videos).map((video, index) => (
           <div key={video.videoId} className="w-[78vw] min-w-[280px] shrink-0 md:w-[31%] md:min-w-[300px] lg:w-[30%] xl:w-[28.5%] 2xl:w-[28%]">
             <ModuleTalkCard
@@ -689,7 +697,7 @@ function RemotePreparationSection({
 }
 
 export default function CorporateEnglishTalksPage() {
-  const { isAuthenticated, isMember } = useAuth()
+  const { isAuthenticated, isMember, membershipCapabilities } = useAuth()
   const { showError } = useNotificationHelpers()
   const showErrorRef = useRef(showError)
   const [ceoLoading, setCeoLoading] = useState(true)
@@ -820,10 +828,11 @@ export default function CorporateEnglishTalksPage() {
     remoteVideos.length
   ])
 
-  const sortedCeoVideos = useMemo(() => sortForAudience(ceoVideos, isAuthenticated, isMember), [ceoVideos, isAuthenticated, isMember])
-  const sortedInterviewVideos = useMemo(() => sortForAudience(interviewVideos, isAuthenticated, isMember), [interviewVideos, isAuthenticated, isMember])
-  const sortedRemoteVideos = useMemo(() => sortForAudience(remoteVideos, isAuthenticated, isMember), [remoteVideos, isAuthenticated, isMember])
-  const sortedMeetingVideos = useMemo(() => sortForAudience(meetingVideos, isAuthenticated, isMember), [meetingVideos, isAuthenticated, isMember])
+  const canViewMemberVideos = Boolean(membershipCapabilities.canAccessCorporateEnglishVideos)
+  const sortedCeoVideos = useMemo(() => sortForAudience(ceoVideos, canViewMemberVideos), [ceoVideos, canViewMemberVideos])
+  const sortedInterviewVideos = useMemo(() => sortForAudience(interviewVideos, canViewMemberVideos), [interviewVideos, canViewMemberVideos])
+  const sortedRemoteVideos = useMemo(() => sortForAudience(remoteVideos, canViewMemberVideos), [remoteVideos, canViewMemberVideos])
+  const sortedMeetingVideos = useMemo(() => sortForAudience(meetingVideos, canViewMemberVideos), [meetingVideos, canViewMemberVideos])
   const isGuest = !isAuthenticated
   const heroVideo = sortedCeoVideos[0]
   const otherCeoVideos = sortedCeoVideos.slice(1)
