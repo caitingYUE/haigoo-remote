@@ -533,7 +533,7 @@ function ModuleInfoPanel({ video }: { video: CorporateEnglishPublicModuleVideo }
           {video.videoSource ? <span>视频来自 {video.videoSource}</span> : null}
         </div>
         {video.description ? (
-          <p className="mt-5 text-base leading-8 text-slate-700">{video.description}</p>
+          <p className="mt-5 whitespace-pre-line break-words text-base leading-8 text-slate-700">{video.description}</p>
         ) : (
           <p className="mt-5 rounded-2xl border border-dashed border-[#dbe8f4] p-5 text-sm font-semibold text-slate-500">暂无视频简介。</p>
         )}
@@ -636,7 +636,7 @@ function CompanyInfoTabs({
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6251f5] text-sm font-black text-white">{index + 1}</span>
               <div>
                 <h3 className="text-base font-black text-slate-950">{section.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">{section.body}</p>
+                <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{section.body}</p>
               </div>
             </div>
           </article>

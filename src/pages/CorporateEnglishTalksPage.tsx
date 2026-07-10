@@ -73,7 +73,7 @@ function formatDuration(ms?: number) {
 }
 
 function truncateText(value: string | undefined, maxLength = 260) {
-  const text = String(value || '').replace(/\s+/g, ' ').trim()
+  const text = String(value || '').trim()
   if (text.length <= maxLength) return text
   return `${text.slice(0, maxLength).trim()}...`
 }
@@ -141,6 +141,22 @@ function PlayOverlay({ label = '' }: { label?: string }) {
       {label ? <Lock className="h-5 w-5" /> : <Play className="ml-1 h-6 w-6 fill-current" />}
       {label ? <span className="text-sm font-black">{label}</span> : null}
     </span>
+  )
+}
+
+function SummaryPreviewText({ children }: { children: string }) {
+  return (
+    <p
+      className="mt-4 whitespace-pre-line break-words text-[13px] leading-6 text-slate-700"
+      style={{
+        display: '-webkit-box',
+        WebkitBoxOrient: 'vertical',
+        WebkitLineClamp: 7,
+        overflow: 'hidden'
+      }}
+    >
+      {children}
+    </p>
   )
 }
 
@@ -223,13 +239,13 @@ function trackModuleView(section: TalkSectionKey, videoCount: number, isAuthenti
   })
 }
 
-function LockedPosterOverlay() {
+function LoginPosterOverlay({ label = '登录后播放' }: { label?: string }) {
   return (
-    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950/28 text-white">
-      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/92 text-[#6251f5] shadow-sm">
-        <Lock className="h-5 w-5" />
+    <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/20 text-white">
+      <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-4 py-2 text-sm font-black text-[#6251f5] shadow-[0_14px_34px_rgba(15,23,42,0.16)] backdrop-blur">
+        <Lock className="h-4 w-4" />
+        {label}
       </span>
-      <span className="rounded-full bg-white/92 px-4 py-1.5 text-sm font-black text-slate-800">需登录</span>
     </div>
   )
 }
@@ -245,7 +261,7 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
         <h1 className="mt-3 text-4xl font-black leading-[1.06] tracking-tight text-slate-950 md:text-5xl">
           {video.materialTitle}
         </h1>
-        {!isGuest ? <p className="mt-4 max-w-3xl text-base leading-7 text-slate-700">
+        {!isGuest ? <p className="mt-4 max-w-3xl whitespace-pre-line text-base leading-7 text-slate-700">
           {truncateText(video.videoSummary, 220) || `跟随 ${video.speakerName} 的真实访谈，理解企业文化、商业思维和外企表达。`}
         </p> : null}
         <div className="mt-4 text-base font-semibold text-slate-500">
@@ -271,18 +287,19 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
           src={video.coverImageUrl}
           title={video.materialTitle}
           eyebrow={video.companyName}
-          className={`transition duration-500 group-hover:scale-[1.025] ${isGuest ? 'blur-sm scale-[1.02]' : ''}`}
+          className="transition duration-500 group-hover:scale-[1.025]"
           loading="eager"
           tone="ceo"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/10 via-transparent to-transparent" />
+        <div className={`absolute inset-0 ${isGuest ? 'bg-gradient-to-t from-slate-950/20 via-transparent to-white/10' : 'bg-gradient-to-t from-slate-950/10 via-transparent to-transparent'}`} />
         {!isGuest ? <div className="absolute right-4 top-4">
           <AccessPill locked={video.isVideoLocked} accessTier={video.accessTier} />
         </div> : null}
-        {isGuest ? <LockedPosterOverlay /> : null}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <PlayOverlay label={isGuest ? '登录后播放' : ''} />
-        </div>
+        {isGuest ? <LoginPosterOverlay /> : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <PlayOverlay />
+          </div>
+        )}
         {formatDuration(video.durationMs) ? (
           <div className="absolute bottom-4 right-4 rounded-full bg-white/90 px-3 py-1 text-sm font-black text-slate-700 shadow-sm">{formatDuration(video.durationMs)}</div>
         ) : null}
@@ -304,14 +321,14 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
           src={video.coverThumbnailUrl || video.coverImageUrl}
           title={video.materialTitle}
           eyebrow={video.companyName}
-          className={`transition duration-500 group-hover:scale-[1.04] ${isGuest ? 'blur-sm scale-[1.02]' : ''}`}
+          className="transition duration-500 group-hover:scale-[1.04]"
           tone="ceo"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-transparent opacity-0 transition group-hover:opacity-100" />
+        <div className={`absolute inset-0 transition ${isGuest ? 'bg-slate-950/10' : 'bg-gradient-to-t from-slate-950/25 via-transparent to-transparent opacity-0 group-hover:opacity-100'}`} />
         {!isGuest ? <div className="absolute right-2 top-2">
           <AccessPill locked={video.isVideoLocked} accessTier={video.accessTier} />
         </div> : null}
-        {isGuest ? <LockedPosterOverlay /> : null}
+        {isGuest ? <LoginPosterOverlay label="登录后播放" /> : null}
       </div>
       <div className="mt-4 flex items-center justify-between gap-3">
         <div className="min-w-0 truncate text-xs font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{video.companyName}</div>
@@ -325,9 +342,7 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
       {!isGuest ? <div className="pointer-events-none absolute inset-0 z-20 flex min-h-0 flex-col overflow-hidden bg-white p-5 opacity-0 shadow-[inset_0_0_0_1px_rgba(219,232,244,0.9)] transition duration-200 group-hover:opacity-100">
         <div className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{video.materialTitle}</div>
         <div className="mt-2 shrink-0 truncate text-sm font-semibold text-[#e11d48]">{video.companyName} · {video.speakerName}</div>
-        <p className="mt-4 line-clamp-8 min-h-0 max-h-[11.6rem] text-[13px] leading-[1.45rem] text-slate-700">
-          {video.videoSummary || `${video.speakerName} 分享 ${video.companyName} 的文化、业务和表达方式。`}
-        </p>
+        <SummaryPreviewText>{video.videoSummary || `${video.speakerName} 分享 ${video.companyName} 的文化、业务和表达方式。`}</SummaryPreviewText>
       </div> : null}
     </Link>
   )
@@ -426,14 +441,15 @@ function ModuleTalkCard({
           src={video.coverThumbnailUrl || video.coverImageUrl}
           title={video.title}
           eyebrow={getModuleVideoEyebrow(video, section)}
-          className={`transition duration-500 group-hover:scale-[1.04] ${isGuest ? 'blur-sm scale-[1.02]' : ''}`}
+          className="transition duration-500 group-hover:scale-[1.04]"
           loading={featured ? 'eager' : 'lazy'}
           tone={SECTION_TONE[section]}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/8 via-transparent to-transparent opacity-80" />
+        <div className={`absolute inset-0 ${isGuest ? 'bg-slate-950/10' : 'bg-gradient-to-t from-slate-950/8 via-transparent to-transparent opacity-80'}`} />
         {!isGuest ? <div className="absolute right-3 top-3"><AccessPill locked={video.isLocked} accessTier={video.accessTier} /></div> : null}
-        {isGuest ? <LockedPosterOverlay /> : null}
-        <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100"><PlayOverlay label={isGuest ? '登录后播放' : ''} /></div>
+        {isGuest ? <LoginPosterOverlay label="登录后播放" /> : (
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100"><PlayOverlay /></div>
+        )}
       </div>
       <div className={`${section === 'foreign_meeting' ? 'mt-3' : 'mt-4'} flex items-center justify-between gap-3`}>
         <div className="min-w-0 truncate text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{getModuleVideoEyebrow(video, section)}</div>
@@ -448,9 +464,7 @@ function ModuleTalkCard({
         <div className="pointer-events-none absolute inset-0 z-20 flex min-h-0 translate-y-6 flex-col overflow-hidden bg-white p-5 opacity-0 shadow-[inset_0_0_0_1px_rgba(219,232,244,0.9)] transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
           <div className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{video.title}</div>
           <div className="mt-2 shrink-0 truncate text-sm font-semibold text-[#e11d48]">{getModuleVideoEyebrow(video, section)} · {formatDateLabel(video.publishedAt) || '精选视频'}</div>
-          <p className="mt-4 line-clamp-8 min-h-0 max-h-[11.6rem] text-[13px] leading-[1.45rem] text-slate-700">
-            {video.description || `${SECTION_LABELS[section]}精选视频，帮助你理解真实远程工作场景和表达方式。`}
-          </p>
+          <SummaryPreviewText>{video.description || `${SECTION_LABELS[section]}精选视频，帮助你理解真实远程工作场景和表达方式。`}</SummaryPreviewText>
         </div>
       ) : null}
     </Link>
