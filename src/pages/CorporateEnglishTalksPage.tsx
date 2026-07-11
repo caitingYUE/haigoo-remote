@@ -57,7 +57,6 @@ const TONE_STYLES: Record<PosterTone, { tag: string; surface: string; title: str
 }
 
 const CEO_PAGE_SIZE = 8
-const MODULE_PAGE_SIZE = 8
 const DRAG_SCROLL_MIN_DISTANCE = 4
 const DRAG_PAGE_RELEASE_DISTANCE = 48
 const HORIZONTAL_WHEEL_RATIO = 0.65
@@ -106,22 +105,76 @@ function clampPage(page: number, pageCount: number) {
   return Math.min(Math.max(page, 0), Math.max(0, pageCount - 1))
 }
 
+function getRailCardWidth(viewportWidth: number, columns: number, gap: number, minWidth = 220) {
+  if (!viewportWidth) return undefined
+  return Math.max(minWidth, (viewportWidth - gap * columns) / columns)
+}
+
+function getModuleRailLayout(section: Exclude<TalkSectionKey, 'ceo'>, viewportWidth: number) {
+  if (section === 'foreign_meeting') {
+    if (viewportWidth >= 1024) return { columns: 4, gap: 16 }
+    if (viewportWidth >= 640) return { columns: 2, gap: 16 }
+    return { columns: 1, gap: 16 }
+  }
+  if (viewportWidth >= 1536) return { columns: 4, gap: 24 }
+  if (viewportWidth >= 1280) return { columns: 3, gap: 24 }
+  if (viewportWidth >= 640) return { columns: 2, gap: 24 }
+  return { columns: 1, gap: 24 }
+}
+
+function orderForTwoRowRail<T>(items: T[], pageSize: number, columns: number) {
+  const ordered: T[] = []
+  for (let pageStart = 0; pageStart < items.length; pageStart += pageSize) {
+    const pageItems = items.slice(pageStart, pageStart + pageSize)
+    for (let column = 0; column < columns; column += 1) {
+      const top = pageItems[column]
+      const bottom = pageItems[column + columns]
+      if (top !== undefined) ordered.push(top)
+      if (bottom !== undefined) ordered.push(bottom)
+    }
+  }
+  return ordered
+}
+
+function getWindowWidth() {
+  return typeof window === 'undefined' ? 0 : window.innerWidth
+}
+
+function useWindowWidth() {
+  const [width, setWidth] = useState(getWindowWidth)
+
+  useEffect(() => {
+    const updateWidth = () => setWidth(getWindowWidth())
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [])
+
+  return width
+}
+
 function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; disabled?: boolean }) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const dragRef = useRef<{ pointerId: number; x: number; scrollLeft: number; page: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
   const pageUpdateFrameRef = useRef<number | null>(null)
   const [currentPage, setCurrentPage] = useState(0)
+  const [viewportWidth, setViewportWidth] = useState(0)
   const safePageCount = Math.max(1, pageCount)
   const enabled = !disabled && safePageCount > 1
+
+  const getPageFromScroll = useCallback((node: HTMLDivElement) => {
+    const width = node.clientWidth || 1
+    const maxScroll = Math.max(0, node.scrollWidth - node.clientWidth)
+    if (node.scrollLeft >= maxScroll - 2) return safePageCount - 1
+    return clampPage(Math.round(node.scrollLeft / width), safePageCount)
+  }, [safePageCount])
 
   const readCurrentPageFromScroll = useCallback(() => {
     const node = scrollRef.current
     if (!node) return
-    const width = node.clientWidth || 1
-    const nextPage = clampPage(Math.round(node.scrollLeft / width), safePageCount)
+    const nextPage = getPageFromScroll(node)
     setCurrentPage((page) => (page === nextPage ? page : nextPage))
-  }, [safePageCount])
+  }, [getPageFromScroll])
 
   const scheduleCurrentPageUpdate = useCallback(() => {
     if (pageUpdateFrameRef.current !== null) return
@@ -136,7 +189,9 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
     setCurrentPage(nextPage)
     const node = scrollRef.current
     if (!node) return
-    node.scrollTo({ left: nextPage * node.clientWidth, behavior })
+    const maxScroll = Math.max(0, node.scrollWidth - node.clientWidth)
+    const targetLeft = nextPage >= safePageCount - 1 ? maxScroll : Math.min(nextPage * node.clientWidth, maxScroll)
+    node.scrollTo({ left: targetLeft, behavior })
   }, [safePageCount])
 
   useEffect(() => {
@@ -148,6 +203,22 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [currentPage, scrollToPage])
+
+  useEffect(() => {
+    const node = scrollRef.current
+    if (!node) return
+    const updateWidth = () => setViewportWidth(node.clientWidth)
+    updateWidth()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateWidth)
+      observer.observe(node)
+      return () => observer.disconnect()
+    }
+
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -164,7 +235,7 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
     if (event.pointerType === 'mouse' && event.button !== 0) return
     const node = scrollRef.current
     if (!node) return
-    const page = clampPage(Math.round(node.scrollLeft / (node.clientWidth || 1)), safePageCount)
+    const page = getPageFromScroll(node)
     dragRef.current = { x: event.clientX, scrollLeft: node.scrollLeft, page, pointerId: event.pointerId, moved: false }
     suppressClickRef.current = false
     try {
@@ -245,6 +316,7 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
     currentPage,
     scrollRef,
     scrollToPage,
+    viewportWidth,
     handlers: {
       onScroll,
       onPointerDown,
@@ -508,17 +580,15 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
 }
 
 function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVideo[]; isGuest: boolean }) {
-  const pages = useMemo(() => {
-    const nextPages: CorporateEnglishPublicCeoVideo[][] = []
-    for (let index = 0; index < videos.length; index += CEO_PAGE_SIZE) {
-      nextPages.push(videos.slice(index, index + CEO_PAGE_SIZE))
-    }
-    return nextPages
-  }, [videos])
-  const visiblePages = isGuest ? pages.slice(0, 1) : pages
-  const pageCount = Math.max(1, visiblePages.length)
+  const visibleVideos = useMemo(() => (isGuest ? videos.slice(0, CEO_PAGE_SIZE) : videos), [isGuest, videos])
+  const orderedVisibleVideos = useMemo(
+    () => orderForTwoRowRail(visibleVideos.map((video, index) => ({ video, index })), CEO_PAGE_SIZE, 4),
+    [visibleVideos]
+  )
+  const pageCount = Math.max(1, Math.ceil(visibleVideos.length / CEO_PAGE_SIZE))
   const carousel = usePagedHorizontalScroll({ pageCount, disabled: isGuest })
-  const { currentPage, scrollRef, scrollToPage, handlers } = carousel
+  const { currentPage, scrollRef, scrollToPage, viewportWidth, handlers } = carousel
+  const cardWidth = getRailCardWidth(viewportWidth, 4, 20, 250)
   const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
   const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
 
@@ -571,13 +641,15 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
         className="hidden select-none overflow-x-auto overscroll-x-contain pb-2 touch-pan-y [scrollbar-width:none] md:block [&::-webkit-scrollbar]:hidden"
         {...handlers}
       >
-        <div className="flex">
-          {visiblePages.map((page, pageIndex) => (
-            <div key={pageIndex} className="grid w-full shrink-0 grid-cols-4 gap-5">
-              {page.map((video, index) => (
-                <CeoCard key={video.materialId} video={video} index={pageIndex * CEO_PAGE_SIZE + index} isGuest={isGuest} />
-              ))}
-            </div>
+        <div
+          className="grid grid-flow-col grid-rows-2 gap-5"
+          style={{
+            gridAutoColumns: cardWidth ? `${cardWidth}px` : undefined,
+            minWidth: viewportWidth && pageCount > 1 ? `${viewportWidth * pageCount}px` : undefined
+          }}
+        >
+          {orderedVisibleVideos.map(({ video, index }) => (
+            <CeoCard key={video.materialId} video={video} index={index} isGuest={isGuest} />
           ))}
         </div>
       </div>
@@ -738,18 +810,18 @@ function ModuleSection({
   isGuest: boolean
 }) {
   const shouldUseFeaturedLayout = section === 'english_interview' && featuredLayout && videos.length <= 5 && !isGuest
-  const pageSize = MODULE_PAGE_SIZE
-  const pages = useMemo(() => {
-    const nextPages: CorporateEnglishPublicModuleVideo[][] = []
-    for (let index = 0; index < videos.length; index += pageSize) {
-      nextPages.push(videos.slice(index, index + pageSize))
-    }
-    return nextPages
-  }, [pageSize, videos])
-  const visiblePages = isGuest ? pages.slice(0, 1) : pages
-  const pageCount = Math.max(1, visiblePages.length)
+  const windowWidth = useWindowWidth()
+  const railLayout = getModuleRailLayout(section, windowWidth)
+  const pageSize = Math.max(1, railLayout.columns * 2)
+  const visibleVideos = useMemo(() => (isGuest ? videos.slice(0, pageSize) : videos), [isGuest, pageSize, videos])
+  const pageCount = Math.max(1, Math.ceil(visibleVideos.length / pageSize))
   const carousel = usePagedHorizontalScroll({ pageCount, disabled: isGuest })
-  const { currentPage, scrollRef, scrollToPage, handlers } = carousel
+  const { currentPage, scrollRef, scrollToPage, viewportWidth, handlers } = carousel
+  const moduleCardWidth = getRailCardWidth(viewportWidth, railLayout.columns, railLayout.gap, 250)
+  const orderedVisibleVideos = useMemo(
+    () => orderForTwoRowRail(visibleVideos.map((video, index) => ({ video, index })), railLayout.columns * 2, railLayout.columns),
+    [railLayout.columns, visibleVideos]
+  )
   const [hero, ...rest] = videos
   const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
   const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
@@ -807,20 +879,22 @@ function ModuleSection({
         className="select-none overflow-x-auto overscroll-x-contain pb-1 touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         {...handlers}
       >
-        <div className="flex">
-          {visiblePages.map((page, pageIndex) => (
-            <div key={pageIndex} className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} w-full shrink-0`}>
-              {page.map((video, index) => (
-                <ModuleTalkCard
-                  key={video.videoId}
-                  video={video}
-                  section={section}
-                  index={pageIndex * pageSize + index}
-                  isGuest={isGuest}
-                  showDescription={section !== 'foreign_meeting' && !shouldUseFeaturedLayout}
-                />
-              ))}
-            </div>
+        <div
+          className={`${section === 'foreign_meeting' ? 'gap-4' : 'gap-6'} grid grid-flow-col grid-rows-2`}
+          style={{
+            gridAutoColumns: moduleCardWidth ? `${moduleCardWidth}px` : undefined,
+            minWidth: viewportWidth && pageCount > 1 ? `${viewportWidth * pageCount}px` : undefined
+          }}
+        >
+          {orderedVisibleVideos.map(({ video, index }) => (
+            <ModuleTalkCard
+              key={video.videoId}
+              video={video}
+              section={section}
+              index={index}
+              isGuest={isGuest}
+              showDescription={section !== 'foreign_meeting' && !shouldUseFeaturedLayout}
+            />
           ))}
         </div>
       </div>
