@@ -58,10 +58,11 @@ const TONE_STYLES: Record<PosterTone, { tag: string; surface: string; title: str
 
 const CEO_PAGE_SIZE = 8
 const MODULE_PAGE_SIZE = 8
-const SWIPE_PAGE_MIN_DISTANCE = 56
-const SWIPE_PAGE_VERTICAL_RATIO = 1.25
-const WHEEL_PAGE_MIN_DISTANCE = 44
-const WHEEL_PAGE_COOLDOWN_MS = 460
+const SWIPE_PAGE_MIN_DISTANCE = 24
+const SWIPE_PAGE_VERTICAL_RATIO = 0.75
+const WHEEL_PAGE_MIN_DISTANCE = 28
+const WHEEL_PAGE_COOLDOWN_MS = 320
+const WHEEL_PAGE_ACCUMULATE_MS = 180
 
 function formatDateLabel(value?: string) {
   if (!value) return ''
@@ -118,7 +119,10 @@ function useSwipePager({
 }) {
   const startRef = useRef<{ x: number; y: number; pointerId: number } | null>(null)
   const suppressClickRef = useRef(false)
+  const swipedRef = useRef(false)
   const wheelLockedRef = useRef(false)
+  const wheelAccumRef = useRef({ x: 0, y: 0 })
+  const wheelResetRef = useRef<number | null>(null)
   const enabled = !disabled && pageCount > 1
 
   const suppressNextClick = useCallback(() => {
@@ -128,17 +132,47 @@ function useSwipePager({
     }, 320)
   }, [])
 
+  const flipFromDelta = useCallback((deltaX: number, deltaY: number) => {
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(deltaY)
+    if (absX < SWIPE_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return false
+
+    if (deltaX < 0 && currentPage < pageCount - 1) {
+      suppressNextClick()
+      onNext()
+      return true
+    }
+    if (deltaX > 0 && currentPage > 0) {
+      suppressNextClick()
+      onPrev()
+      return true
+    }
+    return false
+  }, [currentPage, onNext, onPrev, pageCount, suppressNextClick])
+
   const onPointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
     if (!enabled || !event.isPrimary) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
     startRef.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }
     suppressClickRef.current = false
+    swipedRef.current = false
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
     } catch (_) {
       // Some browsers may not support capture on this target.
     }
   }, [enabled])
+
+  const onPointerMove = useCallback((event: PointerEvent<HTMLElement>) => {
+    const start = startRef.current
+    if (!enabled || !start || swipedRef.current || start.pointerId !== event.pointerId) return
+
+    const didFlip = flipFromDelta(event.clientX - start.x, event.clientY - start.y)
+    if (didFlip) {
+      swipedRef.current = true
+      event.preventDefault()
+    }
+  }, [enabled, flipFromDelta])
 
   const onPointerUp = useCallback((event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
@@ -151,24 +185,14 @@ function useSwipePager({
       // Ignore capture release differences across browsers.
     }
     if (!enabled || !start || start.pointerId !== event.pointerId) return
+    if (swipedRef.current) return
 
-    const deltaX = event.clientX - start.x
-    const deltaY = event.clientY - start.y
-    const absX = Math.abs(deltaX)
-    const absY = Math.abs(deltaY)
-    if (absX < SWIPE_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return
-
-    if (deltaX < 0 && currentPage < pageCount - 1) {
-      suppressNextClick()
-      onNext()
-    } else if (deltaX > 0 && currentPage > 0) {
-      suppressNextClick()
-      onPrev()
-    }
-  }, [currentPage, enabled, onNext, onPrev, pageCount, suppressNextClick])
+    flipFromDelta(event.clientX - start.x, event.clientY - start.y)
+  }, [enabled, flipFromDelta])
 
   const onPointerCancel = useCallback((event: PointerEvent<HTMLElement>) => {
     startRef.current = null
+    swipedRef.current = false
     try {
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId)
@@ -180,15 +204,29 @@ function useSwipePager({
 
   const onWheel = useCallback((event: WheelEvent<HTMLElement>) => {
     if (!enabled || wheelLockedRef.current) return
-    const absX = Math.abs(event.deltaX)
-    const absY = Math.abs(event.deltaY)
+
+    wheelAccumRef.current.x += event.deltaX
+    wheelAccumRef.current.y += event.deltaY
+    if (wheelResetRef.current) window.clearTimeout(wheelResetRef.current)
+    wheelResetRef.current = window.setTimeout(() => {
+      wheelAccumRef.current = { x: 0, y: 0 }
+      wheelResetRef.current = null
+    }, WHEEL_PAGE_ACCUMULATE_MS)
+
+    const { x, y } = wheelAccumRef.current
+    const absX = Math.abs(x)
+    const absY = Math.abs(y)
     if (absX < WHEEL_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return
 
-    if (event.deltaX > 0 && currentPage < pageCount - 1) {
+    if (x > 0 && currentPage < pageCount - 1) {
       wheelLockedRef.current = true
+      wheelAccumRef.current = { x: 0, y: 0 }
+      event.preventDefault()
       onNext()
-    } else if (event.deltaX < 0 && currentPage > 0) {
+    } else if (x < 0 && currentPage > 0) {
       wheelLockedRef.current = true
+      wheelAccumRef.current = { x: 0, y: 0 }
+      event.preventDefault()
       onPrev()
     } else {
       return
@@ -213,6 +251,7 @@ function useSwipePager({
 
   return {
     onPointerDown,
+    onPointerMove,
     onPointerUp,
     onPointerCancel,
     onWheel,
@@ -535,7 +574,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
           </div>
         ))}
       </div>
-      <div className="hidden cursor-grab select-none overflow-x-auto pb-2 touch-pan-y active:cursor-grabbing md:block" {...swipeHandlers}>
+      <div className="hidden select-none overflow-x-auto pb-2 touch-pan-y md:block" {...swipeHandlers}>
         <div className="grid min-w-full grid-cols-4 gap-5">
           {(pages[currentPage] || []).map((video, index) => (
             <CeoCard key={video.materialId} video={video} index={currentPage * CEO_PAGE_SIZE + index} isGuest={isGuest} />
@@ -774,7 +813,7 @@ function ModuleSection({
         onNext={goNext}
       />
       <div
-        className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} cursor-grab select-none touch-pan-y active:cursor-grabbing`}
+        className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} select-none touch-pan-y`}
         {...swipeHandlers}
       >
         {(pages[currentPage] || []).map((video, index) => (
