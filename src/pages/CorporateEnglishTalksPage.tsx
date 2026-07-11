@@ -58,11 +58,8 @@ const TONE_STYLES: Record<PosterTone, { tag: string; surface: string; title: str
 
 const CEO_PAGE_SIZE = 8
 const MODULE_PAGE_SIZE = 8
-const SWIPE_PAGE_MIN_DISTANCE = 24
-const SWIPE_PAGE_VERTICAL_RATIO = 0.75
-const WHEEL_PAGE_MIN_DISTANCE = 28
-const WHEEL_PAGE_COOLDOWN_MS = 320
-const WHEEL_PAGE_ACCUMULATE_MS = 180
+const DRAG_SCROLL_MIN_DISTANCE = 4
+const HORIZONTAL_WHEEL_RATIO = 0.65
 
 function formatDateLabel(value?: string) {
   if (!value) return ''
@@ -104,58 +101,55 @@ function sortForAudience<T extends { accessTier?: string; publishedAt?: string; 
   })
 }
 
-function useSwipePager({
-  currentPage,
-  pageCount,
-  disabled,
-  onPrev,
-  onNext
-}: {
-  currentPage: number
-  pageCount: number
-  disabled?: boolean
-  onPrev: () => void
-  onNext: () => void
-}) {
-  const startRef = useRef<{ x: number; y: number; pointerId: number } | null>(null)
+function clampPage(page: number, pageCount: number) {
+  return Math.min(Math.max(page, 0), Math.max(0, pageCount - 1))
+}
+
+function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; disabled?: boolean }) {
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const dragRef = useRef<{ pointerId: number; x: number; scrollLeft: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
-  const swipedRef = useRef(false)
-  const wheelLockedRef = useRef(false)
-  const wheelAccumRef = useRef({ x: 0, y: 0 })
-  const wheelResetRef = useRef<number | null>(null)
-  const enabled = !disabled && pageCount > 1
+  const [currentPage, setCurrentPage] = useState(0)
+  const safePageCount = Math.max(1, pageCount)
+  const enabled = !disabled && safePageCount > 1
 
-  const suppressNextClick = useCallback(() => {
-    suppressClickRef.current = true
-    window.setTimeout(() => {
-      suppressClickRef.current = false
-    }, 320)
-  }, [])
+  const updateCurrentPageFromScroll = useCallback(() => {
+    const node = scrollRef.current
+    if (!node) return
+    const width = node.clientWidth || 1
+    const nextPage = clampPage(Math.round(node.scrollLeft / width), safePageCount)
+    setCurrentPage((page) => (page === nextPage ? page : nextPage))
+  }, [safePageCount])
 
-  const flipFromDelta = useCallback((deltaX: number, deltaY: number) => {
-    const absX = Math.abs(deltaX)
-    const absY = Math.abs(deltaY)
-    if (absX < SWIPE_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return false
+  const scrollToPage = useCallback((page: number, behavior: ScrollBehavior = 'smooth') => {
+    const nextPage = clampPage(page, safePageCount)
+    setCurrentPage(nextPage)
+    const node = scrollRef.current
+    if (!node) return
+    node.scrollTo({ left: nextPage * node.clientWidth, behavior })
+  }, [safePageCount])
 
-    if (deltaX < 0 && currentPage < pageCount - 1) {
-      suppressNextClick()
-      onNext()
-      return true
-    }
-    if (deltaX > 0 && currentPage > 0) {
-      suppressNextClick()
-      onPrev()
-      return true
-    }
-    return false
-  }, [currentPage, onNext, onPrev, pageCount, suppressNextClick])
+  useEffect(() => {
+    if (currentPage > safePageCount - 1) scrollToPage(safePageCount - 1, 'auto')
+  }, [currentPage, safePageCount, scrollToPage])
 
-  const onPointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
+  useEffect(() => {
+    const handleResize = () => scrollToPage(currentPage, 'auto')
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [currentPage, scrollToPage])
+
+  const onScroll = useCallback(() => {
+    updateCurrentPageFromScroll()
+  }, [updateCurrentPageFromScroll])
+
+  const onPointerDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
     if (!enabled || !event.isPrimary) return
     if (event.pointerType === 'mouse' && event.button !== 0) return
-    startRef.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }
+    const node = scrollRef.current
+    if (!node) return
+    dragRef.current = { x: event.clientX, scrollLeft: node.scrollLeft, pointerId: event.pointerId, moved: false }
     suppressClickRef.current = false
-    swipedRef.current = false
     try {
       event.currentTarget.setPointerCapture(event.pointerId)
     } catch (_) {
@@ -163,20 +157,23 @@ function useSwipePager({
     }
   }, [enabled])
 
-  const onPointerMove = useCallback((event: PointerEvent<HTMLElement>) => {
-    const start = startRef.current
-    if (!enabled || !start || swipedRef.current || start.pointerId !== event.pointerId) return
+  const onPointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const node = scrollRef.current
+    if (!enabled || !drag || !node || drag.pointerId !== event.pointerId) return
 
-    const didFlip = flipFromDelta(event.clientX - start.x, event.clientY - start.y)
-    if (didFlip) {
-      swipedRef.current = true
-      event.preventDefault()
-    }
-  }, [enabled, flipFromDelta])
+    const deltaX = event.clientX - drag.x
+    if (Math.abs(deltaX) < DRAG_SCROLL_MIN_DISTANCE) return
+    drag.moved = true
+    suppressClickRef.current = true
+    node.scrollLeft = drag.scrollLeft - deltaX
+    updateCurrentPageFromScroll()
+    event.preventDefault()
+  }, [enabled, updateCurrentPageFromScroll])
 
-  const onPointerUp = useCallback((event: PointerEvent<HTMLElement>) => {
-    const start = startRef.current
-    startRef.current = null
+  const finishDrag = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    dragRef.current = null
     try {
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
         event.currentTarget.releasePointerCapture(event.pointerId)
@@ -184,79 +181,55 @@ function useSwipePager({
     } catch (_) {
       // Ignore capture release differences across browsers.
     }
-    if (!enabled || !start || start.pointerId !== event.pointerId) return
-    if (swipedRef.current) return
-
-    flipFromDelta(event.clientX - start.x, event.clientY - start.y)
-  }, [enabled, flipFromDelta])
-
-  const onPointerCancel = useCallback((event: PointerEvent<HTMLElement>) => {
-    startRef.current = null
-    swipedRef.current = false
-    try {
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId)
-      }
-    } catch (_) {
-      // Ignore capture release differences across browsers.
+    if (drag?.moved) {
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 250)
     }
   }, [])
 
-  const onWheel = useCallback((event: WheelEvent<HTMLElement>) => {
-    if (!enabled || wheelLockedRef.current) return
+  const onWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    if (!enabled) return
+    const node = scrollRef.current
+    if (!node) return
 
-    wheelAccumRef.current.x += event.deltaX
-    wheelAccumRef.current.y += event.deltaY
-    if (wheelResetRef.current) window.clearTimeout(wheelResetRef.current)
-    wheelResetRef.current = window.setTimeout(() => {
-      wheelAccumRef.current = { x: 0, y: 0 }
-      wheelResetRef.current = null
-    }, WHEEL_PAGE_ACCUMULATE_MS)
+    const deltaX = event.deltaX || (event.shiftKey ? event.deltaY : 0)
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(event.deltaY)
+    const horizontalIntent = absX > 0 && (event.shiftKey || absX >= absY * HORIZONTAL_WHEEL_RATIO)
+    if (!horizontalIntent) return
 
-    const { x, y } = wheelAccumRef.current
-    const absX = Math.abs(x)
-    const absY = Math.abs(y)
-    if (absX < WHEEL_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return
+    event.preventDefault()
+    node.scrollLeft += deltaX
+    updateCurrentPageFromScroll()
+  }, [enabled, updateCurrentPageFromScroll])
 
-    if (x > 0 && currentPage < pageCount - 1) {
-      wheelLockedRef.current = true
-      wheelAccumRef.current = { x: 0, y: 0 }
-      event.preventDefault()
-      onNext()
-    } else if (x < 0 && currentPage > 0) {
-      wheelLockedRef.current = true
-      wheelAccumRef.current = { x: 0, y: 0 }
-      event.preventDefault()
-      onPrev()
-    } else {
-      return
-    }
-
-    window.setTimeout(() => {
-      wheelLockedRef.current = false
-    }, WHEEL_PAGE_COOLDOWN_MS)
-  }, [currentPage, enabled, onNext, onPrev, pageCount])
-
-  const onClickCapture = useCallback((event: MouseEvent<HTMLElement>) => {
+  const onClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
     if (!suppressClickRef.current) return
     event.preventDefault()
     event.stopPropagation()
     suppressClickRef.current = false
   }, [])
 
-  const onDragStartCapture = useCallback((event: DragEvent<HTMLElement>) => {
+  const onDragStartCapture = useCallback((event: DragEvent<HTMLDivElement>) => {
     if (!enabled) return
     event.preventDefault()
   }, [enabled])
 
   return {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onPointerCancel,
-    onWheel,
-    onClickCapture,
-    onDragStartCapture
+    currentPage,
+    scrollRef,
+    scrollToPage,
+    handlers: {
+      onScroll,
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: finishDrag,
+      onPointerCancel: finishDrag,
+      onWheel,
+      onClickCapture,
+      onDragStartCapture
+    }
   }
 }
 
@@ -510,7 +483,6 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
 }
 
 function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVideo[]; isGuest: boolean }) {
-  const [activePage, setActivePage] = useState(0)
   const pages = useMemo(() => {
     const nextPages: CorporateEnglishPublicCeoVideo[][] = []
     for (let index = 0; index < videos.length; index += CEO_PAGE_SIZE) {
@@ -518,21 +490,16 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
     }
     return nextPages
   }, [videos])
-  const pageCount = Math.max(1, pages.length)
-  const currentPage = Math.min(activePage, pageCount - 1)
-  const goPrev = useCallback(() => setActivePage((page) => Math.max(0, page - 1)), [])
-  const goNext = useCallback(() => setActivePage((page) => Math.min(pageCount - 1, page + 1)), [pageCount])
-  const swipeHandlers = useSwipePager({
-    currentPage,
-    pageCount,
-    disabled: isGuest,
-    onPrev: goPrev,
-    onNext: goNext
-  })
+  const visiblePages = isGuest ? pages.slice(0, 1) : pages
+  const pageCount = Math.max(1, visiblePages.length)
+  const carousel = usePagedHorizontalScroll({ pageCount, disabled: isGuest })
+  const { currentPage, scrollRef, scrollToPage, handlers } = carousel
+  const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
+  const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
 
   useEffect(() => {
-    if (activePage > pageCount - 1) setActivePage(Math.max(0, pageCount - 1))
-  }, [activePage, pageCount])
+    scrollToPage(0, 'auto')
+  }, [scrollToPage, videos])
 
   if (!videos.length) return null
 
@@ -567,17 +534,25 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
           </button>
         </div> : null}
       </div>
-      <div className="flex gap-5 overflow-x-auto pb-2 md:hidden">
+      <div className="flex gap-5 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
         {(isGuest ? videos.slice(0, CEO_PAGE_SIZE) : videos).map((video, index) => (
           <div key={video.materialId} className="w-[72vw] min-w-[260px] max-w-[320px] shrink-0">
             <CeoCard video={video} index={index} isGuest={isGuest} />
           </div>
         ))}
       </div>
-      <div className="hidden select-none overflow-x-auto pb-2 touch-pan-y md:block" {...swipeHandlers}>
-        <div className="grid min-w-full grid-cols-4 gap-5">
-          {(pages[currentPage] || []).map((video, index) => (
-            <CeoCard key={video.materialId} video={video} index={currentPage * CEO_PAGE_SIZE + index} isGuest={isGuest} />
+      <div
+        ref={scrollRef}
+        className="hidden select-none snap-x snap-proximity overflow-x-auto overscroll-x-contain scroll-smooth pb-2 touch-pan-y [scrollbar-width:none] md:block [&::-webkit-scrollbar]:hidden"
+        {...handlers}
+      >
+        <div className="flex">
+          {visiblePages.map((page, pageIndex) => (
+            <div key={pageIndex} className="grid w-full shrink-0 snap-start grid-cols-4 gap-5">
+              {page.map((video, index) => (
+                <CeoCard key={video.materialId} video={video} index={pageIndex * CEO_PAGE_SIZE + index} isGuest={isGuest} />
+              ))}
+            </div>
           ))}
         </div>
       </div>
@@ -700,7 +675,7 @@ function CategoryRail({
   return (
     <div className="relative overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white px-4 py-4 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] sm:px-6">
       <span className="pointer-events-none absolute right-5 top-4 h-12 w-12 rounded-full bg-[#7fb069]/10" />
-      <div className="relative flex items-center gap-5 overflow-x-auto">
+      <div className="relative flex items-center gap-5 overflow-x-auto overscroll-x-contain">
         <h2 className="shrink-0 text-3xl font-black tracking-tight md:text-4xl">{title}</h2>
         <div className="flex min-w-max items-center gap-3">
           {normalized.map((category) => {
@@ -737,7 +712,6 @@ function ModuleSection({
   loading?: boolean
   isGuest: boolean
 }) {
-  const [activePage, setActivePage] = useState(0)
   const shouldUseFeaturedLayout = section === 'english_interview' && featuredLayout && videos.length <= 5 && !isGuest
   const pageSize = MODULE_PAGE_SIZE
   const pages = useMemo(() => {
@@ -747,26 +721,17 @@ function ModuleSection({
     }
     return nextPages
   }, [pageSize, videos])
-  const pageCount = Math.max(1, pages.length)
-  const currentPage = Math.min(activePage, pageCount - 1)
+  const visiblePages = isGuest ? pages.slice(0, 1) : pages
+  const pageCount = Math.max(1, visiblePages.length)
+  const carousel = usePagedHorizontalScroll({ pageCount, disabled: isGuest })
+  const { currentPage, scrollRef, scrollToPage, handlers } = carousel
   const [hero, ...rest] = videos
-  const goPrev = useCallback(() => setActivePage((page) => Math.max(0, page - 1)), [])
-  const goNext = useCallback(() => setActivePage((page) => Math.min(pageCount - 1, page + 1)), [pageCount])
-  const swipeHandlers = useSwipePager({
-    currentPage,
-    pageCount,
-    disabled: isGuest,
-    onPrev: goPrev,
-    onNext: goNext
-  })
+  const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
+  const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
 
   useEffect(() => {
-    setActivePage(0)
-  }, [section, videos])
-
-  useEffect(() => {
-    if (activePage > pageCount - 1) setActivePage(Math.max(0, pageCount - 1))
-  }, [activePage, pageCount])
+    scrollToPage(0, 'auto')
+  }, [scrollToPage, section, videos])
 
   if (loading) {
     return (
@@ -813,19 +778,26 @@ function ModuleSection({
         onNext={goNext}
       />
       <div
-        className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} select-none touch-pan-y`}
-        {...swipeHandlers}
+        ref={scrollRef}
+        className="select-none snap-x snap-proximity overflow-x-auto overscroll-x-contain scroll-smooth pb-1 touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        {...handlers}
       >
-        {(pages[currentPage] || []).map((video, index) => (
-          <ModuleTalkCard
-            key={video.videoId}
-            video={video}
-            section={section}
-            index={currentPage * pageSize + index}
-            isGuest={isGuest}
-            showDescription={section !== 'foreign_meeting' && !shouldUseFeaturedLayout}
-          />
-        ))}
+        <div className="flex">
+          {visiblePages.map((page, pageIndex) => (
+            <div key={pageIndex} className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} w-full shrink-0 snap-start`}>
+              {page.map((video, index) => (
+                <ModuleTalkCard
+                  key={video.videoId}
+                  video={video}
+                  section={section}
+                  index={pageIndex * pageSize + index}
+                  isGuest={isGuest}
+                  showDescription={section !== 'foreign_meeting' && !shouldUseFeaturedLayout}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -875,7 +847,7 @@ function RemotePreparationSection({
           </p>
         </div>
       </div>
-      <div className="flex items-stretch gap-6 overflow-x-auto pb-3">
+      <div className="flex items-stretch gap-6 overflow-x-auto overscroll-x-contain pb-3">
         {(isGuest ? videos.slice(0, 6) : videos).map((video, index) => (
           <div key={video.videoId} className="w-[78vw] min-w-[280px] shrink-0 md:w-[31%] md:min-w-[300px] lg:w-[30%] xl:w-[28.5%] 2xl:w-[28%]">
             <ModuleTalkCard
@@ -1034,7 +1006,7 @@ export default function CorporateEnglishTalksPage() {
   const otherCeoVideos = sortedCeoVideos.slice(1)
 
   return (
-    <div className="min-h-screen bg-[#fbfaf6] font-haigoo-rounded text-slate-950">
+    <div className="min-h-screen overscroll-x-none bg-[#fbfaf6] font-haigoo-rounded text-slate-950">
       <div className="mx-auto max-w-[1640px] px-4 pb-10 pt-24 sm:px-8">
         <div className="space-y-10">
             {ceoLoading ? (
