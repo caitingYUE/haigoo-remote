@@ -702,13 +702,6 @@ function ModuleTalkCard({
       <h3 className={`${featured ? 'mt-2 text-2xl md:text-3xl' : section === 'foreign_meeting' ? 'mt-1.5 line-clamp-2 text-xl' : section === 'remote_preparation' ? 'mt-2 line-clamp-2 text-xl' : 'mt-2 line-clamp-2 min-h-[3.5rem] text-xl'} font-black leading-tight tracking-tight`}>{video.title}</h3>
       {!isGuest && (featured || showDescription) ? <p className={`${featured ? 'mt-3 text-base' : section === 'remote_preparation' ? 'mt-2 text-sm leading-6' : section === 'foreign_meeting' ? 'mt-3 text-sm' : 'mt-3 text-sm leading-7'} line-clamp-3 max-w-full text-slate-700`}>{video.description}</p> : null}
       <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500 ${featured ? '' : 'mt-auto pt-1'}`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
-      {!isGuest ? (
-        <div className="pointer-events-none absolute inset-0 z-20 flex min-h-0 translate-y-6 flex-col overflow-hidden bg-white p-5 opacity-0 shadow-[inset_0_0_0_1px_rgba(219,232,244,0.9)] transition duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
-          <div className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{video.title}</div>
-          <div className="mt-2 shrink-0 truncate text-sm font-semibold text-[#e11d48]">{getModuleVideoEyebrow(video, section)} · {formatDateLabel(video.publishedAt) || '精选视频'}</div>
-          <SummaryPreviewText>{video.description || `${SECTION_LABELS[section]}精选视频，帮助你理解真实远程工作场景和表达方式。`}</SummaryPreviewText>
-        </div>
-      ) : null}
     </Link>
   )
 }
@@ -756,11 +749,13 @@ function PagerControls({
 
 function CategoryRail({
   title,
+  subtitle,
   categories,
   activeCategory,
   onChange
 }: {
   title: string
+  subtitle?: string
   categories: CorporateEnglishPublicCategory[]
   activeCategory: string
   onChange: (value: string) => void
@@ -773,7 +768,10 @@ function CategoryRail({
     <div className="relative overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white px-4 py-4 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] sm:px-6">
       <span className="pointer-events-none absolute right-5 top-4 h-12 w-12 rounded-full bg-[#7fb069]/10" />
       <div className="relative flex items-center gap-5 overflow-x-auto overscroll-x-contain">
-        <h2 className="shrink-0 text-3xl font-black tracking-tight md:text-4xl">{title}</h2>
+        <div className="flex shrink-0 items-end gap-4">
+          <h2 className="text-3xl font-black tracking-tight md:text-4xl">{title}</h2>
+          {subtitle ? <p className="hidden pb-1 text-sm font-semibold text-slate-500 lg:block">{subtitle}</p> : null}
+        </div>
         <div className="flex min-w-max items-center gap-3">
           {normalized.map((category) => {
             const active = activeCategory === category.value
@@ -913,17 +911,23 @@ function ModuleSection({
 
 function RemotePreparationSection({
   videos,
+  categories,
+  activeCategory,
+  onCategoryChange,
   loading,
   isGuest
 }: {
   videos: CorporateEnglishPublicModuleVideo[]
+  categories: CorporateEnglishPublicCategory[]
+  activeCategory: string
+  onCategoryChange: (value: string) => void
   loading: boolean
   isGuest: boolean
 }) {
   if (loading) {
     return (
       <section className="space-y-5">
-        <SectionHeader title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" />
+        <CategoryRail title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
         <div className="flex gap-5 overflow-hidden">
           {[0, 1, 2, 3].map((item) => (
             <div key={item} className="h-[300px] min-w-[280px] flex-1 rounded-[22px] border border-[#f1dfbe] bg-white shadow-[0_10px_28px_rgba(240,161,31,0.08)]" />
@@ -936,7 +940,7 @@ function RemotePreparationSection({
   if (!videos.length) {
     return (
       <section className="space-y-5">
-        <SectionHeader title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" />
+        <CategoryRail title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
         <div className="rounded-2xl border border-dashed border-[#e8d4ad] bg-white p-10 text-center text-slate-500">
           后台发布远程准备视频后，这里会展示远程求职与协作准备内容。
         </div>
@@ -946,15 +950,7 @@ function RemotePreparationSection({
 
   return (
     <section className="space-y-4">
-      <div className="relative overflow-hidden rounded-[26px] border border-[#ead8b9] bg-[linear-gradient(135deg,#fffaf0_0%,#ffffff_52%,#f6fbff_100%)] px-6 py-5 shadow-[0_16px_36px_rgba(151,101,34,0.08)]">
-        <span className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#f0a11f]/12" />
-        <div className="relative flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-5">
-          <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">远程准备</h2>
-          <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">
-            熟悉远程工作所需的一切，不打无准备的仗
-          </p>
-        </div>
-      </div>
+      <CategoryRail title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
       <div className="flex items-stretch gap-6 overflow-x-auto overscroll-x-contain pb-3">
         {(isGuest ? videos.slice(0, 6) : videos).map((video, index) => (
           <div key={video.videoId} className="w-[78vw] min-w-[280px] shrink-0 md:w-[31%] md:min-w-[300px] lg:w-[30%] xl:w-[28.5%] 2xl:w-[28%]">
@@ -983,13 +979,15 @@ export default function CorporateEnglishTalksPage() {
   const [ceoVideos, setCeoVideos] = useState<CorporateEnglishPublicCeoVideo[]>([])
   const [interviewVideos, setInterviewVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [interviewCategories, setInterviewCategories] = useState<CorporateEnglishPublicCategory[]>([])
+  const [remoteCategories, setRemoteCategories] = useState<CorporateEnglishPublicCategory[]>([])
   const [remoteVideos, setRemoteVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [meetingVideos, setMeetingVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [activeInterviewCategory, setActiveInterviewCategory] = useState('全部')
+  const [activeRemoteCategory, setActiveRemoteCategory] = useState('全部')
   const trackedModuleViewsRef = useRef<Set<TalkSectionKey>>(new Set())
 
-  const loadModule = useCallback(async (module: CorporateEnglishModuleKey, category = '全部') => {
-    return corporateEnglishPublicService.listModuleVideos({ module, category })
+  const loadModule = useCallback(async (module: CorporateEnglishModuleKey, category = '全部', difficultyLevel = '') => {
+    return corporateEnglishPublicService.listModuleVideos({ module, category, difficultyLevel })
   }, [])
 
   useEffect(() => {
@@ -1044,9 +1042,10 @@ export default function CorporateEnglishTalksPage() {
     const load = async () => {
       try {
         setRemoteLoading(true)
-        const remoteData = await loadModule('remote_preparation', '全部')
+        const remoteData = await loadModule('remote_preparation', '全部', activeRemoteCategory)
         if (cancelled) return
         setRemoteVideos(remoteData.videos)
+        setRemoteCategories(remoteData.categories)
       } catch (error) {
         console.error('Failed to load remote preparation videos:', error)
         if (!cancelled) showErrorRef.current('远程准备加载失败', error instanceof Error ? error.message : '请稍后重试')
@@ -1058,7 +1057,7 @@ export default function CorporateEnglishTalksPage() {
     return () => {
       cancelled = true
     }
-  }, [loadModule])
+  }, [activeRemoteCategory, loadModule])
 
   useEffect(() => {
     let cancelled = false
@@ -1134,6 +1133,9 @@ export default function CorporateEnglishTalksPage() {
 
             <RemotePreparationSection
               videos={sortedRemoteVideos}
+              categories={remoteCategories}
+              activeCategory={activeRemoteCategory}
+              onCategoryChange={setActiveRemoteCategory}
               loading={remoteLoading}
               isGuest={isGuest}
             />

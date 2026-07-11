@@ -232,10 +232,12 @@ export const corporateEnglishPublicService = {
   async listModuleVideos(params: {
     module: CorporateEnglishModuleKey
     category?: string
+    difficultyLevel?: string
     limit?: number
   }) {
     const query = new URLSearchParams({ resource: 'module-videos', module: params.module })
     if (params.category) query.set('category', params.category)
+    if (params.difficultyLevel) query.set('difficultyLevel', params.difficultyLevel)
     if (params.limit) query.set('limit', String(params.limit))
     const data = await readJson<{
       success: boolean
