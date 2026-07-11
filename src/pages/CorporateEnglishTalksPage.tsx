@@ -768,10 +768,7 @@ function CategoryRail({
     <div className="relative overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white px-4 py-4 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] sm:px-6">
       <span className="pointer-events-none absolute right-5 top-4 h-12 w-12 rounded-full bg-[#7fb069]/10" />
       <div className="relative flex items-center gap-5 overflow-x-auto overscroll-x-contain">
-        <div className="flex shrink-0 items-end gap-4">
-          <h2 className="text-3xl font-black tracking-tight md:text-4xl">{title}</h2>
-          {subtitle ? <p className="hidden pb-1 text-sm font-semibold text-slate-500 lg:block">{subtitle}</p> : null}
-        </div>
+        <h2 className="shrink-0 text-3xl font-black tracking-tight md:text-4xl">{title}</h2>
         <div className="flex min-w-max items-center gap-3">
           {normalized.map((category) => {
             const active = activeCategory === category.value
@@ -787,6 +784,7 @@ function CategoryRail({
             )
           })}
         </div>
+        {subtitle ? <p className="ml-auto hidden shrink-0 pr-16 text-right text-sm font-semibold text-slate-500 lg:block">{subtitle}</p> : null}
       </div>
     </div>
   )
