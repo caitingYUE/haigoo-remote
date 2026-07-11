@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type TouchEvent, type WheelEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -58,6 +58,10 @@ const TONE_STYLES: Record<PosterTone, { tag: string; surface: string; title: str
 
 const CEO_PAGE_SIZE = 8
 const MODULE_PAGE_SIZE = 8
+const SWIPE_PAGE_MIN_DISTANCE = 56
+const SWIPE_PAGE_VERTICAL_RATIO = 1.25
+const WHEEL_PAGE_MIN_DISTANCE = 44
+const WHEEL_PAGE_COOLDOWN_MS = 460
 
 function formatDateLabel(value?: string) {
   if (!value) return ''
@@ -97,6 +101,100 @@ function sortForAudience<T extends { accessTier?: string; publishedAt?: string; 
     if (aFree !== bFree) return aFree ? -1 : 1
     return getPublishedTime(b.publishedAt || b.updatedAt) - getPublishedTime(a.publishedAt || a.updatedAt)
   })
+}
+
+function useSwipePager({
+  currentPage,
+  pageCount,
+  disabled,
+  onPrev,
+  onNext
+}: {
+  currentPage: number
+  pageCount: number
+  disabled?: boolean
+  onPrev: () => void
+  onNext: () => void
+}) {
+  const startRef = useRef<{ x: number; y: number } | null>(null)
+  const suppressClickRef = useRef(false)
+  const wheelLockedRef = useRef(false)
+  const enabled = !disabled && pageCount > 1
+
+  const suppressNextClick = useCallback(() => {
+    suppressClickRef.current = true
+    window.setTimeout(() => {
+      suppressClickRef.current = false
+    }, 320)
+  }, [])
+
+  const onTouchStart = useCallback((event: TouchEvent<HTMLElement>) => {
+    if (!enabled || event.touches.length !== 1) return
+    const touch = event.touches[0]
+    startRef.current = { x: touch.clientX, y: touch.clientY }
+    suppressClickRef.current = false
+  }, [enabled])
+
+  const onTouchEnd = useCallback((event: TouchEvent<HTMLElement>) => {
+    const start = startRef.current
+    startRef.current = null
+    if (!enabled || !start || event.changedTouches.length !== 1) return
+
+    const touch = event.changedTouches[0]
+    const deltaX = touch.clientX - start.x
+    const deltaY = touch.clientY - start.y
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(deltaY)
+    if (absX < SWIPE_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return
+
+    if (deltaX < 0 && currentPage < pageCount - 1) {
+      suppressNextClick()
+      onNext()
+    } else if (deltaX > 0 && currentPage > 0) {
+      suppressNextClick()
+      onPrev()
+    }
+  }, [currentPage, enabled, onNext, onPrev, pageCount, suppressNextClick])
+
+  const onTouchCancel = useCallback(() => {
+    startRef.current = null
+  }, [])
+
+  const onWheel = useCallback((event: WheelEvent<HTMLElement>) => {
+    if (!enabled || wheelLockedRef.current) return
+    const absX = Math.abs(event.deltaX)
+    const absY = Math.abs(event.deltaY)
+    if (absX < WHEEL_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return
+
+    if (event.deltaX > 0 && currentPage < pageCount - 1) {
+      wheelLockedRef.current = true
+      onNext()
+    } else if (event.deltaX < 0 && currentPage > 0) {
+      wheelLockedRef.current = true
+      onPrev()
+    } else {
+      return
+    }
+
+    window.setTimeout(() => {
+      wheelLockedRef.current = false
+    }, WHEEL_PAGE_COOLDOWN_MS)
+  }, [currentPage, enabled, onNext, onPrev, pageCount])
+
+  const onClickCapture = useCallback((event: MouseEvent<HTMLElement>) => {
+    if (!suppressClickRef.current) return
+    event.preventDefault()
+    event.stopPropagation()
+    suppressClickRef.current = false
+  }, [])
+
+  return {
+    onTouchStart,
+    onTouchEnd,
+    onTouchCancel,
+    onWheel,
+    onClickCapture
+  }
 }
 
 function AccessPill({ locked, accessTier }: { locked?: boolean; accessTier?: string }) {
@@ -359,6 +457,15 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
   }, [videos])
   const pageCount = Math.max(1, pages.length)
   const currentPage = Math.min(activePage, pageCount - 1)
+  const goPrev = useCallback(() => setActivePage((page) => Math.max(0, page - 1)), [])
+  const goNext = useCallback(() => setActivePage((page) => Math.min(pageCount - 1, page + 1)), [pageCount])
+  const swipeHandlers = useSwipePager({
+    currentPage,
+    pageCount,
+    disabled: isGuest,
+    onPrev: goPrev,
+    onNext: goNext
+  })
 
   useEffect(() => {
     if (activePage > pageCount - 1) setActivePage(Math.max(0, pageCount - 1))
@@ -378,7 +485,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
         {!isGuest ? <div className="hidden items-center gap-3 md:flex">
           <button
             type="button"
-            onClick={() => setActivePage((page) => Math.max(0, page - 1))}
+            onClick={goPrev}
             disabled={currentPage === 0}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="上一页 CEO 访谈"
@@ -388,7 +495,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
           <span className="min-w-[72px] text-center text-sm font-black text-slate-500">{currentPage + 1} / {pageCount}</span>
           <button
             type="button"
-            onClick={() => setActivePage((page) => Math.min(pageCount - 1, page + 1))}
+            onClick={goNext}
             disabled={currentPage >= pageCount - 1}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-40"
             aria-label="下一页 CEO 访谈"
@@ -404,7 +511,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
           </div>
         ))}
       </div>
-      <div className="hidden overflow-x-auto pb-2 md:block">
+      <div className="hidden overflow-x-auto pb-2 touch-pan-y md:block" {...swipeHandlers}>
         <div className="grid min-w-full grid-cols-4 gap-5">
           {(pages[currentPage] || []).map((video, index) => (
             <CeoCard key={video.materialId} video={video} index={currentPage * CEO_PAGE_SIZE + index} isGuest={isGuest} />
@@ -580,6 +687,15 @@ function ModuleSection({
   const pageCount = Math.max(1, pages.length)
   const currentPage = Math.min(activePage, pageCount - 1)
   const [hero, ...rest] = videos
+  const goPrev = useCallback(() => setActivePage((page) => Math.max(0, page - 1)), [])
+  const goNext = useCallback(() => setActivePage((page) => Math.min(pageCount - 1, page + 1)), [pageCount])
+  const swipeHandlers = useSwipePager({
+    currentPage,
+    pageCount,
+    disabled: isGuest,
+    onPrev: goPrev,
+    onNext: goNext
+  })
 
   useEffect(() => {
     setActivePage(0)
@@ -630,10 +746,13 @@ function ModuleSection({
         pageCount={pageCount}
         disabled={isGuest}
         label={SECTION_LABELS[section]}
-        onPrev={() => setActivePage((page) => Math.max(0, page - 1))}
-        onNext={() => setActivePage((page) => Math.min(pageCount - 1, page + 1))}
+        onPrev={goPrev}
+        onNext={goNext}
       />
-      <div className={section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'}>
+      <div
+        className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} touch-pan-y`}
+        {...swipeHandlers}
+      >
         {(pages[currentPage] || []).map((video, index) => (
           <ModuleTalkCard
             key={video.videoId}
