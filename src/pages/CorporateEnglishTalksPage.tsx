@@ -818,9 +818,15 @@ function ModuleSection({
   const carousel = usePagedHorizontalScroll({ pageCount, disabled: isGuest })
   const { currentPage, scrollRef, scrollToPage, viewportWidth, handlers } = carousel
   const moduleCardWidth = getRailCardWidth(viewportWidth, railLayout.columns, railLayout.gap, 250)
+  const usesHorizontalRail = pageCount > 1
   const orderedVisibleVideos = useMemo(
-    () => orderForTwoRowRail(visibleVideos.map((video, index) => ({ video, index })), railLayout.columns * 2, railLayout.columns),
-    [railLayout.columns, visibleVideos]
+    () => {
+      const indexedVideos = visibleVideos.map((video, index) => ({ video, index }))
+      return usesHorizontalRail
+        ? orderForTwoRowRail(indexedVideos, railLayout.columns * 2, railLayout.columns)
+        : indexedVideos
+    },
+    [railLayout.columns, usesHorizontalRail, visibleVideos]
   )
   const [hero, ...rest] = videos
   const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
@@ -876,15 +882,18 @@ function ModuleSection({
       />
       <div
         ref={scrollRef}
-        className="select-none overflow-x-auto overscroll-x-contain pb-1 touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-        {...handlers}
+        className={usesHorizontalRail ? 'select-none overflow-x-auto overscroll-x-contain pb-1 touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''}
+        {...(usesHorizontalRail ? handlers : {})}
       >
         <div
-          className={`${section === 'foreign_meeting' ? 'gap-4' : 'gap-6'} grid grid-flow-col grid-rows-2`}
-          style={{
+          className={usesHorizontalRail
+            ? `${section === 'foreign_meeting' ? 'gap-4' : 'gap-6'} grid grid-flow-col grid-rows-2`
+            : `${section === 'foreign_meeting' ? 'gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} grid grid-cols-1`
+          }
+          style={usesHorizontalRail ? {
             gridAutoColumns: moduleCardWidth ? `${moduleCardWidth}px` : undefined,
-            minWidth: viewportWidth && pageCount > 1 ? `${viewportWidth * pageCount}px` : undefined
-          }}
+            minWidth: viewportWidth ? `${viewportWidth * pageCount}px` : undefined
+          } : undefined}
         >
           {orderedVisibleVideos.map(({ video, index }) => (
             <ModuleTalkCard
