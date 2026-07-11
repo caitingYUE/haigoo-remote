@@ -66,6 +66,12 @@ function PageViewTracker() {
   return null
 }
 
+function LegacyCareerLearningRedirect() {
+  const location = useLocation()
+  const nextPath = location.pathname.replace(/^\/corporate-english/, '/careerlearning')
+  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />
+}
+
 function App() {
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
   return (
@@ -161,8 +167,10 @@ function App() {
                             <Route path="/job/:id" element={<JobDetailPage />} />
                             <Route path="/companies" element={<TrustedCompaniesPage />} />
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
-                            <Route path="/corporate-english" element={<CorporateEnglishPage />} />
-                            <Route path="/corporate-english/watch/:source/:id" element={<CorporateEnglishWatchPage />} />
+                            <Route path="/careerlearning" element={<CorporateEnglishPage />} />
+                            <Route path="/careerlearning/watch/:source/:id" element={<CorporateEnglishWatchPage />} />
+                            <Route path="/corporate-english" element={<LegacyCareerLearningRedirect />} />
+                            <Route path="/corporate-english/watch/:source/:id" element={<LegacyCareerLearningRedirect />} />
                             <Route path="/company/:id" element={<CompanyProfilePage />} />
                             <Route path="/c/:companyName" element={<CompanyDetailPage />} />
                             <Route path="/companies/:companyName" element={<CompanyDetailPage />} />

@@ -235,7 +235,7 @@ function trackModuleView(section: TalkSectionKey, videoCount: number, isAuthenti
     module_label: SECTION_LABELS[section],
     video_count: videoCount,
     audience_state: !isAuthenticated ? 'guest' : isMember ? 'member' : 'free',
-    path: '/corporate-english'
+    path: '/careerlearning'
   })
 }
 
@@ -251,7 +251,7 @@ function LoginPosterOverlay({ label = '登录后播放' }: { label?: string }) {
 }
 
 function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; isGuest: boolean }) {
-  const href = isGuest ? '/login' : `/corporate-english/watch/ceo/${encodeURIComponent(video.materialId)}`
+  const href = isGuest ? '/login' : `/careerlearning/watch/ceo/${encodeURIComponent(video.materialId)}`
   return (
     <section className="relative grid gap-8 overflow-hidden rounded-[28px] border border-[#dbe8f4] bg-white p-6 shadow-[0_18px_48px_rgba(47,111,216,0.07)] lg:grid-cols-[minmax(0,0.85fr)_minmax(520px,1fr)] lg:items-center lg:p-8">
       <span className="pointer-events-none absolute right-10 top-8 h-20 w-20 rounded-full bg-[#7fb069]/10" />
@@ -309,7 +309,7 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
 }
 
 function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVideo; index: number; isGuest: boolean }) {
-  const href = isGuest ? '/login' : `/corporate-english/watch/ceo/${encodeURIComponent(video.materialId)}`
+  const href = isGuest ? '/login' : `/careerlearning/watch/ceo/${encodeURIComponent(video.materialId)}`
   return (
     <Link
       to={href}
@@ -429,7 +429,7 @@ function ModuleTalkCard({
   isGuest: boolean
   showDescription?: boolean
 }) {
-  const href = isGuest ? '/login' : `/corporate-english/watch/module/${encodeURIComponent(video.videoId)}`
+  const href = isGuest ? '/login' : `/careerlearning/watch/module/${encodeURIComponent(video.videoId)}`
   return (
     <Link
       to={href}

@@ -3602,7 +3602,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       return
     }
     if (item.action === 'english') {
-      navigate('/corporate-english')
+      navigate('/careerlearning')
       return
     }
     if (item.action === 'companies') {
@@ -4512,7 +4512,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                           return
                         }
                         if ('action' in item && item.action === 'english') {
-                          navigate('/corporate-english')
+                          navigate('/careerlearning')
                           return
                         }
                         openClubServiceAdvisor(`member_quick_rail_${item.key}`, undefined, 'advisorCopy' in item ? item.advisorCopy : MEMBER_BENEFIT_ADVISOR_COPY)

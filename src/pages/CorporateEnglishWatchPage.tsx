@@ -1038,9 +1038,9 @@ export default function CorporateEnglishWatchPage() {
             <Loader2 className="h-7 w-7 animate-spin text-[#6251f5]" />
           </div>
         ) : source === 'ceo' && ceoDetail ? (
-          <CeoWatchContent detail={ceoDetail} materialId={id} onLockedAction={handleLockedAction} onBack={() => navigate('/corporate-english')} />
+          <CeoWatchContent detail={ceoDetail} materialId={id} onLockedAction={handleLockedAction} onBack={() => navigate('/careerlearning')} />
         ) : source === 'module' && moduleVideo ? (
-          <ModuleWatchContent video={moduleVideo} onLockedAction={handleLockedAction} onBack={() => navigate('/corporate-english')} />
+          <ModuleWatchContent video={moduleVideo} onLockedAction={handleLockedAction} onBack={() => navigate('/careerlearning')} />
         ) : (
           <div className={`${SOFT_PANEL_CLASS} p-12 text-center text-slate-500`}>视频不存在或已下线。</div>
         )}

@@ -1668,7 +1668,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             companyId: job.companyId,
             materialId: firstCorporateVideo.materialId
         })
-        window.open(`/corporate-english?${query.toString()}`, '_blank', 'noopener,noreferrer')
+        window.open(`/careerlearning?${query.toString()}`, '_blank', 'noopener,noreferrer')
     }
     const getApplyButtonLabel = () => {
         if (!isAuthenticated) return '前往申请（需登录）'

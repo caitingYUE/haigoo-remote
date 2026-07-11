@@ -297,8 +297,8 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
             </Link>
 
             <Link
-              to="/corporate-english"
-              className={`relative inline-flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/corporate-english')
+              to="/careerlearning"
+              className={`relative inline-flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english')
                   ? 'text-slate-900 font-bold'
                   : 'text-slate-500 font-medium hover:text-indigo-600'
                 }`}
@@ -605,8 +605,8 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 全部岗位
               </Link>
               <Link
-                to="/corporate-english"
-                className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/corporate-english')
+                to="/careerlearning"
+                className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english')
                   ? 'bg-indigo-50 text-indigo-700'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
