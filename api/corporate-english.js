@@ -83,7 +83,7 @@ function extractTencentVideoVid(value) {
   if (!raw) return ''
   if (/^[a-zA-Z0-9_-]{6,32}$/.test(raw)) return raw
   try {
-    const url = new URL(raw)
+    const url = new URL(normalizeEmbedUrlCandidate(raw))
     if (url.hostname !== 'v.qq.com' && !url.hostname.endsWith('.v.qq.com')) return ''
     return normalizeString(url.searchParams.get('vid')).match(/^[a-zA-Z0-9_-]{6,32}$/)?.[0] || ''
   } catch {
@@ -96,16 +96,56 @@ function buildTencentVideoUrl(vid) {
   return vid ? `https://v.qq.com/txp/iframe/player.html?vid=${encodeURIComponent(vid)}` : ''
 }
 
-function normalizeTencentIframeUrl(value) {
+function extractIframeSrc(value) {
+  const raw = normalizeString(value)
+  return raw.match(/src=["']([^"']+)["']/i)?.[1] || raw
+}
+
+function normalizeEmbedUrlCandidate(value) {
+  const candidate = normalizeString(value)
+  if (candidate.startsWith('//')) return `https:${candidate}`
+  return candidate
+}
+
+function normalizeBilibiliIframeUrl(value) {
+  const candidate = normalizeEmbedUrlCandidate(value)
+  try {
+    const url = new URL(candidate)
+    if (url.protocol !== 'https:') return ''
+    if (url.hostname !== 'player.bilibili.com') return ''
+    if (url.pathname !== '/player.html') return ''
+
+    const bvid = normalizeString(url.searchParams.get('bvid'))
+    const aid = normalizeString(url.searchParams.get('aid'))
+    const cid = normalizeString(url.searchParams.get('cid'))
+    if (!/^BV[a-zA-Z0-9]{8,20}$/.test(bvid) && !/^\d{4,30}$/.test(aid)) return ''
+    if (cid && !/^\d{4,30}$/.test(cid)) return ''
+
+    const allowedParams = ['isOutside', 'aid', 'bvid', 'cid', 'p', 'page', 'danmaku', 'high_quality', 'autoplay']
+    const normalized = new URL('https://player.bilibili.com/player.html')
+    for (const key of allowedParams) {
+      const paramValue = normalizeString(url.searchParams.get(key))
+      if (paramValue) normalized.searchParams.set(key, paramValue)
+    }
+    if (!normalized.searchParams.has('isOutside')) normalized.searchParams.set('isOutside', 'true')
+    return normalized.toString()
+  } catch {
+    return ''
+  }
+}
+
+function normalizeVideoEmbedUrl(value) {
   const raw = normalizeString(value)
   if (!raw) return ''
-  const iframeSrc = raw.match(/src=["']([^"']+)["']/i)?.[1]
-  const candidate = iframeSrc || raw
+  const candidate = extractIframeSrc(raw)
   const vid = extractTencentVideoVid(candidate)
   if (vid) return buildTencentVideoUrl(vid)
 
+  const bilibiliUrl = normalizeBilibiliIframeUrl(candidate)
+  if (bilibiliUrl) return bilibiliUrl
+
   try {
-    const url = new URL(candidate)
+    const url = new URL(normalizeEmbedUrlCandidate(candidate))
     const isTencentVideo = url.protocol === 'https:' && (url.hostname === 'v.qq.com' || url.hostname.endsWith('.v.qq.com'))
     const isPlayerPath = url.pathname.includes('/txp/iframe/player.html')
     const urlVid = normalizeString(url.searchParams.get('vid'))
@@ -799,6 +839,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
     speakerEmail: normalizeString(body.speakerEmail || body.speaker_email) || null,
     speakerLinkedin: normalizeString(body.speakerLinkedin || body.speaker_linkedin) || null,
     tencentVideoVid: extractTencentVideoVid(body.tencentVideoVid || body.tencent_video_vid || body.tencentVideoUrl || body.tencent_video_url),
+    videoEmbedUrl: normalizeVideoEmbedUrl(body.tencentVideoUrl || body.tencent_video_url || body.tencentVideoVid || body.tencent_video_vid),
     sourceVideoUrl: normalizeString(body.sourceVideoUrl || body.source_video_url) || null,
     videoSummary: normalizeString(body.videoSummary || body.video_summary) || null,
     sequence: toInt(body.sequence, 0),
@@ -811,7 +852,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
     durationMs: toInt(body.durationMs || body.duration_ms, 0) || null,
     actor: admin.id || admin.email || 'admin'
   }
-  const tencentVideoUrl = buildTencentVideoUrl(payload.tencentVideoVid)
+  const tencentVideoUrl = payload.videoEmbedUrl || buildTencentVideoUrl(payload.tencentVideoVid)
 
   let materialId = existingId
   if (materialId) {
@@ -1049,8 +1090,8 @@ function validateModuleVideoPayload(body) {
   const title = normalizeString(body.title || body.videoTitle || body.video_title)
   if (!title) return { error: '请填写视频标题' }
 
-  const tencentIframeUrl = normalizeTencentIframeUrl(body.tencentIframeUrl || body.tencent_iframe_url || body.tencentVideoUrl || body.tencent_video_url)
-  if (!tencentIframeUrl) return { error: '请填写有效的腾讯视频 iframe 地址或 vid' }
+  const tencentIframeUrl = normalizeVideoEmbedUrl(body.tencentIframeUrl || body.tencent_iframe_url || body.tencentVideoUrl || body.tencent_video_url)
+  if (!tencentIframeUrl) return { error: '请填写有效的腾讯视频/Bilibili iframe 地址或腾讯 vid' }
 
   const accessTier = body.accessTier === 'free' || body.access_tier === 'free' ? 'free' : 'vip'
   const difficultyLevel = normalizeDifficultyLevel(body.difficultyLevel || body.difficulty_level)

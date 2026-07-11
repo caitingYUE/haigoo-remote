@@ -1183,7 +1183,7 @@ function AdminModuleVideoManager({
       return
     }
     if (!form.tencentIframeUrl.trim()) {
-      alert('请填写腾讯视频 iframe 地址')
+      alert('请填写腾讯视频或 Bilibili iframe 地址')
       return
     }
     if (isRemotePreparation && !form.difficultyLevel) {
@@ -1300,7 +1300,7 @@ function AdminModuleVideoManager({
                 <input className="input" value={form.title} onChange={(event) => setForm((prev) => ({ ...prev, title: event.target.value }))} />
               </label>
               <label className="space-y-1">
-                <span className="text-sm font-bold text-slate-700">腾讯视频 iframe 地址 / vid</span>
+                <span className="text-sm font-bold text-slate-700">视频 iframe 地址 / 腾讯 vid</span>
                 <input className="input" value={form.tencentIframeUrl} onChange={(event) => setForm((prev) => ({ ...prev, tencentIframeUrl: event.target.value }))} />
               </label>
               <label className="space-y-1">
@@ -2843,14 +2843,14 @@ export default function AdminCorporateEnglishPage() {
 
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <label className="block">
-                    <span className="text-sm font-semibold text-slate-700">腾讯视频 vid / iframe 链接</span>
+                    <span className="text-sm font-semibold text-slate-700">视频 iframe 链接 / 腾讯 vid</span>
                     <input
                       className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
                       value={editor.tencentVideoInput}
                       onChange={(event) => updateEditor({ tencentVideoInput: event.target.value })}
-                      placeholder="g32823rixpo 或 https://v.qq.com/txp/iframe/player.html?vid=..."
+                      placeholder="g32823rixpo、腾讯 iframe，或 Bilibili iframe"
                     />
-                    <span className="mt-1 block text-xs text-slate-500">前台只渲染腾讯视频白名单地址，不保存任意 iframe HTML。</span>
+                    <span className="mt-1 block text-xs text-slate-500">前台只渲染腾讯视频和 Bilibili 白名单播放器地址，不保存任意 iframe HTML。</span>
                   </label>
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-700">视频排序</span>

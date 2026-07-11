@@ -1722,7 +1722,7 @@ export default function CorporateEnglishPage() {
                             <div className="flex h-full items-center justify-center bg-[#fffaf0] text-slate-500">
                               <div className="text-center">
                                 <PlayCircle className="mx-auto h-10 w-10 text-[#8a7bff]" />
-                                <p className="mt-2 text-sm font-bold">该内容暂未配置腾讯视频</p>
+                                <p className="mt-2 text-sm font-bold">该内容暂未配置视频</p>
                               </div>
                             </div>
                           )}
@@ -1770,7 +1770,7 @@ export default function CorporateEnglishPage() {
                         ) : null}
                         <div className="text-center">
                           <PlayCircle className="mx-auto h-10 w-10 text-[#8a7bff]" />
-                          <p className="mt-2 text-sm font-bold">该内容暂未配置腾讯视频</p>
+                          <p className="mt-2 text-sm font-bold">该内容暂未配置视频</p>
                         </div>
                       </div>
                     )}
