@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type TouchEvent, type WheelEvent } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type PointerEvent, type WheelEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -116,7 +116,7 @@ function useSwipePager({
   onPrev: () => void
   onNext: () => void
 }) {
-  const startRef = useRef<{ x: number; y: number } | null>(null)
+  const startRef = useRef<{ x: number; y: number; pointerId: number } | null>(null)
   const suppressClickRef = useRef(false)
   const wheelLockedRef = useRef(false)
   const enabled = !disabled && pageCount > 1
@@ -128,21 +128,32 @@ function useSwipePager({
     }, 320)
   }, [])
 
-  const onTouchStart = useCallback((event: TouchEvent<HTMLElement>) => {
-    if (!enabled || event.touches.length !== 1) return
-    const touch = event.touches[0]
-    startRef.current = { x: touch.clientX, y: touch.clientY }
+  const onPointerDown = useCallback((event: PointerEvent<HTMLElement>) => {
+    if (!enabled || !event.isPrimary) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    startRef.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId }
     suppressClickRef.current = false
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch (_) {
+      // Some browsers may not support capture on this target.
+    }
   }, [enabled])
 
-  const onTouchEnd = useCallback((event: TouchEvent<HTMLElement>) => {
+  const onPointerUp = useCallback((event: PointerEvent<HTMLElement>) => {
     const start = startRef.current
     startRef.current = null
-    if (!enabled || !start || event.changedTouches.length !== 1) return
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+    } catch (_) {
+      // Ignore capture release differences across browsers.
+    }
+    if (!enabled || !start || start.pointerId !== event.pointerId) return
 
-    const touch = event.changedTouches[0]
-    const deltaX = touch.clientX - start.x
-    const deltaY = touch.clientY - start.y
+    const deltaX = event.clientX - start.x
+    const deltaY = event.clientY - start.y
     const absX = Math.abs(deltaX)
     const absY = Math.abs(deltaY)
     if (absX < SWIPE_PAGE_MIN_DISTANCE || absX < absY * SWIPE_PAGE_VERTICAL_RATIO) return
@@ -156,8 +167,15 @@ function useSwipePager({
     }
   }, [currentPage, enabled, onNext, onPrev, pageCount, suppressNextClick])
 
-  const onTouchCancel = useCallback(() => {
+  const onPointerCancel = useCallback((event: PointerEvent<HTMLElement>) => {
     startRef.current = null
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+    } catch (_) {
+      // Ignore capture release differences across browsers.
+    }
   }, [])
 
   const onWheel = useCallback((event: WheelEvent<HTMLElement>) => {
@@ -188,12 +206,18 @@ function useSwipePager({
     suppressClickRef.current = false
   }, [])
 
+  const onDragStartCapture = useCallback((event: DragEvent<HTMLElement>) => {
+    if (!enabled) return
+    event.preventDefault()
+  }, [enabled])
+
   return {
-    onTouchStart,
-    onTouchEnd,
-    onTouchCancel,
+    onPointerDown,
+    onPointerUp,
+    onPointerCancel,
     onWheel,
-    onClickCapture
+    onClickCapture,
+    onDragStartCapture
   }
 }
 
@@ -511,7 +535,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
           </div>
         ))}
       </div>
-      <div className="hidden overflow-x-auto pb-2 touch-pan-y md:block" {...swipeHandlers}>
+      <div className="hidden cursor-grab select-none overflow-x-auto pb-2 touch-pan-y active:cursor-grabbing md:block" {...swipeHandlers}>
         <div className="grid min-w-full grid-cols-4 gap-5">
           {(pages[currentPage] || []).map((video, index) => (
             <CeoCard key={video.materialId} video={video} index={currentPage * CEO_PAGE_SIZE + index} isGuest={isGuest} />
@@ -750,7 +774,7 @@ function ModuleSection({
         onNext={goNext}
       />
       <div
-        className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} touch-pan-y`}
+        className={`${section === 'foreign_meeting' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-4' : 'grid gap-6 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4'} cursor-grab select-none touch-pan-y active:cursor-grabbing`}
         {...swipeHandlers}
       >
         {(pages[currentPage] || []).map((video, index) => (
