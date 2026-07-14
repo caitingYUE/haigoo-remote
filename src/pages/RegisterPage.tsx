@@ -274,8 +274,8 @@ export default function RegisterPage() {
                 </svg>
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">注册成功！</h3>
-              <p className="text-slate-600 mb-6">
-                请务必在 <strong>24小时内</strong> 前往邮箱验证您的账号，否则账号将被锁定无法登录。
+              <p className="text-slate-600 mb-6 leading-7">
+                验证邮件已发送。未验证前仍可浏览网站，完成验证后即可搜索、筛选和申请岗位。
               </p>
               <button
                 onClick={() => navigate('/', { replace: true })}

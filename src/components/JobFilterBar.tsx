@@ -62,6 +62,8 @@ interface JobFilterBarProps {
   onListModeChange: (mode: ListMode) => void;
   isAuthenticated?: boolean;
   isMember?: boolean;
+  interactionLocked?: boolean;
+  onLockedInteraction?: () => void;
 }
 
 const EXPERIENCE_OPTIONS = [
@@ -265,7 +267,9 @@ export default function JobFilterBar({
   applicationCount = 0,
   onListModeChange,
   isAuthenticated = false,
-  isMember = false
+  isMember = false,
+  interactionLocked = false,
+  onLockedInteraction
 }: JobFilterBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [tempFilters, setTempFilters] = useState(filters);
@@ -276,6 +280,15 @@ export default function JobFilterBar({
     if (openDropdown === null) setTempFilters(filters);
   }, [filters, openDropdown]);
   const previousOpenDropdownRef = useRef<string | null>(null);
+
+  const toggleFilterDropdown = (name: string) => {
+    if (interactionLocked) {
+      setOpenDropdown(null);
+      onLockedInteraction?.();
+      return;
+    }
+    setOpenDropdown(current => current === name ? null : name);
+  };
 
   const groupedCategories = useMemo(() => buildRoleOptionGroups(categoryOptions), [categoryOptions]);
   const showRoleCounts = Boolean(isMember);
@@ -300,6 +313,11 @@ export default function JobFilterBar({
   }, [openDropdown]);
 
   const applyFilters = (keys: Array<keyof typeof filters>) => {
+    if (interactionLocked) {
+      setOpenDropdown(null);
+      onLockedInteraction?.();
+      return;
+    }
     const updates: any = {};
     keys.forEach(key => {
       const currentVal = filters[key];
@@ -527,7 +545,7 @@ export default function JobFilterBar({
             activeLabel={getActiveLabel('category', categoryOptions, '角色')}
             isActive={(filters.category?.length || 0) > 0}
             isOpen={openDropdown === 'category'}
-            onToggle={() => setOpenDropdown('category')}
+            onToggle={() => toggleFilterDropdown('category')}
             onClose={() => applyFilters(['category'])}
             onApply={() => applyFilters(['category'])}
             onClear={() => clearTempFilters(['category'])}
@@ -590,7 +608,7 @@ export default function JobFilterBar({
             activeLabel={getLocationActiveLabel()}
             isActive={(filters.regionType?.length || 0) > 0 || (filters.location?.length || 0) > 0}
             isOpen={openDropdown === 'location'}
-            onToggle={() => setOpenDropdown('location')}
+            onToggle={() => toggleFilterDropdown('location')}
             onClose={() => applyFilters(['regionType', 'location'])}
             onApply={() => applyFilters(['regionType', 'location'])}
             onClear={() => clearTempFilters(['regionType', 'location'])}
@@ -637,7 +655,7 @@ export default function JobFilterBar({
             activeLabel={moreFilterCount > 0 ? `更多筛选 (${moreFilterCount})` : '更多筛选'}
             isActive={moreFilterCount > 0}
             isOpen={openDropdown === 'more'}
-            onToggle={() => setOpenDropdown('more')}
+            onToggle={() => toggleFilterDropdown('more')}
             onClose={() => applyFilters(['jobType', 'experienceLevel', 'industry'])}
             onApply={() => applyFilters(['jobType', 'experienceLevel', 'industry'])}
             onClear={() => clearTempFilters(['jobType', 'experienceLevel', 'industry'])}
@@ -670,7 +688,7 @@ export default function JobFilterBar({
           {isAuthenticated ? (
             <button
               type="button"
-              onClick={() => onFilterChange({ memberOnly: !filters.memberOnly })}
+              onClick={() => interactionLocked ? onLockedInteraction?.() : onFilterChange({ memberOnly: !filters.memberOnly })}
               className={`inline-flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-all whitespace-nowrap ${
                 filters.memberOnly
                   ? 'border-[#d8d2ff] bg-[#f1efff] text-[#6f63ff] shadow-sm'

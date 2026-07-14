@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { BookOpen, Loader2, Lock, Share2, X } from 'lucide-react'
+import { ArrowRight, BookOpen, Loader2, Lock, Share2, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useNotificationHelpers } from './NotificationSystem'
 import { VideoNotesArticle } from './VideoNotesArticle'
@@ -84,7 +84,15 @@ export function VideoNotesModal({ video, onClose }: { video: VideoNotesModalVide
             <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-[#e2dcff] bg-[#faf9ff] px-6 text-center">
               <Lock className="h-8 w-8 text-[#6251f5]" />
               <h3 className="mt-4 text-xl font-black text-slate-950">{detail.loginRequired ? '登录后查看视频笔记' : '开通 Club 查看完整笔记'}</h3>
-              <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{detail.lockReason?.replace('升级后可播放', '升级后可查看') || '该笔记与视频使用相同的访问权限。'}</p>
+              <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{detail.loginRequired ? '登录后即可继续查看该视频笔记。' : '该视频笔记为 Club 权益内容，升级后可查看。'}</p>
+              <Link
+                to={detail.loginRequired ? `/login?redirect=${encodeURIComponent(notePath)}` : '/profile?tab=membership#club-service-plans'}
+                onClick={onClose}
+                className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm hover:bg-[#5142df] hover:text-white hover:no-underline"
+              >
+                {detail.loginRequired ? '前往登录' : '前往开通 Club'}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           ) : (
             <VideoNotesArticle notes={detail?.videoNotes || []} />

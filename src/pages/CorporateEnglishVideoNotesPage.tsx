@@ -146,7 +146,14 @@ export default function CorporateEnglishVideoNotesPage() {
             <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-[#e2dcff] bg-white px-6 text-center shadow-[0_12px_32px_rgba(70,93,125,0.06)]">
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f3f0ff] text-[#6251f5]"><Lock className="h-7 w-7" /></span>
               <h2 className="mt-5 text-2xl font-black text-slate-950">{video.loginRequired ? '登录后查看视频笔记' : '开通 Club 查看完整笔记'}</h2>
-              <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">{video.lockReason?.replace('升级后可播放', '升级后可查看') || '视频笔记与完整视频使用相同的访问权限。'}</p>
+              <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">{video.loginRequired ? '登录后即可继续查看该视频笔记。' : '该视频笔记为 Club 权益内容，升级后可查看。'}</p>
+              <Link
+                to={video.loginRequired ? `/login?redirect=${encodeURIComponent(currentPath)}` : '/profile?tab=membership#club-service-plans'}
+                className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#6251f5] px-6 text-sm font-black text-white shadow-sm transition hover:bg-[#5142df] hover:text-white hover:no-underline"
+              >
+                {video.loginRequired ? '前往登录' : '前往开通 Club'}
+                <ArrowRight className="h-4 w-4" />
+              </Link>
             </div>
           ) : video.hasVideoNotes ? (
             <VideoNotesArticle notes={video.videoNotes || []} />

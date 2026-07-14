@@ -26,6 +26,7 @@ import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { trackingService } from '../services/tracking-service'
 import MemberEmailSubscriptionCard from './MemberEmailSubscriptionCard'
 import HomeCareerGuides from './HomeCareerGuides'
+import EmailVerificationRequiredModal from './EmailVerificationRequiredModal'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
@@ -667,6 +668,7 @@ export default function HomeHero({
     const [upgradeFeedbackContent, setUpgradeFeedbackContent] = useState('')
     const [upgradeFeedbackSubmitting, setUpgradeFeedbackSubmitting] = useState(false)
     const [isSystemUpgradeNoticeActive, setIsSystemUpgradeNoticeActive] = useState(() => Date.now() < HOME_SYSTEM_UPGRADE_END_AT)
+    const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
 
     useEffect(() => {
         if (!isSystemUpgradeNoticeActive) return
@@ -1646,6 +1648,10 @@ export default function HomeHero({
         resumeIdOverride?: string | null
         resumeHintsOverride?: string[]
     }) => {
+        if (isAuthenticated && user && !user.emailVerified) {
+            setShowEmailVerificationPrompt(true)
+            return
+        }
         const nextJobDirection = String(options?.direction ?? jobDirection).trim()
         const nextPositionType = String(options?.position ?? positionType).trim() || 'full-time'
         const effectiveResumeId = options?.resumeIdOverride !== undefined ? options.resumeIdOverride : resumeId
@@ -1894,6 +1900,10 @@ export default function HomeHero({
         { name: 'Zapier', desc: '自动化工具', image: '/pic_lists/Home_pics/background03.webp' },
     ]
     const runHeroSearch = (value?: string) => {
+        if (isAuthenticated && user && !user.emailVerified) {
+            setShowEmailVerificationPrompt(true)
+            return
+        }
         const keyword = String(value || heroSearchTerm || '').trim()
         const params = new URLSearchParams()
         params.set('memberOnly', 'false')
@@ -1902,6 +1912,10 @@ export default function HomeHero({
     }
 
     const openHeroCategory = (categories: string[]) => {
+        if (isAuthenticated && user && !user.emailVerified) {
+            setShowEmailVerificationPrompt(true)
+            return
+        }
         const params = new URLSearchParams()
         params.set('category', categories.join(','))
         params.set('memberOnly', 'false')
@@ -2617,6 +2631,11 @@ export default function HomeHero({
                     </div>
                 </div>
             )}
+            <EmailVerificationRequiredModal
+                isOpen={showEmailVerificationPrompt}
+                onClose={() => setShowEmailVerificationPrompt(false)}
+                actionLabel="搜索或筛选岗位"
+            />
         </div>
     )
 }

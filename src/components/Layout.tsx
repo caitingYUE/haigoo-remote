@@ -105,6 +105,29 @@ export default function Layout({ children }: LayoutProps) {
 
       <Header showUpgradeNotice={showUpgradeNotice} />
 
+      {showVerificationWarning ? (
+        <div className={`fixed right-3 z-[45] max-w-[calc(100vw-1.5rem)] rounded-2xl border border-amber-200/90 bg-amber-50/95 px-4 py-3 text-amber-950 shadow-[0_18px_48px_-28px_rgba(120,73,16,0.5)] backdrop-blur sm:right-5 sm:max-w-md ${showUpgradeNotice ? 'top-[7.25rem]' : 'top-[4.5rem]'}`}>
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-black">邮箱尚未验证</div>
+              <p className="mt-1 text-xs font-semibold leading-5 text-amber-800">
+                你仍可浏览网站；验证后才可搜索、筛选和申请岗位。
+              </p>
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resending}
+                className="mt-2 inline-flex items-center gap-1.5 text-xs font-black text-amber-700 transition hover:text-amber-900 disabled:cursor-wait disabled:opacity-60"
+              >
+                <Send className="h-3.5 w-3.5" />
+                {resending ? '发送中…' : (resendMsg || '重新发送验证邮件')}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <main className={`flex-1 relative ${lockViewport ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
         <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isCorporateEnglish || isAbout || isBundle || isProfile || isJobsPage) ? '' : 'pt-20'}`}`}>
           {children}

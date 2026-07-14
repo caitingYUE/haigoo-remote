@@ -22,6 +22,7 @@ import { formatSalaryForDisplay } from '../utils/salary-display'
 import { findLocation } from '../data/locations'
 import { corporateEnglishPublicService, type CorporateEnglishCompanyDetail, type CorporateEnglishPublicVideo } from '../services/corporate-english-public-service'
 import { getCompanyLogoSources } from '../utils/company-logo'
+import EmailVerificationRequiredModal from './EmailVerificationRequiredModal'
 
 interface JobDetailPanelProps {
     job: Job
@@ -467,7 +468,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     trackingExtra = EMPTY_TRACKING_EXTRA
 }) => {
     const navigate = useNavigate()
-    const { isMember, isAuthenticated, token } = useAuth()
+    const { isMember, isAuthenticated, token, user } = useAuth()
+    const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
     const sourceType = getJobSourceType(job)
     const shouldMaskGuestMeta = !isAuthenticated
     const trackingExtraSignature = JSON.stringify(trackingExtra)
@@ -493,6 +495,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [headquartersTooltipPosition, setHeadquartersTooltipPosition] = useState<{ left: number; top: number } | null>(null)
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+    const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
     const [isEmailConnectOpen, setIsEmailConnectOpen] = useState(false)
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
     const [nestedJobIndex, setNestedJobIndex] = useState<number | null>(null)
@@ -892,6 +895,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         navigate('/login')
     }
 
+    const promptEmailVerificationIfNeeded = () => {
+        if (!isEmailVerificationRequired) return false
+        setShowEmailVerificationPrompt(true)
+        return true
+    }
+
     const handleApply = async () => {
         trackingService.track('click_apply_init', {
             ...trackingBase,
@@ -911,6 +920,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             goToLogin()
             return
         }
+
+        if (promptEmailVerificationIfNeeded()) return
 
         if (isMemberRestrictedJob && !isMember) {
             openUpgradeModal('member_only_job_apply', 'job_detail_apply_member_only')
@@ -1144,6 +1155,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             navigate('/login')
             return
         }
+        if (promptEmailVerificationIfNeeded()) return
         if (isMemberRestrictedJob && !isMember) {
             goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only_unlock')
             return
@@ -1199,6 +1211,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             goToLogin()
             return
         }
+        if (promptEmailVerificationIfNeeded()) return
 
         if (!isReferralUnlocked) {
             goToMembershipPayment('referral', 'job_detail_referral_locked_apply')
@@ -1242,7 +1255,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             source: 'referral'
         })
 
-        if (!isAuthenticated) return
+        if (!isAuthenticated || promptEmailVerificationIfNeeded()) return
 
         try {
             const token = localStorage.getItem('haigoo_auth_token')
@@ -1575,6 +1588,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             goToLogin()
             return
         }
+        if (promptEmailVerificationIfNeeded()) return
         if (referralAccessMode === 'member_only') {
             goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only_group')
             return
@@ -1603,6 +1617,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             goToLogin()
             return
         }
+        if (promptEmailVerificationIfNeeded()) return
         if (applicationGuideAccessMode === 'member_only' || applicationGuideAccessMode === 'free_exhausted') {
             goToMembershipPayment('application_guide', 'job_detail_application_guide')
             return
@@ -1723,6 +1738,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             entity_type: 'job',
             entity_id: job.id
         })
+
+        if (promptEmailVerificationIfNeeded()) return
 
         if (websiteApplyState === 'login_required') {
             goToLogin()
@@ -2193,6 +2210,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             goToLogin()
                                             return
                                         }
+                                        if (promptEmailVerificationIfNeeded()) return
                                         if (mode === 'member_only') {
                                             goToMembershipPayment('member_only_job_apply', 'job_detail_referral_member_only_card')
                                             return
@@ -2300,6 +2318,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                                 return
                                                                             }
                                                                             event.stopPropagation()
+                                                                            if (promptEmailVerificationIfNeeded()) return
                                                                             window.open(toSafeExternalUrl(contact.linkedin), '_blank', 'noopener,noreferrer')
                                                                         }}
                                                                         className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all hover:scale-[1.02] ${
@@ -2628,6 +2647,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 jobId={job.id}
                 jobTitle={job.translations?.title || job.title}
                 companyName={job.translations?.company || job.company || ''}
+            />
+            <EmailVerificationRequiredModal
+                isOpen={showEmailVerificationPrompt}
+                onClose={() => setShowEmailVerificationPrompt(false)}
+                actionLabel="申请岗位"
             />
 
             {showHeadquartersLocationTooltip && headquartersTooltipPosition && typeof document !== 'undefined' && createPortal(
