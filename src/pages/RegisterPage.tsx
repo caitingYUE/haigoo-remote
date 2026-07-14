@@ -275,7 +275,7 @@ export default function RegisterPage() {
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-2">注册成功！</h3>
               <p className="text-slate-600 mb-6 leading-7">
-                验证邮件已发送。未验证前仍可浏览网站，完成验证后即可搜索、筛选和申请岗位。
+                验证邮件已发送。未验证前可浏览、搜索和筛选部分岗位，完成验证后即可查看完整列表并申请岗位。
               </p>
               <button
                 onClick={() => navigate('/', { replace: true })}

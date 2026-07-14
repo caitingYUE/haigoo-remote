@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import brandLogoPng from '../assets/brandlogo.webp'
-import EmailVerificationRequiredModal from './EmailVerificationRequiredModal'
 
 interface HeaderProps {
   showUpgradeNotice?: boolean
@@ -33,7 +32,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
   const [headerSearchTerm, setHeaderSearchTerm] = useState('')
-  const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout, token, isMember, isTrialMember, memberType } = useAuth()
@@ -211,10 +209,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
 
   const submitHeaderSearch = (event: FormEvent) => {
     event.preventDefault()
-    if (isAuthenticated && user && !user.emailVerified) {
-      setShowEmailVerificationPrompt(true)
-      return
-    }
     const keyword = headerSearchTerm.trim()
     if (!isJobsPage) {
       navigate(keyword ? `/jobs?search=${encodeURIComponent(keyword)}` : '/jobs')
@@ -744,11 +738,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
           </nav>
         )}
       </div>
-      <EmailVerificationRequiredModal
-        isOpen={showEmailVerificationPrompt}
-        onClose={() => setShowEmailVerificationPrompt(false)}
-        actionLabel="搜索岗位"
-      />
     </header>
   )
 }

@@ -496,6 +496,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [isReferralModalOpen, setIsReferralModalOpen] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
+    const [emailVerificationActionLabel, setEmailVerificationActionLabel] = useState('申请岗位')
     const [isEmailConnectOpen, setIsEmailConnectOpen] = useState(false)
     const [selectedReferralContact, setSelectedReferralContact] = useState<ReferralContact | null>(null)
     const [nestedJobIndex, setNestedJobIndex] = useState<number | null>(null)
@@ -689,7 +690,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     // Load free feature usage counts from server (company info + email apply + referral)
     useEffect(() => {
-        if (isAuthenticated && !isMember) {
+        if (isAuthenticated && !isEmailVerificationRequired && !isMember) {
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) return;
             loadFreeUsageSnapshot(token).then(({ sharedData, websiteApplyData }) => {
@@ -702,7 +703,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     setWebsiteApplyUsageReady(true)
                 }
             }).catch(err => console.error('[free-usage] Failed to load quotas:', err));
-        } else if (isMember) {
+        } else if (isMember && !isEmailVerificationRequired) {
             // Members have no limits
             syncSharedFreeAccessState(0, []);
             syncWebsiteApplyState(0, [])
@@ -712,7 +713,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             setSharedFreeUsageReady(false)
             setWebsiteApplyUsageReady(false)
         }
-    }, [isAuthenticated, isMember]);
+    }, [isAuthenticated, isEmailVerificationRequired, isMember]);
 
     useEffect(() => {
         const requestId = companyInfoRequestRef.current + 1
@@ -895,8 +896,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         navigate('/login')
     }
 
-    const promptEmailVerificationIfNeeded = () => {
+    const promptEmailVerificationIfNeeded = (actionLabel = '申请岗位') => {
         if (!isEmailVerificationRequired) return false
+        setEmailVerificationActionLabel(actionLabel)
         setShowEmailVerificationPrompt(true)
         return true
     }
@@ -1364,6 +1366,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             }
             return
         }
+        if (promptEmailVerificationIfNeeded('收藏岗位')) return
 
         trackingService.track('click_save_job', {
             ...trackingBase,
@@ -1499,6 +1502,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             promptLogin('登录后可查看企业信息\n\n是否前往登录？')
             return
         }
+        if (promptEmailVerificationIfNeeded('查看企业信息')) return
         // Navigate to company detail page using company name as identifier
         navigate(getCompanyDetailPath(job.company || ''))
     }
@@ -2651,7 +2655,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             <EmailVerificationRequiredModal
                 isOpen={showEmailVerificationPrompt}
                 onClose={() => setShowEmailVerificationPrompt(false)}
-                actionLabel="申请岗位"
+                actionLabel={emailVerificationActionLabel}
             />
 
             {showHeadquartersLocationTooltip && headquartersTooltipPosition && typeof document !== 'undefined' && createPortal(

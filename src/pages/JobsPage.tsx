@@ -49,7 +49,6 @@ const EXPERIENCE_LABELS = new Map(EXPERIENCE_OPTIONS.map(option => [option.value
 // ];
 
 import { MobileRestricted } from '../components/MobileRestricted'
-import EmailVerificationRequiredModal from '../components/EmailVerificationRequiredModal'
 
 import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
 
@@ -331,8 +330,7 @@ export default function JobsPage() {
   const location = useLocation()
   const { token, user, isAuthenticated, isMember } = useAuth()
   const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
-  const hasVerifiedJobAccess = Boolean(isAuthenticated && !isEmailVerificationRequired)
-  const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
+  const hasVerifiedJobAccess = Boolean(isAuthenticated && user?.emailVerified)
 
   const [searchTerm, setSearchTerm] = useState(() => {
     // Optimization: Initialize from URL to avoid double-fetch and flash of wrong content
@@ -484,12 +482,16 @@ export default function JobsPage() {
   const [, setLoadingStage] = useState<'idle' | 'fetching' | 'translating'>('idle')
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
-  const showGuestFullListLoginPrompt = useCallback(() => {
+  const showPreviewLimitPrompt = useCallback(() => {
     const now = Date.now()
     if (now - guestMorePromptedAtRef.current < GUEST_MORE_PROMPT_COOLDOWN_MS) return
     guestMorePromptedAtRef.current = now
+    if (isEmailVerificationRequired) {
+      showWarning('验证邮箱后可查看更多', '完成邮箱验证后即可继续加载更多远程岗位。')
+      return
+    }
     showWarning('完整列表登录后可见', '登录后可以继续加载更多远程岗位。')
-  }, [showWarning])
+  }, [isEmailVerificationRequired, showWarning])
 
   const syncJobListUrl = useCallback((nextFilters: JobFiltersState, nextSearchTerm: string) => {
     const params = buildJobsSearchParams(location.search, nextFilters, nextSearchTerm)
@@ -503,8 +505,7 @@ export default function JobsPage() {
   // 加载岗位数据（使用新的后端API，支持筛选和分页）
   const loadJobsWithFilters = useCallback(async (page = 1, loadMore = false) => {
     if ((!isAuthenticated || isEmailVerificationRequired) && loadMore) {
-      if (isEmailVerificationRequired) setShowEmailVerificationPrompt(true)
-      else showGuestFullListLoginPrompt()
+      showPreviewLimitPrompt()
       return
     }
 
@@ -532,10 +533,10 @@ export default function JobsPage() {
       // 构建查询参数
       const queryParams = new URLSearchParams()
 
-      const requestSearchTerm = isEmailVerificationRequired ? '' : searchTerm
-      const requestFilters = isEmailVerificationRequired ? DEFAULT_JOB_FILTERS : filters
+      const requestSearchTerm = searchTerm
+      const requestFilters = filters
       const hasCurrentJobIntent = hasActiveJobIntent(requestSearchTerm, requestFilters)
-      const habitBoost = sortBy === 'relevance' && !isEmailVerificationRequired ? readJobHabitBoostParams() : null
+      const habitBoost = sortBy === 'relevance' ? readJobHabitBoostParams() : null
       const hasResumeRefreshIntent = Boolean(readMatchScoreRefreshMarker())
       const shouldUseMatchScore = Boolean(hasVerifiedJobAccess && token && (hasCurrentJobIntent || habitBoost || hasResumeRefreshIntent));
       if (shouldUseMatchScore) {
@@ -549,7 +550,7 @@ export default function JobsPage() {
       queryParams.append('listMode', 'compact')
 
       // Explicitly handle sortBy
-      if (sortBy === 'recent' && !isEmailVerificationRequired) {
+      if (sortBy === 'recent') {
         queryParams.append('sortBy', 'recent')
       } else {
         // Explicitly send relevance to ensure backend knows the intent
@@ -581,7 +582,7 @@ export default function JobsPage() {
       }
 
       const data = await fetchJobsJsonWithDedupe(requestUrl, {
-        headers: token && !isEmailVerificationRequired ? { Authorization: `Bearer ${token}` } : {},
+        headers: token && hasVerifiedJobAccess ? { Authorization: `Bearer ${token}` } : {},
         signal
       }, {
         feature_key: 'job_search',
@@ -728,7 +729,7 @@ export default function JobsPage() {
         }
       }
     }
-  }, [token, isAuthenticated, isEmailVerificationRequired, hasVerifiedJobAccess, showError, effectivePageSize, filters, searchTerm, sortBy, location.search, showGuestFullListLoginPrompt])
+  }, [token, isAuthenticated, isEmailVerificationRequired, hasVerifiedJobAccess, showError, effectivePageSize, filters, searchTerm, sortBy, location.search, showPreviewLimitPrompt])
 
   const loadJobsMetadata = useCallback(async () => {
     if (metadataAbortControllerRef.current) {
@@ -739,13 +740,13 @@ export default function JobsPage() {
 
     try {
       const queryParams = new URLSearchParams()
-      const requestSearchTerm = isEmailVerificationRequired ? '' : searchTerm
-      const requestFilters = isEmailVerificationRequired ? DEFAULT_JOB_FILTERS : filters
+      const requestSearchTerm = searchTerm
+      const requestFilters = filters
       queryParams.append('metadataOnly', 'true')
       queryParams.append('page', '1')
       queryParams.append('pageSize', effectivePageSize.toString())
       queryParams.append('limit', effectivePageSize.toString())
-      queryParams.append('sortBy', sortBy === 'recent' && !isEmailVerificationRequired ? 'recent' : 'relevance')
+      queryParams.append('sortBy', sortBy === 'recent' ? 'recent' : 'relevance')
       queryParams.append('isApproved', 'true')
 
       const hasKeywordSearch = Boolean(requestSearchTerm.trim())
@@ -834,7 +835,7 @@ export default function JobsPage() {
       if (error instanceof Error && error.name === 'AbortError') return
       console.warn('[JobsPage] Failed to load jobs metadata:', error)
     }
-  }, [filters, isEmailVerificationRequired, hasVerifiedJobAccess, effectivePageSize, searchTerm, sortBy])
+  }, [filters, hasVerifiedJobAccess, effectivePageSize, searchTerm, sortBy])
 
   const refreshJobsIfResumeChanged = useCallback(() => {
     if (!isAuthenticated || !token) return
@@ -852,8 +853,7 @@ export default function JobsPage() {
     if (loadingMore || jobsLoading) return
 
     if (!isAuthenticated || isEmailVerificationRequired) {
-      if (isEmailVerificationRequired) setShowEmailVerificationPrompt(true)
-      else showGuestFullListLoginPrompt()
+      showPreviewLimitPrompt()
       return
     }
 
@@ -873,7 +873,7 @@ export default function JobsPage() {
     }, 180)
 
     // Track search or filter change
-    if (debouncedSearchTerm && !isEmailVerificationRequired) {
+    if (debouncedSearchTerm) {
       trackingService.track('search_submitted', {
         event_family: 'search',
         outcome: 'started',
@@ -883,7 +883,7 @@ export default function JobsPage() {
       })
       localStorage.setItem('haigoo_last_non_empty_job_search', debouncedSearchTerm)
     }
-    if (!isEmailVerificationRequired) rememberLatestJobSearch(debouncedSearchTerm)
+    rememberLatestJobSearch(debouncedSearchTerm)
 
     // Track filter usage (if any filter is active)
     const activeFilters = Object.entries(filters).filter(([key, value]) => {
@@ -892,7 +892,7 @@ export default function JobsPage() {
       return false
     })
 
-    if (activeFilters.length > 0 && !isEmailVerificationRequired) {
+    if (activeFilters.length > 0) {
       trackingService.track('filter_applied', {
         event_family: 'search',
         outcome: 'succeeded',
@@ -903,7 +903,7 @@ export default function JobsPage() {
     // 注意: loadJobsWithFilters 故意不包含在依赖中，因为其内部使用的值已在依赖数组中
     return () => window.clearTimeout(metadataTimer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearchTerm, filters, isAuthenticated, isEmailVerificationRequired, token, sortBy])
+  }, [debouncedSearchTerm, filters, isAuthenticated, token, sortBy])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -959,15 +959,6 @@ export default function JobsPage() {
     const paramKeys = ['category', 'experienceLevel', 'industry', 'regionType', 'region', 'sourceType', 'location', 'type', 'jobType', 'salary', 'memberOnly', 'isTrusted', 'isNew']
     const hasFilterParam = paramKeys.some(key => params.has(key))
 
-    if (isEmailVerificationRequired && (search.trim() || hasFilterParam)) {
-      setSearchTerm('')
-      setFilters(DEFAULT_JOB_FILTERS)
-      setSortBy('relevance')
-      JOB_FILTER_URL_KEYS.forEach(key => params.delete(key))
-      navigate({ search: params.toString() }, { replace: true })
-      setShowEmailVerificationPrompt(true)
-      return
-    }
     setSearchTerm(prev => (prev === search ? prev : search))
 
     if (search.trim() && hasFilterParam) {
@@ -988,7 +979,7 @@ export default function JobsPage() {
             : []
         const next = normalizeJobFilters({
           ...prev,
-          ...(params.has('category') && isAuthenticated ? { category: readCsvParam(params, 'category') } : {}),
+          ...(params.has('category') && hasVerifiedJobAccess ? { category: readCsvParam(params, 'category') } : {}),
           ...(params.has('experienceLevel') ? { experienceLevel: readCsvParam(params, 'experienceLevel') } : {}),
           ...(params.has('industry') ? { industry: readCsvParam(params, 'industry') } : {}),
           ...(params.has('regionType') || params.has('region') ? { regionType: urlRegionType.length > 0 ? urlRegionType : legacyRegionType } : {}),
@@ -1004,7 +995,7 @@ export default function JobsPage() {
         return JSON.stringify(next) === JSON.stringify(prev) ? prev : next
       })
     }
-  }, [isAuthenticated, isEmailVerificationRequired, location.search, navigate])
+  }, [hasVerifiedJobAccess, location.search, navigate])
 
   const toggleSaveJob = async (jobId: string, job?: Job) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
@@ -1285,10 +1276,6 @@ export default function JobsPage() {
                 <JobFilterBar
                   filters={filters}
                   onFilterChange={(newFilters: any) => {
-                    if (isEmailVerificationRequired) {
-                      setShowEmailVerificationPrompt(true)
-                      return
-                    }
                     if (import.meta.env.DEV) {
                       console.debug('[JobsPage] onFilterChange triggered:', newFilters)
                     }
@@ -1308,10 +1295,6 @@ export default function JobsPage() {
                   timezoneOptions={timezoneOptions}
                   searchTerm={searchTerm}
                   onSearchChange={(value) => {
-                    if (isEmailVerificationRequired) {
-                      setShowEmailVerificationPrompt(true)
-                      return
-                    }
                     hasManualJobSelectionRef.current = false
                     setSearchTerm(value)
                     const shouldClearFilters = Boolean(value.trim()) && hasActiveJobIntent('', filters)
@@ -1325,10 +1308,9 @@ export default function JobsPage() {
                   listMode={listMode}
                   favoriteCount={savedJobs.size}
                   applicationCount={applicationCount}
-                  isAuthenticated={isAuthenticated}
+                  isAuthenticated={hasVerifiedJobAccess}
                   isMember={isMember}
-                  interactionLocked={isEmailVerificationRequired}
-                  onLockedInteraction={() => setShowEmailVerificationPrompt(true)}
+                  verificationRequired={isEmailVerificationRequired}
                   onListModeChange={(mode) => {
                     setListMode(mode)
                     if (mode !== 'jobs') {
@@ -1340,10 +1322,6 @@ export default function JobsPage() {
                     }
                   }}
                   onSortChange={() => {
-                    if (isEmailVerificationRequired) {
-                      setShowEmailVerificationPrompt(true)
-                      return
-                    }
                     setListMode('jobs')
                     hasManualJobSelectionRef.current = false
                     setSortBy(prev => prev === 'recent' ? 'relevance' : 'recent')
@@ -1635,12 +1613,6 @@ export default function JobsPage() {
           </div>,
           document.body
         )}
-
-        <EmailVerificationRequiredModal
-          isOpen={showEmailVerificationPrompt}
-          onClose={() => setShowEmailVerificationPrompt(false)}
-          actionLabel="搜索、筛选或申请岗位"
-        />
 
       </div>
     </MobileRestricted>

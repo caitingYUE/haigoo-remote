@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, Mail, RefreshCw, Send, X } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Mail, RefreshCw, Send, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 interface EmailVerificationRequiredModalProps {
@@ -23,6 +23,15 @@ export default function EmailVerificationRequiredModal({
   useEffect(() => {
     if (isOpen && user?.emailVerified) onClose()
   }, [isOpen, onClose, user?.emailVerified])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isOpen, onClose])
 
   if (!isOpen || typeof document === 'undefined') return null
 
@@ -57,13 +66,13 @@ export default function EmailVerificationRequiredModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-[2px]"
       role="dialog"
       aria-modal="true"
       aria-labelledby="email-verification-title"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-md overflow-hidden rounded-[28px] border border-white/80 bg-white shadow-[0_32px_100px_-30px_rgba(15,23,42,0.48)]">
+      <div className="relative w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_72px_-28px_rgba(15,23,42,0.42)]">
         <button
           type="button"
           onClick={onClose}
@@ -73,25 +82,25 @@ export default function EmailVerificationRequiredModal({
           <X className="h-5 w-5" />
         </button>
 
-        <div className="bg-[linear-gradient(135deg,#f5f2ff_0%,#f8fbff_58%,#fffaf0_100%)] px-7 pb-6 pt-8 text-center">
-          <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white text-[#6251f5] shadow-[0_16px_36px_-22px_rgba(98,81,245,0.6)]">
-            <Mail className="h-7 w-7" />
+        <div className="pr-10">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3f0ff] text-[#6251f5]">
+            <Mail className="h-5 w-5" />
           </span>
-          <h2 id="email-verification-title" className="mt-5 text-2xl font-black text-slate-950">请先验证邮箱</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            为防止虚假邮箱重复获取体验次数，验证邮箱后才可{actionLabel}。其他页面仍可正常浏览。
+          <h2 id="email-verification-title" className="mt-4 text-xl font-black text-slate-950">验证邮箱后继续</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            完成邮箱验证后即可{actionLabel}。
           </p>
         </div>
 
-        <div className="space-y-4 px-7 py-6">
-          <div className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
-            <div className="text-xs font-bold text-slate-400">验证邮件将发送至</div>
-            <div className="mt-1 break-all text-sm font-black text-slate-800">{user?.email || '当前账户邮箱'}</div>
+        <div className="mt-5 space-y-3">
+          <div className="rounded-2xl bg-slate-50 px-4 py-3">
+            <div className="text-xs font-bold text-slate-400">当前邮箱</div>
+            <div className="mt-1 break-all text-sm font-bold text-slate-700">{user?.email || '当前账户邮箱'}</div>
           </div>
 
           {message ? (
             <div className={`flex items-start gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold leading-6 ${messageTone === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+              {messageTone === 'success' ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />}
               <span>{message}</span>
             </div>
           ) : null}
@@ -100,7 +109,7 @@ export default function EmailVerificationRequiredModal({
             type="button"
             onClick={handleResend}
             disabled={isResending}
-            className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#6251f5] px-5 text-sm font-black text-white transition hover:bg-[#5142df] disabled:cursor-wait disabled:opacity-70"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#6251f5] px-5 text-sm font-black text-white transition hover:bg-[#5142df] disabled:cursor-wait disabled:opacity-70"
           >
             <Send className="h-4 w-4" />
             {isResending ? '发送中…' : '重新发送验证邮件'}

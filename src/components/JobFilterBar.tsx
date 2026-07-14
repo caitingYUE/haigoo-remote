@@ -62,8 +62,7 @@ interface JobFilterBarProps {
   onListModeChange: (mode: ListMode) => void;
   isAuthenticated?: boolean;
   isMember?: boolean;
-  interactionLocked?: boolean;
-  onLockedInteraction?: () => void;
+  verificationRequired?: boolean;
 }
 
 const EXPERIENCE_OPTIONS = [
@@ -268,8 +267,7 @@ export default function JobFilterBar({
   onListModeChange,
   isAuthenticated = false,
   isMember = false,
-  interactionLocked = false,
-  onLockedInteraction
+  verificationRequired = false
 }: JobFilterBarProps) {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [tempFilters, setTempFilters] = useState(filters);
@@ -282,11 +280,6 @@ export default function JobFilterBar({
   const previousOpenDropdownRef = useRef<string | null>(null);
 
   const toggleFilterDropdown = (name: string) => {
-    if (interactionLocked) {
-      setOpenDropdown(null);
-      onLockedInteraction?.();
-      return;
-    }
     setOpenDropdown(current => current === name ? null : name);
   };
 
@@ -313,11 +306,6 @@ export default function JobFilterBar({
   }, [openDropdown]);
 
   const applyFilters = (keys: Array<keyof typeof filters>) => {
-    if (interactionLocked) {
-      setOpenDropdown(null);
-      onLockedInteraction?.();
-      return;
-    }
     const updates: any = {};
     keys.forEach(key => {
       const currentVal = filters[key];
@@ -598,7 +586,7 @@ export default function JobFilterBar({
               </div>
             ) : (
               <div className="flex min-h-[132px] items-center justify-center rounded-2xl border border-dashed border-[#dfe8ef] bg-slate-50/70 px-6 text-sm font-black text-slate-500">
-                登录后可见
+                {verificationRequired ? '验证邮箱后可见' : '登录后可见'}
               </div>
             )}
           </FilterDropdown>
@@ -688,7 +676,7 @@ export default function JobFilterBar({
           {isAuthenticated ? (
             <button
               type="button"
-              onClick={() => interactionLocked ? onLockedInteraction?.() : onFilterChange({ memberOnly: !filters.memberOnly })}
+              onClick={() => onFilterChange({ memberOnly: !filters.memberOnly })}
               className={`inline-flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-all whitespace-nowrap ${
                 filters.memberOnly
                   ? 'border-[#d8d2ff] bg-[#f1efff] text-[#6f63ff] shadow-sm'
