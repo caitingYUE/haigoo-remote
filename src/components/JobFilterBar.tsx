@@ -147,7 +147,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   }, [isOpen, onClose, onApply]);
 
   const theme = THEME_STYLES[colorTheme];
-  const buttonClass = `inline-flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-all whitespace-nowrap ${
+  const buttonClass = `inline-flex h-10 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-all whitespace-nowrap md:h-9 md:px-2.5 ${
     isActive || isOpen
       ? theme.active
       : 'border-slate-200/90 bg-white text-slate-600 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.35)] hover:border-slate-300 hover:text-slate-900'
@@ -156,6 +156,9 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   return (
     <div className="relative z-[120] inline-block text-left" ref={dropdownRef}>
       <button
+        type="button"
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
         onClick={() => {
           if (isOpen && onApply) onApply();
           else onToggle();
@@ -178,6 +181,8 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             }}
           />
           <div
+            role="dialog"
+            aria-label={`${label}筛选`}
             className={`fixed bottom-0 left-0 right-0 z-[9999] w-full overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom duration-200 md:absolute md:bottom-auto md:left-0 md:right-auto md:top-full md:mt-2 ${panelWidthClassName} md:rounded-2xl md:border md:border-slate-100 md:shadow-xl md:animate-in md:fade-in md:zoom-in-95`}
             onClick={(event) => event.stopPropagation()}
           >
@@ -195,7 +200,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     event.stopPropagation();
                     onClear?.();
                   }}
-                  className="rounded-lg px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/50 hover:text-slate-800"
+                  className="inline-flex h-10 items-center rounded-lg px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/50 hover:text-slate-800"
                 >
                   清空
                 </button>
@@ -204,7 +209,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     event.stopPropagation();
                     onApply?.();
                   }}
-                  className="flex-1 rounded-xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
+                  className="h-10 flex-1 rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
                 >
                   应用筛选
                 </button>
@@ -238,7 +243,7 @@ const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, 
         event.stopPropagation();
         onClick();
       }}
-      className={`inline-flex h-8 max-w-full items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-colors ${
+      className={`inline-flex h-10 max-w-full items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-colors md:h-8 md:px-2.5 ${
         active ? activeClass : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
       }`}
       title={label}
@@ -460,7 +465,7 @@ export default function JobFilterBar({
     onSearchChange('');
   };
 
-  const navClass = (active: boolean) => `relative inline-flex h-8 items-center gap-1.5 px-1 text-[13px] font-bold transition-colors ${
+  const navClass = (active: boolean) => `relative inline-flex h-10 items-center gap-1.5 px-1 text-[13px] font-bold transition-colors md:h-8 ${
     active ? 'text-[#40396f]' : 'text-slate-500 hover:text-[#40396f]'
   }`;
 
@@ -677,7 +682,7 @@ export default function JobFilterBar({
             <button
               type="button"
               onClick={() => onFilterChange({ memberOnly: !filters.memberOnly })}
-              className={`inline-flex h-9 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition-all whitespace-nowrap ${
+              className={`inline-flex h-10 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-all whitespace-nowrap md:h-9 md:px-2.5 ${
                 filters.memberOnly
                   ? 'border-[#d8d2ff] bg-[#f1efff] text-[#6f63ff] shadow-sm'
                   : 'border-slate-200/90 bg-white text-slate-600 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.35)] hover:border-slate-300 hover:text-slate-900'

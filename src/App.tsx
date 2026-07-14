@@ -9,7 +9,6 @@ import NotificationProvider from './components/NotificationSystem'
 import ErrorBoundary from './components/ErrorBoundary'
 import ChunkLoadErrorBoundary from './components/ChunkLoadErrorBoundary'
 import GlobalVerificationGuard from './components/GlobalVerificationGuard'
-import { MobileRestricted } from './components/MobileRestricted'
 import { lazyRetry } from './utils/lazyRetry'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
@@ -162,11 +161,7 @@ function App() {
                             <Route path="/" element={<LandingPage />} />
                             <Route path="/about" element={<ProfileCenterPage publicAboutOnly />} />
                             <Route path="/privacy" element={<ResumePrivacyPage />} />
-                            <Route path="/jobs" element={(
-                              <MobileRestricted allowContinue>
-                                <JobsPage />
-                              </MobileRestricted>
-                            )} />
+                            <Route path="/jobs" element={<JobsPage />} />
                             <Route path="/b/:id" element={<JobBundleDetailPage />} />
                             <Route path="/job-bundles/:id" element={<JobBundleDetailPage />} />
                             <Route path="/j/:id" element={<JobDetailPage />} />

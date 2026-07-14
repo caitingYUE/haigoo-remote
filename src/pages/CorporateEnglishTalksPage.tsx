@@ -471,15 +471,15 @@ function LoginPosterOverlay({ label = '登录后播放' }: { label?: string }) {
 function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; isGuest: boolean }) {
   const href = isGuest ? '/login' : `/careerlearning/watch/ceo/${encodeURIComponent(video.materialId)}`
   return (
-    <section className="relative grid gap-8 overflow-hidden rounded-[28px] border border-[#dbe8f4] bg-white p-6 shadow-[0_18px_48px_rgba(47,111,216,0.07)] lg:grid-cols-[minmax(0,0.85fr)_minmax(520px,1fr)] lg:items-center lg:p-8">
+    <section className="relative grid gap-6 overflow-hidden rounded-[24px] border border-[#dbe8f4] bg-white p-5 shadow-[0_18px_48px_rgba(47,111,216,0.07)] sm:rounded-[28px] sm:p-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(520px,1fr)] lg:items-center lg:gap-8 lg:p-8">
       <span className="pointer-events-none absolute right-10 top-8 h-20 w-20 rounded-full bg-[#7fb069]/10" />
       <span className="pointer-events-none absolute bottom-0 left-0 h-1.5 w-40 bg-[#6251f5]" />
       <div className="relative min-w-0">
         <div className="text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">远程企业 CEO 访谈</div>
-        <h1 className="mt-3 text-4xl font-black leading-[1.06] tracking-tight text-slate-950 md:text-5xl">
+        <h1 className="mt-3 text-[32px] font-black leading-[1.04] tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
           {video.materialTitle}
         </h1>
-        {!isGuest ? <p className="mt-4 max-w-3xl whitespace-pre-line text-base leading-7 text-slate-700">
+        {!isGuest ? <p className="mt-4 line-clamp-4 max-w-3xl whitespace-pre-line text-[15px] leading-7 text-slate-700 sm:line-clamp-none sm:text-base">
           {truncateText(video.videoSummary, 220) || `跟随 ${video.speakerName} 的真实访谈，理解企业文化、商业思维和外企表达。`}
         </p> : null}
         <div className="mt-4 text-base font-semibold text-slate-500">
@@ -513,7 +513,12 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
         {!isGuest ? <div className="absolute right-4 top-4">
           <AccessPill locked={video.isVideoLocked} accessTier={video.accessTier} />
         </div> : null}
-        {isGuest ? <LoginPosterOverlay /> : (
+        {isGuest ? (
+          <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/92 px-3 py-1.5 text-xs font-black text-[#6251f5] shadow-sm backdrop-blur">
+            <Lock className="h-3.5 w-3.5" />
+            登录查看
+          </div>
+        ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <PlayOverlay />
           </div>
@@ -588,7 +593,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
     <section className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-5">
-          <h2 className="text-3xl font-black tracking-tight text-slate-950 md:text-4xl">更多 CEO 访谈</h2>
+          <h2 className="text-[28px] font-black tracking-tight text-slate-950 sm:text-3xl md:text-4xl">更多 CEO 访谈</h2>
           <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">
             了解远程企业，提升认知、口语与申请成功率
           </p>
@@ -615,9 +620,9 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
           </button>
         </div> : null}
       </div>
-      <div className="flex gap-5 overflow-x-auto overscroll-x-contain pb-2 md:hidden">
+      <div className="-mr-4 flex snap-x snap-proximity gap-4 overflow-x-auto overscroll-x-contain pb-2 pr-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden">
         {(isGuest ? videos.slice(0, CEO_PAGE_SIZE) : videos).map((video, index) => (
-          <div key={video.materialId} className="w-[72vw] min-w-[260px] max-w-[320px] shrink-0">
+          <div key={video.materialId} className="w-[76vw] min-w-[270px] max-w-[320px] shrink-0 snap-start">
             <CeoCard video={video} index={index} isGuest={isGuest} />
           </div>
         ))}
@@ -1134,8 +1139,8 @@ export default function CorporateEnglishTalksPage() {
 
   return (
     <div className="min-h-screen overscroll-x-none bg-[#fbfaf6] font-haigoo-rounded text-slate-950">
-      <div className="mx-auto max-w-[1640px] px-4 pb-10 pt-24 sm:px-8">
-        <div className="space-y-10">
+      <div className="mx-auto max-w-[1640px] px-4 pb-10 pt-20 sm:px-8 sm:pt-24">
+        <div className="space-y-8 sm:space-y-10">
             {ceoLoading ? (
               <div className="flex min-h-[360px] items-center justify-center rounded-[28px] border border-[#dbe8f4] bg-white shadow-[0_10px_28px_rgba(47,111,216,0.06)]">
                 <Loader2 className="h-7 w-7 animate-spin text-[#6251f5]" />
