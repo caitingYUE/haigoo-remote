@@ -3,7 +3,7 @@ import { lazy, Suspense, useState, useEffect, useRef, useMemo, type CSSPropertie
 import {
     Sparkles, Target, Briefcase, Loader2, X, UploadCloud,
     ChevronLeft, ChevronRight, MapPin, DollarSign, Building2, Search, ArrowRight,
-    Crown, CheckCircle2, Heart, Star, Users, ShieldCheck, MessageCircle
+    Crown, CheckCircle2, Heart, Star, Users, ShieldCheck, MessageCircle, Send
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
@@ -652,7 +652,7 @@ export default function HomeHero({
     companiesLoading = false
 }: HomeHeroProps) {
     const navigate = useNavigate()
-    const { user, isAuthenticated, token, isMember, memberType, updateProfile, isLoading: authLoading } = useAuth()
+    const { user, isAuthenticated, token, isMember, memberType, updateProfile, sendVerificationEmail, isLoading: authLoading } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
     const userId = user?.user_id || null
     const storedTargetRole = String(user?.profile?.targetRole || '').trim()
@@ -666,6 +666,8 @@ export default function HomeHero({
     const [showUpgradeFeedbackModal, setShowUpgradeFeedbackModal] = useState(false)
     const [upgradeFeedbackContent, setUpgradeFeedbackContent] = useState('')
     const [upgradeFeedbackSubmitting, setUpgradeFeedbackSubmitting] = useState(false)
+    const [verificationEmailSending, setVerificationEmailSending] = useState(false)
+    const [dismissedSystemNoticeId, setDismissedSystemNoticeId] = useState<string | null>(null)
     const [isSystemUpgradeNoticeActive, setIsSystemUpgradeNoticeActive] = useState(() => Date.now() < HOME_SYSTEM_UPGRADE_END_AT)
     const canUseVerifiedAccountFeatures = Boolean(isAuthenticated && user?.emailVerified)
 
@@ -743,10 +745,29 @@ export default function HomeHero({
             setUpgradeFeedbackSubmitting(false)
         }
     }
-    const upgradeBannerMessage = isSystemUpgradeNoticeActive
-        ? '系统正在升级中，建议20:40后再使用网站。'
-        : '嗨，我是海狗，你的远程工作探索伙伴。'
-    const shouldShowUpgradeBanner = isSystemUpgradeNoticeActive || showUpgradeBanner
+    const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
+    const homeSystemNotice = isSystemUpgradeNoticeActive
+        ? { id: 'system-upgrade', message: '系统正在升级中，建议20:40后再使用网站。', kind: 'upgrade' as const }
+        : isEmailVerificationRequired
+            ? { id: 'email-verification', message: '您的注册邮箱尚未验证，请尽快验证哦。', kind: 'email_verification' as const }
+            : null
+    const upgradeBannerMessage = homeSystemNotice?.message || '嗨，我是海狗，你的远程工作探索伙伴。'
+    const shouldShowSystemNotice = Boolean(homeSystemNotice && dismissedSystemNoticeId !== homeSystemNotice.id)
+    const shouldShowUpgradeBanner = shouldShowSystemNotice || (!homeSystemNotice && showUpgradeBanner)
+
+    const handleResendVerificationEmail = async () => {
+        if (!user?.email || verificationEmailSending) return
+        setVerificationEmailSending(true)
+        try {
+            const result = await sendVerificationEmail(user.email)
+            if (result.success) showSuccess('验证邮件已发送', '请前往注册邮箱完成验证。')
+            else showError('发送失败', result.message || '请稍后重试。')
+        } catch {
+            showError('发送失败', '请检查网络后重试。')
+        } finally {
+            setVerificationEmailSending(false)
+        }
+    }
 
     // Background Parallax State
     const [bgPosition] = useState({ x: 50, y: 50 })
@@ -1970,7 +1991,27 @@ export default function HomeHero({
                             <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap sm:overflow-visible sm:text-clip">
                                 {upgradeBannerMessage}
                             </span>
-                            {!isSystemUpgradeNoticeActive ? (
+                            {homeSystemNotice?.kind === 'email_verification' ? (
+                                <>
+                                    <button
+                                        type="button"
+                                        onClick={handleResendVerificationEmail}
+                                        disabled={verificationEmailSending}
+                                        className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-full border border-[#eadfc8]/80 bg-white/88 px-2 text-[12px] font-black text-[#a36b18] transition-colors hover:bg-[#fff7e8] disabled:cursor-wait disabled:opacity-60"
+                                    >
+                                        <Send className="h-3.5 w-3.5" />
+                                        <span>{verificationEmailSending ? '发送中…' : '重新发送验证邮件'}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setDismissedSystemNoticeId(homeSystemNotice.id)}
+                                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/76 text-slate-400 transition-colors hover:text-slate-700"
+                                        aria-label="关闭提示"
+                                    >
+                                        <X className="h-3.5 w-3.5" />
+                                    </button>
+                                </>
+                            ) : !homeSystemNotice ? (
                                 <>
                                     <button
                                         type="button"

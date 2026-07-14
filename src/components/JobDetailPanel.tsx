@@ -55,6 +55,7 @@ type WebsiteApplyState =
 type ReferralAccessMode =
     | 'unlocked'
     | 'guest'
+    | 'verification_required'
     | 'member_only'
     | 'free_available'
     | 'free_exhausted'
@@ -282,7 +283,7 @@ function HotApplicationBadge({ count }: { count: number }) {
     )
 }
 
-type GuideAccessMode = 'unlocked' | 'guest' | 'member_only' | 'free_available' | 'free_exhausted'
+type GuideAccessMode = 'unlocked' | 'guest' | 'verification_required' | 'member_only' | 'free_available' | 'free_exhausted'
 
 function ApplicationGuidePanel({
     guide,
@@ -312,6 +313,8 @@ function ApplicationGuidePanel({
 
     const actionLabel = accessMode === 'guest'
         ? '登录后查看'
+        : accessMode === 'verification_required'
+            ? '解锁指南（待验证）'
         : accessMode === 'member_only'
             ? '了解 Club 权益'
             : accessMode === 'free_exhausted'
@@ -319,7 +322,7 @@ function ApplicationGuidePanel({
                 : `解锁指南 ${remaining}/${limit}`
 
     const handleAction = () => {
-        if (accessMode === 'free_available' || accessMode === 'guest') {
+        if (accessMode === 'free_available' || accessMode === 'guest' || accessMode === 'verification_required') {
             onUnlock?.()
             return
         }
@@ -471,7 +474,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const { isMember, isAuthenticated, token, user } = useAuth()
     const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
     const sourceType = getJobSourceType(job)
-    const shouldMaskGuestMeta = !isAuthenticated
+    const shouldMaskGuestMeta = !isAuthenticated || isEmailVerificationRequired
     const trackingExtraSignature = JSON.stringify(trackingExtra)
     const trackingBase = useMemo(() => ({
         page_key: trackingPageKey,
@@ -1529,7 +1532,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const refCompanyName = String(job.company || companyInfo?.name || '').trim()
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const applicationGuideFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
-    const applicationGuideAccessMode: GuideAccessMode = isReferralCompanyUnlocked
+    const applicationGuideAccessMode: GuideAccessMode = isEmailVerificationRequired
+        ? 'verification_required'
+        : isReferralCompanyUnlocked
         ? 'unlocked'
         : !isAuthenticated
             ? 'guest'
@@ -1562,6 +1567,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         { label: '总部地区', widthClass: 'w-24' },
     ]
     const getReferralAccessMode = (): ReferralAccessMode => {
+        if (isEmailVerificationRequired) return 'verification_required'
         if (isReferralCompanyUnlocked) return 'unlocked'
         if (!isAuthenticated) return 'guest'
         if (isMemberRestrictedJob) return 'member_only'
@@ -1580,6 +1586,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const showReferralLoadingPlaceholder = isAuthenticated && !showReferralModule && companyInfoLoading && mayHaveReferralPath
     const getUnifiedReferralUnlockLabel = () => {
         if (referralAccessMode === 'guest') return '帮我内推（需登录）'
+        if (referralAccessMode === 'verification_required') return '一键解锁（待验证）'
         if (referralAccessMode === 'member_only') return '了解解锁方式'
         if (referralAccessMode === 'free_available') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
         if (referralAccessMode === 'free_exhausted') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
@@ -1691,6 +1698,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
     const getApplyButtonLabel = () => {
         if (!isAuthenticated) return '前往申请（需登录）'
+        if (isEmailVerificationRequired) return '前往申请（待验证）'
 
         switch (websiteApplyState) {
             case 'login_required':
@@ -2207,7 +2215,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         }
                                     ]
 
-                                    const handleLockedContactClick = (event: React.MouseEvent, mode: 'guest' | 'member_only' | 'free_available' | 'free_exhausted') => {
+                                    const handleLockedContactClick = (event: React.MouseEvent, mode: 'guest' | 'verification_required' | 'member_only' | 'free_available' | 'free_exhausted') => {
                                         event.preventDefault()
                                         event.stopPropagation()
                                         if (mode === 'guest') {
@@ -2243,6 +2251,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         ? getUnifiedReferralUnlockLabel()
                                                             : referralAccessMode === 'guest'
                                                                 ? '帮我内推（需登录）'
+                                                            : referralAccessMode === 'verification_required'
+                                                                ? '一键解锁（待验证）'
                                                             : referralAccessMode === 'member_only'
                                                                 ? '了解解锁方式'
                                                                 : referralAccessMode === 'free_exhausted'
@@ -2254,13 +2264,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 return (
                                                     <div
                                                         key={`ref-contact-${index}`}
-                                                        onClick={referralAccessMode === 'guest' ? (event) => handleLockedContactClick(event, 'guest') : undefined}
+                                                        onClick={referralAccessMode === 'guest' || referralAccessMode === 'verification_required' ? (event) => handleLockedContactClick(event, referralAccessMode) : undefined}
                                                         className={`relative min-w-[min(260px,calc(100vw-72px))] basis-[78%] shrink-0 snap-start overflow-hidden rounded-2xl border ${
                                                             hasScrollableReferralContacts
                                                                 ? 'sm:min-w-[260px] sm:basis-[calc((100%_-_2rem)/2.5)]'
                                                                 : 'sm:min-w-[340px] sm:basis-[calc((100%_-_1rem)/2)]'
                                                         } ${theme.shell} ${
-                                                            referralAccessMode === 'guest' ? 'cursor-pointer' : ''
+                                                            referralAccessMode === 'guest' || referralAccessMode === 'verification_required' ? 'cursor-pointer' : ''
                                                         } shadow-[0_10px_25px_-12px_rgba(15,23,42,0.12)]`}
                                                     >
                                                         <img

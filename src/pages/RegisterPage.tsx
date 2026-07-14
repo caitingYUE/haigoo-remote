@@ -273,9 +273,16 @@ export default function RegisterPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">注册成功！</h3>
-              <p className="text-slate-600 mb-6 leading-7">
-                验证邮件已发送。未验证前可浏览、搜索和筛选部分岗位，完成验证后即可查看完整列表并申请岗位。
+              <h3 className="text-xl font-bold text-slate-900 mb-2">注册成功，还差一步</h3>
+              <p className="text-slate-600 leading-7">
+                验证邮件已发送至
+                <strong className="mx-1 break-all text-slate-900">{email}</strong>。
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-6 text-indigo-700">
+                请前往注册邮箱，点击邮件中的验证链接完成验证。
+              </p>
+              <p className="mb-6 mt-2 text-xs leading-5 text-slate-400">
+                若未收到，请检查垃圾邮件或稍后重新发送。
               </p>
               <button
                 onClick={() => navigate('/', { replace: true })}
