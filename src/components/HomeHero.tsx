@@ -1988,7 +1988,9 @@ export default function HomeHero({
                                     decoding="async"
                                 />
                             </div>
-                            <span className="min-w-0 overflow-hidden text-ellipsis whitespace-nowrap sm:overflow-visible sm:text-clip">
+                            <span
+                                className={`min-w-0 overflow-hidden text-ellipsis whitespace-nowrap sm:overflow-visible sm:text-clip ${homeSystemNotice?.kind === 'email_verification' ? 'font-bold text-red-600' : ''}`}
+                            >
                                 {upgradeBannerMessage}
                             </span>
                             {homeSystemNotice?.kind === 'email_verification' ? (
