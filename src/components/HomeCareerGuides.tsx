@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, BookOpen, CalendarDays, Check, Lock, Play } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -36,8 +36,26 @@ export default function HomeCareerGuides() {
   const [videos, setVideos] = useState<CorporateEnglishFeaturedVideo[]>([])
   const [loading, setLoading] = useState(true)
   const [notesVideo, setNotesVideo] = useState<VideoNotesModalVideo | null>(null)
+  const [canLoad, setCanLoad] = useState(false)
+  const sectionRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
+    const node = sectionRef.current
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setCanLoad(true)
+      return
+    }
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return
+      setCanLoad(true)
+      observer.disconnect()
+    }, { rootMargin: '500px 0px' })
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+
+  useEffect(() => {
+    if (!canLoad) return
     let cancelled = false
     corporateEnglishPublicService.listFeaturedVideos(4)
       .then((items) => {
@@ -52,13 +70,14 @@ export default function HomeCareerGuides() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [canLoad])
 
   if (!loading && videos.length === 0) return null
 
   return (
     <section
-      className="relative z-10 mt-6 overflow-hidden rounded-[28px] border border-[#dce8f1] bg-white px-5 py-6 shadow-[0_22px_55px_-46px_rgba(39,65,91,0.42)] sm:px-6 lg:px-7 lg:py-7"
+      ref={sectionRef}
+      className="relative z-10 mt-6 overflow-hidden rounded-[28px] border border-[#dce8f1] bg-white px-5 py-6 shadow-[0_22px_55px_-46px_rgba(39,65,91,0.42)] [content-visibility:auto] [contain-intrinsic-size:auto_520px] sm:px-6 lg:px-7 lg:py-7"
       aria-labelledby="home-career-guides-title"
     >
       <div className="mb-5 flex flex-col gap-4 border-b border-[#e8eff5] pb-5 sm:flex-row sm:items-center sm:justify-between">

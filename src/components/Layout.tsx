@@ -1,9 +1,10 @@
-import { ReactNode, useState, useEffect } from 'react'
+import { lazy, ReactNode, Suspense, useState, useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import Header from './Header'
 import Footer from './Footer'
 import { useAuth } from '../contexts/AuthContext'
-import { HappinessCard } from './Christmas/HappinessCard'
+
+const LazyHappinessCard = lazy(() => import('./Christmas/HappinessCard').then((module) => ({ default: module.HappinessCard })))
 
 interface LayoutProps {
   children: ReactNode
@@ -91,7 +92,9 @@ export default function Layout({ children }: LayoutProps) {
       {!hideFooter && <Footer showMembershipCta={showFooterMembershipCta} />}
 
       {showHappinessCard && (
-        <HappinessCard onClose={() => setShowHappinessCard(false)} />
+        <Suspense fallback={null}>
+          <LazyHappinessCard onClose={() => setShowHappinessCard(false)} />
+        </Suspense>
       )}
     </div>
   )

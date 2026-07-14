@@ -68,7 +68,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          utils: ['axios', 'zustand']
+          utils: ['axios', 'zustand'],
+          html2canvas: ['html2canvas']
         }
       }
     }

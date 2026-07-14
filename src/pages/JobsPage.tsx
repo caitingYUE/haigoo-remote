@@ -48,8 +48,6 @@ const EXPERIENCE_LABELS = new Map(EXPERIENCE_OPTIONS.map(option => [option.value
 //   { label: '全球', value: 'Worldwide' }
 // ];
 
-import { MobileRestricted } from '../components/MobileRestricted'
-
 import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
 
 const JOBS_PAGE_DECOR = {
@@ -469,7 +467,13 @@ export default function JobsPage() {
         setActiveBundles([]);
       }
     };
-    fetchActiveBundles();
+    const idleId = 'requestIdleCallback' in window
+      ? window.requestIdleCallback(fetchActiveBundles, { timeout: 2200 })
+      : globalThis.setTimeout(fetchActiveBundles, 900)
+    return () => {
+      if ('cancelIdleCallback' in window) window.cancelIdleCallback(Number(idleId))
+      else globalThis.clearTimeout(idleId)
+    }
   }, [isAuthenticated]);
 
   const [showWechatModal, setShowWechatModal] = useState(false)
@@ -870,7 +874,7 @@ export default function JobsPage() {
     loadJobsWithFilters(1, false)
     const metadataTimer = window.setTimeout(() => {
       void loadJobsMetadata()
-    }, 180)
+    }, 700)
 
     // Track search or filter change
     if (debouncedSearchTerm) {
@@ -1043,7 +1047,7 @@ export default function JobsPage() {
       }
       } catch { }
       })()
-    }, listMode === 'jobs' ? 350 : 0)
+    }, listMode === 'jobs' ? 1200 : 0)
     return () => window.clearTimeout(timer)
   }, [initialJobsSettled, listMode, token])
 
@@ -1094,7 +1098,7 @@ export default function JobsPage() {
     if (!initialJobsSettled && listMode === 'jobs') return
     const timer = window.setTimeout(() => {
     void refreshApplicationSummary({ hydrateList: listMode === 'applications' })
-    }, listMode === 'jobs' ? 450 : 0)
+    }, listMode === 'jobs' ? 1400 : 0)
     return () => window.clearTimeout(timer)
   }, [initialJobsSettled, listMode, refreshApplicationSummary])
 
@@ -1240,8 +1244,7 @@ export default function JobsPage() {
   }
 
   return (
-    <MobileRestricted allowContinue={true}>
-      <div
+    <div
         className="relative flex min-h-screen flex-col overflow-x-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f8fbfd_52%,#fffefb_100%)] pt-20 lg:h-full lg:overflow-hidden"
         role="main"
         aria-label="职位搜索页面"
@@ -1615,6 +1618,5 @@ export default function JobsPage() {
         )}
 
       </div>
-    </MobileRestricted>
   )
 }

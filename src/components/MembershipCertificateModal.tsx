@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Download, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { User } from '../types/auth-types';
 import brandLogoPng from '../assets/brandlogo.webp';
 import { deriveMembershipCapabilities } from '../utils/membership';
@@ -31,6 +30,7 @@ export const MembershipCertificateModal: React.FC<MembershipCertificateModalProp
 
     try {
       setDownloading(true);
+      const { default: html2canvas } = await import('html2canvas');
       const canvas = await html2canvas(certificateRef.current, {
         scale: 2, // Higher resolution
         useCORS: true,

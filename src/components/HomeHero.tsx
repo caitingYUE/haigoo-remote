@@ -501,6 +501,9 @@ function CompanyLogo({ companyName, logoCandidates, className }: { companyName: 
             src={src}
             alt={companyName}
             className={className}
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
             onError={() => setIndex((prev) => (prev < logoCandidates.length - 1 ? prev + 1 : prev))}
         />
     ) : (
@@ -2053,6 +2056,7 @@ export default function HomeHero({
                                 height={208}
                                 loading="eager"
                                 decoding="async"
+                                fetchPriority="high"
                                 className="ml-[-5.48%] block h-auto w-[126.2%] max-w-none select-none"
                                 draggable={false}
                             />
@@ -2259,7 +2263,7 @@ export default function HomeHero({
                 </div>
             </section>
 
-            <section className="relative isolate mx-auto max-w-[1560px] px-5 pb-14 lg:px-10">
+            <section className="relative isolate mx-auto max-w-[1560px] px-5 pb-14 [content-visibility:auto] [contain-intrinsic-size:auto_2200px] lg:px-10">
                 <div className="pointer-events-none absolute left-1/2 top-[-110px] z-0 h-[calc(100%+110px)] w-screen -translate-x-1/2 bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,#fbfaf6_9%,#fbfaf6_100%)]" />
                 <div className="relative z-30 rounded-[28px] border border-[#e4e9ff] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(84,78,180,0.26)]">
                     <div className="grid gap-4 md:grid-cols-[300px_1fr] md:items-center">
@@ -2293,7 +2297,7 @@ export default function HomeHero({
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {heroHighlightItems.map((item) => (
                                 <div key={item.title} className="flex items-center gap-3 rounded-[20px] border border-white/80 bg-white/74 p-4">
-                                    <img src={item.icon} alt="" className="h-10 w-10 object-contain" />
+                                    <img src={item.icon} alt="" loading="lazy" decoding="async" className="h-10 w-10 object-contain" />
                                     <div>
                                         <div className="text-sm font-black text-slate-900">{item.title}</div>
                                         <div className="mt-1 text-xs font-semibold text-slate-500">{item.desc}</div>
@@ -2415,7 +2419,7 @@ export default function HomeHero({
                 }`}>
                     {isMember ? (
                         <>
-                            <img src="/pic_lists/About_pics/about_bg.webp" alt="" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[36%] object-cover object-right opacity-[0.12] saturate-[0.86]" />
+                            <img src="/pic_lists/About_pics/about_bg.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute inset-y-0 right-0 h-full w-[36%] object-cover object-right opacity-[0.12] saturate-[0.86]" />
                             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_86%_18%,rgba(216,210,255,0.28),transparent_24%),radial-gradient(circle_at_62%_90%,rgba(224,241,255,0.32),transparent_30%)]" />
                         </>
                     ) : null}
@@ -2548,7 +2552,7 @@ export default function HomeHero({
                             </div>
 
                             <div className="mt-4 rounded-[22px] border border-[#e3edf4] bg-white/86 p-3 text-center shadow-sm">
-                                <img src="/Wechat_group.webp" alt="Haigoo 远程求职交流群二维码" className="mx-auto h-32 w-32 rounded-2xl object-contain" />
+                                <img src="/Wechat_group.webp" alt="Haigoo 远程求职交流群二维码" loading="lazy" decoding="async" className="mx-auto h-32 w-32 rounded-2xl object-contain" />
                                 <div className="mt-2 text-sm font-black text-slate-700">微信扫一扫加群</div>
                             </div>
                             <button

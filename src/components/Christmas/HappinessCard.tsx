@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Gift, X, Download, Loader2 } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import cardsData from '../../data/happiness-cards.json';
 
 interface HappinessCardProps {
@@ -37,6 +36,7 @@ export const HappinessCard: React.FC<HappinessCardProps> = ({ onClose }) => {
             // Wait a bit for any images/fonts to settle
             await new Promise(resolve => setTimeout(resolve, 100));
 
+            const { default: html2canvas } = await import('html2canvas');
             const canvas = await html2canvas(cardRef.current, {
                 useCORS: true,
                 scale: 2, // Higher quality

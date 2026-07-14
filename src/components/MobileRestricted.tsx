@@ -7,7 +7,10 @@ interface MobileRestrictedProps {
 }
 
 export const MobileRestricted: React.FC<MobileRestrictedProps> = ({ children, allowContinue = false }) => {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.innerWidth < 768;
+  });
   const [bypassed, setBypassed] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.sessionStorage.getItem('haigoo_mobile_continue') === 'true';

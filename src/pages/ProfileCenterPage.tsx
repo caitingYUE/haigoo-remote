@@ -1,22 +1,22 @@
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Users, Building2, Quote, Star, Globe2, Loader2, Calendar, Volume2, BookOpen, PlayCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { trackingService } from '../services/tracking-service'
-import { parseResumeFileEnhanced } from '../services/resume-parser-enhanced'
 import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
-import JobDetailModal from '../components/JobDetailModal'
-import { MembershipUpgradeModal } from '../components/MembershipUpgradeModal'
-import { MembershipCertificateModal } from '../components/MembershipCertificateModal'
-import MyApplicationsTab from '../components/MyApplicationsTab'
-import GeneratedPlanView from '../components/GeneratedPlanView'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { fetchDailyMemberRecommendations } from '../utils/member-recommendations'
 import { LinkedInLogo } from '../components/SocialIcons'
 import { corporateEnglishPublicService, type CorporateEnglishPublicClip } from '../services/corporate-english-public-service'
+
+const LazyJobDetailModal = lazy(() => import('../components/JobDetailModal'))
+const LazyMembershipUpgradeModal = lazy(() => import('../components/MembershipUpgradeModal').then((module) => ({ default: module.MembershipUpgradeModal })))
+const LazyMembershipCertificateModal = lazy(() => import('../components/MembershipCertificateModal').then((module) => ({ default: module.MembershipCertificateModal })))
+const LazyMyApplicationsTab = lazy(() => import('../components/MyApplicationsTab'))
+const LazyGeneratedPlanView = lazy(() => import('../components/GeneratedPlanView'))
 
 type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'about' | 'settings'
 
@@ -818,6 +818,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }, [authUser])
 
   useEffect(() => {
+    if (!publicAboutOnly && tab !== 'about') return
     let cancelled = false
     ;(async () => {
       try {
@@ -836,7 +837,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       }
     })()
     return () => { cancelled = true }
-  }, [])
+  }, [publicAboutOnly, tab])
 
   const openAboutFeedbackModal = () => {
     trackingService.track('feedback_entry_click', {
@@ -924,6 +925,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }
 
   useEffect(() => {
+    if (publicAboutOnly || tab !== 'membership') return
     let mounted = true
 
     const fetchMembershipPlans = async () => {
@@ -971,7 +973,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     return () => {
       mounted = false
     }
-    }, [token])
+    }, [publicAboutOnly, tab, token])
 
   useEffect(() => {
     if (tab !== 'membership' || !isAuthenticated || !isMember) {
@@ -1609,6 +1611,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   useEffect(() => {
+    if (tab !== 'favorites' || favoriteSubTab !== 'jobs') return
     ; (async () => {
       try {
         if (!authUser || !token) {
@@ -1643,9 +1646,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         setLoadingFavorites(false)
       }
     })()
-  }, [authUser?.user_id, token])
+  }, [authUser?.user_id, favoriteSubTab, tab, token])
 
   useEffect(() => {
+    if (tab !== 'favorites' || favoriteSubTab !== 'audio') return
     ; (async () => {
       try {
         if (!authUser || !token) {
@@ -1662,9 +1666,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         setLoadingAudioFavorites(false)
       }
     })()
-  }, [authUser?.user_id, token])
+  }, [authUser?.user_id, favoriteSubTab, tab, token])
 
   useEffect(() => {
+    if (tab !== 'applications') return
     ; (async () => {
       if (!authUser || !token) {
         setApplicationCount(null)
@@ -1688,10 +1693,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         setLoadingApplicationCount(false)
       }
     })()
-  }, [authUser?.user_id, token])
+  }, [authUser?.user_id, tab, token])
 
   // Fetch user resume on page load - FIXED: Read directly from resumes API
   useEffect(() => {
+    if (tab !== 'resume' && tab !== 'custom-plan') {
+      setIsResumeInitializing(false)
+      return
+    }
     (async () => {
       try {
         if (!authUser || !token) {
@@ -1854,12 +1863,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         setIsResumeInitializing(false)
       }
     })()
-  }, [authUser, token])
+  }, [authUser, tab, token])
 
   // Fetch Copilot Plan
   useEffect(() => {
     const fetchPlan = async () => {
-      if (!authUser || !token) return
+      if (tab !== 'custom-plan' || !authUser || !token) return
       try {
         setLoadingPlan(true)
         const res = await fetch('/api/copilot', {
@@ -1983,6 +1992,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             setResumeText(serverText)
           } else {
             // Fallback to client side parsing if server failed to extract text
+            const { parseResumeFileEnhanced } = await import('../services/resume-parser-enhanced')
             const parsed = await parseResumeFileEnhanced(file)
             if (parsed && parsed.success && parsed.textContent) {
               setResumeText(parsed.textContent)
@@ -3862,7 +3872,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 const isDisabled = 'disabled' in item && Boolean(item.disabled)
                 return (
                   <div key={item.key} className="relative flex min-h-[210px] flex-col overflow-hidden rounded-[22px] border border-[#edf2f6] bg-white/78 p-4 shadow-[0_16px_44px_-38px_rgba(64,78,102,0.34)]">
-                    <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-24 w-36 object-cover object-right-bottom opacity-[0.08]" />
+                    <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute bottom-0 right-0 h-24 w-36 object-cover object-right-bottom opacity-[0.08]" />
                     <div className="flex items-start justify-between gap-3">
                       <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${memberCardIconClass}`}>
                         <ItemIcon className="h-5 w-5" />
@@ -3924,7 +3934,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   const isDisabled = 'disabled' in item && Boolean(item.disabled)
                   return (
                     <div key={item.key} className="relative flex min-h-[210px] flex-col overflow-hidden rounded-[22px] border border-[#edf2f6] bg-white/78 p-4 shadow-[0_16px_44px_-38px_rgba(64,78,102,0.34)]">
-                      <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-24 w-36 object-cover object-right-bottom opacity-[0.08]" />
+                      <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute bottom-0 right-0 h-24 w-36 object-cover object-right-bottom opacity-[0.08]" />
                       <div className="flex items-start justify-between gap-3">
                         <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${memberCardIconClass}`}>
                           <ItemIcon className="h-5 w-5" />
@@ -3993,7 +4003,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </section>
 
             <section ref={clubServicePlansRef} id="club-service-plans" className="relative scroll-mt-24 overflow-hidden rounded-[28px] border border-[#e1e8f4] bg-white/90 p-4 shadow-[0_24px_70px_-56px_rgba(64,78,102,0.28)] sm:p-5">
-              <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.12]" />
+              <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.12]" />
               <div className="relative mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <h2 className="text-2xl font-black text-slate-950">会员方案</h2>
@@ -4020,7 +4030,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         生效中
                       </div>
                     ) : null}
-                    <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
+                    <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
                     <div className="relative flex min-w-0 flex-1 flex-col">
                       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                         <div>
@@ -4118,7 +4128,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
             <section className="relative overflow-hidden rounded-[26px] border border-[#e5dcff] bg-[#fffdf8] p-5 shadow-[0_24px_70px_-56px_rgba(95,99,246,0.22)] sm:p-6">
               <div className="pointer-events-none absolute inset-0">
-                <img src="/pic_lists/About_pics/background03.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-bottom opacity-[0.18] saturate-[0.78]" />
+                <img src="/pic_lists/About_pics/background03.webp" alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover object-bottom opacity-[0.18] saturate-[0.78]" />
                 <div className="absolute inset-0 bg-white/92" />
                 <div className="absolute inset-x-0 top-0 h-24 bg-white/86" />
               </div>
@@ -4164,7 +4174,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </section>
 
             <section className="relative overflow-hidden rounded-[28px] border border-[#ddd7ff] bg-[#fffdf8] p-5 shadow-[0_22px_62px_-54px_rgba(111,99,246,0.28)] sm:p-6">
-              <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-32 w-48 object-cover object-right-bottom opacity-[0.12]" />
+              <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute bottom-0 right-0 h-32 w-48 object-cover object-right-bottom opacity-[0.12]" />
               <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="max-w-2xl">
                   <h2 className="text-2xl font-black text-slate-950">需要帮助？</h2>
@@ -4188,7 +4198,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         {!isMember ? (
         <>
         <section ref={clubServicePlansRef} id="club-service-plans" className="relative mb-5 scroll-mt-24 overflow-hidden rounded-[28px] border border-[#e1e8f4] bg-white/90 p-4 shadow-[0_24px_70px_-56px_rgba(64,78,102,0.28)] sm:mb-5 sm:p-5">
-          <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.12]" />
+          <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.12]" />
           <div className="relative mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
               <h2 className="text-2xl font-black text-slate-950">选择适合你的 Club 服务</h2>
@@ -4215,7 +4225,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     生效中
                   </div>
                 ) : null}
-                <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
+                <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
                   <div className="relative flex min-w-0 flex-1 flex-col">
                   <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div>
@@ -4266,7 +4276,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
         <section className="relative mb-5 overflow-hidden rounded-[26px] border border-[#e5dcff] bg-[#fffdf8] p-5 shadow-[0_24px_70px_-56px_rgba(95,99,246,0.22)] sm:mb-7 sm:p-6 2xl:hidden">
           <div className="pointer-events-none absolute inset-0">
-            <img src="/pic_lists/About_pics/background03.webp" alt="" className="absolute inset-0 h-full w-full object-cover object-bottom opacity-[0.18] saturate-[0.78]" />
+            <img src="/pic_lists/About_pics/background03.webp" alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover object-bottom opacity-[0.18] saturate-[0.78]" />
             <div className="absolute inset-0 bg-white/92" />
             <div className="absolute inset-x-0 top-0 h-24 bg-white/86" />
           </div>
@@ -4361,7 +4371,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       <section className="relative mt-5 grid items-stretch gap-4 xl:grid-cols-[1fr_340px] 2xl:hidden">
         <div className="relative flex min-h-[260px] overflow-hidden rounded-[26px] border border-[#e6d7b9] bg-[#fffdf8] p-5 shadow-[0_24px_66px_-52px_rgba(139,101,54,0.32)]">
           <div className="pointer-events-none absolute inset-0">
-            <img src="/pic_lists/About_pics/thanks_bg.webp" alt="" aria-hidden="true" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover object-right-bottom opacity-[0.12]" />
+            <img src="/pic_lists/About_pics/thanks_bg.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="absolute inset-y-0 right-0 h-full w-1/2 object-cover object-right-bottom opacity-[0.12]" />
             <div className="absolute inset-0 bg-[#fffdf8]/84" />
           </div>
           <div className="relative grid w-full gap-5 lg:grid-cols-[240px_1fr] lg:items-center">
@@ -4388,7 +4398,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         </div>
         </div>
         <div className="relative flex min-h-[260px] overflow-hidden rounded-[26px] border border-[#dfe8ef] bg-white p-5 shadow-[0_20px_56px_-44px_rgba(64,78,102,0.22)]">
-          <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-28 w-44 object-cover object-right-bottom opacity-[0.1]" />
+          <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute bottom-0 right-0 h-28 w-44 object-cover object-right-bottom opacity-[0.1]" />
           <div className="relative flex w-full flex-col gap-3">
             <div className="min-w-0">
               <h3 className="text-lg font-black text-slate-950">需要帮助或 1V1 陪跑？</h3>
@@ -4401,6 +4411,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <img
                   src="/series_assistant.png"
                   alt="微信咨询二维码"
+                  loading="lazy"
+                  decoding="async"
                   className="mx-auto h-24 w-24 object-contain"
                 />
                 <div className="mt-1 text-[11px] font-black text-slate-600">微信咨询</div>
@@ -5096,7 +5108,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                           </button>
                         </div>
                       )}
-                      <GeneratedPlanView plan={copilotPlan} isGuest={false} showProfileCta={false} showSavedHint={false} />
+                      <Suspense fallback={<div className="h-72 animate-pulse rounded-3xl bg-slate-100" />}>
+                        <LazyGeneratedPlanView plan={copilotPlan} isGuest={false} showProfileCta={false} showSavedHint={false} />
+                      </Suspense>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center py-16 px-4">
@@ -5147,37 +5161,49 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               )}
               {tab === 'resume' && <div className="hidden lg:block">{ResumeTab()}</div>}
               {tab === 'favorites' && <FavoritesTab />}
-              {tab === 'applications' && <MyApplicationsTab />}
+              {tab === 'applications' && (
+                <Suspense fallback={<div className="h-64 animate-pulse rounded-3xl bg-slate-100" />}>
+                  <LazyMyApplicationsTab />
+                </Suspense>
+              )}
               {tab === 'feedback' && <FeedbackTab />}
               {tab === 'membership' && <MembershipTab />}
               {tab === 'about' && <AboutTab />}
               {tab === 'settings' && <SettingsTab />}
             </div>
             {isJobDetailOpen && selectedJob && (
-              <JobDetailModal
-                job={selectedJob}
-                isOpen={isJobDetailOpen}
-                onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
-                onSave={() => handleToggleFavorite(selectedJob)}
-                isSaved={favorites.some(f => (f.id === selectedJob.id) || (f.jobId === selectedJob.id))}
-                jobs={modalNavigationJobs}
-                currentJobIndex={memberRecommendationModalIndex}
-                onNavigateJob={navigateMemberRecommendationModal}
-                variant="center"
-              />
+              <Suspense fallback={null}>
+                <LazyJobDetailModal
+                  job={selectedJob}
+                  isOpen={isJobDetailOpen}
+                  onClose={() => { setIsJobDetailOpen(false); setSelectedJob(null) }}
+                  onSave={() => handleToggleFavorite(selectedJob)}
+                  isSaved={favorites.some(f => (f.id === selectedJob.id) || (f.jobId === selectedJob.id))}
+                  jobs={modalNavigationJobs}
+                  currentJobIndex={memberRecommendationModalIndex}
+                  onNavigateJob={navigateMemberRecommendationModal}
+                  variant="center"
+                />
+              </Suspense>
             )}
           </main>
-          <MembershipUpgradeModal
-            isOpen={showUpgradeModal}
-            onClose={() => setShowUpgradeModal(false)}
-            triggerSource={upgradeSource}
-          />
-          {authUser && (
-            <MembershipCertificateModal
-              isOpen={showCertificateModal}
-              onClose={() => setShowCertificateModal(false)}
-              user={authUser}
-            />
+          {showUpgradeModal && (
+            <Suspense fallback={null}>
+              <LazyMembershipUpgradeModal
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                triggerSource={upgradeSource}
+              />
+            </Suspense>
+          )}
+          {authUser && showCertificateModal && (
+            <Suspense fallback={null}>
+              <LazyMembershipCertificateModal
+                isOpen={showCertificateModal}
+                onClose={() => setShowCertificateModal(false)}
+                user={authUser}
+              />
+            </Suspense>
           )}
           {modalRoot && showAboutFeedbackModal && createPortal((
               <div className="fixed inset-0 z-[10000] isolate flex items-start justify-center overflow-y-auto p-4 sm:items-center">

@@ -239,7 +239,7 @@ async function listFeaturedVideos(req, res) {
       durationMs: row.duration_ms,
       publishedAt: row.published_at,
       isFeatured: row.is_featured === true,
-      coverImageUrl: buildCoverImageUrl('material', row.id, 'large', row.cover_image_hash),
+      coverImageUrl: buildCoverImageUrl('material', row.id, 'thumb', row.cover_image_hash),
       href: `/careerlearning/watch/ceo/${encodeURIComponent(row.id)}`
     })),
     ...(moduleVideos || []).map((row) => ({
@@ -259,7 +259,7 @@ async function listFeaturedVideos(req, res) {
       durationMs: row.duration_ms,
       publishedAt: row.published_at,
       isFeatured: row.is_featured === true,
-      coverImageUrl: buildCoverImageUrl('module_video', row.id, 'large', row.cover_image_hash),
+      coverImageUrl: buildCoverImageUrl('module_video', row.id, 'thumb', row.cover_image_hash),
       href: `/careerlearning/watch/module/${encodeURIComponent(row.id)}`,
       noteHref: row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) && row.video_notes.length > 0
         ? `/careerlearning/notes/${encodeURIComponent(row.id)}`

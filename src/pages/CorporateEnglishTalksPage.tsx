@@ -405,6 +405,8 @@ function PosterFrame({
         alt={title}
         className={`h-full w-full object-cover ${className}`}
         loading={loading}
+        decoding="async"
+        fetchPriority={loading === 'eager' ? 'high' : 'low'}
         onError={() => setImageFailed(true)}
       />
     )
@@ -679,7 +681,7 @@ function ModuleTalkCard({
           title={video.title}
           eyebrow={getModuleVideoEyebrow(video, section)}
           className="transition duration-500 group-hover:scale-[1.04]"
-          loading={featured ? 'eager' : 'lazy'}
+          loading="lazy"
           tone={SECTION_TONE[section]}
         />
         <div className={`absolute inset-0 ${isGuest ? 'bg-slate-950/10' : 'bg-gradient-to-t from-slate-950/8 via-transparent to-transparent opacity-80'}`} />
@@ -991,6 +993,7 @@ export default function CorporateEnglishTalksPage() {
   const [remoteCategories, setRemoteCategories] = useState<CorporateEnglishPublicCategory[]>([])
   const [remoteVideos, setRemoteVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
   const [meetingVideos, setMeetingVideos] = useState<CorporateEnglishPublicModuleVideo[]>([])
+  const [deferredModulesReady, setDeferredModulesReady] = useState(false)
   const [activeInterviewCategory, setActiveInterviewCategory] = useState('全部')
   const [activeRemoteCategory, setActiveRemoteCategory] = useState('全部')
   const trackedModuleViewsRef = useRef<Set<TalkSectionKey>>(new Set())
@@ -1002,6 +1005,11 @@ export default function CorporateEnglishTalksPage() {
   useEffect(() => {
     showErrorRef.current = showError
   }, [showError])
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDeferredModulesReady(true), 650)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -1025,6 +1033,7 @@ export default function CorporateEnglishTalksPage() {
   }, [])
 
   useEffect(() => {
+    if (!deferredModulesReady) return
     let cancelled = false
     const load = async () => {
       try {
@@ -1044,9 +1053,10 @@ export default function CorporateEnglishTalksPage() {
     return () => {
       cancelled = true
     }
-  }, [activeInterviewCategory, loadModule])
+  }, [activeInterviewCategory, deferredModulesReady, loadModule])
 
   useEffect(() => {
+    if (!deferredModulesReady) return
     let cancelled = false
     const load = async () => {
       try {
@@ -1066,9 +1076,10 @@ export default function CorporateEnglishTalksPage() {
     return () => {
       cancelled = true
     }
-  }, [activeRemoteCategory, loadModule])
+  }, [activeRemoteCategory, deferredModulesReady, loadModule])
 
   useEffect(() => {
+    if (!deferredModulesReady) return
     let cancelled = false
     const load = async () => {
       try {
@@ -1087,7 +1098,7 @@ export default function CorporateEnglishTalksPage() {
     return () => {
       cancelled = true
     }
-  }, [loadModule])
+  }, [deferredModulesReady, loadModule])
 
   useEffect(() => {
     const maybeTrack = (section: TalkSectionKey, loading: boolean, count: number) => {

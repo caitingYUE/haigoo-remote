@@ -2,7 +2,7 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/webp" href="/favicon.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Haigoo Remote Assistant - 海外远程工作助手</title>
     <meta name="description" content="Haigoo Remote Assistant 是一款专为中国求职者打造的海外远程工作助手，提供全球优质远程岗位推荐、简历优化、AI 求职 Copilot 等一站式服务，助您轻松开启理想的远程职业生涯。" />
@@ -11,7 +11,17 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://haigooremote.com" />
     <meta property="og:image" content="/assets/brandlogo.png" />
-    <link rel="preload" as="image" href="/pic_lists/Home_pics/haigoo-hero-title-680.webp" imagesrcset="/pic_lists/Home_pics/haigoo-hero-title-680.webp 680w, /pic_lists/Home_pics/haigoo-hero-title-1020.webp 1020w, /pic_lists/Home_pics/haigoo-hero-title-1360.webp 1360w" imagesizes="(min-width: 1280px) 640px, (min-width: 640px) 560px, calc(100vw - 40px)" />
+    <script>
+      if (window.location.pathname === '/') {
+        const heroPreload = document.createElement('link')
+        heroPreload.rel = 'preload'
+        heroPreload.as = 'image'
+        heroPreload.href = '/pic_lists/Home_pics/haigoo-hero-title-680.webp'
+        heroPreload.setAttribute('imagesrcset', '/pic_lists/Home_pics/haigoo-hero-title-680.webp 680w, /pic_lists/Home_pics/haigoo-hero-title-1020.webp 1020w, /pic_lists/Home_pics/haigoo-hero-title-1360.webp 1360w')
+        heroPreload.setAttribute('imagesizes', '(min-width: 1280px) 640px, (min-width: 640px) 560px, calc(100vw - 40px)')
+        document.head.appendChild(heroPreload)
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
