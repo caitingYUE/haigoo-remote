@@ -63,10 +63,8 @@ export default function HomeCareerGuides() {
     >
       <div className="mb-5 flex flex-col gap-4 border-b border-[#e8eff5] pb-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-            <h2 id="home-career-guides-title" className="text-[28px] font-black leading-tight text-slate-950 sm:text-[32px]">职业成长</h2>
-            <p className="text-sm font-semibold leading-6 text-slate-500 sm:text-[15px]">远程工作必备技能、认知、求职攻略和远程企业文化</p>
-          </div>
+          <h2 id="home-career-guides-title" className="text-[28px] font-black leading-tight text-slate-950 sm:text-[32px]">职业成长</h2>
+          <p className="mt-1 text-sm font-semibold leading-6 text-slate-500 sm:text-[15px]">远程工作必备技能、认知、求职攻略和远程企业文化</p>
         </div>
         <Link
           to="/careerlearning"

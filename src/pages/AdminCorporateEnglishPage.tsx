@@ -1399,6 +1399,13 @@ function AdminModuleVideoManager({
     loadVideos()
   }, [loadVideos])
 
+  useEffect(() => {
+    if (!showForm) return
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, behavior: 'auto' })
+    })
+  }, [showForm, editingVideo?.videoId])
+
   const openCreate = () => {
     closeCoverCropDraft()
     setEditingVideo(null)
@@ -1513,7 +1520,7 @@ function AdminModuleVideoManager({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className={showForm ? 'hidden' : 'flex flex-wrap items-center justify-between gap-3'}>
         <div>
           <h2 className="text-2xl font-black text-slate-900">{title}</h2>
           <p className="text-sm text-slate-500">{description}</p>
@@ -1543,7 +1550,7 @@ function AdminModuleVideoManager({
             <div className="sticky top-0 z-20 -mx-1 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/95 px-1 py-3 backdrop-blur">
               <h3 className="text-lg font-black text-slate-900">{editingVideo ? '编辑视频' : '新增视频'}</h3>
               <div className="flex items-center gap-2">
-                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}><X className="h-4 w-4" />取消</button>
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}><ArrowLeft className="h-4 w-4" />返回列表</button>
                 <button type="button" className="btn-primary" onClick={saveVideo} disabled={saving}>
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}
                   {saving ? '保存中...' : '保存视频'}
@@ -1653,7 +1660,7 @@ function AdminModuleVideoManager({
         </div>
       ) : null}
 
-      <div className="card">
+      <div className={showForm ? 'hidden' : 'card'}>
         <div className="card-content">
           <div className="mb-4 grid grid-cols-1 items-stretch gap-3 xl:grid-cols-[minmax(260px,1fr)_180px]">
             <div className="relative min-w-0">

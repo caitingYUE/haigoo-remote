@@ -3753,11 +3753,11 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       <div className="min-w-0">
 
       <section className="relative mb-5 overflow-hidden rounded-[22px] border border-[#cfc8ff] bg-[linear-gradient(115deg,#f0edff_0%,#fbfbff_52%,#edf6ff_100%)] px-4 py-5 shadow-[0_34px_90px_-58px_rgba(75,73,145,0.38)] sm:mb-5 sm:rounded-[30px] sm:px-8 lg:px-9 lg:py-9">
-        <div className="absolute inset-x-0 top-0 h-1.5 bg-[linear-gradient(90deg,#6251f5_0%,#8a7cf8_46%,#7ba6d8_100%)]" />
+        <div className="absolute inset-x-0 top-0 z-10 h-2 bg-[linear-gradient(90deg,#5546ed_0%,#8a6ff2_48%,#4f9fc4_100%)]" />
         <div className="pointer-events-none absolute inset-0">
-          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[72%_54%] opacity-[0.3] saturate-[0.9]" />
-          <div className="absolute inset-0 bg-white/80" />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-white/86" />
+          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[72%_54%] opacity-[0.38] saturate-[0.94]" />
+          <div className="absolute inset-0 bg-white/72" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-white/80" />
         </div>
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px] xl:items-center">
           <div className="max-w-[820px]">
