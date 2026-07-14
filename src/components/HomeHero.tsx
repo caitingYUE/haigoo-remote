@@ -25,6 +25,7 @@ import {
 import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { trackingService } from '../services/tracking-service'
 import MemberEmailSubscriptionCard from './MemberEmailSubscriptionCard'
+import HomeCareerGuides from './HomeCareerGuides'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v2'
 const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
@@ -1951,7 +1952,7 @@ export default function HomeHero({
                 <div className="absolute inset-x-0 top-[640px] h-[280px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,rgba(251,250,246,0.72)_58%,#fbfaf6_100%)]" />
             </div>
 
-            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.82fr_1.18fr] lg:px-10 lg:pb-10 lg:pt-0">
+            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.95fr_1.05fr] lg:px-10 lg:pb-10 lg:pt-0">
                 {shouldShowUpgradeBanner && (
                     <div className="absolute left-5 top-3 z-30 max-w-[calc(100%-2.5rem)] lg:left-10 lg:top-10 xl:max-w-[640px]">
                         <div className="flex h-9 w-fit max-w-full items-center gap-2 rounded-full border border-[#eadfc8]/80 bg-[#fffdf8]/92 py-1 pl-1.5 pr-1.5 text-[12px] font-semibold text-slate-700 shadow-[0_14px_34px_-30px_rgba(116,90,44,0.42)] ring-1 ring-white/60 backdrop-blur-sm">
@@ -1991,14 +1992,14 @@ export default function HomeHero({
                         </div>
                     </div>
                 )}
-                <div className={`relative z-10 w-full min-w-0 max-w-[640px] ${shouldShowUpgradeBanner ? 'pt-11 sm:pt-0' : ''}`}>
-                    <h1 className="relative max-w-[640px]" aria-label="用你喜欢的方式 工作和生活">
+                <div className={`relative z-10 w-full min-w-0 max-w-[700px] ${shouldShowUpgradeBanner ? 'pt-11 sm:pt-0' : ''}`}>
+                    <h1 className="relative max-w-[510px] overflow-hidden" aria-label="用你喜欢的方式 工作和生活">
                         <span className="sr-only">用你喜欢的方式 工作和生活</span>
                         <picture aria-hidden="true">
                             <source
                                 type="image/webp"
                                 srcSet={HOME_HERO_TITLE_SRCSET}
-                                sizes="(min-width: 1280px) 640px, (min-width: 640px) 560px, calc(100vw - 40px)"
+                                sizes="(min-width: 640px) 644px, 112vw"
                             />
                             <img
                                 src={HOME_HERO_TITLE_SRC}
@@ -2007,7 +2008,7 @@ export default function HomeHero({
                                 height={208}
                                 loading="eager"
                                 decoding="async"
-                                className="-ml-2 block h-auto w-full max-w-[640px] select-none sm:-ml-3 lg:-ml-4"
+                                className="ml-[-5.48%] block h-auto w-[126.2%] max-w-none select-none"
                                 draggable={false}
                             />
                         </picture>
@@ -2017,11 +2018,11 @@ export default function HomeHero({
                             aria-hidden="true"
                             loading="eager"
                             decoding="async"
-                            className="pointer-events-none absolute left-[64%] top-[72%] h-6 w-auto -translate-x-1/2 -translate-y-1/2 select-none object-contain sm:h-7 lg:h-8"
+                            className="pointer-events-none absolute left-[78%] top-[74%] h-6 w-auto -translate-x-1/2 -translate-y-1/2 select-none object-contain sm:h-7 lg:h-8"
                             draggable={false}
                         />
                     </h1>
-                    <p className="mt-4 max-w-xl text-[15px] leading-7 text-[#6b7b90] sm:mt-5 sm:text-[18px] sm:leading-8">
+                    <p className="mt-4 max-w-[520px] text-[15px] leading-7 text-[#5f7087] sm:mt-5 sm:text-[18px] sm:leading-8">
                         可以全球旅居，也可以居家办公。Haigoo 帮你获得理想的远程工作，在喜欢的地方，做有价值的事。
                     </p>
 
@@ -2359,6 +2360,8 @@ export default function HomeHero({
                         </div>
                     )}
                 </div>
+
+                <HomeCareerGuides />
 
                 <div className={`relative z-10 mt-6 overflow-hidden rounded-[30px] border p-5 ${
                     isMember

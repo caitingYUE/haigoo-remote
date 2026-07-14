@@ -9,11 +9,13 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from '../components/ShareJobModal'
 import { decodeJobId, getJobSharePath } from '../utils/share-link-helper'
+import { useReturnNavigation } from '../hooks/useReturnNavigation'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const handleBack = useReturnNavigation('/jobs')
   const { token, isAuthenticated } = useAuth()
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
 
@@ -197,7 +199,7 @@ export default function JobDetailPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Mobile Header */}
       <div className="lg:hidden sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 bg-white border-b border-slate-200 px-3 py-2.5">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2 hover:bg-slate-50 rounded-full">
+        <button onClick={handleBack} className="p-2 -ml-2 hover:bg-slate-50 rounded-full" aria-label="返回上一页">
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
         <div className="px-1 text-center text-sm font-semibold leading-5 text-slate-900 line-clamp-2">{job.title}</div>
@@ -214,11 +216,11 @@ export default function JobDetailPage() {
       <div className="max-w-5xl mx-auto p-4 lg:p-8">
         <div className="lg:mb-6 hidden lg:block">
           <button
-            onClick={() => navigate('/jobs')}
+            onClick={handleBack}
             className="flex items-center text-slate-500 hover:text-indigo-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            返回职位列表
+            返回
           </button>
         </div>
 

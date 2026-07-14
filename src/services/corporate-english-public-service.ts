@@ -1,4 +1,5 @@
 import type { CorporateEnglishClipTag, CorporateEnglishPronunciationMark } from './corporate-english-service'
+import type { CorporateEnglishVideoNoteBlock } from './corporate-english-service'
 import type { CorporateEnglishAccessTier, CorporateEnglishModuleKey } from './corporate-english-service'
 
 const API_BASE = '/api/corporate-english-public'
@@ -99,6 +100,8 @@ export interface CorporateEnglishPublicModuleVideo {
   category: string
   difficultyLevel?: string
   difficultyLevelLabel?: string
+  hasVideoNotes: boolean
+  videoNotes: CorporateEnglishVideoNoteBlock[]
   tags: string[]
   accessTier: CorporateEnglishAccessTier
   durationMs?: number
@@ -109,6 +112,28 @@ export interface CorporateEnglishPublicModuleVideo {
   loginRequired: boolean
   upgradeRequired: boolean
   lockReason?: string
+}
+
+export interface CorporateEnglishFeaturedVideo {
+  id: string
+  kind: 'ceo' | 'module'
+  moduleKey: 'ceo' | CorporateEnglishModuleKey
+  moduleLabel: string
+  title: string
+  source: string
+  description?: string
+  industry?: string
+  category?: string
+  difficultyLevelLabel?: string
+  tags: string[]
+  accessTier: CorporateEnglishAccessTier
+  hasVideoNotes: boolean
+  noteHref?: string
+  coverImageUrl?: string
+  durationMs?: number
+  publishedAt?: string
+  isFeatured: boolean
+  href: string
 }
 
 export interface CorporateEnglishPublicCeoVideo {
@@ -213,6 +238,14 @@ async function readJson<T>(response: Response): Promise<T> {
 }
 
 export const corporateEnglishPublicService = {
+  async listFeaturedVideos(limit = 4) {
+    const query = new URLSearchParams({ resource: 'featured-videos', limit: String(limit) })
+    const data = await readJson<{ success: boolean; videos: CorporateEnglishFeaturedVideo[] }>(
+      await fetch(`${API_BASE}?${query.toString()}`, { headers: getAuthHeaders() })
+    )
+    return data.videos || []
+  },
+
   async listCompanies() {
     const query = new URLSearchParams({ resource: 'companies' })
     const data = await readJson<{ success: boolean; companies: CorporateEnglishPublicCompany[] }>(

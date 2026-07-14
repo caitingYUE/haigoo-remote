@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Building2,
   ChevronDown,
+  ChevronUp,
   ChevronRight,
   Copy,
   Download,
@@ -27,6 +28,8 @@ import {
   CorporateEnglishContentSection,
   CorporateEnglishModuleKey,
   CorporateEnglishModuleVideo,
+  CorporateEnglishVideoNoteBlock,
+  CorporateEnglishVideoNoteBlockType,
   CorporateEnglishResourceLink,
   CorporateEnglishMaterial,
   CorporateEnglishPronunciationMark,
@@ -244,6 +247,7 @@ interface EditorState {
   coverThumbnailUrl?: string
   sequence: number
   status: CorporateEnglishStatus
+  isFeatured: boolean
   sourceAudioAssetId?: string | null
   subtitleCsvAssetId?: string | null
   durationMs?: number | null
@@ -276,6 +280,7 @@ const emptyEditorState = (): EditorState => ({
   coverThumbnailUrl: '',
   sequence: 0,
   status: 'draft',
+  isFeatured: false,
   sourceAudioAssetId: null,
   subtitleCsvAssetId: null,
   durationMs: null,
@@ -1005,12 +1010,281 @@ function emptyModuleVideoForm(moduleKey: CorporateEnglishModuleKey): SaveCorpora
     videoSource: '',
     category: '',
     difficultyLevel: '',
+    videoNotes: [],
     tags: [],
     accessTier: 'vip',
     status: 'draft',
     sortOrder: 0,
-    publishedAt: formatDateTimeInput(new Date().toISOString())
+    publishedAt: formatDateTimeInput(new Date().toISOString()),
+    isFeatured: false
   }
+}
+
+const VIDEO_NOTE_BLOCK_OPTIONS: Array<{ value: CorporateEnglishVideoNoteBlockType; label: string }> = [
+  { value: 'heading_1', label: '一级标题' },
+  { value: 'heading_2', label: '二级标题' },
+  { value: 'paragraph', label: '正文段落' },
+  { value: 'bullet_list', label: '项目列表' },
+  { value: 'numbered_list', label: '编号列表' },
+  { value: 'quote', label: '重点引用' }
+]
+
+function createVideoNoteBlock(type: CorporateEnglishVideoNoteBlockType): CorporateEnglishVideoNoteBlock {
+  const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `note-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  return type === 'bullet_list' || type === 'numbered_list'
+    ? { id, type, items: [''] }
+    : { id, type, text: '' }
+}
+
+function parseVideoNotesText(input: string): CorporateEnglishVideoNoteBlock[] {
+  const lines = String(input || '').replace(/\r\n?/g, '\n').split('\n')
+  const blocks: CorporateEnglishVideoNoteBlock[] = []
+  let paragraphLines: string[] = []
+
+  const addTextBlock = (type: Exclude<CorporateEnglishVideoNoteBlockType, 'bullet_list' | 'numbered_list'>, text: string) => {
+    const normalized = text.trim()
+    if (normalized) blocks.push({ ...createVideoNoteBlock(type), text: normalized })
+  }
+  const flushParagraph = () => {
+    if (!paragraphLines.length) return
+    addTextBlock('paragraph', paragraphLines.join('\n'))
+    paragraphLines = []
+  }
+
+  for (let index = 0; index < lines.length;) {
+    const raw = lines[index]
+    const line = raw.trim()
+    if (!line) {
+      flushParagraph()
+      index += 1
+      continue
+    }
+    if (/^-{3,}$/.test(line)) {
+      flushParagraph()
+      addTextBlock('paragraph', '---')
+      index += 1
+      continue
+    }
+
+    const markdownHeading = line.match(/^(#{1,3})\s+(.+)$/)
+    if (markdownHeading) {
+      flushParagraph()
+      addTextBlock(markdownHeading[1].length === 1 ? 'heading_1' : 'heading_2', markdownHeading[2])
+      index += 1
+      continue
+    }
+    if (/^[一二三四五六七八九十百]+[、.．]\s*\S+/.test(line)) {
+      flushParagraph()
+      addTextBlock('heading_1', line)
+      index += 1
+      continue
+    }
+    if (/^>\s*/.test(line)) {
+      flushParagraph()
+      const quoteLines: string[] = []
+      while (index < lines.length && /^>\s*/.test(lines[index].trim())) {
+        quoteLines.push(lines[index].trim().replace(/^>\s*/, ''))
+        index += 1
+      }
+      addTextBlock('quote', quoteLines.join('\n'))
+      continue
+    }
+    if (/^[-*•·●○]\s+/.test(line)) {
+      flushParagraph()
+      const items: string[] = []
+      while (index < lines.length && /^[-*•·●○]\s+/.test(lines[index].trim())) {
+        items.push(lines[index].trim().replace(/^[-*•·●○]\s+/, '').trim())
+        index += 1
+      }
+      blocks.push({ ...createVideoNoteBlock('bullet_list'), items: items.filter(Boolean) })
+      continue
+    }
+    if (/^\d+[.)、．]\s*/.test(line)) {
+      flushParagraph()
+      const items: string[] = []
+      let cursor = index
+      while (cursor < lines.length && /^\d+[.)、．]\s*/.test(lines[cursor].trim())) {
+        items.push(lines[cursor].trim().replace(/^\d+[.)、．]\s*/, '').trim())
+        cursor += 1
+      }
+      const nextLineIsBlank = cursor >= lines.length || !lines[cursor].trim()
+      if (items.length === 1 && nextLineIsBlank && line.length <= 80) {
+        addTextBlock('heading_2', line)
+      } else {
+        blocks.push({ ...createVideoNoteBlock('numbered_list'), items: items.filter(Boolean) })
+      }
+      index = cursor
+      continue
+    }
+    const nextLine = lines[index + 1]?.trim() || ''
+    if (line.length <= 80 && (/^第[一二三四五六七八九十百]+[层部分章节]/.test(line) || /[：:]$/.test(line))) {
+      flushParagraph()
+      addTextBlock('heading_2', line)
+      index += 1
+      continue
+    }
+    if (line.length <= 60 && !/[。！？!?；;：:]$/.test(line) && (!nextLine || index === 0)) {
+      flushParagraph()
+      addTextBlock(index === 0 ? 'heading_1' : 'heading_2', line)
+      index += 1
+      continue
+    }
+
+    paragraphLines.push(line)
+    index += 1
+  }
+  flushParagraph()
+  return blocks.filter((block) => block.text || block.items?.length)
+}
+
+function VideoNotesEditor({
+  value,
+  onChange
+}: {
+  value: CorporateEnglishVideoNoteBlock[]
+  onChange: (blocks: CorporateEnglishVideoNoteBlock[]) => void
+}) {
+  const blocks = useMemo(() => Array.isArray(value) ? value : [], [value])
+  const [importText, setImportText] = useState('')
+  const noteCharacterCount = useMemo(() => blocks.reduce((sum, block) => sum + (block.text?.length || 0) + (block.items || []).reduce((itemSum, item) => itemSum + item.length, 0), 0), [blocks])
+  const blockGroups = useMemo(() => {
+    const groups: Array<{ id: string; title: string; items: Array<{ block: CorporateEnglishVideoNoteBlock; index: number }> }> = []
+    blocks.forEach((block, index) => {
+      if (block.type === 'heading_1' || groups.length === 0) {
+        groups.push({ id: block.id, title: block.type === 'heading_1' ? (block.text || '未命名章节') : '开篇内容', items: [] })
+      }
+      groups[groups.length - 1].items.push({ block, index })
+    })
+    return groups
+  }, [blocks])
+  const applyImportedText = (mode: 'replace' | 'append', text = importText) => {
+    const parsed = parseVideoNotesText(text)
+    if (!parsed.length) return
+    onChange(mode === 'replace' ? parsed : [...blocks, ...parsed])
+  }
+  const updateBlock = (index: number, patch: Partial<CorporateEnglishVideoNoteBlock>) => {
+    onChange(blocks.map((block, blockIndex) => blockIndex === index ? { ...block, ...patch } : block))
+  }
+  const changeBlockType = (index: number, type: CorporateEnglishVideoNoteBlockType) => {
+    const block = blocks[index]
+    const isList = type === 'bullet_list' || type === 'numbered_list'
+    updateBlock(index, isList
+      ? { type, text: undefined, items: block.items?.length ? block.items : block.text ? [block.text] : [''] }
+      : { type, items: undefined, text: block.text || block.items?.join('\n') || '' })
+  }
+  const moveBlock = (index: number, direction: -1 | 1) => {
+    const target = index + direction
+    if (target < 0 || target >= blocks.length) return
+    const next = [...blocks]
+    ;[next[index], next[target]] = [next[target], next[index]]
+    onChange(next)
+  }
+
+  return (
+    <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 lg:col-span-2">
+      <div className="rounded-xl border border-indigo-100 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h4 className="flex items-center gap-2 font-black text-slate-900"><Wand2 className="h-4 w-4 text-indigo-600" />智能导入整篇笔记</h4>
+            <p className="mt-1 text-sm leading-6 text-slate-500">直接粘贴 Notion、Word 或 Markdown 文本，自动识别标题、段落、列表和引用。</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-secondary h-9 px-3 text-xs" disabled={!importText.trim()} onClick={() => applyImportedText('append')}>追加识别</button>
+            <button type="button" className="btn-primary h-9 px-3 text-xs" disabled={!importText.trim()} onClick={() => applyImportedText('replace')}><Wand2 className="h-3.5 w-3.5" />重新识别并替换</button>
+          </div>
+        </div>
+        <textarea
+          className="input mt-3 min-h-[240px] w-full font-sans leading-7"
+          value={importText}
+          onChange={(event) => setImportText(event.target.value)}
+          onPaste={(event) => {
+            const pasted = event.clipboardData.getData('text/plain')
+            if (!pasted.trim()) return
+            event.preventDefault()
+            setImportText(pasted)
+            applyImportedText(blocks.length ? 'append' : 'replace', pasted)
+          }}
+          placeholder={'粘贴整篇视频笔记，例如：\n\n# 国际远程技术求职完整方法\n\n## 真正的问题不是去哪里投\n\n正文内容……\n\n- 第一项\n- 第二项\n\n> 需要重点记住的结论'}
+        />
+        <p className="mt-2 text-xs font-semibold text-slate-400">粘贴后会立即识别；已有内容时默认追加，可使用“重新识别并替换”覆盖。</p>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h4 className="font-black text-slate-900">视频笔记</h4>
+          <p className="mt-1 text-sm leading-6 text-slate-500">已识别 {blocks.length} 个内容块、{noteCharacterCount.toLocaleString('zh-CN')} 字。建议笔记正文 3,000-30,000 字，最多 60,000 字。</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {VIDEO_NOTE_BLOCK_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              className="btn-secondary h-9 px-3 text-xs"
+              onClick={() => onChange([...blocks, createVideoNoteBlock(option.value)])}
+            >
+              <Plus className="h-3.5 w-3.5" />
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {blocks.length ? (
+        <div className="space-y-3">
+          {blockGroups.map((group) => {
+            const groupCharacters = group.items.reduce((sum, item) => sum + (item.block.text?.length || 0) + (item.block.items || []).reduce((itemSum, text) => itemSum + text.length, 0), 0)
+            return (
+              <details key={group.id} className="group rounded-xl border border-slate-200 bg-white shadow-sm">
+                <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3 marker:hidden">
+                  <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 transition group-open:rotate-90" />
+                  <span className="min-w-0 flex-1 truncate font-black text-slate-900">{group.title}</span>
+                  <span className="shrink-0 text-xs font-semibold text-slate-400">{group.items.length} 块 · {groupCharacters.toLocaleString('zh-CN')} 字</span>
+                </summary>
+                <div className="space-y-3 border-t border-slate-100 bg-slate-50/60 p-3">
+                  {group.items.map(({ block, index }) => {
+                    const isList = block.type === 'bullet_list' || block.type === 'numbered_list'
+                    return (
+                      <div key={block.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <span className="w-6 text-center text-xs font-black text-slate-400">{index + 1}</span>
+                  <select
+                    className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-700"
+                    value={block.type}
+                    onChange={(event) => changeBlockType(index, event.target.value as CorporateEnglishVideoNoteBlockType)}
+                  >
+                    {VIDEO_NOTE_BLOCK_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                  <div className="ml-auto flex items-center gap-1">
+                    <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30" onClick={() => moveBlock(index, -1)} disabled={index === 0} aria-label="上移内容块">
+                      <ChevronUp className="h-4 w-4" />
+                    </button>
+                    <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 disabled:opacity-30" onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} aria-label="下移内容块">
+                      <ChevronDown className="h-4 w-4" />
+                    </button>
+                    <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-red-500 hover:bg-red-50" onClick={() => onChange(blocks.filter((_, blockIndex) => blockIndex !== index))} aria-label="删除内容块">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <textarea
+                  className={`input w-full ${block.type === 'heading_1' || block.type === 'heading_2' ? 'min-h-[72px] font-bold' : 'min-h-[110px]'}`}
+                  value={isList ? (block.items || []).join('\n') : (block.text || '')}
+                  onChange={(event) => updateBlock(index, isList
+                    ? { items: event.target.value.split('\n') }
+                    : { text: event.target.value })}
+                  placeholder={isList ? '每行填写一个列表项' : '填写内容'}
+                />
+                      </div>
+                    )
+                  })}
+                </div>
+              </details>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">暂无视频笔记，使用上方按钮添加内容块。</div>
+      )}
+    </section>
+  )
 }
 
 function AdminModuleVideoManager({
@@ -1146,11 +1420,13 @@ function AdminModuleVideoManager({
       videoSource: video.videoSource,
       category: video.category,
       difficultyLevel: video.difficultyLevel || '',
+      videoNotes: video.videoNotes || [],
       tags: video.tags,
       accessTier: video.accessTier,
       status: video.status,
       sortOrder: video.sortOrder,
-      publishedAt: formatDateTimeInput(video.publishedAt)
+      publishedAt: formatDateTimeInput(video.publishedAt),
+      isFeatured: video.isFeatured === true
     })
     setTagInput(formatSimpleTags(video.tags))
     setCoverFile(null)
@@ -1264,12 +1540,15 @@ function AdminModuleVideoManager({
             />
           ) : null}
           <div className="card-content space-y-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="sticky top-0 z-20 -mx-1 flex items-center justify-between gap-3 border-b border-slate-100 bg-white/95 px-1 py-3 backdrop-blur">
               <h3 className="text-lg font-black text-slate-900">{editingVideo ? '编辑视频' : '新增视频'}</h3>
-              <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}>
-                <X className="h-4 w-4" />
-                取消
-              </button>
+              <div className="flex items-center gap-2">
+                <button type="button" className="btn-secondary" onClick={() => setShowForm(false)}><X className="h-4 w-4" />取消</button>
+                <button type="button" className="btn-primary" onClick={saveVideo} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}
+                  {saving ? '保存中...' : '保存视频'}
+                </button>
+              </div>
             </div>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="space-y-2 lg:col-span-2">
@@ -1344,6 +1623,13 @@ function AdminModuleVideoManager({
                   <option value="archived">已归档</option>
                 </select>
               </label>
+              <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                <input type="checkbox" className="h-4 w-4 accent-indigo-600" checked={form.isFeatured === true} onChange={(event) => setForm((prev) => ({ ...prev, isFeatured: event.target.checked }))} />
+                <span>
+                  <span className="block text-sm font-bold text-slate-700">精选</span>
+                  <span className="block text-xs text-slate-500">展示在首页职业成长模块</span>
+                </span>
+              </label>
               <label className="space-y-1">
                 <span className="text-sm font-bold text-slate-700">发布时间</span>
                 <input type="datetime-local" className="input" value={form.publishedAt || ''} onChange={(event) => setForm((prev) => ({ ...prev, publishedAt: event.target.value }))} />
@@ -1357,10 +1643,12 @@ function AdminModuleVideoManager({
               <span className="text-sm font-bold text-slate-700">简介</span>
               <textarea className="input min-h-[110px]" value={form.description || ''} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
             </label>
-            <button type="button" className="btn-primary" onClick={saveVideo} disabled={saving}>
-              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}
-              {saving ? '保存中...' : '保存视频'}
-            </button>
+            {isRemotePreparation ? (
+              <VideoNotesEditor
+                value={form.videoNotes || []}
+                onChange={(videoNotes) => setForm((prev) => ({ ...prev, videoNotes }))}
+              />
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -1783,6 +2071,7 @@ export default function AdminCorporateEnglishPage() {
           coverThumbnailUrl: detail.material.coverThumbnailUrl || '',
           sequence: detail.material.sequence || 0,
           status: detail.material.status,
+          isFeatured: detail.material.isFeatured === true,
           sourceAudioAssetId: detail.material.sourceAudioAssetId,
           subtitleCsvAssetId: detail.material.subtitleCsvAssetId,
           durationMs: detail.material.durationMs,
@@ -2400,6 +2689,7 @@ export default function AdminCorporateEnglishPage() {
         subtitleCsvAssetId,
         normalizedSubtitleRows: editor.subtitleRows,
         status: editor.status,
+        isFeatured: editor.isFeatured,
         durationMs: editor.durationMs || null,
         clips: uploadedClips
       }, isEditing ? editor.materialId : undefined)
@@ -2892,6 +3182,13 @@ export default function AdminCorporateEnglishPage() {
                       <option value="published">已发布</option>
                       <option value="archived">已归档</option>
                     </select>
+                  </label>
+                  <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                    <input type="checkbox" className="h-4 w-4 accent-indigo-600" checked={editor.isFeatured} onChange={(event) => updateEditor({ isFeatured: event.target.checked })} />
+                    <span>
+                      <span className="block text-sm font-semibold text-slate-700">精选</span>
+                      <span className="block text-xs text-slate-500">展示在首页职业成长模块</span>
+                    </span>
                   </label>
                   <label className="block">
                     <span className="text-sm font-semibold text-slate-700">素材人物名称 *</span>

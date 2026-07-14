@@ -117,6 +117,7 @@ export interface CorporateEnglishMaterial {
   status: CorporateEnglishStatus
   clipCount: number
   durationMs?: number
+  isFeatured?: boolean
   createdAt: string
   updatedAt: string
 }
@@ -144,13 +145,24 @@ export interface CorporateEnglishModuleVideo {
   category: string
   difficultyLevel?: string
   difficultyLevelLabel?: string
+  videoNotes: CorporateEnglishVideoNoteBlock[]
   tags: string[]
   accessTier: CorporateEnglishAccessTier
   status: CorporateEnglishStatus
   sortOrder: number
   publishedAt: string
+  isFeatured?: boolean
   createdAt?: string
   updatedAt?: string
+}
+
+export type CorporateEnglishVideoNoteBlockType = 'heading_1' | 'heading_2' | 'paragraph' | 'bullet_list' | 'numbered_list' | 'quote'
+
+export interface CorporateEnglishVideoNoteBlock {
+  id: string
+  type: CorporateEnglishVideoNoteBlockType
+  text?: string
+  items?: string[]
 }
 
 export interface SaveCorporateEnglishModuleVideoPayload {
@@ -163,11 +175,13 @@ export interface SaveCorporateEnglishModuleVideoPayload {
   coverThumbnailUrl?: string
   category?: string
   difficultyLevel?: string
+  videoNotes?: CorporateEnglishVideoNoteBlock[]
   tags?: string[]
   accessTier: CorporateEnglishAccessTier
   status: CorporateEnglishStatus
   sortOrder?: number
   publishedAt?: string
+  isFeatured?: boolean
 }
 
 export interface SaveCorporateEnglishMaterialPayload {
@@ -189,6 +203,7 @@ export interface SaveCorporateEnglishMaterialPayload {
   normalizedSubtitleRows: CorporateEnglishSubtitleRow[]
   status: CorporateEnglishStatus
   durationMs?: number | null
+  isFeatured?: boolean
   clips: CorporateEnglishClip[]
 }
 

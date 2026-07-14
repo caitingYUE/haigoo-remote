@@ -1260,9 +1260,8 @@ export default function JobsPage() {
           {/* Main Content Area: Split View */}
           <div className="flex flex-col gap-3 min-h-0 mt-0 lg:flex-1 lg:flex-row lg:overflow-hidden">
             {/* Middle Column: Job List */}
-            <div className="relative z-30 flex w-full flex-shrink-0 flex-col overflow-visible rounded-[20px] border border-[#dfe8ef] bg-white shadow-[0_20px_52px_-44px_rgba(64,78,102,0.24)] sm:rounded-[24px] lg:w-[40%] lg:rounded-[28px] xl:w-[40%]">
-              <img src={JOBS_PAGE_DECOR.sun} alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-7 top-7 z-0 hidden h-12 w-12 opacity-55 md:block" />
-              <div className="relative z-50 flex-shrink-0 border-b border-slate-100/90 bg-white/80 px-3 pb-1 pt-3">
+            <div className="relative z-30 flex w-full flex-shrink-0 flex-col overflow-visible rounded-[20px] border border-[#cfdbe5] bg-white shadow-[0_28px_72px_-48px_rgba(49,65,88,0.34)] sm:rounded-[24px] lg:w-[40%] lg:rounded-[28px] xl:w-[40%]">
+              <div className="relative z-50 flex-shrink-0 bg-transparent p-0">
                 <JobFilterBar
                   filters={filters}
                   onFilterChange={(newFilters: any) => {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type MouseEvent, type PointerEvent, type WheelEvent } from 'react'
-import { Link } from 'react-router-dom'
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ArrowRight, BookOpen, Check, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import {
@@ -11,6 +11,7 @@ import {
 } from '../services/corporate-english-public-service'
 import type { CorporateEnglishModuleKey } from '../services/corporate-english-service'
 import { trackingService } from '../services/tracking-service'
+import { VideoNotesModal } from '../components/VideoNotesModal'
 
 type TalkSectionKey = 'ceo' | 'english_interview' | 'remote_preparation' | 'foreign_meeting'
 type PosterTone = 'ceo' | 'interview' | 'remote' | 'meeting'
@@ -243,7 +244,7 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
     } catch (_) {
       // Some browsers may not support capture on this target.
     }
-  }, [enabled])
+  }, [enabled, getPageFromScroll])
 
   const onPointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
@@ -372,22 +373,6 @@ function PlayOverlay({ label = '' }: { label?: string }) {
       {label ? <Lock className="h-5 w-5" /> : <Play className="ml-1 h-6 w-6 fill-current" />}
       {label ? <span className="text-sm font-black">{label}</span> : null}
     </span>
-  )
-}
-
-function SummaryPreviewText({ children }: { children: string }) {
-  return (
-    <p
-      className="mt-4 whitespace-pre-line break-words text-[13px] leading-6 text-slate-700"
-      style={{
-        display: '-webkit-box',
-        WebkitBoxOrient: 'vertical',
-        WebkitLineClamp: 7,
-        overflow: 'hidden'
-      }}
-    >
-      {children}
-    </p>
   )
 }
 
@@ -570,10 +555,9 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
       <h3 className="mt-2 line-clamp-2 min-h-[3rem] text-lg font-black leading-tight tracking-tight">{video.materialTitle}</h3>
       <p className="mt-2 truncate text-sm font-semibold text-slate-500">{isGuest ? '登录后播放' : `${video.speakerName} · ${formatDateLabel(video.publishedAt) || '精选访谈'}`}</p>
       <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">{video.speakerRole}</p>
-      {!isGuest ? <div className="pointer-events-none absolute inset-0 z-20 flex min-h-0 flex-col overflow-hidden bg-white p-5 opacity-0 shadow-[inset_0_0_0_1px_rgba(219,232,244,0.9)] transition duration-200 group-hover:opacity-100">
-        <div className="line-clamp-2 text-sm font-black leading-5 text-slate-950">{video.materialTitle}</div>
-        <div className="mt-2 shrink-0 truncate text-sm font-semibold text-[#e11d48]">{video.companyName} · {video.speakerName}</div>
-        <SummaryPreviewText>{video.videoSummary || `${video.speakerName} 分享 ${video.companyName} 的文化、业务和表达方式。`}</SummaryPreviewText>
+      {!isGuest ? <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-[164px] translate-y-full flex-col overflow-hidden border-t border-[#e4ebf2] bg-white px-5 py-4 opacity-0 shadow-[0_-14px_32px_-26px_rgba(15,23,42,0.28)] transition duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100">
+        <div className="mb-2 flex shrink-0 items-center gap-1.5 text-xs font-black text-[#6251f5]"><BookOpen className="h-3.5 w-3.5" />视频简介</div>
+        <p className="line-clamp-5 whitespace-pre-line break-words text-[13px] font-semibold leading-5 text-slate-600">{video.videoSummary || `${video.speakerName} 分享 ${video.companyName} 的文化、业务和表达方式。`}</p>
       </div> : null}
     </Link>
   )
@@ -662,7 +646,8 @@ function ModuleTalkCard({
   index,
   featured = false,
   isGuest,
-  showDescription = false
+  showDescription = false,
+  onOpenNotes
 }: {
   video: CorporateEnglishPublicModuleVideo
   section: Exclude<TalkSectionKey, 'ceo'>
@@ -670,13 +655,23 @@ function ModuleTalkCard({
   featured?: boolean
   isGuest: boolean
   showDescription?: boolean
+  onOpenNotes?: (video: CorporateEnglishPublicModuleVideo) => void
 }) {
+  const navigate = useNavigate()
   const href = isGuest ? '/login' : `/careerlearning/watch/module/${encodeURIComponent(video.videoId)}`
+  const openVideo = () => {
+    if (!isGuest) trackVideoOpen(section, video.videoId, `${section}_${featured ? 'featured' : 'card'}_${index}`, section === 'remote_preparation' ? video.difficultyLevel || '' : video.category)
+    navigate(href)
+  }
   return (
-    <Link
-      to={href}
-      onClick={() => !isGuest && trackVideoOpen(section, video.videoId, `${section}_${featured ? 'featured' : 'card'}_${index}`, section === 'remote_preparation' ? video.difficultyLevel || '' : video.category)}
-      className={`group relative flex h-full min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white p-3 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] transition hover:-translate-y-1 hover:no-underline ${featured ? '' : ''}`}
+    <article
+      role="link"
+      tabIndex={0}
+      onClick={openVideo}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' && event.target === event.currentTarget) openVideo()
+      }}
+      className={`group relative flex h-full min-w-0 cursor-pointer flex-col overflow-hidden rounded-[22px] border border-[#dbe8f4] bg-white p-3 text-slate-950 shadow-[0_10px_28px_rgba(47,111,216,0.06)] transition hover:-translate-y-1 hover:no-underline ${featured ? '' : ''}`}
     >
       <div className={`relative shrink-0 overflow-hidden rounded-[18px] bg-white ${featured ? 'aspect-[16/9]' : 'aspect-video'}`}>
         <PosterFrame
@@ -695,14 +690,27 @@ function ModuleTalkCard({
       </div>
       <div className={`${section === 'foreign_meeting' ? 'mt-3' : 'mt-4'} flex items-center justify-between gap-3`}>
         <div className="min-w-0 truncate text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{getModuleVideoEyebrow(video, section)}</div>
-        {formatDuration(video.durationMs) ? (
-          <span className="shrink-0 rounded-full bg-[#f4f7fb] px-2.5 py-1 text-xs font-black text-slate-500">{formatDuration(video.durationMs)}</span>
-        ) : null}
+        <div className="flex shrink-0 items-center gap-2">
+          {onOpenNotes && video.hasVideoNotes ? (
+            <button
+              type="button"
+              className="inline-flex h-8 items-center gap-1.5 rounded-full border border-[#d8d0ff] bg-[#f7f5ff] px-3 text-xs font-black text-[#6251f5] transition hover:border-[#6251f5] hover:bg-white"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenNotes(video)
+              }}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              视频笔记
+            </button>
+          ) : null}
+          {formatDuration(video.durationMs) ? <span className="rounded-full bg-[#f4f7fb] px-2.5 py-1 text-xs font-black text-slate-500">{formatDuration(video.durationMs)}</span> : null}
+        </div>
       </div>
       <h3 className={`${featured ? 'mt-2 text-2xl md:text-3xl' : section === 'foreign_meeting' ? 'mt-1.5 line-clamp-2 text-xl' : section === 'remote_preparation' ? 'mt-2 line-clamp-2 text-xl' : 'mt-2 line-clamp-2 min-h-[3.5rem] text-xl'} font-black leading-tight tracking-tight`}>{video.title}</h3>
       {!isGuest && (featured || showDescription) ? <p className={`${featured ? 'mt-3 text-base' : section === 'remote_preparation' ? 'mt-2 text-sm leading-6' : section === 'foreign_meeting' ? 'mt-3 text-sm' : 'mt-3 text-sm leading-7'} line-clamp-3 max-w-full text-slate-700`}>{video.description}</p> : null}
       <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500 ${featured ? '' : 'mt-auto pt-1'}`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
-    </Link>
+    </article>
   )
 }
 
@@ -922,6 +930,7 @@ function RemotePreparationSection({
   loading: boolean
   isGuest: boolean
 }) {
+  const [notesVideo, setNotesVideo] = useState<CorporateEnglishPublicModuleVideo | null>(null)
   if (loading) {
     return (
       <section className="space-y-5">
@@ -958,10 +967,12 @@ function RemotePreparationSection({
               index={index}
               isGuest={isGuest}
               showDescription={!isGuest}
+              onOpenNotes={setNotesVideo}
             />
           </div>
         ))}
       </div>
+      {notesVideo ? <VideoNotesModal video={notesVideo} onClose={() => setNotesVideo(null)} /> : null}
     </section>
   )
 }

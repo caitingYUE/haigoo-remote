@@ -18,6 +18,12 @@ const REMOTE_PREPARATION_LEVEL_LABELS = {
   intermediate: '中级',
   advanced: '高级'
 }
+const CAREER_MODULE_LABELS = {
+  ceo: 'CEO访谈',
+  english_interview: '英语面试',
+  remote_preparation: '远程准备',
+  foreign_meeting: '外企会议'
+}
 const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
 const columnSupportCache = new Map()
 
@@ -120,7 +126,7 @@ function canAccessModuleVideo(row, user) {
   return Boolean(deriveMembershipCapabilities(user).canAccessCorporateEnglishVideos)
 }
 
-function mapModuleVideo(row, user) {
+function mapModuleVideo(row, user, includeVideoNotes = false) {
   const unlocked = canAccessModuleVideo(row, user)
   const isAuthenticated = Boolean(user)
   const accessTier = normalizeAccessTier(row.access_tier)
@@ -141,6 +147,9 @@ function mapModuleVideo(row, user) {
     category: row.category || '',
     difficultyLevel: row.difficulty_level || '',
     difficultyLevelLabel: REMOTE_PREPARATION_LEVEL_LABELS[row.difficulty_level] || '',
+    isFeatured: row.is_featured === true,
+    hasVideoNotes: row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) && row.video_notes.length > 0,
+    videoNotes: includeVideoNotes && unlocked && row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) ? row.video_notes : [],
     tags: canExposePublicDetails && Array.isArray(row.tags) ? row.tags : [],
     accessTier,
     durationMs: row.duration_ms,
@@ -156,6 +165,115 @@ function mapModuleVideo(row, user) {
         ? '该视频为会员内容，升级后可播放。'
         : '登录后可播放免费视频，会员视频需开通会员。'
   }
+}
+
+async function listFeaturedVideos(req, res) {
+  const requestedLimit = Number(req.query.limit || 4)
+  const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 12) : 4
+  const materialHasCover = await hasTableColumn(MATERIALS_TABLE, 'cover_image_hash')
+  const moduleHasCover = await hasTableColumn(MODULE_VIDEOS_TABLE, 'cover_image_hash')
+  const materialHasFeatured = await hasTableColumn(MATERIALS_TABLE, 'is_featured')
+  const moduleHasFeatured = await hasTableColumn(MODULE_VIDEOS_TABLE, 'is_featured')
+  const moduleHasDifficultyLevel = await hasTableColumn(MODULE_VIDEOS_TABLE, 'difficulty_level')
+  const moduleHasVideoNotes = await hasTableColumn(MODULE_VIDEOS_TABLE, 'video_notes')
+
+  const [materials, moduleVideos] = await Promise.all([
+    neonHelper.query(
+      `SELECT m.material_id AS id,
+              m.material_title AS title,
+              m.company_name_snapshot AS source,
+              m.video_summary AS description,
+              COALESCE(tc.industry, '') AS industry,
+              COALESCE((
+                SELECT MAX(to_jsonb(p)->>'access_tier')
+                FROM ${PROFILES_TABLE} p
+                WHERE p.company_id = m.company_id
+              ), 'vip') AS access_tier,
+              m.duration_ms,
+              m.published_at,
+              ${materialHasCover ? 'm.cover_image_hash' : "''::text AS cover_image_hash"},
+              ${materialHasFeatured ? 'm.is_featured' : 'FALSE AS is_featured'}
+       FROM ${MATERIALS_TABLE} m
+       LEFT JOIN trusted_companies tc ON tc.company_id = m.company_id
+       WHERE m.status = 'published' AND m.deleted_at IS NULL
+       ORDER BY m.published_at DESC NULLS LAST, m.updated_at DESC
+       LIMIT 48`
+    ),
+    neonHelper.query(
+      `SELECT video_id AS id,
+              module_key,
+              video_title AS title,
+              video_source AS source,
+              description,
+              category,
+              tags,
+              access_tier,
+              ${moduleHasDifficultyLevel ? 'difficulty_level' : "''::text AS difficulty_level"},
+              ${moduleHasVideoNotes ? 'video_notes' : "'[]'::jsonb AS video_notes"},
+              duration_ms,
+              published_at,
+              ${moduleHasCover ? 'cover_image_hash' : "''::text AS cover_image_hash"},
+              ${moduleHasFeatured ? 'is_featured' : 'FALSE AS is_featured'}
+       FROM ${MODULE_VIDEOS_TABLE}
+       WHERE status = 'published' AND deleted_at IS NULL
+       ORDER BY published_at DESC NULLS LAST, updated_at DESC
+       LIMIT 96`
+    )
+  ])
+
+  const videos = [
+    ...(materials || []).map((row) => ({
+      id: row.id,
+      kind: 'ceo',
+      moduleKey: 'ceo',
+      moduleLabel: CAREER_MODULE_LABELS.ceo,
+      title: row.title,
+      source: row.source || '',
+      description: row.description || '',
+      industry: row.industry || '',
+      category: '',
+      difficultyLevelLabel: '',
+      tags: [],
+      accessTier: normalizeAccessTier(row.access_tier),
+      hasVideoNotes: false,
+      durationMs: row.duration_ms,
+      publishedAt: row.published_at,
+      isFeatured: row.is_featured === true,
+      coverImageUrl: buildCoverImageUrl('material', row.id, 'large', row.cover_image_hash),
+      href: `/careerlearning/watch/ceo/${encodeURIComponent(row.id)}`
+    })),
+    ...(moduleVideos || []).map((row) => ({
+      id: row.id,
+      kind: 'module',
+      moduleKey: row.module_key,
+      moduleLabel: CAREER_MODULE_LABELS[row.module_key] || '职业成长',
+      title: row.title,
+      source: row.source || '',
+      description: row.description || '',
+      industry: '',
+      category: row.category || '',
+      difficultyLevelLabel: REMOTE_PREPARATION_LEVEL_LABELS[row.difficulty_level] || row.difficulty_level || '',
+      tags: Array.isArray(row.tags) ? row.tags : [],
+      accessTier: normalizeAccessTier(row.access_tier),
+      hasVideoNotes: row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) && row.video_notes.length > 0,
+      durationMs: row.duration_ms,
+      publishedAt: row.published_at,
+      isFeatured: row.is_featured === true,
+      coverImageUrl: buildCoverImageUrl('module_video', row.id, 'large', row.cover_image_hash),
+      href: `/careerlearning/watch/module/${encodeURIComponent(row.id)}`,
+      noteHref: row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) && row.video_notes.length > 0
+        ? `/careerlearning/notes/${encodeURIComponent(row.id)}`
+        : ''
+    }))
+  ]
+  const featuredVideos = videos.filter((video) => video.isFeatured)
+  const sortByPublishedAt = (left, right) => new Date(right.publishedAt || 0).getTime() - new Date(left.publishedAt || 0).getTime()
+  const selected = [
+    ...featuredVideos.sort(sortByPublishedAt),
+    ...videos.filter((video) => !video.isFeatured).sort(sortByPublishedAt)
+  ].slice(0, limit)
+
+  return res.status(200).json({ success: true, videos: selected, usingFallback: featuredVideos.length === 0 })
 }
 
 function getPermissions(user, companyAccessTier = 'vip') {
@@ -530,6 +648,7 @@ async function listModuleVideos(req, res, user) {
   const params = [moduleKey]
   const conditions = ['module_key = $1', "status = 'published'", 'deleted_at IS NULL']
   const includeDifficultyLevelField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'difficulty_level')
+  const includeVideoNotesField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'video_notes')
   if (category && category !== '全部') {
     params.push(category)
     conditions.push(`category = $${params.length}`)
@@ -549,7 +668,8 @@ async function listModuleVideos(req, res, user) {
        description,
        video_source,
        category${includeDifficultyLevelField ? `,
-       difficulty_level` : ''},
+       difficulty_level` : ''}${includeVideoNotesField ? `,
+       video_notes` : ''},
        tags,
        access_tier${includeDurationField ? `,
        duration_ms` : ''},
@@ -680,7 +800,7 @@ async function getModuleVideo(req, res, user) {
 
   return res.status(200).json({
     success: true,
-    video: mapModuleVideo(video, user),
+    video: mapModuleVideo(video, user, true),
     recommendations: (recommendationRows || []).map((row) => mapModuleVideo(row, user))
   })
 }
@@ -1044,9 +1164,10 @@ export default async function handler(req, res) {
 
   try {
     const resource = normalizeString(req.query.resource || 'companies')
-    const user = await resolveUser(req)
-
     if (req.method === 'GET' && resource === 'cover-image') return await getCoverImage(req, res)
+    if (req.method === 'GET' && resource === 'featured-videos') return await listFeaturedVideos(req, res)
+
+    const user = await resolveUser(req)
     if (req.method === 'GET' && resource === 'companies') return await listCompanies(req, res, user)
     if (req.method === 'GET' && resource === 'ceo-videos') return await listCeoVideos(req, res, user)
     if (req.method === 'GET' && resource === 'ceo-video') return await getCeoVideo(req, res, user)

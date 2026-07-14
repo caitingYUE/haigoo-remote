@@ -1000,7 +1000,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'rss', label: 'RSS管理', icon: Rss },
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'social-push', label: '内容推送', icon: Mail },
-    { id: 'corporate-english', label: '外企英语', icon: BookOpen },
+    { id: 'corporate-english', label: '职业成长', icon: BookOpen },
     { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
@@ -1150,7 +1150,7 @@ const AdminTeamPage: React.FC = () => {
                 </Suspense>
               )}
               {activeTab === 'corporate-english' && (
-                <Suspense fallback={renderLazyFallback('正在加载外企英语...')}>
+                <Suspense fallback={renderLazyFallback('正在加载职业成长...')}>
                   <AdminCorporateEnglishPage />
                 </Suspense>
               )}

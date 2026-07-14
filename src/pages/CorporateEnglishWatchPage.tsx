@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, BookOpen, Bookmark, BookmarkCheck, Briefcase, Building2, ExternalLink, Eye, EyeOff, FolderOpen, Headphones, Linkedin, Loader2, Lock, Mail, Play, Sparkles, Volume2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -11,9 +11,11 @@ import {
   CorporateEnglishPublicVideo,
   corporateEnglishPublicService
 } from '../services/corporate-english-public-service'
-import type { CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType } from '../services/corporate-english-service'
+import type { CorporateEnglishPronunciationMark, CorporateEnglishPronunciationMarkType, CorporateEnglishVideoNoteBlock } from '../services/corporate-english-service'
 import { trackingService } from '../services/tracking-service'
 import { getCompanyDetailPath } from '../utils/share-link-helper'
+import { VideoNotesArticle } from '../components/VideoNotesArticle'
+import { useReturnNavigation, withReturnTo } from '../hooks/useReturnNavigation'
 
 function normalizeExternalUrl(url?: string) {
   const value = String(url || '').trim()
@@ -549,6 +551,56 @@ function ModuleInfoPanel({ video }: { video: CorporateEnglishPublicModuleVideo }
   )
 }
 
+function ModuleVideoDetails({ video }: { video: CorporateEnglishPublicModuleVideo }) {
+  const metaLabel = getModuleVideoMetaLabel(video)
+  return (
+    <section className={`${SOFT_PANEL_CLASS} mt-5 shrink-0 p-6`}>
+      <div className="text-sm font-black tracking-[0.08em] text-[#6251f5]">{metaLabel}</div>
+      <h1 className={`${getDetailTitleClass(video.title)} mt-2 font-black tracking-tight text-slate-950`}>{video.title}</h1>
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
+        <span>{formatDateLabel(video.publishedAt) || '精选内容'}</span>
+        {video.videoSource ? <span>视频来自 {video.videoSource}</span> : null}
+      </div>
+      {video.description ? (
+        <p className="mt-5 whitespace-pre-line break-words text-base leading-8 text-slate-700">{video.description}</p>
+      ) : (
+        <p className="mt-5 rounded-2xl border border-dashed border-[#dbe8f4] p-5 text-sm font-semibold text-slate-500">暂无视频简介。</p>
+      )}
+      {video.tags.length ? (
+        <div className="mt-6 flex flex-wrap gap-2">
+          {video.tags.map((tag) => <span key={tag} className="rounded-full bg-[#f3f0ff] px-3 py-1.5 text-xs font-black text-[#6251f5]">{tag}</span>)}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+function VideoNotesPanel({ notes, noteHref }: { notes: CorporateEnglishVideoNoteBlock[]; noteHref?: string }) {
+  return (
+    <aside className={`${SOFT_PANEL_CLASS} flex h-full min-h-0 flex-col overflow-hidden`}>
+      <div className="shrink-0 border-b border-[#dbe8f4] px-6 py-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-sm font-black tracking-[0.08em] text-[#6251f5]">
+              <BookOpen className="h-4 w-4" />
+              VIDEO NOTES
+            </div>
+            <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950">视频笔记</h2>
+          </div>
+          {noteHref ? (
+            <Link to={noteHref} target="_blank" rel="noreferrer" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#dbe8f4] bg-white px-3 text-xs font-black text-[#5142df] transition hover:border-[#6251f5] hover:bg-[#f7f5ff] hover:no-underline">
+              进入笔记主页<ExternalLink className="h-3.5 w-3.5" />
+            </Link>
+          ) : null}
+        </div>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+        <VideoNotesArticle notes={notes} />
+      </div>
+    </aside>
+  )
+}
+
 type DetailTabKey = 'culture' | 'thinking' | 'jobs' | 'resources' | 'favorites'
 
 function LockedDetailGate({
@@ -761,10 +813,12 @@ function CeoWatchContent({
   onLockedAction: () => void
   onBack: () => void
 }) {
+  const location = useLocation()
+  const currentPath = `${location.pathname}${location.search}`
   const activeVideo = useMemo<CorporateEnglishPublicVideo | null>(() => {
     return detail.videos.find((video) => video.materialId === materialId) || detail.videos[0] || null
   }, [detail.videos, materialId])
-  const companyPath = detail.company.name ? getCompanyDetailPath(detail.company.name) : ''
+  const companyPath = detail.company.name ? withReturnTo(getCompanyDetailPath(detail.company.name), currentPath) : ''
 
   const trackClipPlay = useCallback((clip: CorporateEnglishPublicClip) => {
     trackingService.track('corporate_english_clip_play', {
@@ -925,6 +979,8 @@ function ModuleWatchContent({
   onLockedAction: () => void
   onBack: () => void
 }) {
+  const location = useLocation()
+  const currentPath = `${location.pathname}${location.search}`
   const section = video.moduleKey || 'english_interview'
   const metaLabel = getModuleVideoMetaLabel(video)
   const detailViewTracker = (
@@ -957,7 +1013,7 @@ function ModuleWatchContent({
       {!video.isLocked && video.tencentIframeUrl ? (
         <TrackVideoView section={section} entityId={video.videoId} category={section === 'remote_preparation' ? video.difficultyLevel || '' : video.category} />
       ) : null}
-      <div className="grid h-full min-h-0 gap-6 overflow-hidden xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px]">
+      <div className={`grid h-full min-h-0 gap-6 overflow-hidden ${section === 'remote_preparation' ? 'xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]' : 'xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px]'}`}>
         <main className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto pr-1">
           <VideoFrame
             title={video.title}
@@ -969,11 +1025,13 @@ function ModuleWatchContent({
             overlay={<VideoBackButton onClick={onBack} />}
             className="max-h-[calc(100vh-15rem)] shrink-0"
           />
-          <section className={`${SOFT_PANEL_CLASS} mt-5 shrink-0 p-5`}>
-            <h1 className={`${getDetailTitleClass(video.title)} line-clamp-3 font-black tracking-tight text-slate-950`}>{video.title}</h1>
-          </section>
+          {section === 'remote_preparation' ? <ModuleVideoDetails video={video} /> : (
+            <section className={`${SOFT_PANEL_CLASS} mt-5 shrink-0 p-5`}>
+              <h1 className={`${getDetailTitleClass(video.title)} line-clamp-3 font-black tracking-tight text-slate-950`}>{video.title}</h1>
+            </section>
+          )}
         </main>
-        <ModuleInfoPanel video={video} />
+        {section === 'remote_preparation' ? <VideoNotesPanel notes={video.videoNotes || []} noteHref={video.hasVideoNotes ? withReturnTo(`/careerlearning/notes/${encodeURIComponent(video.videoId)}`, currentPath) : undefined} /> : <ModuleInfoPanel video={video} />}
       </div>
     </>
   )
@@ -981,6 +1039,7 @@ function ModuleWatchContent({
 
 export default function CorporateEnglishWatchPage() {
   const navigate = useNavigate()
+  const handleBack = useReturnNavigation('/careerlearning')
   const { source = '', id = '' } = useParams<{ source: 'ceo' | 'module'; id: string }>()
   const { isAuthenticated } = useAuth()
   const { showError, showWarning } = useNotificationHelpers()
@@ -1038,9 +1097,9 @@ export default function CorporateEnglishWatchPage() {
             <Loader2 className="h-7 w-7 animate-spin text-[#6251f5]" />
           </div>
         ) : source === 'ceo' && ceoDetail ? (
-          <CeoWatchContent detail={ceoDetail} materialId={id} onLockedAction={handleLockedAction} onBack={() => navigate('/careerlearning')} />
+          <CeoWatchContent detail={ceoDetail} materialId={id} onLockedAction={handleLockedAction} onBack={handleBack} />
         ) : source === 'module' && moduleVideo ? (
-          <ModuleWatchContent video={moduleVideo} onLockedAction={handleLockedAction} onBack={() => navigate('/careerlearning')} />
+          <ModuleWatchContent video={moduleVideo} onLockedAction={handleLockedAction} onBack={handleBack} />
         ) : (
           <div className={`${SOFT_PANEL_CLASS} p-12 text-center text-slate-500`}>视频不存在或已下线。</div>
         )}

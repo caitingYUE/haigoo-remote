@@ -238,6 +238,7 @@ function mapMaterialRow(row) {
     status: row.status,
     clipCount: Number(row.clip_count || 0),
     durationMs: row.duration_ms,
+    isFeatured: row.is_featured === true,
     createdBy: row.created_by,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
@@ -263,15 +264,47 @@ function mapModuleVideoRow(row) {
     coverImageUpdatedAt: row.cover_image_updated_at,
     category: row.category || '',
     difficultyLevel: row.difficulty_level || '',
+    videoNotes: Array.isArray(row.video_notes) ? row.video_notes : [],
     tags: Array.isArray(row.tags) ? row.tags : [],
     accessTier: row.access_tier === 'free' ? 'free' : 'vip',
     durationMs: row.duration_ms,
+    isFeatured: row.is_featured === true,
     status: row.status || 'draft',
     sortOrder: Number(row.sort_order || 0),
     publishedAt: row.published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }
+}
+
+const VALID_VIDEO_NOTE_BLOCK_TYPES = new Set(['heading_1', 'heading_2', 'paragraph', 'bullet_list', 'numbered_list', 'quote'])
+
+function normalizeVideoNotes(value) {
+  if (!Array.isArray(value)) return []
+  let remainingCharacters = 60000
+  const blocks = []
+  for (const [index, block] of value.slice(0, 300).entries()) {
+    if (remainingCharacters <= 0) break
+    const type = VALID_VIDEO_NOTE_BLOCK_TYPES.has(block?.type) ? block.type : 'paragraph'
+    const id = normalizeString(block?.id).slice(0, 80) || `note-${index + 1}`
+    if (type === 'bullet_list' || type === 'numbered_list') {
+      const items = []
+      for (const item of Array.isArray(block?.items) ? block.items.slice(0, 100) : []) {
+        if (remainingCharacters <= 0) break
+        const normalized = normalizeString(item).slice(0, Math.min(2000, remainingCharacters))
+        if (!normalized) continue
+        items.push(normalized)
+        remainingCharacters -= normalized.length
+      }
+      if (items.length) blocks.push({ id, type, items })
+      continue
+    }
+    const text = normalizeString(block?.text).slice(0, Math.min(30000, remainingCharacters))
+    if (!text) continue
+    blocks.push({ id, type, text })
+    remainingCharacters -= text.length
+  }
+  return blocks
 }
 
 function mapProfileRow(row) {
@@ -850,6 +883,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
       : [],
     status: normalizeStatus(body.status),
     durationMs: toInt(body.durationMs || body.duration_ms, 0) || null,
+    isFeatured: body.isFeatured === true || body.is_featured === true,
     actor: admin.id || admin.email || 'admin'
   }
   const tencentVideoUrl = payload.videoEmbedUrl || buildTencentVideoUrl(payload.tencentVideoVid)
@@ -878,6 +912,7 @@ async function saveMaterial(req, res, admin, existingId = null) {
            source_video_url = $19,
            video_summary = $20,
            sequence = $21,
+           is_featured = $22,
            published_at = CASE WHEN $13::text = 'published' THEN COALESCE(published_at, NOW()) ELSE published_at END,
            updated_at = NOW()
        WHERE material_id = $1 AND deleted_at IS NULL
@@ -903,7 +938,8 @@ async function saveMaterial(req, res, admin, existingId = null) {
         tencentVideoUrl || null,
         payload.sourceVideoUrl,
         payload.videoSummary,
-        payload.sequence
+        payload.sequence,
+        payload.isFeatured
       ]
     )
     if (!rows?.[0]) return res.status(404).json({ success: false, error: 'Material not found' })
@@ -914,8 +950,8 @@ async function saveMaterial(req, res, admin, existingId = null) {
          (company_id, company_name_snapshot, company_website_snapshot, material_title, speaker_name, speaker_role,
           speaker_email, speaker_linkedin, source_audio_asset_id, subtitle_csv_asset_id, normalized_subtitle_rows,
           status, clip_count, duration_ms, created_by, updated_by, tencent_video_vid, tencent_video_url, source_video_url, video_summary,
-          sequence, published_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::varchar, $13, $14, $15, $15, $16, $17, $18, $19, $20,
+          sequence, is_featured, published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::jsonb, $12::varchar, $13, $14, $15, $15, $16, $17, $18, $19, $20, $21,
           CASE WHEN $12::text = 'published' THEN NOW() ELSE NULL END)
        RETURNING material_id`,
       [
@@ -938,7 +974,8 @@ async function saveMaterial(req, res, admin, existingId = null) {
         tencentVideoUrl || null,
         payload.sourceVideoUrl,
         payload.videoSummary,
-        payload.sequence
+        payload.sequence,
+        payload.isFeatured
       ]
     )
     materialId = rows?.[0]?.material_id
@@ -1053,6 +1090,7 @@ async function listModuleVideos(req, res) {
       OR LOWER(video_source) LIKE $${params.length}
       OR LOWER(category) LIKE $${params.length}
       OR LOWER(difficulty_level) LIKE $${params.length}
+      OR LOWER(video_notes::text) LIKE $${params.length}
       OR LOWER(tags::text) LIKE $${params.length}
     )`)
   }
@@ -1110,11 +1148,13 @@ function validateModuleVideoPayload(body) {
       videoSource: normalizeString(body.videoSource || body.video_source).slice(0, 1000),
       category: moduleKey === 'remote_preparation' ? '' : normalizeString(body.category).slice(0, 80),
       difficultyLevel: moduleKey === 'remote_preparation' ? difficultyLevel : '',
+      videoNotes: moduleKey === 'remote_preparation' ? normalizeVideoNotes(body.videoNotes || body.video_notes) : [],
       tags: normalizeSimpleTags(body.tags),
       accessTier,
       status: normalizeStatus(body.status),
       sortOrder: toInt(body.sortOrder || body.sort_order, 0),
-      publishedAt
+      publishedAt,
+      isFeatured: body.isFeatured === true || body.is_featured === true
     }
   }
 }
@@ -1136,12 +1176,14 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
            video_source = $6,
            category = $7,
            difficulty_level = $8,
-           tags = $9::jsonb,
-           access_tier = $10,
-           status = $11,
-           sort_order = $12,
-           published_at = $13,
-           updated_by = $14,
+           video_notes = $9::jsonb,
+           tags = $10::jsonb,
+           access_tier = $11,
+           status = $12,
+           sort_order = $13,
+           published_at = $14,
+           is_featured = $15,
+           updated_by = $16,
            updated_at = NOW()
        WHERE video_id = $1 AND deleted_at IS NULL
        RETURNING *`,
@@ -1154,11 +1196,13 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
         payload.videoSource,
         payload.category,
         payload.difficultyLevel,
+        JSON.stringify(payload.videoNotes),
         JSON.stringify(payload.tags),
         payload.accessTier,
         payload.status,
         payload.sortOrder,
         payload.publishedAt,
+        payload.isFeatured,
         actor
       ]
     )
@@ -1168,8 +1212,8 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
 
   const rows = await neonHelper.query(
     `INSERT INTO ${MODULE_VIDEOS_TABLE}
-       (module_key, video_title, description, tencent_iframe_url, video_source, category, difficulty_level, tags, access_tier, status, sort_order, published_at, created_by, updated_by)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9, $10, $11, $12, $13, $13)
+       (module_key, video_title, description, tencent_iframe_url, video_source, category, difficulty_level, video_notes, tags, access_tier, status, sort_order, published_at, is_featured, created_by, updated_by)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8::jsonb, $9::jsonb, $10, $11, $12, $13, $14, $15, $15)
      RETURNING *`,
     [
       payload.moduleKey,
@@ -1179,11 +1223,13 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
       payload.videoSource,
       payload.category,
       payload.difficultyLevel,
+      JSON.stringify(payload.videoNotes),
       JSON.stringify(payload.tags),
       payload.accessTier,
       payload.status,
       payload.sortOrder,
       payload.publishedAt,
+      payload.isFeatured,
       actor
     ]
   )

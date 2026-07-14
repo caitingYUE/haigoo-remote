@@ -33,6 +33,7 @@ const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
 const CorporateEnglishPage = lazy(() => import('./pages/CorporateEnglishTalksPage'))
 const CorporateEnglishWatchPage = lazy(() => import('./pages/CorporateEnglishWatchPage'))
+const CorporateEnglishVideoNotesPage = lazy(() => import('./pages/CorporateEnglishVideoNotesPage'))
 const MockPaymentGateway = lazy(() => import('./pages/MockPaymentGateway'))
 const JoinClubApplicationPage = lazy(() => import('./pages/JoinClubApplicationPage'))
 const NoPermissionPage = lazy(() => import('./pages/NoPermissionPage'))
@@ -169,6 +170,7 @@ function App() {
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
                             <Route path="/careerlearning" element={<CorporateEnglishPage />} />
                             <Route path="/careerlearning/watch/:source/:id" element={<CorporateEnglishWatchPage />} />
+                            <Route path="/careerlearning/notes/:id" element={<CorporateEnglishVideoNotesPage />} />
                             <Route path="/corporate-english" element={<LegacyCareerLearningRedirect />} />
                             <Route path="/corporate-english/watch/:source/:id" element={<LegacyCareerLearningRedirect />} />
                             <Route path="/company/:id" element={<CompanyProfilePage />} />

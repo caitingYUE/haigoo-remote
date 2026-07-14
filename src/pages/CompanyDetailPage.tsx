@@ -11,11 +11,13 @@ import JobDetailModal from '../components/JobDetailModal'
 import { getCompanyLogoSources } from '../utils/company-logo'
 
 import { LocationTooltip } from '../components/LocationTooltip'
+import { useReturnNavigation } from '../hooks/useReturnNavigation'
 
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
     const navigate = useNavigate()
     const location = useLocation()
+    const handleBack = useReturnNavigation('/companies')
     const { isAuthenticated, isMember } = useAuth()
     const [showLocationTooltip, setShowLocationTooltip] = useState(false)
 
@@ -271,7 +273,7 @@ export default function CompanyDetailPage() {
                 {/* Back Button Section */}
                 <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 pb-4">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={handleBack}
                         className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#6f63f6] transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />

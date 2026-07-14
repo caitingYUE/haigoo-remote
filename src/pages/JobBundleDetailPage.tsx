@@ -11,6 +11,7 @@ import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { trackingService } from '../services/tracking-service';
 import { getBundleDetailLink, getBundleDetailPath } from '../utils/share-link-helper';
+import { useReturnNavigation } from '../hooks/useReturnNavigation';
 
 interface JobBundle {
   id: number;
@@ -30,6 +31,7 @@ interface JobBundle {
 export default function JobBundleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const handleBack = useReturnNavigation('/jobs');
   const { user, isAuthenticated, isMember, isTrialMember } = useAuth();
 
   const [bundle, setBundle] = useState<JobBundle | null>(null);
@@ -161,8 +163,8 @@ export default function JobBundleDetailPage() {
         <div className="text-center text-slate-400 p-8">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
           <p className="text-lg font-medium">{error || '组合包不存在'}</p>
-          <button onClick={() => navigate('/jobs')} className="mt-4 text-blue-600 text-sm hover:underline">
-            ← 返回职位列表
+          <button onClick={handleBack} className="mt-4 text-blue-600 text-sm hover:underline">
+            ← 返回
           </button>
         </div>
       </div>
@@ -198,9 +200,9 @@ export default function JobBundleDetailPage() {
     return (
       <div className="min-h-screen bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
-          <button onClick={() => navigate('/jobs')}
+          <button onClick={handleBack}
             className="flex items-center text-slate-500 hover:text-[#3f7f67] transition-colors text-sm mb-12">
-            <ArrowLeft className="w-4 h-4 mr-1" />返回职位列表
+            <ArrowLeft className="w-4 h-4 mr-1" />返回
           </button>
           <div className="max-w-md mx-auto text-center py-12">
             <div className="w-20 h-20 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-6">
@@ -252,9 +254,9 @@ export default function JobBundleDetailPage() {
 
       <main className="relative z-10 mx-auto max-w-[1420px] px-3.5 pb-12 pt-[84px] sm:px-8 sm:pb-16 sm:pt-[96px] lg:px-10">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <button onClick={() => navigate('/jobs')}
+          <button onClick={handleBack}
             className="inline-flex items-center gap-1.5 text-slate-500 hover:text-[#6f63f6] transition-colors text-sm font-medium">
-            <ArrowLeft className="w-4 h-4" />返回职位列表
+            <ArrowLeft className="w-4 h-4" />返回
           </button>
           <button
             type="button"

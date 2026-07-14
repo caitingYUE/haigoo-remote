@@ -3752,11 +3752,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       <div className="relative grid gap-5 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <div className="min-w-0">
 
-      <section className="relative mb-5 overflow-hidden rounded-[22px] border border-[#ddd7ff] bg-[#fffdf8] px-4 py-5 shadow-[0_28px_86px_-62px_rgba(111,99,246,0.28)] sm:mb-5 sm:rounded-[30px] sm:px-8 lg:px-9 lg:py-8">
+      <section className="relative mb-5 overflow-hidden rounded-[22px] border border-[#cfc8ff] bg-[linear-gradient(115deg,#f0edff_0%,#fbfbff_52%,#edf6ff_100%)] px-4 py-5 shadow-[0_34px_90px_-58px_rgba(75,73,145,0.38)] sm:mb-5 sm:rounded-[30px] sm:px-8 lg:px-9 lg:py-9">
+        <div className="absolute inset-x-0 top-0 h-1.5 bg-[linear-gradient(90deg,#6251f5_0%,#8a7cf8_46%,#7ba6d8_100%)]" />
         <div className="pointer-events-none absolute inset-0">
-          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[72%_54%] opacity-[0.34] saturate-[0.96]" />
-          <div className="absolute inset-0 bg-[#fffdf8]/86" />
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-[#fffdf8]/92" />
+          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-0 h-full w-full scale-[1.03] object-cover object-[72%_54%] opacity-[0.3] saturate-[0.9]" />
+          <div className="absolute inset-0 bg-white/80" />
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-white/86" />
         </div>
         <div className="relative grid gap-6 xl:grid-cols-[minmax(0,1fr)_330px] xl:items-center">
           <div className="max-w-[820px]">
@@ -3764,15 +3765,31 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <Crown className="h-3.5 w-3.5" />
               {isMember ? `${memberIdentityLabel} · ${membershipStatusLabel}` : 'Haigoo Remote Club'}
             </div>
-            <h1 className="max-w-[760px] text-[28px] font-black leading-[1.16] tracking-normal text-slate-950 sm:text-[40px] xl:text-[46px]">
-              {isMember ? memberHeroTitle : '成为远程专家，工作手拿把掐'}
-            </h1>
+            {isMember ? (
+              <h1 className="max-w-[800px] text-[30px] font-black leading-[1.12] tracking-normal text-slate-950 sm:text-[42px] xl:text-[50px]">
+                {memberHeroTitle}
+              </h1>
+            ) : (
+              <h1 className="max-w-[800px]" aria-label="成为远程专家，工作手拿把掐">
+                <span className="sr-only">成为远程专家，工作手拿把掐</span>
+                <img
+                  src="/pic_lists/Handwriting/club-expert-title.webp"
+                  alt=""
+                  width={1000}
+                  height={98}
+                  loading="eager"
+                  decoding="async"
+                  className="block h-auto w-full max-w-[720px] select-none"
+                  draggable={false}
+                />
+              </h1>
+            )}
             <p className="mt-4 max-w-[680px] text-sm leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-7">
               {isMember ? memberHeroSubtitle : '跟着 Haigoo 一起申请岗位、了解企业、提升口语，一步步升级全球通用的远程职业能力，小白也能变专家。'}
             </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-[20px] border border-[#ddd7ff] bg-white/78 p-4 shadow-[0_24px_70px_-58px_rgba(111,99,246,0.28)] backdrop-blur sm:rounded-[24px] sm:p-5">
+          <div className="relative overflow-hidden rounded-[20px] border border-[#d6d0ff] bg-white/90 p-4 shadow-[0_28px_72px_-52px_rgba(75,73,145,0.42)] backdrop-blur sm:rounded-[24px] sm:p-5">
             <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-28 w-40 object-cover object-right-bottom opacity-[0.1]" />
             <div className="relative flex items-center gap-3">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f0edff] text-[#6f63f6]">

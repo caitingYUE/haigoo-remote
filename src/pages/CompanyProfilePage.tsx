@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { Briefcase, CheckCircle, ArrowLeft } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -8,9 +8,10 @@ import JobCardNew from '../components/JobCardNew'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import JobDetailModal from '../components/JobDetailModal'
 import { getCompanyLogoSources } from '../utils/company-logo'
+import { useReturnNavigation } from '../hooks/useReturnNavigation'
 
 export default function CompanyProfilePage() {
-    const navigate = useNavigate()
+    const handleBack = useReturnNavigation('/jobs')
     const { id } = useParams<{ id: string }>()
     const { showError } = useNotificationHelpers()
     const [company, setCompany] = useState<TrustedCompany | null>(null)
@@ -102,7 +103,7 @@ export default function CompanyProfilePage() {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
                 <h1 className="text-2xl font-bold text-slate-900 mb-4">未找到该企业</h1>
-                <Link to="/jobs" className="text-indigo-600 hover:underline">返回职位列表</Link>
+                <button type="button" onClick={handleBack} className="text-indigo-600 hover:underline">返回</button>
             </div>
         )
     }
@@ -113,7 +114,7 @@ export default function CompanyProfilePage() {
             <div className="bg-white border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <button
-                        onClick={() => navigate(-1)}
+                        onClick={handleBack}
                         className="inline-flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />

@@ -455,11 +455,16 @@ export default function JobFilterBar({
   };
 
   const navClass = (active: boolean) => `relative inline-flex h-8 items-center gap-1.5 px-1 text-[13px] font-bold transition-colors ${
-    active ? 'text-[#2b3448]' : 'text-slate-500 hover:text-slate-900'
+    active ? 'text-[#40396f]' : 'text-slate-500 hover:text-[#40396f]'
   }`;
 
   return (
-    <div className="relative z-30 mb-2 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white p-3.5 shadow-[0_18px_48px_-40px_rgba(64,78,102,0.24)]">
+    <div
+      className="relative z-30 overflow-visible rounded-t-[20px] border-b border-[#d8def3] bg-[#f7f6ff] bg-cover bg-center p-4 shadow-[0_22px_54px_-38px_rgba(76,74,143,0.42),inset_0_1px_0_rgba(255,255,255,0.92)] sm:rounded-t-[24px] lg:rounded-t-[28px]"
+      style={{
+        backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.68) 0%, rgba(255,255,255,0.52) 58%, rgba(255,255,255,0.38) 100%), url('/pic_lists/Jobs_pics/jobs-filter-hero.webp')"
+      }}
+    >
       <div className="relative flex flex-col gap-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-5">
           <div className="min-w-0 xl:shrink-0">
@@ -471,7 +476,7 @@ export default function JobFilterBar({
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  className="h-auto w-[118px] max-w-full"
+                  className="h-auto w-[126px] max-w-full"
                 />
               </h2>
               {isMember ? (
@@ -480,9 +485,9 @@ export default function JobFilterBar({
                   <span className="text-[8px] font-black leading-none tracking-wide">Club</span>
                 </span>
               ) : (
-                <img src="/pic_lists/Jobs_pics/sun-transparent.webp" alt="" className="h-7 w-7 opacity-80" />
+                <img src="/pic_lists/Jobs_pics/sun-transparent.webp" alt="" className="h-7 w-7 opacity-70" />
               )}
-              <ChevronDown className="-rotate-90 h-4 w-4 text-slate-300" />
+              <ChevronDown className="-rotate-90 h-4 w-4 text-slate-400" />
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-5 xl:pt-0.5">
@@ -500,17 +505,17 @@ export default function JobFilterBar({
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
               {sortBy === 'recent' ? '最新' : '推荐'}
-              {listMode === 'jobs' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#8f83ff]" /> : null}
+              {listMode === 'jobs' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
             </button>
             <button type="button" className={navClass(listMode === 'favorites')} onClick={() => onListModeChange('favorites')}>
               收藏
-              <span className="rounded-full bg-[#2b3448] px-1.5 py-0.5 text-[10px] text-white">{favoriteCount}</span>
-              {listMode === 'favorites' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#8f83ff]" /> : null}
+              <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600 shadow-sm">{favoriteCount}</span>
+              {listMode === 'favorites' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
             </button>
             <button type="button" className={navClass(listMode === 'applications')} onClick={() => onListModeChange('applications')}>
               申请中
-              <span className="rounded-full bg-[#2b3448] px-1.5 py-0.5 text-[10px] text-white">{applicationCount}</span>
-              {listMode === 'applications' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#8f83ff]" /> : null}
+              <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600 shadow-sm">{applicationCount}</span>
+              {listMode === 'applications' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
             </button>
           </div>
 
