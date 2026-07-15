@@ -1000,12 +1000,10 @@ export default function HomeHero({
         }
     }, [displayCompanies])
 
-    const formattedUpdatedAt = new Intl.DateTimeFormat('zh-CN', {
+    const formattedUpdatedDate = new Intl.DateTimeFormat('zh-CN', {
         year: 'numeric',
         month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
+        day: '2-digit'
     }).format(lastUpdatedAt)
     
     const previewDisplayJobs = (() => {
@@ -2124,30 +2122,15 @@ export default function HomeHero({
 
                 <div className="relative hidden min-h-0 lg:block lg:min-h-[620px]">
                     <div className="relative z-20 flex w-full min-w-0 flex-col rounded-[26px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:rounded-[34px] lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
-                        <div className="mb-3">
-                            <h2 className="text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <h2 className="whitespace-nowrap text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
                                 {isAuthenticated ? '今日为你推荐的5个匹配岗位' : '登录后获取每日5个匹配岗位'}
                             </h2>
-                            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#6f63f6]" />
-                                        正在根据职业方向和简历自动更新
-                                    </>
-                                ) : isAuthenticated && hasCurrentDailyRecommendation ? (
-                                    <>
-                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                                        今日已自动更新 {formattedUpdatedAt} · 近3次不重复
-                                    </>
-                                ) : isAuthenticated ? (
-                                    <>
-                                        <Sparkles className="h-3.5 w-3.5 text-[#6f63f6]" />
-                                        每天首次进入自动更新，并避开近3次已推荐岗位
-                                    </>
-                                ) : (
-                                    <>登录后将根据职业方向或简历每日自动匹配</>
-                                )}
-                            </div>
+                            {isAuthenticated && hasCurrentDailyRecommendation && !loading ? (
+                                <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-slate-400">
+                                    {formattedUpdatedDate} 已更新
+                                </span>
+                            ) : null}
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
