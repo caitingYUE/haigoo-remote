@@ -112,12 +112,13 @@ export interface Job {
     risks?: string[]
     suggestions?: string[]
     breakdown?: {
-      titleMatch?: number
-      roleTypeMatch?: number
-      skillMatch?: number
-      keywordSimilarity?: number
-      experienceMatch?: number
-      preferenceMatch?: number
+      titleMatch?: number | null
+      roleTypeMatch?: number | null
+      skillMatch?: number | null
+      keywordSimilarity?: number | null
+      experienceMatch?: number | null
+      preferenceMatch?: number | null
+      evidenceCoverage?: number
     }
   } | null
   matchDetailsLocked?: boolean
@@ -126,6 +127,8 @@ export interface Job {
   constraintFlags?: {
     remoteOnlyMismatch?: boolean
     strictLocationMismatch?: boolean
+    remoteRegionMismatch?: boolean
+    timezoneMismatch?: boolean
     severeRoleMismatch?: boolean
     severeSkillMismatch?: boolean
     strongRoleAlignment?: boolean

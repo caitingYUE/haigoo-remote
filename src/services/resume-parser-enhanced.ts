@@ -167,7 +167,7 @@ async function extractDataViaServer(file: File): Promise<ParsedResume | null> {
         title: data.designation ? (Array.isArray(data.designation) ? data.designation[0] : data.designation) : undefined,
         gender: undefined, // pyresparser doesn't extract gender usually
         location: undefined,
-        targetRole: undefined,
+        targetRole: data.targetRole || data.target_role || (Array.isArray(data.roles) ? data.roles[0] : undefined),
         education: data.degree ? (Array.isArray(data.degree) ? data.degree.join('\n') : data.degree) : undefined,
         graduationYear: undefined,
         summary: undefined,
@@ -178,8 +178,11 @@ async function extractDataViaServer(file: File): Promise<ParsedResume | null> {
 
     // 如果是 fallback 文本结果
     if (data.text) {
+      const localFields = extractResumeFields(normalizeText(data.text))
       return {
-        ...extractResumeFields(normalizeText(data.text)),
+        ...localFields,
+        targetRole: data.targetRole || data.target_role || localFields.targetRole,
+        skills: Array.isArray(data.skills) ? data.skills.join(', ') : (data.skills || localFields.skills),
         id: json.id
       }
     }
@@ -403,4 +406,3 @@ export async function parseResumeFileEnhanced(file: File): Promise<ParsedResume>
 export async function parseResumeFile(file: File): Promise<ParsedResume> {
   return parseResumeFileEnhanced(file)
 }
-

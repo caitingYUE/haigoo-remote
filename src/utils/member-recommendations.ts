@@ -102,7 +102,7 @@ export function rememberLatestJobSearch(searchTerm: string) {
 }
 
 export function getMeaningfulRecommendationScore(job: Job) {
-  return Number(job.trueMatchScore ?? job.displayMatchScore ?? job.matchScore ?? job.recommendationScore ?? 0) || 0
+  return Number(job.displayMatchScore ?? job.matchScore ?? job.recommendationScore ?? 0) || 0
 }
 
 function uniqueJobs(jobs: Job[]) {

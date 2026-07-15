@@ -1,8 +1,8 @@
 export type MatchLevel = 'high' | 'medium' | 'low' | 'none'
 
-export const MATCH_DISPLAY_FLOOR = 70
+export const MATCH_DISPLAY_FLOOR = 75
 export const MATCH_HIGH_THRESHOLD = 90
-export const MATCH_MEDIUM_THRESHOLD = 70
+export const MATCH_MEDIUM_THRESHOLD = 75
 
 export function resolveMatchLevel(score?: number | null, fallbackLevel?: string | null): MatchLevel {
   if (fallbackLevel === 'high' || fallbackLevel === 'medium' || fallbackLevel === 'low' || fallbackLevel === 'none') {

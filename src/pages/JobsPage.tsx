@@ -283,7 +283,7 @@ function hasUsableAggregations(aggregations: any) {
 }
 
 function getMeaningfulMatchScore(job: Job) {
-  return Number(job.trueMatchScore ?? job.displayMatchScore ?? job.matchScore ?? 0) || 0
+  return Number(job.displayMatchScore ?? job.matchScore ?? 0) || 0
 }
 
 function hasActiveJobIntent(searchTerm: string, filters: JobFiltersState) {

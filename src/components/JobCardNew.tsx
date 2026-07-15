@@ -246,7 +246,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    }, [job, resolvedDisplayScore]);
 
    const rawScoreNum = Math.round(resolvedDisplayScore);
-   const showMatchScore = rawScoreNum >= 80;
+   const showMatchScore = rawScoreNum >= 75;
    const applicationCount = Number(job.applicationCount || 0);
    const isHotApplication = Boolean(job.isHotApplication || applicationCount >= 10);
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
