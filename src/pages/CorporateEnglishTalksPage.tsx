@@ -336,6 +336,121 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
   }
 }
 
+function useContinuousHorizontalScroll() {
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [scrollNode, setScrollNode] = useState<HTMLDivElement | null>(null)
+  const dragRef = useRef<{ pointerId: number; x: number; scrollLeft: number; moved: boolean } | null>(null)
+  const suppressClickRef = useRef(false)
+  const [viewportWidth, setViewportWidth] = useState(0)
+  const attachScrollRef = useCallback((node: HTMLDivElement | null) => {
+    scrollRef.current = node
+    setScrollNode(node)
+  }, [])
+
+  useEffect(() => {
+    if (!scrollNode) return
+    const updateWidth = () => setViewportWidth(scrollNode.clientWidth)
+    updateWidth()
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const observer = new ResizeObserver(updateWidth)
+      observer.observe(scrollNode)
+      return () => observer.disconnect()
+    }
+
+    window.addEventListener('resize', updateWidth)
+    return () => window.removeEventListener('resize', updateWidth)
+  }, [scrollNode])
+
+  const scrollToStart = useCallback(() => {
+    scrollRef.current?.scrollTo({ left: 0, behavior: 'auto' })
+  }, [])
+
+  const onPointerDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    if (!event.isPrimary) return
+    if (event.pointerType === 'mouse' && event.button !== 0) return
+    const node = scrollRef.current
+    if (!node || node.scrollWidth <= node.clientWidth) return
+    dragRef.current = { x: event.clientX, scrollLeft: node.scrollLeft, pointerId: event.pointerId, moved: false }
+    suppressClickRef.current = false
+    try {
+      event.currentTarget.setPointerCapture(event.pointerId)
+    } catch (_) {
+      // Some browsers may not support capture on this target.
+    }
+  }, [])
+
+  const onPointerMove = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    const node = scrollRef.current
+    if (!drag || !node || drag.pointerId !== event.pointerId) return
+
+    const deltaX = event.clientX - drag.x
+    if (Math.abs(deltaX) < DRAG_SCROLL_MIN_DISTANCE) return
+    drag.moved = true
+    suppressClickRef.current = true
+    node.scrollLeft = drag.scrollLeft - deltaX
+    event.preventDefault()
+  }, [])
+
+  const finishDrag = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current
+    dragRef.current = null
+    try {
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+    } catch (_) {
+      // Ignore capture release differences across browsers.
+    }
+    if (drag?.moved) {
+      window.setTimeout(() => {
+        suppressClickRef.current = false
+      }, 250)
+    }
+  }, [])
+
+  const onWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    const node = scrollRef.current
+    if (!node || node.scrollWidth <= node.clientWidth) return
+
+    const deltaX = event.deltaX || (event.shiftKey ? event.deltaY : 0)
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(event.deltaY)
+    const horizontalIntent = absX > 0 && (event.shiftKey || absX >= absY * HORIZONTAL_WHEEL_RATIO)
+    if (!horizontalIntent) return
+
+    event.preventDefault()
+    node.scrollLeft += deltaX
+  }, [])
+
+  const onClickCapture = useCallback((event: MouseEvent<HTMLDivElement>) => {
+    if (!suppressClickRef.current) return
+    event.preventDefault()
+    event.stopPropagation()
+    suppressClickRef.current = false
+  }, [])
+
+  const onDragStartCapture = useCallback((event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault()
+  }, [])
+
+  return {
+    scrollRef: attachScrollRef,
+    scrollToStart,
+    viewportWidth,
+    handlers: {
+      onPointerDown,
+      onPointerMove,
+      onPointerUp: finishDrag,
+      onPointerCancel: finishDrag,
+      onWheel,
+      onClickCapture,
+      onDragStartCapture
+    }
+  }
+}
+
 function AccessPill({ locked, accessTier }: { locked?: boolean; accessTier?: string }) {
   if (locked) {
     return (
@@ -817,21 +932,25 @@ function FeaturedInterviewRail({
   isGuest: boolean
 }) {
   const [hero, ...rest] = videos
-  const pageSize = 4
-  const pageCount = Math.max(1, Math.ceil(rest.length / pageSize))
-  const carousel = usePagedHorizontalScroll({ pageCount })
-  const { currentPage, scrollRef, scrollToPage, viewportWidth, handlers } = carousel
-  const cardWidth = getRailCardWidth(viewportWidth, 2, 24, 250)
+  const gap = 24
+  const supportingColumns = Math.ceil(rest.length / 2)
+  const carousel = useContinuousHorizontalScroll()
+  const { scrollRef, scrollToStart, viewportWidth, handlers } = carousel
   const orderedVideos = useMemo(
-    () => orderForTwoRowRail(rest.map((video, index) => ({ video, index: index + 1 })), pageSize, 2),
+    () => orderForTwoRowRail(rest.map((video, index) => ({ video, index: index + 1 })), 4, 2),
     [rest]
   )
-  const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
-  const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
+  const heroWidth = viewportWidth ? Math.max(560, (viewportWidth - gap) / 2) : undefined
+  const cardWidth = viewportWidth && heroWidth
+    ? Math.max(280, (viewportWidth - heroWidth - gap * 2) / 2)
+    : undefined
+  const railWidth = heroWidth && cardWidth
+    ? heroWidth + cardWidth * supportingColumns + gap * supportingColumns
+    : undefined
 
   useEffect(() => {
-    scrollToPage(0, 'auto')
-  }, [scrollToPage, videos])
+    scrollToStart()
+  }, [scrollToStart, videos])
 
   if (!hero) return null
 
@@ -844,55 +963,38 @@ function FeaturedInterviewRail({
   }
 
   return (
-    <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <ModuleTalkCard video={hero} section="english_interview" index={0} featured isGuest={isGuest} />
-      <div className={`relative min-w-0 ${pageCount > 1 ? 'pr-14' : ''}`}>
-        <div
-          ref={scrollRef}
-          className="h-full select-none overflow-x-auto overscroll-x-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          {...handlers}
-        >
-          <div
-            className="grid h-full grid-flow-col grid-rows-2 gap-6"
-            style={{
-              gridAutoColumns: cardWidth ? `${cardWidth}px` : undefined,
-              minWidth: viewportWidth && pageCount > 1 ? `${viewportWidth * pageCount}px` : undefined
-            }}
-          >
-            {orderedVideos.map(({ video, index }) => (
-              <ModuleTalkCard
-                key={video.videoId}
-                video={video}
-                section="english_interview"
-                index={index}
-                isGuest={isGuest}
-              />
-            ))}
-          </div>
+    <div
+      ref={scrollRef}
+      role="region"
+      aria-label="英语面试视频横向列表"
+      tabIndex={0}
+      className="select-none overflow-x-auto overscroll-x-contain pb-1 touch-pan-y [scrollbar-width:none] cursor-grab focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6251f5]/50 active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
+      {...handlers}
+    >
+      <div
+        className="grid grid-flow-col grid-rows-2 items-stretch gap-6"
+        style={{
+          gridTemplateColumns: heroWidth ? `${heroWidth}px` : undefined,
+          gridAutoColumns: cardWidth ? `${cardWidth}px` : undefined,
+          minWidth: railWidth ? `${railWidth}px` : undefined
+        }}
+      >
+        <div className="row-span-2 h-full min-w-0">
+          <ModuleTalkCard video={hero} section="english_interview" index={0} featured isGuest={isGuest} />
         </div>
-        {pageCount > 1 ? (
-          <div className="absolute right-0 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-2">
-            <button
-              type="button"
-              onClick={goPrev}
-              disabled={currentPage === 0}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-35"
-              aria-label="上一页英语面试"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <span className="text-xs font-black text-slate-500" aria-live="polite">{currentPage + 1}/{pageCount}</span>
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={currentPage >= pageCount - 1}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-35"
-              aria-label="下一页英语面试"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
+        {orderedVideos.map(({ video, index }) => (
+          <div
+            key={video.videoId}
+            className="h-full min-w-0"
+          >
+            <ModuleTalkCard
+              video={video}
+              section="english_interview"
+              index={index}
+              isGuest={isGuest}
+            />
           </div>
-        ) : null}
+        ))}
       </div>
     </div>
   )
@@ -967,14 +1069,16 @@ function ModuleSection({
 
   return (
     <div className="space-y-5">
-      <PagerControls
-        currentPage={currentPage}
-        pageCount={pageCount}
-        disabled={isGuest}
-        label={SECTION_LABELS[section]}
-        onPrev={goPrev}
-        onNext={goNext}
-      />
+      {section !== 'english_interview' ? (
+        <PagerControls
+          currentPage={currentPage}
+          pageCount={pageCount}
+          disabled={isGuest}
+          label={SECTION_LABELS[section]}
+          onPrev={goPrev}
+          onNext={goNext}
+        />
+      ) : null}
       <div
         ref={scrollRef}
         className={usesHorizontalRail ? 'select-none overflow-x-auto overscroll-x-contain pb-1 touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : ''}
