@@ -27,7 +27,7 @@ import { trackingService } from '../services/tracking-service'
 import MemberEmailSubscriptionCard from './MemberEmailSubscriptionCard'
 import HomeCareerGuides from './HomeCareerGuides'
 
-const HERO_CACHE_KEY = 'copilot_hero_state_v2'
+const HERO_CACHE_KEY = 'copilot_hero_state_v4'
 const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
 const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
@@ -352,8 +352,17 @@ function isInvalidJobDirectionInput(value?: string) {
     return false
 }
 
-function buildHeroRecommendationContextKey(direction?: string, positionType?: string) {
-    return `${normalizePlanCompareText(direction) || 'default'}::${String(positionType || 'full-time').trim().toLowerCase() || 'full-time'}`
+function isGenericRecommendationDirection(value?: string) {
+    return /^(远程工作|remote work|remote job|remote)$/i.test(String(value || '').trim())
+}
+
+function buildHeroRecommendationContextKey(direction?: string, positionType?: string, resumeContext?: string | null) {
+    const normalizedResumeContext = String(resumeContext || '').trim().toLowerCase()
+    return [
+        normalizePlanCompareText(direction) || 'default',
+        String(positionType || 'full-time').trim().toLowerCase() || 'full-time',
+        normalizedResumeContext ? `resume:${normalizedResumeContext}` : 'profile',
+    ].join('::')
 }
 
 function buildHeroAutoRefreshAttemptKey(
@@ -503,7 +512,6 @@ function CompanyLogo({ companyName, logoCandidates, className }: { companyName: 
             className={className}
             loading="lazy"
             decoding="async"
-            fetchPriority="low"
             onError={() => setIndex((prev) => (prev < logoCandidates.length - 1 ? prev + 1 : prev))}
         />
     ) : (
@@ -823,9 +831,12 @@ export default function HomeHero({
         : []
     const dailyLimit = isAuthenticated ? 5 : 1
     const effectiveJobDirection = String(jobDirection || storedTargetRole || '').trim()
+    const hasResumeRecommendationSignal = Boolean(resumeId || resumeName || guestResumeHints.length > 0)
+    const effectiveRecommendationDirection = effectiveJobDirection || (hasResumeRecommendationSignal ? '远程工作' : '')
+    const recommendationResumeContext = resumeId || (resumeName ? `file:${resumeName}` : null)
     const recommendationContextKey = useMemo(
-        () => buildHeroRecommendationContextKey(effectiveJobDirection, positionType),
-        [effectiveJobDirection, positionType]
+        () => buildHeroRecommendationContextKey(effectiveRecommendationDirection, positionType, recommendationResumeContext),
+        [effectiveRecommendationDirection, positionType, recommendationResumeContext]
     )
     const todayDateKey = getLocalDateKey()
     const latestRecommendationDateKey = lastUpdatedAt ? getLocalDateKey(lastUpdatedAt) : ''
@@ -835,6 +846,7 @@ export default function HomeHero({
             item.contextKey === recommendationContextKey && item.dateKey === todayDateKey
         ))
     }, [recommendationContextKey, recommendationHistory, todayDateKey])
+    const hasCurrentDailyRecommendation = hasRecommendationForToday && latestRecommendationDateKey === todayDateKey
     const positionTypeLabel = positionType === 'full-time'
         ? '全职远程'
         : positionType === 'contract'
@@ -1245,7 +1257,7 @@ export default function HomeHero({
 
                 setLastUpdatedAt(cacheTimestamp)
                 setRecommendationHistory(normalizeHeroRecommendationHistory(data.recommendationHistory))
-                if (data.jobDirection) setJobDirection(data.jobDirection)
+                if (data.jobDirection && !isGenericRecommendationDirection(data.jobDirection)) setJobDirection(data.jobDirection)
                 if (data.positionType) setPositionType(data.positionType)
                 if (Array.isArray(data.recommendations)) {
                     setRecommendations(data.recommendations)
@@ -1321,7 +1333,7 @@ export default function HomeHero({
                 if (cacheTimestamp && Date.now() - cacheTimestamp < HERO_CACHE_TTL) {
                     setLastUpdatedAt(cacheTimestamp)
                     setRecommendationHistory(normalizeHeroRecommendationHistory(data.recommendationHistory))
-                    if (data.jobDirection) setJobDirection(data.jobDirection)
+                    if (data.jobDirection && !isGenericRecommendationDirection(data.jobDirection)) setJobDirection(data.jobDirection)
                     if (data.positionType) setPositionType(data.positionType)
                     if (Array.isArray(data.recommendations)) {
                         setRecommendations(data.recommendations)
@@ -1652,6 +1664,7 @@ export default function HomeHero({
         setResumeId(null)
         setGuestResumeFile(null)
         setGuestResumeHints([])
+        setIsEditingPreferences(true)
         clearPendingGuestResume()
         writeStoredHeroResumeState({
             resumeId: null,
@@ -1670,6 +1683,7 @@ export default function HomeHero({
         skipProfileSync?: boolean
         resumeIdOverride?: string | null
         resumeHintsOverride?: string[]
+        forceResumeExtraction?: boolean
     }) => {
         const nextJobDirection = String(options?.direction ?? jobDirection).trim()
         const nextPositionType = String(options?.position ?? positionType).trim() || 'full-time'
@@ -1678,7 +1692,8 @@ export default function HomeHero({
         const effectiveResumeHints = options?.resumeHintsOverride || guestResumeHints
         const hasResumeSignal = Boolean(effectiveResumeId || guestResumeFile || resumeName || effectiveResumeHints.length > 0)
         const requestJobDirection = nextJobDirection || (hasResumeSignal ? '远程工作' : '')
-        const nextContextKey = buildHeroRecommendationContextKey(requestJobDirection, nextPositionType)
+        const resumeContext = effectiveResumeId || (resumeName ? `file:${resumeName}` : null)
+        const nextContextKey = buildHeroRecommendationContextKey(requestJobDirection, nextPositionType, resumeContext)
         const recentRecommendationIds = getRecentRecommendationIds(recommendationHistory, nextContextKey)
 
         if (!requestJobDirection) {
@@ -1721,8 +1736,12 @@ export default function HomeHero({
                     jobDirection: requestJobDirection,
                     positionType: nextPositionType,
                     resumeId: effectiveResumeId,
+                    resumeName,
                     resumeHints: authToken ? undefined : parsedResumeHints,
+                    forceResumeExtraction: Boolean(options?.forceResumeExtraction),
                     recentRecommendationIds,
+                    contextKey: nextContextKey,
+                    dateKey: getLocalDateKey(),
                     limit: dailyLimit
                 })
             })
@@ -1740,8 +1759,9 @@ export default function HomeHero({
             }
             const updatedAt = data?.generatedAt ? new Date(data.generatedAt).getTime() : Date.now()
             const todayDateKey = getLocalDateKey(updatedAt)
+            const responseContextKey = String(data?.contextKey || nextContextKey).trim() || nextContextKey
             const nextHistoryEntry: HeroRecommendationHistoryEntry = {
-                contextKey: nextContextKey,
+                contextKey: responseContextKey,
                 dateKey: todayDateKey,
                 jobIds: Array.from(new Set(capped.map((job: any) => String(job?.id || '')).filter(Boolean))),
                 updatedAt,
@@ -1758,7 +1778,10 @@ export default function HomeHero({
             if (jobDirection !== nextJobDirection) setJobDirection(nextJobDirection)
             if (positionType !== nextPositionType) setPositionType(nextPositionType)
             setRecommendations(capped)
-            setRecommendationHistory((prev) => mergeHeroRecommendationHistory(prev, nextHistoryEntry))
+            setRecommendationHistory((prev) => {
+                const serverHistory = normalizeHeroRecommendationHistory(data?.recommendationHistory)
+                return mergeHeroRecommendationHistory(serverHistory.length > 0 ? serverHistory : prev, nextHistoryEntry)
+            })
             setActiveCard(0)
             setHasResults(true)
             setIsEditingPreferences(false)
@@ -1766,7 +1789,7 @@ export default function HomeHero({
             const loginEventStamp = String(localStorage.getItem(LOGIN_EVENT_KEY) || '')
             autoRefreshAttemptKeyRef.current = buildHeroAutoRefreshAttemptKey(
                 userId,
-                nextContextKey,
+                responseContextKey,
                 todayDateKey,
                 loginEventStamp
             )
@@ -1805,7 +1828,8 @@ export default function HomeHero({
             silent: true,
             skipProfileSync: true,
             resumeIdOverride: pending.resumeId,
-            resumeHintsOverride: pending.resumeHints
+            resumeHintsOverride: pending.resumeHints,
+            forceResumeExtraction: Boolean(pending.resumeId && pending.resumeId !== 'guest-temp-id')
         })
         // handleGetRecommendations intentionally reads current component state.
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1825,9 +1849,9 @@ export default function HomeHero({
             loginEventStamp
         )
         if (autoRefreshAttemptKeyRef.current === autoRefreshAttemptKey) return
-        if (!effectiveJobDirection) return
+        if (!effectiveRecommendationDirection) return
 
-        const directionMatchesProfile = !storedTargetRole || normalizePlanCompareText(effectiveJobDirection) === normalizePlanCompareText(storedTargetRole)
+        const directionMatchesProfile = !storedTargetRole || normalizePlanCompareText(effectiveRecommendationDirection) === normalizePlanCompareText(storedTargetRole)
         const isRecommendationStaleForToday = latestRecommendationDateKey !== todayDateKey || !hasRecommendationForToday
         const shouldRefresh = directionMatchesProfile && (
             !hasResults ||
@@ -1849,7 +1873,7 @@ export default function HomeHero({
             silent: true,
             skipProfileSync: true
         })
-    }, [hasHydrated, isAuthenticated, loading, isEditingPreferences, effectiveJobDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit, recommendationContextKey, todayDateKey, hasRecommendationForToday, userId])
+    }, [hasHydrated, isAuthenticated, loading, isEditingPreferences, effectiveJobDirection, effectiveRecommendationDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit, recommendationContextKey, todayDateKey, hasRecommendationForToday, userId, resumeId, resumeName])
 
     useEffect(() => {
         if (!highlightPrivacyConsent) return
@@ -1942,27 +1966,15 @@ export default function HomeHero({
         { title: '热爱驱动', desc: '做你喜欢的事', icon: '/pic_lists/Home_pics/strength-passion.webp' },
     ]
     const companyFallbackImages = ['/pic_lists/Jobs_pics/card_bg1.webp', '/pic_lists/Jobs_pics/card_bg2.webp', '/pic_lists/Home_pics/background03.webp']
-    const heroRecommendationPreviewLimit = isAuthenticated ? dailyLimit : 3
-    const heroCaseCandidates = displayRecommendations.length > 0
-        ? displayRecommendations
-        : curatedJobs.length > 0
-            ? curatedJobs
-            : previewJobs.length > 0
-                ? previewJobs
-                : SAMPLE_RECOMMENDATIONS
-    const heroCaseJobs = (() => {
-        const primary = heroCaseCandidates.slice(0, heroRecommendationPreviewLimit)
-        if (primary.length >= heroRecommendationPreviewLimit) return primary
-
-        const seen = new Set(primary.map((job: any) => String(job?.id || `${job?.title || ''}:${job?.company || job?.company_name || ''}`)))
-        const fillers = [...curatedJobs, ...previewJobs, ...PREVIEW_PM_RECOMMENDATIONS].filter((job: any) => {
-            const key = String(job?.id || `${job?.title || ''}:${job?.company || job?.company_name || ''}`)
-            if (!key || seen.has(key)) return false
-            seen.add(key)
-            return true
-        })
-        return [...primary, ...fillers].slice(0, heroRecommendationPreviewLimit)
-    })()
+    const guestHeroCaseJobs = (curatedJobs.length > 0
+        ? curatedJobs
+        : previewJobs.length > 0
+            ? previewJobs
+            : SAMPLE_RECOMMENDATIONS
+    ).slice(0, 3)
+    const heroCaseJobs = isAuthenticated
+        ? displayRecommendations.slice(0, dailyLimit)
+        : guestHeroCaseJobs
     const canRequestRecommendations = Boolean(String(jobDirection).trim() || resumeId || resumeName || guestResumeFile)
     return (
         <div className="relative overflow-hidden bg-[#fbfaf6] pt-20 text-slate-950 md:pt-24">
@@ -2057,7 +2069,6 @@ export default function HomeHero({
                                 height={208}
                                 loading="eager"
                                 decoding="async"
-                                fetchPriority="high"
                                 className="ml-[-5.48%] block h-auto w-[126.2%] max-w-none select-none"
                                 draggable={false}
                             />
@@ -2115,8 +2126,28 @@ export default function HomeHero({
                     <div className="relative z-20 flex w-full min-w-0 flex-col rounded-[26px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:rounded-[34px] lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
                         <div className="mb-3">
                             <h2 className="text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
-                                {isAuthenticated ? '每日推荐5个与你匹配的岗位' : '每日推荐5个与你匹配的岗位（需登录）'}
+                                {isAuthenticated ? '今日为你推荐的5个匹配岗位' : '登录后获取每日5个匹配岗位'}
                             </h2>
+                            <div className="mt-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                                {loading ? (
+                                    <>
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin text-[#6f63f6]" />
+                                        正在根据职业方向和简历自动更新
+                                    </>
+                                ) : isAuthenticated && hasCurrentDailyRecommendation ? (
+                                    <>
+                                        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                                        今日已自动更新 {formattedUpdatedAt} · 近3次不重复
+                                    </>
+                                ) : isAuthenticated ? (
+                                    <>
+                                        <Sparkles className="h-3.5 w-3.5 text-[#6f63f6]" />
+                                        每天首次进入自动更新，并避开近3次已推荐岗位
+                                    </>
+                                ) : (
+                                    <>登录后将根据职业方向或简历每日自动匹配</>
+                                )}
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -2126,6 +2157,7 @@ export default function HomeHero({
                                 value={jobDirection}
                                 onChange={(val) => {
                                     setJobDirection(val)
+                                    setIsEditingPreferences(true)
                                     localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection: val, positionType, timestamp: Date.now() }))
                                 }}
                                 placeholder="产品经理 / 数据分析 / 前端开发"
@@ -2136,6 +2168,7 @@ export default function HomeHero({
                                 value={positionType}
                                 onChange={(val) => {
                                     setPositionType(val)
+                                    setIsEditingPreferences(true)
                                     localStorage.setItem('copilot_guest_cache', JSON.stringify({ jobDirection, positionType: val, timestamp: Date.now() }))
                                 }}
                                 options={[
@@ -2148,51 +2181,82 @@ export default function HomeHero({
                         </div>
 
                         <div className="mt-3 grid flex-1 content-start gap-2 overflow-hidden pr-0 sm:min-h-[190px] sm:pr-1">
-                            {heroCaseJobs.map((rawJob: any) => {
-                                const job = normalizeHeroJob(rawJob)
-                                const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
-                                const isVipJob = normalizeHeroBoolean((job as any).memberOnly ?? (job as any).member_only)
-                                const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
-                                const displayTitle = translatedTitle || job.title
-                                const displayCompany = job.translations?.company || job.company_name || job.company || '远程企业'
-                                const isNewJob = isFreshHomeJob(job)
-                                const metaItems = [
-                                    job.category,
-                                    job.jobType,
-                                    job.location || 'Remote'
-                                ].map((item) => String(item || '').trim()).filter(Boolean)
-                                const logoCandidates = Array.isArray(job.logo_candidates) ? job.logo_candidates : []
-                                return (
-                                    <button
-                                        key={job.id}
-                                        type="button"
-                                        onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
-                                        className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8]"
-                                    >
-                                        <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
-                                            <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl">
-                                                <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
-                                            </span>
-                                            {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-1.5 z-20" /> : null}
+                            {loading && heroCaseJobs.length === 0 ? (
+                                Array.from({ length: dailyLimit }).map((_, index) => (
+                                    <div key={`hero-recommendation-loading-${index}`} className="flex animate-pulse items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5">
+                                        <span className="h-10 w-10 shrink-0 rounded-2xl bg-slate-100" />
+                                        <span className="min-w-0 flex-1 space-y-2">
+                                            <span className="block h-3 w-3/5 rounded-full bg-slate-100" />
+                                            <span className="block h-2.5 w-2/5 rounded-full bg-slate-100" />
                                         </span>
-                                        <span className="min-w-0 flex-1">
-                                            <span className="flex min-w-0 items-center gap-1.5">
-                                                <span className="block truncate text-sm font-black text-slate-900" title={displayTitle}>{displayTitle}</span>
-                                                {translatedTitle ? (
-                                                    <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-black text-slate-500" title="已翻译">译</span>
+                                        <span className="h-6 w-16 rounded-full bg-[#f2efff]" />
+                                    </div>
+                                ))
+                            ) : heroCaseJobs.length > 0 ? (
+                                heroCaseJobs.map((rawJob: any) => {
+                                    const job = normalizeHeroJob(rawJob)
+                                    const salaryText = getHeroDisplaySalary(job.salary || job.salary_range)
+                                    const matchScore = Math.round(Number(job.displayMatchScore ?? job.matchScore ?? 0) || 0)
+                                    const isVipJob = normalizeHeroBoolean((job as any).memberOnly ?? (job as any).member_only)
+                                    const translatedTitle = typeof job.translations?.title === 'string' ? job.translations.title.trim() : ''
+                                    const displayTitle = translatedTitle || job.title
+                                    const displayCompany = job.translations?.company || job.company_name || job.company || '远程企业'
+                                    const isNewJob = isFreshHomeJob(job)
+                                    const metaItems = [
+                                        job.category,
+                                        job.jobType,
+                                        job.location || 'Remote'
+                                    ].map((item) => String(item || '').trim()).filter(Boolean)
+                                    const logoCandidates = Array.isArray(job.logo_candidates) ? job.logo_candidates : []
+                                    return (
+                                        <button
+                                            key={job.id}
+                                            type="button"
+                                            onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
+                                            className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#bfc8ff]"
+                                        >
+                                            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
+                                                <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl">
+                                                    <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
+                                                </span>
+                                                {isVipJob ? <HomeVipBadge className="absolute -right-3 -top-1.5 z-20" /> : null}
+                                            </span>
+                                            <span className="min-w-0 flex-1">
+                                                <span className="flex min-w-0 items-center gap-1.5">
+                                                    <span className="block truncate text-sm font-black text-slate-900" title={displayTitle}>{displayTitle}</span>
+                                                    {translatedTitle ? (
+                                                        <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-black text-slate-500" title="已翻译">译</span>
+                                                    ) : null}
+                                                    {isNewJob ? <HomeNewBadge /> : null}
+                                                </span>
+                                                <span className="block truncate text-xs font-semibold text-slate-500">
+                                                    {displayCompany}{metaItems.length ? ` · ${metaItems.slice(0, 2).join(' · ')}` : ''}
+                                                </span>
+                                            </span>
+                                            <span className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
+                                                {isAuthenticated && matchScore > 0 ? (
+                                                    <span className="rounded-full bg-[#f0edff] px-2.5 py-1 text-xs font-black text-[#6251f5]">
+                                                        {matchScore}% 匹配
+                                                    </span>
                                                 ) : null}
-                                                {isNewJob ? <HomeNewBadge /> : null}
+                                                <span className="text-[10px] font-bold text-[#c48212]">{salaryText}</span>
                                             </span>
-                                            <span className="block truncate text-xs font-semibold text-slate-500">
-                                                {displayCompany}{metaItems.length ? ` · ${metaItems.slice(0, 2).join(' · ')}` : ''}
-                                            </span>
-                                        </span>
-                                        <span className="hidden shrink-0 rounded-full bg-[#fff8e8] px-2.5 py-1 text-xs font-black text-[#c48212] sm:inline-flex">
-                                            {salaryText}
-                                        </span>
-                                    </button>
-                                )
-                            })}
+                                        </button>
+                                    )
+                                })
+                            ) : (
+                                <div className="flex min-h-[190px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#dfe7f0] bg-white/70 px-6 text-center">
+                                    <ShieldCheck className="h-7 w-7 text-[#6f63f6]" />
+                                    <div className="mt-2 text-sm font-black text-slate-800">
+                                        {canRequestRecommendations ? '正在等待今日匹配结果' : '填写职业方向或上传简历'}
+                                    </div>
+                                    <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">
+                                        {canRequestRecommendations
+                                            ? '系统只展示与你当前需求匹配的岗位，不会用后台新岗位直接补位。'
+                                            : '完成任一项后，登录状态下会在每天首次进入时自动生成5个推荐。'}
+                                    </p>
+                                </div>
+                            )}
                         </div>
 
                         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_1fr]">
@@ -2243,11 +2307,25 @@ export default function HomeHero({
                             <button
                                 type="button"
                                 onClick={() => { void handleGetRecommendations() }}
-                                disabled={loading || !canRequestRecommendations}
+                                disabled={loading || !canRequestRecommendations || (isAuthenticated && hasCurrentDailyRecommendation && !isEditingPreferences)}
                                 className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-[20px] bg-[#7b74ff] px-5 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(111,99,246,0.62)] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55"
                             >
-                                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                                {loading ? '正在推荐...' : '查看今日推荐'}
+                                {loading ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : isAuthenticated && hasCurrentDailyRecommendation && !isEditingPreferences ? (
+                                    <CheckCircle2 className="h-4 w-4" />
+                                ) : (
+                                    <Sparkles className="h-4 w-4" />
+                                )}
+                                {loading
+                                    ? '正在自动更新'
+                                    : isAuthenticated && hasCurrentDailyRecommendation && !isEditingPreferences
+                                        ? '今日推荐已更新'
+                                        : isEditingPreferences
+                                            ? '按新需求更新'
+                                            : isAuthenticated
+                                                ? '生成今日推荐'
+                                                : '体验岗位匹配'}
                             </button>
                         </div>
 
