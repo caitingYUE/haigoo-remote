@@ -155,6 +155,7 @@ function useWindowWidth() {
 
 function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; disabled?: boolean }) {
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [scrollNode, setScrollNode] = useState<HTMLDivElement | null>(null)
   const dragRef = useRef<{ pointerId: number; x: number; scrollLeft: number; page: number; moved: boolean } | null>(null)
   const suppressClickRef = useRef(false)
   const pageUpdateFrameRef = useRef<number | null>(null)
@@ -162,6 +163,10 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
   const [viewportWidth, setViewportWidth] = useState(0)
   const safePageCount = Math.max(1, pageCount)
   const enabled = !disabled && safePageCount > 1
+  const attachScrollRef = useCallback((node: HTMLDivElement | null) => {
+    scrollRef.current = node
+    setScrollNode(node)
+  }, [])
 
   const getPageFromScroll = useCallback((node: HTMLDivElement) => {
     const width = node.clientWidth || 1
@@ -206,7 +211,7 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
   }, [currentPage, scrollToPage])
 
   useEffect(() => {
-    const node = scrollRef.current
+    const node = scrollNode
     if (!node) return
     const updateWidth = () => setViewportWidth(node.clientWidth)
     updateWidth()
@@ -219,7 +224,7 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
 
     window.addEventListener('resize', updateWidth)
     return () => window.removeEventListener('resize', updateWidth)
-  }, [])
+  }, [scrollNode])
 
   useEffect(() => {
     return () => {
@@ -315,7 +320,7 @@ function usePagedHorizontalScroll({ pageCount, disabled }: { pageCount: number; 
 
   return {
     currentPage,
-    scrollRef,
+    scrollRef: attachScrollRef,
     scrollToPage,
     viewportWidth,
     handlers: {
@@ -406,7 +411,6 @@ function PosterFrame({
         className={`h-full w-full object-cover ${className}`}
         loading={loading}
         decoding="async"
-        fetchPriority={loading === 'eager' ? 'high' : 'low'}
         onError={() => setImageFailed(true)}
       />
     )
@@ -805,6 +809,95 @@ function CategoryRail({
   )
 }
 
+function FeaturedInterviewRail({
+  videos,
+  isGuest
+}: {
+  videos: CorporateEnglishPublicModuleVideo[]
+  isGuest: boolean
+}) {
+  const [hero, ...rest] = videos
+  const pageSize = 4
+  const pageCount = Math.max(1, Math.ceil(rest.length / pageSize))
+  const carousel = usePagedHorizontalScroll({ pageCount })
+  const { currentPage, scrollRef, scrollToPage, viewportWidth, handlers } = carousel
+  const cardWidth = getRailCardWidth(viewportWidth, 2, 24, 250)
+  const orderedVideos = useMemo(
+    () => orderForTwoRowRail(rest.map((video, index) => ({ video, index: index + 1 })), pageSize, 2),
+    [rest]
+  )
+  const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
+  const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
+
+  useEffect(() => {
+    scrollToPage(0, 'auto')
+  }, [scrollToPage, videos])
+
+  if (!hero) return null
+
+  if (!rest.length) {
+    return (
+      <div className="xl:max-w-[calc(50%-12px)]">
+        <ModuleTalkCard video={hero} section="english_interview" index={0} featured isGuest={isGuest} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid items-stretch gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <ModuleTalkCard video={hero} section="english_interview" index={0} featured isGuest={isGuest} />
+      <div className={`relative min-w-0 ${pageCount > 1 ? 'pr-14' : ''}`}>
+        <div
+          ref={scrollRef}
+          className="h-full select-none overflow-x-auto overscroll-x-contain touch-pan-y [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          {...handlers}
+        >
+          <div
+            className="grid h-full grid-flow-col grid-rows-2 gap-6"
+            style={{
+              gridAutoColumns: cardWidth ? `${cardWidth}px` : undefined,
+              minWidth: viewportWidth && pageCount > 1 ? `${viewportWidth * pageCount}px` : undefined
+            }}
+          >
+            {orderedVideos.map(({ video, index }) => (
+              <ModuleTalkCard
+                key={video.videoId}
+                video={video}
+                section="english_interview"
+                index={index}
+                isGuest={isGuest}
+              />
+            ))}
+          </div>
+        </div>
+        {pageCount > 1 ? (
+          <div className="absolute right-0 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center gap-2">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={currentPage === 0}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-35"
+              aria-label="上一页英语面试"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <span className="text-xs font-black text-slate-500" aria-live="polite">{currentPage + 1}/{pageCount}</span>
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={currentPage >= pageCount - 1}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-35"
+              aria-label="下一页英语面试"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 function ModuleSection({
   section,
   videos,
@@ -820,8 +913,8 @@ function ModuleSection({
   loading?: boolean
   isGuest: boolean
 }) {
-  const shouldUseFeaturedLayout = section === 'english_interview' && featuredLayout && videos.length <= 5 && !isGuest
   const windowWidth = useWindowWidth()
+  const shouldUseFeaturedLayout = section === 'english_interview' && featuredLayout && windowWidth >= 1280 && !isGuest
   const railLayout = getModuleRailLayout(section, windowWidth)
   const pageSize = Math.max(1, railLayout.columns * 2)
   const visibleVideos = useMemo(() => (isGuest ? videos.slice(0, pageSize) : videos), [isGuest, pageSize, videos])
@@ -839,7 +932,7 @@ function ModuleSection({
     },
     [railLayout.columns, usesHorizontalRail, visibleVideos]
   )
-  const [hero, ...rest] = videos
+  const [hero] = videos
   const goPrev = useCallback(() => scrollToPage(currentPage - 1), [currentPage, scrollToPage])
   const goNext = useCallback(() => scrollToPage(currentPage + 1), [currentPage, scrollToPage])
 
@@ -869,16 +962,7 @@ function ModuleSection({
   }
 
   if (shouldUseFeaturedLayout) {
-    return (
-      <div className="grid gap-8 xl:grid-cols-[minmax(0,1.04fr)_minmax(520px,0.96fr)]">
-        <ModuleTalkCard video={hero} section={section} index={0} featured isGuest={isGuest} />
-        <div className="grid content-start gap-6 sm:grid-cols-2">
-          {rest.slice(0, 4).map((video, index) => (
-            <ModuleTalkCard key={video.videoId} video={video} section={section} index={index + 1} isGuest={isGuest} />
-          ))}
-        </div>
-      </div>
-    )
+    return <FeaturedInterviewRail videos={videos} isGuest={isGuest} />
   }
 
   return (
