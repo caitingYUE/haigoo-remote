@@ -506,7 +506,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [hasResume, setHasResume] = useState<boolean | null>(null)
     const [unlockingApplicationGuide, setUnlockingApplicationGuide] = useState(false)
     const [corporateEnglishDetail, setCorporateEnglishDetail] = useState<CorporateEnglishCompanyDetail | null>(null)
-    const { showSuccess, showError, showInfo } = useNotificationHelpers()
+    const { showSuccess, showError, showInfo, showWarning } = useNotificationHelpers()
     const companyInfoRequestRef = useRef(0)
     const headquartersStatRef = useRef<HTMLDivElement | null>(null)
 
@@ -889,14 +889,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         })
     }, [job, showTranslation])
 
-    const promptLogin = (message = '申请职位需要登录\n\n是否前往登录？') => {
-        if (window.confirm(message)) {
-            navigate('/login')
-        }
-    }
-
-    const goToLogin = () => {
-        navigate('/login')
+    const goToLogin = (message = '登录后可以继续使用岗位功能。') => {
+        const returnPath = typeof window !== 'undefined'
+            ? `${window.location.pathname}${window.location.search || ''}`
+            : '/jobs'
+        showWarning('请先登录', message)
+        navigate(`/login?redirect=${encodeURIComponent(returnPath)}`)
     }
 
     const promptEmailVerificationIfNeeded = (actionLabel = '申请岗位') => {
@@ -1157,7 +1155,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         const token = localStorage.getItem('haigoo_auth_token');
         const companyName = String(job.company || companyInfo?.name || '').trim()
         if (!token) {
-            navigate('/login')
+            goToLogin('登录后可以查看企业联系信息。')
             return
         }
         if (promptEmailVerificationIfNeeded()) return
@@ -1364,9 +1362,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const handleSave = () => {
         if (!isAuthenticated) {
-            if (window.confirm('登录后可以收藏职位\n\n是否前往登录？')) {
-                navigate('/login')
-            }
+            goToLogin('登录后可以收藏职位。')
             return
         }
         if (promptEmailVerificationIfNeeded('收藏岗位')) return
@@ -1502,7 +1498,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const handleCompanyClick = () => {
         if (!isAuthenticated) {
-            promptLogin('登录后可查看企业信息\n\n是否前往登录？')
+            goToLogin('登录后可查看企业信息。')
             return
         }
         if (promptEmailVerificationIfNeeded('查看企业信息')) return
@@ -1895,8 +1891,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const nestedJob = nestedJobIndex == null ? null : companyJobsForTab[nestedJobIndex] || null
 
     return (
-        <div className="flex flex-col overflow-hidden bg-[#fbfaf6]">
-            <header className="relative z-20 flex-shrink-0 overflow-hidden border-b border-[#e8f0f4] bg-[#fffdf9] px-4 pb-0 pt-5 sm:px-6 sm:pt-6 xl:px-8">
+        <div className="flex flex-col overflow-hidden bg-[#fbfaf6] pb-[env(safe-area-inset-bottom)]">
+            <header className="relative z-20 flex-shrink-0 overflow-hidden border-b border-[#e8f0f4] bg-[#fffdf9] px-4 pb-0 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-6 sm:pt-6 xl:px-8">
                 <img
                     src={detailBackgroundSrc}
                     alt=""
@@ -1908,7 +1904,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[60%] bg-[radial-gradient(circle_at_82%_14%,rgba(255,238,190,0.28),transparent_28%),linear-gradient(90deg,rgba(255,253,249,0.99)_0%,rgba(255,253,249,0.78)_42%,rgba(255,255,255,0.1)_100%)] lg:block" />
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.36)_0%,rgba(255,250,239,0.4)_100%)]" />
                 {showCloseButton && (
-                    <div className="absolute right-4 top-4 z-40 flex items-center gap-1">
+                    <div className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] z-40 flex items-center gap-1 sm:top-4">
                         {showInlineNavigation && (
                             <>
                                 <button onClick={() => onNavigateJob?.('prev')} disabled={!canNavigatePrev} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/80 disabled:opacity-30">

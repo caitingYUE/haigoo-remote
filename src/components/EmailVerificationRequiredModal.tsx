@@ -72,7 +72,7 @@ export default function EmailVerificationRequiredModal({
       aria-labelledby="email-verification-title"
       onMouseDown={(event) => event.target === event.currentTarget && onClose()}
     >
-      <div className="relative w-full max-w-sm rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_24px_72px_-28px_rgba(15,23,42,0.42)]">
+      <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-sm overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_24px_72px_-28px_rgba(15,23,42,0.42)]">
         <button
           type="button"
           onClick={onClose}

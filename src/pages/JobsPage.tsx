@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import JobCardNew from '../components/JobCardNew'
 import { JobBundleCard } from '../components/JobBundleBanner'
 import JobFilterBar from '../components/JobFilterBar'
+import EmailVerificationRequiredModal from '../components/EmailVerificationRequiredModal'
 import { Job } from '../types'
 
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -326,7 +327,7 @@ function readJobHabitBoostParams() {
 export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { token, user, isAuthenticated, isMember } = useAuth()
+  const { token, user, isAuthenticated, isMember, isLoading: authLoading } = useAuth()
   const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
   const hasVerifiedJobAccess = Boolean(isAuthenticated && user?.emailVerified)
 
@@ -349,6 +350,7 @@ export default function JobsPage() {
   const jobsRequestSeqRef = useRef(0)
   const hasManualJobSelectionRef = useRef(false)
   const guestMorePromptedAtRef = useRef(0)
+  const restrictedSearchHandledRef = useRef('')
 
   useEffect(() => {
     searchTermRef.current = searchTerm
@@ -477,6 +479,8 @@ export default function JobsPage() {
   }, [isAuthenticated]);
 
   const [showWechatModal, setShowWechatModal] = useState(false)
+  const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
+  const [emailVerificationActionLabel, setEmailVerificationActionLabel] = useState('使用岗位功能')
 
   const openCommunityPage = useCallback(() => {
     setShowWechatModal(true)
@@ -497,6 +501,57 @@ export default function JobsPage() {
     showWarning('完整列表登录后可见', '登录后可以继续加载更多远程岗位。')
   }, [isEmailVerificationRequired, showWarning])
 
+  const handleRestrictedAction = useCallback((actionLabel: string) => {
+    if (isEmailVerificationRequired) {
+      setEmailVerificationActionLabel(actionLabel)
+      setShowEmailVerificationPrompt(true)
+      return
+    }
+
+    const returnPath = `${location.pathname}${location.search || ''}`
+    showWarning('请先登录', `登录后可以${actionLabel}。`)
+    navigate(`/login?redirect=${encodeURIComponent(returnPath)}`)
+  }, [isEmailVerificationRequired, location.pathname, location.search, navigate, showWarning])
+
+  useEffect(() => {
+    if (authLoading || hasVerifiedJobAccess) {
+      restrictedSearchHandledRef.current = ''
+      return
+    }
+
+    const params = new URLSearchParams(location.search)
+    const keyword = String(params.get('search') || params.get('searchQuery') || '').trim()
+    const category = String(params.get('category') || '').trim()
+    if (!keyword && !category) {
+      restrictedSearchHandledRef.current = ''
+      return
+    }
+
+    const actionLabel = keyword ? '搜索岗位' : '筛选岗位角色'
+    const signature = `${isEmailVerificationRequired ? 'verification' : 'guest'}:${keyword || category}`
+    if (restrictedSearchHandledRef.current === signature) return
+    restrictedSearchHandledRef.current = signature
+
+    trackingService.track(keyword ? 'search_submitted' : 'filter_applied', {
+      event_family: keyword ? 'search' : 'filter',
+      outcome: 'blocked',
+      reason: isEmailVerificationRequired ? 'email_verification_required' : 'login_required',
+      feature_key: keyword ? 'job_search' : 'job_filter',
+      source_key: 'jobs_page',
+      has_keyword: Boolean(keyword),
+    })
+
+    if (isEmailVerificationRequired) {
+      setEmailVerificationActionLabel(actionLabel)
+      setShowEmailVerificationPrompt(true)
+      return
+    }
+
+    const returnPath = `${location.pathname}${location.search || ''}`
+    showWarning('请先登录', keyword ? '登录后即可搜索并查看完整岗位结果。' : '登录后即可按岗位方向筛选职位。')
+    navigate(`/login?redirect=${encodeURIComponent(returnPath)}`, { replace: true })
+  }, [authLoading, hasVerifiedJobAccess, isEmailVerificationRequired, location.pathname, location.search, navigate, showWarning])
+
   const syncJobListUrl = useCallback((nextFilters: JobFiltersState, nextSearchTerm: string) => {
     const params = buildJobsSearchParams(location.search, nextFilters, nextSearchTerm)
     const nextSearch = params.toString()
@@ -508,6 +563,16 @@ export default function JobsPage() {
 
   // 加载岗位数据（使用新的后端API，支持筛选和分页）
   const loadJobsWithFilters = useCallback(async (page = 1, loadMore = false) => {
+    if (!hasVerifiedJobAccess && searchTerm.trim()) {
+      if (!loadMore) {
+        setJobsLoading(false)
+        setJobsRefreshing(false)
+        setInitialJobsSettled(true)
+        setJobsLoadError(null)
+      }
+      return
+    }
+
     if ((!isAuthenticated || isEmailVerificationRequired) && loadMore) {
       showPreviewLimitPrompt()
       return
@@ -736,6 +801,8 @@ export default function JobsPage() {
   }, [token, isAuthenticated, isEmailVerificationRequired, hasVerifiedJobAccess, showError, effectivePageSize, filters, searchTerm, sortBy, location.search, showPreviewLimitPrompt])
 
   const loadJobsMetadata = useCallback(async () => {
+    if (!hasVerifiedJobAccess && searchTerm.trim()) return
+
     if (metadataAbortControllerRef.current) {
       metadataAbortControllerRef.current.abort()
     }
@@ -853,11 +920,15 @@ export default function JobsPage() {
   }, [isAuthenticated, token, jobsLoading, loadingMore, loadJobsWithFilters])
 
   // 加载更多数据
-  const loadMoreJobs = async () => {
+  const loadMoreJobs = async (source: 'scroll' | 'button' = 'scroll') => {
     if (loadingMore || jobsLoading) return
 
     if (!isAuthenticated || isEmailVerificationRequired) {
-      showPreviewLimitPrompt()
+      if (source === 'button') {
+        handleRestrictedAction('查看更多岗位')
+      } else {
+        showPreviewLimitPrompt()
+      }
       return
     }
 
@@ -1003,7 +1074,14 @@ export default function JobsPage() {
 
   const toggleSaveJob = async (jobId: string, job?: Job) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
-    if (!isAuthenticated || !authToken) { showWarning('请先登录', '登录后可以收藏职位'); navigate('/login'); return }
+    if (!isAuthenticated || !authToken) {
+      handleRestrictedAction('收藏职位')
+      return
+    }
+    if (isEmailVerificationRequired) {
+      handleRestrictedAction('收藏职位')
+      return
+    }
     const isSaved = savedJobs.has(jobId)
     setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.delete(jobId) : s.add(jobId); return s })
     try {
@@ -1037,7 +1115,10 @@ export default function JobsPage() {
     if (!initialJobsSettled && listMode === 'jobs') return
     const timer = window.setTimeout(() => {
       ; (async () => {
-      if (!token) return
+      if (!token || !hasVerifiedJobAccess) {
+        setSavedJobs(new Set())
+        return
+      }
       try {
         const resp = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${token}` } })
         if (resp.ok) {
@@ -1049,7 +1130,7 @@ export default function JobsPage() {
       })()
     }, listMode === 'jobs' ? 1200 : 0)
     return () => window.clearTimeout(timer)
-  }, [initialJobsSettled, listMode, token])
+  }, [hasVerifiedJobAccess, initialJobsSettled, listMode, token])
 
   // 地址分类加载已移除 - 不再需要关键词匹配
 
@@ -1075,7 +1156,7 @@ export default function JobsPage() {
   ), [])
 
   const refreshApplicationSummary = useCallback(async (options: { hydrateList?: boolean } = {}) => {
-    if (!token) {
+    if (!token || !hasVerifiedJobAccess) {
       setApplicationCount(0)
       setApplicationJobs([])
       return
@@ -1092,7 +1173,7 @@ export default function JobsPage() {
     } catch (error) {
       console.error('[JobsPage] Failed to refresh application summary:', error)
     }
-  }, [mapApplicationJobs, token])
+  }, [hasVerifiedJobAccess, mapApplicationJobs, token])
 
   useEffect(() => {
     if (!initialJobsSettled && listMode === 'jobs') return
@@ -1115,7 +1196,7 @@ export default function JobsPage() {
   }, [listMode, refreshApplicationSummary])
 
   useEffect(() => {
-    if (!token || listMode === 'jobs') return
+    if (!token || !hasVerifiedJobAccess || listMode === 'jobs') return
     let cancelled = false
     const loadPersonalList = async () => {
       setPersonalListLoading(true)
@@ -1145,7 +1226,7 @@ export default function JobsPage() {
     }
     void loadPersonalList()
     return () => { cancelled = true }
-  }, [listMode, mapApplicationJobs, token])
+  }, [hasVerifiedJobAccess, listMode, mapApplicationJobs, token])
 
   const visibleJobs = useMemo(() => {
     if (listMode === 'favorites') return favoriteJobs
@@ -1156,6 +1237,16 @@ export default function JobsPage() {
   const shouldShowListSkeleton =
     (listMode === 'jobs' && (showLoading || (!initialJobsSettled && visibleJobs.length === 0))) ||
     (listMode !== 'jobs' && personalListLoading)
+  const isRestrictedSearch = Boolean(searchTerm.trim() && !hasVerifiedJobAccess)
+
+  const handleListModeChange = (mode: 'jobs' | 'favorites' | 'applications') => {
+    if (mode !== 'jobs' && !hasVerifiedJobAccess) {
+      handleRestrictedAction(mode === 'favorites' ? '查看收藏职位' : '查看申请记录')
+      return false
+    }
+    setListMode(mode)
+    return true
+  }
 
   // Deep Linking: Sync URL with selectedJob
   useEffect(() => {
@@ -1315,7 +1406,7 @@ export default function JobsPage() {
                   isMember={isMember}
                   verificationRequired={isEmailVerificationRequired}
                   onListModeChange={(mode) => {
-                    setListMode(mode)
+                    if (!handleListModeChange(mode)) return
                     if (mode !== 'jobs') {
                       const params = new URLSearchParams(location.search)
                       params.delete('jobId')
@@ -1324,6 +1415,7 @@ export default function JobsPage() {
                       hasManualJobSelectionRef.current = false
                     }
                   }}
+                  onRestrictedAction={handleRestrictedAction}
                   onSortChange={() => {
                     setListMode('jobs')
                     hasManualJobSelectionRef.current = false
@@ -1367,7 +1459,26 @@ export default function JobsPage() {
                   </div>
                 ) : visibleJobs.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                    {jobsLoadError && listMode === 'jobs' ? (
+                    {isRestrictedSearch && listMode === 'jobs' ? (
+                      <>
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f3f0ff]">
+                          <Search className="h-6 w-6 text-[#6251f5]" />
+                        </div>
+                        <p className="mb-1 font-medium text-slate-900">
+                          {isEmailVerificationRequired ? '验证邮箱后搜索岗位' : '登录后搜索岗位'}
+                        </p>
+                        <p className="mb-4 max-w-[240px] text-xs text-slate-500">
+                          {isEmailVerificationRequired ? '完成邮箱验证后即可继续当前搜索。' : '登录后即可继续当前搜索并查看岗位结果。'}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => handleRestrictedAction('搜索岗位')}
+                          className="mb-8 inline-flex h-11 items-center justify-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm transition-colors hover:bg-[#5142df]"
+                        >
+                          {isEmailVerificationRequired ? '去验证邮箱' : '去登录'}
+                        </button>
+                      </>
+                    ) : jobsLoadError && listMode === 'jobs' ? (
                       <>
                         <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mb-3">
                           <Search className="w-6 h-6 text-rose-300" />
@@ -1491,7 +1602,7 @@ export default function JobsPage() {
                           加载中...
                         </div>
                       ) : jobs.length < totalJobs ? (
-                        <button onClick={loadMoreJobs} className="text-xs text-[#6f63f6] hover:underline font-medium">
+                        <button onClick={() => loadMoreJobs('button')} className="inline-flex min-h-11 items-center justify-center rounded-full px-4 text-xs font-bold text-[#6f63f6] hover:bg-[#f3f0ff]">
                           加载更多
                         </button>
                       ) : (
@@ -1616,6 +1727,12 @@ export default function JobsPage() {
           </div>,
           document.body
         )}
+
+        <EmailVerificationRequiredModal
+          isOpen={showEmailVerificationPrompt}
+          onClose={() => setShowEmailVerificationPrompt(false)}
+          actionLabel={emailVerificationActionLabel}
+        />
 
       </div>
   )

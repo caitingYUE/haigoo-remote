@@ -198,7 +198,7 @@ export default function JobDetailPage() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Mobile Header */}
-      <div className="lg:hidden sticky top-0 z-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 bg-white border-b border-slate-200 px-3 py-2.5">
+      <div className="sticky top-14 z-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 md:top-16 lg:hidden">
         <button onClick={handleBack} className="p-2 -ml-2 hover:bg-slate-50 rounded-full" aria-label="返回上一页">
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>

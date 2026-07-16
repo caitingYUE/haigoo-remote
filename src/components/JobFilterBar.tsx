@@ -60,6 +60,7 @@ interface JobFilterBarProps {
   favoriteCount?: number;
   applicationCount?: number;
   onListModeChange: (mode: ListMode) => void;
+  onRestrictedAction?: (actionLabel: string) => void;
   isAuthenticated?: boolean;
   isMember?: boolean;
   verificationRequired?: boolean;
@@ -194,7 +195,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             </div>
 
             {(onApply || onClear) && (
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 p-3">
+              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                 <button
                   onClick={(event) => {
                     event.stopPropagation();
@@ -270,6 +271,7 @@ export default function JobFilterBar({
   favoriteCount = 0,
   applicationCount = 0,
   onListModeChange,
+  onRestrictedAction,
   isAuthenticated = false,
   isMember = false,
   verificationRequired = false
@@ -540,8 +542,8 @@ export default function JobFilterBar({
             isOpen={openDropdown === 'category'}
             onToggle={() => toggleFilterDropdown('category')}
             onClose={() => applyFilters(['category'])}
-            onApply={() => applyFilters(['category'])}
-            onClear={() => clearTempFilters(['category'])}
+            onApply={isAuthenticated ? () => applyFilters(['category']) : undefined}
+            onClear={isAuthenticated ? () => clearTempFilters(['category']) : undefined}
             icon={<Briefcase className="h-3.5 w-3.5" />}
             colorTheme="indigo"
           >
@@ -590,8 +592,22 @@ export default function JobFilterBar({
                 </div>
               </div>
             ) : (
-              <div className="flex min-h-[132px] items-center justify-center rounded-2xl border border-dashed border-[#dfe8ef] bg-slate-50/70 px-6 text-sm font-black text-slate-500">
-                {verificationRequired ? '验证邮箱后可见' : '登录后可见'}
+              <div className="flex min-h-[160px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#dfe8ef] bg-slate-50/70 px-6 text-center">
+                <div className="text-sm font-black text-slate-700">
+                  {verificationRequired ? '验证邮箱后可筛选岗位角色' : '登录后可筛选岗位角色'}
+                </div>
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setOpenDropdown(null);
+                    onRestrictedAction?.('筛选岗位角色');
+                  }}
+                  className="mt-4 inline-flex h-11 min-w-[132px] items-center justify-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm transition-colors hover:bg-[#5142df]"
+                >
+                  {verificationRequired ? '去验证邮箱' : '去登录'}
+                </button>
               </div>
             )}
           </FilterDropdown>

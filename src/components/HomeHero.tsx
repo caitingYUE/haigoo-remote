@@ -1946,7 +1946,43 @@ export default function HomeHero({
         const params = new URLSearchParams()
         params.set('memberOnly', 'false')
         if (keyword) params.set('search', keyword)
-        navigate(`/jobs${params.toString() ? `?${params.toString()}` : ''}`)
+        const destination = `/jobs${params.toString() ? `?${params.toString()}` : ''}`
+
+        if (authLoading) return
+
+        if (!keyword) {
+            navigate(destination)
+            return
+        }
+
+        if (!isAuthenticated) {
+            trackingService.track('search_submitted', {
+                event_family: 'search',
+                outcome: 'blocked',
+                reason: 'login_required',
+                feature_key: 'job_search',
+                source_key: 'home_hero',
+                has_keyword: Boolean(keyword),
+            })
+            showWarning('请先登录', '登录后即可搜索并查看完整岗位结果。')
+            navigate(`/login?redirect=${encodeURIComponent(destination)}`)
+            return
+        }
+
+        if (isEmailVerificationRequired) {
+            trackingService.track('search_submitted', {
+                event_family: 'search',
+                outcome: 'blocked',
+                reason: 'email_verification_required',
+                feature_key: 'job_search',
+                source_key: 'home_hero',
+                has_keyword: Boolean(keyword),
+            })
+            showWarning('请先验证邮箱', '完成邮箱验证后即可搜索并查看完整岗位结果。')
+            return
+        }
+
+        navigate(destination)
     }
 
     const openHeroCategory = (categories: string[]) => {
@@ -1954,7 +1990,22 @@ export default function HomeHero({
         params.set('category', categories.join(','))
         params.set('memberOnly', 'false')
         params.set('source', 'home-hero')
-        navigate(`/jobs?${params.toString()}`)
+        const destination = `/jobs?${params.toString()}`
+
+        if (authLoading) return
+
+        if (!isAuthenticated) {
+            showWarning('请先登录', '登录后即可按岗位方向筛选职位。')
+            navigate(`/login?redirect=${encodeURIComponent(destination)}`)
+            return
+        }
+
+        if (isEmailVerificationRequired) {
+            showWarning('请先验证邮箱', '完成邮箱验证后即可按岗位方向筛选职位。')
+            return
+        }
+
+        navigate(destination)
     }
 
     const heroHighlightItems = [

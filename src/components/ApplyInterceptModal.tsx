@@ -6,6 +6,7 @@ import { Job } from '../types';
 import { TrustedCompany } from '../services/trusted-companies-service';
 import { trackingService } from '../services/tracking-service';
 import { getCompanyLogoSources } from '../utils/company-logo';
+import { useNotificationHelpers } from './NotificationSystem';
 
 interface ApplyInterceptModalProps {
     isOpen: boolean;
@@ -48,6 +49,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
     onShowUpgrade,
 }) => {
     const navigate = useNavigate();
+    const { showWarning } = useNotificationHelpers();
     const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
     const logoSources = useMemo(() => getCompanyLogoSources({
         companyId: companyInfo?.id || job.companyId,
@@ -98,6 +100,12 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
         return popup;
     };
 
+    const goToLogin = () => {
+        const returnPath = `${window.location.pathname}${window.location.search || ''}`;
+        showWarning('请先登录', '登录后可以继续申请岗位。');
+        navigate(`/login?redirect=${encodeURIComponent(returnPath)}`);
+    };
+
     if (!isOpen) return null;
 
     const canWebsiteApplyFree = isAuthenticated && (websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit);
@@ -112,7 +120,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                <div className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)]">
+                <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-[28px] border border-white/60 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)]">
                     <button
                         onClick={onClose}
                         className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
@@ -186,7 +194,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                <div className="relative w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[430px] overflow-y-auto overscroll-contain rounded-[28px] border border-white/60 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
                         className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
@@ -327,7 +335,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         onClick={onClose}
                     />
 
-                <div className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-[28px] border border-white/60 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
                         className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
@@ -402,7 +410,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                <div className="relative w-full max-w-[440px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
+                <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[440px] overflow-y-auto overscroll-contain rounded-[28px] border border-white/60 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all scale-100 animate-in fade-in zoom-in duration-200">
                     <button
                         onClick={onClose}
                         className="absolute right-4 top-4 z-20 rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white"
@@ -499,7 +507,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         onClick={onClose}
                     />
 
-                    <div className="relative w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all animate-in fade-in zoom-in duration-200">
+                    <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[430px] overflow-y-auto overscroll-contain rounded-[28px] border border-white/60 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all animate-in fade-in zoom-in duration-200">
                         <button
                             onClick={onClose}
                             className="absolute top-4 right-4 z-10 rounded-full border border-slate-200 bg-white/90 p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
@@ -541,7 +549,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     });
                                     if (!isAuthenticated) {
                                         onClose();
-                                        navigate('/login');
+                                        goToLogin();
                                         return;
                                     }
                                     if (!canWebsiteApplyFree) {
@@ -598,7 +606,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     onClick={onClose}
                 />
 
-                    <div className="relative w-full max-w-[470px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all">
+                    <div className="relative max-h-[calc(100dvh-2rem)] w-full max-w-[470px] overflow-y-auto overscroll-contain rounded-[28px] border border-white/60 bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all">
                         <button
                             onClick={onClose}
                             className="absolute top-4 right-4 z-10 rounded-full border border-slate-200 bg-white/90 p-2 text-slate-400 transition-colors hover:bg-slate-50 hover:text-slate-600"
@@ -690,7 +698,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     });
                                     if (!isAuthenticated) {
                                         onClose();
-                                        navigate('/login');
+                                        goToLogin();
                                         return;
                                     }
                                     if (!canWebsiteApplyFree) {

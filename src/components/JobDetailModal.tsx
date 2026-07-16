@@ -121,7 +121,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
       <div
         className={`relative ${
           variant === 'center'
-            ? 'h-full w-full sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px]'
+            ? 'h-[100dvh] w-full sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px]'
             : 'h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw]'
         }`}
       >
@@ -129,7 +129,7 @@ const JobDetailModal: React.FC<JobDetailModalProps> = ({
           ref={modalRef}
           className={`bg-white dark:bg-zinc-900 shadow-xl flex flex-col relative transform transition-all duration-300 overflow-hidden ${
             variant === 'center'
-              ? `h-full w-full rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px] sm:rounded-2xl ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
+              ? `h-[100dvh] w-full rounded-none sm:h-auto sm:max-h-[90vh] sm:max-w-[1000px] sm:rounded-2xl ${isOpen ? 'scale-100 opacity-100' : 'scale-95 opacity-0'}`
               : `h-full w-full max-w-full md:max-w-[75vw] lg:max-w-[65vw] xl:max-w-[60vw] ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-8 opacity-0'}`
           }`}
           onClick={(e) => e.stopPropagation()}

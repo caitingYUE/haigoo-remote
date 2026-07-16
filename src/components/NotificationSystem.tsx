@@ -81,7 +81,10 @@ function NotificationContainer() {
   if (notifications.length === 0) return null
 
   return (
-    <div className="fixed top-4 right-4 z-[100] space-y-2 max-w-sm w-full">
+    <div
+      className="fixed left-4 right-4 top-4 z-[100] space-y-2 sm:left-auto sm:w-full sm:max-w-sm"
+      style={{ top: 'max(1rem, env(safe-area-inset-top))' }}
+    >
       {notifications.map(notification => (
         <NotificationItem
           key={notification.id}
@@ -131,7 +134,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
     <div className={`
       ${getBackgroundColor()}
       border rounded-lg p-4 shadow-lg animate-slide-in-right
-      transform transition-all duration-300 hover:scale-105
+      transform transition-all duration-300 sm:hover:scale-105
     `}>
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">

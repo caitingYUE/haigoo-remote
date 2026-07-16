@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import brandLogoPng from '../assets/brandlogo.webp'
+import { useNotificationHelpers } from './NotificationSystem'
 
 interface HeaderProps {
   showUpgradeNotice?: boolean
@@ -34,7 +35,8 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const [headerSearchTerm, setHeaderSearchTerm] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, isAuthenticated, logout, token, isMember, isTrialMember, memberType } = useAuth()
+  const { user, isAuthenticated, logout, token, isMember, isTrialMember, memberType, isLoading: authLoading } = useAuth()
+  const { showWarning } = useNotificationHelpers()
 
 
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -210,6 +212,21 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const submitHeaderSearch = (event: FormEvent) => {
     event.preventDefault()
     const keyword = headerSearchTerm.trim()
+
+    if (keyword && authLoading) return
+
+    if (keyword && !isAuthenticated) {
+      const destination = `/jobs?search=${encodeURIComponent(keyword)}`
+      showWarning('请先登录', '登录后即可搜索并查看完整岗位结果。')
+      navigate(`/login?redirect=${encodeURIComponent(destination)}`)
+      return
+    }
+
+    if (keyword && !user?.emailVerified) {
+      showWarning('请先验证邮箱', '完成邮箱验证后即可搜索并查看完整岗位结果。')
+      return
+    }
+
     if (!isJobsPage) {
       navigate(keyword ? `/jobs?search=${encodeURIComponent(keyword)}` : '/jobs')
       return
@@ -338,13 +355,13 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               <>
                 <Link
                   to="/login"
-                  className="px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline text-slate-600 hover:text-slate-900"
+                  className="hidden px-4 py-2 text-sm font-medium transition-colors no-underline hover:no-underline text-slate-600 hover:text-slate-900 md:inline-flex"
                 >
                   登录
                 </Link>
                 <Link
                   to="/register"
-                  className="px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700 hover:text-white"
+                  className="hidden px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700 hover:text-white md:inline-flex"
                 >
                   注册
                 </Link>
@@ -378,7 +395,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   </button>
 
                   {isNotificationOpen && (
-                    <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
+                    <div className={`fixed left-3 right-3 z-50 rounded-xl border border-slate-100 bg-white py-2 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 ${showUpgradeNotice ? 'top-28' : 'top-16'}`}>
                       <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
                         <h3 className="text-sm font-semibold text-slate-900">消息通知</h3>
                         <div className="flex gap-2">
@@ -431,7 +448,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 {/* User Menu - 优化用户菜单设计 */}
                 <div
                   ref={userMenuRef}
-                  className="relative"
+                  className="relative hidden md:block"
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
@@ -578,7 +595,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav
-            className="md:hidden absolute left-3 right-3 top-full mt-3 overflow-hidden rounded-2xl border border-[#e5edf3] bg-[#fffdf8] shadow-[0_20px_48px_-36px_rgba(139,101,54,0.46)]"
+            className="absolute left-3 right-3 top-full mt-3 max-h-[calc(100dvh-4.75rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[#e5edf3] bg-[#fffdf8] pb-[env(safe-area-inset-bottom)] shadow-[0_20px_48px_-36px_rgba(139,101,54,0.46)] md:hidden"
             id="mobile-menu"
             role="navigation"
             aria-label="移动端导航"
