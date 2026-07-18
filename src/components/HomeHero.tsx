@@ -2135,7 +2135,7 @@ export default function HomeHero({
                                 height={isEnglish ? 227 : 208}
                                 loading="eager"
                                 decoding="async"
-                                className={`block h-auto max-w-none select-none ${isEnglish ? 'ml-0 w-full sm:ml-[-1%] sm:w-[102%]' : 'ml-[-5.48%] w-[122%] sm:w-[102%]'}`}
+                                className={`block h-auto max-w-none select-none ${isEnglish ? 'ml-0 w-full sm:ml-[-1%] sm:w-[102%]' : 'ml-[-5.48%] w-[122%] sm:ml-[-4.35%] sm:w-[102%]'}`}
                                 draggable={false}
                             />
                         </picture>
