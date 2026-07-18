@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { Briefcase, CheckCircle, ArrowLeft } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
@@ -9,11 +9,18 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import JobDetailModal from '../components/JobDetailModal'
 import { getCompanyLogoSources } from '../utils/company-logo'
 import { useReturnNavigation } from '../hooks/useReturnNavigation'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function CompanyProfilePage() {
     const handleBack = useReturnNavigation('/jobs')
     const { id } = useParams<{ id: string }>()
     const { showError } = useNotificationHelpers()
+    const { text } = useLanguage()
+    const textRef = useRef(text)
+
+    useEffect(() => {
+        textRef.current = text
+    }, [text])
     const [company, setCompany] = useState<TrustedCompany | null>(null)
     const [jobs, setJobs] = useState<Job[]>([])
     const [loading, setLoading] = useState(true)
@@ -49,7 +56,7 @@ export default function CompanyProfilePage() {
 
         } catch (error) {
             console.error('Failed to load company data:', error)
-            showError('加载失败', '无法获取企业信息')
+            showError(textRef.current('加载失败', 'Load failed'), textRef.current('无法获取企业信息', 'Could not load company information.'))
         } finally {
             setLoading(false)
         }
@@ -102,8 +109,8 @@ export default function CompanyProfilePage() {
     if (!company) {
         return (
             <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-                <h1 className="text-2xl font-bold text-slate-900 mb-4">未找到该企业</h1>
-                <button type="button" onClick={handleBack} className="text-indigo-600 hover:underline">返回</button>
+                <h1 className="text-2xl font-bold text-slate-900 mb-4">{text('未找到该企业', 'Company not found')}</h1>
+                <button type="button" onClick={handleBack} className="text-indigo-600 hover:underline">{text('返回', 'Back')}</button>
             </div>
         )
     }
@@ -118,7 +125,7 @@ export default function CompanyProfilePage() {
                         className="inline-flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-1" />
-                        返回
+                        {text('返回', 'Back')}
                     </button>
 
                     <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -155,7 +162,7 @@ export default function CompanyProfilePage() {
                             </div>
 
                             <p className="text-slate-600 leading-relaxed max-w-3xl">
-                                {company.description || '暂无详细介绍'}
+                                {company.description || text('暂无详细介绍', 'No company description available.')}
                             </p>
 
                             {company.tags && company.tags.length > 0 && (
@@ -182,7 +189,7 @@ export default function CompanyProfilePage() {
                 <div className="mb-6 flex flex-col lg:flex-row lg:items-end gap-4 lg:justify-between">
                     <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                         <Briefcase className="w-5 h-5 text-indigo-600" />
-                        在招职位 ({jobs.length})
+                        {text('在招职位', 'Open roles')} ({jobs.length})
                     </h2>
 
                     {/* Search & Filters */}
@@ -194,7 +201,7 @@ export default function CompanyProfilePage() {
                                     type="text"
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="搜索职位名称、地点、类型..."
+                                    placeholder={text('搜索职位名称、地点、类型...', 'Search by title, location, or type...')}
                                     className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-700"
                                 />
                             </div>
@@ -206,11 +213,11 @@ export default function CompanyProfilePage() {
                             onChange={e => setTypeFilter(e.target.value as any)}
                             className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 shadow-sm"
                         >
-                            <option value="all">全部类型</option>
-                            <option value="full-time">全职</option>
-                            <option value="part-time">兼职</option>
-                            <option value="contract">合同</option>
-                            <option value="internship">实习</option>
+                            <option value="all">{text('全部类型', 'All types')}</option>
+                            <option value="full-time">{text('全职', 'Full-time')}</option>
+                            <option value="part-time">{text('兼职', 'Part-time')}</option>
+                            <option value="contract">{text('合同', 'Contract')}</option>
+                            <option value="internship">{text('实习', 'Internship')}</option>
                         </select>
 
                         {/* Remote Filter */}
@@ -219,9 +226,9 @@ export default function CompanyProfilePage() {
                             onChange={e => setRemoteFilter(e.target.value as any)}
                             className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 shadow-sm"
                         >
-                            <option value="all">全部地点</option>
-                            <option value="remote">仅远程</option>
-                            <option value="onsite">非远程</option>
+                            <option value="all">{text('全部地点', 'All locations')}</option>
+                            <option value="remote">{text('仅远程', 'Remote only')}</option>
+                            <option value="onsite">{text('非远程', 'On-site')}</option>
                         </select>
                     </div>
                 </div>
@@ -243,8 +250,8 @@ export default function CompanyProfilePage() {
                         <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
                             <Briefcase className="w-8 h-8" />
                         </div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-1">未找到匹配的职位</h3>
-                        <p className="text-slate-500">试试调整搜索关键词或筛选条件。</p>
+                        <h3 className="text-lg font-medium text-slate-900 mb-1">{text('未找到匹配的职位', 'No matching roles')}</h3>
+                        <p className="text-slate-500">{text('试试调整搜索关键词或筛选条件。', 'Try changing your search or filters.')}</p>
                     </div>
                 )}
             </div>

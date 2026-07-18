@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowUpDown, Briefcase, Check, ChevronDown, Crown, MapPin, SlidersHorizontal, X } from 'lucide-react';
 import { buildRoleOptionGroups } from '../constants/job-role-groups';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface FilterDropdownProps {
   label: string;
@@ -133,6 +134,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   onClear,
   panelWidthClassName = 'md:w-[430px]'
 }) => {
+  const { text } = useLanguage();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -203,7 +205,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                   }}
                   className="inline-flex h-10 items-center rounded-lg px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/50 hover:text-slate-800"
                 >
-                  清空
+                  {text('清空', 'Clear')}
                 </button>
                 <button
                   onClick={(event) => {
@@ -212,7 +214,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                   }}
                   className="h-10 flex-1 rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
                 >
-                  应用筛选
+                  {text('应用筛选', 'Apply filters')}
                 </button>
               </div>
             )}
@@ -276,6 +278,7 @@ export default function JobFilterBar({
   isMember = false,
   verificationRequired = false
 }: JobFilterBarProps) {
+  const { isEnglish, text } = useLanguage();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [tempFilters, setTempFilters] = useState(filters);
   const [activeRoleGroup, setActiveRoleGroup] = useState(0);
@@ -427,10 +430,12 @@ export default function JobFilterBar({
     const current = filters.location || [];
     if (current.length === 1) {
       const selectedGroup = LOCATION_GROUPS.find(option => current.includes(option.filterValue));
-      if (selectedGroup) return selectedGroup.label;
+      if (selectedGroup) return isEnglish
+        ? ({ china: 'China remote', apac: 'APAC remote', global: 'Global remote' }[selectedGroup.value])
+        : selectedGroup.label;
     }
-    if (current.length > 1) return `地点 (${current.length})`;
-    return getActiveLabel('location', locationOptions, '地点');
+    if (current.length > 1) return `${text('地点', 'Location')} (${current.length})`;
+    return getActiveLabel('location', locationOptions, text('地点', 'Location'));
   };
 
   const moreFilterCount =
@@ -482,15 +487,15 @@ export default function JobFilterBar({
         <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-5">
           <div className="min-w-0 xl:shrink-0">
             <div className="flex min-w-0 items-center gap-2">
-              <h2 className="leading-none" aria-label="远程工作">
-                <span className="sr-only">远程工作</span>
-                <img
+              <h2 className="leading-none" aria-label={text('远程工作', 'Remote jobs')}>
+                <span className="sr-only">{text('远程工作', 'Remote jobs')}</span>
+                {!isEnglish ? <img
                   src="/pic_lists/Handwriting/hand-remote-work.webp"
                   alt=""
                   loading="lazy"
                   decoding="async"
                   className="h-auto w-[126px] max-w-full"
-                />
+                /> : <span aria-hidden="true" className="text-xl font-black tracking-tight text-slate-950">Remote Jobs</span>}
               </h2>
               {isMember ? (
                 <span className="pointer-events-none inline-flex h-5 shrink-0 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
@@ -514,19 +519,19 @@ export default function JobFilterBar({
                 }
                 onListModeChange('jobs');
               }}
-              title={sortBy === 'recent' ? '当前：最新排序，点击切换推荐' : '当前：推荐排序，点击切换最新'}
+              title={sortBy === 'recent' ? text('当前：最新排序，点击切换推荐', 'Sorted by newest; click for recommended') : text('当前：推荐排序，点击切换最新', 'Sorted by recommended; click for newest')}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
-              {sortBy === 'recent' ? '最新' : '推荐'}
+              {sortBy === 'recent' ? text('最新', 'Newest') : text('推荐', 'Recommended')}
               {listMode === 'jobs' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
             </button>
             <button type="button" className={navClass(listMode === 'favorites')} onClick={() => onListModeChange('favorites')}>
-              收藏
+              {text('收藏', 'Saved')}
               <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600 shadow-sm">{favoriteCount}</span>
               {listMode === 'favorites' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
             </button>
             <button type="button" className={navClass(listMode === 'applications')} onClick={() => onListModeChange('applications')}>
-              申请中
+              {text('申请中', 'Applications')}
               <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600 shadow-sm">{applicationCount}</span>
               {listMode === 'applications' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
             </button>
@@ -536,8 +541,8 @@ export default function JobFilterBar({
 
         <div className="-mx-1 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-1 pb-1 md:flex-wrap md:overflow-visible md:pb-0">
           <FilterDropdown
-            label="角色"
-            activeLabel={getActiveLabel('category', categoryOptions, '角色')}
+            label={text('角色', 'Role')}
+            activeLabel={getActiveLabel('category', categoryOptions, text('角色', 'Role'))}
             isActive={(filters.category?.length || 0) > 0}
             isOpen={openDropdown === 'category'}
             onToggle={() => toggleFilterDropdown('category')}
@@ -594,7 +599,7 @@ export default function JobFilterBar({
             ) : (
               <div className="flex min-h-[160px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#dfe8ef] bg-slate-50/70 px-6 text-center">
                 <div className="text-sm font-black text-slate-700">
-                  {verificationRequired ? '验证邮箱后可筛选岗位角色' : '登录后可筛选岗位角色'}
+                  {verificationRequired ? text('验证邮箱后可筛选岗位角色', 'Verify your email to filter roles') : text('登录后可筛选岗位角色', 'Log in to filter roles')}
                 </div>
                 <button
                   type="button"
@@ -606,14 +611,14 @@ export default function JobFilterBar({
                   }}
                   className="mt-4 inline-flex h-11 min-w-[132px] items-center justify-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm transition-colors hover:bg-[#5142df]"
                 >
-                  {verificationRequired ? '去验证邮箱' : '去登录'}
+                  {verificationRequired ? text('去验证邮箱', 'Verify email') : text('去登录', 'Log in')}
                 </button>
               </div>
             )}
           </FilterDropdown>
 
           <FilterDropdown
-            label="地点"
+            label={text('地点', 'Location')}
             activeLabel={getLocationActiveLabel()}
             isActive={(filters.regionType?.length || 0) > 0 || (filters.location?.length || 0) > 0}
             isOpen={openDropdown === 'location'}
@@ -646,7 +651,7 @@ export default function JobFilterBar({
                         : 'border-slate-100 bg-white text-slate-600 hover:border-emerald-100 hover:bg-emerald-50/40 hover:text-slate-900'
                     }`}
                   >
-                    <span>{option.label}</span>
+                    <span>{isEnglish ? ({ china: 'China remote', apac: 'APAC remote', global: 'Global remote' }[option.value]) : option.label}</span>
                     <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
                       isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
                     }`}>
@@ -660,8 +665,8 @@ export default function JobFilterBar({
           </FilterDropdown>
 
           <FilterDropdown
-            label="更多筛选"
-            activeLabel={moreFilterCount > 0 ? `更多筛选 (${moreFilterCount})` : '更多筛选'}
+            label={text('更多筛选', 'More filters')}
+            activeLabel={moreFilterCount > 0 ? `${text('更多筛选', 'More filters')} (${moreFilterCount})` : text('更多筛选', 'More filters')}
             isActive={moreFilterCount > 0}
             isOpen={openDropdown === 'more'}
             onToggle={() => toggleFilterDropdown('more')}
@@ -672,21 +677,21 @@ export default function JobFilterBar({
             colorTheme="slate"
             panelWidthClassName="md:w-[720px]"
           >
-            <FilterSectionHeader title="工作类型" />
+            <FilterSectionHeader title={text('工作类型', 'Job type')} />
             <div className="flex flex-wrap gap-2 px-2 pb-2">
               {jobTypeOptions.map(option => (
-                <FilterChip key={option.value} label={option.label} active={tempFilters.jobType?.includes(option.value) || false} onClick={() => handleCheckboxChange('jobType', option.value, !tempFilters.jobType?.includes(option.value))} />
+                <FilterChip key={option.value} label={isEnglish ? ({ 'full-time': 'Full-time', 'part-time': 'Part-time', contract: 'Contract', freelance: 'Freelance', internship: 'Internship' }[option.value] || option.value) : option.label} active={tempFilters.jobType?.includes(option.value) || false} onClick={() => handleCheckboxChange('jobType', option.value, !tempFilters.jobType?.includes(option.value))} />
               ))}
             </div>
 
-            <FilterSectionHeader title="级别" />
+            <FilterSectionHeader title={text('级别', 'Experience level')} />
             <div className="flex flex-wrap gap-2 px-2 pb-2">
               {experienceLevelOptions.map(option => (
-                <FilterChip key={option.value} label={option.label} active={tempFilters.experienceLevel?.includes(option.value) || false} onClick={() => handleCheckboxChange('experienceLevel', option.value, !tempFilters.experienceLevel?.includes(option.value))} />
+                <FilterChip key={option.value} label={isEnglish ? ({ Entry: 'Entry', Mid: 'Mid-level', Senior: 'Senior', Lead: 'Lead', Executive: 'Executive' }[option.value] || option.value) : option.label} active={tempFilters.experienceLevel?.includes(option.value) || false} onClick={() => handleCheckboxChange('experienceLevel', option.value, !tempFilters.experienceLevel?.includes(option.value))} />
               ))}
             </div>
 
-            <FilterSectionHeader title="行业" />
+            <FilterSectionHeader title={text('行业', 'Industry')} />
             <div className="flex flex-wrap gap-2 px-2 pb-2">
               {industryOptions.map(option => (
                 <FilterChip key={option.value} label={option.label} active={tempFilters.industry?.includes(option.value) || false} onClick={() => handleCheckboxChange('industry', option.value, !tempFilters.industry?.includes(option.value))} />
@@ -707,7 +712,7 @@ export default function JobFilterBar({
               <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${filters.memberOnly ? 'border-[#6f63ff] bg-[#6f63ff]' : 'border-slate-300 bg-white'}`}>
                 {filters.memberOnly ? <Check className="h-3 w-3 text-white" /> : null}
               </span>
-              Club 权益
+              {text('Club 权益', 'Club access')}
             </button>
           ) : null}
 
@@ -717,7 +722,7 @@ export default function JobFilterBar({
               onClick={clearAllFilters}
               className="inline-flex h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-full px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
             >
-              清空筛选
+              {text('清空筛选', 'Clear filters')}
               <X className="h-3 w-3" />
             </button>
           ) : null}

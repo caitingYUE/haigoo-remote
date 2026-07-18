@@ -1,5 +1,6 @@
 import { ArrowRight, Briefcase, MessageSquare, ShieldCheck, Sparkles } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useLanguage } from '../contexts/LanguageContext'
 
 type Variant = 'page' | 'embedded' | 'compact'
 
@@ -11,15 +12,15 @@ interface WeChatCommunityPanelProps {
   className?: string
 }
 
-function getCommunityConfig(isMember = false) {
+function getCommunityConfig(isMember = false, isEnglish = false) {
   return {
-    title: '加入 Haigoo 远程交流群',
+    title: isEnglish ? 'Wechat Group' : '加入 Haigoo 远程交流群',
     subtitle: isMember
-      ? '群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。'
-      : '群里会同步精选岗位、求职经验、投递反馈和产品更新，适合正在找远程工作的用户。',
+      ? (isEnglish ? 'Get curated role updates, focused job-search discussions, and priority support from the community.' : '群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。')
+      : (isEnglish ? 'Get curated roles, application insights, real feedback, and product updates while exploring remote work.' : '群里会同步精选岗位、求职经验、投递反馈和产品更新，适合正在找远程工作的用户。'),
     qrSrc: '/Wechat_group.webp',
-    qrAlt: 'Haigoo 求职交流群二维码',
-    qrTitle: '交流入口',
+    qrAlt: isEnglish ? 'Haigoo remote community QR code' : 'Haigoo 求职交流群二维码',
+    qrTitle: isEnglish ? 'Community access' : '交流入口',
   }
 }
 
@@ -30,7 +31,8 @@ export default function WeChatCommunityPanel({
   showActions = true,
   className = ''
 }: WeChatCommunityPanelProps) {
-  const config = getCommunityConfig(isMember)
+  const { isEnglish, text } = useLanguage()
+  const config = getCommunityConfig(isMember, isEnglish)
   const baseClass = variant === 'page'
     ? 'rounded-[28px] border border-slate-200 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.08)] overflow-hidden'
     : variant === 'compact'
@@ -55,7 +57,7 @@ export default function WeChatCommunityPanel({
                 to="/jobs"
                 className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white no-underline transition-colors hover:bg-slate-800 hover:text-white visited:text-white active:text-white focus:text-white"
               >
-                先看看今日岗位
+                {text('先看看今日岗位', 'Browse today’s roles')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -91,10 +93,10 @@ export default function WeChatCommunityPanel({
 
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: Briefcase, title: '每日精选岗位', desc: '固定同步重点岗位，不需要反复刷新站点。' },
-              { icon: MessageSquare, title: '同行交流', desc: '和正在找远程工作的用户讨论投递、面试和工作方式。' },
-              { icon: Sparkles, title: '重点信息提醒', desc: '岗位更新、运营活动和重要通知会集中在群里同步。' },
-              { icon: ShieldCheck, title: '交流更直接', desc: '相比只看邮件或站内通知，群里更容易获得真实反馈。' }
+              { icon: Briefcase, title: text('每日精选岗位', 'Daily curated roles'), desc: text('固定同步重点岗位，不需要反复刷新站点。', 'Receive selected opportunities without repeatedly refreshing the site.') },
+              { icon: MessageSquare, title: text('同行交流', 'Peer conversations'), desc: text('和正在找远程工作的用户讨论投递、面试和工作方式。', 'Discuss applications, interviews, and remote work with other job seekers.') },
+              { icon: Sparkles, title: text('重点信息提醒', 'Important updates'), desc: text('岗位更新、运营活动和重要通知会集中在群里同步。', 'Get role updates, community events, and important notices in one place.') },
+              { icon: ShieldCheck, title: text('交流更直接', 'Direct support'), desc: text('相比只看邮件或站内通知，群里更容易获得真实反馈。', 'Ask questions and get practical feedback more directly than by email alone.') }
             ].map((item) => (
               <div key={item.title} className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4">
                 <div className="flex items-start gap-3">
@@ -116,7 +118,7 @@ export default function WeChatCommunityPanel({
                 to="/jobs"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-950 px-6 py-3 text-sm font-semibold text-white no-underline transition-colors hover:bg-slate-800 hover:text-white visited:text-white active:text-white focus:text-white"
               >
-                先看看今日岗位
+                {text('先看看今日岗位', 'Browse today’s roles')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -130,7 +132,7 @@ export default function WeChatCommunityPanel({
                 {config.qrTitle}
               </div>
               <div className="mt-1.5 text-sm leading-6 text-slate-600">
-                微信扫一扫入群
+                {text('微信扫一扫入群', 'Scan with WeChat to join')}
               </div>
             </div>
 

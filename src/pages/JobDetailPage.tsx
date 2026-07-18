@@ -10,6 +10,7 @@ import { trackingService } from '../services/tracking-service'
 import { ShareJobModal } from '../components/ShareJobModal'
 import { decodeJobId, getJobSharePath } from '../utils/share-link-helper'
 import { useReturnNavigation } from '../hooks/useReturnNavigation'
+import { useLanguage } from '../contexts/LanguageContext'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -18,6 +19,12 @@ export default function JobDetailPage() {
   const handleBack = useReturnNavigation('/jobs')
   const { token, isAuthenticated } = useAuth()
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
+  const { isEnglish, text } = useLanguage()
+  const textRef = React.useRef(text)
+
+  useEffect(() => {
+    textRef.current = text
+  }, [text])
 
   const [job, setJob] = useState<Job | null>(null)
   const [loading, setLoading] = useState(true)
@@ -64,25 +71,25 @@ export default function JobDetailPage() {
           resp = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(resolvedJobId)}`)
         }
 
-        if (!resp.ok) throw new Error('职位不存在或已下线')
+        if (!resp.ok) throw new Error(textRef.current('职位不存在或已下线', 'This job does not exist or is no longer available.'))
         const data = await resp.json()
         if (data.jobs && data.jobs.length > 0) {
           const fetchedJob = data.jobs[0]
 
           // Check validity
           if (fetchedJob.status === 'closed' || fetchedJob.status === 'expired') {
-            setError('该职位已停止招聘')
+            setError(textRef.current('该职位已停止招聘', 'This role is no longer accepting applications.'))
             startRedirectCountdown()
           } else {
             setJob(fetchedJob)
             trackingService.track('view_job_detail', { jobId: resolvedJobId, title: fetchedJob.title })
           }
         } else {
-          setError('职位不存在或已下线')
+          setError(textRef.current('职位不存在或已下线', 'This job does not exist or is no longer available.'))
           startRedirectCountdown()
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : '加载失败')
+        setError(err instanceof Error ? err.message : textRef.current('加载失败', 'Could not load this job.'))
       } finally {
         setLoading(false)
       }
@@ -90,6 +97,11 @@ export default function JobDetailPage() {
 
     fetchJob()
   }, [id, isAuthenticated, token, location.search, resolvedJobId])
+
+  useEffect(() => {
+    if (!job?.title) return
+    document.title = `${isEnglish ? job.title : (job.translations?.title || job.title)} | Haigoo Remote`
+  }, [job, isEnglish])
 
   const startRedirectCountdown = () => {
     setCountdown(5)
@@ -134,7 +146,7 @@ export default function JobDetailPage() {
 
   const handleSave = async () => {
     if (!isAuthenticated || !token) {
-      showWarning('请先登录', '登录后可以收藏职位')
+      showWarning(text('请先登录', 'Please log in'), text('登录后可以收藏职位', 'Log in to save jobs.'))
       navigate(`/login?redirect=${encodeURIComponent(getJobSharePath(resolvedJobId || id || ''))}`)
       return
     }
@@ -152,12 +164,12 @@ export default function JobDetailPage() {
 
       if (resp.ok) {
         setIsSaved(!isSaved)
-        showSuccess(isSaved ? '已取消收藏' : '收藏成功')
+        showSuccess(isSaved ? text('已取消收藏', 'Removed from saved jobs') : text('收藏成功', 'Job saved'))
       } else {
-        throw new Error('操作失败')
+        throw new Error(text('操作失败', 'Action failed'))
       }
     } catch (e) {
-      showError('操作失败，请重试')
+      showError(text('操作失败，请重试', 'Action failed. Please try again.'))
     }
   }
 
@@ -182,13 +194,13 @@ export default function JobDetailPage() {
           <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">无法加载职位</h2>
-          <p className="text-slate-500 mb-6">{error || '职位可能已过期或被删除'}</p>
+          <h2 className="text-xl font-bold text-slate-900 mb-2">{text('无法加载职位', 'Could not load this job')}</h2>
+          <p className="text-slate-500 mb-6">{error || text('职位可能已过期或被删除', 'The job may have expired or been removed.')}</p>
           <button
             onClick={() => navigate('/jobs')}
             className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
           >
-            查看其他职位
+            {text('查看其他职位', 'Browse other jobs')}
           </button>
         </div>
       </div>
@@ -199,15 +211,15 @@ export default function JobDetailPage() {
     <div className="min-h-screen bg-slate-50">
       {/* Mobile Header */}
       <div className="sticky top-14 z-10 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b border-slate-200 bg-white px-3 py-2.5 md:top-16 lg:hidden">
-        <button onClick={handleBack} className="p-2 -ml-2 hover:bg-slate-50 rounded-full" aria-label="返回上一页">
+        <button onClick={handleBack} className="p-2 -ml-2 hover:bg-slate-50 rounded-full" aria-label={text('返回上一页', 'Go back')}>
           <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
-        <div className="px-1 text-center text-sm font-semibold leading-5 text-slate-900 line-clamp-2">{job.title}</div>
+        <div className="px-1 text-center text-sm font-semibold leading-5 text-slate-900 line-clamp-2">{isEnglish ? job.title : (job.translations?.title || job.title)}</div>
         <button
           type="button"
           onClick={handleShare}
           className="p-2 -mr-2 hover:bg-slate-50 rounded-full"
-          aria-label="分享岗位"
+          aria-label={text('分享岗位', 'Share job')}
         >
           <Share2 className="w-5 h-5 text-slate-600" />
         </button>
@@ -220,7 +232,7 @@ export default function JobDetailPage() {
             className="flex items-center text-slate-500 hover:text-indigo-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
-            返回
+            {text('返回', 'Back')}
           </button>
         </div>
 
@@ -240,8 +252,8 @@ export default function JobDetailPage() {
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
             jobId={job.id}
-            jobTitle={job.translations?.title || job.title}
-            companyName={job.translations?.company || job.company || ''}
+            jobTitle={isEnglish ? job.title : (job.translations?.title || job.title)}
+            companyName={isEnglish ? (job.company || '') : (job.translations?.company || job.company || '')}
           />
         )}
       </div>

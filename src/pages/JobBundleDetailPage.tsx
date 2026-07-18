@@ -12,6 +12,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { trackingService } from '../services/tracking-service';
 import { getBundleDetailLink, getBundleDetailPath } from '../utils/share-link-helper';
 import { useReturnNavigation } from '../hooks/useReturnNavigation';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface JobBundle {
   id: number;
@@ -33,6 +34,7 @@ export default function JobBundleDetailPage() {
   const navigate = useNavigate();
   const handleBack = useReturnNavigation('/jobs');
   const { user, isAuthenticated, isMember, isTrialMember } = useAuth();
+  const { isEnglish, text } = useLanguage();
 
   const [bundle, setBundle] = useState<JobBundle | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -75,11 +77,11 @@ export default function JobBundleDetailPage() {
           if (data2.data.job_ids?.length > 0) await fetchJobs(data2.data.job_ids);
           else setJobs([]);
         } else {
-          setError('组合包不存在');
+          setError(text('组合包不存在', 'This collection does not exist.'));
         }
       }
     } catch {
-      setError('加载失败，请稍后重试');
+      setError(text('加载失败，请稍后重试', 'Could not load this collection. Please try again later.'));
     } finally {
       setLoading(false);
     }
@@ -150,7 +152,7 @@ export default function JobBundleDetailPage() {
       <div className="min-h-screen bg-white flex items-center justify-center pt-20">
         <div className="text-center text-slate-400">
           <div className="w-8 h-8 rounded-full border-2 border-blue-200 border-t-blue-500 animate-spin mx-auto mb-3" />
-          <p className="text-sm">加载中...</p>
+          <p className="text-sm">{text('加载中...', 'Loading...')}</p>
         </div>
       </div>
     );
@@ -162,9 +164,9 @@ export default function JobBundleDetailPage() {
       <div className="min-h-screen bg-white flex items-center justify-center pt-20">
         <div className="text-center text-slate-400 p-8">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">{error || '组合包不存在'}</p>
+          <p className="text-lg font-medium">{error || text('组合包不存在', 'This collection does not exist.')}</p>
           <button onClick={handleBack} className="mt-4 text-blue-600 text-sm hover:underline">
-            ← 返回
+            ← {text('返回', 'Back')}
           </button>
         </div>
       </div>
@@ -174,21 +176,21 @@ export default function JobBundleDetailPage() {
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
   const memberExpireAt = (user as any)?.memberExpireAt || (user as any)?.member_expire_at || null;
-  const memberExpireLabel = memberExpireAt ? new Date(memberExpireAt).toLocaleDateString('zh-CN') : '长期有效';
-  const memberStatusLabel = isTrialMember ? '短期体验权益生效中' : 'Haigoo Club 权益生效中';
+  const memberExpireLabel = memberExpireAt ? new Date(memberExpireAt).toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN') : text('长期有效', 'No expiration');
+  const memberStatusLabel = isTrialMember ? text('短期体验权益生效中', 'Trial benefits active') : text('Haigoo Club 权益生效中', 'Haigoo Club benefits active');
   const pageBackground = '/pic_lists/About_pics/about_bg.webp';
   const assistantSupportPanel = (
     <div className="rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] p-3.5 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.22)]">
       <div className="flex items-start gap-3">
         <img
           src="/series_assistant.png"
-          alt="海狗小助手二维码"
+          alt={text('海狗小助手二维码', 'Haigoo assistant QR code')}
           className="h-[76px] w-[76px] rounded-2xl border border-[#dfe8ef] bg-white object-contain p-1"
         />
         <div className="min-w-0">
-          <div className="text-sm font-black text-slate-900">海狗小助手</div>
+          <div className="text-sm font-black text-slate-900">{text('海狗小助手', 'Haigoo Assistant')}</div>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            扫码添加微信，咨询岗位、加入交流群、获取帮助。
+            {text('扫码添加微信，咨询岗位、加入交流群、获取帮助。', 'Scan to connect on WeChat for role questions, community access, and support.')}
           </p>
         </div>
       </div>
@@ -202,7 +204,7 @@ export default function JobBundleDetailPage() {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
           <button onClick={handleBack}
             className="flex items-center text-slate-500 hover:text-[#3f7f67] transition-colors text-sm mb-12">
-            <ArrowLeft className="w-4 h-4 mr-1" />返回
+            <ArrowLeft className="w-4 h-4 mr-1" />{text('返回', 'Back')}
           </button>
           <div className="max-w-md mx-auto text-center py-12">
             <div className="w-20 h-20 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-6">
@@ -211,24 +213,24 @@ export default function JobBundleDetailPage() {
             <h1 className="text-2xl font-bold text-slate-900 mb-2">{bundle.title}</h1>
             <p className="text-slate-500 mb-2 text-sm">{bundle.subtitle}</p>
             <p className="text-sm text-amber-700 font-medium mb-8 flex items-center justify-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />此精选合集仅对 Haigoo 会员开放
+              <Lock className="w-3.5 h-3.5" />{text('此精选合集仅对 Haigoo 会员开放', 'This curated collection is available to Haigoo members only.')}
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {!isAuthenticated ? (
                 <>
                   <button onClick={() => navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle.id))}`)}
                     className="px-6 py-3 rounded-xl bg-[#2b3448] text-white font-semibold hover:bg-slate-800 transition-colors text-sm">
-                    登录账号
+                    {text('登录账号', 'Log in')}
                   </button>
                   <button onClick={() => navigate('/profile?tab=membership#club-service-plans')}
                     className="px-6 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors text-sm">
-                    添加顾问了解
+                    {text('添加顾问了解', 'Contact an advisor')}
                   </button>
                 </>
               ) : (
                 <button onClick={() => navigate('/profile?tab=membership#club-service-plans')}
                   className="px-6 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors text-sm">
-                  咨询权益方案
+                  {text('咨询权益方案', 'Ask about membership')}
                 </button>
               )}
             </div>
@@ -256,14 +258,14 @@ export default function JobBundleDetailPage() {
         <div className="mb-4 flex items-center justify-between gap-3">
           <button onClick={handleBack}
             className="inline-flex items-center gap-1.5 text-slate-500 hover:text-[#6f63f6] transition-colors text-sm font-medium">
-            <ArrowLeft className="w-4 h-4" />返回
+            <ArrowLeft className="w-4 h-4" />{text('返回', 'Back')}
           </button>
           <button
             type="button"
             onClick={() => document.getElementById('bundle-jobs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             className="hidden items-center gap-1.5 rounded-full border border-[#dfe8ef] bg-white/90 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-[#cfc7ff] hover:text-[#6f63f6] sm:inline-flex"
           >
-            查看全部岗位
+            {text('查看全部岗位', 'View all roles')}
             <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -279,21 +281,21 @@ export default function JobBundleDetailPage() {
               <div className="mb-4 flex flex-wrap items-center gap-2.5">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eeeaff] text-[#6f63f6] text-xs font-bold border border-[#dfd8ff]">
                   <Package className="w-3 h-3" />
-                  精选合集
+                  {text('精选合集', 'Curated collection')}
                 </span>
                 {isMemberBundle && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                    <Crown className="w-3 h-3" />会员专属
+                    <Crown className="w-3 h-3" />{text('会员专属', 'Members only')}
                   </span>
                 )}
                 <span className="text-slate-400 text-xs flex items-center gap-1">
                   <Briefcase className="w-3 h-3" />
-                  {jobs.length} 个职位
+                  {text(`${jobs.length} 个职位`, `${jobs.length} roles`)}
                 </span>
                 {bundle.start_time && (
                   <span className="text-slate-400 text-xs flex items-center gap-1">
                     <Calendar className="w-3 h-3" />
-                    {new Date(bundle.start_time).toLocaleDateString('zh-CN')}
+                    {new Date(bundle.start_time).toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')}
                   </span>
                 )}
               </div>
@@ -305,7 +307,7 @@ export default function JobBundleDetailPage() {
 
               <div className="inline-flex w-full max-w-4xl items-start gap-2.5 rounded-2xl border border-[#eadfcf] bg-white px-3.5 py-3 text-sm font-semibold leading-6 text-slate-600 shadow-[0_18px_44px_-36px_rgba(139,101,54,0.28)] sm:items-center sm:gap-3 sm:px-4">
                 <Megaphone className="h-4 w-4 shrink-0 text-[#8f83ff]" />
-                <span>{bundle.content || '本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。'}</span>
+                <span>{bundle.content || text('本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。', 'This collection is ready. More remote opportunities will be added in the next update.')}</span>
               </div>
 
               <div className="mt-5 space-y-3 lg:hidden">
@@ -314,7 +316,7 @@ export default function JobBundleDetailPage() {
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
                     : 'bg-white border-slate-200 text-slate-600 hover:border-blue-200 hover:text-blue-600'
                     }`}>
-                  {copied ? <><Check className="w-3.5 h-3.5" />已复制！</> : <><Share2 className="w-3.5 h-3.5" />分享合集</>}
+                  {copied ? <><Check className="w-3.5 h-3.5" />{text('已复制！', 'Copied!')}</> : <><Share2 className="w-3.5 h-3.5" />{text('分享合集', 'Share collection')}</>}
                 </button>
                 {assistantSupportPanel}
               </div>
@@ -328,7 +330,7 @@ export default function JobBundleDetailPage() {
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
                     : 'bg-white/86 border-[#dfe8ef] text-slate-600 hover:border-[#cfe0ea] hover:text-[#3f7f67]'
                     }`}>
-                  {copied ? <><Check className="w-3.5 h-3.5" />已复制！</> : <><Share2 className="w-3.5 h-3.5" />分享合集</>}
+                  {copied ? <><Check className="w-3.5 h-3.5" />{text('已复制！', 'Copied!')}</> : <><Share2 className="w-3.5 h-3.5" />{text('分享合集', 'Share collection')}</>}
                 </button>
               </div>
               {assistantSupportPanel}
@@ -345,19 +347,19 @@ export default function JobBundleDetailPage() {
           <div className="relative mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-[11px] font-semibold tracking-[0.18em] text-[#8f83ff]">
-                精选岗位合集
+                {text('精选岗位合集', 'CURATED ROLE COLLECTION')}
               </p>
               <h2 className="mt-2 flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
                 <Sparkles className="h-5 w-5 text-[#8f83ff]" />
-                包含职位
+                {text('包含职位', 'Included roles')}
               </h2>
               <p className="mt-1 text-sm text-slate-500">
-                点击卡片查看岗位详情，可根据需要选择“前往申请”或“帮我内推”。
+                {text('点击卡片查看岗位详情，可根据需要选择“前往申请”或“帮我内推”。', 'Select a card to view role details, apply on the company website, or request a referral.')}
               </p>
             </div>
             <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm shadow-slate-200/40">
               <Briefcase className="h-4 w-4 text-slate-400" />
-              {jobs.length} 个职位
+              {text(`${jobs.length} 个职位`, `${jobs.length} roles`)}
             </div>
           </div>
 
@@ -378,8 +380,8 @@ export default function JobBundleDetailPage() {
           {jobs.length === 0 && (
             <div className="relative overflow-hidden rounded-[24px] border border-[#e3edf4] bg-white py-12 text-center text-slate-400 shadow-sm">
               <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">暂无职位数据</p>
-              <p className="mt-1 text-sm">下一次更新后会同步更多适合远程申请的机会。</p>
+              <p className="font-medium">{text('暂无职位数据', 'No roles available')}</p>
+              <p className="mt-1 text-sm">{text('下一次更新后会同步更多适合远程申请的机会。', 'More remote opportunities will be added in the next update.')}</p>
             </div>
           )}
         </section>
@@ -392,14 +394,14 @@ export default function JobBundleDetailPage() {
                 <Crown className="h-7 w-7" />
               </div>
               <div>
-                <div className="text-sm font-black text-[#49a982]">Haigoo 会员权益</div>
+                <div className="text-sm font-black text-[#49a982]">{text('Haigoo 会员权益', 'Haigoo membership')}</div>
                 <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">
-                  {isMember ? memberStatusLabel : '想看更多高价值岗位和联系人？'}
+                  {isMember ? memberStatusLabel : text('想看更多高价值岗位和联系人？', 'Want more high-value roles and direct contacts?')}
                 </h3>
                 <p className="mt-1 text-sm leading-6 text-slate-500">
                   {isMember
-                    ? `你已解锁会员岗位、邮箱直申、内推线索和精选推荐，有效期至 ${memberExpireLabel}。`
-                    : '解锁会员岗位、邮箱直申、内推线索和精选推荐，让申请推进更高效。'}
+                    ? text(`你已解锁会员岗位、邮箱直申、内推线索和精选推荐，有效期至 ${memberExpireLabel}。`, `Member roles, direct email applications, referral leads, and curated picks are unlocked through ${memberExpireLabel}.`)
+                    : text('解锁会员岗位、邮箱直申、内推线索和精选推荐，让申请推进更高效。', 'Unlock member roles, direct email applications, referral leads, and curated picks.')}
                 </p>
               </div>
             </div>
@@ -408,7 +410,7 @@ export default function JobBundleDetailPage() {
               onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership#club-service-plans')}
               className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#49a982] px-6 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(73,169,130,0.6)] transition hover:-translate-y-0.5 sm:w-auto"
             >
-              {isMember ? '继续查看会员岗位' : '了解会员权益'}
+              {isMember ? text('继续查看会员岗位', 'View member roles') : text('了解会员权益', 'Explore membership')}
               <ChevronRight className="h-4 w-4" />
             </button>
           </div>

@@ -48,6 +48,7 @@ interface BuildJobDetailSectionsInput {
   benefits?: string[]
   translatedBenefits?: string[]
   preferTranslated?: boolean
+  language?: 'zh' | 'en'
 }
 
 const SECTION_ORDER: Record<JobDetailCanonicalTitle, number> = {
@@ -74,6 +75,19 @@ const CANONICAL_TITLES: Record<JobDetailCanonicalTitle, string> = {
   compensation: '薪资说明',
   apply: '申请方式',
   details: '职位详情'
+}
+
+const EN_CANONICAL_TITLES: Record<JobDetailCanonicalTitle, string> = {
+  overview: 'Role overview',
+  responsibilities: 'Responsibilities',
+  requirements: 'Requirements',
+  preferred: 'Preferred qualifications',
+  benefits: 'Benefits',
+  company: 'About the company',
+  team: 'About the team',
+  compensation: 'Compensation',
+  apply: 'How to apply',
+  details: 'Job details'
 }
 
 const STRONG_HEADING_RULES: Array<{ canonicalTitle: JobDetailCanonicalTitle; patterns: RegExp[] }> = [
@@ -245,6 +259,7 @@ const HEADING_PREFIX_SPLITS: Array<{ canonicalTitle: JobDetailCanonicalTitle; pa
 ]
 
 export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobDetailSection[] {
+  const displayTitles = input.language === 'en' ? EN_CANONICAL_TITLES : CANONICAL_TITLES
   const originalDescription = normalizeInputText(input.description)
   const translatedDescription = normalizeInputText(input.translatedDescription)
 
@@ -279,14 +294,17 @@ export function buildJobDetailSections(input: BuildJobDetailSectionsInput): JobD
     : originalMergedSections
 
   if (!displaySections.length) {
-    return [createFallbackSection(Boolean(input.preferTranslated) && translatedDescription ? translatedDescription : '暂无描述')]
+    return [createFallbackSection(
+      Boolean(input.preferTranslated) && translatedDescription ? translatedDescription : (input.language === 'en' ? 'No description available.' : '暂无描述'),
+      displayTitles
+    )]
   }
 
   return displaySections.map((section, index) => ({
     id: `${section.canonicalTitle}-${index}`,
     canonicalTitle: section.canonicalTitle,
     rawTitle: section.rawTitle,
-    displayTitle: section.displayTitle,
+    displayTitle: displayTitles[section.canonicalTitle],
     blocks: section.blocks,
     translatedBlocks: section.translatedBlocks,
     activeBlocks: section.activeBlocks || section.blocks,
@@ -307,14 +325,14 @@ export function flattenSectionBlocks(blocks: JobDetailBlock[]): string {
     .trim()
 }
 
-function createFallbackSection(text: string): JobDetailSection {
+function createFallbackSection(text: string, displayTitles = CANONICAL_TITLES): JobDetailSection {
   const content = String(text || '').trim() || '暂无描述'
   const blocks: JobDetailBlock[] = [{ type: 'paragraph', text: content }]
   return {
     id: 'details-0',
     canonicalTitle: 'details',
     rawTitle: undefined,
-    displayTitle: CANONICAL_TITLES.details,
+    displayTitle: displayTitles.details,
     blocks,
     translatedBlocks: undefined,
     activeBlocks: blocks,

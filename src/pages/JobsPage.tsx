@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Search, Sparkles, Briefcase, Zap, X } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import JobCardNew from '../components/JobCardNew'
 import { JobBundleCard } from '../components/JobBundleBanner'
 import JobFilterBar from '../components/JobFilterBar'
@@ -328,6 +329,7 @@ export default function JobsPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { token, user, isAuthenticated, isMember, isLoading: authLoading } = useAuth()
+  const { text } = useLanguage()
   const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
   const hasVerifiedJobAccess = Boolean(isAuthenticated && user?.emailVerified)
 
@@ -480,7 +482,7 @@ export default function JobsPage() {
 
   const [showWechatModal, setShowWechatModal] = useState(false)
   const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)
-  const [emailVerificationActionLabel, setEmailVerificationActionLabel] = useState('使用岗位功能')
+  const [emailVerificationActionLabel, setEmailVerificationActionLabel] = useState(() => text('使用岗位功能', 'use job features'))
 
   const openCommunityPage = useCallback(() => {
     setShowWechatModal(true)
@@ -495,13 +497,22 @@ export default function JobsPage() {
     if (now - guestMorePromptedAtRef.current < GUEST_MORE_PROMPT_COOLDOWN_MS) return
     guestMorePromptedAtRef.current = now
     if (isEmailVerificationRequired) {
-      showWarning('验证邮箱后可查看更多', '完成邮箱验证后即可继续加载更多远程岗位。')
+      showWarning(text('验证邮箱后可查看更多', 'Verify your email to view more'), text('完成邮箱验证后即可继续加载更多远程岗位。', 'Verify your email to load more remote roles.'))
       return
     }
-    showWarning('完整列表登录后可见', '登录后可以继续加载更多远程岗位。')
-  }, [isEmailVerificationRequired, showWarning])
+    showWarning(text('完整列表登录后可见', 'Log in to view the full list'), text('登录后可以继续加载更多远程岗位。', 'Log in to load more remote roles.'))
+  }, [isEmailVerificationRequired, showWarning, text])
 
-  const handleRestrictedAction = useCallback((actionLabel: string) => {
+  const handleRestrictedAction = useCallback((actionLabelZh: string, actionLabelEn?: string) => {
+    const englishAction = actionLabelEn || ({
+      '筛选岗位角色': 'filter roles',
+      '搜索岗位': 'search jobs',
+      '查看更多岗位': 'view more jobs',
+      '收藏职位': 'save jobs',
+      '查看收藏职位': 'view saved jobs',
+      '查看申请记录': 'view application history'
+    } as Record<string, string>)[actionLabelZh] || 'continue'
+    const actionLabel = text(actionLabelZh, englishAction)
     if (isEmailVerificationRequired) {
       setEmailVerificationActionLabel(actionLabel)
       setShowEmailVerificationPrompt(true)
@@ -509,9 +520,9 @@ export default function JobsPage() {
     }
 
     const returnPath = `${location.pathname}${location.search || ''}`
-    showWarning('请先登录', `登录后可以${actionLabel}。`)
+    showWarning(text('请先登录', 'Please log in'), text(`登录后可以${actionLabelZh}。`, `Log in to ${englishAction}.`))
     navigate(`/login?redirect=${encodeURIComponent(returnPath)}`)
-  }, [isEmailVerificationRequired, location.pathname, location.search, navigate, showWarning])
+  }, [isEmailVerificationRequired, location.pathname, location.search, navigate, showWarning, text])
 
   useEffect(() => {
     if (authLoading || hasVerifiedJobAccess) {
@@ -527,7 +538,7 @@ export default function JobsPage() {
       return
     }
 
-    const actionLabel = keyword ? '搜索岗位' : '筛选岗位角色'
+    const actionLabel = keyword ? text('搜索岗位', 'search jobs') : text('筛选岗位角色', 'filter roles')
     const signature = `${isEmailVerificationRequired ? 'verification' : 'guest'}:${keyword || category}`
     if (restrictedSearchHandledRef.current === signature) return
     restrictedSearchHandledRef.current = signature
@@ -548,9 +559,9 @@ export default function JobsPage() {
     }
 
     const returnPath = `${location.pathname}${location.search || ''}`
-    showWarning('请先登录', keyword ? '登录后即可搜索并查看完整岗位结果。' : '登录后即可按岗位方向筛选职位。')
+    showWarning(text('请先登录', 'Please log in'), keyword ? text('登录后即可搜索并查看完整岗位结果。', 'Log in to search and view complete job results.') : text('登录后即可按岗位方向筛选职位。', 'Log in to filter jobs by role.'))
     navigate(`/login?redirect=${encodeURIComponent(returnPath)}`, { replace: true })
-  }, [authLoading, hasVerifiedJobAccess, isEmailVerificationRequired, location.pathname, location.search, navigate, showWarning])
+  }, [authLoading, hasVerifiedJobAccess, isEmailVerificationRequired, location.pathname, location.search, navigate, showWarning, text])
 
   const syncJobListUrl = useCallback((nextFilters: JobFiltersState, nextSearchTerm: string) => {
     const params = buildJobsSearchParams(location.search, nextFilters, nextSearchTerm)
@@ -783,10 +794,10 @@ export default function JobsPage() {
       setLoadingStage('idle')
       if (!loadMore) {
         setInitialJobsSettled(true)
-        setJobsLoadError(error instanceof Error ? error.message : '职位列表接口异常')
+        setJobsLoadError(error instanceof Error ? error.message : text('职位列表接口异常', 'The jobs service returned an error.'))
       }
       console.error('❌ 加载岗位数据失败:', error)
-      showError('加载岗位数据失败，请稍后重试')
+      showError(text('加载岗位数据失败，请稍后重试', 'Could not load jobs. Please try again later.'))
     } finally {
       // P0 Fix: Only update loading state if request wasn't aborted (prevent race condition with new requests)
       if (isLatestRequest()) {
@@ -798,7 +809,7 @@ export default function JobsPage() {
         }
       }
     }
-  }, [token, isAuthenticated, isEmailVerificationRequired, hasVerifiedJobAccess, showError, effectivePageSize, filters, searchTerm, sortBy, location.search, showPreviewLimitPrompt])
+  }, [token, isAuthenticated, isEmailVerificationRequired, hasVerifiedJobAccess, showError, effectivePageSize, filters, searchTerm, sortBy, location.search, showPreviewLimitPrompt, text])
 
   const loadJobsMetadata = useCallback(async () => {
     if (!hasVerifiedJobAccess && searchTerm.trim()) return
@@ -925,7 +936,7 @@ export default function JobsPage() {
 
     if (!isAuthenticated || isEmailVerificationRequired) {
       if (source === 'button') {
-        handleRestrictedAction('查看更多岗位')
+        handleRestrictedAction('查看更多岗位', 'view more jobs')
       } else {
         showPreviewLimitPrompt()
       }
@@ -1075,11 +1086,11 @@ export default function JobsPage() {
   const toggleSaveJob = async (jobId: string, job?: Job) => {
     const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('haigoo_auth_token') || '' : '')
     if (!isAuthenticated || !authToken) {
-      handleRestrictedAction('收藏职位')
+      handleRestrictedAction('收藏职位', 'save jobs')
       return
     }
     if (isEmailVerificationRequired) {
-      handleRestrictedAction('收藏职位')
+      handleRestrictedAction('收藏职位', 'save jobs')
       return
     }
     const isSaved = savedJobs.has(jobId)
@@ -1093,7 +1104,7 @@ export default function JobsPage() {
 
       if (!resp.ok) {
         const data = await resp.json().catch(() => ({}))
-        throw new Error(data.error || '收藏接口失败')
+        throw new Error(data.error || text('收藏接口失败', 'Could not update the saved job.'))
       }
 
       const r = await fetch('/api/user-profile?action=favorites', { headers: { Authorization: `Bearer ${authToken}` } })
@@ -1101,12 +1112,12 @@ export default function JobsPage() {
         const d = await r.json()
         const ids: string[] = (d?.favorites || []).map((f: any) => f.id)
         setSavedJobs(new Set(ids))
-        showSuccess(isSaved ? '已取消收藏' : '收藏成功')
+        showSuccess(isSaved ? text('已取消收藏', 'Removed from saved jobs') : text('收藏成功', 'Job saved'))
       }
     } catch (e) {
       setSavedJobs(prev => { const s = new Set(prev); isSaved ? s.add(jobId) : s.delete(jobId); return s })
       console.warn('收藏操作失败', e)
-      showError('收藏失败', e instanceof Error ? e.message : '网络或服务不可用')
+      showError(text('收藏失败', 'Could not save job'), e instanceof Error ? e.message : text('网络或服务不可用', 'The network or service is unavailable.'))
     }
   }
 
@@ -1241,7 +1252,8 @@ export default function JobsPage() {
 
   const handleListModeChange = (mode: 'jobs' | 'favorites' | 'applications') => {
     if (mode !== 'jobs' && !hasVerifiedJobAccess) {
-      handleRestrictedAction(mode === 'favorites' ? '查看收藏职位' : '查看申请记录')
+      if (mode === 'favorites') handleRestrictedAction('查看收藏职位', 'view saved jobs')
+      else handleRestrictedAction('查看申请记录', 'view application history')
       return false
     }
     setListMode(mode)
@@ -1338,7 +1350,7 @@ export default function JobsPage() {
     <div
         className="relative flex min-h-screen flex-col overflow-x-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f8fbfd_52%,#fffefb_100%)] pt-20 lg:h-full lg:overflow-hidden"
         role="main"
-        aria-label="职位搜索页面"
+        aria-label={text('职位搜索页面', 'Remote job search')}
       >
         <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
           <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_18%_12%,rgba(255,239,198,0.5),transparent_32%),radial-gradient(circle_at_78%_6%,rgba(217,235,252,0.72),transparent_30%),linear-gradient(180deg,rgba(255,253,248,0.96),rgba(255,253,248,0))]" />
@@ -1430,12 +1442,12 @@ export default function JobsPage() {
                 <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-end items-center text-xs text-slate-500 font-medium">
                   <span className="flex items-center gap-1 text-[#6f63f6]">
                     <Zap className="w-3 h-3 fill-[#6f63f6]" />
-                    已过滤精选企业
+                    {text('已过滤精选企业', 'Featured companies only')}
                   </span>
                 </div>
               )}
               {jobsRefreshing && listMode === 'jobs' && (
-                <div className="h-0.5 overflow-hidden bg-slate-100" aria-label="正在更新职位列表">
+                <div className="h-0.5 overflow-hidden bg-slate-100" aria-label={text('正在更新职位列表', 'Updating job list')}>
                   <div className="h-full w-1/2 animate-[pulse_1.2s_ease-in-out_infinite] bg-[#8b7cff]" />
                 </div>
               )}
@@ -1465,17 +1477,17 @@ export default function JobsPage() {
                           <Search className="h-6 w-6 text-[#6251f5]" />
                         </div>
                         <p className="mb-1 font-medium text-slate-900">
-                          {isEmailVerificationRequired ? '验证邮箱后搜索岗位' : '登录后搜索岗位'}
+                          {isEmailVerificationRequired ? text('验证邮箱后搜索岗位', 'Verify your email to search jobs') : text('登录后搜索岗位', 'Log in to search jobs')}
                         </p>
                         <p className="mb-4 max-w-[240px] text-xs text-slate-500">
-                          {isEmailVerificationRequired ? '完成邮箱验证后即可继续当前搜索。' : '登录后即可继续当前搜索并查看岗位结果。'}
+                          {isEmailVerificationRequired ? text('完成邮箱验证后即可继续当前搜索。', 'Verify your email to continue this search.') : text('登录后即可继续当前搜索并查看岗位结果。', 'Log in to continue your search and view results.')}
                         </p>
                         <button
                           type="button"
-                          onClick={() => handleRestrictedAction('搜索岗位')}
+                          onClick={() => handleRestrictedAction('搜索岗位', 'search jobs')}
                           className="mb-8 inline-flex h-11 items-center justify-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm transition-colors hover:bg-[#5142df]"
                         >
-                          {isEmailVerificationRequired ? '去验证邮箱' : '去登录'}
+                          {isEmailVerificationRequired ? text('去验证邮箱', 'Verify email') : text('去登录', 'Log in')}
                         </button>
                       </>
                     ) : jobsLoadError && listMode === 'jobs' ? (
@@ -1483,26 +1495,26 @@ export default function JobsPage() {
                         <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mb-3">
                           <Search className="w-6 h-6 text-rose-300" />
                         </div>
-                        <p className="text-slate-900 font-medium mb-1">职位列表加载失败</p>
-                        <p className="text-slate-500 text-xs mb-4 max-w-[240px]">网络或数据服务暂时不可用，请稍后重试。</p>
-                        <button onClick={() => loadJobsWithFilters(1, false)} className="text-[#6f63f6] text-sm hover:underline mb-8">重新加载</button>
+                        <p className="text-slate-900 font-medium mb-1">{text('职位列表加载失败', 'Could not load jobs')}</p>
+                        <p className="text-slate-500 text-xs mb-4 max-w-[240px]">{text('网络或数据服务暂时不可用，请稍后重试。', 'The service is temporarily unavailable. Please try again shortly.')}</p>
+                        <button onClick={() => loadJobsWithFilters(1, false)} className="text-[#6f63f6] text-sm hover:underline mb-8">{text('重新加载', 'Try again')}</button>
                       </>
                     ) : filters.aiRecommended ? (
                       <>
                         <div className="w-12 h-12 bg-[#f6f3ff] rounded-full flex items-center justify-center mb-3">
                           <Sparkles className="w-6 h-6 text-[#8b7cff]" />
                         </div>
-                        <p className="text-slate-900 font-medium mb-1">当前条件下暂未发现 AI 强推荐的职位</p>
-                        <p className="text-slate-500 text-xs mb-4 max-w-[240px]">为了保证内推质量，AI 只会推荐与你高度匹配的优质机会。建议稍微放宽筛选条件，或稍后再来。</p>
-                        <button onClick={() => setFilters((prev: any) => ({ ...prev, aiRecommended: false }))} className="text-[#6f63f6] text-sm font-medium hover:underline mb-8 bg-[#f6f3ff] px-4 py-2 rounded-lg">返回普通列表</button>
+                        <p className="text-slate-900 font-medium mb-1">{text('当前条件下暂未发现 AI 强推荐的职位', 'No strong AI matches under these filters')}</p>
+                        <p className="text-slate-500 text-xs mb-4 max-w-[240px]">{text('为了保证内推质量，AI 只会推荐与你高度匹配的优质机会。建议稍微放宽筛选条件，或稍后再来。', 'AI only highlights high-confidence matches. Try broadening your filters or check again later.')}</p>
+                        <button onClick={() => setFilters((prev: any) => ({ ...prev, aiRecommended: false }))} className="text-[#6f63f6] text-sm font-medium hover:underline mb-8 bg-[#f6f3ff] px-4 py-2 rounded-lg">{text('返回普通列表', 'Back to all jobs')}</button>
                       </>
                     ) : (
                       <>
                         <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                           <Search className="w-6 h-6 text-slate-300" />
                         </div>
-                        <p className="text-slate-900 font-medium mb-1">未找到相关职位</p>
-                        <button onClick={clearAllFilters} className="text-[#6f63f6] text-sm hover:underline mb-8">清除筛选</button>
+                        <p className="text-slate-900 font-medium mb-1">{text('未找到相关职位', 'No matching jobs found')}</p>
+                        <button onClick={clearAllFilters} className="text-[#6f63f6] text-sm hover:underline mb-8">{text('清除筛选', 'Clear filters')}</button>
                       </>
                     )}
 
@@ -1510,14 +1522,14 @@ export default function JobsPage() {
                     <div className="w-full max-w-sm rounded-xl border border-[#dceadf] bg-[linear-gradient(120deg,#f3fbf6_0%,#ffffff_58%,#fff9ef_100%)] p-4 flex flex-col items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Sparkles className="w-5 h-5 text-[#6f63f6]" />
-                        <span className="font-bold text-slate-900 text-sm">获取每日精选岗位推荐</span>
+                        <span className="font-bold text-slate-900 text-sm">{text('获取每日精选岗位推荐', 'Get daily curated job picks')}</span>
                       </div>
-                      <p className="text-xs text-slate-500 text-center">加入微信群，获取更及时的精选岗位推荐，并与同行交流经验。</p>
+                      <p className="text-xs text-slate-500 text-center">{text('加入微信群，获取更及时的精选岗位推荐，并与同行交流经验。', 'Join our community for curated job updates and conversations with other remote professionals.')}</p>
                       <button
                         onClick={openCommunityPage}
                         className="px-6 py-2 bg-white text-[#3f7f67] text-xs font-bold rounded-lg border border-emerald-100 shadow-sm hover:bg-emerald-50 transition-colors w-full tracking-wide"
                       >
-                        岗位订阅
+                        {text('岗位订阅', 'Job updates')}
                       </button>
                     </div>
                   </div>
@@ -1581,15 +1593,15 @@ export default function JobsPage() {
                             <Sparkles className="w-5 h-5" />
                           </div>
                           <div className="text-center sm:text-left">
-                            <h3 className="font-bold text-slate-900 text-sm">没找到心仪的职位？</h3>
-                            <p className="text-xs text-slate-500 mt-0.5">加入微信群，获取更及时的精选岗位推荐，并与同行交流经验</p>
+                            <h3 className="font-bold text-slate-900 text-sm">{text('没找到心仪的职位？', 'Still looking for the right role?')}</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">{text('加入微信群，获取更及时的精选岗位推荐，并与同行交流经验', 'Join our community for curated job updates and peer support.')}</p>
                           </div>
                         </div>
                         <button
                           onClick={openCommunityPage}
                           className="px-4 py-2 bg-white text-[#3f7f67] text-xs font-bold rounded-lg border border-emerald-100 shadow-sm hover:bg-emerald-50 transition-colors whitespace-nowrap"
                         >
-                          岗位订阅
+                          {text('岗位订阅', 'Job updates')}
                         </button>
                       </div>
                     )}
@@ -1599,14 +1611,14 @@ export default function JobsPage() {
                       {loadingMore ? (
                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
                           <div className="w-4 h-4 border-2 border-[#6f63f6] border-t-transparent rounded-full animate-spin"></div>
-                          加载中...
+                          {text('加载中...', 'Loading...')}
                         </div>
                       ) : jobs.length < totalJobs ? (
                         <button onClick={() => loadMoreJobs('button')} className="inline-flex min-h-11 items-center justify-center rounded-full px-4 text-xs font-bold text-[#6f63f6] hover:bg-[#f3f0ff]">
-                          加载更多
+                          {text('加载更多', 'Load more')}
                         </button>
                       ) : (
-                        <span className="text-xs text-slate-400">已加载全部</span>
+                        <span className="text-xs text-slate-400">{text('已加载全部', 'All jobs loaded')}</span>
                       )}
                     </div>}
                   </div>
@@ -1620,7 +1632,7 @@ export default function JobsPage() {
                 <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
                   <Suspense fallback={
                     <div className="flex h-full min-h-[520px] items-center justify-center text-sm font-semibold text-slate-400">
-                      岗位详情加载中...
+                      {text('岗位详情加载中...', 'Loading job details...')}
                     </div>
                   }>
                     <JobDetailPanel
@@ -1647,8 +1659,8 @@ export default function JobsPage() {
                   <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-100 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)]">
                     <Briefcase className="w-10 h-10 text-slate-300" />
                   </div>
-                  <p className="text-lg font-semibold text-slate-600">选择一个职位查看详情</p>
-                  <p className="mt-2 max-w-[260px] text-center text-sm text-slate-400">左侧列表适合快速筛选，右侧详情用于集中判断与申请。</p>
+                  <p className="text-lg font-semibold text-slate-600">{text('选择一个职位查看详情', 'Select a job to view details')}</p>
+                  <p className="mt-2 max-w-[260px] text-center text-sm text-slate-400">{text('左侧列表适合快速筛选，右侧详情用于集中判断与申请。', 'Filter roles on the left, then review details and apply on the right.')}</p>
                   </div>
                 </div>
               )}
@@ -1660,7 +1672,7 @@ export default function JobsPage() {
         {isJobDetailOpen && selectedJob && (
           <Suspense fallback={
             <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-900/40 p-6 text-sm font-semibold text-white">
-              岗位详情加载中...
+              {text('岗位详情加载中...', 'Loading job details...')}
             </div>
           }>
             <JobDetailModal
@@ -1703,23 +1715,23 @@ export default function JobsPage() {
                     <Sparkles className="w-7 h-7 text-emerald-500" />
                   </div>
                   <h3 className="text-[22px] font-bold tracking-tight text-slate-900 mb-2">
-                    岗位订阅
+                    {text('岗位订阅', 'Job updates')}
                   </h3>
                   <p className="text-[13px] leading-relaxed text-slate-500 mb-6 px-1">
-                    加入企业微信群，获得更及时的精选岗位推荐，并与同行交流经验。
+                    {text('加入企业微信群，获得更及时的精选岗位推荐，并与同行交流经验。', 'Join our community for timely curated job recommendations and conversations with remote professionals.')}
                   </p>
                   
                   <div className="relative mx-auto max-w-[200px] bg-white p-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 mb-6 group">
                     <img
                       src="/Wechat_group.webp"
-                      alt="微信群二维码"
+                      alt={text('微信群二维码', 'Community QR code')}
                       className="w-full h-auto rounded-xl object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                   </div>
                   
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-700 text-xs font-medium">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                    使用微信或企业微信扫码加入
+                    {text('使用微信或企业微信扫码加入', 'Scan with WeChat or WeCom to join')}
                   </div>
                 </div>
               </div>

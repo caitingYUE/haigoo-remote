@@ -27,12 +27,12 @@ import neonHelper from '../server-utils/dal/neon-helper.js'
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
 import { subscriptionsService } from '../lib/services/subscriptions-service.js'
 import { isMembershipActive } from '../lib/shared/membership.js'
+import { MAX_SUBSCRIPTION_TOPICS } from '../lib/shared/subscription-limits.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CONFIGURED = !!GOOGLE_CLIENT_ID
 const googleClient = GOOGLE_CONFIGURED ? new OAuth2Client(GOOGLE_CLIENT_ID) : null
-const MAX_SUBSCRIPTION_TOPICS = 3
 const LEGACY_SUBSCRIPTION_TOPIC_MAP = {
   'full-stack': '全栈开发',
   frontend: '前端开发',
@@ -67,7 +67,7 @@ function normalizeSubscriptionTopics(input, topic) {
     .map(item => String(item || '').trim())
     .map(item => LEGACY_SUBSCRIPTION_TOPIC_MAP[item] || item)
     .filter(Boolean)
-  )].slice(0, MAX_SUBSCRIPTION_TOPICS)
+  )]
 }
 
 function normalizeSubscriptionCustomTopics(input, customTopic) {
@@ -698,7 +698,7 @@ async function handleUpdateSubscription(req, res) {
         return res.status(400).json({ success: false, error: '请至少选择一个岗位方向' })
       }
       if (countStandardSubscriptionTopics(normalizedTopics) + normalizedCustomTopics.length > MAX_SUBSCRIPTION_TOPICS) {
-        return res.status(400).json({ success: false, error: `最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向` })
+        return res.status(400).json({ success: false, error: '已触达订阅上限，无法继续添加' })
       }
       nextTopic = [...normalizedTopics, ...normalizedCustomTopics].filter(Boolean).join(',')
       nextPreferences = {
@@ -790,14 +790,13 @@ async function handleSubscribe(req, res) {
       return res.status(400).json({ success: false, error: '请至少选择一个岗位方向' })
     }
     if (countStandardSubscriptionTopics(topics) + customTopics.length > MAX_SUBSCRIPTION_TOPICS) {
-      return res.status(400).json({ success: false, error: `最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向` })
+      return res.status(400).json({ success: false, error: '已触达订阅上限，无法继续添加' })
     }
 
     const subscription = await subscriptionsService.upsertForUser(user, {
       topics,
       customTopic: customTopics[0] || '',
-      customTopics,
-      status: 'active'
+      customTopics
     })
 
     return res.status(200).json({
@@ -807,6 +806,9 @@ async function handleSubscribe(req, res) {
     })
   } catch (error) {
     console.error('[auth] Subscribe error:', error)
+    if (error?.code === 'SUBSCRIPTION_TOPIC_LIMIT') {
+      return res.status(400).json({ success: false, error: '已触达订阅上限，无法继续添加' })
+    }
     return res.status(500).json({ success: false, error: '服务器错误' })
   }
 }

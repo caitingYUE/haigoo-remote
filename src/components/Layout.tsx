@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import Header from './Header'
 import Footer from './Footer'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 
 const LazyHappinessCard = lazy(() => import('./Christmas/HappinessCard').then((module) => ({ default: module.HappinessCard })))
 
@@ -21,6 +22,7 @@ const shouldShowSiteUpgradeNotice = () => {
 export default function Layout({ children }: LayoutProps) {
   const { pathname } = useLocation()
   const { isAuthenticated } = useAuth()
+  const { isEnglish, text } = useLanguage()
   const [showHappinessCard, setShowHappinessCard] = useState(false)
   const [showUpgradeNotice, setShowUpgradeNotice] = useState(shouldShowSiteUpgradeNotice)
   const [isDesktopViewport, setIsDesktopViewport] = useState(false)
@@ -37,6 +39,17 @@ export default function Layout({ children }: LayoutProps) {
   const hideFooter = isHome || pathname.startsWith('/resume') || isJobsPage || isProfile || isAbout || isBundle || isCorporateEnglish
   const showFooterMembershipCta = !(isCompanies || isBundle || (!isAuthenticated && isJobDetailPage))
   const lockViewport = isJobsPage && isDesktopViewport
+
+  useEffect(() => {
+    const pageName = isJobsPage
+      ? text('远程工作', 'Remote Jobs')
+      : isCompanies
+        ? text('精选企业', 'Featured Companies')
+        : isCorporateEnglish
+          ? text('职业成长', 'Career Growth')
+          : text('全球远程工作平台', 'Global Remote Work')
+    document.title = `${pageName} | Haigoo Remote`
+  }, [isEnglish, isJobsPage, isCompanies, isCorporateEnglish, text])
 
   useEffect(() => {
     const syncViewport = () => {
@@ -76,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
       {showUpgradeNotice && (
         <div className="fixed inset-x-0 top-0 z-[70] bg-slate-900/92 text-white backdrop-blur-md">
           <div className="mx-auto flex h-10 max-w-7xl items-center justify-center px-4 text-center text-sm font-medium">
-            网站正在升级更新中，预计 10 分钟内完成，可能有轻微功能或数据抖动。
+            {text('网站正在升级更新中，预计 10 分钟内完成，可能有轻微功能或数据抖动。', 'We are updating the site. Service may be briefly unstable for about 10 minutes.')}
           </div>
         </div>
       )}

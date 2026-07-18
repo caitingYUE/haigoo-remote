@@ -53,7 +53,15 @@ export function NotificationProvider({ children }: NotificationProviderProps) {
       duration: notification.duration ?? 5000
     }
 
-    setNotifications(prev => [...prev, newNotification])
+    setNotifications(prev => {
+      const isDuplicate = prev.some(item => (
+        item.type === newNotification.type
+        && item.title === newNotification.title
+        && item.message === newNotification.message
+      ))
+
+      return isDuplicate ? prev : [...prev, newNotification]
+    })
 
     if (newNotification.duration && newNotification.duration > 0) {
       setTimeout(() => {
@@ -131,11 +139,16 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
   }
 
   return (
-    <div className={`
+    <div
+      role={type === 'error' || type === 'warning' ? 'alert' : 'status'}
+      aria-live={type === 'error' || type === 'warning' ? 'assertive' : 'polite'}
+      aria-atomic="true"
+      className={`
       ${getBackgroundColor()}
       border rounded-lg p-4 shadow-lg animate-slide-in-right
       transform transition-all duration-300 sm:hover:scale-105
-    `}>
+    `}
+    >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
           {getIcon()}
@@ -162,6 +175,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
 
         <button
           onClick={onClose}
+          aria-label="Close notification"
           className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
         >
           <X className="w-4 h-4" />

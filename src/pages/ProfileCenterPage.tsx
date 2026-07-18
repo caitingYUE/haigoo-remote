@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Users, Building2, Quote, Star, Globe2, Loader2, Calendar, Volume2, BookOpen, PlayCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { trackingService } from '../services/tracking-service'
 import { Job } from '../types'
 import JobCardNew from '../components/JobCardNew'
@@ -432,6 +433,102 @@ const CLUB_MEMBERSHIP_FAQS = [
   }
 ]
 
+const CLUB_COPY_EN: Record<string, string> = {
+  '工具服务': 'Self-service tools',
+  '推荐｜适合 HR / 品牌 / 市场 / 运营': 'Recommended · For HR, brand, marketing & operations',
+  '长期陪伴': 'Long-term support',
+  '¥99 / 月': '¥99 / month',
+  '¥499 / 半年': '¥499 / 6 months',
+  '¥998 / 年': '¥998 / year',
+  '适合远程入门或已经有明确目标的用户，通过网站上的岗位、内容和 AI 工具自主推进申请。': 'For focused job seekers who prefer self-service tools.',
+  '适合正在认真探索远程工作，希望获得长期岗位资源和求职支持的用户。': 'For an active search with ongoing resources and support.',
+  '适合希望长期探索远程职业机会，并沉淀个人职业资源的用户。': 'For long-term career growth and professional collaboration.',
+  '了解 Club Starter': 'Explore Club Starter',
+  '了解 Club Member': 'Explore Club Member',
+  '了解 Club Partner': 'Explore Club Partner',
+  '全部精选岗位资源': 'Curated remote jobs',
+  '全部申请路径和联系人信息': 'Application links & contacts',
+  '完整远程职业成长权益': 'Full career learning library',
+  'AI 简历优化、岗位订阅等工具': 'AI resume tools & job alerts',
+  '纯网站工具服务，不含语音咨询': 'Self-service tools; no consultation',
+  '30-60 分钟语音 1V1 咨询': '30–60 min 1:1 consultation',
+  'Club Member 全部权益': 'All Club Member benefits',
+  '1 次远程求职规划': 'One career planning session',
+  '优先参与会员闭门交流': 'Priority access to private events',
+  '可申请成为共建伙伴': 'Apply as a community partner',
+  '企业岗位发布与品牌传播支持额度（1季度1次）': 'Quarterly employer-brand support',
+  '长期岗位资源': 'Curated jobs',
+  '持续筛选适合中国用户申请的机会': 'Remote roles selected for China-based talent',
+  '申请路径支持': 'Application support',
+  '联系人资源、申请入口与工具支持': 'Contacts, direct links, and practical tools',
+  '远程职业成长': 'Career growth',
+  '远程求职准备、英文面试、远程会议等': 'Interviews, meetings, and remote-work skills',
+  '企业文化理解': 'Company insight',
+  '从CEO访谈里了解远程企业的使命、文化和商业模式': 'Learn culture and business through CEO interviews',
+  '社群陪伴支持': 'Community support',
+  '资料更新、交流和远程求职咨询': 'Fresh resources, peers, and job-search guidance',
+  '浏览/搜索/筛选': 'Browse / search / filter',
+  '20次直申/3次内推': '20 direct applications / 3 referrals',
+  '有限体验': 'Limited access',
+  '开放': 'Included',
+  '可申请': 'Eligible',
+  '30-60分钟': '30–60 min',
+  '1季度1次': 'Once per quarter',
+  '语音 1V1 远程咨询': '1:1 remote voice consultation',
+  '会员闭门交流优先参与': 'Priority access to private member events',
+  '企业岗位发布与品牌传播支持额度': 'Employer job-posting and brand support credit',
+  '为什么需要添加顾问才能开通？': 'Why do I need to contact an advisor to join?',
+  'Haigoo Remote Club 以咨询与社群服务为主，网站是配套工具。顾问会先了解你的阶段、目标与适配度，确认适合后再开通，避免盲目加入，对你和俱乐部都更负责。': 'An advisor checks your goals and recommends the right level of support before activation.',
+  '这几项权益核心差别是什么？': 'What are the key differences between the plans?',
+  'Club Starter 是工具型网站服务，适合远程入门、已经有明确目标、希望自己高效查资料和投递的人；Club Member 是社群陪伴型服务，适合在职准备或方向还不够清晰的人，可结合 1V1 咨询梳理准备路径；Club Partner 更适合 HR、品牌、商务或市场等有资源协作需求的人，Haigoo 会作为你的资源辅助与职业背书，帮助你放大工作优势。': 'Starter is self-service. Member adds ongoing support and a 1:1 session. Partner adds collaboration and professional-network benefits.',
+  '加入会员后发现不适合自己怎么办？': 'What if the membership is not right for me?',
+  '如果投递一段时间效果不理想，建议先找顾问复盘方向、简历和投递策略；再次尝试仍无改善，可按剩余有效时间申请退款。Haigoo 更希望长期陪伴并真正帮到你，而不是做一次性服务。': 'Review your direction and application strategy with an advisor first. If it is still not a fit, refunds may be requested for the unused period.',
+  '语音咨询可以咨询哪些内容？': 'What can I discuss in a voice consultation?',
+  '可以咨询在职如何提前准备、适合哪些远程方向、需要补哪些技能、转行路径、远程工作的五险一金、税务和沟通方式等问题。': 'Discuss career direction, skill gaps, transitions, benefits, taxes, and remote communication.',
+  '远程求职规划是什么？会包含哪些内容？': 'What is included in remote career planning?',
+  '我们会结合你的过往经历、能力优势、兴趣偏好和目标岗位，梳理适合发展的职业方向，并评估每个方向的落地性、成长性和可拓展性。报告通常包含核心定位、方向排序、适合岗位、人群/行业建议、简历优化重点、能力补充建议和阶段行动路径，帮助你判断适合往哪里走、怎么准备、下一步做什么。': 'A practical plan covering direction, target roles, resume priorities, skill gaps, and next steps.',
+  '成为共建伙伴最大的作用是什么？': 'What is the value of becoming a community partner?',
+  'Partner 可以更充分调用 Haigoo Remote Club 的网站、社媒、社群与合作资源，作为职业背书或求职优势。若有企业商务合作、岗位发布、品牌传播等需求，也会优先为 Partner 协同支持。': 'Partners receive priority access to Haigoo’s community, publishing, and collaboration resources.',
+  '可使用': 'Available',
+  '不可用': 'Unavailable',
+  '有限可用': 'Limited access',
+  '查看岗位': 'View jobs',
+  '开始学习': 'Start learning',
+  '使用工具': 'Use tools',
+  '联系顾问': 'Contact advisor',
+  '提交申请': 'Apply now',
+  '申请发布': 'Request support',
+  '查看预约': 'View appointment',
+  '预约咨询': 'Book a consultation',
+  '预约规划': 'Book planning session',
+  '已预约': 'Scheduled',
+  '未预约': 'Not scheduled',
+  '已完成': 'Completed',
+  '未申请': 'Not applied',
+  '已通过': 'Approved',
+  '未使用': 'Unused',
+  '已发布': 'Published',
+  '可参与': 'Available',
+  '远程职业成长权益': 'Remote career learning',
+  'AI简历优化、岗位订阅等工具': 'AI resume tools, job alerts, and more',
+  '闭门交流优先参与': 'Priority access to private events',
+  '会员期内可查看全部精选远程岗位资源。': 'Access every curated remote opportunity during your membership.',
+  '查看岗位申请入口、企业联系人和直达线索。': 'View application links, company contacts, and direct leads.',
+  'CEO访谈、企业文化、远程准备、英文面试等材料已开放。': 'Access CEO interviews, company culture, remote-work preparation, and English interview materials.',
+  '当前会员类型暂不包含完整远程职业成长权益。': 'Your current plan does not include full remote career learning access.',
+  '可使用 AI 简历分析/求职规划、订阅关注的岗位更新等工具。': 'Use AI resume analysis, career planning, and personalized job alerts.',
+  '会员期内包含一次 30-60 分钟远程咨询。': 'Includes one 30–60 minute remote consultation during your membership.',
+  '当前会员类型暂不包含语音咨询。': 'Your current plan does not include a voice consultation.',
+  '年度会员专属，适合制定长期求职目标和行动计划。': 'Exclusive to annual members for long-term goals and an actionable career plan.',
+  '年度会员可优先参与 Haigoo Remote Club 闭门交流。': 'Annual members receive priority access to private Haigoo Remote Club events.',
+  '年度会员在会员期内成功入职远程企业后可申请。': 'Annual members may apply after joining a remote company during their membership.',
+  '年度会员可申请岗位发布与雇主品牌传播支持，每季度 1 次免费发布/宣传。': 'Annual members may request one job-posting or employer-brand support credit per quarter.'
+}
+
+function translateClubCopy(value: string, isEnglish: boolean) {
+  return isEnglish ? (CLUB_COPY_EN[value] || value) : value
+}
+
 const DEFAULT_CLUB_ADVISOR_COPY = {
   title: '添加顾问，了解 Club 服务',
   subtitle: '添加 Haigoo 顾问后，可了解会员方案、适合人群和开通方式。',
@@ -681,6 +778,7 @@ const ResumePreviewPane = memo(function ResumePreviewPane({
 
 export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCenterPageProps = {}) {
   const { user: authUser, token, isAuthenticated, isMember, isTrialMember, logout } = useAuth()
+  const { isEnglish, text } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -3096,20 +3194,20 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     }
     ]
     const activeMemberLabel = activeMemberType === 'trial_week'
-      ? 'Trial（体验）'
+      ? text('Trial（体验）', 'Trial')
       : activeMemberType === 'starter'
-        ? 'Club Starter（月度）'
+        ? text('Club Starter（月度）', 'Club Starter (monthly)')
       : activeMemberType === 'annual'
-        ? 'Club Partner（年度）'
+        ? text('Club Partner（年度）', 'Club Partner (annual)')
       : activeMemberType === 'half_year'
-        ? 'Club Member（半年）'
+        ? text('Club Member（半年）', 'Club Member (6 months)')
       : activeMemberType === 'quarter'
         ? 'VIP'
       : activeMemberType === 'quarter_pro'
         ? 'VIP'
         : isMember
-          ? 'Club Partner（年度）'
-          : '未加入'
+          ? text('Club Partner（年度）', 'Club Partner (annual)')
+          : text('未加入', 'Not a member')
   const memberVisual = !isMember
     ? {
       shortName: 'Haigoo Club',
@@ -3237,9 +3335,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       }
   const membershipExpireDate = activeMembershipExpireAt ? new Date(activeMembershipExpireAt) : null
   const membershipExpireLabel = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
-    ? membershipExpireDate.toLocaleDateString('zh-CN')
-    : '长期有效'
-  const membershipStatusExpireLabel = isMember ? membershipExpireLabel : '顾问协助开通'
+    ? membershipExpireDate.toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')
+    : text('长期有效', 'No expiration')
+  const membershipStatusExpireLabel = isMember ? membershipExpireLabel : text('顾问协助开通', 'Contact an advisor')
   const membershipDaysRemaining = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
     ? Math.ceil((membershipExpireDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
     : null
@@ -3266,21 +3364,21 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const memberWorkspaceShellClass = 'border-[#e1e8f4] bg-white/90 shadow-[0_24px_70px_-56px_rgba(64,78,102,0.24)]'
   const memberCardIconClass = 'bg-[#f4f1ff] text-[#6f63f6]'
   const memberIdentityLabel = activeMemberType === 'trial_week'
-    ? 'Trial（体验）'
+    ? text('Trial（体验）', 'Trial')
     : activeMemberType === 'starter'
-      ? 'Club Starter（月度）'
+      ? text('Club Starter（月度）', 'Club Starter (monthly)')
     : activeMemberType === 'quarter'
       ? 'VIP'
     : activeMemberType === 'half_year'
-        ? 'Club Member（半年）'
+        ? text('Club Member（半年）', 'Club Member (6 months)')
         : activeMemberType === 'annual'
-          ? 'Club Partner（年度）'
+          ? text('Club Partner（年度）', 'Club Partner (annual)')
           : activeMemberType === 'quarter_pro'
             ? 'VIP'
             : activeMemberType === 'year'
-              ? 'Club Partner（年度）'
-              : '未加入'
-  const membershipStatusLabel = isMember ? '生效中' : '未加入'
+              ? text('Club Partner（年度）', 'Club Partner (annual)')
+              : text('未加入', 'Not a member')
+  const membershipStatusLabel = isMember ? text('生效中', 'Active') : text('未加入', 'Not a member')
   const serviceEntitlements = authUser?.profile?.memberServiceEntitlements || {}
   const getServiceEntitlement = (key: string) => serviceEntitlements[key] || {}
   const serviceStatusLabels: Record<string, string> = {
@@ -3307,7 +3405,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     if (!value) return ''
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return ''
-    return new Intl.DateTimeFormat('zh-CN', {
+    return new Intl.DateTimeFormat(isEnglish ? 'en-US' : 'zh-CN', {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
@@ -3316,9 +3414,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }
   const getServiceMeta = (key: string) => {
     const record = getServiceEntitlement(key)
-    if (record.appointmentAt) return `预约时间：${formatServiceTime(record.appointmentAt)}`
-    if (record.completedAt) return `完成时间：${formatServiceTime(record.completedAt)}`
-    if (record.expiredAt) return `失效时间：${formatServiceTime(record.expiredAt)}`
+    if (record.appointmentAt) return `${text('预约时间：', 'Scheduled: ')}${formatServiceTime(record.appointmentAt)}`
+    if (record.completedAt) return `${text('完成时间：', 'Completed: ')}${formatServiceTime(record.completedAt)}`
+    if (record.expiredAt) return `${text('失效时间：', 'Expired: ')}${formatServiceTime(record.expiredAt)}`
     return record.note || ''
   }
   const consultationStatus = getServiceStatusLabel('voice_consultation_30m', '未预约')
@@ -3336,27 +3434,27 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     return '预约咨询'
   }
   const memberHeroTitle = activeMemberType === 'half_year'
-    ? 'Member 会员权益已开启'
+    ? text('Member 会员权益已开启', 'Your Club Member benefits are active')
     : isStarterClubMember
-      ? 'Starter 网站工具权益已开启'
+      ? text('Starter 网站工具权益已开启', 'Your Club Starter tools are active')
     : isAnnualClubMember
-      ? 'Partner 会员权益已开启'
+      ? text('Partner 会员权益已开启', 'Your Club Partner benefits are active')
       : isQuarterMember
-        ? '季度会员权益已开启'
+        ? text('季度会员权益已开启', 'Your quarterly membership is active')
         : activeMemberType === 'trial_week'
-          ? 'Trial 体验权益已开启'
-          : '会员权益已开启'
+          ? text('Trial 体验权益已开启', 'Your trial benefits are active')
+          : text('会员权益已开启', 'Your membership benefits are active')
   const memberHeroSubtitle = activeMemberType === 'half_year'
-    ? '全部岗位申请路径、完整远程职业成长权益和语音咨询等权限已生效。'
+    ? text('全部岗位申请路径、完整远程职业成长权益和语音咨询等权限已生效。', 'All application paths, remote career learning, and your voice consultation are now available.')
     : isStarterClubMember
-      ? '全部岗位申请路径、完整远程职业成长权益和 AI 辅助工具已生效。'
+      ? text('全部岗位申请路径、完整远程职业成长权益和 AI 辅助工具已生效。', 'All application paths, remote career learning, and AI tools are now available.')
     : isAnnualClubMember
-      ? '全部岗位申请路径、完整远程职业成长权益、语音咨询、年度规划、共建申请等权限已生效。'
+      ? text('全部岗位申请路径、完整远程职业成长权益、语音咨询、年度规划、共建申请等权限已生效。', 'All application paths, learning content, consultation, annual planning, and partner benefits are now available.')
       : isQuarterMember
-        ? '岗位申请、企业资料和职业成长权益已开放，原季度权益在有效期内继续可用。'
+        ? text('岗位申请、企业资料和职业成长权益已开放，原季度权益在有效期内继续可用。', 'Job applications, company insights, and career learning remain available through your current term.')
         : isTrialWeekMember
-          ? '短期体验权益已开放，你可以集中使用岗位、申请路径和简历优化能力。'
-          : memberVisual.description
+          ? text('短期体验权益已开放，你可以集中使用岗位、申请路径和简历优化能力。', 'Your trial includes job access, application paths, and resume tools for a focused application sprint.')
+          : translateClubCopy(memberVisual.description, isEnglish)
   const memberBenefitCards = [
     {
       key: 'job_resources',
@@ -3779,22 +3877,25 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 {memberHeroTitle}
               </h1>
             ) : (
-              <h1 className="max-w-[800px]" aria-label="成为远程专家，工作手拿把掐">
-                <span className="sr-only">成为远程专家，工作手拿把掐</span>
-                <img
-                  src="/pic_lists/Handwriting/club-expert-title.webp"
-                  alt=""
-                  width={1000}
-                  height={98}
-                  loading="eager"
-                  decoding="async"
-                  className="block h-auto w-full max-w-[720px] select-none"
-                  draggable={false}
-                />
+              <h1 className="max-w-[800px]" aria-label={text('成为远程专家，工作手拿把掐', 'Build a remote career that works for you')}>
+                {isEnglish ? (
+                  <span className="block text-[30px] font-black leading-[1.12] text-slate-950 sm:text-[42px] xl:text-[50px]">Build a remote career that works for you.</span>
+                ) : (
+                  <img
+                    src="/pic_lists/Handwriting/club-expert-title.webp"
+                    alt=""
+                    width={1000}
+                    height={98}
+                    loading="eager"
+                    decoding="async"
+                    className="block h-auto w-full max-w-[720px] select-none"
+                    draggable={false}
+                  />
+                )}
               </h1>
             )}
             <p className="mt-4 max-w-[680px] text-sm leading-6 text-slate-600 sm:mt-5 sm:text-base sm:leading-7">
-              {isMember ? memberHeroSubtitle : '跟着 Haigoo 一起申请岗位、了解企业、提升口语，一步步升级全球通用的远程职业能力，小白也能变专家。'}
+              {isMember ? memberHeroSubtitle : text('跟着 Haigoo 一起申请岗位、了解企业、提升口语，一步步升级全球通用的远程职业能力，小白也能变专家。', 'Apply with confidence, understand remote-first companies, and build the communication skills to grow a global remote career.')}
             </p>
           </div>
 
@@ -3805,15 +3906,15 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <Crown className="h-6 w-6" />
               </div>
               <div className="min-w-0">
-                  <div className="text-lg font-black text-slate-950">{isMember ? activeMemberLabel : '未加入'}</div>
-                <div className="mt-0.5 text-xs font-bold text-slate-400">当前会员状态</div>
+                  <div className="text-lg font-black text-slate-950">{isMember ? activeMemberLabel : text('未加入', 'Not a member')}</div>
+                <div className="mt-0.5 text-xs font-bold text-slate-400">{text('当前会员状态', 'Membership status')}</div>
               </div>
             </div>
             <div className="relative mt-5 rounded-[20px] border border-[#ebe7ff] bg-white/78 px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.85)]">
-              <div className="text-[11px] font-black tracking-[0.14em] text-slate-400">{isMember ? '有效期至' : '开通方式'}</div>
+              <div className="text-[11px] font-black tracking-[0.14em] text-slate-400">{isMember ? text('有效期至', 'Valid until') : text('开通方式', 'How to join')}</div>
               <div className="mt-1 text-2xl font-black text-slate-900">{membershipStatusExpireLabel}</div>
               {membershipDaysRemaining !== null ? (
-                <div className="mt-1 text-xs font-bold text-[#6f63f6]">剩余 {Math.max(membershipDaysRemaining, 0)} 天</div>
+                <div className="mt-1 text-xs font-bold text-[#6f63f6]">{text(`剩余 ${Math.max(membershipDaysRemaining, 0)} 天`, `${Math.max(membershipDaysRemaining, 0)} days remaining`)}</div>
               ) : null}
             </div>
             <div className={`mt-4 grid gap-2 ${isMember ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
@@ -3822,7 +3923,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 onClick={openMembershipPlanChooser}
                 className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${memberPrimaryButtonClass}`}
               >
-                  {isMember ? '查看我的权益' : '添加顾问了解'}
+                  {isMember ? text('查看我的权益', 'View my benefits') : text('添加顾问了解', 'Contact an advisor')}
                 <ArrowRight className="h-4 w-4" />
               </button>
               {isMember ? (
@@ -3831,7 +3932,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   onClick={() => setShowCertificateModal(true)}
                   className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#e5e0ff] bg-white px-4 py-2.5 text-sm font-black text-[#6f63f6] transition-all hover:-translate-y-0.5"
                 >
-                  证书
+                  {text('证书', 'Certificate')}
                   <Download className="h-4 w-4" />
                 </button>
               ) : null}
@@ -3850,8 +3951,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <ItemIcon className="h-6 w-6 transition-transform group-hover:scale-110" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-black text-slate-900 sm:text-base">{item.title}</div>
-                  <div className="mt-1 text-xs font-semibold leading-5 text-slate-500 sm:text-sm">{item.desc}</div>
+                  <div className="text-sm font-black text-slate-900 sm:text-base">{translateClubCopy(item.title, isEnglish)}</div>
+                  <div className="mt-1 text-xs font-semibold leading-5 text-slate-500 sm:text-sm">{translateClubCopy(item.desc, isEnglish)}</div>
                 </div>
               </div>
             )
@@ -3863,7 +3964,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           <section ref={memberBenefitsRef} id="member-benefits" className={`relative mb-5 scroll-mt-24 overflow-hidden rounded-[28px] border ${memberWorkspaceShellClass} p-5 sm:p-6`}>
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 className="text-2xl font-black text-slate-950">我的权益工作台</h2>
+                <h2 className="text-2xl font-black text-slate-950">{text('我的权益工作台', 'My benefits dashboard')}</h2>
               </div>
             </div>
             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -3877,17 +3978,17 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${memberCardIconClass}`}>
                         <ItemIcon className="h-5 w-5" />
                       </div>
-                      <span className={`relative rounded-full border px-3 py-1 text-xs font-black shadow-sm ${item.status === '不可用' ? 'border-slate-200 bg-slate-50 text-slate-400' : 'border-[#e5e0ff] bg-white text-[#6f63f6]'}`}>{item.status}</span>
+                      <span className={`relative rounded-full border px-3 py-1 text-xs font-black shadow-sm ${item.status === '不可用' ? 'border-slate-200 bg-slate-50 text-slate-400' : 'border-[#e5e0ff] bg-white text-[#6f63f6]'}`}>{translateClubCopy(item.status, isEnglish)}</span>
                     </div>
-                    <div className="mt-4 text-base font-black text-slate-950">{item.title}</div>
-                    <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{item.desc}</p>
+                    <div className="mt-4 text-base font-black text-slate-950">{translateClubCopy(item.title, isEnglish)}</div>
+                    <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{translateClubCopy(item.desc, isEnglish)}</p>
                     <button
                       type="button"
                       disabled={isDisabled}
                       onClick={() => handleMemberDashboardAction(item)}
                       className={`relative mt-4 inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black transition-all ${isDisabled ? 'cursor-not-allowed bg-slate-100 text-slate-400' : `${memberPrimaryButtonClass} text-white hover:-translate-y-0.5`}`}
                     >
-                      {item.cta}
+                      {translateClubCopy(item.cta, isEnglish)}
                       {!isDisabled ? <ArrowRight className="h-4 w-4" /> : null}
                     </button>
                   </div>
@@ -3903,11 +4004,11 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <div className="overflow-hidden rounded-[22px] border border-[#ddd7ff] bg-[#fffdf8] p-4 shadow-[0_18px_52px_-44px_rgba(111,99,246,0.22)] sm:rounded-[26px] sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
-                    <div className="inline-flex rounded-full border border-[#e5e0ff] bg-white/86 px-3 py-1 text-xs font-black text-[#6f63f6]">会员方案升级提示</div>
+                    <div className="inline-flex rounded-full border border-[#e5e0ff] bg-white/86 px-3 py-1 text-xs font-black text-[#6f63f6]">{text('会员方案升级提示', 'Membership update')}</div>
                     <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">
                       {isTrialWeekMember
-                        ? '会员权益全新升级，原体验会员将不再开放。如需升级半年/年度会员可联系顾问。'
-                        : '会员权益全新升级，原季度会员将不再开放。为感谢您的支持，我们已特别赠送职业成长权益，如需升级半年/年度会员可联系顾问。'}
+                        ? text('会员权益全新升级，原体验会员将不再开放。如需升级半年/年度会员可联系顾问。', 'Our membership plans have been updated. Contact an advisor to move to a six-month or annual plan.')
+                        : text('会员权益全新升级，原季度会员将不再开放。为感谢您的支持，我们已特别赠送职业成长权益，如需升级半年/年度会员可联系顾问。', 'Our membership plans have been updated. Your career-learning access remains active; contact an advisor to upgrade.')}
                     </p>
                   </div>
                   <button
@@ -3915,7 +4016,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   onClick={() => openClubServiceAdvisor(isTrialWeekMember ? 'legacy_trial_upgrade' : 'legacy_quarter_upgrade')}
                   className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.58)] transition-all hover:-translate-y-0.5"
                 >
-                  咨询调整方案
+                  {text('咨询调整方案', 'Discuss plan options')}
                   <ArrowRight className="h-4 w-4" />
                 </button>
                 </div>
@@ -3925,7 +4026,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <section ref={memberBenefitsRef} id="member-benefits" className={`relative scroll-mt-24 overflow-hidden rounded-[28px] border ${memberWorkspaceShellClass} p-5 sm:p-6`}>
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-950">我的权益工作台</h2>
+                  <h2 className="text-2xl font-black text-slate-950">{text('我的权益工作台', 'My benefits dashboard')}</h2>
                 </div>
               </div>
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -3939,10 +4040,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         <div className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${memberCardIconClass}`}>
                           <ItemIcon className="h-5 w-5" />
                         </div>
-                        <span className={`relative rounded-full border px-3 py-1 text-xs font-black shadow-sm ${item.status === '不可用' ? 'border-slate-200 bg-slate-50 text-slate-400' : 'border-[#e5e0ff] bg-white text-[#6f63f6]'}`}>{item.status}</span>
+                        <span className={`relative rounded-full border px-3 py-1 text-xs font-black shadow-sm ${item.status === '不可用' ? 'border-slate-200 bg-slate-50 text-slate-400' : 'border-[#e5e0ff] bg-white text-[#6f63f6]'}`}>{translateClubCopy(item.status, isEnglish)}</span>
                       </div>
-                      <div className="mt-4 text-base font-black text-slate-950">{item.title}</div>
-                      <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{item.desc}</p>
+                      <div className="mt-4 text-base font-black text-slate-950">{translateClubCopy(item.title, isEnglish)}</div>
+                      <p className="mt-2 flex-1 text-sm leading-6 text-slate-500">{translateClubCopy(item.desc, isEnglish)}</p>
                     {'meta' in item && item.meta ? (
                       <div className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-bold text-slate-500 shadow-sm">{item.meta}</div>
                     ) : null}
@@ -3952,7 +4053,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         onClick={() => handleMemberDashboardAction(item)}
                         className={`relative mt-4 inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black transition-all ${isDisabled ? 'cursor-not-allowed bg-slate-100 text-slate-400' : `${memberPrimaryButtonClass} text-white hover:-translate-y-0.5`}`}
                       >
-                        {item.cta}
+                        {translateClubCopy(item.cta, isEnglish)}
                         {!isDisabled ? <ArrowRight className="h-4 w-4" /> : null}
                       </button>
                     </div>
@@ -3964,7 +4065,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <section className="relative overflow-hidden rounded-[28px] border border-[#e1e8f4] bg-white/92 p-5 shadow-[0_22px_62px_-54px_rgba(64,78,102,0.28)] sm:p-6">
               <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-950">为你推荐</h2>
+                  <h2 className="text-2xl font-black text-slate-950">{text('为你推荐', 'Recommended for you')}</h2>
                 </div>
               </div>
               {loadingMemberRecommendations ? (
@@ -3989,13 +4090,13 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               ) : (
                 <div className="flex min-h-[170px] flex-col items-center justify-center rounded-[22px] border border-dashed border-[#d8d2ff] bg-[#fbfaff] px-5 py-8 text-center">
                   <Briefcase className="h-9 w-9 text-[#6f63f6]" />
-                  <div className="mt-3 text-base font-black text-slate-950">暂时没有新的会员岗位推荐</div>
+                  <div className="mt-3 text-base font-black text-slate-950">{text('暂时没有新的会员岗位推荐', 'No new member job recommendations yet')}</div>
                   <button
                     type="button"
                     onClick={() => navigate('/jobs')}
                     className="mt-5 inline-flex items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-2.5 text-sm font-black text-white shadow-[0_14px_30px_-22px_rgba(95,99,246,0.62)] transition hover:-translate-y-0.5 hover:bg-[#5d50df]"
                   >
-                    查看全部岗位
+                    {text('查看全部岗位', 'View all jobs')}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -4006,8 +4107,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.12]" />
               <div className="relative mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-950">会员方案</h2>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">会员权益全新升级，从企业文化到英语练习到远程求职，我们陪你一起上岸。</p>
+                  <h2 className="text-2xl font-black text-slate-950">{text('会员方案', 'Membership plans')}</h2>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">{text('会员权益全新升级，从企业文化到英语练习到远程求职，我们陪你一起上岸。', 'Choose the support you need—from company insights and English practice to focused remote job-search tools.')}</p>
                 </div>
               </div>
               <div className="relative grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
@@ -4027,7 +4128,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     <div className={`absolute inset-x-0 top-0 h-1.5 ${plan.highlighted ? 'bg-[#6f63f6]' : plan.id === 'starter' ? 'bg-[#8aa4ff]' : 'bg-[#c79a55]'}`} />
                     {isCurrentPlan ? (
                       <div className="absolute right-5 top-5 z-10 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white shadow-[0_12px_28px_-18px_rgba(95,99,246,0.65)]">
-                        生效中
+                        {text('生效中', 'Active')}
                       </div>
                     ) : null}
                     <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
@@ -4035,25 +4136,25 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                         <div>
                           {plan.tag ? (
-                            <div className="mb-4 inline-flex rounded-full bg-[#f1efff] px-3 py-1 text-xs font-black text-[#6f63f6]">{plan.tag}</div>
+                            <div className="mb-4 inline-flex rounded-full bg-[#f1efff] px-3 py-1 text-xs font-black text-[#6f63f6]">{translateClubCopy(plan.tag, isEnglish)}</div>
                           ) : (
-                            <div className="mb-4 inline-flex rounded-full border border-[#eadfcf] bg-white/82 px-3 py-1 text-xs font-black text-[#9a6a2d]">长期陪伴</div>
+                            <div className="mb-4 inline-flex rounded-full border border-[#eadfcf] bg-white/82 px-3 py-1 text-xs font-black text-[#9a6a2d]">{text('长期陪伴', 'Long-term support')}</div>
                           )}
                           <h3 className="text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{plan.title}</h3>
                         </div>
                       </div>
-                      <p className="text-sm leading-6 text-slate-600 sm:min-h-[48px]">{plan.description}</p>
+                      <p className="text-sm leading-6 text-slate-600 sm:min-h-[48px]">{translateClubCopy(plan.description, isEnglish)}</p>
                       <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1">
-                        <span className="text-[34px] font-black tracking-normal text-slate-950 sm:text-4xl">{plan.price}</span>
+                        <span className="text-[34px] font-black tracking-normal text-slate-950 sm:text-4xl">{translateClubCopy(plan.price, isEnglish)}</span>
                         {plan.originalPrice ? <span className="pb-1 text-sm font-bold text-slate-400 line-through">{plan.originalPrice}</span> : null}
                       </div>
                       <div className="mt-6 flex-1 rounded-[20px] border border-white/70 bg-white/76 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                        <div className="mb-3 text-xs font-black tracking-[0.14em] text-slate-400">核心权益</div>
+                        <div className="mb-3 text-xs font-black tracking-[0.14em] text-slate-400">{text('核心权益', 'Core benefits')}</div>
                         <div className="grid content-start gap-3">
                           {plan.features.map((feature) => (
                             <div key={feature} className="flex items-start gap-3 text-sm font-semibold leading-6 text-slate-700">
                               <Check className={`mt-1 h-[18px] w-[18px] shrink-0 ${plan.highlighted || plan.id === 'starter' ? 'text-[#6f63f6]' : 'text-[#9a6a2d]'}`} strokeWidth={3} />
-                              <span>{feature}</span>
+                              <span>{translateClubCopy(feature, isEnglish)}</span>
                             </div>
                           ))}
                         </div>
@@ -4069,7 +4170,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                                 : 'bg-slate-900 shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
                         }`}
                       >
-                        {plan.cta}
+                        {translateClubCopy(plan.cta, isEnglish)}
                         <ArrowRight className="h-4 w-4" />
                       </button>
                     </div>
@@ -4082,29 +4183,29 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <section className="relative overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white/92 shadow-[0_24px_64px_-54px_rgba(64,78,102,0.24)]">
               <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef3f7] px-5 py-4">
                 <div>
-                  <h3 className="text-base font-black text-slate-950">会员权益对比</h3>
+                  <h3 className="text-base font-black text-slate-950">{text('会员权益对比', 'Compare membership benefits')}</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowFullClubComparison((value) => !value)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-[#e4dfff] bg-white px-4 py-2 text-sm font-black text-[#6f63f6] transition hover:-translate-y-0.5"
                 >
-                  {showFullClubComparison ? '展示主要项' : '展示完整项'}
+                  {showFullClubComparison ? text('展示主要项', 'Show key benefits') : text('展示完整项', 'Show all benefits')}
                   <ChevronRight className={`h-4 w-4 transition-transform ${showFullClubComparison ? '-rotate-90' : 'rotate-90'}`} />
                 </button>
               </div>
               <div className="overflow-x-auto">
                 <div className="min-w-[980px]">
                   <div className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] border-b border-[#eef3f7] bg-[#fbfdff] px-5 py-3 text-xs font-black text-slate-500">
-                    <span>服务权益</span>
-                    <span className="text-center">免费用户</span>
+                    <span>{text('服务权益', 'Benefits')}</span>
+                    <span className="text-center">{text('免费用户', 'Free')}</span>
                     <span className="text-center">Club Starter</span>
                     <span className="text-center">Club Member</span>
                     <span className="text-center">Club Partner</span>
                   </div>
                   {visibleClubComparisonRows.map((row) => (
                     <div key={row.label} className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] items-center border-b border-[#eef3f7] px-5 py-3 last:border-b-0">
-                      <div className="pr-4 text-sm font-bold leading-6 text-slate-800">{row.label}</div>
+                      <div className="pr-4 text-sm font-bold leading-6 text-slate-800">{translateClubCopy(row.label, isEnglish)}</div>
                       {(['free', 'starter', 'half_year', 'annual'] as const).map((key) => {
                         const value = row[key]
                         return (
@@ -4112,7 +4213,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                             {value ? (
                               <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f1ff] px-2.5 py-1 text-xs font-black text-[#6f63f6]">
                                 <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                                {value}
+                                {translateClubCopy(value, isEnglish)}
                               </span>
                             ) : (
                               <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-black text-slate-300">-</span>
@@ -4133,15 +4234,15 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="absolute inset-x-0 top-0 h-24 bg-white/86" />
               </div>
               <div className="relative">
-                <h2 className="max-w-4xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">年度会员价值：长期权益与共建支持</h2>
+                <h2 className="max-w-4xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{text('年度会员价值：长期权益与共建支持', 'Annual membership value: long-term benefits and collaboration')}</h2>
                 <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-                  年度会员适合希望长期沉淀远程求职资源，并在入职后继续获得共建、发布和品牌传播支持的用户。
+                  {text('年度会员适合希望长期沉淀远程求职资源，并在入职后继续获得共建、发布和品牌传播支持的用户。', 'The annual plan is for people building long-term remote-career resources who also want collaboration, job-posting, and employer-brand support after joining a company.')}
                 </p>
                 <div className="mt-6 grid gap-3 md:grid-cols-3">
                   {[
-                    { title: '可申请成为共建伙伴', desc: '会员期内成功入职远程企业后，可申请参与 Haigoo 远程人才网络共建。', icon: Users },
-                    { title: '企业招聘与传播支持', desc: '年度会员可申请岗位发布与雇主品牌传播支持，每季度1次免费发布/宣传。', icon: Briefcase },
-                    { title: '长期规划与闭门交流', desc: '获得远程求职规划支持，并优先参与会员闭门交流。', icon: ShieldCheck }
+                    { title: text('可申请成为共建伙伴', 'Apply as a community partner'), desc: text('会员期内成功入职远程企业后，可申请参与 Haigoo 远程人才网络共建。', 'After joining a remote company during your membership, you may apply to help build the Haigoo remote talent network.'), icon: Users },
+                    { title: text('企业招聘与传播支持', 'Employer hiring and brand support'), desc: text('年度会员可申请岗位发布与雇主品牌传播支持，每季度1次免费发布/宣传。', 'Annual members may request one free job post or employer-brand feature per quarter.'), icon: Briefcase },
+                    { title: text('长期规划与闭门交流', 'Long-term planning and private events'), desc: text('获得远程求职规划支持，并优先参与会员闭门交流。', 'Receive remote career planning and priority access to private member events.'), icon: ShieldCheck }
                   ].map((item) => {
                     const ItemIcon = item.icon
                     return (
@@ -4160,14 +4261,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
             <section className="relative overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white/92 p-5 shadow-[0_24px_64px_-54px_rgba(64,78,102,0.24)] sm:p-6">
               <div className="mb-4">
-                <h3 className="text-lg font-black text-slate-950">会员 QA</h3>
-                <p className="mt-1 text-sm leading-6 text-slate-500">关于开通方式、服务边界和退款规则的常见问题。</p>
+                <h3 className="text-lg font-black text-slate-950">{text('会员 QA', 'Membership FAQ')}</h3>
+                <p className="mt-1 text-sm leading-6 text-slate-500">{text('关于开通方式、服务边界和退款规则的常见问题。', 'Common questions about joining, service scope, and refunds.')}</p>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {CLUB_MEMBERSHIP_FAQS.map((item) => (
                   <div key={item.question} className="rounded-[18px] border border-[#edf2f6] bg-[#fbfdff] p-4">
-                    <div className="text-sm font-black leading-6 text-slate-900">{item.question}</div>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">{item.answer}</p>
+                    <div className="text-sm font-black leading-6 text-slate-900">{translateClubCopy(item.question, isEnglish)}</div>
+                    <p className="mt-2 text-sm leading-6 text-slate-500">{translateClubCopy(item.answer, isEnglish)}</p>
                   </div>
                 ))}
               </div>
@@ -4177,9 +4278,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute bottom-0 right-0 h-32 w-48 object-cover object-right-bottom opacity-[0.12]" />
               <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div className="max-w-2xl">
-                  <h2 className="text-2xl font-black text-slate-950">需要帮助？</h2>
+                  <h2 className="text-2xl font-black text-slate-950">{text('需要帮助？', 'Need help?')}</h2>
                   <p className="mt-2 text-sm font-semibold leading-6 text-slate-500">
-                    如果你需要预约咨询、确认权益状态或了解升级方案，可以联系海狗小助手。
+                    {text('如果你需要预约咨询、确认权益状态或了解升级方案，可以联系海狗小助手。', 'Contact the Haigoo assistant to book a consultation, check a benefit, or discuss an upgrade.')}
                   </p>
                 </div>
                 <button
@@ -4187,7 +4288,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   onClick={() => openClubServiceAdvisor('member_dashboard_support', undefined, MEMBER_SUPPORT_ADVISOR_COPY)}
                   className={`inline-flex shrink-0 items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${memberPrimaryButtonClass}`}
                 >
-                  添加小助手咨询
+                  {text('添加小助手咨询', 'Contact the Haigoo assistant')}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -4201,8 +4302,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.12]" />
           <div className="relative mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-2xl font-black text-slate-950">选择适合你的 Club 服务</h2>
-              <p className="mt-1 text-sm leading-6 text-slate-500">本网站为 Haigoo Remote Club 会员配套求职工具，核心功能仅面向会员开放。</p>
+              <h2 className="text-2xl font-black text-slate-950">{text('选择适合你的 Club 服务', 'Choose your Club plan')}</h2>
+              <p className="mt-1 text-sm leading-6 text-slate-500">{text('本网站为 Haigoo Remote Club 会员配套求职工具，核心功能仅面向会员开放。', 'Pick the level of tools and support that fits your remote career goals.')}</p>
             </div>
           </div>
           <div className="relative grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
@@ -4222,7 +4323,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className={`absolute inset-x-0 top-0 h-1.5 ${plan.highlighted ? 'bg-[#6f63f6]' : plan.id === 'starter' ? 'bg-[#8aa4ff]' : 'bg-[#c79a55]'}`} />
                 {isCurrentPlan ? (
                   <div className="absolute right-5 top-5 z-10 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white shadow-[0_12px_28px_-18px_rgba(95,99,246,0.65)]">
-                    生效中
+                    {text('生效中', 'Active')}
                   </div>
                 ) : null}
                 <img src={plan.highlighted ? '/pic_lists/Jobs_pics/card_bg2.webp' : '/pic_lists/Jobs_pics/card_bg1.webp'} alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute -right-2 bottom-0 h-36 w-48 object-cover object-right-bottom opacity-[0.12]" />
@@ -4230,25 +4331,25 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
                     <div>
                       {plan.tag ? (
-                        <div className="mb-4 inline-flex rounded-full bg-[#f1efff] px-3 py-1 text-xs font-black text-[#6f63f6]">{plan.tag}</div>
+                        <div className="mb-4 inline-flex rounded-full bg-[#f1efff] px-3 py-1 text-xs font-black text-[#6f63f6]">{translateClubCopy(plan.tag, isEnglish)}</div>
                       ) : (
-                        <div className="mb-4 inline-flex rounded-full border border-[#eadfcf] bg-white/82 px-3 py-1 text-xs font-black text-[#9a6a2d]">长期陪伴</div>
+                        <div className="mb-4 inline-flex rounded-full border border-[#eadfcf] bg-white/82 px-3 py-1 text-xs font-black text-[#9a6a2d]">{text('长期陪伴', 'Guided support')}</div>
                       )}
                       <h3 className="text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{plan.title}</h3>
                     </div>
                   </div>
-                  <p className="text-sm leading-6 text-slate-600 sm:min-h-[48px]">{plan.description}</p>
+                  <p className="text-sm leading-6 text-slate-600 sm:min-h-[48px]">{translateClubCopy(plan.description, isEnglish)}</p>
                   <div className="mt-5 flex flex-wrap items-end gap-x-3 gap-y-1">
-                    <span className="text-[34px] font-black tracking-normal text-slate-950 sm:text-4xl">{plan.price}</span>
+                    <span className="text-[34px] font-black tracking-normal text-slate-950 sm:text-4xl">{translateClubCopy(plan.price, isEnglish)}</span>
                     {plan.originalPrice ? <span className="pb-1 text-sm font-bold text-slate-400 line-through">{plan.originalPrice}</span> : null}
                   </div>
                   <div className="mt-6 flex-1 rounded-[20px] border border-white/70 bg-white/76 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]">
-                    <div className="mb-3 text-xs font-black tracking-[0.14em] text-slate-400">核心权益</div>
+                    <div className="mb-3 text-xs font-black tracking-[0.14em] text-slate-400">{text('核心权益', 'Key benefits')}</div>
                   <div className="grid content-start gap-3">
                     {plan.features.map((feature) => (
                       <div key={feature} className="flex items-start gap-3 text-sm font-semibold leading-6 text-slate-700">
                           <Check className={`mt-1 h-[18px] w-[18px] shrink-0 ${plan.highlighted || plan.id === 'starter' ? 'text-[#6f63f6]' : 'text-[#9a6a2d]'}`} strokeWidth={3} />
-                        <span>{feature}</span>
+                        <span>{translateClubCopy(feature, isEnglish)}</span>
                       </div>
                     ))}
                   </div>
@@ -4264,7 +4365,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                             : 'bg-slate-900 shadow-[0_18px_38px_-24px_rgba(15,23,42,0.34)] hover:bg-[#6f63f6]'
                     }`}
                   >
-                    {plan.cta}
+                    {translateClubCopy(plan.cta, isEnglish)}
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -4281,15 +4382,15 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <div className="absolute inset-x-0 top-0 h-24 bg-white/86" />
           </div>
           <div className="relative">
-            <h2 className="max-w-4xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">年度会员价值：长期权益与共建支持</h2>
+            <h2 className="max-w-4xl text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{text('年度会员价值：长期权益与共建支持', 'Partner value beyond the job search')}</h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-slate-600">
-              如果你未来入职远程企业，Haigoo 可以成为你的外部人才与传播协作渠道。
+              {text('如果你未来入职远程企业，Haigoo 可以成为你的外部人才与传播协作渠道。', 'Keep access to Haigoo’s network, publishing, and collaboration support after you land a remote role.')}
             </p>
             <div className="mt-6 grid gap-3 md:grid-cols-3">
               {[
-                { title: '可申请成为共建伙伴', desc: '会员期内成功入职远程企业后，可申请参与 Haigoo 远程人才网络共建。', icon: Users },
-                { title: '企业招聘与传播支持', desc: '年度会员可申请岗位发布与雇主品牌传播支持，每季度1次免费发布/宣传。', icon: Briefcase },
-                { title: '可持续远程生态', desc: 'Haigoo Remote Club 会持续邀请远程相关的企业、品牌和会员伙伴，共建良型远程生态。', icon: ShieldCheck }
+                { title: text('可申请成为共建伙伴', 'Community partner'), desc: text('会员期内成功入职远程企业后，可申请参与 Haigoo 远程人才网络共建。', 'Apply to join Haigoo’s remote talent network.'), icon: Users },
+                { title: text('企业招聘与传播支持', 'Employer support'), desc: text('年度会员可申请岗位发布与雇主品牌传播支持，每季度1次免费发布/宣传。', 'Use one job-posting or brand-support credit each quarter.'), icon: Briefcase },
+                { title: text('可持续远程生态', 'Long-term network'), desc: text('Haigoo Remote Club 会持续邀请远程相关的企业、品牌和会员伙伴，共建良型远程生态。', 'Connect with remote companies, brands, and Club members.'), icon: ShieldCheck }
               ].map((item) => {
                 const ItemIcon = item.icon
                 return (
@@ -4309,29 +4410,29 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         <section className="relative mb-5 overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white/92 shadow-[0_24px_64px_-54px_rgba(64,78,102,0.24)]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#eef3f7] px-5 py-4">
             <div>
-              <h3 className="text-base font-black text-slate-950">会员权益对比</h3>
+              <h3 className="text-base font-black text-slate-950">{text('会员权益对比', 'Compare plans')}</h3>
             </div>
             <button
               type="button"
               onClick={() => setShowFullClubComparison((value) => !value)}
               className="inline-flex items-center gap-1.5 rounded-full border border-[#e4dfff] bg-white px-4 py-2 text-sm font-black text-[#6f63f6] transition hover:-translate-y-0.5"
             >
-              {showFullClubComparison ? '展示主要项' : '展示完整项'}
+              {showFullClubComparison ? text('展示主要项', 'Show essentials') : text('展示完整项', 'Show all')}
               <ChevronRight className={`h-4 w-4 transition-transform ${showFullClubComparison ? '-rotate-90' : 'rotate-90'}`} />
             </button>
           </div>
           <div className="overflow-x-auto">
             <div className="min-w-[980px]">
               <div className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] border-b border-[#eef3f7] bg-[#fbfdff] px-5 py-3 text-xs font-black text-slate-500">
-                <span>服务权益</span>
-                <span className="text-center">免费用户</span>
+                <span>{text('服务权益', 'Benefits')}</span>
+                <span className="text-center">{text('免费用户', 'Free')}</span>
                 <span className="text-center">Club Starter</span>
                 <span className="text-center">Club Member</span>
                 <span className="text-center">Club Partner</span>
               </div>
               {visibleClubComparisonRows.map((row) => (
                 <div key={row.label} className="grid grid-cols-[1.45fr_repeat(4,minmax(140px,0.85fr))] items-center border-b border-[#eef3f7] px-5 py-3 last:border-b-0">
-                  <div className="pr-4 text-sm font-bold leading-6 text-slate-800">{row.label}</div>
+                  <div className="pr-4 text-sm font-bold leading-6 text-slate-800">{translateClubCopy(row.label, isEnglish)}</div>
                   {(['free', 'starter', 'half_year', 'annual'] as const).map((key) => {
                     const value = row[key]
                     return (
@@ -4339,7 +4440,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         {value ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f1ff] px-2.5 py-1 text-xs font-black text-[#6f63f6]">
                             <Check className="h-3.5 w-3.5" strokeWidth={3} />
-                            {value}
+                            {translateClubCopy(value, isEnglish)}
                           </span>
                         ) : (
                           <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-full bg-slate-100 px-2 text-xs font-black text-slate-300">-</span>
@@ -4355,14 +4456,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
         <section className="relative mb-5 overflow-hidden rounded-[24px] border border-[#e6edf3] bg-white/92 p-5 shadow-[0_24px_64px_-54px_rgba(64,78,102,0.24)] sm:p-6">
           <div className="mb-4">
-            <h3 className="text-lg font-black text-slate-950">会员 QA</h3>
-            <p className="mt-1 text-sm leading-6 text-slate-500">关于开通方式、服务边界和退款规则的常见问题。</p>
+            <h3 className="text-lg font-black text-slate-950">{text('会员 QA', 'Club FAQ')}</h3>
+            <p className="mt-1 text-sm leading-6 text-slate-500">{text('关于开通方式、服务边界和退款规则的常见问题。', 'Short answers about plans, support, and refunds.')}</p>
           </div>
           <div className="grid gap-3 md:grid-cols-2">
             {CLUB_MEMBERSHIP_FAQS.map((item) => (
               <div key={item.question} className="rounded-[18px] border border-[#edf2f6] bg-[#fbfdff] p-4">
-                <div className="text-sm font-black leading-6 text-slate-900">{item.question}</div>
-                <p className="mt-2 text-sm leading-6 text-slate-500">{item.answer}</p>
+                <div className="text-sm font-black leading-6 text-slate-900">{translateClubCopy(item.question, isEnglish)}</div>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{translateClubCopy(item.answer, isEnglish)}</p>
               </div>
             ))}
           </div>
@@ -4376,13 +4477,13 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           </div>
           <div className="relative grid w-full gap-5 lg:grid-cols-[240px_1fr] lg:items-center">
               <div className="self-center">
-                  <h3 className="text-2xl font-black text-slate-950">我们的服务承诺</h3>
+                  <h3 className="text-2xl font-black text-slate-950">{text('我们的服务承诺', 'Our promise')}</h3>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-3">
                   {[
-                    { title: '信息安全', desc: '简历与个人信息仅用于岗位匹配和会员服务支持。', icon: ShieldCheck },
-                    { title: '持续更新', desc: '持续筛选远程岗位、企业资料和职业成长内容。', icon: Sparkles },
-                    { title: '透明可靠', desc: '明确展示服务边界，不过度或虚假承诺录用结果。', icon: CheckCircle }
+                    { title: text('信息安全', 'Private by design'), desc: text('简历与个人信息仅用于岗位匹配和会员服务支持。', 'Your data is used only for matching and support.'), icon: ShieldCheck },
+                    { title: text('持续更新', 'Always current'), desc: text('持续筛选远程岗位、企业资料和职业成长内容。', 'Fresh jobs, company insight, and learning content.'), icon: Sparkles },
+                    { title: text('透明可靠', 'Clear scope'), desc: text('明确展示服务边界，不过度或虚假承诺录用结果。', 'Clear service boundaries and no hiring promises.'), icon: CheckCircle }
                   ].map((item) => {
                   const ItemIcon = item.icon
                   return (
@@ -4401,27 +4502,27 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" loading="lazy" decoding="async" className="pointer-events-none absolute bottom-0 right-0 h-28 w-44 object-cover object-right-bottom opacity-[0.1]" />
           <div className="relative flex w-full flex-col gap-3">
             <div className="min-w-0">
-              <h3 className="text-lg font-black text-slate-950">需要帮助或 1V1 陪跑？</h3>
+              <h3 className="text-lg font-black text-slate-950">{text('需要帮助或 1V1 陪跑？', 'Need 1:1 support?')}</h3>
               <p className="mt-1.5 text-sm leading-6 text-slate-500">
-                会员权益或需要简历优化、模拟面试、求职陪跑等一对一服务，可以通过微信或邮件咨询。
+                {text('会员权益或需要简历优化、模拟面试、求职陪跑等一对一服务，可以通过微信或邮件咨询。', 'Ask about plans, resume reviews, interview practice, or job-search coaching.')}
               </p>
             </div>
             <div className="mt-auto flex flex-col gap-3">
               <div className="mx-auto w-full max-w-[128px] rounded-[18px] border border-[#f3e7c8] bg-white/92 p-2 text-center shadow-sm">
                 <img
                   src="/series_assistant.png"
-                  alt="微信咨询二维码"
+                  alt={text('微信咨询二维码', 'WeChat consultation QR code')}
                   loading="lazy"
                   decoding="async"
                   className="mx-auto h-24 w-24 object-contain"
                 />
-                <div className="mt-1 text-[11px] font-black text-slate-600">微信咨询</div>
+                <div className="mt-1 text-[11px] font-black text-slate-600">{text('微信咨询', 'WeChat')}</div>
               </div>
               <a
                 href="mailto:hi@haigooremote.com"
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-4 py-2.5 text-sm font-black text-white no-underline shadow-[0_16px_34px_-24px_rgba(111,99,246,0.65)] transition-all hover:-translate-y-0.5 hover:no-underline"
               >
-                或试试 邮件联系
+                {text('或试试 邮件联系', 'Contact by email')}
                 <ArrowRight className="h-4 w-4" />
               </a>
             </div>
@@ -4438,21 +4539,21 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <section className="sticky top-0 space-y-5">
               <div className="overflow-hidden rounded-[28px] border border-[#dfe8ef] bg-white/88 p-5 shadow-[0_24px_70px_-58px_rgba(64,78,102,0.32)]">
                 <div className="mb-5 flex items-center justify-between gap-3">
-                  <h3 className="text-lg font-black text-slate-950">年度会员的长期价值</h3>
+                  <h3 className="text-lg font-black text-slate-950">{text('年度会员的长期价值', 'Partner value')}</h3>
                   <button
                     type="button"
                     onClick={() => openClubServiceAdvisor('club_value_rail', 'annual')}
                     className="inline-flex items-center gap-1 text-xs font-black text-[#6f63f6] transition hover:text-[#5148d8]"
                   >
-                    了解更多
+                    {text('了解更多', 'Learn more')}
                     <ArrowRight className="h-3.5 w-3.5" />
                   </button>
                 </div>
                 <div className="space-y-4">
                   {[
-                    { title: '可申请成为共建伙伴', desc: '会员期内成功入职远程企业后，可申请参与 Haigoo 远程人才网络共建。', icon: Users },
-                    { title: '带着资源进入企业', desc: '年度会员可申请岗位发布与雇主品牌传播支持，每季度1次免费发布/宣传。', icon: Briefcase },
-                    { title: '直接发布，边界清晰', desc: '岗位和企业内容需经 Haigoo 审核后发布，共建伙伴不代表雇佣、代理或合伙关系。', icon: ShieldCheck }
+                    { title: text('可申请成为共建伙伴', 'Community partner'), desc: text('会员期内成功入职远程企业后，可申请参与 Haigoo 远程人才网络共建。', 'Apply to join Haigoo’s remote talent network.'), icon: Users },
+                    { title: text('带着资源进入企业', 'Employer support'), desc: text('年度会员可申请岗位发布与雇主品牌传播支持，每季度1次免费发布/宣传。', 'Use one job-posting or brand-support credit each quarter.'), icon: Briefcase },
+                    { title: text('直接发布，边界清晰', 'Clear collaboration'), desc: text('岗位和企业内容需经 Haigoo 审核后发布，共建伙伴不代表雇佣、代理或合伙关系。', 'Haigoo reviews all published content and keeps partnership boundaries clear.'), icon: ShieldCheck }
                   ].map((item) => {
                     const ItemIcon = item.icon
                     return (
@@ -4471,12 +4572,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               </div>
 
               <div className="overflow-hidden rounded-[28px] border border-[#dfe8ef] bg-white p-5 shadow-[0_20px_56px_-44px_rgba(64,78,102,0.22)]">
-                <h3 className="text-lg font-black text-slate-950">我们的服务承诺</h3>
+                <h3 className="text-lg font-black text-slate-950">{text('我们的服务承诺', 'Our promise')}</h3>
                 <div className="mt-4 space-y-4">
                   {[
-                    { title: '信息安全', desc: '简历与个人信息仅用于岗位匹配和会员服务支持。', icon: ShieldCheck },
-                    { title: '持续更新', desc: '持续筛选远程岗位、企业资料和职业成长内容。', icon: Sparkles },
-                    { title: '透明可靠', desc: '明确展示服务边界，不过度或虚假承诺录用结果。', icon: CheckCircle }
+                    { title: text('信息安全', 'Private by design'), desc: text('简历与个人信息仅用于岗位匹配和会员服务支持。', 'Your data is used only for matching and support.'), icon: ShieldCheck },
+                    { title: text('持续更新', 'Always current'), desc: text('持续筛选远程岗位、企业资料和职业成长内容。', 'Fresh jobs, company insight, and learning content.'), icon: Sparkles },
+                    { title: text('透明可靠', 'Clear scope'), desc: text('明确展示服务边界，不过度或虚假承诺录用结果。', 'Clear service boundaries and no hiring promises.'), icon: CheckCircle }
                   ].map((item) => {
                     const ItemIcon = item.icon
                     return (
@@ -4496,16 +4597,16 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
               <div className="relative overflow-hidden rounded-[28px] border border-[#e4dfff] bg-[#fffdf8] p-5 shadow-[0_20px_56px_-44px_rgba(111,99,246,0.28)]">
                 <img src="/pic_lists/Jobs_pics/card_bg2.webp" alt="" aria-hidden="true" className="pointer-events-none absolute bottom-0 right-0 h-28 w-40 object-cover object-right-bottom opacity-[0.1]" />
-                <h3 className="relative text-lg font-black text-slate-950">需要帮助或 1V1 陪跑？</h3>
+                <h3 className="relative text-lg font-black text-slate-950">{text('需要帮助或 1V1 陪跑？', 'Need 1:1 support?')}</h3>
                 <p className="relative mt-2 text-sm leading-6 text-slate-500">
-                  会员权益或需要简历优化、模拟面试、求职陪跑等一对一服务，可以通过微信或邮件咨询。
+                  {text('会员权益或需要简历优化、模拟面试、求职陪跑等一对一服务，可以通过微信或邮件咨询。', 'Ask about plans, resume reviews, interviews, or job-search coaching.')}
                 </p>
                 <button
                   type="button"
                   onClick={() => openClubServiceAdvisor('club_help_rail')}
                   className="relative mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.58)] transition-all hover:-translate-y-0.5"
                 >
-                  添加顾问了解
+                  {text('添加顾问了解', 'Contact an advisor')}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>
@@ -4519,7 +4620,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <Crown className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-slate-950">快速入口</h3>
+                  <h3 className="text-lg font-black text-slate-950">{text('快速入口', 'Quick access')}</h3>
                   <p className="mt-1 text-xs font-semibold text-slate-500">{memberIdentityLabel} · {membershipStatusLabel}</p>
                 </div>
               </div>
@@ -4551,8 +4652,8 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         <ItemIcon className="h-5 w-5" />
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate text-sm font-black text-slate-900">{item.title}</span>
-                        <span className="mt-0.5 block text-xs font-bold text-[#6f63f6]">{item.status}</span>
+                        <span className="block truncate text-sm font-black text-slate-900">{translateClubCopy(item.title, isEnglish)}</span>
+                        <span className="mt-0.5 block text-xs font-bold text-[#6f63f6]">{translateClubCopy(item.status, isEnglish)}</span>
                       </span>
                     </button>
                   )
@@ -4561,27 +4662,27 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             </div>
 
             <div className="overflow-hidden rounded-[28px] border border-[#dfe8ef] bg-white/88 p-5 shadow-[0_20px_56px_-44px_rgba(64,78,102,0.22)]">
-              <h3 className="text-lg font-black text-slate-950">{shouldShowRenewalPlans ? '续费 / 升级咨询' : '服务支持'}</h3>
+              <h3 className="text-lg font-black text-slate-950">{shouldShowRenewalPlans ? text('续费 / 升级咨询', 'Renewal / upgrade') : text('服务支持', 'Member support')}</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                {shouldShowRenewalPlans ? '你的权益即将到期，可联系顾问了解续费或升级方案。' : '需要预约咨询、提交共建伙伴申请或确认权益状态，可以联系顾问处理。'}
+                {shouldShowRenewalPlans ? text('你的权益即将到期，可联系顾问了解续费或升级方案。', 'Your membership is ending soon. Contact an advisor to renew or upgrade.') : text('需要预约咨询、提交共建伙伴申请或确认权益状态，可以联系顾问处理。', 'Contact an advisor to book a consultation, submit a partner application, or confirm a benefit.')}
               </p>
               <button
                 type="button"
                 onClick={() => openClubServiceAdvisor('member_support_rail', undefined, MEMBER_SUPPORT_ADVISOR_COPY)}
                 className={`mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${memberPrimaryButtonClass}`}
               >
-                添加顾问咨询
+                {text('添加顾问咨询', 'Contact an advisor')}
                 <ArrowRight className="h-4 w-4" />
               </button>
             </div>
 
             <div className="overflow-hidden rounded-[28px] border border-[#dfe8ef] bg-white p-5 shadow-[0_20px_56px_-44px_rgba(64,78,102,0.22)]">
-              <h3 className="text-lg font-black text-slate-950">我们的服务承诺</h3>
+              <h3 className="text-lg font-black text-slate-950">{text('我们的服务承诺', 'Our service promise')}</h3>
               <div className="mt-4 space-y-4">
                 {[
-                  { title: '信息安全', desc: '简历与个人信息仅用于岗位匹配和会员服务支持。', icon: ShieldCheck },
-                  { title: '持续更新', desc: '持续筛选远程岗位、企业资料和职业成长内容。', icon: Sparkles },
-                  { title: '透明可靠', desc: '明确展示服务边界，不过度或虚假承诺录用结果。', icon: CheckCircle }
+                    { title: text('信息安全', 'Data privacy'), desc: text('简历与个人信息仅用于岗位匹配和会员服务支持。', 'Your resume and personal data are used only for matching and member support.'), icon: ShieldCheck },
+                    { title: text('持续更新', 'Fresh resources'), desc: text('持续筛选远程岗位、企业资料和职业成长内容。', 'We continually curate remote roles, company insights, and career content.'), icon: Sparkles },
+                    { title: text('透明可靠', 'Clear expectations'), desc: text('明确展示服务边界，不过度或虚假承诺录用结果。', 'We state service boundaries clearly and never promise hiring outcomes.'), icon: CheckCircle }
                 ].map((item) => {
                   const ItemIcon = item.icon
                   return (
@@ -4850,15 +4951,15 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       </div>
       <div className="relative mx-auto min-h-full max-w-[1600px] px-2 py-3 sm:px-3 lg:h-full lg:px-4 lg:py-4">
         <div className="flex min-h-full flex-col gap-4 lg:h-full lg:flex-row lg:gap-5 lg:overflow-hidden">
-          <nav className="lg:hidden" role="tablist" aria-label="Club 权益移动端目录">
+          <nav className="lg:hidden" role="tablist" aria-label={text('Club 权益移动端目录', 'Club mobile navigation')}>
             <div className="flex gap-2 overflow-x-auto rounded-[22px] border border-[#e1e9f1] bg-white/86 p-2 shadow-[0_18px_48px_-42px_rgba(61,89,120,0.52)]">
               {[
-                { id: 'resume', label: '首页', icon: Home },
-                { id: 'membership', label: 'Club 权益', icon: Crown },
-                { id: 'about', label: '关于我们', icon: Building2 },
-                { id: 'favorites', label: '收藏', icon: Heart },
-                { id: 'applications', label: '申请', icon: Briefcase },
-                { id: 'feedback', label: '反馈', icon: MessageSquare }
+                { id: 'resume', label: text('首页', 'Home'), icon: Home },
+                { id: 'membership', label: text('Club 权益', 'Club benefits'), icon: Crown },
+                { id: 'about', label: text('关于我们', 'About'), icon: Building2 },
+                { id: 'favorites', label: text('收藏', 'Saved'), icon: Heart },
+                { id: 'applications', label: text('申请', 'Applications'), icon: Briefcase },
+                { id: 'feedback', label: text('反馈', 'Feedback'), icon: MessageSquare }
               ].map((item) => (
                 <button
                   key={item.id}
@@ -4892,10 +4993,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <div className="relative overflow-hidden border-b border-[#edf2f6] bg-white/92 px-4 py-3.5">
                     <div className="relative">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="text-sm font-black text-slate-950">Haigoo Remote Club 权益</div>
+                        <div className="text-sm font-black text-slate-950">{text('Haigoo Remote Club 权益', 'Haigoo Remote Club benefits')}</div>
                         {isMember ? <Crown className="h-4 w-4 shrink-0 text-[#6f63f6]" /> : null}
                       </div>
-                      {isMember ? <div className="mt-0.5 text-xs text-slate-500">权益与账号管理</div> : null}
+                      {isMember ? <div className="mt-0.5 text-xs text-slate-500">{text('权益与账号管理', 'Benefits and account')}</div> : null}
                     </div>
                   </div>
 
@@ -4910,25 +5011,25 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                                 <div className="max-w-full truncate text-[15px] font-black leading-tight text-slate-950">{memberVisual.shortName}</div>
                                 <div className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#e5e0ff] bg-[#f4f1ff] px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
                                 <CheckCircle className="h-3 w-3" />
-                                生效中
+                                {text('生效中', 'Active')}
                                 </div>
                               </div>
                             </div>
                           </div>
                           <div className="relative mt-3 rounded-[16px] border border-[#ebe7ff] bg-white/80 px-3 py-2.5">
-                            <div className="text-[10px] font-black tracking-[0.12em] text-slate-400">有效期至</div>
+                            <div className="text-[10px] font-black tracking-[0.12em] text-slate-400">{text('有效期至', 'Valid until')}</div>
                             <div className="mt-1 text-[17px] font-black leading-tight text-slate-900">{membershipStatusExpireLabel}</div>
                             {membershipDaysRemaining !== null ? (
-                              <div className="mt-1 text-[11px] font-bold text-[#6f63f6]">剩余 {Math.max(membershipDaysRemaining, 0)} 天</div>
+                              <div className="mt-1 text-[11px] font-bold text-[#6f63f6]">{text(`剩余 ${Math.max(membershipDaysRemaining, 0)} 天`, `${Math.max(membershipDaysRemaining, 0)} days remaining`)}</div>
                             ) : null}
                           </div>
                         </div>
                       </>
                     ) : (
                       <div className="rounded-2xl border border-[#edf2f6] bg-white/78 px-3.5 py-3 shadow-sm">
-                        <div className="text-base font-black text-slate-950">添加顾问了解</div>
+                        <div className="text-base font-black text-slate-950">{text('添加顾问了解', 'Contact an advisor')}</div>
                         <div className="mt-2 text-sm leading-6 text-slate-500">
-                          解锁全部岗位申请、联系人信息和职业成长权益。
+                          {text('解锁全部岗位申请、联系人信息和职业成长权益。', 'Unlock all application paths, contact details, and career learning benefits.')}
                         </div>
                       </div>
                     )}
@@ -4950,18 +5051,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
               <div className="rounded-[28px] border border-[#e1e9f1] bg-white/82 p-3 shadow-[0_18px_55px_-48px_rgba(61,89,120,0.58)] backdrop-blur">
                 <div className={`mb-3 px-2 text-xs font-bold tracking-[0.16em] text-slate-400 ${isSidebarCollapsed ? 'text-center px-0' : ''}`}>
-                  {isSidebarCollapsed ? 'MENU' : 'Club 权益'}
+                  {isSidebarCollapsed ? 'MENU' : text('Club 权益', 'Club benefits')}
                 </div>
                 <nav className="space-y-1" role="tablist">
                 {[
                   // { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
-                  { id: 'resume', label: '首页', icon: Home },
-                  { id: 'membership', label: 'Club 权益', icon: Crown },
-                  { id: 'about', label: '关于我们', icon: Building2 },
-                  { id: 'favorites', label: '我的收藏', icon: Heart },
-                  { id: 'applications', label: '我的申请', icon: Briefcase },
-                  { id: 'feedback', label: '我要反馈', icon: MessageSquare },
-                  { id: 'settings', label: '注销账号', icon: Settings }
+                  { id: 'resume', label: text('首页', 'Home'), icon: Home },
+                  { id: 'membership', label: text('Club 权益', 'Club benefits'), icon: Crown },
+                  { id: 'about', label: text('关于我们', 'About us'), icon: Building2 },
+                  { id: 'favorites', label: text('我的收藏', 'Saved items'), icon: Heart },
+                  { id: 'applications', label: text('我的申请', 'My applications'), icon: Briefcase },
+                  { id: 'feedback', label: text('我要反馈', 'Feedback'), icon: MessageSquare },
+                  { id: 'settings', label: text('注销账号', 'Delete account'), icon: Settings }
                 ].map((item) => (
                     <button
                     key={item.id}

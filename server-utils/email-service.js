@@ -40,6 +40,15 @@ function getTopicLabel(topic) {
   return map[topic] || topic
 }
 
+function summarizeTopics(topics, fallbackLabel) {
+  const values = Array.isArray(topics)
+    ? topics.map(item => String(item || '').trim()).filter(Boolean)
+    : []
+  if (values.length === 0) return fallbackLabel
+  if (values.length <= 3) return values.join('、')
+  return `${values.slice(0, 3).join('、')}等${values.length}个方向`
+}
+
 function formatEmailDate(value) {
   if (!value) return '待确认'
   const date = new Date(value)
@@ -432,7 +441,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
 export async function sendDailyDigestEmail(to, jobs, topic, options = {}) {
   if (!jobs || jobs.length === 0) return false
 
-  const label = getTopicLabel(topic)
+  const label = summarizeTopics(options.topics, getTopicLabel(topic))
   const siteUrl = String(process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const primaryJobs = jobs.filter(job => job.matchTier !== 'related')
   const relatedJobs = jobs.filter(job => job.matchTier === 'related')
@@ -473,7 +482,7 @@ export async function sendDailyDigestEmail(to, jobs, topic, options = {}) {
     renderSection('相关岗位推荐', '与你关注方向相近，作为补充推荐', relatedJobs, '#0f766e')
   ].join('')
 
-  const subject = options.subject || `你订阅的「${label}」方向有新岗位`
+  const subject = options.subject || `Haigoo 岗位订阅更新｜${jobs.length} 个新机会`
   const html = `
 <!DOCTYPE html>
 <html>

@@ -3,6 +3,7 @@ import { Building2, Briefcase, Clock } from 'lucide-react'
 import { TrustedCompany } from '../services/trusted-companies-service'
 import { trustedCompaniesService } from '../services/trusted-companies-service'
 import { getCompanyLogoSources } from '../utils/company-logo'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface HomeCompanyCardProps {
     company: TrustedCompany
@@ -14,6 +15,7 @@ interface HomeCompanyCardProps {
 }
 
 export default function HomeCompanyCard({ company, jobStats, onClick }: HomeCompanyCardProps) {
+    const { text } = useLanguage()
     const [coverImage, setCoverImage] = useState<string>('')
     const [isLoadingCover, setIsLoadingCover] = useState(false)
     const [hasLoadedCover, setHasLoadedCover] = useState(false)
@@ -85,8 +87,8 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
         : []
     const totalJobs = Number(jobStats?.total ?? company.jobCount ?? 0)
     const hiringLine = topCategories.length > 0
-        ? `${totalJobs} 个在招 ${topCategories.map(([cat]) => cat).join('/')}`
-        : `${totalJobs} 个在招岗位`
+        ? text(`${totalJobs} 个在招 ${topCategories.map(([cat]) => cat).join('/')}`, `${totalJobs} open · ${topCategories.map(([cat]) => cat).join(' / ')}`)
+        : text(`${totalJobs} 个在招岗位`, `${totalJobs} open role${totalJobs === 1 ? '' : 's'}`)
 
     return (
         <div
@@ -148,12 +150,12 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 {/* Updated At */}
                 <div className="mb-3 hidden items-center gap-1.5 text-[11px] text-slate-400 sm:flex sm:text-xs">
                     <Clock className="w-3 h-3" />
-                    <span>企业信息更新于 {formatDate(company.updatedAt || new Date().toISOString())}</span>
+                    <span>{text('企业信息更新于', 'Company info updated')} {formatDate(company.updatedAt || new Date().toISOString())}</span>
                 </div>
 
                 {/* Description */}
                 <p className="mb-4 flex-1 line-clamp-2 text-[13px] sm:text-sm text-slate-500">
-                    {company.description || '暂无简介'}
+                    {company.description || text('暂无简介', 'No description available.')}
                 </p>
 
                 {/* Footer: Hiring Info */}
@@ -165,7 +167,7 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                         </span>
                     </div>
                     <span className="ml-2 flex-shrink-0 whitespace-nowrap text-[11px] sm:text-xs font-medium text-[#4f63f6] transition-transform group-hover:translate-x-1">
-                        查看岗位 &rarr;
+                        {text('查看岗位', 'View jobs')} &rarr;
                     </span>
                 </div>
             </div>

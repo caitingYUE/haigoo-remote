@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Crown, Lock, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getBundleDetailPath } from '../utils/share-link-helper';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface JobBundle {
   id: number;
@@ -24,6 +25,7 @@ interface JobBundleCarouselProps {
 export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const navigate = useNavigate();
   const { isAuthenticated, isMember } = useAuth();
+  const { text } = useLanguage();
 
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
@@ -52,11 +54,11 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
           <div className="flex items-center gap-2 mb-1.5">
             <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-md border border-slate-200 text-xs font-bold text-slate-800 shadow-sm">
               {isMemberBundle
-                ? <><Crown className="w-3 h-3 fill-indigo-900/60" />会员专属</>
-                : <><Layers className="w-3 h-3" />精选合集</>
+                ? <><Crown className="w-3 h-3 fill-indigo-900/60" />{text('会员专属', 'Members only')}</>
+                : <><Layers className="w-3 h-3" />{text('精选合集', 'Curated collection')}</>
               }
             </span>
-            <span className="text-xs text-slate-600 font-medium">{jobCount} 个职位</span>
+            <span className="text-xs text-slate-600 font-medium">{text(`${jobCount} 个职位`, `${jobCount} roles`)}</span>
           </div>
           <h3 className="line-clamp-2 text-base font-bold leading-snug text-slate-900">{bundle.title}</h3>
         </div>
@@ -133,6 +135,7 @@ interface JobBundleCardProps extends JobBundleBannerProps {
 export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const navigate = useNavigate();
   const { isAuthenticated, isMember } = useAuth();
+  const { text } = useLanguage();
 
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
@@ -172,7 +175,7 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
             {bundle.title}
           </h3>
           <span className={`shrink-0 rounded-full border bg-white/86 px-2 py-0.5 text-[11px] font-bold shadow-sm ${theme.count}`}>
-            {jobCount}个
+            {text(`${jobCount}个`, `${jobCount} roles`)}
           </span>
         </div>
       </div>

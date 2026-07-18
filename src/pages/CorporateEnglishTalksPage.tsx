@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type DragEvent, type
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, BookOpen, Check, ChevronLeft, ChevronRight, Loader2, Lock, Play, Video } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import {
   CorporateEnglishPublicCategory,
@@ -21,6 +22,13 @@ const SECTION_LABELS: Record<TalkSectionKey, string> = {
   english_interview: '英语面试',
   remote_preparation: '远程准备',
   foreign_meeting: '远程会议'
+}
+
+const SECTION_LABELS_EN: Record<TalkSectionKey, string> = {
+  ceo: 'CEO interviews',
+  english_interview: 'English interviews',
+  remote_preparation: 'Remote work preparation',
+  foreign_meeting: 'Remote meetings'
 }
 
 const SECTION_TONE: Record<TalkSectionKey, PosterTone> = {
@@ -62,11 +70,11 @@ const DRAG_SCROLL_MIN_DISTANCE = 4
 const DRAG_PAGE_RELEASE_DISTANCE = 48
 const HORIZONTAL_WHEEL_RATIO = 0.65
 
-function formatDateLabel(value?: string) {
+function formatDateLabel(value?: string, isEnglish = false) {
   if (!value) return ''
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-  return date.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN', { month: 'short', day: 'numeric' })
 }
 
 function formatDuration(ms?: number) {
@@ -452,6 +460,7 @@ function useContinuousHorizontalScroll() {
 }
 
 function AccessPill({ locked, accessTier }: { locked?: boolean; accessTier?: string }) {
+  const { text } = useLanguage()
   if (locked) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-[#6251f5]/90 px-2.5 py-1 text-xs font-black text-white shadow-sm backdrop-blur">
@@ -470,7 +479,7 @@ function AccessPill({ locked, accessTier }: { locked?: boolean; accessTier?: str
   }
   return (
     <span className="inline-flex items-center rounded-full bg-white px-2.5 py-1 text-xs font-black text-[#2f6ed8] shadow-sm">
-      {accessTier === 'free' ? 'Free' : '会员'}
+      {accessTier === 'free' ? 'Free' : text('会员', 'Member')}
     </span>
   )
 }
@@ -555,9 +564,10 @@ function trackVideoOpen(section: TalkSectionKey, entityId: string, position: str
   })
 }
 
-function getModuleVideoEyebrow(video: CorporateEnglishPublicModuleVideo, section: Exclude<TalkSectionKey, 'ceo'>) {
-  if (section === 'remote_preparation') return video.difficultyLevelLabel || SECTION_LABELS[section]
-  return video.category || SECTION_LABELS[section]
+function getModuleVideoEyebrow(video: CorporateEnglishPublicModuleVideo, section: Exclude<TalkSectionKey, 'ceo'>, isEnglish = false) {
+  const fallback = isEnglish ? SECTION_LABELS_EN[section] : SECTION_LABELS[section]
+  if (section === 'remote_preparation') return video.difficultyLevelLabel || fallback
+  return video.category || fallback
 }
 
 function trackModuleView(section: TalkSectionKey, videoCount: number, isAuthenticated: boolean, isMember: boolean) {
@@ -576,30 +586,32 @@ function trackModuleView(section: TalkSectionKey, videoCount: number, isAuthenti
   })
 }
 
-function LoginPosterOverlay({ label = '登录后播放' }: { label?: string }) {
+function LoginPosterOverlay({ label }: { label?: string }) {
+  const { text } = useLanguage()
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-slate-950/20 text-white">
       <span className="inline-flex items-center gap-2 rounded-full border border-white/70 bg-white/90 px-4 py-2 text-sm font-black text-[#6251f5] shadow-[0_14px_34px_rgba(15,23,42,0.16)] backdrop-blur">
         <Lock className="h-4 w-4" />
-        {label}
+        {label || text('登录后播放', 'Log in to watch')}
       </span>
     </div>
   )
 }
 
 function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; isGuest: boolean }) {
+  const { text } = useLanguage()
   const href = isGuest ? '/login' : `/careerlearning/watch/ceo/${encodeURIComponent(video.materialId)}`
   return (
     <section className="relative grid gap-6 overflow-hidden rounded-[24px] border border-[#dbe8f4] bg-white p-5 shadow-[0_18px_48px_rgba(47,111,216,0.07)] sm:rounded-[28px] sm:p-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(520px,1fr)] lg:items-center lg:gap-8 lg:p-8">
       <span className="pointer-events-none absolute right-10 top-8 h-20 w-20 rounded-full bg-[#7fb069]/10" />
       <span className="pointer-events-none absolute bottom-0 left-0 h-1.5 w-40 bg-[#6251f5]" />
       <div className="relative min-w-0">
-        <div className="text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">远程企业 CEO 访谈</div>
+        <div className="text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{text('远程企业 CEO 访谈', 'REMOTE COMPANY CEO INTERVIEWS')}</div>
         <h1 className="mt-3 text-[32px] font-black leading-[1.04] tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
           {video.materialTitle}
         </h1>
         {!isGuest ? <p className="mt-4 line-clamp-4 max-w-3xl whitespace-pre-line text-[15px] leading-7 text-slate-700 sm:line-clamp-none sm:text-base">
-          {truncateText(video.videoSummary, 220) || `跟随 ${video.speakerName} 的真实访谈，理解企业文化、商业思维和外企表达。`}
+          {truncateText(video.videoSummary, 220) || text(`跟随 ${video.speakerName} 的真实访谈，理解企业文化、商业思维和外企表达。`, `Learn about company culture, business thinking, and global workplace communication through ${video.speakerName}’s interview.`)}
         </p> : null}
         <div className="mt-4 text-base font-semibold text-slate-500">
           {isGuest ? `${video.speakerRole}${video.companyName ? ` · ${video.companyName}` : ''}` : `${video.speakerName} · ${video.speakerRole}${video.companyName ? ` · ${video.companyName}` : ''}`}
@@ -610,7 +622,7 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
             onClick={() => !isGuest && trackVideoOpen('ceo', video.materialId, 'hero')}
             className="inline-flex h-12 items-center gap-2 rounded-full bg-[#6251f5] px-6 text-sm font-black !text-white shadow-[0_14px_30px_rgba(98,81,245,0.22)] transition hover:bg-[#6251f5] hover:!text-white hover:shadow-[0_12px_26px_rgba(98,81,245,0.16)] hover:no-underline focus:!text-white active:!text-white"
           >
-            {isGuest ? '登录后播放' : '开始观看'}
+            {isGuest ? text('登录后播放', 'Log in to watch') : text('开始观看', 'Watch now')}
             <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -635,7 +647,7 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
         {isGuest ? (
           <div className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full border border-white/80 bg-white/92 px-3 py-1.5 text-xs font-black text-[#6251f5] shadow-sm backdrop-blur">
             <Lock className="h-3.5 w-3.5" />
-            登录查看
+            {text('登录查看', 'Log in to view')}
           </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -651,6 +663,7 @@ function CeoHero({ video, isGuest }: { video: CorporateEnglishPublicCeoVideo; is
 }
 
 function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVideo; index: number; isGuest: boolean }) {
+  const { isEnglish, text } = useLanguage()
   const href = isGuest ? '/login' : `/careerlearning/watch/ceo/${encodeURIComponent(video.materialId)}`
   return (
     <Link
@@ -670,7 +683,7 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
         {!isGuest ? <div className="absolute right-2 top-2">
           <AccessPill locked={video.isVideoLocked} accessTier={video.accessTier} />
         </div> : null}
-        {isGuest ? <LoginPosterOverlay label="登录后播放" /> : null}
+        {isGuest ? <LoginPosterOverlay /> : null}
       </div>
       <div className="mt-4 flex items-center justify-between gap-3">
         <div className="min-w-0 truncate text-xs font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{video.companyName}</div>
@@ -679,17 +692,18 @@ function CeoCard({ video, index, isGuest }: { video: CorporateEnglishPublicCeoVi
         ) : null}
       </div>
       <h3 className="mt-2 line-clamp-2 min-h-[3rem] text-lg font-black leading-tight tracking-tight">{video.materialTitle}</h3>
-      <p className="mt-2 truncate text-sm font-semibold text-slate-500">{isGuest ? '登录后播放' : `${video.speakerName} · ${formatDateLabel(video.publishedAt) || '精选访谈'}`}</p>
+      <p className="mt-2 truncate text-sm font-semibold text-slate-500">{isGuest ? text('登录后播放', 'Log in to watch') : `${video.speakerName} · ${formatDateLabel(video.publishedAt, isEnglish) || text('精选访谈', 'Featured interview')}`}</p>
       <p className="mt-1 line-clamp-1 text-xs font-semibold text-slate-400">{video.speakerRole}</p>
       {!isGuest ? <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex h-[164px] translate-y-full flex-col overflow-hidden border-t border-[#e4ebf2] bg-white px-5 py-4 opacity-0 shadow-[0_-14px_32px_-26px_rgba(15,23,42,0.28)] transition duration-300 ease-out group-hover:translate-y-0 group-hover:opacity-100">
-        <div className="mb-2 flex shrink-0 items-center gap-1.5 text-xs font-black text-[#6251f5]"><BookOpen className="h-3.5 w-3.5" />视频简介</div>
-        <p className="line-clamp-5 whitespace-pre-line break-words text-[13px] font-semibold leading-5 text-slate-600">{video.videoSummary || `${video.speakerName} 分享 ${video.companyName} 的文化、业务和表达方式。`}</p>
+        <div className="mb-2 flex shrink-0 items-center gap-1.5 text-xs font-black text-[#6251f5]"><BookOpen className="h-3.5 w-3.5" />{text('视频简介', 'About this video')}</div>
+        <p className="line-clamp-5 whitespace-pre-line break-words text-[13px] font-semibold leading-5 text-slate-600">{video.videoSummary || text(`${video.speakerName} 分享 ${video.companyName} 的文化、业务和表达方式。`, `${video.speakerName} discusses ${video.companyName}’s culture, business, and communication style.`)}</p>
       </div> : null}
     </Link>
   )
 }
 
 function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVideo[]; isGuest: boolean }) {
+  const { text } = useLanguage()
   const visibleVideos = useMemo(() => (isGuest ? videos.slice(0, CEO_PAGE_SIZE) : videos), [isGuest, videos])
   const orderedVisibleVideos = useMemo(
     () => orderForTwoRowRail(visibleVideos.map((video, index) => ({ video, index })), CEO_PAGE_SIZE, 4),
@@ -712,9 +726,9 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
     <section className="space-y-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-5">
-          <h2 className="text-[28px] font-black tracking-tight text-slate-950 sm:text-3xl md:text-4xl">更多 CEO 访谈</h2>
+          <h2 className="text-[28px] font-black tracking-tight text-slate-950 sm:text-3xl md:text-4xl">{text('更多 CEO 访谈', 'More CEO interviews')}</h2>
           <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">
-            了解远程企业，提升认知、口语与申请成功率
+            {text('了解远程企业，提升认知、口语与申请成功率', 'Understand remote companies, strengthen your communication, and apply with greater confidence.')}
           </p>
         </div>
         {!isGuest ? <div className="hidden items-center gap-3 md:flex">
@@ -723,7 +737,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
             onClick={goPrev}
             disabled={currentPage === 0}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="上一页 CEO 访谈"
+            aria-label={text('上一页 CEO 访谈', 'Previous CEO interviews')}
           >
             <ChevronLeft className="h-5 w-5" />
           </button>
@@ -733,7 +747,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
             onClick={goNext}
             disabled={currentPage >= pageCount - 1}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="下一页 CEO 访谈"
+            aria-label={text('下一页 CEO 访谈', 'Next CEO interviews')}
           >
             <ChevronRight className="h-5 w-5" />
           </button>
@@ -784,6 +798,7 @@ function ModuleTalkCard({
   onOpenNotes?: (video: CorporateEnglishPublicModuleVideo) => void
 }) {
   const navigate = useNavigate()
+  const { isEnglish, text } = useLanguage()
   const href = isGuest ? '/login' : `/careerlearning/watch/module/${encodeURIComponent(video.videoId)}`
   const openVideo = () => {
     if (!isGuest) trackVideoOpen(section, video.videoId, `${section}_${featured ? 'featured' : 'card'}_${index}`, section === 'remote_preparation' ? video.difficultyLevel || '' : video.category)
@@ -803,19 +818,19 @@ function ModuleTalkCard({
         <PosterFrame
           src={video.coverThumbnailUrl || video.coverImageUrl}
           title={video.title}
-          eyebrow={getModuleVideoEyebrow(video, section)}
+          eyebrow={getModuleVideoEyebrow(video, section, isEnglish)}
           className="transition duration-500 group-hover:scale-[1.04]"
           loading="lazy"
           tone={SECTION_TONE[section]}
         />
         <div className={`absolute inset-0 ${isGuest ? 'bg-slate-950/10' : 'bg-gradient-to-t from-slate-950/8 via-transparent to-transparent opacity-80'}`} />
         {!isGuest ? <div className="absolute right-3 top-3"><AccessPill locked={video.isLocked} accessTier={video.accessTier} /></div> : null}
-        {isGuest ? <LoginPosterOverlay label="登录后播放" /> : (
+        {isGuest ? <LoginPosterOverlay /> : (
           <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100"><PlayOverlay /></div>
         )}
       </div>
       <div className={`${section === 'foreign_meeting' ? 'mt-3' : 'mt-4'} flex items-center justify-between gap-3`}>
-        <div className="min-w-0 truncate text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{getModuleVideoEyebrow(video, section)}</div>
+        <div className="min-w-0 truncate text-sm font-black uppercase tracking-[0.08em] text-[#2f6ed8]">{getModuleVideoEyebrow(video, section, isEnglish)}</div>
         <div className="flex shrink-0 items-center gap-2">
           {onOpenNotes && video.hasVideoNotes ? (
             <button
@@ -827,7 +842,7 @@ function ModuleTalkCard({
               }}
             >
               <BookOpen className="h-3.5 w-3.5" />
-              视频笔记
+              {text('视频笔记', 'Video notes')}
             </button>
           ) : null}
           {formatDuration(video.durationMs) ? <span className="rounded-full bg-[#f4f7fb] px-2.5 py-1 text-xs font-black text-slate-500">{formatDuration(video.durationMs)}</span> : null}
@@ -835,7 +850,7 @@ function ModuleTalkCard({
       </div>
       <h3 className={`${featured ? 'mt-2 text-2xl md:text-3xl' : section === 'foreign_meeting' ? 'mt-1.5 line-clamp-2 text-xl' : section === 'remote_preparation' ? 'mt-2 line-clamp-2 text-xl' : 'mt-2 line-clamp-2 min-h-[3.5rem] text-xl'} font-black leading-tight tracking-tight`}>{video.title}</h3>
       {!isGuest && (featured || showDescription) ? <p className={`${featured ? 'mt-3 text-base' : section === 'remote_preparation' ? 'mt-2 text-sm leading-6' : section === 'foreign_meeting' ? 'mt-3 text-sm' : 'mt-3 text-sm leading-7'} line-clamp-3 max-w-full text-slate-700`}>{video.description}</p> : null}
-      <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500 ${featured ? '' : 'mt-auto pt-1'}`}>{isGuest ? '登录后播放' : (formatDateLabel(video.publishedAt) || '精选视频')}</p>
+      <p className={`${section === 'remote_preparation' ? 'mt-2' : section === 'foreign_meeting' ? 'mt-3' : 'mt-2'} text-sm font-semibold text-slate-500 ${featured ? '' : 'mt-auto pt-1'}`}>{isGuest ? text('登录后播放', 'Log in to watch') : (formatDateLabel(video.publishedAt, isEnglish) || text('精选视频', 'Featured video'))}</p>
     </article>
   )
 }
@@ -855,6 +870,7 @@ function PagerControls({
   disabled?: boolean
   label: string
 }) {
+  const { text } = useLanguage()
   if (disabled || pageCount <= 1) return null
   return (
     <div className="flex items-center justify-end gap-3">
@@ -863,7 +879,7 @@ function PagerControls({
         onClick={onPrev}
         disabled={currentPage === 0}
         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label={`上一页${label}`}
+        aria-label={text(`上一页${label}`, `Previous ${label}`)}
       >
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -873,7 +889,7 @@ function PagerControls({
         onClick={onNext}
         disabled={currentPage >= pageCount - 1}
         className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#dbe8f4] bg-white text-slate-600 shadow-sm transition enabled:hover:border-[#6251f5] enabled:hover:text-[#6251f5] disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label={`下一页${label}`}
+        aria-label={text(`下一页${label}`, `Next ${label}`)}
       >
         <ChevronRight className="h-5 w-5" />
       </button>
@@ -894,6 +910,7 @@ function CategoryRail({
   activeCategory: string
   onChange: (value: string) => void
 }) {
+  const { isEnglish } = useLanguage()
   const normalized = useMemo(() => {
     const values = categories.length ? categories : [{ label: '全部', value: '全部', count: 0 }]
     return values
@@ -913,7 +930,7 @@ function CategoryRail({
                 onClick={() => onChange(category.value)}
                 className={`relative h-11 rounded-full border px-5 text-sm font-black transition ${active ? 'border-[#6251f5] bg-[#6251f5] text-white shadow-[0_10px_24px_rgba(98,81,245,0.22)]' : 'border-[#dbe8f4] bg-white/80 text-slate-700 hover:border-[#9ebff0] hover:text-[#2f6ed8]'}`}
               >
-                {category.label}
+                {isEnglish && category.value === '全部' ? 'All' : category.label}
               </button>
             )
           })}
@@ -931,6 +948,7 @@ function FeaturedInterviewRail({
   videos: CorporateEnglishPublicModuleVideo[]
   isGuest: boolean
 }) {
+  const { text } = useLanguage()
   const [hero, ...rest] = videos
   const gap = 24
   const supportingColumns = Math.ceil(rest.length / 2)
@@ -966,7 +984,7 @@ function FeaturedInterviewRail({
     <div
       ref={scrollRef}
       role="region"
-      aria-label="英语面试视频横向列表"
+      aria-label={text('英语面试视频横向列表', 'English interview video carousel')}
       tabIndex={0}
       className="select-none overflow-x-auto overscroll-x-contain pb-1 touch-pan-y [scrollbar-width:none] cursor-grab focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6251f5]/50 active:cursor-grabbing [&::-webkit-scrollbar]:hidden"
       {...handlers}
@@ -1015,6 +1033,7 @@ function ModuleSection({
   loading?: boolean
   isGuest: boolean
 }) {
+  const { isEnglish } = useLanguage()
   const windowWidth = useWindowWidth()
   const shouldUseFeaturedLayout = section === 'english_interview' && featuredLayout && windowWidth >= 1280 && !isGuest
   const railLayout = getModuleRailLayout(section, windowWidth)
@@ -1074,7 +1093,7 @@ function ModuleSection({
           currentPage={currentPage}
           pageCount={pageCount}
           disabled={isGuest}
-          label={SECTION_LABELS[section]}
+          label={isEnglish ? SECTION_LABELS_EN[section] : SECTION_LABELS[section]}
           onPrev={goPrev}
           onNext={goNext}
         />
@@ -1125,11 +1144,12 @@ function RemotePreparationSection({
   loading: boolean
   isGuest: boolean
 }) {
+  const { text } = useLanguage()
   const [notesVideo, setNotesVideo] = useState<CorporateEnglishPublicModuleVideo | null>(null)
   if (loading) {
     return (
       <section className="space-y-5">
-        <CategoryRail title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
+        <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('熟悉远程工作所需的一切，不打无准备的仗', 'Build the practical skills and habits needed to thrive in remote work.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
         <div className="flex gap-5 overflow-hidden">
           {[0, 1, 2, 3].map((item) => (
             <div key={item} className="h-[300px] min-w-[280px] flex-1 rounded-[22px] border border-[#f1dfbe] bg-white shadow-[0_10px_28px_rgba(240,161,31,0.08)]" />
@@ -1142,9 +1162,9 @@ function RemotePreparationSection({
   if (!videos.length) {
     return (
       <section className="space-y-5">
-        <CategoryRail title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
+        <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('熟悉远程工作所需的一切，不打无准备的仗', 'Build the practical skills and habits needed to thrive in remote work.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
         <div className="rounded-2xl border border-dashed border-[#e8d4ad] bg-white p-10 text-center text-slate-500">
-          后台发布远程准备视频后，这里会展示远程求职与协作准备内容。
+          {text('后台发布远程准备视频后，这里会展示远程求职与协作准备内容。', 'Remote job-search and collaboration preparation videos will appear here.')}
         </div>
       </section>
     )
@@ -1152,7 +1172,7 @@ function RemotePreparationSection({
 
   return (
     <section className="space-y-4">
-      <CategoryRail title="远程准备" subtitle="熟悉远程工作所需的一切，不打无准备的仗" categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
+      <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('熟悉远程工作所需的一切，不打无准备的仗', 'Build the practical skills and habits needed to thrive in remote work.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
       <div className="flex items-stretch gap-6 overflow-x-auto overscroll-x-contain pb-3">
         {(isGuest ? videos.slice(0, 6) : videos).map((video, index) => (
           <div key={video.videoId} className="w-[78vw] min-w-[280px] shrink-0 md:w-[31%] md:min-w-[300px] lg:w-[30%] xl:w-[28.5%] 2xl:w-[28%]">
@@ -1174,6 +1194,7 @@ function RemotePreparationSection({
 
 export default function CorporateEnglishTalksPage() {
   const { isAuthenticated, isMember, membershipCapabilities } = useAuth()
+  const { text } = useLanguage()
   const { showError } = useNotificationHelpers()
   const showErrorRef = useRef(showError)
   const [ceoLoading, setCeoLoading] = useState(true)
@@ -1340,7 +1361,7 @@ export default function CorporateEnglishTalksPage() {
               </>
             ) : (
               <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-                后台发布 CEO 访谈后，这里会展示最新内容。
+                {text('后台发布 CEO 访谈后，这里会展示最新内容。', 'New CEO interviews will appear here when published.')}
               </div>
             )}
 
@@ -1355,7 +1376,7 @@ export default function CorporateEnglishTalksPage() {
 
             <section className="space-y-4">
               <CategoryRail
-                title="英语面试"
+                title={text('英语面试', 'English interview preparation')}
                 categories={interviewCategories}
                 activeCategory={activeInterviewCategory}
                 onChange={setActiveInterviewCategory}
@@ -1363,7 +1384,7 @@ export default function CorporateEnglishTalksPage() {
               <ModuleSection
                 section="english_interview"
                 videos={sortedInterviewVideos}
-                emptyText="后台发布英语面试视频后，这里会按岗位类型展示。"
+                emptyText={text('后台发布英语面试视频后，这里会按岗位类型展示。', 'English interview videos will be organized here by role type.')}
                 featuredLayout={activeInterviewCategory === '全部'}
                 loading={interviewLoading}
                 isGuest={isGuest}
@@ -1371,8 +1392,8 @@ export default function CorporateEnglishTalksPage() {
             </section>
 
             <section className="space-y-4">
-              <SectionHeader title="远程会议" subtitle="提前适应远程工作环境，丝滑过渡" />
-              <ModuleSection section="foreign_meeting" videos={sortedMeetingVideos} emptyText="后台发布远程会议视频后，这里会展示最新会议内容。" loading={meetingLoading} isGuest={isGuest} />
+              <SectionHeader title={text('远程会议', 'Remote meetings')} subtitle={text('提前适应远程工作环境，丝滑过渡', 'Get comfortable with global remote meetings before your first day.')} />
+              <ModuleSection section="foreign_meeting" videos={sortedMeetingVideos} emptyText={text('后台发布远程会议视频后，这里会展示最新会议内容。', 'Remote meeting videos will appear here when published.')} loading={meetingLoading} isGuest={isGuest} />
             </section>
           </div>
       </div>

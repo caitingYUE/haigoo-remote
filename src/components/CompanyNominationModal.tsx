@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Building2, Link as LinkIcon, User, MessageSquare, Loader2 } from 'lucide-react';
 import { useNotificationHelpers } from './NotificationSystem';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CompanyNominationModalProps {
     isOpen: boolean;
@@ -9,6 +10,7 @@ interface CompanyNominationModalProps {
 
 export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ isOpen, onClose }) => {
     const { showSuccess, showError } = useNotificationHelpers();
+    const { text } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         companyName: '',
@@ -40,7 +42,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
         e.preventDefault();
 
         if (!formData.companyName || !formData.companyWebsite || !formData.contact) {
-            showError('请填写必要信息', '企业名称、官网和联系方式为必填项');
+            showError(text('请填写必要信息', 'Complete the required fields'), text('企业名称、官网和联系方式为必填项', 'Company name, website, and contact details are required.'));
             return;
         }
 
@@ -48,7 +50,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
             setLoading(true);
             const token = localStorage.getItem('haigoo_auth_token');
             if (!token) {
-                showError('请先登录', '登录后即可提交招聘需求');
+                showError(text('请先登录', 'Please log in'), text('登录后即可提交招聘需求', 'Log in to submit your hiring request.'));
                 return;
             }
 
@@ -70,15 +72,15 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
             const data = await res.json();
 
             if (data.success) {
-                showSuccess('提交成功', '我们已收到由于您的招聘需求，工作人员将尽快与您联系。');
+                showSuccess(text('提交成功', 'Request submitted'), text('我们已收到您的招聘需求，工作人员将尽快与您联系。', 'We received your hiring request and will contact you soon.'));
                 onClose();
                 setFormData({ companyName: '', companyWebsite: '', contact: '', recruitmentNeeds: '' });
             } else {
-                showError('提交失败', data.error || '请稍后重试');
+                showError(text('提交失败', 'Submission failed'), data.error || text('请稍后重试', 'Please try again later.'));
             }
         } catch (error) {
             console.error('Submission error:', error);
-            showError('提交失败', '网络请求错误，请稍后重试');
+            showError(text('提交失败', 'Submission failed'), text('网络请求错误，请稍后重试', 'Network error. Please try again later.'));
         } finally {
             setLoading(false);
         }
@@ -91,8 +93,8 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                 {/* Header */}
                 <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                     <div>
-                        <h3 className="text-lg font-bold text-slate-900">我要招聘</h3>
-                        <p className="text-sm text-slate-500">发布远程岗位，对接全球人才</p>
+                        <h3 className="text-lg font-bold text-slate-900">{text('我要招聘', 'Hire remote talent')}</h3>
+                        <p className="text-sm text-slate-500">{text('发布远程岗位，对接全球人才', 'Share remote roles and reach talent worldwide')}</p>
                     </div>
                     <button
                         onClick={onClose}
@@ -107,7 +109,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                企业名称 <span className="text-red-500">*</span>
+                                {text('企业名称', 'Company name')} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -116,7 +118,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     value={formData.companyName}
                                     onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
-                                    placeholder="请输入企业名称"
+                                    placeholder={text('请输入企业名称', 'Enter the company name')}
                                     required
                                 />
                             </div>
@@ -124,7 +126,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                官网链接 <span className="text-red-500">*</span>
+                                {text('官网链接', 'Company website')} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -141,7 +143,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                联系方式 <span className="text-red-500">*</span>
+                                {text('联系方式', 'Contact details')} <span className="text-red-500">*</span>
                             </label>
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -150,7 +152,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     value={formData.contact}
                                     onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
-                                    placeholder="HR 邮箱、微信或电话"
+                                    placeholder={text('HR 邮箱、微信或电话', 'HR email, WhatsApp, WeChat, or phone')}
                                     required
                                 />
                             </div>
@@ -158,7 +160,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
 
                         <div>
                             <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                招聘需求 <span className="text-slate-400 font-normal">(可选)</span>
+                                {text('招聘需求', 'Hiring needs')} <span className="text-slate-400 font-normal">{text('(可选)', '(optional)')}</span>
                             </label>
                             <div className="relative">
                                 <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
@@ -166,7 +168,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     value={formData.recruitmentNeeds}
                                     onChange={(e) => setFormData(prev => ({ ...prev, recruitmentNeeds: e.target.value }))}
                                     className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all min-h-[100px] resize-none"
-                                    placeholder="简述需要招聘的岗位、人数或特殊要求..."
+                                    placeholder={text('简述需要招聘的岗位、人数或特殊要求...', 'Briefly describe the roles, headcount, or special requirements...')}
                                 />
                             </div>
                         </div>
@@ -177,7 +179,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                 onClick={onClose}
                                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
                             >
-                                取消
+                                {text('取消', 'Cancel')}
                             </button>
                             <button
                                 type="submit"
@@ -185,7 +187,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                 className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-500/20 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                                提交需求
+                                {text('提交需求', 'Submit request')}
                             </button>
                         </div>
                     </form>

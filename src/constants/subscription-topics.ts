@@ -1,6 +1,13 @@
 import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
+import {
+  MAX_SUBSCRIPTION_TOPICS,
+  RECOMMENDED_SUBSCRIPTION_TOPICS
+} from '../../lib/shared/subscription-limits.js'
 
-export const MAX_SUBSCRIPTION_TOPICS = 3
+export {
+  MAX_SUBSCRIPTION_TOPICS,
+  RECOMMENDED_SUBSCRIPTION_TOPICS
+}
 
 export const SUBSCRIPTION_TOPIC_ALIASES: Record<string, string[]> = {
   '后端开发': ['backend', 'backend engineer', 'server side', 'java', 'python', 'go', 'node', '服务端'],

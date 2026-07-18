@@ -9,6 +9,8 @@ import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.webp'
 import { loadGoogleIdentity } from '../utils/googleIdentity'
+import { useLanguage } from '../contexts/LanguageContext'
+import LanguageToggle from '../components/LanguageToggle'
 
 // Google Client ID from environment
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || ''
@@ -22,6 +24,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   
   const { login, loginWithGoogle } = useAuth()
+  const { text } = useLanguage()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -32,7 +35,7 @@ export default function LoginPage() {
 
   const handleGoogleCallback = useCallback(async (response: any) => {
     if (!response.credential) {
-      setError('Google 登录失败：未获取到凭证')
+      setError(text('Google 登录失败：未获取到凭证', 'Google sign-in failed: no credential received'))
       return
     }
 
@@ -48,15 +51,15 @@ export default function LoginPage() {
         navigate(from, { replace: true })
       } else {
         console.error('[LoginPage] Google login failed:', result.error)
-        setError(result.error || 'Google 登录失败')
+        setError(result.error || text('Google 登录失败', 'Google sign-in failed'))
       }
     } catch (err) {
       console.error('[LoginPage] Google login error:', err)
-      setError('Google 登录失败，请稍后重试')
+      setError(text('Google 登录失败，请稍后重试', 'Google sign-in failed. Please try again later.'))
     } finally {
       setIsLoading(false)
     }
-  }, [loginWithGoogle, navigate, from])
+  }, [loginWithGoogle, navigate, from, text])
 
   const initializeGoogleSignIn = useCallback(() => {
     try {
@@ -116,10 +119,10 @@ export default function LoginPage() {
       if (result.success) {
         navigate(from, { replace: true })
       } else {
-        setError(result.error || '登录失败')
+        setError(result.error || text('登录失败', 'Login failed'))
       }
     } catch (err) {
-      setError('登录失败，请稍后重试')
+      setError(text('登录失败，请稍后重试', 'Login failed. Please try again later.'))
     } finally {
       setIsLoading(false)
     }
@@ -129,12 +132,13 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900">欢迎回来</h1>
-          <p className="text-slate-600 mt-2">登录您的 Haigoo 账户</p>
+          <h1 className="text-2xl font-bold text-slate-900">{text('欢迎回来', 'Welcome back')}</h1>
+          <p className="text-slate-600 mt-2">{text('登录您的 Haigoo 账户', 'Log in to your Haigoo account')}</p>
         </div>
 
         {/* 登录表单 */}
@@ -147,7 +151,7 @@ export default function LoginPage() {
                 {errorCode === 'USER_NOT_FOUND' && (
                   <div className="mt-2">
                     <Link to="/register" className="text-red-700 font-bold underline hover:text-red-800">
-                      前往注册 &rarr;
+                      {text('前往注册', 'Create an account')} &rarr;
                     </Link>
                   </div>
                 )}
@@ -157,7 +161,7 @@ export default function LoginPage() {
             {/* 邮箱 */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                邮箱地址
+                {text('邮箱地址', 'Email address')}
               </label>
               <input
                 id="email"
@@ -174,13 +178,13 @@ export default function LoginPage() {
             <div>
               <div className="flex justify-between items-center mb-2">
                 <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                  密码
+                  {text('密码', 'Password')}
                 </label>
                 <Link 
                   to="/forgot-password" 
                   className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                 >
-                  忘记密码？
+                  {text('忘记密码？', 'Forgot password?')}
                 </Link>
               </div>
               <div className="relative">
@@ -213,7 +217,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
-              {isLoading ? '登录中...' : '登录'}
+              {isLoading ? text('登录中...', 'Logging in...') : text('登录', 'Log in')}
             </button>
           </form>
 
@@ -223,7 +227,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-slate-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-slate-500">或</span>
+              <span className="px-2 bg-white text-slate-500">{text('或', 'or')}</span>
             </div>
           </div>
 
@@ -233,9 +237,9 @@ export default function LoginPage() {
 
           {/* 注册链接 */}
           <p className="text-center mt-6 text-sm text-slate-600">
-            还没有账户？{' '}
+            {text('还没有账户？', "Don't have an account?")}{' '}
             <Link to="/register" className="text-indigo-600 font-medium hover:text-indigo-700">
-              立即注册
+              {text('立即注册', 'Sign up')}
             </Link>
           </p>
         </div>
@@ -243,7 +247,7 @@ export default function LoginPage() {
         {/* 返回首页 */}
         <div className="text-center mt-6">
           <Link to="/" className="text-sm text-slate-600 hover:text-slate-900">
-            ← 返回首页
+            ← {text('返回首页', 'Back to home')}
           </Link>
         </div>
       </div>

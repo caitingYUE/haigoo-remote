@@ -3,6 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Mail, CheckCircle } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.webp'
+import { useLanguage } from '../contexts/LanguageContext'
+import LanguageToggle from '../components/LanguageToggle'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')
@@ -11,6 +13,7 @@ export default function ForgotPasswordPage() {
   const [error, setError] = useState('')
 
   const { requestPasswordReset } = useAuth()
+  const { text } = useLanguage()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,10 +28,10 @@ export default function ForgotPasswordPage() {
       if (result.success) {
         setIsSuccess(true)
       } else {
-        setError(result.error || '发送重置邮件失败，请稍后重试')
+        setError(result.error || text('发送重置邮件失败，请稍后重试', 'Could not send the reset email. Please try again later.'))
       }
     } catch (err) {
-      setError('发送重置邮件失败，请稍后重试')
+      setError(text('发送重置邮件失败，请稍后重试', 'Could not send the reset email. Please try again later.'))
     } finally {
       setIsSubmitting(false)
     }
@@ -36,12 +39,13 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
+      <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-slate-900">重置密码</h1>
-          <p className="text-slate-600 mt-2">我们将向您发送重置密码的链接</p>
+          <h1 className="text-2xl font-bold text-slate-900">{text('重置密码', 'Reset your password')}</h1>
+          <p className="text-slate-600 mt-2">{text('我们将向您发送重置密码的链接', 'We will email you a password reset link')}</p>
         </div>
 
         {/* 表单 */}
@@ -51,15 +55,15 @@ export default function ForgotPasswordPage() {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold text-slate-900 mb-2">邮件已发送</h3>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">{text('邮件已发送', 'Email sent')}</h3>
               <p className="text-slate-600 mb-6">
-                如果 <strong>{email}</strong> 已注册，我们已向其发送了重置密码的说明，请查收邮件（包括垃圾邮件箱）。
+                {text(`如果 ${email} 已注册，我们已向其发送了重置密码的说明，请查收邮件（包括垃圾邮件箱）。`, `If ${email} is registered, we sent password reset instructions. Please check your inbox and spam folder.`)}
               </p>
               <Link
                 to="/login"
                 className="inline-block w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
               >
-                返回登录
+                {text('返回登录', 'Back to login')}
               </Link>
             </div>
           ) : (
@@ -74,7 +78,7 @@ export default function ForgotPasswordPage() {
               {/* 邮箱 */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-                  邮箱地址
+                  {text('邮箱地址', 'Email address')}
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -98,7 +102,7 @@ export default function ForgotPasswordPage() {
                 disabled={isSubmitting}
                 className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? '发送中...' : '发送重置链接'}
+                {isSubmitting ? text('发送中...', 'Sending...') : text('发送重置链接', 'Send reset link')}
               </button>
             </form>
           )}
@@ -107,7 +111,7 @@ export default function ForgotPasswordPage() {
           {!isSuccess && (
             <div className="mt-6 text-center">
               <Link to="/login" className="text-sm text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
-                <ArrowLeft className="w-4 h-4" /> 返回登录
+                <ArrowLeft className="w-4 h-4" /> {text('返回登录', 'Back to login')}
               </Link>
             </div>
           )}

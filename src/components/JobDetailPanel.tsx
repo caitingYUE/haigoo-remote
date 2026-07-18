@@ -23,6 +23,7 @@ import { findLocation } from '../data/locations'
 import { corporateEnglishPublicService, type CorporateEnglishCompanyDetail, type CorporateEnglishPublicVideo } from '../services/corporate-english-public-service'
 import { getCompanyLogoSources } from '../utils/company-logo'
 import EmailVerificationRequiredModal from './EmailVerificationRequiredModal'
+import { useLanguage } from '../contexts/LanguageContext'
 
 interface JobDetailPanelProps {
     job: Job
@@ -60,21 +61,17 @@ type ReferralAccessMode =
     | 'free_available'
     | 'free_exhausted'
 
-const GuestMaskedInline = ({ className = 'w-20' }: { className?: string }) => (
-    <span
-        className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
-        aria-label="登录后查看"
-        title="登录后查看"
-    />
-)
+const GuestMaskedInline = ({ className = 'w-20' }: { className?: string }) => {
+    const { isEnglish } = useLanguage()
+    const label = isEnglish ? 'Log in to view' : '登录后查看'
+    return <span className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`} aria-label={label} title={label} />
+}
 
-const GuestMaskedStatValue = ({ className = 'w-24' }: { className?: string }) => (
-    <span
-        className={`mt-1 inline-flex h-4 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
-        aria-label="登录后查看"
-        title="登录后查看"
-    />
-)
+const GuestMaskedStatValue = ({ className = 'w-24' }: { className?: string }) => {
+    const { isEnglish } = useLanguage()
+    const label = isEnglish ? 'Log in to view' : '登录后查看'
+    return <span className={`mt-1 inline-flex h-4 rounded-full bg-slate-300/80 blur-[2px] ${className}`} aria-label={label} title={label} />
+}
 
 const JOB_TYPE_LABELS: Record<string, string> = {
     'full-time': '全职',
@@ -273,12 +270,13 @@ function resolveDetailBackground(job: Job) {
 }
 
 function HotApplicationBadge({ count }: { count: number }) {
+    const { isEnglish } = useLanguage()
     return (
         <span
             className="inline-flex h-6 shrink-0 items-center rounded-full border border-amber-200 bg-amber-50 px-2.5 text-[11px] font-black text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
-            title={`${count} 位用户已申请`}
+            title={isEnglish ? `${count} applicants` : `${count} 位用户已申请`}
         >
-            🔥热门
+            🔥{isEnglish ? 'Hot' : '热门'}
         </span>
     )
 }
@@ -304,6 +302,7 @@ function ApplicationGuidePanel({
     onUpgrade?: () => void
     className?: string
 }) {
+    const { text } = useLanguage()
     const [expanded, setExpanded] = useState(false)
     const isUnlocked = accessMode === 'unlocked'
     const shouldCollapse = guide.length > APPLICATION_GUIDE_MAX_COLLAPSED_CHARS
@@ -312,14 +311,14 @@ function ApplicationGuidePanel({
         : guide
 
     const actionLabel = accessMode === 'guest'
-        ? '登录后查看'
+        ? text('登录后查看', 'Log in to view')
         : accessMode === 'verification_required'
-            ? '解锁指南（待验证）'
+            ? text('解锁指南（待验证）', 'Unlock guide (verification required)')
         : accessMode === 'member_only'
-            ? '了解 Club 权益'
+            ? text('了解 Club 权益', 'Explore Club benefits')
             : accessMode === 'free_exhausted'
-                ? `解锁指南 ${remaining}/${limit}`
-                : `解锁指南 ${remaining}/${limit}`
+                ? `${text('解锁指南', 'Unlock guide')} ${remaining}/${limit}`
+                : `${text('解锁指南', 'Unlock guide')} ${remaining}/${limit}`
 
     const handleAction = () => {
         if (accessMode === 'free_available' || accessMode === 'guest' || accessMode === 'verification_required') {
@@ -336,7 +335,7 @@ function ApplicationGuidePanel({
                     <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-[#f1f8ff] text-[#5f83f7]">
                         <BookOpen className="h-4 w-4" />
                     </span>
-                    <h4 className="truncate text-base font-black tracking-tight text-slate-900">岗位申请指南</h4>
+                    <h4 className="truncate text-base font-black tracking-tight text-slate-900">{text('岗位申请指南', 'Application guide')}</h4>
                 </div>
                 {!isUnlocked ? (
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
@@ -355,14 +354,14 @@ function ApplicationGuidePanel({
                             onClick={() => setExpanded((value) => !value)}
                             className="mt-3 inline-flex items-center gap-1.5 text-xs font-black text-[#6f63f6] transition hover:text-[#5f55e8]"
                         >
-                            {expanded ? '收起' : '展开'}
+                            {expanded ? text('收起', 'Show less') : text('展开', 'Show more')}
                             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
                         </button>
                     ) : null}
                 </>
             ) : (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-                    <p className="text-sm leading-6 text-slate-600">解锁后查看该岗位的投递重点、申请路径和准备建议。</p>
+                    <p className="text-sm leading-6 text-slate-600">{text('解锁后查看该岗位的投递重点、申请路径和准备建议。', 'Unlock the guide to see application priorities, steps, and preparation tips for this role.')}</p>
                     <button
                         type="button"
                         onClick={handleAction}
@@ -370,7 +369,7 @@ function ApplicationGuidePanel({
                         className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#6f63f6] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <Lock className="h-4 w-4" />
-                        {isUnlocking ? '解锁中...' : actionLabel}
+                        {isUnlocking ? text('解锁中...', 'Unlocking...') : actionLabel}
                     </button>
                 </div>
             )}
@@ -472,6 +471,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 }) => {
     const navigate = useNavigate()
     const { isMember, isAuthenticated, token, user } = useAuth()
+    const { isEnglish, text } = useLanguage()
     const isEmailVerificationRequired = Boolean(isAuthenticated && user && !user.emailVerified)
     const sourceType = getJobSourceType(job)
     const shouldMaskGuestMeta = !isAuthenticated || isEmailVerificationRequired
@@ -605,7 +605,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         setActiveDetailTab('description')
 
         const savedPreference = typeof window !== 'undefined' ? localStorage.getItem(translationPreferenceKey) : null
-        const shouldShowTranslation = hasTranslation && savedPreference !== 'original'
+        const shouldShowTranslation = !isEnglish && hasTranslation && savedPreference !== 'original'
         setShowTranslation(shouldShowTranslation)
 
         // Track view job detail
@@ -622,7 +622,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             })
         }
-    }, [job?.id, hasTranslation, translationPreferenceKey, sourceType, job?.title, job?.company, trackingBase, trackingModule])
+    }, [job?.id, hasTranslation, translationPreferenceKey, sourceType, job?.title, job?.company, trackingBase, trackingModule, isEnglish])
 
     useEffect(() => {
         let cancelled = false
@@ -854,7 +854,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         try {
             popup.opener = null
-            popup.document.title = '正在跳转申请页面...'
+            popup.document.title = text('正在跳转申请页面...', 'Opening application page...')
             popup.document.body.style.margin = '0'
             popup.document.body.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
             popup.document.body.style.display = 'flex'
@@ -862,7 +862,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             popup.document.body.style.justifyContent = 'center'
             popup.document.body.style.minHeight = '100vh'
             popup.document.body.style.color = '#475569'
-            popup.document.body.innerHTML = '<div style="font-size:14px;">正在打开岗位申请页面...</div>'
+            popup.document.body.innerHTML = `<div style="font-size:14px;">${text('正在打开岗位申请页面...', 'Opening the job application page...')}</div>`
         } catch (_error) {
             // Ignore cross-window DOM errors and continue with navigation handoff.
         }
@@ -885,9 +885,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             translatedResponsibilities: job?.translations?.responsibilities || [],
             benefits: job?.benefits || [],
             translatedBenefits: job?.translations?.benefits || [],
-            preferTranslated: showTranslation
+            preferTranslated: showTranslation,
+            language: isEnglish ? 'en' : 'zh'
         })
-    }, [job, showTranslation])
+    }, [job, showTranslation, isEnglish])
 
     const goToLogin = (message = '登录后可以继续使用岗位功能。') => {
         const returnPath = typeof window !== 'undefined'
@@ -1506,20 +1507,20 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         navigate(getCompanyDetailPath(job.company || ''))
     }
 
-    const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || '未分类'
+    const companyIndustryLabel = companyInfo?.industry || job.companyIndustry || job.category || text('未分类', 'Uncategorized')
     const rawCompanyJobCount = Number(companyInfo?.jobCount)
     const trustedCompanyJobCount = Number.isFinite(rawCompanyJobCount) && rawCompanyJobCount > 0 ? rawCompanyJobCount : null
     const companyOpenJobCount = companyOpenJobsCount ?? trustedCompanyJobCount
-    const companyDescription = String(companyInfo?.description || job.companyDescription || '').trim() || '该企业暂无公开简介信息，Haigoo 正在持续补充。'
+    const companyDescription = String(companyInfo?.description || job.companyDescription || '').trim() || text('该企业暂无公开简介信息，Haigoo 正在持续补充。', 'No public company description is available yet. Haigoo is working to add one.')
     const companySpecialties = Array.isArray(companyInfo?.specialties) ? companyInfo!.specialties.filter(Boolean).slice(0, 8) : []
     const companyFactCards = [
-        { label: '官网', value: companyInfo?.website || job.companyWebsite || '', href: companyInfo?.website || job.companyWebsite || '' },
-        { label: '员工规模', value: companyInfo?.employeeCount || '规模未知' },
-        { label: '总部地址', value: companyInfo?.address || job.companyAddress || '总部未知' },
-        { label: '成立年份', value: companyInfo?.foundedYear ? `${companyInfo.foundedYear}年` : '年份未知' },
-        { label: '企业评分', value: companyInfo?.companyRating || job.companyRating ? `${companyInfo?.companyRating || job.companyRating}${(companyInfo?.ratingSource || job.ratingSource) ? ` · ${companyInfo?.ratingSource || job.ratingSource}` : ''}` : '暂无评分' },
-        { label: '行业类型', value: companyIndustryLabel },
-        { label: '在招岗位', value: companyOpenJobCount != null ? `${companyOpenJobCount} 个` : '统计中' }
+        { label: text('官网', 'Website'), value: companyInfo?.website || job.companyWebsite || '', href: companyInfo?.website || job.companyWebsite || '' },
+        { label: text('员工规模', 'Company size'), value: companyInfo?.employeeCount || text('规模未知', 'Unknown') },
+        { label: text('总部地址', 'Headquarters'), value: companyInfo?.address || job.companyAddress || text('总部未知', 'Unknown') },
+        { label: text('成立年份', 'Founded'), value: companyInfo?.foundedYear ? `${companyInfo.foundedYear}` : text('年份未知', 'Unknown') },
+        { label: text('企业评分', 'Company rating'), value: companyInfo?.companyRating || job.companyRating ? `${companyInfo?.companyRating || job.companyRating}${(companyInfo?.ratingSource || job.ratingSource) ? ` · ${companyInfo?.ratingSource || job.ratingSource}` : ''}` : text('暂无评分', 'Not rated') },
+        { label: text('行业类型', 'Industry'), value: companyIndustryLabel },
+        { label: text('在招岗位', 'Open roles'), value: companyOpenJobCount != null ? `${companyOpenJobCount}` : text('统计中', 'Loading') }
     ].filter((item) => item.value)
     const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
     const websiteApplyFreeRemaining = Math.max(0, websiteApplyFreeLimit - websiteApplyUsageCount)
@@ -1693,29 +1694,29 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         window.open(`/careerlearning?${query.toString()}`, '_blank', 'noopener,noreferrer')
     }
     const getApplyButtonLabel = () => {
-        if (!isAuthenticated) return '前往申请（需登录）'
-        if (isEmailVerificationRequired) return '前往申请（待验证）'
+        if (!isAuthenticated) return text('前往申请（需登录）', 'Apply (login required)')
+        if (isEmailVerificationRequired) return text('前往申请（待验证）', 'Apply (email verification required)')
 
         switch (websiteApplyState) {
             case 'login_required':
-                return '前往申请（需登录）'
+                return text('前往申请（需登录）', 'Apply (login required)')
             case 'website_available':
-                if (isMemberRestrictedJob && !isMember) return '解锁申请入口'
-                if (isMemberRestrictedJob) return '前往申请'
-                if (websiteApplyUnlocked && !isMember) return '前往申请（已解锁）'
+                if (isMemberRestrictedJob && !isMember) return text('解锁申请入口', 'Unlock application')
+                if (isMemberRestrictedJob) return text('前往申请', 'Apply now')
+                if (websiteApplyUnlocked && !isMember) return text('前往申请（已解锁）', 'Apply now (unlocked)')
                 return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
-                    ? `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
-                    : '前往申请'
+                    ? `${text('前往申请', 'Apply now')} ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
+                    : text('前往申请', 'Apply now')
             case 'website_locked_member':
-                if (isMemberRestrictedJob && !isMember) return '解锁申请入口'
-                if (isMemberRestrictedJob) return '前往申请'
-                return `前往申请 ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
+                if (isMemberRestrictedJob && !isMember) return text('解锁申请入口', 'Unlock application')
+                if (isMemberRestrictedJob) return text('前往申请', 'Apply now')
+                return `${text('前往申请', 'Apply now')} ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
             case 'email_only':
-                if (isMemberRestrictedJob && !isMember) return '解锁申请入口'
-                if (isReferralCompanyUnlocked && !isMember) return '仅支持邮箱申请（已解锁）'
-                return '仅支持邮箱申请'
+                if (isMemberRestrictedJob && !isMember) return text('解锁申请入口', 'Unlock application')
+                if (isReferralCompanyUnlocked && !isMember) return text('仅支持邮箱申请（已解锁）', 'Apply by email (unlocked)')
+                return text('仅支持邮箱申请', 'Apply by email')
             default:
-                return '暂无申请入口'
+                return text('暂无申请入口', 'Application unavailable')
         }
     }
     const getApplyButtonClassName = () => {
@@ -1851,17 +1852,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return items
     }, [] as { label: string, type: 'normal' }[])
 
-    const headquartersAddress = companyInfo?.address || job.companyAddress || jobAny.company_address || jobAny.trustedAddress || jobAny.trusted_address || '总部未知'
+    const headquartersAddress = companyInfo?.address || job.companyAddress || jobAny.company_address || jobAny.trustedAddress || jobAny.trusted_address || text('总部未知', 'Unknown')
     const headquartersLocationData = useMemo(() => {
         return isConcreteLocationValue(headquartersAddress) ? findLocation(headquartersAddress) : null
     }, [headquartersAddress])
     const canShowHeadquartersLocationTooltip = Boolean(headquartersLocationData)
     const detailBackgroundSrc = resolveDetailBackground(job)
     const iconStats = [
-        { label: '薪资范围', value: formatSalaryForDisplay(job.salary, '具体面议'), icon: DollarSign, maskForGuest: true, maskWidth: 'w-24' },
-        { label: '发布时间', value: job.publishedAt ? new Date(job.publishedAt).toLocaleDateString('zh-CN') : '未知', icon: Calendar, maskForGuest: true, maskWidth: 'w-20' },
-        { label: '总部地址', value: headquartersAddress, icon: MapPin, maskForGuest: true, maskWidth: 'w-24', locationTooltip: canShowHeadquartersLocationTooltip ? 'headquarters' as const : undefined },
-        { label: '行业类型', value: companyIndustryLabel || '未知', icon: Building2, maskForGuest: true, maskWidth: 'w-20' }
+        { label: text('薪资范围', 'Salary'), value: formatSalaryForDisplay(job.salary, text('具体面议', 'Negotiable')), icon: DollarSign, maskForGuest: true, maskWidth: 'w-24' },
+        { label: text('发布时间', 'Published'), value: job.publishedAt ? new Date(job.publishedAt).toLocaleDateString(isEnglish ? 'en' : 'zh-CN') : text('未知', 'Unknown'), icon: Calendar, maskForGuest: true, maskWidth: 'w-20' },
+        { label: text('总部地址', 'Headquarters'), value: headquartersAddress, icon: MapPin, maskForGuest: true, maskWidth: 'w-24', locationTooltip: canShowHeadquartersLocationTooltip ? 'headquarters' as const : undefined },
+        { label: text('行业类型', 'Industry'), value: companyIndustryLabel || text('未知', 'Unknown'), icon: Building2, maskForGuest: true, maskWidth: 'w-20' }
     ]
     const positionHeadquartersTooltip = () => {
         if (typeof window === 'undefined') return
@@ -1874,9 +1875,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const detailTabs = [
-        { key: 'description' as const, label: '职位详情' },
-        { key: 'company' as const, label: '企业信息' },
-        { key: 'jobs' as const, label: `在招职位 ${companyOpenJobCount != null ? companyOpenJobCount : ''}`.trim() }
+        { key: 'description' as const, label: text('职位详情', 'Job details') },
+        { key: 'company' as const, label: text('企业信息', 'Company') },
+        { key: 'jobs' as const, label: `${text('在招职位', 'Open roles')} ${companyOpenJobCount != null ? companyOpenJobCount : ''}`.trim() }
     ]
     const companyJobsForTab = useMemo(() => {
         const seen = new Set<string>()
@@ -1930,7 +1931,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             {displayText(job.title, job.translations?.title)}
                         </h1>
 
-                        {hasTranslation ? (
+                        {hasTranslation && !isEnglish ? (
                             <div className="inline-flex h-6 shrink-0 items-center rounded-full border border-[#d7e2ff] bg-[#f8faff] px-0.5 text-[11px] font-black text-slate-400 shadow-[0_8px_20px_-18px_rgba(47,81,140,0.5)]" aria-label="切换岗位详情语言">
                                 <button
                                     type="button"
@@ -1964,14 +1965,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             }`}
                         >
                             <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
-                            <span>{isSaved ? '已收藏' : '收藏'}</span>
+                            <span>{isSaved ? text('已收藏', 'Saved') : text('收藏', 'Save')}</span>
                         </button>
                         <button
                             onClick={handleShare}
                             className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#d8d2ff] hover:text-[#6f63f6]"
                         >
                             <Share2 className="h-3.5 w-3.5" />
-                            <span>分享</span>
+                            <span>{text('分享', 'Share')}</span>
                         </button>
                     </div>
                 </div>
@@ -1984,14 +1985,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         }`}
                     >
                         <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
-                        <span>{isSaved ? '已收藏' : '收藏'}</span>
+                        <span>{isSaved ? text('已收藏', 'Saved') : text('收藏', 'Save')}</span>
                     </button>
                     <button
                         onClick={handleShare}
                         className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#d8d2ff] hover:text-[#6f63f6]"
                     >
                         <Share2 className="h-3.5 w-3.5" />
-                        <span>分享</span>
+                        <span>{text('分享', 'Share')}</span>
                     </button>
                 </div>
 
@@ -2119,12 +2120,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <Lock className="h-4 w-4" />
                                     </span>
                                     <span className="min-w-0">
-                                        <span className="block truncate text-[13px] font-black text-slate-900">Club 会员可解锁联系人与申请入口</span>
-                                        <span className="block truncate text-[12px] font-semibold text-slate-500">了解适合你的服务方案，加入后可开通网站对应权限。</span>
+                                        <span className="block truncate text-[13px] font-black text-slate-900">{text('Club 会员可解锁联系人与申请入口', 'Club members can unlock contacts and application access')}</span>
+                                        <span className="block truncate text-[12px] font-semibold text-slate-500">{text('了解适合你的服务方案，加入后可开通网站对应权限。', 'Explore a plan that fits your needs and unlock the relevant tools.')}</span>
                                     </span>
                                 </div>
                                 <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-slate-950 px-3.5 text-[12px] font-black text-white transition-colors group-hover:bg-[#6f63f6]">
-                                    了解解锁方式
+                                    {text('了解解锁方式', 'See unlock options')}
                                 </span>
                             </button>
                     )}
@@ -2413,7 +2414,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     {((job.tags && job.tags.length > 0) || (job.skills && job.skills.length > 0)) && (
                         <section className="rounded-[26px] border border-[#dce8ef] bg-white/88 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(52,76,92,0.24)]">
                             <h3 className="text-base font-semibold text-slate-900 mb-3">
-                                技能要求
+                                {text('技能要求', 'Skills')}
                             </h3>
                             <SingleLineTags
                                 tags={(Array.isArray(job.tags) && job.tags.length > 0
@@ -2496,7 +2497,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                                     {companySpecialties.length > 0 && (
                                         <div className="mt-6 border-t border-slate-100 pt-5">
-                                            <div className="text-[13px] font-semibold text-slate-400">企业领域/专长</div>
+                                            <div className="text-[13px] font-semibold text-slate-400">{text('企业领域/专长', 'Company specialties')}</div>
                                             <div className="mt-3 flex flex-wrap gap-2.5">
                                                 {companySpecialties.map((item) => (
                                                     <span key={item} className="rounded-full border border-slate-200/80 bg-white px-3.5 py-1.5 text-[13px] font-semibold text-slate-600 shadow-sm">
@@ -2526,11 +2527,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         <section className="rounded-[26px] border border-slate-100 bg-white/88 p-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
                             <div className="mb-4 flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-bold text-slate-900">企业在招岗位</h3>
-                                    <p className="mt-1 text-sm text-slate-500">包含当前岗位；点击其他岗位可在弹窗中查看详情</p>
+                                    <h3 className="text-lg font-bold text-slate-900">{text('企业在招岗位', 'Open roles at this company')}</h3>
+                                    <p className="mt-1 text-sm text-slate-500">{text('包含当前岗位；点击其他岗位可在弹窗中查看详情', 'Includes this role; select another role to view its details.')}</p>
                                 </div>
                                 <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-                                    {companyOpenJobCount != null ? `${companyOpenJobCount} 个` : '统计中'}
+                                    {companyOpenJobCount != null ? `${companyOpenJobCount}` : text('统计中', 'Loading')}
                                 </span>
                             </div>
                             {companyJobsForTab.length > 0 ? (
@@ -2556,15 +2557,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         >
                                             <div className="min-w-0">
                                                 <div className="flex min-w-0 items-center gap-2">
-                                                    <div className="truncate text-sm font-bold text-slate-900">{item.translations?.title || item.title}</div>
+                                                    <div className="truncate text-sm font-bold text-slate-900">{isEnglish ? item.title : (item.translations?.title || item.title)}</div>
                                                     {isCurrentJob ? (
-                                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">当前</span>
+                                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">{text('当前', 'Current')}</span>
                                                     ) : null}
                                                 </div>
                                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                                                    <span>{JOB_TYPE_LABELS[item.type] || item.type || '岗位'}</span>
+                                                    <span>{isEnglish ? (item.type || 'Job') : (JOB_TYPE_LABELS[item.type] || item.type || '岗位')}</span>
                                                     <span>·</span>
-                                                    <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString('zh-CN') : '未知时间'}</span>
+                                                    <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleDateString(isEnglish ? 'en' : 'zh-CN') : text('未知时间', 'Unknown date')}</span>
                                                 </div>
                                             </div>
                                             <ChevronRight className="h-4 w-4 shrink-0 text-slate-400" />
@@ -2591,8 +2592,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                                 <div className="relative z-10 flex items-center justify-between">
                                     <div>
-                                        <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80">岗位反馈</div>
-                                        <h3 className="mt-3 text-lg font-bold">告诉我们这条岗位信息是否准确</h3>
+                                        <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80">{text('岗位反馈', 'Job feedback')}</div>
+                                        <h3 className="mt-3 text-lg font-bold">{text('告诉我们这条岗位信息是否准确', 'Tell us whether this job information is accurate')}</h3>
                                     </div>
                                     <button onClick={() => setIsFeedbackOpen(false)} className="rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white">
                                         <X className="w-4 h-4" />
@@ -2600,32 +2601,32 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 </div>
                             </div>
                             <div className="p-5 space-y-4">
-                                <p className="text-sm text-slate-500">你的反馈会帮助我们继续优化岗位质量与展示准确度。</p>
+                                <p className="text-sm text-slate-500">{text('你的反馈会帮助我们继续优化岗位质量与展示准确度。', 'Your feedback helps us improve job quality and accuracy.')}</p>
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">该岗位信息是否准确？</label>
+                                    <label className="block text-sm font-medium mb-2">{text('该岗位信息是否准确？', 'Is this job information accurate?')}</label>
                                     <div className="flex flex-wrap items-center gap-3">
                                         <label className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm">
                                             <input type="radio" name="accuracy" value="accurate" checked={feedbackAccuracy === 'accurate'} onChange={() => setFeedbackAccuracy('accurate')} />
-                                            准确
+                                            {text('准确', 'Accurate')}
                                         </label>
                                         <label className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm">
                                             <input type="radio" name="accuracy" value="inaccurate" checked={feedbackAccuracy === 'inaccurate'} onChange={() => setFeedbackAccuracy('inaccurate')} />
-                                            不准确
+                                            {text('不准确', 'Inaccurate')}
                                         </label>
                                         <label className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-sm">
                                             <input type="radio" name="accuracy" value="unknown" checked={feedbackAccuracy === 'unknown'} onChange={() => setFeedbackAccuracy('unknown')} />
-                                            不确定
+                                            {text('不确定', 'Not sure')}
                                         </label>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">反馈内容</label>
-                                    <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm" placeholder="请描述你发现的问题或建议"></textarea>
+                                    <label className="block text-sm font-medium mb-2">{text('反馈内容', 'Feedback')}</label>
+                                    <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm" placeholder={text('请描述你发现的问题或建议', 'Describe the issue or suggestion')}></textarea>
                                 </div>
                                 {feedbackMessage && <div className="text-sm text-[#6f63f6]">{feedbackMessage}</div>}
                                 <div className="flex justify-end gap-2">
-                                    <button onClick={() => setIsFeedbackOpen(false)} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">取消</button>
-                                    <button onClick={submitFeedback} disabled={feedbackSubmitting} className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white hover:shadow-lg disabled:opacity-50">提交</button>
+                                    <button onClick={() => setIsFeedbackOpen(false)} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">{text('取消', 'Cancel')}</button>
+                                    <button onClick={submitFeedback} disabled={feedbackSubmitting} className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white hover:shadow-lg disabled:opacity-50">{text('提交', 'Submit')}</button>
                                 </div>
                             </div>
                         </div>
@@ -2655,8 +2656,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 isOpen={isShareModalOpen}
                 onClose={() => setIsShareModalOpen(false)}
                 jobId={job.id}
-                jobTitle={job.translations?.title || job.title}
-                companyName={job.translations?.company || job.company || ''}
+                jobTitle={isEnglish ? job.title : (job.translations?.title || job.title)}
+                companyName={isEnglish ? (job.company || '') : (job.translations?.company || job.company || '')}
             />
             <EmailVerificationRequiredModal
                 isOpen={showEmailVerificationPrompt}

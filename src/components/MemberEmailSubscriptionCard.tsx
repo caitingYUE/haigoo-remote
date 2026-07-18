@@ -2,23 +2,27 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { ArrowRight, CheckCircle2, ChevronDown, Crown, Loader2, Mail, PauseCircle, PlayCircle, Plus, Search, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import { buildRoleOptionGroups, type RoleOption } from '../constants/job-role-groups'
 import {
   getSubscriptionTopicSearchText,
   MAX_SUBSCRIPTION_TOPICS,
   normalizeSubscriptionTopicValue,
+  RECOMMENDED_SUBSCRIPTION_TOPICS,
   SUBSCRIPTION_TOPICS
 } from '../constants/subscription-topics'
+
+interface SubscriptionPreferences {
+  topics?: string[]
+  customTopic?: string | null
+  customTopics?: string[]
+}
 
 interface UserSubscription {
   subscription_id: number | string
   topic?: string
-  preferences?: {
-    topics?: string[]
-    customTopic?: string | null
-    customTopics?: string[]
-  }
+  preferences?: string | SubscriptionPreferences
   status: 'active' | 'inactive' | 'bounced'
 }
 
@@ -73,11 +77,20 @@ function normalizeTopicOption(value: string, count?: number): SubscriptionTopicO
   }
 }
 
+function parseSubscriptionPreferences(value: UserSubscription['preferences']): SubscriptionPreferences {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value
+  if (typeof value !== 'string' || !value.trim()) return {}
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
 function parseTopicState(subscription: UserSubscription | null) {
   if (!subscription) return { topics: [] as string[], customTopics: [] as string[] }
-  const preferences = subscription.preferences && typeof subscription.preferences === 'object'
-    ? subscription.preferences
-    : {}
+  const preferences = parseSubscriptionPreferences(subscription.preferences)
   const rawTopics = Array.isArray(preferences.topics)
     ? preferences.topics
     : String(subscription.topic || '').split(',')
@@ -102,6 +115,7 @@ function parseTopicState(subscription: UserSubscription | null) {
 
 export default function MemberEmailSubscriptionCard() {
   const { isAuthenticated, isMember, token, user } = useAuth()
+  const { text } = useLanguage()
   const { showSuccess, showError, showWarning } = useNotificationHelpers()
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -114,10 +128,10 @@ export default function MemberEmailSubscriptionCard() {
   const [activeTopicGroup, setActiveTopicGroup] = useState(0)
   const comboRef = useRef<HTMLDivElement | null>(null)
   const previousDropdownOpenRef = useRef(false)
+  const operationInFlightRef = useRef(false)
 
   const isActive = subscription?.status === 'active'
   const normalizedSearchTerm = normalizeSearchText(searchTerm)
-  const selectedCount = selectedTopics.length + customTopics.length
   const topicOptions = useMemo(() => {
     const optionMap = new Map<string, SubscriptionTopicOption>()
     const addOption = (option: SubscriptionTopicOption) => {
@@ -204,7 +218,7 @@ export default function MemberEmailSubscriptionCard() {
     })
   }, [activeTopicGroup, groupedTopicOptions, selectedTopics])
   const dropdownTopicOptions = normalizedSearchTerm ? visibleTopicOptions : currentTopicGroupOptions
-  const dropdownTitle = normalizedSearchTerm ? '匹配结果' : (groupedTopicOptions[activeTopicGroup]?.title || '岗位方向')
+  const dropdownTitle = normalizedSearchTerm ? text('匹配结果', 'Matching roles') : (groupedTopicOptions[activeTopicGroup]?.title || text('岗位方向', 'Role categories'))
   const customTopicHint = useMemo(() => {
     const hasFuzzyTopicMatch = (value: string) => {
       const normalizedValue = normalizeSearchText(value)
@@ -217,14 +231,14 @@ export default function MemberEmailSubscriptionCard() {
     }
     const nextTerm = searchTerm.trim()
     if (nextTerm && !exactMatchedTopic && visibleTopicOptions.length === 0) {
-      return `暂无「${nextTerm}」这类岗位，如后续新增该类型，会继续发送匹配岗位。`
+      return text(`暂无「${nextTerm}」这类岗位，如后续新增该类型，会继续发送匹配岗位。`, `No “${nextTerm}” roles are available yet. We’ll include matching roles when they are added.`)
     }
     const latestCustomTopic = customTopics[customTopics.length - 1]
     if (latestCustomTopic && !normalizedTopicLabels.has(normalizeSearchText(latestCustomTopic)) && !hasFuzzyTopicMatch(latestCustomTopic)) {
-      return `暂无「${latestCustomTopic}」这类岗位，如后续新增该类型，会继续发送匹配岗位。`
+      return text(`暂无「${latestCustomTopic}」这类岗位，如后续新增该类型，会继续发送匹配岗位。`, `No “${latestCustomTopic}” roles are available yet. We’ll include matching roles when they are added.`)
     }
     return ''
-  }, [customTopics, exactMatchedTopic, normalizedTopicLabels, searchTerm, topicOptions, visibleTopicOptions.length])
+  }, [customTopics, exactMatchedTopic, normalizedTopicLabels, searchTerm, text, topicOptions, visibleTopicOptions.length])
 
   useEffect(() => {
     let mounted = true
@@ -237,22 +251,21 @@ export default function MemberEmailSubscriptionCard() {
         })
         const data = await response.json().catch(() => ({}))
         if (!mounted) return
-        if (response.ok && data?.success) {
-          const emailSub = (data.subscriptions || []).find((item: UserSubscription) => item.status !== 'bounced') || data.subscriptions?.[0] || null
-          setSubscription(emailSub)
-          const next = parseTopicState(emailSub)
-          setSelectedTopics(next.topics)
-          setCustomTopics(next.customTopics)
-        }
+        if (!response.ok || !data?.success) throw new Error(data?.error || 'subscription_load_failed')
+        const emailSub = (data.subscriptions || []).find((item: UserSubscription) => item.status !== 'bounced') || data.subscriptions?.[0] || null
+        setSubscription(emailSub)
+        const next = parseTopicState(emailSub)
+        setSelectedTopics(next.topics)
+        setCustomTopics(next.customTopics)
       } catch {
-        if (mounted) showError('订阅信息加载失败', '请稍后刷新页面重试')
+        if (mounted) showError(text('订阅信息加载失败', 'Could not load your subscription'), text('请稍后刷新页面重试', 'Refresh the page and try again.'))
       } finally {
         if (mounted) setLoading(false)
       }
     }
     loadSubscription()
     return () => { mounted = false }
-  }, [isAuthenticated, token, showError])
+  }, [isAuthenticated, token, showError, text])
 
   useEffect(() => {
     let mounted = true
@@ -348,14 +361,15 @@ export default function MemberEmailSubscriptionCard() {
   }, [])
 
   const toggleTopic = (value: string) => {
-    setSelectedTopics(prev => {
-      if (prev.includes(value)) return prev.filter(item => item !== value)
-      if (prev.length + customTopics.length >= MAX_SUBSCRIPTION_TOPICS) {
-        showWarning(`最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向`)
-        return prev
-      }
-      return [...prev, value]
-    })
+    if (selectedTopics.includes(value)) {
+      setSelectedTopics(prev => prev.filter(item => item !== value))
+      return
+    }
+    if (selectedTopics.length + customTopics.length >= MAX_SUBSCRIPTION_TOPICS) {
+      showWarning(text('已触达订阅上限，无法继续添加', 'Subscription limit reached. You can’t add more categories.'))
+      return
+    }
+    setSelectedTopics(prev => prev.includes(value) ? prev : [...prev, value])
   }
 
   const removeSelectedItem = (value: string) => {
@@ -378,7 +392,7 @@ export default function MemberEmailSubscriptionCard() {
     }
     const alreadyExists = customTopics.some(item => normalizeSearchText(item) === normalizeSearchText(nextValue))
     if (!alreadyExists && selectedTopics.length + customTopics.length >= MAX_SUBSCRIPTION_TOPICS) {
-      showWarning(`最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向`)
+      showWarning(text('已触达订阅上限，无法继续添加', 'Subscription limit reached. You can’t add more categories.'))
       return
     }
     if (!alreadyExists) setCustomTopics(prev => uniqueCustomTopics([...prev, nextValue]))
@@ -406,11 +420,11 @@ export default function MemberEmailSubscriptionCard() {
   }
 
   const saveSubscription = async () => {
-    if (!token) return
+    if (!token || operationInFlightRef.current) return
     const pendingSearchTerm = searchTerm.trim()
     const pendingMatchedTopic = pendingSearchTerm ? normalizedTopicLabels.get(normalizeSearchText(pendingSearchTerm)) : null
     const nextSelectedTopics = pendingMatchedTopic && !selectedTopics.includes(pendingMatchedTopic)
-      ? [...selectedTopics, pendingMatchedTopic].slice(0, MAX_SUBSCRIPTION_TOPICS)
+      ? [...selectedTopics, pendingMatchedTopic]
       : selectedTopics
     const nextCustomTopics = uniqueCustomTopics([
       ...customTopics,
@@ -419,17 +433,18 @@ export default function MemberEmailSubscriptionCard() {
     const nextSelectedCount = nextSelectedTopics.length + nextCustomTopics.length
 
     if (selectedTopics.length === 0 && customTopics.length === 0 && !pendingMatchedTopic && nextCustomTopics.length === 0) {
-      showWarning('请选择岗位方向', '至少选择一个方向后再保存。')
+      showWarning(text('请选择岗位方向', 'Choose a role category'), text('至少选择一个方向后再保存。', 'Select at least one category before saving.'))
       return
     }
     if (nextSelectedCount > MAX_SUBSCRIPTION_TOPICS) {
-      showWarning(`最多选择 ${MAX_SUBSCRIPTION_TOPICS} 个方向`)
+      showWarning(text('已触达订阅上限，无法继续添加', 'Subscription limit reached. You can’t add more categories.'))
       return
     }
     const topicsToSave = nextCustomTopics.length
       ? [...nextSelectedTopics, 'other']
       : nextSelectedTopics.slice(0, MAX_SUBSCRIPTION_TOPICS)
 
+    operationInFlightRef.current = true
     setSaving(true)
     try {
       const response = await fetch('/api/auth?action=subscribe', {
@@ -446,7 +461,7 @@ export default function MemberEmailSubscriptionCard() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data?.success) {
-        showError('订阅保存失败', data?.error || '请稍后重试')
+        showError(text('订阅保存失败', 'Could not save subscription'), data?.error || text('请稍后重试', 'Please try again later.'))
         return
       }
       setSubscription(data.subscription)
@@ -454,16 +469,18 @@ export default function MemberEmailSubscriptionCard() {
       const next = parseTopicState(data.subscription)
       setSelectedTopics(next.topics)
       setCustomTopics(next.customTopics)
-      showSuccess('邮件订阅已保存', '之后会按你的方向匹配每日精选岗位。')
+      showSuccess(text('邮件订阅已保存', 'Email subscription saved'), text('之后会按你的方向匹配每日精选岗位。', 'We’ll match daily curated roles to your selected categories.'))
     } catch {
-      showError('订阅保存失败', '网络错误，请稍后重试')
+      showError(text('订阅保存失败', 'Could not save subscription'), text('网络错误，请稍后重试', 'Network error. Please try again later.'))
     } finally {
+      operationInFlightRef.current = false
       setSaving(false)
     }
   }
 
   const updateSubscriptionStatus = async (status: 'active' | 'inactive') => {
-    if (!token || !subscription) return
+    if (!token || !subscription || operationInFlightRef.current) return
+    operationInFlightRef.current = true
     setSaving(true)
     try {
       const response = await fetch('/api/auth?action=update-subscription', {
@@ -479,14 +496,15 @@ export default function MemberEmailSubscriptionCard() {
       })
       const data = await response.json().catch(() => ({}))
       if (!response.ok || !data?.success) {
-        showError('订阅状态更新失败', data?.error || '请稍后重试')
+        showError(text('订阅状态更新失败', 'Could not update subscription'), data?.error || text('请稍后重试', 'Please try again later.'))
         return
       }
       setSubscription(prev => prev ? { ...prev, status } : prev)
-      showSuccess(status === 'active' ? '订阅已恢复' : '订阅已暂停')
+      showSuccess(status === 'active' ? text('订阅已恢复', 'Subscription resumed') : text('订阅已暂停', 'Subscription paused'))
     } catch {
-      showError('订阅状态更新失败', '网络错误，请稍后重试')
+      showError(text('订阅状态更新失败', 'Could not update subscription'), text('网络错误，请稍后重试', 'Network error. Please try again later.'))
     } finally {
+      operationInFlightRef.current = false
       setSaving(false)
     }
   }
@@ -499,22 +517,22 @@ export default function MemberEmailSubscriptionCard() {
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h2 className="text-[22px] font-black leading-tight tracking-normal text-slate-950 sm:text-[26px]">
-                订阅你感兴趣的方向，及时接收最新岗位通知
+                {text('订阅你感兴趣的方向，及时接收最新岗位通知', 'Subscribe to the roles you care about')}
               </h2>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e4dfff] bg-[#f4f1ff] px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
                 <Crown className="h-3.5 w-3.5" />
-                Club 权益
+                {text('Club 权益', 'Club benefit')}
               </span>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-              选择 1-{MAX_SUBSCRIPTION_TOPICS} 个岗位方向，当有岗位上新时，我们会发到你的注册邮箱。
+              {text(`选择 1-${RECOMMENDED_SUBSCRIPTION_TOPICS} 个岗位方向，当有岗位上新时，我们会发到你的注册邮箱。`, `Choose 1–${RECOMMENDED_SUBSCRIPTION_TOPICS} role categories and receive new matching opportunities at your registered email.`)}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 xl:justify-end">
             <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white bg-white/80 px-3 shadow-sm">
               <Mail className="h-3.5 w-3.5 text-[#6f63f6]" />
-              {user?.email || '登录后使用注册邮箱'}
+              {user?.email || text('登录后使用注册邮箱', 'Log in to use your registered email')}
             </span>
           </div>
         </div>
@@ -522,28 +540,28 @@ export default function MemberEmailSubscriptionCard() {
         {!isAuthenticated ? (
           <div className="mt-5 flex flex-col gap-3 rounded-[20px] border border-[#e3edf4] bg-white/78 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="text-sm font-black text-slate-950">登录后开启会员订阅</div>
-              <p className="mt-1 text-sm leading-6 text-slate-500">登录并开通会员后，可保存岗位方向并接收每日邮件推荐。</p>
+              <div className="text-sm font-black text-slate-950">{text('登录后开启会员订阅', 'Log in to start a Club subscription')}</div>
+              <p className="mt-1 text-sm leading-6 text-slate-500">{text('登录并开通会员后，可保存岗位方向并接收每日邮件推荐。', 'Club members can save role categories and receive daily recommendations by email.')}</p>
             </div>
             <Link
               to="/login"
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white no-underline hover:bg-[#6f63f6] hover:no-underline"
             >
-              去登录
+              {text('去登录', 'Log in')}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
         ) : !isMember ? (
           <div className="mt-5 flex flex-col gap-3 rounded-[20px] border border-[#f2dfb7] bg-[#fffaf0]/90 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <div className="text-sm font-black text-slate-950">会员专属邮件订阅</div>
-              <p className="mt-1 text-sm leading-6 text-slate-600">升级会员后可及时接收你关注的岗位更新，避免错过好机会。</p>
+              <div className="text-sm font-black text-slate-950">{text('会员专属邮件订阅', 'Member email updates')}</div>
+              <p className="mt-1 text-sm leading-6 text-slate-600">{text('升级会员后可及时接收你关注的岗位更新，避免错过好机会。', 'Upgrade to receive timely updates for the roles you follow.')}</p>
             </div>
             <Link
               to="/profile?tab=membership#club-service-plans"
               className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[#f0a11f] px-5 text-sm font-black text-white no-underline hover:bg-[#d9951f] hover:no-underline"
             >
-              升级会员
+              {text('升级会员', 'Upgrade membership')}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
@@ -552,9 +570,9 @@ export default function MemberEmailSubscriptionCard() {
             <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start">
               <div className="min-w-0">
                 <div className="mb-2 flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <div className="text-sm font-black text-slate-950">订阅方向</div>
+                  <div className="text-sm font-black text-slate-950">{text('订阅方向', 'Subscribed categories')}</div>
                   <div className="text-xs font-semibold text-slate-500">
-                    {loading ? '正在读取订阅...' : subscription ? (isActive ? '当前订阅生效中' : '当前订阅已暂停') : '尚未保存订阅'}
+                    {loading ? text('正在读取订阅...', 'Loading subscription...') : subscription ? (isActive ? text('当前订阅生效中', 'Subscription active') : text('当前订阅已暂停', 'Subscription paused')) : text('尚未保存订阅', 'No subscription saved')}
                   </div>
                 </div>
 
@@ -580,7 +598,7 @@ export default function MemberEmailSubscriptionCard() {
                               removeSelectedItem(item.value)
                             }}
                             className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[#7c70f4] hover:bg-white"
-                            aria-label={`移除${item.label}`}
+                            aria-label={text(`移除${item.label}`, `Remove ${item.label}`)}
                           >
                             <X className="h-3 w-3" />
                           </button>
@@ -594,7 +612,7 @@ export default function MemberEmailSubscriptionCard() {
                         }}
                         onFocus={() => setDropdownOpen(true)}
                         onKeyDown={handleSearchKeyDown}
-                        placeholder={selectedDisplayItems.length ? '继续输入或搜索' : '搜索或输入岗位方向，例如 产品经理、市场营销'}
+                        placeholder={selectedDisplayItems.length ? text('继续输入或搜索', 'Type or search for more') : text('搜索或输入岗位方向，例如 产品经理、市场营销', 'Search or enter a role, e.g. Product Manager or Marketing')}
                         className="h-7 min-w-[180px] flex-1 border-0 bg-transparent text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
                       />
                     </div>
@@ -605,14 +623,14 @@ export default function MemberEmailSubscriptionCard() {
                         setDropdownOpen(prev => !prev)
                       }}
                       className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-slate-500 hover:bg-slate-50"
-                      aria-label="展开岗位方向列表"
+                      aria-label={text('展开岗位方向列表', 'Open role category list')}
                     >
                       <ChevronDown className={`h-4 w-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
                     </button>
                   </div>
 
                   <div className="mt-2 min-h-[20px] text-xs font-semibold leading-5 text-slate-500">
-                    {customTopicHint || (selectedLabels ? `已选：${selectedLabels}` : '')}
+                    {customTopicHint || (selectedLabels ? text(`已选：${selectedLabels}`, `Selected: ${selectedLabels}`) : '')}
                   </div>
 
                   {dropdownOpen ? (
@@ -656,8 +674,8 @@ export default function MemberEmailSubscriptionCard() {
                               <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]">
                                 <Plus className="h-3.5 w-3.5" />
                               </span>
-                              <span className="min-w-0 flex-1 truncate">保留“{searchTerm.trim()}”</span>
-                              <span className="text-xs font-semibold text-slate-400">自定义</span>
+                              <span className="min-w-0 flex-1 truncate">{text(`保留“${searchTerm.trim()}”`, `Keep “${searchTerm.trim()}”`)}</span>
+                              <span className="text-xs font-semibold text-slate-400">{text('自定义', 'Custom')}</span>
                             </button>
                           ) : null}
 
@@ -681,12 +699,12 @@ export default function MemberEmailSubscriptionCard() {
                                     {checked ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
                                   </span>
                                   <span className="min-w-0 flex-1 truncate">{topic.label}</span>
-                                  {checked ? <span className="text-xs font-black text-[#7c70f4]">已选</span> : null}
+                                  {checked ? <span className="text-xs font-black text-[#7c70f4]">{text('已选', 'Selected')}</span> : null}
                                 </button>
                               )
                             }) : (
                               <div className="px-3 py-6 text-center text-sm font-semibold text-slate-400">
-                                没有匹配的内置方向
+                                {text('没有匹配的内置方向', 'No matching role category')}
                               </div>
                             )}
                           </div>
@@ -705,7 +723,7 @@ export default function MemberEmailSubscriptionCard() {
                   className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white transition-colors hover:bg-[#6f63f6] disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
-                  保存订阅
+                  {text('保存订阅', 'Save subscription')}
                 </button>
                 {subscription ? (
                   <button
@@ -715,7 +733,7 @@ export default function MemberEmailSubscriptionCard() {
                     className="inline-flex h-12 items-center justify-center gap-2 rounded-full border border-[#e3edf4] bg-white px-5 text-sm font-black text-slate-700 transition-colors hover:bg-slate-50 disabled:opacity-60"
                   >
                     {isActive ? <PauseCircle className="h-4 w-4" /> : <PlayCircle className="h-4 w-4" />}
-                    {isActive ? '暂停' : '恢复'}
+                    {isActive ? text('暂停', 'Pause') : text('恢复', 'Resume')}
                   </button>
                 ) : null}
               </div>

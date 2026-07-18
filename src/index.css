@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-.font-haigoo-hand {
-  font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
-  font-synthesis-weight: none;
-}
-
 .haigoo-hero-title {
   font-weight: 800 !important;
   -webkit-text-stroke: 0;

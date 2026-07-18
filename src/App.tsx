@@ -1,15 +1,17 @@
-import { Suspense, lazy } from 'react'
+import { Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AdminRoute from './components/AdminRoute'
 import { AppProvider } from './contexts/AppContext'
 import { AuthProvider } from './contexts/AuthContext'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import NotificationProvider from './components/NotificationSystem'
 import ErrorBoundary from './components/ErrorBoundary'
 import ChunkLoadErrorBoundary from './components/ChunkLoadErrorBoundary'
 import GlobalVerificationGuard from './components/GlobalVerificationGuard'
 import { lazyRetry } from './utils/lazyRetry'
+import { stripLanguagePrefix } from './utils/language-path'
 
 const LandingPage = lazy(() => import('./pages/LandingPage'))
 const JobsPage = lazy(() => import('./pages/JobsPage'))
@@ -49,7 +51,6 @@ const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'Christma
 const AdminBugReportsPage = lazy(() => import('./pages/AdminBugReportsPage'))
 
 import PageLoadingSkeleton from './components/PageLoadingSkeleton'
-import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { trackingService } from './services/tracking-service'
 
@@ -67,24 +68,64 @@ function PageViewTracker() {
   return null
 }
 
+function DocumentMetadata() {
+  const location = useLocation()
+  const { isEnglish, text } = useLanguage()
+
+  useEffect(() => {
+    const path = stripLanguagePrefix(location.pathname)
+    const pageName = path === '/'
+      ? text('全球远程工作平台', 'Global Remote Work')
+      : path === '/jobs'
+        ? text('远程工作', 'Remote Jobs')
+        : path.startsWith('/job/') || path.startsWith('/j/')
+          ? text('岗位详情', 'Job Details')
+          : path === '/login'
+            ? text('登录', 'Log In')
+            : path === '/register'
+              ? text('注册', 'Sign Up')
+              : path === '/forgot-password' || path === '/reset-password'
+                ? text('重置密码', 'Reset Password')
+                : path.startsWith('/verify-email')
+                  ? text('验证邮箱', 'Verify Email')
+                  : path.startsWith('/trusted-companies') || path.startsWith('/companies') || path.startsWith('/c/')
+                    ? text('精选企业', 'Featured Companies')
+                    : path.startsWith('/careerlearning')
+                      ? text('职业成长', 'Career Growth')
+                      : 'Haigoo Remote'
+    document.title = pageName === 'Haigoo Remote' ? pageName : `${pageName} | Haigoo Remote`
+  }, [location.pathname, isEnglish, text])
+
+  return null
+}
+
 function LegacyCareerLearningRedirect() {
   const location = useLocation()
+  const { path } = useLanguage()
   const nextPath = location.pathname.replace(/^\/corporate-english/, '/careerlearning')
-  return <Navigate to={`${nextPath}${location.search}${location.hash}`} replace />
+  return <Navigate to={path(`${nextPath}${location.search}${location.hash}`)} replace />
 }
 
 function App() {
+  const location = useLocation()
+  const routedLocation = useMemo(() => ({
+    ...location,
+    pathname: stripLanguagePrefix(location.pathname)
+  }), [location])
+
   console.log('Haigoo Frontend Version: 2025-12-18-Fix-Visuals-v2');
   return (
     <ChunkLoadErrorBoundary>
       <ErrorBoundary>
-        <AuthProvider>
-          <AppProvider>
+        <LanguageProvider>
+          <DocumentMetadata />
+          <AuthProvider>
+            <AppProvider>
             <NotificationProvider>
               <GlobalVerificationGuard>
                 <PageViewTracker />
                 <Suspense fallback={<PageLoadingSkeleton />}>
-                  <Routes>
+                  <Routes location={routedLocation}>
                     {/* Public: Christmas Campaign (Deprecated for New Year) */}
                     <Route path="/christmas" element={<ChristmasPage />} />
                     {/* 公开路由：登录和注册 */}
@@ -202,8 +243,9 @@ function App() {
                 </Suspense>
               </GlobalVerificationGuard>
             </NotificationProvider>
-          </AppProvider>
-        </AuthProvider>
+            </AppProvider>
+          </AuthProvider>
+        </LanguageProvider>
       </ErrorBoundary>
     </ChunkLoadErrorBoundary>
   )

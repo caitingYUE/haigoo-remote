@@ -8,6 +8,7 @@ import { trackingService } from '../services/tracking-service';
 import { formatSalaryForDisplay } from '../utils/salary-display';
 import { getCompanyLogoSources } from '../utils/company-logo';
 import { useAuth } from '../contexts/AuthContext';
+import { useLanguage } from '../contexts/LanguageContext';
 // import { getJobSourceType } from '../utils/job-source-helper';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -61,34 +62,47 @@ const getPastelColor = (str: string) => getBrandPalette(str).bg;
 const getDarkerColor = (str: string) => getBrandPalette(str).text;
 const getHoverColor = (str: string) => getBrandPalette(str).hover;
 
-const resolveDirectConnectEmailLabel = (rawType: string) => {
+const resolveDirectConnectEmailLabel = (rawType: string, isEnglish: boolean) => {
    const emailType = String(rawType || '').trim();
    const normalized = emailType.toLowerCase();
    const haystack = `${normalized} ${emailType}`;
 
    if (/(boss|ceo|chief|founder|vp|head|director|高管|老板|创始|负责人)/i.test(haystack)) {
-      return '直连企业BOSS邮箱';
+      return isEnglish ? 'Direct executive email' : '直连企业BOSS邮箱';
    }
    if (/(hr|human resources|people|人力|人事|hr邮箱)/i.test(haystack)) {
-      return '直连企业HR邮箱';
+      return isEnglish ? 'Direct HR email' : '直连企业HR邮箱';
    }
    if (/(招聘|recruit|recruiter|hiring|career|talent|talent acquisition)/i.test(haystack)) {
-      return '直连企业招聘邮箱';
+      return isEnglish ? 'Direct recruiting email' : '直连企业招聘邮箱';
    }
    if (/(员工|employee|staff|teammate|team)/i.test(haystack)) {
-      return '直连企业员工邮箱';
+      return isEnglish ? 'Direct employee email' : '直连企业员工邮箱';
    }
    if (emailType && emailType.includes('邮箱')) {
-      return `直连企业${emailType}`;
+      return isEnglish ? `Direct company ${emailType}` : `直连企业${emailType}`;
    }
-   return '直连企业邮箱';
+   return isEnglish ? 'Direct company email' : '直连企业邮箱';
+};
+
+const formatPublishTime = (dateString: string, isEnglish: boolean) => {
+   if (!isEnglish) return DateFormatter.formatPublishTime(dateString);
+   if (!dateString) return 'Unknown';
+   const date = new Date(dateString);
+   if (Number.isNaN(date.getTime())) return 'Unknown';
+   if (DateFormatter.isToday(dateString)) return 'Today';
+   if (DateFormatter.isYesterday(dateString)) return 'Yesterday';
+   const diffDays = Math.max(0, Math.floor((Date.now() - date.getTime()) / (24 * 60 * 60 * 1000)));
+   if (diffDays >= 30) return '1 month ago';
+   if (diffDays >= 7) return '1 week ago';
+   return DateFormatter.formatDate(date);
 };
 
 // Match Score Badge
-const MatchScoreBadge = ({ score, level, compact = false }: { score: number, level: string, compact?: boolean }) => {
+const MatchScoreBadge = ({ score, level, compact = false, isEnglish = false }: { score: number, level: string, compact?: boolean, isEnglish?: boolean }) => {
    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
    const isHigh = level === 'high';
-   const title = `简历与该岗位需求匹配度 ${safeScore}%`;
+   const title = isEnglish ? `Resume match for this role: ${safeScore}%` : `简历与该岗位需求匹配度 ${safeScore}%`;
 
    if (compact) {
       return (
@@ -96,7 +110,7 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
             className={`flex items-center justify-center min-w-[78px] px-2.5 py-1 rounded-full border shadow-sm ${isHigh ? 'border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6]' : 'border-[#d7e9ff] bg-[#f4f9ff] text-[#4f8fe8]'}`}
             title={title}
          >
-            <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% 匹配</span>
+            <span className="text-[11px] font-bold whitespace-nowrap leading-none">{safeScore}% {isEnglish ? 'match' : '匹配'}</span>
          </div>
       );
    }
@@ -107,43 +121,51 @@ const MatchScoreBadge = ({ score, level, compact = false }: { score: number, lev
             {safeScore}
             <span className="ml-0.5 text-[15px] font-semibold">%</span>
          </span>
-         <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-[#7b74ff]' : 'text-[#5f9bea]'}`}>匹配</span>
+         <span className={`mt-1 text-[11px] font-semibold ${isHigh ? 'text-[#7b74ff]' : 'text-[#5f9bea]'}`}>{isEnglish ? 'match' : '匹配'}</span>
       </div>
    );
 };
 
-const FreshBadge = () => (
-   <span
-      className="inline-flex h-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 px-2 text-[10px] font-black leading-none text-white shadow-[0_10px_18px_-14px_rgba(16,185,129,0.55)]"
-      aria-label="new"
-      title="最近 3 天内上新"
-   >
-      New
-   </span>
-);
+const FreshBadge = () => {
+   const { isEnglish } = useLanguage();
+   return (
+      <span
+         className="inline-flex h-5 items-center justify-center rounded-full border border-emerald-500 bg-emerald-500 px-2 text-[10px] font-black leading-none text-white shadow-[0_10px_18px_-14px_rgba(16,185,129,0.55)]"
+         aria-label="new"
+         title={isEnglish ? 'Added within the last 3 days' : '最近 3 天内上新'}
+      >
+         New
+      </span>
+   );
+};
 
-const HotApplicationBadge = ({ count }: { count: number }) => (
-   <span
-      className="inline-flex h-5 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-2 text-[10px] font-black leading-none text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
-      title={`${count} 位用户已申请`}
-   >
-      🔥热门
-   </span>
-);
+const HotApplicationBadge = ({ count }: { count: number }) => {
+   const { isEnglish } = useLanguage();
+   return (
+      <span
+         className="inline-flex h-5 shrink-0 items-center justify-center rounded-full border border-amber-200 bg-amber-50 px-2 text-[10px] font-black leading-none text-amber-700 shadow-[0_10px_18px_-14px_rgba(245,158,11,0.5)]"
+         title={isEnglish ? `${count} applicants` : `${count} 位用户已申请`}
+      >
+         🔥{isEnglish ? 'Hot' : '热门'}
+      </span>
+   );
+};
 
-const GuestMaskedValue = ({ className = 'w-20' }: { className?: string }) => (
-   <span
-      className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`}
-      aria-label="登录后查看"
-      title="登录后查看"
-   />
-);
+const GuestMaskedValue = ({ className = 'w-20' }: { className?: string }) => {
+   const { isEnglish } = useLanguage();
+   const label = isEnglish ? 'Log in to view' : '登录后查看';
+   return <span className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`} aria-label={label} title={label} />;
+};
 
 export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, isSaved = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false, hideMemberBackdrop = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const { isAuthenticated } = useAuth();
-   const isTranslated = !!job.translations?.title;
+   const { isEnglish } = useLanguage();
+   const displayTitle = isEnglish ? job.title : (job.translations?.title || job.title);
+   const displayCompany = isEnglish ? job.company : (job.translations?.company || job.company);
+   const displayLocation = isEnglish ? job.location : (job.translations?.location || job.location);
+   const isTranslated = !isEnglish && !!job.translations?.title;
 
    const isMemberOnlyJob = Boolean(job.memberOnly);
    const shouldMaskGuestMeta = !isAuthenticated;
@@ -167,7 +189,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       }
    }, [job.publishedAt]);
 
-   const companyInitial = useMemo(() => (job.translations?.company || job.company || 'H').charAt(0).toUpperCase(), [job.translations?.company, job.company]);
+   const companyInitial = useMemo(() => (displayCompany || 'H').charAt(0).toUpperCase(), [displayCompany]);
    const websiteLogoFallbacks = useMemo(() => {
       const rawWebsite = String(job.companyWebsite || '').trim();
       if (!rawWebsite) return [];
@@ -227,10 +249,10 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
       const rawTypes = authoritativeTypes.length > 0 ? authoritativeTypes : fallbackTypes;
       if (rawTypes.length === 0) return [];
 
-      const labels = rawTypes.map(resolveDirectConnectEmailLabel);
+      const labels = rawTypes.map(type => resolveDirectConnectEmailLabel(type, isEnglish));
 
       return [...new Set(labels)].slice(0, 4);
-   }, [hasDirectApplyEmail, job, rawReferralTypes]);
+   }, [hasDirectApplyEmail, isEnglish, job, rawReferralTypes]);
    const hasReferralContactSignal = directConnectLabels.length > 0;
    const resolvedDisplayScore = Number(
       matchScore
@@ -294,6 +316,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
    const salaryText = formatSalaryForDisplay(job.salary, '薪资Open');
    const isSalaryOpen = salaryText === '薪资Open' || salaryText === '薪资 Open';
+   const displaySalaryText = isEnglish && isSalaryOpen ? 'Salary open' : salaryText;
    const companyRatingText = String(job.companyRating || (job as any).company_rating || '').trim();
    const renderApplicationMethodBadges = () => {
       if (!showApplicationMethodIcons || !hasReferralContactSignal) return null;
@@ -331,7 +354,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   onDelete(job.id);
                }}
                className={`z-10 rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500 ${mobile ? '' : 'border border-transparent hover:border-red-100'}`}
-               title="删除记录"
+               title={isEnglish ? 'Delete record' : '删除记录'}
             >
                <Trash2 className="w-4 h-4" />
             </button>
@@ -361,9 +384,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             <div
                className="flex-shrink-0 text-xs font-bold text-center mb-1.5 line-clamp-2 w-full leading-tight break-words"
                style={{ color: textColor }}
-               title={job.translations?.company || job.company}
+               title={displayCompany}
             >
-               {job.translations?.company || job.company}
+               {displayCompany}
             </div>
 
             {/* Logo (Centered) */}
@@ -481,9 +504,9 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      <h3
                         className={`min-w-0 shrink truncate font-bold tracking-tight text-slate-950 transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.08rem]' : 'text-[17px] sm:text-[18px] md:text-[20px]'}`}
                         style={{ ['--job-title-hover-color' as any]: hoverColor }}
-                        title={job.translations?.title || job.title}
+                        title={displayTitle}
                      >
-                        {job.translations?.title || job.title}
+                        {displayTitle}
                      </h3>
                      {isTranslated ? (
                         <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold leading-none text-slate-500" title="已翻译">
@@ -493,20 +516,20 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                      {isNew ? <FreshBadge /> : null}
                      {isHotApplication ? <HotApplicationBadge count={applicationCount} /> : null}
                      {isSaved ? (
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]" title="已收藏">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]" title={isEnglish ? 'Saved' : '已收藏'}>
                            <Bookmark className="h-3 w-3 fill-current" />
                         </span>
                      ) : null}
                      {(job.status === '已失效' || job.status === '已结束') ? (
                         <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
-                           已下架
+                           {isEnglish ? 'Closed' : '已下架'}
                         </span>
                      ) : null}
                   </div>
 
                   <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-slate-500 md:text-[13px]">
-                     <span className="min-w-0 max-w-[172px] truncate font-medium text-slate-700 sm:max-w-[132px]" title={job.translations?.company || job.company}>
-                        {job.translations?.company || job.company}
+                     <span className="min-w-0 max-w-[172px] truncate font-medium text-slate-700 sm:max-w-[132px]" title={displayCompany}>
+                        {displayCompany}
                      </span>
                      {companyRatingText ? (
                         <>
@@ -518,12 +541,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </>
                      ) : null}
                      <span className="text-slate-300">·</span>
-                     <span className={`max-w-[150px] truncate ${isSalaryOpen ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`} title={shouldMaskGuestMeta ? '登录后查看' : salaryText}>
-                        {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : salaryText}
+                     <span className={`max-w-[150px] truncate ${isSalaryOpen ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`} title={shouldMaskGuestMeta ? (isEnglish ? 'Log in to view' : '登录后查看') : displaySalaryText}>
+                        {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : displaySalaryText}
                      </span>
                      {showMatchScore ? (
                         <span className="inline-flex shrink-0 items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[11px] font-bold text-[#6f63f6] shadow-[0_8px_18px_-16px_rgba(111,99,246,0.45)]">
-                           {rawScoreNum}% 匹配
+                           {rawScoreNum}% {isEnglish ? 'match' : '匹配'}
                         </span>
                      ) : null}
                   </div>
@@ -531,8 +554,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   {(job as any).appliedAt || (job as any).savedAt ? (
                      <div className="mt-1 text-[11px] text-slate-400">
                         {(job as any).appliedAt
-                           ? `申请于 ${new Date((job as any).appliedAt).toLocaleDateString()}`
-                           : `收藏于 ${new Date((job as any).savedAt).toLocaleDateString()}`}
+                           ? `${isEnglish ? 'Applied on' : '申请于'} ${new Date((job as any).appliedAt).toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')}`
+                           : `${isEnglish ? 'Saved on' : '收藏于'} ${new Date((job as any).savedAt).toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')}`}
                      </div>
                   ) : null}
                </div>
@@ -605,8 +628,8 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2 mb-1">
                      <div className="min-w-0 flex items-start gap-2">
-                        <h3 className="text-lg font-bold text-slate-900 line-clamp-2 leading-snug" title={job.translations?.title || job.title}>
-                           {job.translations?.title || job.title}
+                        <h3 className="text-lg font-bold text-slate-900 line-clamp-2 leading-snug" title={displayTitle}>
+                           {displayTitle}
                         </h3>
                         {isNew && (
                            <div className="flex-shrink-0">
@@ -615,16 +638,16 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         )}
                         {isHotApplication ? <HotApplicationBadge count={applicationCount} /> : null}
                {isFeatured && (
-                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500" title="精选岗位">
+                  <span className="mt-0.5 flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500" title={isEnglish ? 'Featured role' : '精选岗位'}>
                      <Star className="h-3 w-3 fill-current" />
                   </span>
                )}
                      </div>
                   </div>
                   <div className="flex items-center text-sm text-slate-500 font-medium">
-                     <span className="truncate mr-2 max-w-[140px]" style={{ color: textColor }}>{job.translations?.company || job.company}</span>
+                     <span className="truncate mr-2 max-w-[140px]" style={{ color: textColor }}>{displayCompany}</span>
                      <MapPin className="w-3.5 h-3.5 mr-1 text-slate-400 flex-shrink-0" />
-                     <span className="truncate max-w-[100px]">{job.translations?.location || job.location}</span>
+                     <span className="truncate max-w-[100px]">{displayLocation}</span>
                   </div>
                </div>
             </div>
@@ -635,14 +658,14 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                {job.type && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap">
                      <Briefcase className="w-3 h-3 mr-1" />
-                     {job.type === 'full-time' ? '全职' : job.type}
+                     {job.type === 'full-time' ? (isEnglish ? 'Full-time' : '全职') : job.type}
                   </span>
                )}
                {/* Experience Level (Emerald) */}
                {job.experienceLevel && (
                   <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200 whitespace-nowrap">
                      <TrendingUp className="w-3 h-3 mr-1" />
-                     {EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel}
+                     {isEnglish ? job.experienceLevel : (EXPERIENCE_LEVEL_MAP[job.experienceLevel] || job.experienceLevel)}
                   </span>
                )}
                {/* Industry (Purple) */}
@@ -670,15 +693,15 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             {/* Footer */}
             <div className="mt-auto pt-4 border-t border-slate-50 flex items-center justify-between">
                <div className="flex items-center gap-2">
-                  <div className={`text-[15px] ${formatSalaryForDisplay(job.salary, '薪资Open') === '薪资Open' ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
-                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : formatSalaryForDisplay(job.salary, '薪资Open')}
+                  <div className={`text-[15px] ${isSalaryOpen ? 'text-slate-400' : 'font-semibold text-slate-800'}`}>
+                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : displaySalaryText}
                   </div>
                </div>
                {resolvedMatchLevel !== 'none' && showMatchScore ? (
-                  <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} />
+                  <MatchScoreBadge score={rawScoreNum} level={resolvedMatchLevel} isEnglish={isEnglish} />
                ) : (
                   <span className="text-xs text-slate-400 font-medium">
-                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-16" /> : DateFormatter.formatPublishTime(job.publishedAt)}
+                     {shouldMaskGuestMeta ? <GuestMaskedValue className="w-16" /> : formatPublishTime(job.publishedAt, isEnglish)}
                   </span>
                )}
             </div>
