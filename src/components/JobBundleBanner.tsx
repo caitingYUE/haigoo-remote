@@ -24,19 +24,19 @@ interface JobBundleCarouselProps {
 // Default full-width banner (kept for compatibility)
 export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const navigate = useNavigate();
-  const { isAuthenticated, isMember } = useAuth();
+  const { isMember } = useAuth();
   const { text } = useLanguage();
 
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = isMemberBundle && !isMember;
-  const jobCount = bundle.job_ids?.length || 0;
+  const accessBadge = bundle.visibility === 'specified'
+    ? text('仅你可见', 'Only you')
+    : bundle.visibility === 'member'
+      ? text('Club 权益', 'Club benefits')
+      : null;
 
   const handleClick = () => {
     const bundlePath = getBundleDetailPath(bundle.id);
-    if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership#club-service-plans');
-      return;
-    }
     navigate(bundlePath);
   };
 
@@ -58,7 +58,7 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
                 : <><Layers className="w-3 h-3" />{text('精选合集', 'Curated collection')}</>
               }
             </span>
-            <span className="text-xs text-slate-600 font-medium">{text(`${jobCount} 个职位`, `${jobCount} roles`)}</span>
+            {accessBadge && <span className="text-xs text-slate-600 font-medium">{accessBadge}</span>}
           </div>
           <h3 className="line-clamp-2 text-base font-bold leading-snug text-slate-900">{bundle.title}</h3>
         </div>
@@ -134,19 +134,16 @@ interface JobBundleCardProps extends JobBundleBannerProps {
 
 export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const navigate = useNavigate();
-  const { isAuthenticated, isMember } = useAuth();
   const { text } = useLanguage();
 
-  const isMemberBundle = bundle.visibility === 'member';
-  const isLocked = isMemberBundle && !isMember;
-  const jobCount = bundle.job_ids?.length || 0;
+  const accessBadge = bundle.visibility === 'specified'
+    ? text('仅你可见', 'Only you')
+    : bundle.visibility === 'member'
+      ? text('Club 权益', 'Club benefits')
+      : null;
 
   const handleClick = () => {
     const bundlePath = getBundleDetailPath(bundle.id);
-    if (isLocked) {
-      navigate(!isAuthenticated ? `/login?redirect=${encodeURIComponent(bundlePath)}` : '/profile?tab=membership#club-service-plans');
-      return;
-    }
     navigate(bundlePath);
   };
 
@@ -174,14 +171,11 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
           <h3 className="line-clamp-3 min-h-[60px] max-w-[190px] text-[16px] font-black leading-snug tracking-tight text-slate-900">
             {bundle.title}
           </h3>
-          <span className={`shrink-0 rounded-full border bg-white/86 px-2 py-0.5 text-[11px] font-bold shadow-sm ${theme.count}`}>
-            {text(`${jobCount}个`, `${jobCount} roles`)}
-          </span>
+          {accessBadge && <span className={`shrink-0 rounded-full border bg-white/86 px-2 py-0.5 text-[11px] font-bold shadow-sm ${theme.count}`}>
+            {accessBadge}
+          </span>}
         </div>
       </div>
-      {isLocked && (
-        <div className="absolute inset-0 rounded-[18px] bg-white/34 backdrop-blur-[1px]" />
-      )}
     </div>
   );
 }

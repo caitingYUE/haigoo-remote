@@ -898,6 +898,18 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         navigate(`/login?redirect=${encodeURIComponent(returnPath)}`)
     }
 
+    const reportBundleApplicationStarted = (method: 'website' | 'email') => {
+        const bundleId = Number(trackingExtra?.bundle_id)
+        if (trackingPageKey !== 'job_bundle_detail' || !Number.isInteger(bundleId) || bundleId <= 0) return
+        window.dispatchEvent(new CustomEvent('haigoo:bundle-application-started', {
+            detail: {
+                bundleId,
+                jobId: String(job.id || ''),
+                method
+            }
+        }))
+    }
+
     const promptEmailVerificationIfNeeded = (actionLabel = '申请岗位') => {
         if (!isEmailVerificationRequired) return false
         setEmailVerificationActionLabel(actionLabel)
@@ -993,6 +1005,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 source: sourceType
             });
 
+            reportBundleApplicationStarted('email')
+
             window.location.href = `mailto:${resolvedHiringEmail}?subject=${encodeURIComponent(`Application for ${job.title || ''}`)}`;
             trackingService.track('email_apply_success', {
                 ...trackingBase,
@@ -1056,6 +1070,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             apply_method: url ? 'external_link' : 'internal_apply',
             source: sourceType
         });
+
+        reportBundleApplicationStarted('website')
 
         if (url) {
             trackingService.track('click_apply_external', {

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Calendar, Briefcase, Crown, Lock,
-  Share2, Check, ChevronRight, Sparkles, Package, Megaphone
+  ArrowLeft, Briefcase, Crown, Lock,
+  Share2, Check, Sparkles, Package, Megaphone, BookOpen, PlayCircle, PartyPopper
 } from 'lucide-react';
 import JobCardNew from '../components/JobCardNew';
 import JobDetailModal from '../components/JobDetailModal';
-import HaigooClubInfoCard from '../components/HaigooClubInfoCard';
 import { Job } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 import { trackingService } from '../services/tracking-service';
@@ -27,13 +26,36 @@ interface JobBundle {
   is_active: boolean;
   created_at: string;
   visibility?: string;
+  allowed_emails?: string[];
+  career_items?: CareerPlanItem[];
+  progress?: BundleProgress | null;
+  access?: { visible: boolean; locked: boolean; requires_login?: boolean };
+}
+
+interface CareerPlanItem {
+  video_id: string;
+  title: string;
+  description?: string;
+  guidance?: string;
+  module_key?: string;
+  category?: string;
+  difficulty_level?: string;
+  duration_ms?: number;
+  href?: string;
+  cover_image_url?: string;
+}
+
+interface BundleProgress {
+  completed_video_ids: string[];
+  growth_records: Array<{ id: string; content: string; created_at: string }>;
+  updated_at?: string | null;
 }
 
 export default function JobBundleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const handleBack = useReturnNavigation('/jobs');
-  const { user, isAuthenticated, isMember, isTrialMember } = useAuth();
+  const { token, isAuthenticated, isMember } = useAuth();
   const { isEnglish, text } = useLanguage();
 
   const [bundle, setBundle] = useState<JobBundle | null>(null);
@@ -45,8 +67,38 @@ export default function JobBundleDetailPage() {
   const [currentJobIndex, setCurrentJobIndex] = useState(0);
   const [savedJobs] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState(false);
+  const [activeCareerTab, setActiveCareerTab] = useState<'learning' | 'records'>('learning');
+  const [progress, setProgress] = useState<BundleProgress>({ completed_video_ids: [], growth_records: [] });
+  const [savingProgress, setSavingProgress] = useState(false);
 
-  useEffect(() => { if (id) fetchBundle(id); }, [id]);
+  useEffect(() => { if (id) fetchBundle(id); }, [id, token]);
+
+  useEffect(() => {
+    const bundleId = bundle?.id;
+    if (!bundleId || !token) return;
+    const handleBundleApplicationStarted = async (event: Event) => {
+      const detail = (event as CustomEvent<{ bundleId?: number; jobId?: string }>).detail;
+      if (Number(detail?.bundleId) !== bundleId || !detail?.jobId) return;
+      try {
+        const res = await fetch('/api/data/job-bundles?action=progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            bundle_id: bundleId,
+            progress_action: 'auto_event',
+            event_type: 'application_started',
+            job_id: detail.jobId
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) setProgress(data.progress || { completed_video_ids: [], growth_records: [] });
+      } catch (eventError) {
+        console.warn('Failed to record bundle application event', eventError);
+      }
+    };
+    window.addEventListener('haigoo:bundle-application-started', handleBundleApplicationStarted);
+    return () => window.removeEventListener('haigoo:bundle-application-started', handleBundleApplicationStarted);
+  }, [bundle?.id, token]);
 
   // Fire page-view tracking after bundle loads
   useEffect(() => {
@@ -62,29 +114,53 @@ export default function JobBundleDetailPage() {
   const fetchBundle = async (bundleId: string) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/data/job-bundles?id=${bundleId}`);
+      const res = await fetch(`/api/data/job-bundles?id=${bundleId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
       const data = await res.json();
       if (data.success && data.data?.length > 0) {
         const b = data.data[0];
         setBundle(b);
+        setProgress(b.progress || { completed_video_ids: [], growth_records: [] });
         if (b.job_ids?.length > 0) await fetchJobs(b.job_ids);
         else setJobs([]);
       } else {
-        const res2 = await fetch(`/api/admin/job-bundles?id=${bundleId}`);
-        const data2 = await res2.json();
-        if (data2.success && data2.data) {
-          setBundle(data2.data);
-          if (data2.data.job_ids?.length > 0) await fetchJobs(data2.data.job_ids);
-          else setJobs([]);
-        } else {
-          setError(text('组合包不存在', 'This collection does not exist.'));
-        }
+        setError(text('组合包不存在或暂未对你开放', 'This collection is unavailable to your account.'));
       }
     } catch {
       setError(text('加载失败，请稍后重试', 'Could not load this collection. Please try again later.'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveProgress = async (payload: Record<string, string>) => {
+    if (!bundle || !token) {
+      navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle?.id || Number(id || 0)))}`);
+      return;
+    }
+    try {
+      setSavingProgress(true);
+      const res = await fetch('/api/data/job-bundles?action=progress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ bundle_id: bundle.id, ...payload })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || '保存失败')
+      setProgress(data.progress || { completed_video_ids: [], growth_records: [] });
+      return true;
+    } catch (error) {
+      setError(error instanceof Error ? error.message : text('保存失败，请稍后重试', 'Could not save progress.'));
+      return false;
+    } finally {
+      setSavingProgress(false);
+    }
+  };
+
+  const handleToggleVideoComplete = (videoId: string) => saveProgress({ progress_action: 'toggle_video', video_id: videoId });
+  const handleOpenVideo = (videoId: string) => {
+    void saveProgress({ progress_action: 'auto_event', event_type: 'video_open', video_id: videoId });
   };
 
   const fetchJobs = async (ids: string[]) => {
@@ -173,12 +249,33 @@ export default function JobBundleDetailPage() {
     );
   }
 
+  if (bundle.access?.requires_login) {
+    return (
+      <div className="min-h-screen bg-white">
+        <div className="mx-auto max-w-md px-4 pb-10 pt-28 text-center sm:pt-32">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#ddd7ff] bg-[#f6f4ff] text-[#6f63f6]">
+            <Lock className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-black text-slate-950">{text('需登录验证后访问', 'Sign in to verify access')}</h1>
+          <p className="mt-3 text-sm leading-6 text-slate-500">{text('当前页面为指定用户可见，请先登录验证后再访问。', 'This page is visible to designated users only. Please sign in to verify access before continuing.')}</p>
+          <button
+            type="button"
+            onClick={() => navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle.id))}`)}
+            className="mt-7 inline-flex items-center justify-center rounded-full bg-[#6f63f6] px-6 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.62)] transition hover:bg-[#5d50df]"
+          >
+            {text('前往登录', 'Log in')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const isMemberBundle = bundle.visibility === 'member';
-  const isLocked = isMemberBundle && !isMember;
-  const memberExpireAt = (user as any)?.memberExpireAt || (user as any)?.member_expire_at || null;
-  const memberExpireLabel = memberExpireAt ? new Date(memberExpireAt).toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN') : text('长期有效', 'No expiration');
-  const memberStatusLabel = isTrialMember ? text('短期体验权益生效中', 'Trial benefits active') : text('Haigoo Club 权益生效中', 'Haigoo Club benefits active');
-  const pageBackground = '/pic_lists/About_pics/about_bg.webp';
+  const isLocked = Boolean(bundle.access?.locked) || (isMemberBundle && !isMember);
+  const isPrivateExperience = bundle.visibility === 'specified' || isMemberBundle;
+  const careerItems = bundle.career_items || [];
+  const completedVideoIds = new Set(progress.completed_video_ids || []);
+  const completedCareerCount = careerItems.filter((item) => completedVideoIds.has(item.video_id)).length;
   const assistantSupportPanel = (
     <div className="rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] p-3.5 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.22)]">
       <div className="flex items-start gap-3">
@@ -242,75 +339,44 @@ export default function JobBundleDetailPage() {
 
   // ── Main page ─────────────────────────────────────────────────────────────
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#fffdfa]">
-      <div className="pointer-events-none absolute inset-0 z-0">
-        <img
-          src={pageBackground}
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover object-top opacity-[0.42] saturate-[0.96]"
-        />
-        <img src="/pic_lists/About_pics/grass_icon-transparent.webp" alt="" className="absolute bottom-10 left-3 hidden h-40 w-40 object-contain opacity-30 lg:block" />
-        <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="absolute bottom-10 right-4 hidden h-40 w-40 object-contain opacity-30 lg:block" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.74)_0%,rgba(255,253,248,0.92)_38%,rgba(248,252,255,0.86)_100%)]" />
-      </div>
-
-      <main className="relative z-10 mx-auto max-w-[1420px] px-3.5 pb-12 pt-[84px] sm:px-8 sm:pb-16 sm:pt-[96px] lg:px-10">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <button onClick={handleBack}
-            className="inline-flex items-center gap-1.5 text-slate-500 hover:text-[#6f63f6] transition-colors text-sm font-medium">
-            <ArrowLeft className="w-4 h-4" />{text('返回', 'Back')}
-          </button>
-          <button
-            type="button"
-            onClick={() => document.getElementById('bundle-jobs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            className="hidden items-center gap-1.5 rounded-full border border-[#dfe8ef] bg-white/90 px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:-translate-y-0.5 hover:border-[#cfc7ff] hover:text-[#6f63f6] sm:inline-flex"
-          >
-            {text('查看全部岗位', 'View all roles')}
-            <ChevronRight className="h-4 w-4" />
-          </button>
-        </div>
+    <div className="min-h-screen bg-[#f5f6fb]">
+      <main className="mx-auto max-w-[1680px] px-3 pb-3 pt-[76px] sm:px-5 sm:pt-[80px] lg:h-screen lg:overflow-hidden lg:pb-3">
+        <div className="grid gap-4 lg:h-[calc(100vh-92px)] lg:min-h-0 lg:grid-cols-[minmax(0,0.86fr)_minmax(0,1.14fr)]">
+        <section className="min-w-0 overflow-hidden rounded-[26px] border border-[#dfe6f0] bg-white shadow-[0_24px_70px_-54px_rgba(33,47,70,0.20)] sm:rounded-[30px]">
+        <div className="h-full min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-5">
+        <button onClick={handleBack}
+          className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-[#e0e7f0] bg-white px-3 py-1.5 text-sm font-black text-slate-600 shadow-sm transition hover:border-[#bdb3ff] hover:text-[#6251f5]">
+          <ArrowLeft className="h-4 w-4" />{text('返回', 'Back')}
+        </button>
         {/* ── Hero Header ───────────────────────────────────────────────────── */}
-        <section className="relative mb-5 overflow-hidden rounded-[24px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_72px_-62px_rgba(139,101,54,0.34)] sm:mb-6 sm:rounded-[30px] sm:p-6 lg:p-8">
-          <div className="pointer-events-none absolute inset-0">
-            <img src="/pic_lists/Home_pics/background04.webp" alt="" className="absolute inset-y-0 right-0 h-full w-[54%] object-cover object-[68%_54%] opacity-[0.48] saturate-[0.98]" />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#fffdf8_0%,rgba(255,253,248,0.94)_48%,rgba(255,253,248,0.48)_100%)]" />
-          </div>
+        <section className="relative mb-3 overflow-hidden rounded-[22px] border border-[#e4e7f0] bg-[#fcfbff] p-4 shadow-[0_24px_72px_-62px_rgba(58,67,112,0.2)] sm:rounded-[26px] sm:p-5">
+          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute bottom-0 right-0 h-[60%] w-[42%] object-cover object-[68%_100%] opacity-[0.1]" />
 
-          <div className="relative grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <div className="relative">
             <div className="min-w-0">
-              <div className="mb-4 flex flex-wrap items-center gap-2.5">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eeeaff] text-[#6f63f6] text-xs font-bold border border-[#dfd8ff]">
+              <div className="mb-2 flex flex-wrap items-center gap-2">
+                {!isPrivateExperience && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eeeaff] text-[#6f63f6] text-xs font-bold border border-[#dfd8ff]">
                   <Package className="w-3 h-3" />
                   {text('精选合集', 'Curated collection')}
-                </span>
+                </span>}
                 {isMemberBundle && (
                   <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
                     <Crown className="w-3 h-3" />{text('会员专属', 'Members only')}
                   </span>
                 )}
-                <span className="text-slate-400 text-xs flex items-center gap-1">
-                  <Briefcase className="w-3 h-3" />
-                  {text(`${jobs.length} 个职位`, `${jobs.length} roles`)}
-                </span>
-                {bundle.start_time && (
-                  <span className="text-slate-400 text-xs flex items-center gap-1">
-                    <Calendar className="w-3 h-3" />
-                    {new Date(bundle.start_time).toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')}
-                  </span>
-                )}
               </div>
 
-              <h1 className="mb-3 flex max-w-5xl flex-wrap items-center gap-3 text-[25px] font-black leading-[1.14] tracking-normal text-slate-950 sm:mb-4 sm:text-[38px] lg:text-[44px]">
+              <h1 className="mb-2 flex max-w-5xl flex-wrap items-center gap-3 text-[28px] font-black leading-[1.14] tracking-normal text-slate-950 sm:text-[34px] lg:text-[38px]">
                 <span>{bundle.title}</span>
               </h1>
-              <p className="mb-4 max-w-3xl text-sm leading-6 text-slate-500 sm:mb-5 sm:text-base sm:leading-7">{bundle.subtitle}</p>
+              <p className="mb-3 max-w-3xl text-sm leading-6 text-slate-500 sm:text-[15px]">{bundle.subtitle}</p>
 
-              <div className="inline-flex w-full max-w-4xl items-start gap-2.5 rounded-2xl border border-[#eadfcf] bg-white px-3.5 py-3 text-sm font-semibold leading-6 text-slate-600 shadow-[0_18px_44px_-36px_rgba(139,101,54,0.28)] sm:items-center sm:gap-3 sm:px-4">
+              <div className="inline-flex max-w-4xl items-start gap-2.5 text-sm font-semibold leading-6 text-slate-600 sm:items-center">
                 <Megaphone className="h-4 w-4 shrink-0 text-[#8f83ff]" />
                 <span>{bundle.content || text('本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。', 'This collection is ready. More remote opportunities will be added in the next update.')}</span>
               </div>
 
-              <div className="mt-5 space-y-3 lg:hidden">
+              {!isPrivateExperience && <div className="mt-5 space-y-3 lg:hidden">
                 <button onClick={handleShare}
                   className={`inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-sm font-medium transition-all duration-200 ${copied
                     ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
@@ -319,11 +385,11 @@ export default function JobBundleDetailPage() {
                   {copied ? <><Check className="w-3.5 h-3.5" />{text('已复制！', 'Copied!')}</> : <><Share2 className="w-3.5 h-3.5" />{text('分享合集', 'Share collection')}</>}
                 </button>
                 {assistantSupportPanel}
-              </div>
+              </div>}
 
             </div>
 
-            <div className="hidden space-y-3 self-start lg:block">
+            {!isPrivateExperience && <div className="hidden space-y-3 self-start lg:block">
               <div className="flex justify-end">
                 <button onClick={handleShare}
                   className={`inline-flex w-[190px] items-center justify-center gap-1.5 px-3.5 py-2 rounded-full border text-sm font-medium transition-all duration-200 ${copied
@@ -334,36 +400,25 @@ export default function JobBundleDetailPage() {
                 </button>
               </div>
               {assistantSupportPanel}
-            </div>
+            </div>}
           </div>
         </section>
 
         {/* ── Jobs Grid ────────────────────────────────────────────────────── */}
-        <section id="bundle-jobs" className="relative scroll-mt-24 overflow-hidden rounded-[24px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-58px_rgba(139,101,54,0.24)] sm:rounded-[30px] sm:p-8">
-          <div className="pointer-events-none absolute inset-0">
-            <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="absolute bottom-0 right-5 h-28 w-28 object-contain opacity-18" />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.72)_0%,rgba(255,255,255,0.96)_34%)]" />
-          </div>
-          <div className="relative mb-7 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <section id="bundle-jobs" className="relative scroll-mt-24 overflow-hidden rounded-[22px] border border-[#e4e7f0] bg-[#fbfcff] p-4 shadow-[0_24px_70px_-58px_rgba(58,67,112,0.16)] sm:rounded-[26px] sm:p-5">
+          <div className="relative mb-4">
             <div>
-              <p className="text-[11px] font-semibold tracking-[0.18em] text-[#8f83ff]">
+              {!isPrivateExperience && <p className="text-[11px] font-semibold tracking-[0.18em] text-[#8f83ff]">
                 {text('精选岗位合集', 'CURATED ROLE COLLECTION')}
-              </p>
-              <h2 className="mt-2 flex items-center gap-2 text-xl font-bold text-slate-900 sm:text-2xl">
+              </p>}
+              <h2 className="mt-1 flex items-center gap-2 text-xl font-bold text-slate-900">
                 <Sparkles className="h-5 w-5 text-[#8f83ff]" />
                 {text('包含职位', 'Included roles')}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {text('点击卡片查看岗位详情，可根据需要选择“前往申请”或“帮我内推”。', 'Select a card to view role details, apply on the company website, or request a referral.')}
-              </p>
-            </div>
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-slate-200 bg-white/90 px-4 py-2 text-sm font-medium text-slate-600 shadow-sm shadow-slate-200/40">
-              <Briefcase className="h-4 w-4 text-slate-400" />
-              {text(`${jobs.length} 个职位`, `${jobs.length} roles`)}
             </div>
           </div>
 
-          <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2 sm:gap-5 xl:gap-7">
+          <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2 sm:gap-5">
             {jobs.map((job) => (
               <JobCardNew
                 key={job.id}
@@ -378,45 +433,65 @@ export default function JobBundleDetailPage() {
           </div>
 
           {jobs.length === 0 && (
-            <div className="relative overflow-hidden rounded-[24px] border border-[#e3edf4] bg-white py-12 text-center text-slate-400 shadow-sm">
+            <div className="relative overflow-hidden rounded-[20px] border border-[#e3edf4] bg-white py-8 text-center text-slate-400 shadow-sm">
               <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="font-medium">{text('暂无职位数据', 'No roles available')}</p>
               <p className="mt-1 text-sm">{text('下一次更新后会同步更多适合远程申请的机会。', 'More remote opportunities will be added in the next update.')}</p>
             </div>
           )}
         </section>
-
-        <section className="relative mt-5 overflow-hidden rounded-[24px] border border-[#e3edf4] bg-[linear-gradient(135deg,#fffdf8_0%,#f7fbff_100%)] p-4 shadow-[0_24px_70px_-58px_rgba(64,78,102,0.24)] sm:mt-6 sm:rounded-[28px] sm:p-6">
-          <img src="/pic_lists/Home_pics/background03.webp" alt="" className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full object-cover object-bottom opacity-30" />
-          <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="hidden h-16 w-16 items-center justify-center rounded-[20px] bg-[#f0edff] text-[#6f63f6] sm:flex">
-                <Crown className="h-7 w-7" />
-              </div>
-              <div>
-                <div className="text-sm font-black text-[#49a982]">{text('Haigoo 会员权益', 'Haigoo membership')}</div>
-                <h3 className="mt-1 text-xl font-black text-slate-950 sm:text-2xl">
-                  {isMember ? memberStatusLabel : text('想看更多高价值岗位和联系人？', 'Want more high-value roles and direct contacts?')}
-                </h3>
-                <p className="mt-1 text-sm leading-6 text-slate-500">
-                  {isMember
-                    ? text(`你已解锁会员岗位、邮箱直申、内推线索和精选推荐，有效期至 ${memberExpireLabel}。`, `Member roles, direct email applications, referral leads, and curated picks are unlocked through ${memberExpireLabel}.`)
-                    : text('解锁会员岗位、邮箱直申、内推线索和精选推荐，让申请推进更高效。', 'Unlock member roles, direct email applications, referral leads, and curated picks.')}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => navigate(isMember ? '/jobs?memberOnly=true' : '/profile?tab=membership#club-service-plans')}
-              className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-full bg-[#49a982] px-6 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(73,169,130,0.6)] transition hover:-translate-y-0.5 sm:w-auto"
-            >
-              {isMember ? text('继续查看会员岗位', 'View member roles') : text('了解会员权益', 'Explore membership')}
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
+        </div>
         </section>
 
-        <HaigooClubInfoCard className="mt-6" />
+        <aside className="relative min-h-0 overflow-y-auto rounded-[26px] border border-[#ddd7ff] bg-white shadow-[0_24px_70px_-54px_rgba(95,99,246,0.22)] sm:rounded-[30px]">
+          <div className="sticky top-0 z-10 border-b border-[#ebe8ff] bg-white px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                {!isPrivateExperience && <div className="flex items-center gap-2 text-xs font-black tracking-[0.12em] text-[#6f63f6]"><BookOpen className="h-4 w-4" />{text('职业成长路径', 'CAREER LEARNING PATH')}</div>}
+                <h2 className={`${isPrivateExperience ? '' : 'mt-1 '}text-xl font-black text-slate-950`}>{text('专属于你的准备方案', 'Your preparation plan')}</h2>
+              </div>
+              <span className="shrink-0 rounded-full bg-[#f0edff] px-3 py-1.5 text-xs font-black text-[#6251f5]">{completedCareerCount}/{careerItems.length}</span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 rounded-xl bg-slate-100 p-1 text-sm font-black">
+              <button type="button" onClick={() => setActiveCareerTab('learning')} className={`rounded-lg px-3 py-1.5 transition ${activeCareerTab === 'learning' ? 'bg-white text-[#5f52de] shadow-sm' : 'text-slate-500'}`}>{text('准备内容', 'Preparation')}</button>
+              <button type="button" onClick={() => setActiveCareerTab('records')} className={`rounded-lg px-3 py-1.5 transition ${activeCareerTab === 'records' ? 'bg-white text-[#5f52de] shadow-sm' : 'text-slate-500'}`}>{text('成长记录', 'Growth log')}</button>
+            </div>
+          </div>
+
+          <div className="p-3 sm:p-4">
+            {activeCareerTab === 'learning' ? (
+              careerItems.length ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {careerItems.map((item, index) => {
+                  const completed = completedVideoIds.has(item.video_id)
+                  const introduction = item.guidance || item.description || text('打开视频，完成这一步的远程求职准备。', 'Open the video to complete this preparation step.')
+                  return <article key={item.video_id} className={`overflow-hidden rounded-[18px] border p-2.5 transition ${completed ? 'border-[#d8d2ff] bg-[#faf9ff]' : 'border-slate-200 bg-white'}`}>
+                    <a href={item.href || '/careerlearning'} target="_blank" rel="noreferrer" onClick={() => handleOpenVideo(item.video_id)} aria-label={text(`打开准备内容 ${index + 1}`, `Open preparation ${index + 1}`)} className="group relative block aspect-video overflow-hidden rounded-[13px] border border-slate-100 bg-[#f5f3ff]">
+                      {item.cover_image_url ? <img src={item.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" /> : <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5f3ff,#e8f4ff)]"><PlayCircle className="h-10 w-10 text-[#7a6ff7]" /></div>}
+                      <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-slate-950 px-2.5 py-1 text-[11px] font-black text-white">{text(`准备 ${index + 1}`, `Step ${index + 1}`)}</span>
+                      <span className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#6251f5] shadow-sm"><PlayCircle className="h-5 w-5" /></span>
+                    </a>
+                    <div className="px-0.5 pt-2.5">
+                      <h3 className="line-clamp-1 text-sm font-black leading-5 text-slate-800">{item.title}</h3>
+                      <p className="mt-1 line-clamp-2 min-h-10 text-xs font-medium leading-5 text-slate-500">{introduction}</p>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between gap-2 px-0.5">
+                      <span className={`text-xs font-black ${completed ? 'text-[#6251f5]' : 'text-slate-400'}`}>{completed ? text('准备完成，撒花！🎉', 'Ready to go! 🎉') : text('看完就来点亮它吧', 'Light this up when ready')}</span>
+                      <button type="button" disabled={savingProgress} onClick={() => handleToggleVideoComplete(item.video_id)} className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition ${completed ? 'bg-[#eeeaff] text-[#6251f5] hover:bg-[#e4dfff]' : 'bg-[#6f63f6] text-white hover:bg-[#5d50df]'}`}>
+                        {completed ? <><PartyPopper className="h-3.5 w-3.5" />{text('已点亮', 'Celebrated')}</> : <><Check className="h-3.5 w-3.5" />{text('完成准备', 'Mark ready')}</>}
+                      </button>
+                    </div>
+                  </article>
+                })}
+              </div> : <div className="rounded-[20px] border border-dashed border-[#d8d2ff] bg-[#faf9ff] px-5 py-10 text-center"><BookOpen className="mx-auto h-8 w-8 text-[#8f83ff]" /><p className="mt-3 text-sm font-black text-slate-700">{text('顾问正在为你整理成长内容', 'Your career plan is being prepared')}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text('组合更新后，视频和具体使用建议会显示在这里。', 'Videos and instructions will appear here once the plan is updated.')}</p></div>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-[20px] border border-[#e6e4ff] bg-[#faf9ff] p-3.5 text-sm leading-6 text-slate-600">{text('这里会自动收集你打开准备内容、迈出申请第一步的时刻。不用填写表格，专心往前走就好。', 'This log automatically captures the moments you open preparation content and take the first application step. Keep moving; we will keep the trail.')}</div>
+                <div className="relative space-y-0 before:absolute before:bottom-5 before:left-[15px] before:top-5 before:w-px before:bg-[#ded9ff]">{progress.growth_records.length ? progress.growth_records.map((record, index) => <article key={record.id} className="relative pb-5 pl-10 last:pb-0"><span className="absolute left-0 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f2efff] text-xs font-black text-[#6658ef] shadow-sm">{index + 1}</span><div className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_16px_35px_-30px_rgba(48,58,95,0.42)]"><p className="text-sm leading-6 text-slate-700">{record.content}</p><time className="mt-2 block text-xs font-semibold text-slate-400">{new Date(record.created_at).toLocaleString(isEnglish ? 'en-US' : 'zh-CN', { dateStyle: 'medium', timeStyle: 'short' })}</time></div></article>) : <p className="relative px-2 py-7 text-center text-sm leading-6 text-slate-400">{text('第一条记录会在你打开准备内容或发起一次申请时自动出现。', 'Your first entry will appear automatically when you open preparation content or start an application.')}</p>}</div>
+              </div>
+            )}
+          </div>
+        </aside>
+        </div>
 
       </main>
 

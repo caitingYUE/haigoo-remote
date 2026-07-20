@@ -1,7 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, Calendar, Eye, EyeOff, Search, X, Check, Copy } from 'lucide-react';
-import { Job } from '../../types';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Plus, Edit3, Trash2, Search, X, Check, Copy, BookOpen, Video, Users, Loader2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import './AdminJobBundles.css';
 
 const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
@@ -25,8 +25,29 @@ interface JobBundle {
   start_time: string | null;
   end_time: string | null;
   visibility: string;
+  allowed_user_ids?: string[];
+  allowed_emails?: string[];
+  allowed_users?: RegisteredUser[];
+  career_items?: Array<{ video_id: string; guidance?: string; sort_order?: number }>;
   is_active: boolean;
   created_at: string;
+}
+
+interface RegisteredUser {
+  user_id: string;
+  email: string;
+  username?: string;
+  member_status?: string;
+  member_type?: string;
+}
+
+interface CareerVideo {
+  video_id: string;
+  video_title: string;
+  module_key: string;
+  description?: string;
+  category?: string;
+  difficulty_level?: string;
 }
 
 const getDisplayJobTitle = (job: any) => {
@@ -38,6 +59,7 @@ const getDisplayJobCompany = (job: any) => {
 };
 
 const AdminJobBundles: React.FC = () => {
+  const { token } = useAuth();
   const [bundles, setBundles] = useState<JobBundle[]>([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -49,6 +71,15 @@ const AdminJobBundles: React.FC = () => {
   const [searching, setSearching] = useState(false);
   const [selectedJobs, setSelectedJobs] = useState<any[]>([]); // Full job objects for display
   const [isCopied, setIsCopied] = useState(false);
+  const [careerVideos, setCareerVideos] = useState<CareerVideo[]>([]);
+  const [loadingCareerVideos, setLoadingCareerVideos] = useState(false);
+  const [allowedUserSearch, setAllowedUserSearch] = useState('');
+  const [allowedUserResults, setAllowedUserResults] = useState<RegisteredUser[]>([]);
+  const [selectedAllowedUsers, setSelectedAllowedUsers] = useState<RegisteredUser[]>([]);
+  const [searchingAllowedUsers, setSearchingAllowedUsers] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
+  const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
   const handleCopyAll = () => {
     if (selectedJobs.length === 0) return;
@@ -62,13 +93,56 @@ const AdminJobBundles: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchBundles();
-  }, []);
+    if (currentBundle.visibility !== 'specified') {
+      setAllowedUserSearch('');
+      setAllowedUserResults([]);
+      return;
+    }
+    const query = allowedUserSearch.trim();
+    if (query.length < 2) {
+      setAllowedUserResults([]);
+      setSearchingAllowedUsers(false);
+      return;
+    }
+    const timer = window.setTimeout(async () => {
+      try {
+        setSearchingAllowedUsers(true);
+        const res = await fetch(`/api/admin/job-bundles?resource=registered-users&search=${encodeURIComponent(query)}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
+        const data = await res.json();
+        setAllowedUserResults(data.success ? (data.data || []) : []);
+      } catch (error) {
+        console.error('Failed to search registered users:', error);
+        setAllowedUserResults([]);
+      } finally {
+        setSearchingAllowedUsers(false);
+      }
+    }, 260);
+    return () => window.clearTimeout(timer);
+  }, [allowedUserSearch, currentBundle.visibility, token]);
 
-  const fetchBundles = async () => {
+  const fetchCareerVideos = useCallback(async () => {
+    try {
+      setLoadingCareerVideos(true);
+      const res = await fetch('/api/admin/job-bundles?resource=career-videos', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
+      const data = await res.json();
+      if (data.success) setCareerVideos(data.data || []);
+    } catch (error) {
+      console.error('Failed to fetch career videos:', error);
+    } finally {
+      setLoadingCareerVideos(false);
+    }
+  }, [token]);
+
+  const fetchBundles = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch('/api/admin/job-bundles');
+      const res = await fetch('/api/admin/job-bundles', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
       const data = await res.json();
       if (data.success) {
         setBundles(data.data);
@@ -78,7 +152,12 @@ const AdminJobBundles: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    void fetchBundles();
+    void fetchCareerVideos();
+  }, [fetchBundles, fetchCareerVideos]);
 
   // Format date for datetime-local input (YYYY-MM-DDThh:mm)
   const formatDateForInput = (dateStr: string | null) => {
@@ -100,32 +179,19 @@ const AdminJobBundles: React.FC = () => {
       return;
     }
     try {
-      // We can reuse the processed-jobs API with a filter or ID list if supported
-      // For now, let's just fetch them one by one or modify the API to support ID list
-      // Optimization: Fetch all at once if API supports `ids` param
-      // Assuming /api/data/processed-jobs supports ?ids=1,2,3 or we filter client side (bad for performance)
-
-      // Let's implement a simple search by ID loop for now or search endpoint
-      // Better: Use the search endpoint with ID filter if available. 
-      // If not, we might need to display just IDs until we load them.
-
-      // For this MVP, let's search by ID one by one or batch if possible.
-      // Actually, let's just use the search API to find them by title if we can't get by ID easily? No.
-
-      // Let's assume we can fetch job details. For now, we will just show IDs in the list until we search.
-      // Or we can fetch them using `fetch('/api/data/processed-jobs?ids=' + ids.join(','))` if implemented.
-      // Let's implement a helper in the backend later.
-
-      // Temporary: Just set empty details, populate via search
-      // setSelectedJobs(ids.map(id => ({ id: id, title: 'Loading...', company: '...' })));
-
-      // Real fetch
-      const res = await fetch(`/api/data/processed-jobs?ids=${encodeURIComponent(JSON.stringify(ids))}`);
+      const res = await fetch(`/api/admin/job-bundles?resource=publishable-jobs&ids=${encodeURIComponent(JSON.stringify(ids))}`, {
+        headers: authHeaders
+      });
       const data = await res.json();
-      if (data.jobs) {
+      if (data.success) {
         // Reorder according to ids
-        const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
-        const ordered = ids.map(id => jobMap.get(id)).filter(Boolean);
+        const jobMap = new Map((data.data || []).map((j: any) => [j.id, j]));
+        const ordered = ids.map(id => jobMap.get(id) || ({
+          id,
+          title: '该岗位当前不能公开展示',
+          company: '已下线、未审核或本地预览数据',
+          unavailable: true
+        }));
         setSelectedJobs(ordered);
       }
     } catch (e) {
@@ -134,12 +200,17 @@ const AdminJobBundles: React.FC = () => {
   };
 
   const handleEdit = (bundle: JobBundle) => {
-    setCurrentBundle(bundle);
+    setSaveError('');
+    setCurrentBundle({ ...bundle, allowed_user_ids: bundle.allowed_user_ids || [], allowed_emails: bundle.allowed_emails || [], career_items: bundle.career_items || [] });
+    setSelectedAllowedUsers(bundle.allowed_users || []);
+    setAllowedUserSearch('');
+    setAllowedUserResults([]);
     fetchJobDetails(bundle.job_ids || []);
     setIsEditing(true);
   };
 
   const handleCreate = () => {
+    setSaveError('');
     setCurrentBundle({
       title: '',
       subtitle: '',
@@ -147,42 +218,61 @@ const AdminJobBundles: React.FC = () => {
       job_ids: [],
       priority: 10,
       visibility: 'public',
+      allowed_user_ids: [],
+      allowed_emails: [],
+      career_items: [],
       is_active: true
     });
     setSelectedJobs([]);
+    setSelectedAllowedUsers([]);
+    setAllowedUserSearch('');
+    setAllowedUserResults([]);
     setIsEditing(true);
   };
 
   const handleSave = async () => {
+    setSaveError('');
+    if (!String(currentBundle.title || '').trim()) {
+      setSaveError('请填写组合标题。');
+      return;
+    }
+    if (currentBundle.visibility === 'specified' && selectedAllowedUsers.length === 0) {
+      setSaveError('请通过站内搜索添加至少一位已注册用户。');
+      return;
+    }
     try {
       const url = '/api/admin/job-bundles';
       const method = currentBundle.id ? 'PUT' : 'POST';
       const body = {
         ...currentBundle,
-        job_ids: selectedJobs.map(j => j.id) // Use j.id consistently
+      job_ids: selectedJobs.map(j => j.id), // Use j.id consistently
+        allowed_user_ids: selectedAllowedUsers.map(user => user.user_id),
+        career_items: currentBundle.career_items || []
       };
 
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify(body)
       });
 
-      if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
         setIsEditing(false);
         fetchBundles();
       } else {
-        alert('Failed to save');
+        setSaveError(data.error || '保存失败，请稍后重试。');
       }
     } catch (error) {
       console.error('Save error:', error);
+      setSaveError('网络异常，未能保存。请检查连接后重试。');
     }
   };
 
   const handleDelete = async (id: number) => {
     if (!confirm('确定要删除这个组合包吗？')) return;
     try {
-      await fetch(`/api/admin/job-bundles?id=${id}`, { method: 'DELETE' });
+      await fetch(`/api/admin/job-bundles?id=${id}`, { method: 'DELETE', headers: authHeaders });
       fetchBundles();
     } catch (error) {
       console.error('Delete error:', error);
@@ -194,10 +284,12 @@ const AdminJobBundles: React.FC = () => {
     if (!searchTerm) return;
     setSearching(true);
     try {
-      const res = await fetch(`/api/data/processed-jobs?search=${encodeURIComponent(searchTerm)}&limit=20`);
+      const res = await fetch(`/api/admin/job-bundles?resource=publishable-jobs&search=${encodeURIComponent(searchTerm)}`, {
+        headers: authHeaders
+      });
       const data = await res.json();
-      if (data.jobs) {
-        setSearchResults(data.jobs);
+      if (data.success) {
+        setSearchResults(data.data || []);
       }
     } catch (e) {
       console.error('Search failed', e);
@@ -228,6 +320,27 @@ const AdminJobBundles: React.FC = () => {
     }
   };
 
+  const careerItems = currentBundle.career_items || [];
+  const addCareerVideo = (video: CareerVideo) => {
+    if (careerItems.some(item => item.video_id === video.video_id)) return;
+    setCurrentBundle({ ...currentBundle, career_items: [...careerItems, { video_id: video.video_id, guidance: '' }] });
+  };
+  const updateCareerGuidance = (index: number, guidance: string) => {
+    setCurrentBundle({ ...currentBundle, career_items: careerItems.map((item, itemIndex) => itemIndex === index ? { ...item, guidance } : item) });
+  };
+  const removeCareerVideo = (videoId: string) => {
+    setCurrentBundle({ ...currentBundle, career_items: careerItems.filter(item => item.video_id !== videoId) });
+  };
+  const addAllowedUser = (user: RegisteredUser) => {
+    if (selectedAllowedUsers.some(item => item.user_id === user.user_id)) return;
+    setSelectedAllowedUsers([...selectedAllowedUsers, user]);
+    setAllowedUserSearch('');
+    setAllowedUserResults([]);
+  };
+  const removeAllowedUser = (userId: string) => {
+    setSelectedAllowedUsers(selectedAllowedUsers.filter(user => user.user_id !== userId));
+  };
+
   if (isEditing) {
     return (
       <div className="job-bundle-editor">
@@ -236,6 +349,8 @@ const AdminJobBundles: React.FC = () => {
           <button onClick={() => setIsEditing(false)} className="btn-secondary">取消</button>
           <button onClick={handleSave} className="btn-primary">保存</button>
         </div>
+
+        {saveError && <div className="job-bundle-save-error" role="alert">{saveError}</div>}
 
         <div className="editor-content">
           {/* Basic Info */}
@@ -307,6 +422,7 @@ const AdminJobBundles: React.FC = () => {
                   >
                     <option value="public">公开可见</option>
                     <option value="member">Club 可申</option>
+                    <option value="specified">指定注册邮箱可见</option>
                     <option value="admin">仅管理员可见</option>
                   </select>
                 </div>
@@ -320,11 +436,90 @@ const AdminJobBundles: React.FC = () => {
                 </label>
               </div>
             </div>
+            {currentBundle.visibility === 'specified' && (
+              <div className="form-row allowed-users-field">
+                <label>指定注册用户</label>
+                <p className="allowed-users-hint">按邮箱或用户名搜索已注册用户；选择后将关联账户 ID，邮箱变更后权限仍会保留。</p>
+                <div className="allowed-user-search-wrap">
+                  <Search className="allowed-user-search-icon" aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={allowedUserSearch}
+                    onChange={e => setAllowedUserSearch(e.target.value)}
+                    placeholder="输入至少 2 个字符搜索邮箱或用户名"
+                    aria-label="搜索注册用户"
+                  />
+                  {searchingAllowedUsers && <Loader2 className="allowed-user-loading animate-spin" aria-label="搜索中" />}
+                </div>
+                {allowedUserSearch.trim().length >= 2 && (
+                  <div className="allowed-user-results" aria-live="polite">
+                    {allowedUserResults.length === 0 && !searchingAllowedUsers ? (
+                      <div className="allowed-user-empty">没有匹配的已注册用户</div>
+                    ) : allowedUserResults.map(user => {
+                      const alreadySelected = selectedAllowedUsers.some(item => item.user_id === user.user_id);
+                      return <button type="button" key={user.user_id} className="allowed-user-option" onClick={() => addAllowedUser(user)} disabled={alreadySelected}>
+                        <span className="allowed-user-avatar"><Users className="h-3.5 w-3.5" /></span>
+                        <span className="min-w-0 flex-1 text-left"><b>{user.username || '未设置昵称'}</b><small>{user.email}</small></span>
+                        <span className="allowed-user-add">{alreadySelected ? '已添加' : '添加'}</span>
+                      </button>;
+                    })}
+                  </div>
+                )}
+                <div className="selected-allowed-users">
+                  {selectedAllowedUsers.length === 0 ? <span className="allowed-user-empty">尚未指定用户</span> : selectedAllowedUsers.map(user => (
+                    <span className="allowed-user-chip" key={user.user_id}>
+                      <span className="min-w-0"><b>{user.username || '未设置昵称'}</b><small>{user.email}</small></span>
+                      <button type="button" onClick={() => removeAllowedUser(user.user_id)} aria-label={`移除 ${user.email}`}><X className="h-3.5 w-3.5" /></button>
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs text-slate-500">仅这些已登录账户可以打开该组合；支持重复搜索并添加多个用户。</p>
+              </div>
+            )}
+          </div>
+
+          <div className="form-section">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="mb-1 flex items-center gap-2"><BookOpen className="h-4 w-4 text-indigo-500" />职业成长内容</h3>
+                <p className="text-xs text-slate-500">从已发布的职业成长视频中选择，并为每一项补充仅在本组合页显示的观看说明。</p>
+              </div>
+              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">已选 {careerItems.length}</span>
+            </div>
+            <div className="career-plan-editor">
+              <div className="career-video-picker">
+                <div className="career-picker-title">可添加的视频</div>
+                <div className="career-video-list">
+                  {loadingCareerVideos ? <div className="p-3 text-sm text-slate-400">加载中...</div> : careerVideos.map(video => (
+                    <button type="button" key={video.video_id} onClick={() => addCareerVideo(video)} disabled={careerItems.some(item => item.video_id === video.video_id)} className="career-video-option">
+                      <Video className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1 text-left"><b>{video.video_title}</b><small>{video.module_key} {video.category ? `· ${video.category}` : ''}</small></span>
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="career-selected-list">
+                <div className="career-picker-title">组合内的成长路径</div>
+                {careerItems.length === 0 ? <div className="p-4 text-sm text-slate-400">选择视频后，可给用户写下正确打开与使用方式。</div> : careerItems.map((item, index) => {
+                  const video = careerVideos.find(candidate => candidate.video_id === item.video_id);
+                  return <div className="career-selected-item" key={item.video_id}>
+                    <div className="career-item-order">{index + 1}</div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-slate-800">{video?.video_title || item.video_id}</div>
+                      <textarea value={item.guidance || ''} onChange={e => updateCareerGuidance(index, e.target.value)} placeholder="例如：先看这一节，再把自己的经历写成 3 个可复用案例。" rows={2} />
+                    </div>
+                    <button type="button" onClick={() => removeCareerVideo(item.video_id)} className="text-slate-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+                  </div>
+                })}
+              </div>
+            </div>
           </div>
 
           {/* Job Selection */}
           <div className="form-section">
             <h3>职位选择</h3>
+            <p className="mb-3 text-xs text-slate-500">仅可添加已审核且正在公开展示的真实岗位；本地预览数据不会进入合集。</p>
 
             <div className="job-selector">
               {/* Search Panel */}
@@ -389,7 +584,7 @@ const AdminJobBundles: React.FC = () => {
                       <div className="item-order">{index + 1}</div>
                       <div className="job-info">
                         <div className="job-title">{getDisplayJobTitle(job)}</div>
-                        <div className="job-company">{getDisplayJobCompany(job)}</div>
+                        <div className="job-company">{getDisplayJobCompany(job)}{job.unavailable ? ' · 无法公开展示，请移除' : ''}</div>
                       </div>
                       <div className="item-actions">
                         <button onClick={() => moveJob(index, 'up')} disabled={index === 0}>↑</button>
@@ -425,6 +620,8 @@ const AdminJobBundles: React.FC = () => {
                 <th>标题</th>
                 <th>优先级</th>
                 <th>职位数</th>
+                <th>成长内容</th>
+                <th>授权用户</th>
                 <th>有效期</th>
                 <th>状态</th>
                 <th>操作</th>
@@ -432,9 +629,9 @@ const AdminJobBundles: React.FC = () => {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={6} className="text-center py-4">加载中...</td></tr>
+                <tr><td colSpan={8} className="text-center py-4">加载中...</td></tr>
               ) : bundles.length === 0 ? (
-                <tr><td colSpan={6} className="text-center py-4">暂无数据</td></tr>
+                <tr><td colSpan={8} className="text-center py-4">暂无数据</td></tr>
               ) : (
                 bundles.map(bundle => (
                   <tr key={bundle.id}>
@@ -444,6 +641,8 @@ const AdminJobBundles: React.FC = () => {
                     </td>
                     <td>{bundle.priority}</td>
                     <td>{bundle.job_ids?.length || 0}</td>
+                    <td>{bundle.career_items?.length || 0}</td>
+                    <td>{bundle.visibility === 'specified' ? (bundle.allowed_user_ids?.length || bundle.allowed_users?.length || bundle.allowed_emails?.length || 0) : '—'}</td>
                     <td className="text-sm">
                       {bundle.start_time ? new Date(bundle.start_time).toLocaleDateString() : '即时'}
                       {' - '}
@@ -460,6 +659,9 @@ const AdminJobBundles: React.FC = () => {
                       )}
                       {bundle.visibility === 'admin' && (
                         <span className="status-badge medium ml-2">仅管理员</span>
+                      )}
+                      {bundle.visibility === 'specified' && (
+                        <span className="status-badge medium ml-2">指定用户</span>
                       )}
                     </td>
                     <td>

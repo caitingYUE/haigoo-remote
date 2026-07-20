@@ -108,6 +108,28 @@ const LOCAL_USERS = new Map([
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     }],
+    ['test_month@haigoo.com', {
+        user_id: 'test-month-uuid-008',
+        email: 'test_month@haigoo.com',
+        username: 'Test Club Starter Member',
+        auth_provider: 'email',
+        password_hash: LOCAL_TEST_PASSWORD_HASH,
+        email_verified: true,
+        status: 'active',
+        roles: { user: true },
+        membership_level: 'club_go',
+        member_status: 'active',
+        member_cycle_start_at: new Date().toISOString(),
+        member_expire_at: getLocalExpireAtByMonths(1),
+        member_type: 'starter',
+        free_website_apply_count: 0,
+        free_website_apply_limit: DEFAULT_FREE_WEBSITE_APPLY_LIMIT,
+        free_referral_count: 0,
+        free_referral_limit: DEFAULT_FREE_REFERRAL_LIMIT,
+        profile: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    }],
     ['test_annual@haigoo.com', {
         user_id: 'test-annual-uuid-007',
         email: 'test_annual@haigoo.com',
@@ -655,17 +677,18 @@ const userHelper = {
      */
     sanitizeUser(user) {
         if (!user) return null
-        const {
-            passwordHash,
-            password_hash,
-            verificationToken,
-            verification_token,
-            verificationExpires,
-            verification_expires,
-            google_id,
-            googleId,
-            ...safeUser
-        } = user
+        const safeUser = { ...user }
+        const sensitiveKeys = [
+            'passwordHash',
+            'password_hash',
+            'verificationToken',
+            'verification_token',
+            'verificationExpires',
+            'verification_expires',
+            'google_id',
+            'googleId'
+        ]
+        sensitiveKeys.forEach((key) => delete safeUser[key])
         return safeUser
     },
 

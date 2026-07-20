@@ -440,7 +440,11 @@ export default function JobsPage() {
     // Fetch active bundles
     const fetchActiveBundles = async () => {
       try {
-        const data = await fetchJobsJsonWithDedupe('/api/data/job-bundles?is_active=true');
+        // 指定用户合集依赖身份识别。若不携带 Token，服务端会将其视为匿名访问并正确地隐藏它，
+        // 但用户会误以为后台配置没有生效。
+        const data = await fetchJobsJsonWithDedupe('/api/data/job-bundles?is_active=true', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined
+        });
         if (data.success && data.data && data.data.length > 0) {
           // Time filtering is now handled by the backend API.
           // Only filter by visibility based on current user state.
@@ -478,7 +482,7 @@ export default function JobsPage() {
       if ('cancelIdleCallback' in window) window.cancelIdleCallback(Number(idleId))
       else globalThis.clearTimeout(idleId)
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, token]);
 
   const [showWechatModal, setShowWechatModal] = useState(false)
   const [showEmailVerificationPrompt, setShowEmailVerificationPrompt] = useState(false)

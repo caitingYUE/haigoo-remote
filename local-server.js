@@ -73,6 +73,7 @@ async function startServer() {
         const adminContentPushSocialReplaceHandler = (await import('./api/admin/content-push/social-push/replace.js')).default;
         const adminContentPushSocialManualSearchHandler = (await import('./api/admin/content-push/social-push/manual-search.js')).default;
         const adminSearchInsightsHandler = (await import('./api/admin/search-insights.js')).default;
+        const adminJobBundlesHandler = (await import('./api/admin/job-bundles.js')).default;
         app.all('/api/admin/content-push/xiaohongshu/jobs', async (req, res) => { await adminContentPushXhsJobsHandler(req, res); });
         app.all('/api/admin/content-push/xiaohongshu/summary', async (req, res) => { await adminContentPushXhsSummaryHandler(req, res); });
         app.all('/api/admin/content-push/xiaohongshu/draft', async (req, res) => { await adminContentPushXhsDraftHandler(req, res); });
@@ -80,6 +81,7 @@ async function startServer() {
         app.all('/api/admin/content-push/social-push/replace', async (req, res) => { await adminContentPushSocialReplaceHandler(req, res); });
         app.all('/api/admin/content-push/social-push/manual-search', async (req, res) => { await adminContentPushSocialManualSearchHandler(req, res); });
         app.all('/api/admin/search-insights', async (req, res) => { await adminSearchInsightsHandler(req, res); });
+        app.all('/api/admin/job-bundles', async (req, res) => { await adminJobBundlesHandler(req, res); });
         // Map legacy admin routes
         app.all('/api/check-user-data', async (req, res) => { req.query.action = 'check-user'; await adminOpsHandler(req, res); });
         app.all('/api/diagnose-db', async (req, res) => { req.query.action = 'diagnose'; await adminOpsHandler(req, res); });
