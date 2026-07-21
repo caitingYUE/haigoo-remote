@@ -57,11 +57,16 @@ const formatVideoDuration = (durationMs: number | undefined, isEnglish: boolean)
   return isEnglish ? `About ${minutes} min` : `约 ${minutes} 分钟`;
 };
 
+const getDisplayName = (user: ReturnType<typeof useAuth>['user']) => {
+  const candidate = user?.profile?.fullName || user?.username || user?.email?.split('@')[0] || '';
+  return candidate.trim();
+};
+
 export default function JobBundleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const handleBack = useReturnNavigation('/jobs');
-  const { token, isAuthenticated, isMember } = useAuth();
+  const { token, isAuthenticated, isMember, user } = useAuth();
   const { isEnglish, text } = useLanguage();
 
   const [bundle, setBundle] = useState<JobBundle | null>(null);
@@ -286,6 +291,7 @@ export default function JobBundleDetailPage() {
   const isMemberBundle = bundle.visibility === 'member';
   const isLocked = Boolean(bundle.access?.locked) || (isMemberBundle && !isMember);
   const isPrivateExperience = bundle.visibility === 'specified' || isMemberBundle;
+  const displayName = bundle.visibility === 'specified' ? getDisplayName(user) : '';
   const careerItems = bundle.career_items || [];
   const completedVideoIds = new Set(progress.completed_video_ids || []);
   const completedCareerCount = careerItems.filter((item) => completedVideoIds.has(item.video_id)).length;
@@ -373,7 +379,7 @@ export default function JobBundleDetailPage() {
               <h1 className="mb-2 flex max-w-5xl flex-wrap items-center gap-3 text-[26px] font-black leading-[1.16] tracking-normal text-slate-950 sm:text-[30px] lg:text-[32px]">
                 <span>{bundle.title}</span>
               </h1>
-              {!isPrivateExperience && <p className="mb-3 max-w-3xl text-sm font-medium leading-6 text-slate-500 sm:text-[15px]">{bundle.subtitle}</p>}
+              {bundle.subtitle && <p className="mb-3 max-w-3xl text-sm font-medium leading-6 text-slate-500 sm:text-[15px]">{bundle.subtitle}</p>}
 
               <p className="max-w-4xl rounded-2xl border border-[#e9e6f7] bg-white/75 px-3 py-2.5 text-sm font-semibold leading-6 text-slate-600">
                 {bundle.content || text('本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。', 'This collection is ready. More remote opportunities will be added in the next update.')}
@@ -411,7 +417,10 @@ export default function JobBundleDetailPage() {
         <section id="bundle-jobs" className="relative scroll-mt-24 overflow-hidden rounded-[20px] border border-[#e4e7f0] bg-[#fbfcff] p-4 shadow-[0_24px_70px_-58px_rgba(58,67,112,0.16)] sm:rounded-[24px] sm:p-5">
           <div className="relative mb-3 flex items-end justify-between gap-4">
             <div>
-              <h2 className="text-xl font-black text-slate-900">{text('岗位列表', 'Roles')}</h2>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <h2 className="shrink-0 whitespace-nowrap text-[18px] font-black text-slate-900 sm:text-xl">{text('推荐申请的岗位', 'Recommended roles')}</h2>
+                {displayName && <span title={displayName} className="min-w-0 max-w-[10rem] truncate whitespace-nowrap text-sm font-black text-[#7568ed] sm:text-base">@{displayName}</span>}
+              </div>
             </div>
           </div>
 
@@ -444,8 +453,9 @@ export default function JobBundleDetailPage() {
         <aside className="relative min-h-0 overflow-y-auto rounded-[24px] border border-[#ddd7ff] bg-[#fdfcff] shadow-[0_24px_70px_-54px_rgba(95,99,246,0.22)] sm:rounded-[28px]">
           <div className="sticky top-0 z-10 border-b border-[#ebe8ff] bg-[#fdfcff] px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
             <div className="flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-black text-slate-950">{text('专属于你的准备方案', 'Your preparation plan')}</h2>
+              <div className="flex min-w-0 items-center gap-1.5">
+                <h2 className="shrink-0 whitespace-nowrap text-[18px] font-black text-slate-950 sm:text-xl">{text('专属于你的准备方案', 'Your preparation plan')}</h2>
+                {displayName && <span title={displayName} className="min-w-0 max-w-[8rem] truncate whitespace-nowrap text-sm font-black text-[#7568ed] sm:text-base">@{displayName}</span>}
               </div>
               <span className="shrink-0 rounded-full border border-[#e0d9ff] bg-[#f4f1ff] px-3 py-1.5 text-xs font-black text-[#6251f5]">{completedCareerCount}/{careerItems.length}</span>
             </div>

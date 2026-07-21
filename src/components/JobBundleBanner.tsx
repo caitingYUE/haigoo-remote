@@ -21,6 +21,11 @@ interface JobBundleCarouselProps {
   bundles: JobBundle[];
 }
 
+function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
+  const candidate = user?.profile?.fullName || user?.username || user?.email?.split('@')[0] || '';
+  return candidate.trim();
+}
+
 // Default full-width banner (kept for compatibility)
 export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const navigate = useNavigate();
@@ -135,7 +140,9 @@ interface JobBundleCardProps extends JobBundleBannerProps {
 export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const navigate = useNavigate();
   const { text } = useLanguage();
+  const { user } = useAuth();
   const isPrivateBundle = bundle.visibility === 'specified';
+  const displayName = isPrivateBundle ? getDisplayName(user) : '';
 
   const accessBadge = bundle.visibility === 'specified'
     ? text('仅你可见', 'Only you')
@@ -156,20 +163,19 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
         type="button"
         onClick={handleClick}
         aria-label={`${text('打开专属求职准备', 'Open personal preparation plan')}：${bundle.title}`}
-        className="group relative h-full min-h-[156px] w-full min-w-0 overflow-hidden rounded-[20px] border border-[#dcd5ff] bg-[linear-gradient(135deg,#fbfaff_0%,#ffffff_58%,#f8f6ff_100%)] text-left shadow-[0_18px_44px_-36px_rgba(83,72,180,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#bcb0ff] hover:shadow-[0_22px_48px_-34px_rgba(83,72,180,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]"
+        className="group relative h-full min-h-[174px] w-full min-w-0 overflow-hidden rounded-[20px] border border-[#dcd5ff] bg-[linear-gradient(135deg,#fbfaff_0%,#ffffff_58%,#f8f6ff_100%)] text-left shadow-[0_18px_44px_-36px_rgba(83,72,180,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#bcb0ff] hover:shadow-[0_22px_48px_-34px_rgba(83,72,180,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]"
       >
         <div className="pointer-events-none absolute inset-y-0 right-0 w-[45%] bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(245,242,255,0.9)_100%)]" />
         <img
           src={theme.image}
           alt=""
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-[-3px] right-2 h-[82px] w-[148px] object-contain opacity-45 transition-transform duration-300 group-hover:scale-[1.04]"
+          className="pointer-events-none absolute bottom-[-3px] right-2 h-[86px] w-[156px] object-contain opacity-45 transition-transform duration-300 group-hover:scale-[1.04]"
           loading="lazy"
           decoding="async"
         />
-        <div className="relative flex h-full min-h-[156px] flex-col p-4">
-          <div className="flex items-center justify-between gap-2">
-            <span aria-hidden="true" />
+        <div className="relative flex h-full min-h-[174px] flex-col p-4">
+          <div className="flex justify-end">
             <span className="shrink-0 rounded-full border border-[#ded6ff] bg-white px-2.5 py-1 text-[11px] font-black text-[#6759e8] shadow-sm">
               {accessBadge}
             </span>
@@ -177,6 +183,10 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
           <h3 className="mt-2 line-clamp-2 max-w-[72%] text-[17px] font-black leading-snug tracking-tight text-slate-950">
             {bundle.title}
           </h3>
+          {(bundle.subtitle || displayName) && <div className="mt-1 flex max-w-[66%] min-w-0 items-center gap-1.5 text-xs leading-5">
+            {bundle.subtitle && <p className="min-w-0 flex-1 truncate font-medium text-slate-500">{bundle.subtitle}</p>}
+            {displayName && <span title={displayName} className="max-w-[88px] shrink-0 truncate font-bold text-[#776be9]">@{displayName}</span>}
+          </div>}
           <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-[#6f63f6] px-3 py-1.5 text-xs font-black text-white shadow-[0_12px_24px_-16px_rgba(95,82,222,0.9)] transition group-hover:bg-[#5d50df]">
             {text('打开准备方案', 'Open plan')}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
