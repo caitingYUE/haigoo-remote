@@ -509,6 +509,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const { showSuccess, showError, showInfo, showWarning } = useNotificationHelpers()
     const companyInfoRequestRef = useRef(0)
     const headquartersStatRef = useRef<HTMLDivElement | null>(null)
+    const referralContactsScrollRef = useRef<HTMLDivElement | null>(null)
 
     useEffect(() => {
         setNestedJobIndex(null)
@@ -1590,6 +1591,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const referralAccessMode = getReferralAccessMode()
     const hasMultipleReferralContacts = displayReferralContacts.length > 1
     const hasScrollableReferralContacts = displayReferralContacts.length >= 3
+    const scrollReferralContacts = (direction: 'previous' | 'next') => {
+        const container = referralContactsScrollRef.current
+        if (!container) return
+        const pageWidth = Math.max(Math.round(container.clientWidth * 0.8), 280)
+        container.scrollBy({
+            left: direction === 'previous' ? -pageWidth : pageWidth,
+            behavior: 'smooth'
+        })
+    }
     const shouldShowUnifiedReferralUnlock = hasMultipleReferralContacts && referralAccessMode !== 'unlocked'
     const mayHaveReferralPath = Boolean(
         fallbackHiringEmail ||
@@ -2180,9 +2190,26 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             帮我内推 <span className="font-black text-[#6f63f6]">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
                                         {hasScrollableReferralContacts && (
-                                            <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[11px] font-black text-[#6f63f6]">
-                                                {displayReferralContacts.length} 位联系人
-                                            </span>
+                                            <div className="mt-0.5 flex shrink-0 items-center gap-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => scrollReferralContacts('previous')}
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6] transition-colors hover:bg-[#ede9fe]"
+                                                    aria-label="查看上一位联系人"
+                                                    title="上一位"
+                                                >
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => scrollReferralContacts('next')}
+                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6] transition-colors hover:bg-[#ede9fe]"
+                                                    aria-label="查看下一位联系人"
+                                                    title="下一位"
+                                                >
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'sm:truncate' : ''}`}>
@@ -2248,7 +2275,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     }
 
                                     return (
-                                        <div className="mt-4 flex overflow-x-auto gap-3 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
+                                        <div ref={referralContactsScrollRef} className="mt-4 flex overflow-x-auto gap-3 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
                                             {displayReferralContacts.map((contact, index) => {
                                                 const theme = contactThemes[index % contactThemes.length]
                                                 const isUnlockedCard = referralAccessMode === 'unlocked'
