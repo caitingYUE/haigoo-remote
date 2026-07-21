@@ -167,9 +167,10 @@ function mapModuleVideo(row, user, includeVideoNotes = false) {
   }
 }
 
-async function listFeaturedVideos(req, res) {
+async function listFeaturedVideos(req, res, user) {
   const requestedLimit = Number(req.query.limit || 4)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 12) : 4
+  const shouldPrioritizeFreeVideos = !deriveMembershipCapabilities(user).canAccessCorporateEnglishVideos
   const materialHasCover = await hasTableColumn(MATERIALS_TABLE, 'cover_image_hash')
   const moduleHasCover = await hasTableColumn(MODULE_VIDEOS_TABLE, 'cover_image_hash')
   const materialHasFeatured = await hasTableColumn(MATERIALS_TABLE, 'is_featured')
@@ -268,10 +269,17 @@ async function listFeaturedVideos(req, res) {
   ]
   const featuredVideos = videos.filter((video) => video.isFeatured)
   const sortByPublishedAt = (left, right) => new Date(right.publishedAt || 0).getTime() - new Date(left.publishedAt || 0).getTime()
-  const selected = [
-    ...featuredVideos.sort(sortByPublishedAt),
-    ...videos.filter((video) => !video.isFeatured).sort(sortByPublishedAt)
-  ].slice(0, limit)
+  const selected = (shouldPrioritizeFreeVideos
+    ? [
+        ...videos.filter((video) => video.accessTier === 'free').sort(sortByPublishedAt),
+        ...videos.filter((video) => video.accessTier !== 'free' && video.isFeatured).sort(sortByPublishedAt),
+        ...videos.filter((video) => video.accessTier !== 'free' && !video.isFeatured).sort(sortByPublishedAt)
+      ]
+    : [
+        ...featuredVideos.sort(sortByPublishedAt),
+        ...videos.filter((video) => !video.isFeatured).sort(sortByPublishedAt)
+      ]
+  ).slice(0, limit)
 
   return res.status(200).json({ success: true, videos: selected, usingFallback: featuredVideos.length === 0 })
 }
@@ -1165,9 +1173,8 @@ export default async function handler(req, res) {
   try {
     const resource = normalizeString(req.query.resource || 'companies')
     if (req.method === 'GET' && resource === 'cover-image') return await getCoverImage(req, res)
-    if (req.method === 'GET' && resource === 'featured-videos') return await listFeaturedVideos(req, res)
-
     const user = await resolveUser(req)
+    if (req.method === 'GET' && resource === 'featured-videos') return await listFeaturedVideos(req, res, user)
     if (req.method === 'GET' && resource === 'companies') return await listCompanies(req, res, user)
     if (req.method === 'GET' && resource === 'ceo-videos') return await listCeoVideos(req, res, user)
     if (req.method === 'GET' && resource === 'ceo-video') return await getCeoVideo(req, res, user)
