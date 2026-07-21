@@ -376,7 +376,6 @@ export default function JobBundleDetailPage() {
 
           <div className="relative">
             <div className="min-w-0">
-              {isPrivateExperience && <p className="mb-2 text-xs font-bold tracking-[0.08em] text-[#7164e9]">{text('专属岗位合集', 'PERSONAL ROLE COLLECTION')}</p>}
               <h1 className="mb-2 flex max-w-5xl flex-wrap items-center gap-3 text-[25px] font-bold leading-[1.28] tracking-[-0.018em] text-slate-900 sm:text-[29px] lg:text-[30px]">
                 <span>{bundle.title}</span>
               </h1>
@@ -423,7 +422,7 @@ export default function JobBundleDetailPage() {
                 <span className="rounded-full bg-[#eef2f7] px-2 py-0.5 text-xs font-semibold text-slate-500">{jobs.length}</span>
                 {displayName && <span title={displayName} className="min-w-0 max-w-[10rem] truncate whitespace-nowrap text-sm font-semibold text-[#7568ed] sm:text-base">@{displayName}</span>}
               </div>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{text('为你的当前目标筛选，点击岗位可查看完整信息。', 'Selected for your current goal. Open a role for full details.')}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{text('根据你的背景推荐，点击岗位可查看完整信息。', 'Recommended from your background. Open a role for full details.')}</p>
             </div>
           </div>
 
@@ -436,7 +435,7 @@ export default function JobBundleDetailPage() {
                   onClick={() => handleJobClick(job)}
                   isActive={selectedJob?.id === job.id}
                   showApplicationMethodIcons
-                  compactFeatured
+                  expandedDetails
                 />
               </div>
             ))}

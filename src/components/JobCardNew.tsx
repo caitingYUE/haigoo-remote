@@ -38,6 +38,7 @@ interface JobCardNewProps {
    applicationStatusNode?: React.ReactNode;
    showApplicationMethodIcons?: boolean;
    compactFeatured?: boolean;
+   expandedDetails?: boolean;
    hideMemberBackdrop?: boolean;
 }
 
@@ -157,7 +158,7 @@ const GuestMaskedValue = ({ className = 'w-20' }: { className?: string }) => {
    return <span className={`inline-flex h-3.5 rounded-full bg-slate-300/80 blur-[2px] ${className}`} aria-label={label} title={label} />;
 };
 
-export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, isSaved = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false, hideMemberBackdrop = false }: JobCardNewProps) {
+export default function JobCardNew({ job, onClick, onDelete, matchScore, className, variant = 'grid', isActive = false, isSaved = false, applicationStatusNode, showApplicationMethodIcons = false, compactFeatured = false, expandedDetails = false, hideMemberBackdrop = false }: JobCardNewProps) {
    // const navigate = useNavigate();
    // const sourceType = getJobSourceType(job);
    const { isAuthenticated } = useAuth();
@@ -286,15 +287,15 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       // 1. Skills (Priority)
       if (job.skills && job.skills.length > 0) {
-         job.skills.slice(0, 5).forEach(skill => {
-            if (skill.length < 15 && !skill.includes('年以上')) {
+         job.skills.slice(0, expandedDetails ? 8 : 5).forEach(skill => {
+            if ((expandedDetails || skill.length < 15) && !skill.includes('年以上')) {
                tags.push({ text: skill, type: 'skill' });
             }
          });
       } else if (legacyTags && legacyTags.length > 0) {
          // Fallback to 'tags' field if skills is empty
-         legacyTags.slice(0, 5).forEach((tag: string) => {
-            if (tag.length < 15 && !tag.includes('年以上')) {
+         legacyTags.slice(0, expandedDetails ? 8 : 5).forEach((tag: string) => {
+            if ((expandedDetails || tag.length < 15) && !tag.includes('年以上')) {
                tags.push({ text: tag, type: 'skill' });
             }
          });
@@ -302,15 +303,15 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
       // 2. Company Tags (Benefits/Culture)
       if (job.companyTags && job.companyTags.length > 0) {
-         job.companyTags.slice(0, 3).forEach(tag => {
-            if (tag.length < 15) {
+         job.companyTags.slice(0, expandedDetails ? 4 : 3).forEach(tag => {
+            if (expandedDetails || tag.length < 15) {
                tags.push({ text: tag, type: 'benefit' });
             }
          });
       }
 
-      return tags.filter((tag) => tag.text !== '精选').slice(0, 5); // Reduce max tags for cleaner look
-   }, [job.skills, job.tags, job.companyTags]);
+      return tags.filter((tag) => tag.text !== '精选').slice(0, expandedDetails ? 8 : 5);
+   }, [job.skills, job.tags, job.companyTags, expandedDetails]);
    const compactSkillTags = isCompactFeaturedCard ? displayTags.slice(0, 4) : displayTags.slice(0, 4);
    const compactSkillTagOverflow = isCompactFeaturedCard ? Math.max(displayTags.length - compactSkillTags.length, 0) : 0;
 
@@ -502,7 +503,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                <div className="min-w-0 flex-1">
                   <div className="flex min-w-0 items-center gap-1.5">
                      <h3
-                        className={`min-w-0 shrink truncate font-bold tracking-tight text-slate-950 transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${isCompactFeaturedCard ? 'text-[1rem] lg:text-[1.08rem]' : 'text-[17px] sm:text-[18px] md:text-[20px]'}`}
+                        className={`min-w-0 font-bold tracking-tight text-slate-950 transition-colors duration-200 group-hover:text-[color:var(--job-title-hover-color)] ${expandedDetails ? 'flex-1 text-[18px] leading-6 sm:text-[20px]' : isCompactFeaturedCard ? 'shrink truncate text-[1rem] lg:text-[1.08rem]' : 'shrink truncate text-[17px] sm:text-[18px] md:text-[20px]'}`}
                         style={{ ['--job-title-hover-color' as any]: hoverColor }}
                         title={displayTitle}
                      >
@@ -528,7 +529,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                   </div>
 
                   <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-slate-500 md:text-[13px]">
-                     <span className="min-w-0 max-w-[172px] truncate font-medium text-slate-700 sm:max-w-[132px]" title={displayCompany}>
+                     <span className={`min-w-0 truncate font-medium text-slate-700 ${expandedDetails ? 'max-w-[280px] sm:max-w-[360px]' : 'max-w-[172px] sm:max-w-[132px]'}`} title={displayCompany}>
                         {displayCompany}
                      </span>
                      {companyRatingText ? (
@@ -541,7 +542,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                         </>
                      ) : null}
                      <span className="text-slate-300">·</span>
-                     <span className={`max-w-[150px] truncate ${isSalaryOpen ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`} title={shouldMaskGuestMeta ? (isEnglish ? 'Log in to view' : '登录后查看') : displaySalaryText}>
+                     <span className={`${expandedDetails ? 'max-w-[260px]' : 'max-w-[150px]'} truncate ${isSalaryOpen ? 'font-medium text-slate-500' : 'font-semibold text-slate-800'}`} title={shouldMaskGuestMeta ? (isEnglish ? 'Log in to view' : '登录后查看') : displaySalaryText}>
                         {shouldMaskGuestMeta ? <GuestMaskedValue className="w-24" /> : displaySalaryText}
                      </span>
                      {showMatchScore ? (
@@ -578,13 +579,13 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
 
             {displayTags.length > 0 ? (
                <div className={`${hasReferralContactSignal ? 'mt-2' : 'mt-2.5'} flex min-w-0 flex-wrap items-center gap-2`}>
-                  {(isCompactFeaturedCard ? compactSkillTags : displayTags.slice(0, 4)).map((tag, i) => (
+                  {(isCompactFeaturedCard ? compactSkillTags : expandedDetails ? displayTags : displayTags.slice(0, 4)).map((tag, i) => (
                      <span
                         key={i}
-                        className={`inline-flex items-center rounded-full border border-[#dfe8ef] bg-[#fbfcfa] px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-[#cfe0ea] hover:bg-white ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : 'max-w-full'}`}
+                        className={`inline-flex items-center rounded-full border border-[#dfe8ef] bg-[#fbfcfa] px-2.5 py-1 text-[11px] font-medium text-slate-700 transition-colors hover:border-[#cfe0ea] hover:bg-white ${isCompactFeaturedCard ? 'max-w-[96px] shrink-0' : expandedDetails ? 'max-w-full whitespace-normal' : 'max-w-full'}`}
                         title={tag.text}
                      >
-                        <span className="truncate">{tag.text}</span>
+                        <span className={expandedDetails ? 'break-words' : 'truncate'}>{tag.text}</span>
                      </span>
                   ))}
                   {isCompactFeaturedCard && compactSkillTagOverflow > 0 ? (

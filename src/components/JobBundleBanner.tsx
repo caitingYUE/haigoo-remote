@@ -175,21 +175,20 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
           decoding="async"
         />
         <div className="relative flex h-full min-h-[176px] flex-col p-4 sm:p-[18px]">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e1dcff] bg-white/90 px-2.5 py-1 text-[11px] font-bold text-[#6759e8] shadow-sm">
-              <Crown className="h-3 w-3 fill-current" />
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="line-clamp-2 max-w-[70%] text-[17px] font-bold leading-[1.4] tracking-[-0.01em] text-slate-900 sm:text-[18px]">
+              {bundle.title}
+            </h3>
+            {accessBadge && <span className="shrink-0 rounded-full border border-[#ded6ff] bg-white/88 px-2.5 py-1 text-[11px] font-semibold text-[#6759e8] shadow-sm">{accessBadge}</span>}
+          </div>
+          <div className="mt-2 flex max-w-[70%] min-w-0 items-center gap-1.5 text-xs leading-5">
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#6759e8]">
+              <Crown className="h-3.5 w-3.5 fill-current" />
               {text('专属准备方案', 'Personal plan')}
             </span>
-            {accessBadge && <span className="text-[11px] font-semibold text-[#8a80c9]">{accessBadge}</span>}
+            {displayName && <span title={displayName} className="min-w-0 truncate font-semibold text-[#776be9]">@{displayName}</span>}
           </div>
-          <h3 className="mt-3 line-clamp-2 max-w-[70%] text-[17px] font-bold leading-[1.4] tracking-[-0.01em] text-slate-900 sm:text-[18px]">
-            {bundle.title}
-          </h3>
-          {(bundle.subtitle || displayName) && <div className="mt-1.5 flex max-w-[70%] min-w-0 items-center gap-1.5 text-xs leading-5">
-            {bundle.subtitle && <p className="min-w-0 flex-1 truncate font-medium text-slate-500">{bundle.subtitle}</p>}
-            {bundle.subtitle && displayName && <span aria-hidden="true" className="h-1 w-1 shrink-0 rounded-full bg-[#c5bff5]" />}
-            {displayName && <span title={displayName} className="max-w-[108px] shrink-0 truncate font-semibold text-[#776be9]">@{displayName}</span>}
-          </div>}
+          {bundle.subtitle && <p className="mt-1 max-w-[70%] truncate text-xs font-medium leading-5 text-slate-500">{bundle.subtitle}</p>}
           <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-[#6f63f6] px-3.5 py-2 text-xs font-bold text-white shadow-[0_12px_24px_-16px_rgba(95,82,222,0.9)] transition group-hover:bg-[#5d50df]">
             {text('打开准备方案', 'Open plan')}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
