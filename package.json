@@ -14,6 +14,7 @@
     "test:match-calibration": "node test-match-score-calibration.js",
     "test:matching-v3": "node test-matching-engine-v3.js",
     "test:hero-recommendations": "node test-hero-recommendation-policy.js",
+    "test:mini-gateway": "node test-mini-gateway-signature.js",
     "lint": "eslint . --ext ts,tsx,js --report-unused-disable-directives",
     "preview": "vite preview",
     "server": "npm run server:api",
