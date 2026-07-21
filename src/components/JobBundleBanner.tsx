@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Crown, Lock, Layers } from 'lucide-react';
+import { ArrowRight, Crown, Lock, Layers, Sparkles } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getBundleDetailPath } from '../utils/share-link-helper';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -135,6 +135,7 @@ interface JobBundleCardProps extends JobBundleBannerProps {
 export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const navigate = useNavigate();
   const { text } = useLanguage();
+  const isPrivateBundle = bundle.visibility === 'specified';
 
   const accessBadge = bundle.visibility === 'specified'
     ? text('仅你可见', 'Only you')
@@ -148,13 +149,53 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   };
 
   const theme = getBundleTheme(bundle, colorIndex);
+
+  if (isPrivateBundle) {
+    return (
+      <button
+        type="button"
+        onClick={handleClick}
+        aria-label={`${text('打开专属求职准备', 'Open personal preparation plan')}：${bundle.title}`}
+        className="group relative h-full min-h-[156px] w-full min-w-0 overflow-hidden rounded-[20px] border border-[#dcd5ff] bg-[linear-gradient(135deg,#fbfaff_0%,#ffffff_58%,#f8f6ff_100%)] text-left shadow-[0_18px_44px_-36px_rgba(83,72,180,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#bcb0ff] hover:shadow-[0_22px_48px_-34px_rgba(83,72,180,0.5)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]"
+      >
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[45%] bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(245,242,255,0.9)_100%)]" />
+        <img
+          src={theme.image}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-[-3px] right-2 h-[82px] w-[148px] object-contain opacity-45 transition-transform duration-300 group-hover:scale-[1.04]"
+          loading="lazy"
+          decoding="async"
+        />
+        <div className="relative flex h-full min-h-[156px] flex-col p-4">
+          <div className="flex items-center justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-black tracking-[0.08em] text-[#6759e8]">
+              <Sparkles className="h-3.5 w-3.5" />
+              {text('你的专属求职准备', 'YOUR PERSONAL PLAN')}
+            </span>
+            <span className="shrink-0 rounded-full border border-[#ded6ff] bg-white px-2.5 py-1 text-[11px] font-black text-[#6759e8] shadow-sm">
+              {accessBadge}
+            </span>
+          </div>
+          <h3 className="mt-3 line-clamp-2 max-w-[72%] text-[17px] font-black leading-snug tracking-tight text-slate-950">
+            {bundle.title}
+          </h3>
+          <p className="mt-1 line-clamp-2 max-w-[68%] text-xs font-medium leading-5 text-slate-500">
+            {bundle.subtitle || text('岗位建议与申请准备已为你整理好。', 'Your roles and preparation are ready.')}
+          </p>
+          <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-[#6f63f6] px-3 py-1.5 text-xs font-black text-white shadow-[0_12px_24px_-16px_rgba(95,82,222,0.9)] transition group-hover:bg-[#5d50df]">
+            {text('打开准备方案', 'Open plan')}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </span>
+        </div>
+      </button>
+    );
+  }
+
   return (
-    <div
+    <button
+      type="button"
       onClick={handleClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-      className={`group relative h-full min-w-0 cursor-pointer select-none overflow-hidden rounded-[18px] border ${theme.shell} shadow-[0_14px_34px_-32px_rgba(52,76,92,0.26)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-36px_rgba(52,76,92,0.34)]`}
+      className={`group relative h-full min-w-0 cursor-pointer overflow-hidden rounded-[18px] border text-left ${theme.shell} shadow-[0_14px_34px_-32px_rgba(52,76,92,0.26)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-36px_rgba(52,76,92,0.34)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]`}
       style={{ minHeight: '122px' }}
     >
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_62%,rgba(255,255,255,0.34)_100%)]" />
@@ -176,7 +217,7 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
           </span>}
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
