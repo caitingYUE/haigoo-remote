@@ -272,9 +272,12 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
    const showMatchScore = rawScoreNum >= 75;
    const applicationCount = Number(job.applicationCount || 0);
    const isHotApplication = Boolean(job.isHotApplication || applicationCount >= 10);
+   const isUnavailableJob = ['已失效', '已结束', 'expired', 'inactive', 'closed', 'deleted'].includes(String(job.status || '').toLowerCase());
    const hasActionControls = Boolean(applicationStatusNode || onDelete);
    const isCompactFeaturedCard = variant === 'list' && compactFeatured;
-   const listCardTone = isActive
+   const listCardTone = isUnavailableJob
+      ? 'border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(248,250,252,0.94))] shadow-[0_16px_34px_-30px_rgba(71,85,105,0.16)]'
+      : isActive
       ? 'border-[#acd4ea] bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(246,252,255,0.98))] shadow-[0_24px_54px_-36px_rgba(69,111,142,0.28)] ring-1 ring-[#d6eaf4]'
       : isMemberOnlyJob
          ? 'border-[#e7d8bd] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,250,241,0.98))] shadow-[0_22px_48px_-36px_rgba(139,111,66,0.24)] hover:border-[#d8c39a] hover:shadow-[0_28px_58px_-38px_rgba(139,111,66,0.28)]'
@@ -488,7 +491,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
             className={`
                group relative min-h-[118px] cursor-pointer rounded-[22px] border p-3.5 transition-all duration-300 md:rounded-[24px] md:p-4
                ${listCardTone}
-               ${(job.status === '已失效' || job.status === '已结束') ? 'opacity-65 grayscale hover:grayscale-0' : ''}
+               ${isUnavailableJob ? 'opacity-65 grayscale' : ''}
                ${className}
             `}
          >
@@ -521,7 +524,7 @@ export default function JobCardNew({ job, onClick, onDelete, matchScore, classNa
                            <Bookmark className="h-3 w-3 fill-current" />
                         </span>
                      ) : null}
-                     {(job.status === '已失效' || job.status === '已结束') ? (
+                     {isUnavailableJob ? (
                         <span className="mt-0.5 inline-flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
                            {isEnglish ? 'Closed' : '已下架'}
                         </span>
