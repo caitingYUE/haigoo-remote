@@ -243,10 +243,20 @@ const AdminJobBundles: React.FC = () => {
     try {
       const url = '/api/admin/job-bundles';
       const method = currentBundle.id ? 'PUT' : 'POST';
+      // The API resolves access by either user ID or email. Build both fields from
+      // the same selection so a removed user cannot remain authorized through a
+      // stale email retained from an earlier edit.
+      const selectedUserIds = [...new Set(selectedAllowedUsers
+        .map(user => String(user.user_id || '').trim())
+        .filter(Boolean))];
+      const selectedUserEmails = [...new Set(selectedAllowedUsers
+        .map(user => String(user.email || '').trim().toLowerCase())
+        .filter(Boolean))];
       const body = {
         ...currentBundle,
-      job_ids: selectedJobs.map(j => j.id), // Use j.id consistently
-        allowed_user_ids: selectedAllowedUsers.map(user => user.user_id),
+        job_ids: selectedJobs.map(j => j.id), // Use j.id consistently
+        allowed_user_ids: currentBundle.visibility === 'specified' ? selectedUserIds : [],
+        allowed_emails: currentBundle.visibility === 'specified' ? selectedUserEmails : [],
         career_items: currentBundle.career_items || []
       };
 
