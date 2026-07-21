@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Briefcase, Crown, Lock,
-  Share2, Check, Sparkles, Package, Megaphone, BookOpen, PlayCircle, PartyPopper
+  Share2, Check, Package, BookOpen, PlayCircle, PartyPopper
 } from 'lucide-react';
 import JobCardNew from '../components/JobCardNew';
 import JobDetailModal from '../components/JobDetailModal';
@@ -180,7 +180,14 @@ export default function JobBundleDetailPage() {
       const data = await res.json();
       if (data.jobs) {
         const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
-        const ordered = ids.map(id => jobMap.get(id) || jobMap.get(String(id))).filter(Boolean) as Job[];
+        const ordered = ids
+          .map((jobId) => (jobMap.get(jobId) || jobMap.get(String(jobId))) as Job | undefined)
+          .filter((job): job is Job => Boolean(job))
+          .sort((a, b) => {
+            const aAddedAt = new Date((a as any).createdAt || (a as any).created_at || (a as any).publishedAt || 0).getTime();
+            const bAddedAt = new Date((b as any).createdAt || (b as any).created_at || (b as any).publishedAt || 0).getTime();
+            return bAddedAt - aAddedAt;
+          }) as Job[];
         setJobs(ordered);
       }
     } catch (e) {
@@ -350,7 +357,7 @@ export default function JobBundleDetailPage() {
   return (
     <div className="min-h-screen bg-[#f7f7fc]">
       <main className="mx-auto max-w-[1720px] px-3 pb-3 pt-[76px] sm:px-5 sm:pt-[82px] lg:h-screen lg:overflow-hidden lg:pb-4">
-        <div className="grid gap-3 lg:h-[calc(100vh-96px)] lg:min-h-0 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-4">
+        <div className="grid gap-3 lg:h-[calc(100vh-96px)] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-4">
         <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#dfe6f0] bg-white shadow-[0_24px_70px_-54px_rgba(33,47,70,0.20)] sm:rounded-[28px]">
         <div className="h-full min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-4.5">
         <button onClick={handleBack}
@@ -363,30 +370,14 @@ export default function JobBundleDetailPage() {
 
           <div className="relative">
             <div className="min-w-0">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                {!isPrivateExperience && <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eeeaff] text-[#6f63f6] text-xs font-bold border border-[#dfd8ff]">
-                  <Package className="w-3 h-3" />
-                  {text('精选合集', 'Curated collection')}
-                </span>}
-                {bundle.visibility === 'specified' && <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e0d8ff] bg-[#f4f1ff] px-2.5 py-1 text-[11px] font-black tracking-[0.08em] text-[#6251f5]">
-                  <Sparkles className="h-3.5 w-3.5" />{text('为你整理的求职准备', 'YOUR PERSONAL PREPARATION')}
-                </span>}
-                {isMemberBundle && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                    <Crown className="w-3 h-3" />{text('会员专属', 'Members only')}
-                  </span>
-                )}
-              </div>
-
-              <h1 className="mb-2 flex max-w-5xl flex-wrap items-center gap-3 text-[27px] font-black leading-[1.16] tracking-normal text-slate-950 sm:text-[32px] lg:text-[36px]">
+              <h1 className="mb-2 flex max-w-5xl flex-wrap items-center gap-3 text-[26px] font-black leading-[1.16] tracking-normal text-slate-950 sm:text-[30px] lg:text-[32px]">
                 <span>{bundle.title}</span>
               </h1>
-              <p className="mb-3 max-w-3xl text-sm font-medium leading-6 text-slate-500 sm:text-[15px]">{bundle.subtitle}</p>
+              {!isPrivateExperience && <p className="mb-3 max-w-3xl text-sm font-medium leading-6 text-slate-500 sm:text-[15px]">{bundle.subtitle}</p>}
 
-              <div className="inline-flex max-w-4xl items-start gap-2.5 rounded-2xl border border-[#e9e6f7] bg-white/75 px-3 py-2.5 text-sm font-semibold leading-6 text-slate-600 sm:items-center">
-                <Megaphone className="h-4 w-4 shrink-0 text-[#8f83ff]" />
-                <span>{bundle.content || text('本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。', 'This collection is ready. More remote opportunities will be added in the next update.')}</span>
-              </div>
+              <p className="max-w-4xl rounded-2xl border border-[#e9e6f7] bg-white/75 px-3 py-2.5 text-sm font-semibold leading-6 text-slate-600">
+                {bundle.content || text('本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。', 'This collection is ready. More remote opportunities will be added in the next update.')}
+              </p>
 
               {!isPrivateExperience && <div className="mt-5 space-y-3 lg:hidden">
                 <button onClick={handleShare}
@@ -420,25 +411,13 @@ export default function JobBundleDetailPage() {
         <section id="bundle-jobs" className="relative scroll-mt-24 overflow-hidden rounded-[20px] border border-[#e4e7f0] bg-[#fbfcff] p-4 shadow-[0_24px_70px_-58px_rgba(58,67,112,0.16)] sm:rounded-[24px] sm:p-5">
           <div className="relative mb-3 flex items-end justify-between gap-4">
             <div>
-              {isPrivateExperience ? <p className="text-[11px] font-black tracking-[0.14em] text-[#7568ed]">
-                {text('从这里开始', 'START HERE')}
-              </p> : <p className="text-[11px] font-semibold tracking-[0.18em] text-[#8f83ff]">
-                {text('精选岗位合集', 'CURATED ROLE COLLECTION')}
-              </p>}
-              <h2 className="mt-1 flex items-center gap-2 text-xl font-black text-slate-900">
-                <Sparkles className="h-5 w-5 text-[#8f83ff]" />
-                {isPrivateExperience ? text('优先申请的职位', 'Your priority roles') : text('包含职位', 'Included roles')}
-              </h2>
-              {isPrivateExperience && <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{text('先查看最符合本次方向的机会，再决定你的申请节奏。', 'Start with the roles that best fit this direction, then decide your application pace.')}</p>}
+              <h2 className="text-xl font-black text-slate-900">{text('岗位列表', 'Roles')}</h2>
             </div>
           </div>
 
-          <div className="relative grid grid-cols-1 gap-3 md:grid-cols-2">
-            {jobs.map((job, index) => (
-              <div key={job.id} className="relative pt-0">
-                {isPrivateExperience && index < 2 && <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-[#f0edff] px-2 py-1 text-[10px] font-black text-[#6251f5] shadow-sm">
-                  {text(`优先 ${index + 1}`, `Priority ${index + 1}`)}
-                </span>}
+          <div className="relative grid grid-cols-1 gap-3">
+            {jobs.map((job) => (
+              <div key={job.id}>
                 <JobCardNew
                   job={job}
                   variant="list"
@@ -466,9 +445,7 @@ export default function JobBundleDetailPage() {
           <div className="sticky top-0 z-10 border-b border-[#ebe8ff] bg-[#fdfcff] px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 text-[11px] font-black tracking-[0.12em] text-[#6f63f6]"><BookOpen className="h-4 w-4" />{isPrivateExperience ? text('为这次申请准备', 'PREPARE FOR THIS APPLICATION') : text('职业成长路径', 'CAREER LEARNING PATH')}</div>
-                <h2 className="mt-1 text-xl font-black text-slate-950">{text('专属于你的准备方案', 'Your preparation plan')}</h2>
-                <p className="mt-1 text-xs font-medium leading-5 text-slate-500">{text('按顺序完成准备，把每一次行动沉淀成自己的节奏。', 'Complete each step in order and build a rhythm that is yours.')}</p>
+                <h2 className="text-xl font-black text-slate-950">{text('专属于你的准备方案', 'Your preparation plan')}</h2>
               </div>
               <span className="shrink-0 rounded-full border border-[#e0d9ff] bg-[#f4f1ff] px-3 py-1.5 text-xs font-black text-[#6251f5]">{completedCareerCount}/{careerItems.length}</span>
             </div>
@@ -484,14 +461,13 @@ export default function JobBundleDetailPage() {
           <div className="p-3 sm:p-4">
             {activeCareerTab === 'learning' ? (
               careerItems.length ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                {careerItems.map((item, index) => {
+                {careerItems.map((item) => {
                   const completed = completedVideoIds.has(item.video_id)
                   const introduction = item.guidance || item.description || text('打开视频，完成这一步的远程求职准备。', 'Open the video to complete this preparation step.')
                   const duration = formatVideoDuration(item.duration_ms, isEnglish)
                   return <article key={item.video_id} className={`overflow-hidden rounded-[18px] border p-2.5 transition ${completed ? 'border-[#d8d2ff] bg-[#faf9ff]' : 'border-[#e1e5ef] bg-white hover:border-[#cfc6ff]'}`}>
-                    <a href={item.href || '/careerlearning'} target="_blank" rel="noreferrer" onClick={() => handleOpenVideo(item.video_id)} aria-label={text(`打开第 ${index + 1} 步准备内容：${item.title}`, `Open preparation step ${index + 1}: ${item.title}`)} className="group relative block aspect-video overflow-hidden rounded-[13px] border border-slate-100 bg-[#f5f3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]">
+                    <a href={item.href || '/careerlearning'} target="_blank" rel="noreferrer" onClick={() => handleOpenVideo(item.video_id)} aria-label={text(`打开准备内容：${item.title}`, `Open preparation: ${item.title}`)} className="group relative block aspect-video overflow-hidden rounded-[13px] border border-slate-100 bg-[#f5f3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]">
                       {item.cover_image_url ? <img src={item.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" /> : <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5f3ff,#e8f4ff)]"><PlayCircle className="h-10 w-10 text-[#7a6ff7]" /></div>}
-                      <span className="absolute left-3 top-3 inline-flex items-center rounded-full bg-slate-950 px-2.5 py-1 text-[11px] font-black text-white">{text(`第 ${index + 1} 步`, `Step ${index + 1}`)}</span>
                       <span className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#6251f5] shadow-sm"><PlayCircle className="h-5 w-5" /></span>
                     </a>
                     <div className="px-0.5 pt-2.5">
@@ -511,10 +487,7 @@ export default function JobBundleDetailPage() {
                 })}
               </div> : <div className="rounded-[20px] border border-dashed border-[#d8d2ff] bg-[#faf9ff] px-5 py-10 text-center"><BookOpen className="mx-auto h-8 w-8 text-[#8f83ff]" /><p className="mt-3 text-sm font-black text-slate-700">{text('顾问正在为你整理成长内容', 'Your career plan is being prepared')}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text('组合更新后，视频和具体使用建议会显示在这里。', 'Videos and instructions will appear here once the plan is updated.')}</p></div>
             ) : (
-              <div className="space-y-4">
-                <div className="rounded-[20px] border border-[#e6e4ff] bg-[#faf9ff] p-3.5 text-sm leading-6 text-slate-600">{text('这里会自动收集你打开准备内容、迈出申请第一步的时刻。不用填写表格，专心往前走就好。', 'This log automatically captures the moments you open preparation content and take the first application step. Keep moving; we will keep the trail.')}</div>
-                <div className="relative space-y-0 before:absolute before:bottom-5 before:left-[15px] before:top-5 before:w-px before:bg-[#ded9ff]">{growthRecords.length ? growthRecords.map((record, index) => <article key={record.id} className="relative pb-5 pl-10 last:pb-0"><span className="absolute left-0 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f2efff] text-xs font-black text-[#6658ef] shadow-sm">{index + 1}</span><div className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_16px_35px_-30px_rgba(48,58,95,0.42)]"><p className="text-sm leading-6 text-slate-700">{record.content}</p><time className="mt-2 block text-xs font-semibold text-slate-400">{new Date(record.created_at).toLocaleString(isEnglish ? 'en-US' : 'zh-CN', { dateStyle: 'medium', timeStyle: 'short' })}</time></div></article>) : <p className="relative px-2 py-7 text-center text-sm leading-6 text-slate-400">{text('第一条记录会在你打开准备内容或发起一次申请时自动出现。', 'Your first entry will appear automatically when you open preparation content or start an application.')}</p>}</div>
-              </div>
+              <div className="relative space-y-0 before:absolute before:bottom-5 before:left-[15px] before:top-5 before:w-px before:bg-[#ded9ff]">{growthRecords.length ? growthRecords.map((record, index) => <article key={record.id} className="relative pb-5 pl-10 last:pb-0"><span className="absolute left-0 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f2efff] text-xs font-black text-[#6658ef] shadow-sm">{index + 1}</span><div className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_16px_35px_-30px_rgba(48,58,95,0.42)]"><p className="text-sm leading-6 text-slate-700">{record.content}</p><time className="mt-2 block text-xs font-semibold text-slate-400">{new Date(record.created_at).toLocaleString(isEnglish ? 'en-US' : 'zh-CN', { dateStyle: 'medium', timeStyle: 'short' })}</time></div></article>) : <p className="relative px-2 py-10 text-center text-sm leading-6 text-slate-400">{text('你的申请经历和学习成长会记录在这里，开始你的远程之旅吧！', 'Your applications and learning milestones will appear here. Start your remote journey!')}</p>}</div>
             )}
           </div>
         </aside>

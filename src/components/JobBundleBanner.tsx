@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Crown, Lock, Layers, Sparkles } from 'lucide-react';
+import { ArrowRight, Crown, Lock, Layers } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { getBundleDetailPath } from '../utils/share-link-helper';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -169,20 +169,14 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
         />
         <div className="relative flex h-full min-h-[156px] flex-col p-4">
           <div className="flex items-center justify-between gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-black tracking-[0.08em] text-[#6759e8]">
-              <Sparkles className="h-3.5 w-3.5" />
-              {text('你的专属求职准备', 'YOUR PERSONAL PLAN')}
-            </span>
+            <span aria-hidden="true" />
             <span className="shrink-0 rounded-full border border-[#ded6ff] bg-white px-2.5 py-1 text-[11px] font-black text-[#6759e8] shadow-sm">
               {accessBadge}
             </span>
           </div>
-          <h3 className="mt-3 line-clamp-2 max-w-[72%] text-[17px] font-black leading-snug tracking-tight text-slate-950">
+          <h3 className="mt-2 line-clamp-2 max-w-[72%] text-[17px] font-black leading-snug tracking-tight text-slate-950">
             {bundle.title}
           </h3>
-          <p className="mt-1 line-clamp-2 max-w-[68%] text-xs font-medium leading-5 text-slate-500">
-            {bundle.subtitle || text('岗位建议与申请准备已为你整理好。', 'Your roles and preparation are ready.')}
-          </p>
           <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-[#6f63f6] px-3 py-1.5 text-xs font-black text-white shadow-[0_12px_24px_-16px_rgba(95,82,222,0.9)] transition group-hover:bg-[#5d50df]">
             {text('打开准备方案', 'Open plan')}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
