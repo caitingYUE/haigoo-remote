@@ -23,10 +23,11 @@
 1. 在腾讯云控制台确认 `cloud1` 已开通云托管资源并确认套餐/计费；当前 API 返回“云托管资源未开通”。
 2. 在 `cloudrun/` 安装锁定依赖并运行 `npm run check`。
 3. 首次生产部署执行 `node scripts/deploy-mini-cloudrun.mjs --target=production --configure-vercel`。脚本只打包运行文件，显式关闭公网、设置最小实例 1，并生成独立密钥。
-4. 后续生产更新执行 `node scripts/deploy-mini-cloudrun.mjs --target=production`；测试环境更新执行 `node scripts/deploy-mini-cloudrun.mjs --target=development`。
-5. 检查 `/health`、启动日志和首次全量同步结果。
-6. 确认岗位总数与主站一致、详情可读、Logo 失败时有本地图标兜底。
-7. 生产冒烟测试完成后保存镜像版本号；回滚时切换到上一镜像，不覆盖数据库。
+4. 首次脚本成功后立即执行 `npx vercel --prod --yes`，让新生产网关密钥进入 Vercel 函数运行时；完成前不要将小程序切到生产环境。
+5. 后续生产代码更新执行 `node scripts/deploy-mini-cloudrun.mjs --target=production`；测试环境更新执行 `node scripts/deploy-mini-cloudrun.mjs --target=development`。
+6. 检查 `/health`、启动日志和首次全量同步结果。
+7. 确认岗位总数与主站一致、详情可读、Logo 失败时有本地图标兜底。
+8. 生产冒烟测试完成后保存镜像版本号；回滚时切换到上一镜像，不覆盖数据库。
 
 ## 4. 小程序构建与提交
 

@@ -87,6 +87,7 @@ function addVercelSecret(secret) {
     throw new Error(`Unable to configure Vercel production gateway secret: ${result.stderr || result.stdout}`)
   }
   console.log('Vercel production gateway secret configured.')
+  console.log('After CloudRun is created, redeploy Vercel Production so the new secret reaches the function runtime.')
 }
 
 const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
@@ -174,3 +175,7 @@ console.log(JSON.stringify({
   maxNum: deployedConfig.MaxNum,
   status: deployed.BaseInfo?.Status || null
 }, null, 2))
+
+if (target === 'production' && configureVercel) {
+  console.log('Required next command: npx vercel --prod --yes')
+}
