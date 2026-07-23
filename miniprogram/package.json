@@ -1,0 +1,68 @@
+{
+  "name": "miniprogram",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Haigoo Remote WeChat Mini Program",
+  "templateInfo": {
+    "name": "default",
+    "typescript": true,
+    "css": "Sass",
+    "framework": "React"
+  },
+  "scripts": {
+    "prepare": "husky",
+    "build:weapp": "taro build --type weapp --no-check",
+    "build:weapp:prod": "NODE_ENV=production taro build --type weapp --no-check",
+    "dev:weapp": "NODE_ENV=development taro build --type weapp --watch --no-check",
+    "type-check": "tsc --noEmit"
+  },
+  "browserslist": [
+    "defaults and fully supports es6-module",
+    "maintained node versions"
+  ],
+  "author": "",
+  "dependencies": {
+    "@babel/runtime": "^7.24.4",
+    "@nutui/icons-react-taro": "^3.0.2-cpp.3.beta.9",
+    "@tarojs/components": "4.2.1",
+    "@tarojs/helper": "4.2.1",
+    "@tarojs/plugin-framework-react": "4.2.1",
+    "@tarojs/plugin-platform-weapp": "4.2.1",
+    "@tarojs/react": "4.2.1",
+    "@tarojs/runtime": "4.2.1",
+    "@tarojs/shared": "4.2.1",
+    "@tarojs/taro": "4.2.1",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.24.4",
+    "@babel/plugin-transform-class-properties": "7.25.9",
+    "@babel/preset-react": "^7.24.1",
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.5",
+    "@tarojs/cli": "4.2.1",
+    "@tarojs/plugin-generator": "4.2.1",
+    "@tarojs/taro-loader": "4.2.1",
+    "@tarojs/webpack5-runner": "4.2.1",
+    "@types/minimatch": "^5",
+    "@types/node": "^18",
+    "@types/react": "^18.0.0",
+    "@types/webpack-env": "^1.13.6",
+    "babel-preset-taro": "4.2.1",
+    "eslint": "^8.57.0",
+    "eslint-config-taro": "4.2.1",
+    "eslint-plugin-react": "^7.34.1",
+    "eslint-plugin-react-hooks": "^4.4.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "postcss": "^8.5.6",
+    "react-refresh": "^0.14.0",
+    "sass": "^1.75.0",
+    "stylelint": "^16.4.0",
+    "stylelint-config-standard": "^38.0.0",
+    "tsconfig-paths-webpack-plugin": "^4.1.0",
+    "typescript": "^5.4.5",
+    "webpack": "5.91.0"
+  }
+}

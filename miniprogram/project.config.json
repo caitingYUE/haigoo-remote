@@ -1,0 +1,38 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "miniprogram",
+  "description": "Haigoo Remote WeChat Mini Program",
+  "appid": "wxc61db5b8b472925a",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "enhance": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "minified": true,
+    "uglifyFileName": false,
+    "uploadWithSourceMap": false,
+    "packNpmManually": false,
+    "packNpmRelationList": [],
+    "minifyWXSS": true,
+    "localPlugins": false,
+    "condition": false,
+    "compileWorklet": false,
+    "babelSetting": {
+      "ignore": [],
+      "disablePlugins": [],
+      "outputPath": ""
+    },
+    "disableUseStrict": false,
+    "minifyWXML": true,
+    "useCompilerPlugins": false
+  },
+  "compileType": "miniprogram",
+  "srcMiniprogramRoot": "dist/",
+  "simulatorPluginLibVersion": {},
+  "packOptions": {
+    "ignore": [],
+    "include": []
+  },
+  "editorSetting": {}
+}

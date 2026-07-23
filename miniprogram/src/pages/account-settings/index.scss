@@ -1,0 +1,23 @@
+.account-settings-page { min-height: 100vh; box-sizing: border-box; padding: 28px 30px calc(52px + env(safe-area-inset-bottom)); background: #f8f8fc; }
+.settings-hero, .settings-card { border: 1px solid #e3e6ee; border-radius: 24px; background: #fff; }
+.settings-hero { display: flex; align-items: center; gap: 18px; padding: 28px; }
+.settings-hero__icon { display: flex; align-items: center; justify-content: center; width: 64px; height: 64px; border-radius: 18px; background: #f0efff; }
+.settings-hero__title, .settings-hero__copy, .settings-card__title, .settings-card__copy { display: block; }
+.settings-hero__title { color: #11182b; font-size: 31px; font-weight: 800; }
+.settings-hero__copy { margin-top: 6px; color: #7b8495; font-size: 19px; }
+.settings-card { margin-top: 20px; padding: 26px; }
+.settings-card__title { color: #17213f; font-size: 24px; font-weight: 800; }
+.settings-card__copy { margin-top: 9px; color: #7b8495; font-size: 18px; line-height: 1.6; }
+.settings-row { display: flex; align-items: center; gap: 14px; min-height: 76px; border-bottom: 1px solid #eef0f4; color: #35405a; font-size: 21px; font-weight: 650; }
+.settings-row:last-child { border-bottom: 0; }
+.settings-row__arrow { margin-left: auto; color: #a2a8b6; font-size: 30px; }
+.settings-feedback { width: 100%; min-height: 190px; box-sizing: border-box; margin-top: 18px; padding: 18px; border: 2px solid #e4e6ec; border-radius: 16px; color: #26324d; font-size: 21px; line-height: 1.6; }
+.settings-secondary-button, .settings-warning-button, .settings-danger-button { display: flex; align-items: center; justify-content: center; min-height: 76px; margin-top: 18px; border-radius: 16px; font-size: 22px; font-weight: 800; }
+.settings-secondary-button { background: #5146e5; color: #fff; }
+.settings-warning-button { border: 1px solid #d9b365; background: #fff9ec; color: #875d13; }
+.settings-danger-button { border: 1px solid #e7b6b6; background: #fff2f2; color: #a33f3f; }
+.settings-email { display: flex; justify-content: space-between; margin-top: 20px; color: #69758d; font-size: 18px; }
+.settings-email text:last-child { color: #5146e5; font-weight: 700; }
+.settings-card--danger { border-color: #ead0d0; }
+.settings-password { width: 100%; height: 80px; box-sizing: border-box; margin-top: 18px; padding: 0 18px; border: 2px solid #e4e6ec; border-radius: 16px; font-size: 22px; }
+.settings-danger-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 16px; color: #915252; font-size: 16px; line-height: 1.55; }

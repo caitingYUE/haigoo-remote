@@ -1,0 +1,9 @@
+{
+  "openAccessTypes": ["OA", "MINIAPP"],
+  "cpu": 0,
+  "mem": 0,
+  "minNum": 0,
+  "maxNum": 2,
+  "initialDelaySeconds": 0,
+  "port": 8080
+}

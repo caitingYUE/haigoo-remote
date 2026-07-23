@@ -1,0 +1,32 @@
+<svg width="680" height="500" viewBox="0 0 680 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sky" x1="450" y1="42" x2="562" y2="410" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#B9D2FF" stop-opacity=".46"/>
+      <stop offset="1" stop-color="#9E8CFF" stop-opacity=".04"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="355" y1="260" x2="561" y2="423" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F1F6FF"/>
+      <stop offset="1" stop-color="#C9D3FF"/>
+    </linearGradient>
+    <filter id="glow" x="243" y="39" width="335" height="399" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="17"/>
+    </filter>
+  </defs>
+  <circle cx="457" cy="201" r="120" fill="url(#sky)"/>
+  <circle cx="457" cy="201" r="116" stroke="#DCE7FF" stroke-opacity=".28"/>
+  <path d="M247 397C290 339 334 341 371 373C404 401 442 365 472 337C518 294 554 312 590 344V456H247V397Z" fill="#7E8EDF" fill-opacity=".32"/>
+  <path d="M277 418C321 371 367 389 397 410C430 433 464 399 500 373C538 345 576 371 616 408V456H277V418Z" fill="#D0D8FF" fill-opacity=".42"/>
+  <g filter="url(#glow)" opacity=".3"><circle cx="422" cy="172" r="72" fill="#9A8BFF"/></g>
+  <rect x="322" y="226" width="218" height="150" rx="23" fill="#122A53" transform="rotate(-7 322 226)"/>
+  <rect x="331" y="235" width="200" height="128" rx="16" fill="url(#screen)" transform="rotate(-7 331 235)"/>
+  <path d="M353 311C384 269 414 293 438 315C461 336 487 300 517 274" stroke="#7A77D8" stroke-width="10" stroke-linecap="round"/>
+  <path d="M369 286L391 265L412 280" stroke="#A084F7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M397 394L499 382L529 407L371 423L397 394Z" fill="#D9DFFF" fill-opacity=".68"/>
+  <rect x="529" y="129" width="30" height="132" rx="15" fill="#F7D981" fill-opacity=".9"/>
+  <path d="M542 86L566 129H518L542 86Z" fill="#F4C972"/>
+  <rect x="535" y="157" width="14" height="32" rx="7" fill="#FFF8D9"/>
+  <path d="M592 376C606 332 636 321 661 340C668 345 673 353 678 362V439H594L592 376Z" fill="#A6D5CC" fill-opacity=".45"/>
+  <path d="M274 432C280 394 302 376 326 385C340 390 350 402 356 417V455H272L274 432Z" fill="#A6D5CC" fill-opacity=".4"/>
+  <circle cx="293" cy="153" r="9" fill="#FFDE85"/>
+  <circle cx="596" cy="229" r="7" fill="#FFDE85"/>
+</svg>

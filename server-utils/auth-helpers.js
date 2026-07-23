@@ -8,12 +8,14 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 import { deriveMembershipCapabilities, deriveMemberTier, normalizeMemberType } from '../lib/shared/membership.js'
 
-// JWT 密钥（从环境变量读取，或使用默认值）
-const JWT_SECRET = process.env.JWT_SECRET || 'haigoo-jwt-secret-key-change-in-production'
+const IS_PRODUCTION = process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production'
+const JWT_SECRET = process.env.JWT_SECRET || (IS_PRODUCTION ? '' : 'haigoo-local-development-jwt-secret')
 
-// Security Warning for Default Secret
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is required in production')
+}
 if (!process.env.JWT_SECRET) {
-  console.warn('\x1b[31m%s\x1b[0m', 'CRITICAL SECURITY WARNING: Using default JWT_SECRET. This is unsafe for production! Please set JWT_SECRET in your environment variables.');
+  console.warn('[auth-helpers] Using local-development JWT secret; never use this process for production traffic')
 }
 
 const JWT_EXPIRES_IN = '30d' // Token 有效期 30 天

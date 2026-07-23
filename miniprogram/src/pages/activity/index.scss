@@ -1,0 +1,132 @@
+.activity-page {
+  padding-top: 18px;
+}
+
+.activity-page__title,
+.activity-page__subtitle {
+  display: block;
+}
+
+.activity-page__title {
+  color: #121a2e;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.activity-page__subtitle {
+  margin-top: 8px;
+  color: #8a93a5;
+  font-size: 22px;
+}
+
+.activity-tabs {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+  padding: 5px;
+  border: 1px solid #e5e7ef;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.activity-tabs__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 66px;
+  border-radius: 14px;
+  color: #7c8598;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.activity-tabs__item--active {
+  background: #5146e5;
+  color: #fff;
+}
+
+.activity-list {
+  margin-top: 20px;
+}
+
+.activity-list__item + .activity-list__item {
+  margin-top: 18px;
+}
+
+.activity-list__item .job-card + .job-card {
+  margin-top: 0;
+}
+
+.activity-list__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 4px 9px;
+  color: #766ccd;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.activity-state {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 22px;
+  padding: 64px 28px;
+  color: #4e5870;
+  font-size: 23px;
+  text-align: center;
+}
+
+.activity-state > text {
+  margin-top: 15px;
+}
+
+.activity-state__copy {
+  color: #949cad;
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.activity-state__action {
+  color: #5146e5;
+  font-weight: 700;
+}
+
+.activity-unavailable {
+  padding: 24px;
+}
+
+.activity-unavailable + .activity-unavailable,
+.activity-list__item + .activity-unavailable,
+.activity-unavailable + .activity-list__item {
+  margin-top: 18px;
+}
+
+.activity-unavailable__title,
+.activity-unavailable__company {
+  display: block;
+}
+
+.activity-unavailable__title {
+  color: #303a52;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.activity-unavailable__company {
+  margin-top: 8px;
+  color: #8a93a5;
+  font-size: 21px;
+}
+
+.activity-unavailable__meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #ececf2;
+  color: #766ccd;
+  font-size: 19px;
+}
