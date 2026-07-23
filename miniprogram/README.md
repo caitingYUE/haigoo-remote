@@ -19,7 +19,7 @@
 ## 发布配置
 
 1. 在微信云托管部署仓库根目录的 `cloudrun/` 服务，并配置其中 `.env.example` 列出的环境变量。
-2. 在 Vercel 配置与云托管相同的 `MINI_GATEWAY_SHARED_SECRET` 以及 `WECHAT_MINI_APP_ID`，然后依次执行迁移 `054_mini_wechat_identities.sql` 与 `055_mini_job_views.sql`。
+2. 在 Vercel 配置与云托管相同的 `MINI_GATEWAY_SHARED_SECRET` 以及 `WECHAT_MINI_APP_ID`，然后依次执行迁移 `054_mini_wechat_identities.sql`、`055_mini_job_views.sql`、`056_mini_launch_readiness.sql` 与 `057_mini_security_and_consistency.sql`。
 3. 在本目录 `.env.production` 填入关联的 `TARO_APP_CLOUD_ENV`；服务名默认使用 `haigoo-mini`。
 4. 首次打开小程序时服务会自动完成全量预热；之后每五分钟最多向主站拉取一次增量。首版无需额外暴露公网定时接口。
 

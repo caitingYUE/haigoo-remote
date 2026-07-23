@@ -4,7 +4,7 @@ import { mapApiJob, type RawApiJob } from '../utils/job-format'
 import { requestJson } from './api-client'
 import { trackMiniEvent } from './analytics-service'
 import { loginWithWechat } from './mini-auth-service'
-import { getMiniSessionToken, hasAuthenticatedSession } from './session'
+import { getMiniSessionCacheKey, getMiniSessionToken } from './session'
 
 interface RawJobsResponse {
   jobs?: RawApiJob[]
@@ -94,7 +94,6 @@ export async function fetchJobs(query: JobsQuery = {}): Promise<JobsResponse> {
   await ensureBrowseSession()
   const page = query.page || 1
   const limit = query.limit || 20
-  const authenticated = hasAuthenticatedSession()
   const params = {
     page,
     limit,
@@ -109,7 +108,10 @@ export async function fetchJobs(query: JobsQuery = {}): Promise<JobsResponse> {
     .filter(([, value]) => value !== undefined && value !== null && value !== '')
     .map(([key, value]) => [key, String(value)]))}`
 
-  const cacheKey = `${authenticated ? 'auth' : 'guest'}:${url}`
+  // The browse allowance is tied to the WeChat identity. A shared auth/guest
+  // cache key could leak another session's remaining quota and skip counting
+  // the current identity's page load after logout/login on the same device.
+  const cacheKey = `${getMiniSessionCacheKey()}:${url}`
   const cached = requestCache.get(cacheKey)
   if (cached && cached.expiresAt > Date.now()) return cached.promise
 

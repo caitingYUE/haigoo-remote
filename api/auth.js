@@ -58,6 +58,83 @@ function isSuperAdminEmail(email) {
   return !!email && SUPER_ADMIN_EMAILS.includes(String(email).trim().toLowerCase())
 }
 
+function hashPasswordResetToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex')
+}
+
+function matchesPasswordResetToken(token, storedHash) {
+  const candidate = Buffer.from(hashPasswordResetToken(token), 'hex')
+  const stored = Buffer.from(String(storedHash || ''), 'hex')
+  return candidate.length === stored.length && crypto.timingSafeEqual(candidate, stored)
+}
+
+function authRateLimitKeys(req, action, email) {
+  const forwarded = String(req.headers?.['x-forwarded-for'] || '').split(',')[0].trim()
+  const client = forwarded || String(req.headers?.['x-real-ip'] || '').trim()
+  return [
+    ['email', String(email || '').trim().toLowerCase()],
+    ['client', client]
+  ]
+    .filter(([, value]) => value)
+    .map(([dimension, value]) => (
+      crypto.createHash('sha256').update(`${action}:${dimension}:${value}`).digest('hex')
+    ))
+}
+
+async function consumeAuthRateLimit(req, res, { action, email, limit, windowSeconds }) {
+  // Mini Gateway already applies OpenID/email/IP limits before invoking this
+  // handler in-process. Do not double-count the same email dimension.
+  if (req.trustedMiniGateway === true) return { allowed: true, keyHashes: [] }
+  if (!neonHelper.isConfigured) return { allowed: true, keyHashes: [] }
+  const keyHashes = authRateLimitKeys(req, action, email)
+  if (!keyHashes.length) return { allowed: true, keyHashes: [] }
+
+  await neonHelper.query(
+    `DELETE FROM mini_rate_limits WHERE updated_at < NOW() - INTERVAL '2 days'`
+  )
+  const results = await Promise.all(keyHashes.map((keyHash) => neonHelper.query(
+    `INSERT INTO mini_rate_limits (
+        key_hash, action, attempts, window_started_at, updated_at
+     ) VALUES ($1, $2, 1, NOW(), NOW())
+     ON CONFLICT (key_hash, action)
+     DO UPDATE SET
+       attempts = CASE
+         WHEN mini_rate_limits.window_started_at <= NOW() - ($3::int * INTERVAL '1 second') THEN 1
+         ELSE mini_rate_limits.attempts + 1
+       END,
+       window_started_at = CASE
+         WHEN mini_rate_limits.window_started_at <= NOW() - ($3::int * INTERVAL '1 second') THEN NOW()
+         ELSE mini_rate_limits.window_started_at
+       END,
+       updated_at = NOW()
+     RETURNING attempts, window_started_at`,
+    [keyHash, action, windowSeconds]
+  )))
+  const exceeded = results
+    .map((rows) => rows?.[0])
+    .filter((row) => Number(row?.attempts || 0) > limit)
+  if (!exceeded.length) return { allowed: true, keyHashes }
+
+  const oldestWindow = Math.min(...exceeded.map((row) => new Date(row.window_started_at).getTime()))
+  const retryAfter = Math.max(1, Math.ceil((oldestWindow + windowSeconds * 1000 - Date.now()) / 1000))
+  res.setHeader('Retry-After', String(retryAfter))
+  res.status(429).json({
+    success: false,
+    code: 'RATE_LIMITED',
+    error: '操作过于频繁，请稍后再试',
+    retryAfter
+  })
+  return { allowed: false, keyHashes }
+}
+
+async function clearAuthRateLimit(keyHashes, action) {
+  if (!neonHelper.isConfigured || !keyHashes?.length) return
+  await neonHelper.query(
+    'DELETE FROM mini_rate_limits WHERE key_hash = ANY($1::text[]) AND action = $2',
+    [keyHashes, action]
+  )
+}
+
 function normalizeSubscriptionTopics(input, topic) {
   const source = Array.isArray(input)
     ? input
@@ -186,18 +263,27 @@ async function handleRegister(req, res) {
     return res.status(400).json({ success: false, error: '密码至少8位，且包含字母和数字' })
   }
 
-  const deletedAccountLock = await getActiveDeletedAccountLock(email)
+  const normalizedEmail = email.toLowerCase()
+  const rateLimit = await consumeAuthRateLimit(req, res, {
+    action: 'register',
+    email: normalizedEmail,
+    limit: 3,
+    windowSeconds: 60 * 60
+  })
+  if (!rateLimit.allowed) return
+
+  const deletedAccountLock = await getActiveDeletedAccountLock(normalizedEmail)
   if (deletedAccountLock) {
     return res.status(403).json({ success: false, error: buildDeletedAccountLockMessage(deletedAccountLock) })
   }
 
-  const emailExists = await getUserByEmail(email.toLowerCase())
+  const emailExists = await getUserByEmail(normalizedEmail)
   if (emailExists) {
     if (!emailExists.emailVerified) {
       if (isTokenExpired(emailExists.verificationExpires)) {
         // Delete expired unverified account and proceed as new user
         await deleteUserById(emailExists.user_id)
-        console.log(`[auth] Deleted expired unverified account: ${email}`)
+        console.log(`[auth] Deleted expired unverified account: ${emailExists.user_id}`)
         // Fall through to register
       } else {
         return res.status(409).json({ success: false, error: '该邮箱已注册但尚未验证，请查看您的收件箱。如需重新注册请等待24小时验证过期。' })
@@ -214,7 +300,6 @@ async function handleRegister(req, res) {
   const verificationToken = generateVerificationToken()
   const verificationExpires = generateVerificationExpiry()
 
-  const normalizedEmail = email.toLowerCase()
   const user = {
     user_id: userId,
     email: normalizedEmail,
@@ -240,7 +325,7 @@ async function handleRegister(req, res) {
     return res.status(500).json({ success: false, error: '注册失败，请稍后重试' })
   }
 
-  console.log(`[auth] New user registered: ${email}`)
+  console.log(`[auth] New user registered: ${userId}`)
 
   if (neonHelper.isConfigured) {
     try {
@@ -253,8 +338,16 @@ async function handleRegister(req, res) {
     }
   }
 
+  let verificationEmailSent = false
   if (isEmailServiceConfigured()) {
-    await sendVerificationEmail(email, finalUsername, verificationToken)
+    try {
+      await sendVerificationEmail(email, finalUsername, verificationToken)
+      verificationEmailSent = true
+    } catch (error) {
+      // Account creation has already committed. Returning a 500 here makes
+      // clients retry registration and hit an unavoidable email conflict.
+      console.error('[auth] Failed to send registration verification email:', error)
+    }
   }
 
   const token = generateToken({
@@ -267,7 +360,12 @@ async function handleRegister(req, res) {
     success: true,
     token,
     user: sanitizeUser(user),
-    message: isEmailServiceConfigured() ? '注册成功！请查收验证邮件' : '注册成功！'
+    message: verificationEmailSent
+      ? '注册成功！请查收验证邮件'
+      : isEmailServiceConfigured()
+        ? '注册成功，但验证邮件暂时未发出，请稍后在网站重新发送'
+        : '注册成功！',
+    emailDeliveryFailed: isEmailServiceConfigured() && !verificationEmailSent
   })
 }
 
@@ -286,12 +384,18 @@ async function handleLogin(req, res) {
   }
 
   const normalizedEmail = email.toLowerCase()
+  const rateLimit = await consumeAuthRateLimit(req, res, {
+    action: 'login',
+    email: normalizedEmail,
+    limit: 5,
+    windowSeconds: 15 * 60
+  })
+  if (!rateLimit.allowed) return
+
   const user = await getUserByEmail(normalizedEmail)
   if (!user) {
     return res.status(401).json({ success: false, error: '邮箱或密码错误' })
   }
-  console.log(`[auth] User found: ${JSON.stringify(user)}`)
-
   // 验证密码
   const passwordMatch = await comparePassword(password, user.passwordHash)
   if (!passwordMatch) {
@@ -353,8 +457,9 @@ async function handleLogin(req, res) {
 
   // 使用统一的更新函数更新最后登录时间
   await updateUser(user.user_id, { lastLoginAt: true })
+  await clearAuthRateLimit(rateLimit.keyHashes, 'login')
 
-  console.log(`[auth] User logged in: ${email}`)
+  console.log(`[auth] User logged in: ${user.user_id}`)
 
   if (isSuperAdminEmail(normalizedEmail) && !user.roles?.admin) {
     user.roles = { ...(user.roles || {}), admin: true }
@@ -870,52 +975,51 @@ async function handleUnsubscribeByEmail(req, res) {
  */
 async function handleRequestPasswordReset(req, res) {
   const { email } = req.body
+  const genericMessage = '如果该邮箱已注册，重置邮件将发送到您的邮箱'
 
-  if (!email) {
-    return res.status(400).json({ success: false, error: '邮箱不能为空' })
+  if (!email || !isValidEmail(email)) {
+    return res.status(400).json({ success: false, error: '请输入有效邮箱' })
   }
 
-  const user = await getUserByEmail(email.toLowerCase())
+  const normalizedEmail = email.toLowerCase()
+  const rateLimit = await consumeAuthRateLimit(req, res, {
+    action: 'request_password_reset',
+    email: normalizedEmail,
+    limit: 3,
+    windowSeconds: 60 * 60
+  })
+  if (!rateLimit.allowed) return
+
+  const user = await getUserByEmail(normalizedEmail)
   if (!user) {
-    // 为了安全，即使邮箱不存在也返回成功，避免枚举用户
-    // 但为了用户体验，这里可以稍微提示一下，或者就统一提示已发送
-    return res.status(200).json({ success: true, message: '如果该邮箱已注册，重置邮件将发送到您的邮箱' })
+    return res.status(200).json({ success: true, message: genericMessage })
   }
 
-  // 生成重置 token (有效期 1 小时)
   const resetToken = generateVerificationToken()
-  // 1 hour expiry
   const resetExpires = new Date(Date.now() + 60 * 60 * 1000).toISOString()
 
-  // 更新用户
-  // 这里我们复用 verification_token 字段或者新增 reset_token 字段？
-  // 最好新增 reset_token 和 reset_expires 字段
-  // 如果数据库表没有这两个字段，可以复用 verification 字段，或者存到 profile json 中
-  // 查看 neon-ddl.sql 会更好，但为了快速实现，我们先尝试更新 user 表的 verification 字段
-  // 风险：这会覆盖邮箱验证 token。但考虑到重置密码通常意味着重新验证身份，这是可以接受的。
-  // 或者，我们检查一下 userHelper.updateUser 是否支持自定义字段。
-
-  // 让我们复用 verification_token，但在 token 中加个前缀或者 context? 
-  // 不，Token 只是随机字符串。
-  // 我们就在 reset-password 接口里检查 verification_token。
-
-  // 更好的做法：使用 update，存入 `reset_token` (假设表支持 json 或者我们修改表)
-  // 如果表不支持，存 profile?
-  // 让我们看看 neon-helper 的 update.
-
-  // 假设我们复用 verification_token 和 verification_expires
-  // 这样比较简单，不需要改表结构。
-
-  await updateUser(user.user_id, {
-    verificationToken: resetToken,
-    verificationExpires: resetExpires
+  const updateResult = await updateUser(user.user_id, {
+    resetToken: hashPasswordResetToken(resetToken),
+    resetExpires
   })
-
-  if (isEmailServiceConfigured()) {
-    await sendPasswordResetEmail(email, user.username, resetToken)
+  if (!updateResult?.success) {
+    console.error('[auth] Failed to persist password reset token')
+    return res.status(200).json({ success: true, message: genericMessage })
   }
 
-  return res.status(200).json({ success: true, message: '重置邮件已发送，请查收' })
+  try {
+    if (isEmailServiceConfigured()) {
+      await sendPasswordResetEmail(email, user.username, resetToken)
+    } else {
+      console.error('[auth] Password reset requested while email service is not configured')
+    }
+  } catch (error) {
+    // Do not reveal whether an account exists through a different status,
+    // message or timing-dependent retry path.
+    console.error('[auth] Failed to send password reset email:', error)
+  }
+
+  return res.status(200).json({ success: true, message: genericMessage })
 }
 
 /**
@@ -930,15 +1034,15 @@ async function handleResetPassword(req, res) {
 
   const user = await getUserByEmail(email.toLowerCase())
   if (!user) {
-    return res.status(404).json({ success: false, error: '用户不存在' })
+    return res.status(400).json({ success: false, error: '重置令牌无效或已过期' })
   }
 
-  if (user.verification_token !== token) {
-    return res.status(400).json({ success: false, error: '重置令牌无效' })
+  if (!matchesPasswordResetToken(token, user.reset_token)) {
+    return res.status(400).json({ success: false, error: '重置令牌无效或已过期' })
   }
 
-  if (isTokenExpired(user.verification_expires)) {
-    return res.status(400).json({ success: false, error: '重置令牌已过期' })
+  if (isTokenExpired(user.reset_expires)) {
+    return res.status(400).json({ success: false, error: '重置令牌无效或已过期' })
   }
 
   if (!isValidPassword(newPassword)) {
@@ -948,11 +1052,14 @@ async function handleResetPassword(req, res) {
   const passwordHash = await hashPassword(newPassword)
 
   // 更新密码并清除 token
-  await updateUser(user.user_id, {
+  const updateResult = await updateUser(user.user_id, {
     passwordHash,
-    verificationToken: null,
-    verificationExpires: null
+    resetToken: null,
+    resetExpires: null
   })
+  if (!updateResult?.success) {
+    return res.status(500).json({ success: false, error: '密码重置失败，请稍后重试' })
+  }
 
   return res.status(200).json({ success: true, message: '密码重置成功，请使用新密码登录' })
 }

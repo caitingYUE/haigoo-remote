@@ -19,13 +19,115 @@ if (!migrationPath.startsWith(migrationsRoot) || !fs.existsSync(migrationPath)) 
 }
 
 const source = fs.readFileSync(migrationPath, 'utf8')
-const statements = source
-  .split('\n')
-  .filter((line) => !line.trim().startsWith('--'))
-  .join('\n')
-  .split(';')
-  .map((statement) => statement.trim())
-  .filter(Boolean)
+
+function splitSqlStatements(sqlSource) {
+  const statements = []
+  let current = ''
+  let singleQuoted = false
+  let doubleQuoted = false
+  let lineComment = false
+  let blockCommentDepth = 0
+  let dollarTag = ''
+
+  for (let index = 0; index < sqlSource.length; index += 1) {
+    const character = sqlSource[index]
+    const next = sqlSource[index + 1] || ''
+
+    if (lineComment) {
+      if (character === '\n') {
+        lineComment = false
+        current += '\n'
+      }
+      continue
+    }
+    if (blockCommentDepth > 0) {
+      if (character === '/' && next === '*') {
+        blockCommentDepth += 1
+        index += 1
+      } else if (character === '*' && next === '/') {
+        blockCommentDepth -= 1
+        index += 1
+      }
+      continue
+    }
+    if (dollarTag) {
+      if (sqlSource.startsWith(dollarTag, index)) {
+        current += dollarTag
+        index += dollarTag.length - 1
+        dollarTag = ''
+      } else {
+        current += character
+      }
+      continue
+    }
+    if (singleQuoted) {
+      current += character
+      if (character === "'" && next === "'") {
+        current += next
+        index += 1
+      } else if (character === "'") {
+        singleQuoted = false
+      }
+      continue
+    }
+    if (doubleQuoted) {
+      current += character
+      if (character === '"' && next === '"') {
+        current += next
+        index += 1
+      } else if (character === '"') {
+        doubleQuoted = false
+      }
+      continue
+    }
+
+    if (character === '-' && next === '-') {
+      lineComment = true
+      index += 1
+      continue
+    }
+    if (character === '/' && next === '*') {
+      blockCommentDepth = 1
+      index += 1
+      continue
+    }
+    if (character === "'") {
+      singleQuoted = true
+      current += character
+      continue
+    }
+    if (character === '"') {
+      doubleQuoted = true
+      current += character
+      continue
+    }
+    if (character === '$') {
+      const match = sqlSource.slice(index).match(/^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/)
+      if (match) {
+        dollarTag = match[0]
+        current += dollarTag
+        index += dollarTag.length - 1
+        continue
+      }
+    }
+    if (character === ';') {
+      const statement = current.trim()
+      if (statement) statements.push(statement)
+      current = ''
+      continue
+    }
+    current += character
+  }
+
+  if (singleQuoted || doubleQuoted || dollarTag || blockCommentDepth > 0) {
+    throw new Error(`Migration contains an unterminated SQL construct: ${migrationName}`)
+  }
+  const trailing = current.trim()
+  if (trailing) statements.push(trailing)
+  return statements
+}
+
+const statements = splitSqlStatements(source)
 
 const sql = neon(databaseUrl)
 await sql.query(`

@@ -15,7 +15,7 @@
 - 开发和生产分别生成 `MINI_SESSION_SECRET`、`MINI_SYNC_SECRET`。
 - 两个环境使用同一个微信 AppID 时可使用同一个 AppSecret，但不得写入仓库。
 - 生产 CloudRun 只连接正式 Gateway；开发环境不得写入正式收藏、申请、订阅或浏览额度数据。
-- 发布前应用数据库迁移 `054`、`055`、`056`，记录执行时间和执行人。
+- 发布前应用数据库迁移 `054`、`055`、`056`、`057`，记录执行时间和执行人。
 - 发布前创建 Neon 恢复点并导出 CloudBase `mini_jobs`、`mini_job_list`、`mini_sync_state`。
 
 ## 3. CloudRun 发布

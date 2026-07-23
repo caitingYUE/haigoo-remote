@@ -57,8 +57,8 @@ assert.equal(
       'x-haigoo-mini-signature': legacySignature
     }
   }, 'sync'),
-  true,
-  'legacy GET signatures remain valid during the rolling deployment'
+  false,
+  'legacy GET signatures must not authorize altered or unsigned query parameters'
 )
 
 console.log('mini gateway signature checks passed')

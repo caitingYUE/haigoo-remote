@@ -26,6 +26,13 @@ export function getMiniSessionToken(): string {
   return String(getMiniSession()?.token || '').trim()
 }
 
+export function getMiniSessionCacheKey(): string {
+  const session = getMiniSession()
+  const token = String(session?.token || '').trim()
+  if (!token) return 'none'
+  return `${session?.userId || 'anonymous'}:${token.slice(-16)}`
+}
+
 export function hasMiniSession(): boolean {
   return Boolean(getMiniSessionToken())
 }

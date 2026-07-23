@@ -278,6 +278,8 @@ function enrichUserFields(user) {
     if (u.google_id) u.googleId = u.google_id
     if (u.verification_token) u.verificationToken = u.verification_token
     if (u.verification_expires) u.verificationExpires = u.verification_expires
+    if (u.reset_token) u.resetToken = u.reset_token
+    if (u.reset_expires) u.resetExpires = u.reset_expires
     if (u.email_verified !== undefined) u.emailVerified = u.email_verified
     if (u.last_login_at) u.lastLoginAt = u.last_login_at
     if (u.created_at) u.createdAt = u.created_at
@@ -539,6 +541,8 @@ const userHelper = {
                     google_id: user.googleId || user.google_id || null,
                     verification_token: user.verificationToken || user.verification_token || null,
                     verification_expires: user.verificationExpires || user.verification_expires || null,
+                    reset_token: user.resetToken || user.reset_token || null,
+                    reset_expires: user.resetExpires || user.reset_expires || null,
                     email_verified: user.emailVerified ?? user.email_verified ?? false,
                     status: user.status || 'active',
                     roles: user.roles || {},
@@ -569,6 +573,8 @@ const userHelper = {
                 google_id: user.googleId || user.google_id,
                 verification_token: user.verificationToken || user.verification_token,
                 verification_expires: user.verificationExpires || user.verification_expires,
+                reset_token: user.resetToken || user.reset_token,
+                reset_expires: user.resetExpires || user.reset_expires,
                 email_verified: user.emailVerified || user.email_verified || false,
                 status: user.status || 'active',
                 roles: JSON.stringify(user.roles || {}),
@@ -622,34 +628,56 @@ const userHelper = {
                 return false
             }
 
-            // 删除用户
-            const result = await neonHelper.delete('users', { user_id: userId })
+            // Keep the deletion atomic. Most historical user-owned tables do
+            // not have foreign keys, so deleting `users` first used to leave
+            // orphaned records. Data-modifying CTEs run as one PostgreSQL
+            // statement and preserve deleted_account_locks intentionally.
+            const result = await neonHelper.query(
+                `WITH target_openids AS MATERIALIZED (
+                    SELECT app_id, openid
+                      FROM mini_wechat_identities
+                     WHERE user_id = $1
+                 ),
+                 delete_mini_views AS (
+                    DELETE FROM mini_job_views views
+                     USING target_openids identity
+                     WHERE views.app_id = identity.app_id
+                       AND views.openid = identity.openid
+                 ),
+                 delete_mini_idempotency AS (
+                    DELETE FROM mini_idempotency_keys keys
+                     USING target_openids identity
+                     WHERE keys.app_id = identity.app_id
+                       AND keys.openid = identity.openid
+                 ),
+                 delete_favorites AS (DELETE FROM favorites WHERE user_id = $1),
+                 delete_resumes AS (DELETE FROM resumes WHERE user_id = $1),
+                 delete_subscriptions AS (DELETE FROM subscriptions WHERE user_id = $1),
+                 delete_digest_items AS (DELETE FROM subscription_digest_items WHERE user_id = $1),
+                 delete_digest_runs AS (DELETE FROM subscription_digest_runs WHERE user_id = $1),
+                 delete_interactions AS (DELETE FROM user_job_interactions WHERE user_id = $1),
+                 delete_matches AS (DELETE FROM user_job_matches WHERE user_id = $1),
+                 delete_notifications AS (DELETE FROM notifications WHERE user_id = $1),
+                 delete_feedbacks AS (DELETE FROM feedbacks WHERE user_id = $1),
+                 delete_recommendations AS (DELETE FROM recommendations WHERE user_id = $1),
+                 delete_bug_reports AS (DELETE FROM bug_reports WHERE user_id = $1),
+                 delete_campaign_leads AS (DELETE FROM campaign_leads WHERE user_id = $1),
+                 delete_bundle_progress AS (DELETE FROM job_bundle_user_progress WHERE user_id = $1),
+                 delete_club_applications AS (DELETE FROM club_applications WHERE user_id = $1),
+                 delete_payment_records AS (DELETE FROM payment_records WHERE user_id = $1),
+                 delete_analytics AS (DELETE FROM analytics_events WHERE user_id = $1),
+                 deleted_user AS (
+                    DELETE FROM users
+                     WHERE user_id = $1
+                     RETURNING user_id
+                 )
+                 SELECT user_id FROM deleted_user`,
+                [userId]
+            )
             const success = !!result?.[0]
 
-            // 如果删除成功，清理相关数据
-            if (success) {
-                // 删除用户关联数据
-                // 1. 核心业务数据
-                await neonHelper.delete('favorites', { user_id: userId })
-                await neonHelper.delete('resumes', { user_id: userId })
-                await neonHelper.delete('subscriptions', { user_id: userId })
-
-                // 2. 互动数据
-                await neonHelper.delete('feedbacks', { user_id: userId })
-                await neonHelper.delete('recommendations', { user_id: userId })
-                await neonHelper.delete('bug_reports', { user_id: userId })
-
-                // 3. 会员与权益数据
-                await neonHelper.delete('club_applications', { user_id: userId })
-                await neonHelper.delete('payment_records', { user_id: userId })
-
-                // 4. 分析数据
-                await neonHelper.delete('analytics_events', { user_id: userId })
-
-                console.log(`[user-helper] Deleted user and all related data: ${userId}`)
-            } else {
-                console.log(`[user-helper] Failed to delete user: ${userId}`)
-            }
+            if (success) console.log(`[user-helper] Deleted user and all related data: ${userId}`)
+            else console.log(`[user-helper] Failed to delete user: ${userId}`)
 
             return success
         } catch (error) {
@@ -685,6 +713,10 @@ const userHelper = {
             'verification_token',
             'verificationExpires',
             'verification_expires',
+            'resetToken',
+            'reset_token',
+            'resetExpires',
+            'reset_expires',
             'google_id',
             'googleId'
         ]
@@ -1116,6 +1148,8 @@ const userHelper = {
                 if (updates.emailVerified === true || updates.emailVerified === false) local.email_verified = updates.emailVerified
                 if (updates.verificationToken !== undefined) local.verification_token = updates.verificationToken
                 if (updates.verificationExpires !== undefined) local.verification_expires = updates.verificationExpires
+                if (updates.resetToken !== undefined) local.reset_token = updates.resetToken
+                if (updates.resetExpires !== undefined) local.reset_expires = updates.resetExpires
                 if (typeof updates.username === 'string' && updates.username.trim()) local.username = updates.username.trim()
                 if (typeof updates.avatar === 'string' && updates.avatar.trim()) local.avatar = updates.avatar.trim()
                 const profileData = local.profile || {}
@@ -1165,6 +1199,8 @@ const userHelper = {
                 emailVerified,
                 verificationToken,
                 verificationExpires,
+                resetToken,
+                resetExpires,
                 passwordHash,
                 memberType,
                 autoApplyMemberDuration,
@@ -1200,6 +1236,14 @@ const userHelper = {
             // 验证过期时间更新
             if (verificationExpires !== undefined) {
                 updateFields.verification_expires = verificationExpires
+            }
+
+            if (resetToken !== undefined) {
+                updateFields.reset_token = resetToken
+            }
+
+            if (resetExpires !== undefined) {
+                updateFields.reset_expires = resetExpires
             }
 
             // 基本字段更新（所有用户都可以更新）

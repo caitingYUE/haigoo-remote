@@ -20,6 +20,8 @@ const jobListCollection = 'mini_job_list'
 const syncCollection = 'mini_sync_state'
 const SYNC_PAGE_SIZE = 100
 const LIST_INDEX_FETCH_LIMIT = 1000
+const LIST_INDEX_MAX_RECORDS = 20000
+const MAX_REQUEST_BODY_BYTES = 1024 * 1024
 const SYNC_MAX_PAGES_PER_RUN = Math.max(1, Math.min(10, Number(process.env.MINI_SYNC_PAGES_PER_RUN || 3)))
 const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_WRITE_CONCURRENCY || 8)))
 const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 2)))
@@ -193,15 +195,14 @@ function compactTranslations(value) {
 // CloudBase's single-query response limit. This separate collection contains
 // only the fields the job cards need.
 function compactJobPayload(payload = {}) {
-  const {
-    description,
-    originalDescription,
-    requirements,
-    responsibilities,
-    benefits,
-    translations,
-    ...summary
-  } = payload
+  const summary = { ...payload }
+  const translations = summary.translations
+  delete summary.description
+  delete summary.originalDescription
+  delete summary.requirements
+  delete summary.responsibilities
+  delete summary.benefits
+  delete summary.translations
   const compact = { ...summary }
   const localized = compactTranslations(translations)
   if (localized) compact.translations = localized
@@ -233,7 +234,8 @@ function unwrapDocument(record) {
 }
 
 function withoutDocumentId(record) {
-  const { _id, ...data } = record || {}
+  const data = { ...(record || {}) }
+  delete data._id
   return data
 }
 
@@ -376,8 +378,7 @@ async function writeBatch(jobs, { syncRunId = '' } = {}) {
 
 async function removeStaleCacheDocuments(syncRunId) {
   if (!syncRunId) return { removed: 0 }
-  const result = await db.collection(jobListCollection).limit(LIST_INDEX_FETCH_LIMIT).get().catch(() => ({ data: [] }))
-  const records = Array.isArray(result.data) ? result.data : []
+  const records = await readAllListDocuments()
   const stale = records.filter((record) => String(record?.lastSeenSyncId || '') !== syncRunId)
   const fileIds = []
   await runWithConcurrency(stale, WRITE_CONCURRENCY, async (record) => {
@@ -397,6 +398,25 @@ async function removeStaleCacheDocuments(syncRunId) {
     })
   }
   return { removed: stale.length }
+}
+
+async function readAllListDocuments() {
+  const records = []
+  let offset = 0
+  while (offset < LIST_INDEX_MAX_RECORDS) {
+    const result = await db.collection(jobListCollection)
+      .skip(offset)
+      .limit(LIST_INDEX_FETCH_LIMIT)
+      .get()
+    const batch = Array.isArray(result.data) ? result.data : []
+    records.push(...batch)
+    if (batch.length < LIST_INDEX_FETCH_LIMIT) break
+    offset += batch.length
+  }
+  if (records.length >= LIST_INDEX_MAX_RECORDS) {
+    throw new Error(`List cache exceeds safety cap: ${LIST_INDEX_MAX_RECORDS}`)
+  }
+  return records
 }
 
 async function syncJobs({ force = false } = {}) {
@@ -493,14 +513,13 @@ function buildJobsResponse(items, query) {
   const matchesCategory = (item) => {
     if (categoryTerms.length === 0) return true
     const payload = item.payload || {}
-    const categoryText = String(payload.category || '').toLowerCase()
     const haystack = [payload.category, payload.title, payload.type, payload.jobType, ...(payload.tags || [])]
       .join(' ')
       .toLowerCase()
     if (categoryTerms.length === 1 && categoryTerms[0] === 'freelance') {
       return /(freelance|freelancer|自由职业|part[- ]?time|兼职|contractor|contract|合同工|合同制)/i.test(haystack)
     }
-    return categoryTerms.some((term) => categoryText.includes(term))
+    return categoryTerms.some((term) => haystack.includes(term))
   }
   const searchScore = (item) => {
     if (!search) return 0
@@ -517,6 +536,8 @@ function buildJobsResponse(items, query) {
       (categoryText.includes(search) ? 500 : 0) +
       (tags.includes(search) ? 280 : 0)
   }
+  const compareStableId = (a, b) => String(b.payload?.id || b.jobId || '')
+    .localeCompare(String(a.payload?.id || a.jobId || ''))
   const compareDefault = (a, b) => {
     const searchDifference = searchScore(b) - searchScore(a)
     if (searchDifference) return searchDifference
@@ -528,16 +549,20 @@ function buildJobsResponse(items, query) {
     if (memberDifference) return memberDifference
     const referralDifference = Number(Boolean(b.payload?.canRefer)) - Number(Boolean(a.payload?.canRefer))
     if (referralDifference) return referralDifference
-    return Number(Boolean(b.payload?.isTrusted)) - Number(Boolean(a.payload?.isTrusted))
+    const trustedDifference = Number(Boolean(b.payload?.isTrusted)) - Number(Boolean(a.payload?.isTrusted))
+    if (trustedDifference) return trustedDifference
+    return compareStableId(a, b)
   }
+  const compareRecent = (a, b) => (
+    String(b.payload?.publishedAt || '').localeCompare(String(a.payload?.publishedAt || ''))
+    || compareStableId(a, b)
+  )
   const all = items
     .filter((item) => item.status !== 'closed' && item.status !== 'expired')
     .filter((item) => !featured || item.featured)
     .filter(matchesCategory)
     .filter((item) => !search || [item.payload?.title, item.payload?.company, ...(item.payload?.tags || [])].join(' ').toLowerCase().includes(search))
-    .sort(sortBy === 'recent'
-      ? (a, b) => String(b.payload?.publishedAt || '').localeCompare(String(a.payload?.publishedAt || ''))
-      : compareDefault)
+    .sort(sortBy === 'recent' ? compareRecent : compareDefault)
   const categoryCounts = new Map()
   for (const item of all) {
     const value = String(item.payload?.category || '').trim()
@@ -563,13 +588,17 @@ async function fetchUpstreamJobs(query) {
       ...(query.sortBy ? { sortBy: query.sortBy } : {})
     }
   })
-  const jobs = (Array.isArray(batch.jobs) ? batch.jobs : []).map((job) => ({
-    status: job.status || 'active',
-    featured: Boolean(job.isFeatured),
-    payload: publicJob(job)
-  }))
-  const response = buildJobsResponse(jobs, query)
-  return { ...response, total: Number(batch.total || response.total), source: 'upstream-cold-cache' }
+  const jobs = (Array.isArray(batch.jobs) ? batch.jobs : []).map((job) => publicJob(job))
+  const total = Math.max(0, Number(batch.total || jobs.length))
+  return {
+    jobs,
+    total,
+    page,
+    pageSize: limit,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+    categories: [],
+    source: 'upstream-cold-cache'
+  }
 }
 
 async function fetchUpstreamJob(jobId) {
@@ -579,11 +608,19 @@ async function fetchUpstreamJob(jobId) {
 }
 
 async function listJobs(query) {
+  if (query.search) {
+    const state = await getSyncState()
+    if (Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
+    return fetchUpstreamJobs(query)
+  }
   const [state, result] = await Promise.all([
     getSyncState(),
-    db.collection(jobListCollection).limit(LIST_INDEX_FETCH_LIMIT).get().catch(() => ({ data: [] }))
+    readAllListDocuments().catch((error) => {
+      console.warn('[mini-cloudrun] list cache unavailable, falling back upstream', error?.message || error)
+      return []
+    })
   ])
-  const cached = (result.data || []).map(unwrapDocument).filter((item) => item?.payload)
+  const cached = result.map(unwrapDocument).filter((item) => item?.payload)
   if (!state.cacheReady || cached.length === 0) {
     // The first visitor gets a prompt upstream response. Full cache hydration is
     // deliberately best-effort work after the HTTP response is released.
@@ -627,22 +664,69 @@ async function getCachedJobs(jobIds, limit = 100) {
 }
 
 async function exchangeCode(code) {
+  if (!code || code.length > 256) {
+    const error = new Error('无效的微信登录凭证')
+    error.statusCode = 400
+    error.payload = { code: 'INVALID_WECHAT_CODE', error: error.message }
+    throw error
+  }
   const url = new URL('https://api.weixin.qq.com/sns/jscode2session')
   url.search = new URLSearchParams({ appid: appId, secret: appSecret, js_code: code, grant_type: 'authorization_code' }).toString()
-  const response = await fetch(url)
-  const payload = await response.json()
-  if (!response.ok || !payload.openid) throw new Error(payload.errmsg || '微信登录失败')
-  return payload.openid
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(8000) })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok || !payload.openid) {
+      const error = new Error('微信登录凭证无效或已过期')
+      error.statusCode = 401
+      error.payload = { code: 'WECHAT_LOGIN_FAILED', error: error.message }
+      throw error
+    }
+    return payload.openid
+  } catch (error) {
+    if (error?.statusCode) throw error
+    const unavailable = new Error('微信登录服务暂时不可用，请稍后重试')
+    unavailable.statusCode = 503
+    unavailable.payload = { code: 'WECHAT_SERVICE_UNAVAILABLE', error: unavailable.message }
+    throw unavailable
+  }
 }
 
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = ''
-    req.on('data', (chunk) => { body += chunk; if (body.length > 1024 * 1024) reject(new Error('Request too large')) })
-    req.on('end', () => {
-      try { resolve(body ? JSON.parse(body) : {}) } catch { reject(new Error('Invalid JSON body')) }
+    let receivedBytes = 0
+    let settled = false
+    req.on('data', (chunk) => {
+      if (settled) return
+      receivedBytes += Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(String(chunk))
+      if (receivedBytes > MAX_REQUEST_BODY_BYTES) {
+        settled = true
+        const error = new Error('请求内容过大')
+        error.statusCode = 413
+        error.payload = { code: 'REQUEST_TOO_LARGE', error: error.message }
+        reject(error)
+        return
+      }
+      body += chunk
     })
-    req.on('error', reject)
+    req.on('end', () => {
+      if (settled) return
+      try {
+        settled = true
+        resolve(body ? JSON.parse(body) : {})
+      } catch {
+        settled = true
+        const error = new Error('请求内容不是有效的 JSON')
+        error.statusCode = 400
+        error.payload = { code: 'INVALID_JSON', error: error.message }
+        reject(error)
+      }
+    })
+    req.on('error', (error) => {
+      if (settled) return
+      settled = true
+      reject(error)
+    })
   })
 }
 
@@ -771,7 +855,11 @@ async function route(req, res) {
       const body = await readBody(req)
       const result = await gatewayRequest('unbind_wechat', {
         method: 'POST',
-        body: { openid: session.openid, password: body.password }
+        body: {
+          openid: session.openid,
+          password: body.password,
+          clientKey: requestClientKey(req)
+        }
       })
       return send(res, 200, result)
     }
@@ -781,7 +869,11 @@ async function route(req, res) {
       const body = await readBody(req)
       const result = await gatewayRequest('delete_account', {
         method: 'POST',
-        body: { openid: session.openid, password: body.password }
+        body: {
+          openid: session.openid,
+          password: body.password,
+          clientKey: requestClientKey(req)
+        }
       })
       return send(res, 200, result)
     }
@@ -897,7 +989,13 @@ async function route(req, res) {
       const jobId = decodeURIComponent(url.pathname.split('/')[3])
       const result = await gatewayRequest('application_status', {
         method: 'POST',
-        body: { openid: session.openid, jobId, type: body.type, status: body.status }
+        body: {
+          openid: session.openid,
+          jobId,
+          type: body.type,
+          status: body.status,
+          idempotencyKey: body.idempotencyKey
+        }
       })
       return send(res, 200, result)
     }

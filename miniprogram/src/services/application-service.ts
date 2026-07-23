@@ -46,7 +46,11 @@ export function confirmApplicationCompleted(job: MiniJob, type: 'website' | 'ema
     {
       method: 'POST',
       authenticated: true,
-      data: { type, status: 'applied' }
+      data: {
+        type,
+        status: 'applied',
+        idempotencyKey: createIdempotencyKey(job.id, `${type}-confirmed`)
+      }
     }
   ).then((response) => {
     void trackMiniEvent('mini_application_confirmed', { job_id: job.id, apply_method: type, status: 'applied' })
