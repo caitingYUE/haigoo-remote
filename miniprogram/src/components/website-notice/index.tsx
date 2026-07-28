@@ -1,6 +1,6 @@
 import { Text, View } from '@tarojs/components'
-import { Link } from '@nutui/icons-react-taro'
 import { setClipboardData, showToast } from '@tarojs/taro'
+import MiniIcon from '../mini-icon'
 import './index.scss'
 
 const WEBSITE_URL = 'https://haigooremote.com/'
@@ -13,7 +13,7 @@ export default function WebsiteNotice() {
 
   return (
     <View className='website-notice' onClick={copyWebsite}>
-      <Link size={18} color='#6f78a0' />
+      <MiniIcon name='link' size={19} />
       <View className='website-notice__copy'>
         <Text>小程序主要展示岗位信息，完整功能和内容请访问网站</Text>
         <Text className='website-notice__url'>{WEBSITE_URL}</Text>

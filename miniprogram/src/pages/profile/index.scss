@@ -29,6 +29,12 @@
   box-shadow: 0 10px 24px rgba(29, 36, 66, 0.12);
 }
 
+.profile-identity__avatar-image {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
 .profile-identity__edit {
   position: absolute;
   right: 2px;
@@ -233,6 +239,22 @@
   display: block;
 }
 
+.profile-club__heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.profile-club__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #e9e6ff;
+}
+
 .profile-club__eyebrow {
   color: #5146e5;
   font-size: 17px;
@@ -266,6 +288,10 @@
   color: #fff;
   font-size: 22px;
   font-weight: 700;
+}
+
+.profile-club__button-icon {
+  filter: brightness(0) invert(1);
 }
 
 .profile-page__version {

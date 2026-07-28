@@ -58,6 +58,11 @@
   font-weight: 800;
 }
 
+.job-card__club .mini-icon,
+.job-card__favorite-icon--active {
+  filter: brightness(0) invert(1);
+}
+
 .job-card__match {
   display: flex;
   align-items: center;

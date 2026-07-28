@@ -45,7 +45,6 @@ export interface RawApiJob {
   translations?: RawTranslation | null
   sourceType?: string
   isTrusted?: boolean
-  canRefer?: boolean
   memberOnly?: boolean
   isFeatured?: boolean
   matchScore?: number
@@ -64,8 +63,6 @@ export interface RawApiJob {
   emailType?: string | null
   hasWebsiteApply?: boolean
   hasEmailApply?: boolean
-  hasReferral?: boolean
-  effectiveReferralContactCount?: number
   applicationCount?: number
 }
 
@@ -186,15 +183,12 @@ export function formatPublishedLabel(value?: string): string {
 function resolveApplication(job: RawApiJob): JobApplicationInfo {
   const websiteUrl = String(job.url || job.sourceUrl || '').trim()
   const hiringEmail = String(job.hiringEmail || '').trim()
-  const referralCount = Number(job.effectiveReferralContactCount || 0)
   const hasWebsiteApply = Boolean(job.hasWebsiteApply || websiteUrl)
   const hasEmailApply = Boolean(job.hasEmailApply || hiringEmail)
-  const hasReferral = Boolean(job.hasReferral || job.canRefer || referralCount > 0)
 
   let mode: JobApplicationInfo['mode'] = 'unavailable'
   if (hasWebsiteApply) mode = 'website'
   else if (hasEmailApply) mode = 'email'
-  else if (hasReferral) mode = 'referral'
 
   return {
     mode,
@@ -202,8 +196,7 @@ function resolveApplication(job: RawApiJob): JobApplicationInfo {
     hiringEmail: hiringEmail || undefined,
     emailType: String(job.emailType || '').trim() || undefined,
     hasWebsiteApply,
-    hasEmailApply,
-    hasReferral
+    hasEmailApply
   }
 }
 
@@ -251,7 +244,6 @@ export function mapApiJob(job: RawApiJob): MiniJob {
     displayBand,
     memberOnly: Boolean(job.memberOnly),
     featured: Boolean(job.isFeatured),
-    canRefer: Boolean(job.canRefer),
     isTrusted: Boolean(job.isTrusted),
     sourceType: String(job.sourceType || job.source || '').trim() || undefined,
     status: String(job.status || '').trim() || undefined,

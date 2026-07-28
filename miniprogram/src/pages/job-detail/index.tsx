@@ -1,13 +1,6 @@
 import { Button, Image, Text, View } from '@tarojs/components'
 import {
-  Heart,
-  Internation,
-  Link,
   Loading,
-  Mail,
-  Share2,
-  StarFill,
-  Store
 } from '@nutui/icons-react-taro'
 import {
   setClipboardData,
@@ -24,7 +17,6 @@ import {
   confirmApplicationCompleted,
   fetchApplicationUsage,
   unlockEmailApplication,
-  unlockReferralApplication,
   unlockWebsiteApplication,
   type ApplicationUsage
 } from '../../services/application-service'
@@ -35,10 +27,11 @@ import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import type { MiniJob } from '../../types'
 import { getApplicationMethods, type ApplicationMethod } from '../../utils/job-application'
 import { buildJobDetailSections } from '../../utils/job-content'
+import MiniIcon from '../../components/mini-icon'
 import './index.scss'
 
 function getApplicationSummary(job: MiniJob): string {
-  if (job.memberOnly) return 'Club 会员岗位'
+  if (job.memberOnly) return 'Club 专属岗位'
   return getApplicationMethods(job).map((method) => method.shortLabel).join(' · ') || '暂无申请入口'
 }
 
@@ -47,7 +40,7 @@ function getApplicationError(error: unknown): string {
   if (error.statusCode === 401) return '登录状态已失效，请重新登录'
   if (error.payload.emailVerificationRequired) return '请先绑定并验证邮箱后再申请岗位'
   if (error.payload.code === 'ACCOUNT_BIND_REQUIRED') return '请先绑定 Haigoo 网站账号后再申请岗位'
-  if (error.payload.code === 'MEMBER_REQUIRED') return '该岗位为 Club 专属岗位，请先了解并开通会员服务'
+  if (error.payload.code === 'MEMBER_REQUIRED') return '该岗位为 Club 专属岗位，请先了解 Club 权益'
   if (error.statusCode === 403) return '当前免费申请次数已用完，可在网站了解更多服务'
   return error.message || '申请入口暂时无法打开，请稍后重试'
 }
@@ -151,7 +144,7 @@ export default function JobDetailPage() {
     })
   }
 
-  const confirmApplied = (type: 'website' | 'email' | 'referral', content: string) => {
+  const confirmApplied = (type: ApplicationMethod, content: string) => {
     if (!job) return
     showModal({
       title: '申请入口已准备好',
@@ -193,28 +186,18 @@ export default function JobDetailPage() {
     confirmApplied('email', '招聘邮箱和申请文案已复制，请在邮箱客户端完成发送。')
   }
 
-  const copyWebsiteJobPage = async () => {
-    if (!job) return
-    const application = await unlockReferralApplication(job)
-    if (!application.websiteUrl) throw new Error('该岗位暂无内推说明')
-    await setClipboardData({
-      data: application.websiteUrl
-    })
-    confirmApplied('referral', '网站岗位链接已复制，请在浏览器查看内推说明。')
-  }
-
   const openClubIntroduction = () => {
     showModal({
       title: 'Club 专属岗位',
-      content: '该岗位的申请入口仅向 Club 会员开放，可先查看会员方案并添加顾问咨询。',
-      confirmText: '了解 Club',
+      content: '该岗位的申请入口仅在 Club 权益有效期间开放，可先查看权益方案并添加顾问咨询。',
+      confirmText: '查看权益',
       success: ({ confirm }) => {
         if (confirm) switchTab({ url: '/pages/learning/index' })
       }
     })
   }
 
-  const runApplicationAction = async (type: 'website' | 'email' | 'referral') => {
+  const runApplicationAction = async (type: ApplicationMethod) => {
     if (job?.memberOnly && !getMiniUser()?.isMember) {
       openClubIntroduction()
       return
@@ -223,7 +206,6 @@ export default function JobDetailPage() {
     try {
       if (type === 'website') await copyWebsiteApplication()
       if (type === 'email') await copyEmailApplication()
-      if (type === 'referral') await copyWebsiteJobPage()
     } catch (applicationError) {
       showModal({
         title: '暂时无法继续申请',
@@ -251,9 +233,7 @@ export default function JobDetailPage() {
       ...method,
       label: method.type === 'website'
         ? '复制官网申请链接'
-        : method.type === 'email'
-          ? `复制${method.label}与申请文案`
-          : '复制网站链接，查看 Club 内推方式'
+        : `复制${method.label}与申请文案`
     }))
 
     if (options.length === 0) {
@@ -336,14 +316,12 @@ export default function JobDetailPage() {
   const getMethodUsage = (type: ApplicationMethod) => {
     if (!applicationUsage) return null
     if (type === 'website') return applicationUsage.website
-    if (type === 'email') return applicationUsage.email
-    return applicationUsage.referral
+    return applicationUsage.email
   }
 
   const getMethodDescription = (type: ApplicationMethod) => {
     if (type === 'website') return '复制企业官网申请链接，在浏览器中继续'
-    if (type === 'email') return '复制招聘邮箱与申请文案，在邮箱客户端发送'
-    return '复制网站岗位链接，查看 Club 内推说明'
+    return '复制招聘邮箱与申请文案，在邮箱客户端发送'
   }
 
   return (
@@ -355,10 +333,10 @@ export default function JobDetailPage() {
             disabled={favoritePending}
             onClick={handleToggleFavorite}
           >
-            <Heart size={23} color={favorited ? '#ffffff' : '#11182b'} />
+            <MiniIcon name='favorite' size={24} className={favorited ? 'job-detail-actions__icon--active' : ''} />
           </Button>
           <Button className='job-detail-actions__button' openType='share'>
-            <Share2 size={23} color='#11182b' />
+            <MiniIcon name='share' size={24} />
           </Button>
         </View>
 
@@ -372,7 +350,7 @@ export default function JobDetailPage() {
                 onError={() => setLogoFailed(true)}
               />
             ) : (
-              <Store size={36} color='#65728a' />
+              <MiniIcon name='building' size={38} />
             )}
           </View>
           <Text className='job-detail-hero__title'>{visibleJob.title}</Text>
@@ -419,13 +397,10 @@ export default function JobDetailPage() {
 
         <View className='job-detail-application surface-card'>
           <View className='job-detail-application__heading'>
-            <View>
-              <Text className='job-detail-application__eyebrow'>APPLICATION OPTIONS</Text>
-              <Text className='job-detail-application__title'>选择申请方式</Text>
-            </View>
+            <Text className='job-detail-application__title'>选择申请方式</Text>
             {visibleJob.memberOnly ? (
               <View className='job-detail-application__club'>
-                <StarFill size={13} color='#ffffff' />
+                <MiniIcon name='club' size={14} />
                 <Text>Club 专属</Text>
               </View>
             ) : null}
@@ -435,7 +410,7 @@ export default function JobDetailPage() {
             {!hasAuthenticatedSession() ? (
               <Text>登录后可查看免费申请额度，并同步网站申请记录。</Text>
             ) : isActiveMember || applicationUsage?.isMember ? (
-              <Text>Club 会员申请入口不限次数。</Text>
+              <Text>Club 权益有效期间，申请入口不限次数。</Text>
             ) : applicationUsageLoading ? (
               <Text>正在同步你的免费申请额度…</Text>
             ) : applicationUsageError ? (
@@ -448,7 +423,7 @@ export default function JobDetailPage() {
           <View className='job-detail-application__methods'>
             {applicationMethods.length > 0 ? applicationMethods.map((method) => {
               const usage = getMethodUsage(method.type)
-              const MethodIcon = method.type === 'website' ? Link : method.type === 'email' ? Mail : StarFill
+              const methodIcon = method.type === 'website' ? 'link' : 'mail'
               const quota = !isActiveMember && usage && Number(usage.limit) >= 0
                 ? `剩余 ${Math.max(0, Number(usage.remaining || 0))}/${Number(usage.limit || 0)} 次`
                 : isActiveMember
@@ -464,7 +439,7 @@ export default function JobDetailPage() {
                   }}
                 >
                   <View className='job-detail-application__method-icon'>
-                    <MethodIcon size={19} color='#5146e5' />
+                    <MiniIcon name={methodIcon} size={21} />
                   </View>
                   <View className='job-detail-application__method-copy'>
                     <View className='job-detail-application__method-title-row'>
@@ -517,7 +492,7 @@ export default function JobDetailPage() {
             {visibleJob.matchScore ? (
               <View className='job-detail-match surface-card'>
                 <View className='job-detail-match__title'>
-                  <Internation size={21} color='#5146e5' />
+                  <MiniIcon name='target' size={22} />
                   <Text>{visibleJob.matchLabel || '岗位匹配'} · {visibleJob.matchScore}%</Text>
                 </View>
               </View>
@@ -533,7 +508,9 @@ export default function JobDetailPage() {
               <View className='job-detail-company__logo'>
                 {visibleJob.logoUrl && !logoFailed ? (
                   <Image className='job-detail-company__logo-image' mode='aspectFit' src={visibleJob.logoUrl} />
-                ) : <Store size={30} color='#65728a' />}
+                ) : (
+                  <MiniIcon name='building' size={32} />
+                )}
               </View>
             </View>
             <Text className='job-detail-company__description'>
@@ -551,7 +528,7 @@ export default function JobDetailPage() {
               </View>
               <View>
                 <Text>所在地</Text>
-                <Text>{visibleJob.companyAddress || '全球远程'}</Text>
+                <Text>{visibleJob.companyAddress || '待补充'}</Text>
               </View>
               {visibleJob.companyRating ? (
                 <View>

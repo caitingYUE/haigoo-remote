@@ -216,20 +216,11 @@
   gap: 16px;
 }
 
-.job-detail-application__eyebrow,
 .job-detail-application__title {
   display: block;
 }
 
-.job-detail-application__eyebrow {
-  color: #5146e5;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 1px;
-}
-
 .job-detail-application__title {
-  margin-top: 7px;
   color: #151e34;
   font-size: 28px;
   font-weight: 800;
@@ -247,6 +238,11 @@
   color: #fff;
   font-size: 17px;
   font-weight: 800;
+}
+
+.job-detail-application__club .mini-icon,
+.job-detail-actions__icon--active {
+  filter: brightness(0) invert(1);
 }
 
 .job-detail-application__quota {

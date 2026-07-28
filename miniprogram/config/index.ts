@@ -45,6 +45,10 @@ export default defineConfig<'webpack5'>(async (merge) => {
         {
           from: path.resolve(__dirname, '../../public/Wechat_group.webp'),
           to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-community.webp`)
+        },
+        {
+          from: path.resolve(__dirname, '../assets/icons'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/icons`)
         }
       ],
       options: {

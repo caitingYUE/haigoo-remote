@@ -1,5 +1,5 @@
 import { Input, ScrollView, Text, View } from '@tarojs/components'
-import { Close, Loading, Search, User } from '@nutui/icons-react-taro'
+import { Loading } from '@nutui/icons-react-taro'
 import {
   navigateTo,
   showActionSheet,
@@ -12,6 +12,7 @@ import {
 } from '@tarojs/taro'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import JobCard from '../../components/job-card'
+import MiniIcon from '../../components/mini-icon'
 import { MINI_JOB_CATEGORY_FILTERS } from '../../data/job-filters'
 import { clearJobsRequestCache, fetchBrowseStatus, fetchJobs } from '../../services/jobs-service'
 import { fetchFavorites, setJobFavorite } from '../../services/user-activity-service'
@@ -218,16 +219,13 @@ export default function JobsPage() {
   return (
     <View className='page-shell jobs-page'>
       <View className='jobs-page__heading'>
-        <View>
-          <Text className='jobs-page__heading-title'>寻找适合你的远程岗位</Text>
-          <Text className='page-subtitle'>精选真实在招岗位，支持全球远程与地区远程</Text>
-        </View>
+        <Text className='jobs-page__heading-title'>寻找适合你的远程岗位</Text>
       </View>
 
       <View className='jobs-search surface-card' onClick={() => {
         if (!authenticated) promptLogin('登录后搜索岗位')
       }}>
-        <Search size={23} color='#98a1b2' />
+        <MiniIcon name='search' size={24} />
         <Input
           className='jobs-search__input'
           confirmType='search'
@@ -239,7 +237,7 @@ export default function JobsPage() {
         />
         {keyword ? (
           <View className='jobs-search__clear' onClick={() => setKeyword('')}>
-            <Close size={17} color='#777f92' />
+            <Text>清除</Text>
           </View>
         ) : null}
       </View>
@@ -258,7 +256,6 @@ export default function JobsPage() {
             ))}
             {!authenticated ? (
               <View className='jobs-category-login' onClick={() => promptLogin()}>
-                <User size={16} color='#ffffff' />
                 <Text>登录查看完整岗位</Text>
               </View>
             ) : null}
@@ -295,7 +292,7 @@ export default function JobsPage() {
         ) : error ? (
           <View className='jobs-state surface-card'>
             <View className='jobs-empty__icon'>
-              <Search size={34} color='#a29abf' />
+              <MiniIcon name='search' size={34} />
             </View>
             <Text className='jobs-state__title'>暂时无法加载岗位</Text>
             <Text className='jobs-state__copy'>{error}</Text>
@@ -319,7 +316,7 @@ export default function JobsPage() {
             {refreshing ? <Text className='jobs-page__refreshing'>正在刷新最新岗位…</Text> : null}
             {showAllowanceNotice ? (
               <View className='jobs-page__preview-note'>
-                <Text>免费版本可享有100次查看额度，完整可前往网站或升级会员。</Text>
+                <Text>免费版本可享有100次查看额度，完整功能可前往网站或了解 Club 权益。</Text>
               </View>
             ) : !authenticated ? (
               <View className='jobs-page__preview-note' onClick={() => promptLogin()}>
@@ -330,7 +327,7 @@ export default function JobsPage() {
         ) : (
           <View className='jobs-state surface-card'>
             <View className='jobs-empty__icon'>
-              <Search size={34} color='#a29abf' />
+              <MiniIcon name='search' size={35} />
             </View>
             <Text className='jobs-state__title'>暂时没有找到相关岗位</Text>
             <Text className='jobs-state__copy'>试试其他关键词或岗位分类</Text>

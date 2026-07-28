@@ -9,7 +9,7 @@ function App({ children }: PropsWithChildren<Record<string, never>>) {
   useEffect(() => {
     if (process.env.TARO_ENV === 'weapp') {
       if (CLOUD_ENV_ID) Taro.cloud.init({ env: CLOUD_ENV_ID, traceUser: true })
-      Taro.setTabBarItem({ index: 2, text: getMiniUser()?.isMember ? '订阅' : '会员' })
+      Taro.setTabBarItem({ index: 2, text: getMiniUser()?.isMember ? '订阅' : 'Club' })
       void trackMiniEvent('mini_app_launch', { page_key: 'app' })
 
       const updateManager = Taro.getUpdateManager()

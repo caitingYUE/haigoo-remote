@@ -30,7 +30,7 @@ const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_
 const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 2)))
 const MAX_LOGO_BYTES = Math.max(64 * 1024, Math.min(8 * 1024 * 1024, Number(process.env.MINI_LOGO_MAX_BYTES || 2 * 1024 * 1024)))
 const CACHE_REFRESH_MS = 5 * 60 * 1000
-const CACHE_MODEL_VERSION = '2026-07-28-detail-quota-hot-logo-v2'
+const CACHE_MODEL_VERSION = '2026-07-28-real-application-modes-v3'
 
 if (!apiOrigin || !jobsApiOrigin || !appId || !appSecret || !gatewaySecret || !jobsGatewaySecret || !sessionSecret) {
   throw new Error('Missing required Cloud Hosting environment variables')
@@ -192,8 +192,7 @@ function publicJob(job, logoFileId = '') {
     cachedLogoUrl: logoFileId || '',
     cachedCompanyLogoUrl: logoFileId || '',
     hasWebsiteApply: Boolean(url || sourceUrl),
-    hasEmailApply: Boolean(hiringEmail),
-    hasReferral: Boolean(safeJob.canRefer || Number(safeJob.effectiveReferralContactCount || 0) > 0)
+    hasEmailApply: Boolean(hiringEmail)
   }
 }
 
@@ -681,9 +680,7 @@ async function fetchUpstreamJobSnapshot(jobId) {
     url: String(job.url || '').slice(0, 2048),
     sourceUrl: String(job.sourceUrl || '').slice(0, 2048),
     hiringEmail: String(job.hiringEmail || '').slice(0, 320),
-    emailType: String(job.emailType || '').slice(0, 50),
-    canRefer: Boolean(job.canRefer),
-    effectiveReferralContactCount: Math.max(0, Number(job.effectiveReferralContactCount || 0))
+    emailType: String(job.emailType || '').slice(0, 50)
   }
 }
 
@@ -958,7 +955,7 @@ async function route(req, res) {
         if (jobs.length === 0) {
           return send(res, 403, {
             code: 'MINI_BROWSE_LIMIT_REACHED',
-            error: '免费版本可享有100次查看额度，完整可前往网站或升级会员。',
+            error: '免费版本可享有100次查看额度，完整功能可前往网站或了解 Club 权益。',
             browse: { viewedCount: browse?.viewedCount || 100, remaining: browse?.remaining || 0 }
           })
         }
@@ -983,7 +980,7 @@ async function route(req, res) {
       if (jobs.length === 0) {
         return send(res, 403, {
           code: 'MINI_BROWSE_LIMIT_REACHED',
-          error: '免费版本可享有100次查看额度，完整可前往网站或升级会员。',
+          error: '免费版本可享有100次查看额度，完整功能可前往网站或了解 Club 权益。',
           browse: { viewedCount: browse?.viewedCount || 100, remaining: browse?.remaining || 0 }
         })
       }

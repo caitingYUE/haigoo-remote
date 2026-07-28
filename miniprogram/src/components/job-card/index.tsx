@@ -1,9 +1,9 @@
 import { Image, Text, View } from '@tarojs/components'
-import { Heart, Internation, StarFill, Store } from '@nutui/icons-react-taro'
 import { navigateTo } from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import type { MiniJob } from '../../types'
 import { getApplicationMethods } from '../../utils/job-application'
+import MiniIcon from '../mini-icon'
 import './index.scss'
 
 interface JobCardProps {
@@ -38,10 +38,10 @@ export default function JobCard({
       {showEyebrow ? (
         <View className='job-card__eyebrow-row'>
           <View className='job-card__signals'>
-            {job.featured ? <Text className='job-card__hot'>🔥热门申请</Text> : null}
+            {job.featured ? <Text className='job-card__hot'>🔥 热门申请</Text> : null}
             {job.memberOnly ? (
               <View className='job-card__club'>
-                <StarFill size={13} color='#ffffff' />
+                <MiniIcon name='club' size={14} />
                 <Text>Club</Text>
               </View>
             ) : null}
@@ -51,7 +51,7 @@ export default function JobCard({
           </View>
           {job.matchScore ? (
             <View className='job-card__match'>
-              <Internation size={16} color='#5146e5' />
+              <MiniIcon name='target' size={17} />
               <Text>{job.matchScore}% 匹配</Text>
             </View>
           ) : null}
@@ -78,7 +78,7 @@ export default function JobCard({
               onError={() => setLogoFailed(true)}
             />
           ) : (
-            <Store size={27} color='#65728a' />
+            <MiniIcon name='building' size={29} />
           )}
         </View>
       </View>
@@ -110,7 +110,7 @@ export default function JobCard({
               if (!favoritePending) onToggleFavorite(job)
             }}
           >
-            <Heart size={23} color={favorited ? '#ffffff' : '#5146e5'} />
+            <MiniIcon name='favorite' size={24} className={favorited ? 'job-card__favorite-icon--active' : ''} />
             <Text>{favoritePending ? '处理中' : favorited ? '已收藏' : '收藏'}</Text>
           </View>
         ) : null}

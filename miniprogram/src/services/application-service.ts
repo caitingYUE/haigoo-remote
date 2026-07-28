@@ -5,7 +5,7 @@ import { trackMiniEvent } from './analytics-service'
 export interface ApplicationResponse {
   success?: boolean
   usage?: ApplicationUsageItem
-  type?: 'website' | 'email' | 'referral'
+  type?: 'website' | 'email'
   websiteUrl?: string
   hiringEmail?: string
   emailType?: string
@@ -26,14 +26,13 @@ export interface ApplicationUsage {
   isMember: boolean
   website: ApplicationUsageItem
   email: ApplicationUsageItem
-  referral: ApplicationUsageItem
 }
 
 function createIdempotencyKey(jobId: string, type: string) {
   return `mini-${type}-${jobId}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
 }
 
-async function requestApplication(job: MiniJob, type: 'website' | 'email' | 'referral'): Promise<ApplicationResponse> {
+async function requestApplication(job: MiniJob, type: 'website' | 'email'): Promise<ApplicationResponse> {
   const response = await requestJson<ApplicationResponse>(
     `/mini/jobs/${encodeURIComponent(job.id)}/application`,
     {
@@ -51,7 +50,6 @@ async function requestApplication(job: MiniJob, type: 'website' | 'email' | 'ref
 
 export const unlockWebsiteApplication = (job: MiniJob) => requestApplication(job, 'website')
 export const unlockEmailApplication = (job: MiniJob) => requestApplication(job, 'email')
-export const unlockReferralApplication = (job: MiniJob) => requestApplication(job, 'referral')
 
 export function fetchApplicationUsage() {
   return requestJson<ApplicationUsage>(
@@ -60,7 +58,7 @@ export function fetchApplicationUsage() {
   )
 }
 
-export function confirmApplicationCompleted(job: MiniJob, type: 'website' | 'email' | 'referral') {
+export function confirmApplicationCompleted(job: MiniJob, type: 'website' | 'email') {
   return requestJson<{ success?: boolean; status?: 'applied' }>(
     `/mini/jobs/${encodeURIComponent(job.id)}/application-status`,
     {

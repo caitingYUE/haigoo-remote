@@ -1,4 +1,4 @@
-export type JobApplyMode = 'website' | 'email' | 'referral' | 'unavailable'
+export type JobApplyMode = 'website' | 'email' | 'unavailable'
 
 export interface JobApplicationInfo {
   mode: JobApplyMode
@@ -7,7 +7,6 @@ export interface JobApplicationInfo {
   emailType?: string
   hasWebsiteApply: boolean
   hasEmailApply: boolean
-  hasReferral: boolean
 }
 
 export interface MiniJob {
@@ -29,7 +28,6 @@ export interface MiniJob {
   displayBand?: 'hidden' | 'common' | 'high'
   memberOnly?: boolean
   featured?: boolean
-  canRefer?: boolean
   isTrusted?: boolean
   sourceType?: string
   status?: string
@@ -70,16 +68,4 @@ export interface JobDetailSection {
   title: string
   paragraphs: string[]
   items: string[]
-}
-
-export interface LearningVideo {
-  id: string
-  title: string
-  category: string
-  duration: string
-  level: string
-  description: string
-  accent: string
-  locked?: boolean
-  featured?: boolean
 }

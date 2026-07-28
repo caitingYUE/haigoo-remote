@@ -33,7 +33,7 @@ export default defineAppConfig({
       },
       {
         pagePath: 'pages/learning/index',
-        text: '会员'
+        text: 'Club'
       },
       {
         pagePath: 'pages/profile/index',

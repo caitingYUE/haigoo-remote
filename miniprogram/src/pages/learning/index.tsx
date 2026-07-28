@@ -56,8 +56,8 @@ export default function LearningPage() {
     }
     const member = Boolean(getMiniUser()?.isMember)
     setIsMember(member)
-    setTabBarItem({ index: 2, text: member ? '订阅' : '会员' })
-    setNavigationBarTitle({ title: member ? '岗位订阅' : '会员服务' })
+    setTabBarItem({ index: 2, text: member ? '订阅' : 'Club' })
+    setNavigationBarTitle({ title: member ? '岗位订阅' : 'Club 权益' })
     if (!member) {
       setFeed({ subscriptions: [], jobs: [] })
       setSelectedTopics([])
@@ -135,7 +135,7 @@ export default function LearningPage() {
         </View>
         <View className='membership-page__heading'>
           <View>
-            <Text className='membership-page__title'>三种会员方案</Text>
+            <Text className='membership-page__title'>Club 权益方案</Text>
             <Text className='membership-page__note'>按求职阶段选择适合自己的支持方式</Text>
           </View>
           <Text className='membership-page__consult' onClick={() => showAdvisor()}>咨询开通</Text>

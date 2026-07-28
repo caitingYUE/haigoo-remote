@@ -137,7 +137,7 @@ export default function AccountBindPage() {
       <View className='account-auth-hero'>
         <Text className='account-auth-hero__brand'>HAIGOO REMOTE</Text>
         <Text className='account-auth-hero__title'>让微信连接你的{'\n'}远程职业旅程</Text>
-        <Text className='account-auth-hero__copy'>先确认微信身份，再连接或创建 Haigoo 账号。会员权益、投递记录和职业资料会在同一个账号中延续。</Text>
+        <Text className='account-auth-hero__copy'>先确认微信身份，再连接或创建 Haigoo 账号。Club 权益、投递记录和职业资料会在同一个账号中延续。</Text>
         <View className='account-auth-steps'>
           <Text className='account-auth-steps__item account-auth-steps__item--active'>01 微信身份</Text>
           <Text className='account-auth-steps__line' />

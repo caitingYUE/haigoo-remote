@@ -117,9 +117,7 @@ assert.deepEqual(
     url: 'https://example.com/jobs/1',
     sourceUrl: '',
     hiringEmail: 'jobs@example.com',
-    emailType: '',
-    canRefer: false,
-    effectiveReferralContactCount: 0
+    emailType: ''
   },
   'a signed formal-job snapshot must be usable by Preview account actions'
 )

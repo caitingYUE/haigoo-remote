@@ -1,5 +1,4 @@
 import type { JobsResponse, MiniJob } from '../types'
-import { previewCategories, previewJobs } from '../data/preview-jobs'
 import { mapApiJob, type RawApiJob } from '../utils/job-format'
 import { requestJson } from './api-client'
 import { trackMiniEvent } from './analytics-service'
@@ -36,30 +35,6 @@ export interface BrowseStatus {
 
 const requestCache = new Map<string, { expiresAt: number; promise: Promise<JobsResponse> }>()
 const CACHE_TTL = 30 * 1000
-
-function previewResponse(query: JobsQuery = {}): JobsResponse {
-  const search = String(query.search || '').toLowerCase()
-  const categoryTerms = String(query.category || '').split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)
-  const filteredJobs = previewJobs.filter((job) => {
-    if (query.featured && !job.featured) return false
-    if (categoryTerms.length > 0) {
-      const haystack = [job.category, job.title, job.type, ...job.tags].join(' ').toLowerCase()
-      if (!categoryTerms.some((item) => haystack.includes(item))) return false
-    }
-    return !search || [job.title, job.company, ...job.tags].join(' ').toLowerCase().includes(search)
-  })
-  const page = Math.max(1, query.page || 1)
-  const pageSize = Math.max(1, query.limit || 20)
-  const jobs = filteredJobs.slice((page - 1) * pageSize, page * pageSize)
-  return {
-    jobs,
-    total: filteredJobs.length,
-    page,
-    pageSize,
-    totalPages: Math.max(1, Math.ceil(filteredJobs.length / pageSize)),
-    categories: previewCategories
-  }
-}
 
 function mapJobsResponse(data: RawJobsResponse): JobsResponse {
   const jobs = Array.isArray(data.jobs)
@@ -137,7 +112,6 @@ export async function fetchJobs(query: JobsQuery = {}): Promise<JobsResponse> {
     return response
   } catch (error) {
     requestCache.delete(cacheKey)
-    if (process.env.TARO_ENV === 'h5') return previewResponse(query)
     throw error
   }
 }
@@ -155,7 +129,6 @@ export async function fetchFeaturedJobs(): Promise<MiniJob[]> {
       ? data.jobs.map(mapApiJob).filter((job) => Boolean(job.id))
       : []
   } catch (error) {
-    if (process.env.TARO_ENV === 'h5') return previewJobs.filter((job) => job.featured)
     throw error
   }
 }
@@ -178,7 +151,6 @@ export async function fetchJobById(id: string): Promise<MiniJob | null> {
       { authenticated: true }
     )
   } catch (error) {
-    if (process.env.TARO_ENV === 'h5') return previewJobs.find((job) => job.id === id) || previewJobs[0]
     throw error
   }
   const job = (data as RawJobsResponse & { job?: RawApiJob }).job || (Array.isArray(data.jobs) ? data.jobs[0] : undefined)

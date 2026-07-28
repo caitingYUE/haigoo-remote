@@ -1,13 +1,14 @@
 import { Image, Input, ScrollView, Text, View } from '@tarojs/components'
-import { ArrowRight, Loading, Search, ShieldCheck, StarFill } from '@nutui/icons-react-taro'
+import { Loading } from '@nutui/icons-react-taro'
 import { stopPullDownRefresh, switchTab, useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useState } from 'react'
 import BrandHeader from '../../components/brand-header'
 import JobCard from '../../components/job-card'
+import MiniIcon from '../../components/mini-icon'
 import WebsiteNotice from '../../components/website-notice'
 import { fetchFeaturedJobs } from '../../services/jobs-service'
 import { fetchSubscriptionFeed, type SubscriptionFeed } from '../../services/subscription-service'
-import { getMiniUser } from '../../services/session'
+import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import type { MiniJob } from '../../types'
 import './index.scss'
 
@@ -15,7 +16,9 @@ export default function HomePage() {
   const [featuredJobs, setFeaturedJobs] = useState<MiniJob[]>([])
   const [jobsLoading, setJobsLoading] = useState(true)
   const [jobsError, setJobsError] = useState('')
+  const [authenticated, setAuthenticated] = useState(hasAuthenticatedSession())
   const [isMember, setIsMember] = useState(false)
+  const [userAvatar, setUserAvatar] = useState('')
   const [subscriptionFeed, setSubscriptionFeed] = useState<SubscriptionFeed>({ subscriptions: [], jobs: [] })
 
   const handleSearch = () => {
@@ -43,8 +46,12 @@ export default function HomePage() {
   })
 
   useDidShow(() => {
-    const member = Boolean(getMiniUser()?.isMember)
+    const user = getMiniUser()
+    const nextAuthenticated = hasAuthenticatedSession()
+    const member = nextAuthenticated && Boolean(user?.isMember)
+    setAuthenticated(nextAuthenticated)
     setIsMember(member)
+    setUserAvatar(nextAuthenticated ? String(user?.avatar || '') : '')
     if (!member) {
       setSubscriptionFeed({ subscriptions: [], jobs: [] })
       return
@@ -56,7 +63,7 @@ export default function HomePage() {
 
   return (
     <View className='page-shell home-page'>
-      <BrandHeader isMember={isMember} />
+      <BrandHeader authenticated={authenticated} isMember={isMember} avatar={userAvatar} />
 
       <View className='home-welcome'>
         <Image className='home-welcome__website-bg' src='/assets/home-hero-bg.webp' mode='aspectFill' />
@@ -75,7 +82,7 @@ export default function HomePage() {
       </View>
 
       <View className='home-search surface-card' onClick={handleSearch}>
-        <Search size={23} color='#98a1b2' />
+        <MiniIcon name='search' size={23} />
         <Input
           className='home-search__input'
           disabled
@@ -121,30 +128,30 @@ export default function HomePage() {
           <View>
             <View className='home-page__club-heading'>
               <View className='home-page__club-icon'>
-                <StarFill size={15} color='#5146e5' />
+                <MiniIcon name='club' size={17} />
               </View>
-              <Text className='section-title'>{isMember ? '我订阅的岗位更新' : '了解会员服务'}</Text>
+              <Text className='section-title'>{isMember ? '我订阅的岗位更新' : '了解 Club 权益'}</Text>
             </View>
             <Text className='home-page__section-note'>
               {isMember ? '与邮件订阅同步的最新关注岗位' : '岗位申请、更新订阅与远程求职支持'}
             </Text>
           </View>
           <Text className='section-action' onClick={() => switchTab({ url: '/pages/learning/index' })}>
-            {isMember ? '管理订阅' : '查看服务'}
+            {isMember ? '管理订阅' : '查看权益'}
           </Text>
         </View>
         {isMember && subscriptionFeed.jobs.length > 0 ? (
           <JobCard compact job={subscriptionFeed.jobs[0]} />
         ) : (
           <View className='home-membership-callout surface-card' onClick={() => switchTab({ url: '/pages/learning/index' })}>
-            <View className='home-membership-callout__icon'><ShieldCheck size={27} color='#5146e5' /></View>
+            <View className='home-membership-callout__icon'><MiniIcon name='shield' size={29} /></View>
             <View className='home-membership-callout__copy'>
-              <Text className='home-membership-callout__title'>{isMember ? '设置订阅方向，开始接收更新' : '会员服务，帮你更快拿到机会'}</Text>
+              <Text className='home-membership-callout__title'>{isMember ? '设置订阅方向，开始接收更新' : 'Club 权益，助你更快推进求职'}</Text>
               <Text className='home-membership-callout__description'>
                 {isMember ? '保存后，匹配岗位会同时出现在邮箱和小程序。' : '浏览完整岗位库，保存方向并接收每日匹配岗位。'}
               </Text>
             </View>
-            <ArrowRight size={19} color='#5146e5' />
+            <MiniIcon name='chevronRight' size={20} />
           </View>
         )}
       </View>

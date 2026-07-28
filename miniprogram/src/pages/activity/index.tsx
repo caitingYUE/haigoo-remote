@@ -17,7 +17,6 @@ type ActivityTab = 'favorites' | 'applications'
 function applicationLabel(record?: MiniApplicationRecord) {
   if (!record) return '已打开申请入口'
   const status = record.status === 'applied' ? '已申请' : '已打开入口'
-  if (record.interactionType === 'referral') return `内推 · ${status}`
   if (record.interactionType === 'email') return `邮箱 · ${status}`
   return `官网 · ${status}`
 }

@@ -1,6 +1,6 @@
 import type { MiniJob } from '../types'
 
-export type ApplicationMethod = 'website' | 'email' | 'referral'
+export type ApplicationMethod = 'website' | 'email'
 
 export interface ApplicationMethodOption {
   type: ApplicationMethod
@@ -35,9 +35,6 @@ export function getApplicationMethods(job: MiniJob): ApplicationMethodOption[] {
   if (job.application.hasEmailApply) {
     const label = resolveDirectEmailLabel(job.application.emailType)
     methods.push({ type: 'email', label, shortLabel: label })
-  }
-  if (job.application.hasReferral) {
-    methods.push({ type: 'referral', label: 'Club 内推', shortLabel: '内推' })
   }
   return methods
 }
