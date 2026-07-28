@@ -5,8 +5,8 @@
 - 开发：`haigoo-dev-d2gctbzxma401b345 / haigoo-mini`
 - 生产：`cloud1-d8ggt7rbl273f83c7 / haigoo-mini-prod`
 - 小程序只通过 `wx.cloud.callContainer` 调用云托管，CloudRun 公网访问保持关闭。
-- CloudRun 通过 HMAC 调用 `https://haigooremote.com/api/mini`。
-- 当前架构不需要购买或绑定新的 API 域名。
+- 开发 CloudRun 通过 HMAC 调用 `https://mini-preview.haigooremote.com/api/mini`，生产 CloudRun 调用 `https://haigooremote.com/api/mini`。
+- `mini-preview` 是现有主域名下的开发子域名，不是新购买的顶级域名；当前架构仍不需要购买新域名。
 
 ## 2. 发布前密钥与数据
 
@@ -16,7 +16,7 @@
 - 开发 CloudRun 通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问受保护的 Vercel Preview；该密钥不得配置到生产服务。
 - 两个环境使用同一个微信 AppID 时可使用同一个 AppSecret，但不得写入仓库。
 - 生产 CloudRun 只连接正式 Gateway；开发环境不得写入正式收藏、申请、订阅或浏览额度数据。
-- 发布前应用数据库迁移 `054`、`055`、`056`、`057`，记录执行时间和执行人。
+- 发布前应用数据库迁移 `054`、`055`、`056`、`057`、`058`，记录执行时间和执行人。若测试库来自较早快照，还要核对网站基础迁移 `019`、`021`、`023`、`026`、`037`、`038`，否则会员岗位、企业内推、Logo 和小程序埋点会静默走兼容回退。
 - 发布前创建 Neon 恢复点并导出 CloudBase `mini_jobs`、`mini_job_list`、`mini_sync_state`。
 
 ## 3. CloudRun 发布
@@ -32,14 +32,17 @@
 
 截至 2026-07-28，生产服务状态为 `normal`，最小实例 1、最大实例 2、公网访问关闭，正式 Gateway 签名请求返回 200，无签名请求返回 401，首次全量缓存为 412 个岗位。
 
-开发 CloudRun 已切换到受保护的 Preview Gateway，Preview 使用独立测试数据库且已应用迁移 054–057。开发与生产密钥交叉请求均返回 401。
+开发 CloudRun 已切换到受保护的稳定 Preview Gateway `mini-preview.haigooremote.com`，Preview 使用独立测试数据库且已应用小程序迁移 054–058，并补齐其快照缺失的基础迁移 019、021、023、026、037、038。开发与生产密钥交叉请求均返回 401。不要改回临时 `*.vercel.app` 地址；腾讯云大陆容器对该地址曾出现 `ETIMEDOUT`。
+
+Vercel Mini Gateway 有改动时执行 `npm run deploy:mini-preview`。脚本先验证新的不可变 Preview 部署，再更新稳定子域名，失败时不会覆盖上一个可用部署。CloudRun 代码有改动时执行 `npm run deploy:mini-cloudrun:dev`。执行 `npm run check:mini-gateway:dev` 可核对当前开发链路。
 
 ## 4. 小程序构建与提交
 
 1. `npm run type-check`。
-2. `npm run build:weapp:prod`。
+2. 在 `miniprogram/` 执行 `npm run build:weapp:prod`。
    - 脚本使用 Taro 官方 `--no-check` 参数跳过存在 macOS 原生崩溃的 Doctor 远程 schema 校验；TypeScript、JSON、上线契约和真实构建仍需全部通过。
-3. 微信开发者工具执行代码依赖分析，主包目标不超过 1.8 MiB。
+   - 开发产物保留在 `dist/`；正式产物写入 `dist-prod/`，并生成可独立导入的 `.wechat-production/`，不会再被本地 `--watch` 覆盖。
+3. 微信开发者工具导入 `miniprogram/.wechat-production/`，执行代码依赖分析，主包目标不超过 1.8 MiB。
 4. 确认上传时关闭 source map，产物中的环境为 `cloud1/haigoo-mini-prod`。
 5. 上传体验版，以审核账号完成只读冒烟和真机回归。
 6. 在微信公众平台完成隐私保护指引、服务类目、审核说明和版本说明。

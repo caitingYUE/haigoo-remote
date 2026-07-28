@@ -6,6 +6,7 @@ import prodConfig from './prod'
 
 // https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
 export default defineConfig<'webpack5'>(async (merge) => {
+  const outputRoot = process.env.NODE_ENV === 'production' ? 'dist-prod' : 'dist'
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'miniprogram',
     date: '2026-7-16',
@@ -17,7 +18,7 @@ export default defineConfig<'webpack5'>(async (merge) => {
       828: 1.81 / 2
     },
     sourceRoot: 'src',
-    outputRoot: 'dist',
+    outputRoot,
     plugins: [
       "@tarojs/plugin-generator"
     ],
@@ -27,15 +28,15 @@ export default defineConfig<'webpack5'>(async (merge) => {
       patterns: [
         {
           from: path.resolve(__dirname, '../../public/pic_lists/Home_pics/background05.webp'),
-          to: path.resolve(__dirname, '../dist/assets/home-hero-bg.webp')
+          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.webp`)
         },
         {
           from: path.resolve(__dirname, '../../public/assets/brandlogo.png'),
-          to: path.resolve(__dirname, '../dist/assets/haigoo-brand-logo.png')
+          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-brand-logo.png`)
         },
         {
           from: path.resolve(__dirname, '../../public/avatars/user_icon1.png'),
-          to: path.resolve(__dirname, '../dist/assets/haigoo-avatar.png')
+          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-avatar.png`)
         }
       ],
       options: {

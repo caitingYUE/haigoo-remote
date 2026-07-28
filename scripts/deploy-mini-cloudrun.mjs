@@ -19,7 +19,8 @@ const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
     serviceName: 'haigoo-mini',
-    minNum: 0
+    minNum: 0,
+    apiOrigin: 'https://mini-preview.haigooremote.com'
   },
   production: {
     envId: 'cloud1-d8ggt7rbl273f83c7',
@@ -117,7 +118,12 @@ try {
 
 let targetEnvironment
 if (target === 'development') {
-  targetEnvironment = developmentEnvironment
+  targetEnvironment = {
+    ...developmentEnvironment,
+    TCB_ENV: deployment.envId,
+    HAIGOO_API_ORIGIN: deployment.apiOrigin,
+    NODE_ENV: 'production'
+  }
 } else if (existingDetail) {
   targetEnvironment = parseEnvironment(existingDetail.ServerConfig?.EnvParams)
 } else {
@@ -144,8 +150,11 @@ if (target === 'development') {
 for (const key of ['MINI_GATEWAY_SHARED_SECRET', 'MINI_SESSION_SECRET', 'WECHAT_MINI_APP_SECRET']) {
   if (!targetEnvironment[key]) throw new Error(`Target CloudRun is missing ${key}`)
 }
-if (target === 'production' && targetEnvironment.HAIGOO_API_ORIGIN !== deployment.apiOrigin) {
-  throw new Error(`Production CloudRun must use ${deployment.apiOrigin}`)
+if (target === 'development' && !targetEnvironment.VERCEL_AUTOMATION_BYPASS_SECRET) {
+  throw new Error('Development CloudRun is missing VERCEL_AUTOMATION_BYPASS_SECRET')
+}
+if (targetEnvironment.HAIGOO_API_ORIGIN !== deployment.apiOrigin) {
+  throw new Error(`${target} CloudRun must use ${deployment.apiOrigin}`)
 }
 
 const baseConfig = existingDetail?.ServerConfig || developmentConfig

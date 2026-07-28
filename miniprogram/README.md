@@ -19,7 +19,7 @@
 ## 发布配置
 
 1. 在微信云托管部署仓库根目录的 `cloudrun/` 服务，并配置其中 `.env.example` 列出的环境变量。
-2. 在 Vercel 配置与云托管相同的 `MINI_GATEWAY_SHARED_SECRET` 以及 `WECHAT_MINI_APP_ID`，然后依次执行迁移 `054_mini_wechat_identities.sql`、`055_mini_job_views.sql`、`056_mini_launch_readiness.sql` 与 `057_mini_security_and_consistency.sql`。
+2. 在 Vercel 配置与云托管相同的 `MINI_GATEWAY_SHARED_SECRET` 以及 `WECHAT_MINI_APP_ID`，然后依次执行迁移 `054_mini_wechat_identities.sql`、`055_mini_job_views.sql`、`056_mini_launch_readiness.sql`、`057_mini_security_and_consistency.sql` 与 `058_trusted_company_referral_contacts.sql`。从早期快照创建的测试库还必须确认网站基础迁移 `019`、`021`、`023`、`026`、`037`、`038` 已应用。
 3. 在本目录 `.env.production` 填入关联的 `TARO_APP_CLOUD_ENV`；服务名默认使用 `haigoo-mini`。
 4. 首次打开小程序时服务会自动完成全量预热；之后每五分钟最多向主站拉取一次增量。首版无需额外暴露公网定时接口。
 
@@ -27,8 +27,32 @@
 
 ## 构建
 
-- 日常开发监听：`npm run dev:weapp`（显式使用 `NODE_ENV=development`）。
-- 上传体验版、提审或发布前：`npm run build:weapp:prod`（显式使用 `NODE_ENV=production`，会启用生产压缩）。
+- 日常开发监听：`npm run dev:weapp`（显式使用 `NODE_ENV=development`，输出到 `dist/`）。
+- 微信开发者工具日常只导入本目录 `miniprogram/`，根目录的 `project.config.json` 会加载开发产物 `dist/`，该产物固定连接 `haigoo-dev/haigoo-mini`。
+- 上传体验版、提审或发布前：`npm run build:weapp:prod`（显式使用 `NODE_ENV=production`，输出到 `dist-prod/`，并准备独立项目 `.wechat-production/`）。
+- 预览或上传正式环境时，微信开发者工具/CLI 必须选择 `.wechat-production/`，不能选择日常开发项目。开发监听与正式构建不再互相覆盖。
+
+## 本地联调
+
+开发调用链固定为：
+
+`微信开发者工具 -> haigoo-dev/haigoo-mini -> https://mini-preview.haigooremote.com -> Vercel Preview 数据库`
+
+`mini-preview.haigooremote.com` 是受 Vercel Deployment Protection 保护的稳定开发入口；云托管通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问。不要把临时的 `*.vercel.app` 部署地址直接写入云托管：腾讯云大陆容器访问该地址曾出现 `ETIMEDOUT`，且临时部署更新后地址会变化。
+
+常用操作：
+
+1. 只修改小程序页面、样式或交互：在本目录执行 `npm run dev:weapp`，微信开发者工具导入本目录并重新编译即可。
+2. 修改 `cloudrun/`：仓库根目录执行 `npm run deploy:mini-cloudrun:dev`。
+3. 修改 Vercel `/api/mini` 或数据库读取逻辑：仓库根目录执行 `npm run deploy:mini-preview`。脚本会先部署并签名验证不可变 Preview URL，成功后才把稳定子域名切到新部署，再执行一次验证。
+4. 任意时候可在仓库根目录执行 `npm run check:mini-gateway:dev`，确认开发 Gateway、签名、保护绕过和测试数据库连通性；成功结果应返回 HTTP 200 和测试库岗位总数。
+
+开发工具出现 `fetch failed` 时，优先查看 `haigoo-dev/haigoo-mini` 日志：
+
+- `ETIMEDOUT`：检查 `HAIGOO_API_ORIGIN` 是否仍为 `https://mini-preview.haigooremote.com`。
+- HTTP `401`：检查开发 CloudRun 与 Vercel Preview 的 Gateway Shared Secret 是否一致，以及保护绕过密钥是否仍有效。
+- 页面仍显示旧环境：停止旧的 `dev:weapp` 监听并重新启动，再确认 `dist/common.js` 中只包含开发环境 ID。
+- `base.wxml Template ... not found` 等 Taro 模板警告与本次网络失败无关，可单独作为编译器兼容问题处理。
 
 ## 申请与账号
 
