@@ -15,6 +15,7 @@ const appSecret = String(process.env.WECHAT_MINI_APP_SECRET || '')
 const gatewaySecret = String(process.env.MINI_GATEWAY_SHARED_SECRET || '')
 const sessionSecret = String(process.env.MINI_SESSION_SECRET || '')
 const syncSecret = String(process.env.MINI_SYNC_SECRET || '')
+const vercelAutomationBypassSecret = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '')
 const jobsCollection = 'mini_jobs'
 const jobListCollection = 'mini_job_list'
 const syncCollection = 'mini_sync_state'
@@ -60,6 +61,9 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {} } 
     signal: AbortSignal.timeout(12000),
     headers: {
       Accept: 'application/json',
+      ...(vercelAutomationBypassSecret
+        ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret }
+        : {}),
       ...(method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
       'X-Haigoo-Mini-Timestamp': timestamp,
       'X-Haigoo-Mini-Signature': signGatewayRequest(method, action, timestamp, signaturePayload)

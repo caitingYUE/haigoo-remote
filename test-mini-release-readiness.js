@@ -18,6 +18,7 @@ const jobsService = read('./miniprogram/src/services/jobs-service.ts')
 const projectConfig = JSON.parse(read('./miniprogram/project.config.json'))
 const developmentExample = read('./miniprogram/.env.development.example')
 const productionExample = read('./miniprogram/.env.production.example')
+const deployScript = read('./scripts/deploy-mini-cloudrun.mjs')
 
 for (const action of [
   'request_password_reset',
@@ -71,6 +72,9 @@ assert.ok(cloudrun.includes("if (query.search)"), 'search must use the canonical
 assert.ok(cloudrun.includes("source: 'upstream-cold-cache'"), 'cold-cache pagination response must be explicit')
 assert.ok(cloudrun.includes('MAX_REQUEST_BODY_BYTES'), 'CloudRun must cap request bodies')
 assert.ok(cloudrun.includes("error.statusCode = 413"), 'oversized requests must return 413')
+assert.ok(cloudrun.includes("'x-vercel-protection-bypass'"), 'development CloudRun must support protected Preview gateways')
+assert.ok(deployScript.includes("apiOrigin: 'https://haigooremote.com'"), 'production deployment must pin the formal gateway origin')
+assert.ok(deployScript.includes('Production CloudRun must use'), 'production deployment must reject a Preview gateway origin')
 assert.ok(jobsService.includes('getMiniSessionCacheKey()'), 'job response cache must be isolated by WeChat session')
 assert.ok(app.includes('getUpdateManager'), 'Mini Program must prompt for ready updates')
 assert.ok(!profile.includes('简历与职业方向'), 'unfinished resume entry must stay hidden')

@@ -24,7 +24,8 @@ const environments = {
   production: {
     envId: 'cloud1-d8ggt7rbl273f83c7',
     serviceName: 'haigoo-mini-prod',
-    minNum: 1
+    minNum: 1,
+    apiOrigin: 'https://haigooremote.com'
   }
 }
 const development = environments.development
@@ -122,7 +123,7 @@ if (target === 'development') {
 } else {
   targetEnvironment = {
     TCB_ENV: deployment.envId,
-    HAIGOO_API_ORIGIN: developmentEnvironment.HAIGOO_API_ORIGIN,
+    HAIGOO_API_ORIGIN: deployment.apiOrigin,
     MINI_GATEWAY_SHARED_SECRET: randomSecret(),
     MINI_SESSION_SECRET: randomSecret(),
     WECHAT_MINI_APP_ID: developmentEnvironment.WECHAT_MINI_APP_ID,
@@ -142,6 +143,9 @@ if (target === 'development') {
 
 for (const key of ['MINI_GATEWAY_SHARED_SECRET', 'MINI_SESSION_SECRET', 'WECHAT_MINI_APP_SECRET']) {
   if (!targetEnvironment[key]) throw new Error(`Target CloudRun is missing ${key}`)
+}
+if (target === 'production' && targetEnvironment.HAIGOO_API_ORIGIN !== deployment.apiOrigin) {
+  throw new Error(`Production CloudRun must use ${deployment.apiOrigin}`)
 }
 
 const baseConfig = existingDetail?.ServerConfig || developmentConfig
