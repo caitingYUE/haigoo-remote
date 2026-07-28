@@ -20,14 +20,16 @@
 
 ## 3. CloudRun 发布
 
-1. 在腾讯云控制台确认 `cloud1` 已开通云托管资源并确认套餐/计费；当前 API 返回“云托管资源未开通”。
+1. `cloud1` 云托管资源已开通，生产服务 `haigoo-mini-prod` 已创建；后续发布前继续确认套餐、余额与自动续费。
 2. 在 `cloudrun/` 安装锁定依赖并运行 `npm run check`。
-3. 首次生产部署执行 `node scripts/deploy-mini-cloudrun.mjs --target=production --configure-vercel`。脚本只打包运行文件，显式关闭公网、设置最小实例 1，并生成独立密钥。
-4. 首次脚本成功后立即执行 `npx vercel --prod --yes`，让新生产网关密钥进入 Vercel 函数运行时；完成前不要将小程序切到生产环境。
+3. 首次生产部署已经完成。重建新服务时执行 `node scripts/deploy-mini-cloudrun.mjs --target=production --configure-vercel`；脚本只打包运行文件，显式关闭公网、设置最小实例 1、固定正式 Gateway，并生成独立密钥。
+4. 仅在首次生成或轮换生产 Gateway 密钥后执行 Vercel Production 重新部署，让新密钥进入函数运行时；完成前不要将小程序切到生产环境。
 5. 后续生产代码更新执行 `node scripts/deploy-mini-cloudrun.mjs --target=production`；测试环境更新执行 `node scripts/deploy-mini-cloudrun.mjs --target=development`。
 6. 检查 `/health`、启动日志和首次全量同步结果。
 7. 确认岗位总数与主站一致、详情可读、Logo 失败时有本地图标兜底。
 8. 生产冒烟测试完成后保存镜像版本号；回滚时切换到上一镜像，不覆盖数据库。
+
+截至 2026-07-28，生产服务状态为 `normal`，最小实例 1、最大实例 2、公网访问关闭，正式 Gateway 签名请求返回 200，无签名请求返回 401，首次全量缓存为 412 个岗位。
 
 ## 4. 小程序构建与提交
 
