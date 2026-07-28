@@ -13,6 +13,7 @@
 - Vercel Production/Preview 必须配置不同的 `JWT_SECRET`；不得使用本地开发回退值。
 - 开发 CloudRun 的 `MINI_GATEWAY_SHARED_SECRET` 对应 Vercel 的同名变量；生产 CloudRun 的该变量对应 Vercel `MINI_GATEWAY_PRODUCTION_SECRET`。
 - 开发和生产分别生成 `MINI_SESSION_SECRET`、`MINI_SYNC_SECRET`。
+- 开发 CloudRun 通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问受保护的 Vercel Preview；该密钥不得配置到生产服务。
 - 两个环境使用同一个微信 AppID 时可使用同一个 AppSecret，但不得写入仓库。
 - 生产 CloudRun 只连接正式 Gateway；开发环境不得写入正式收藏、申请、订阅或浏览额度数据。
 - 发布前应用数据库迁移 `054`、`055`、`056`、`057`，记录执行时间和执行人。
@@ -30,6 +31,8 @@
 8. 生产冒烟测试完成后保存镜像版本号；回滚时切换到上一镜像，不覆盖数据库。
 
 截至 2026-07-28，生产服务状态为 `normal`，最小实例 1、最大实例 2、公网访问关闭，正式 Gateway 签名请求返回 200，无签名请求返回 401，首次全量缓存为 412 个岗位。
+
+开发 CloudRun 已切换到受保护的 Preview Gateway，Preview 使用独立测试数据库且已应用迁移 054–057。开发与生产密钥交叉请求均返回 401。
 
 ## 4. 小程序构建与提交
 

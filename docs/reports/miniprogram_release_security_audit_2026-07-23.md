@@ -55,14 +55,15 @@ CloudRun 仍报告腾讯 `@cloudbase/node-sdk@3.18.3` 固定依赖的旧 Axios �
 - `mini_jobs`、`mini_job_list`、`mini_sync_state` 已创建；首次全量同步与正式 Gateway 均返回 412 个岗位。
 - Vercel Production 只保留 `MINI_GATEWAY_PRODUCTION_SECRET`，Preview 只保留 `MINI_GATEWAY_SHARED_SECRET`；开发和生产的 Gateway、Session、Sync Secret 均已确认互不相同。
 - 正式数据库 054–057 迁移均已执行并写入 `schema_migrations`。
-- Vercel Preview 仍受 SSO Deployment Protection 保护。开发 CloudRun 已具备 Automation Bypass 请求能力，但需在 Vercel 创建 bypass secret 并仅配置到开发 CloudRun 后，才能切换到 Preview Gateway。
-- 最终小程序生产构建通过，产物约 692 KiB、无 source map，环境固定为 `cloud1/haigoo-mini-prod`。
+- Vercel Preview 保持 SSO Deployment Protection；Automation Bypass 已仅配置到开发 CloudRun。Preview Gateway 请求返回 200，开发密钥访问生产、生产密钥访问 Preview 均返回 401。
+- Preview 使用与正式库不同的测试数据库，迁移 054–057 已执行并核验；测试库当前 Gateway 岗位总数为 1515。
+- 最终小程序生产构建通过，磁盘产物约 692 KiB、无 source map，微信开发者工具实际预览包为 505926 字节，环境固定为 `cloud1/haigoo-mini-prod`。
 
 ## 上线安全闸门
 
 - [x] Vercel Production 与 Preview 均存在不同的强随机 `JWT_SECRET`。
 - [x] 开发和生产 Gateway/Session/Sync Secret 完全不同。
 - [x] 数据库迁移 054–057 已应用并记录；057 的并发额度实测为两组并发请求最多合计写入 100 个唯一岗位。429、协议留痕和幂等写入仍需真机接口回归。
-- [ ] 开发 CloudRun 尚需改为独立测试 Gateway/数据库；在完成前不得用开发版执行收藏、申请、订阅、注册或注销的写入回归。
+- [x] 开发 CloudRun 已使用受保护的独立 Preview Gateway/测试数据库，且双向交叉密钥验证均被拒绝。
 - [ ] 微信后台隐私保护指引与小程序内政策一致。
 - [ ] CloudRun 公网访问、最小实例和回滚版本已确认；监控、余额告警和自动续费仍需在控制台确认。
