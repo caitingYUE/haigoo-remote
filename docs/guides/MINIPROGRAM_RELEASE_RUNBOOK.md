@@ -5,7 +5,7 @@
 - 开发：`haigoo-dev-d2gctbzxma401b345 / haigoo-mini`
 - 生产：`cloud1-d8ggt7rbl273f83c7 / haigoo-mini-prod`
 - 小程序只通过 `wx.cloud.callContainer` 调用云托管，CloudRun 公网访问保持关闭。
-- 开发 CloudRun 通过 HMAC 调用 `https://mini-preview.haigooremote.com/api/mini`，生产 CloudRun 调用 `https://haigooremote.com/api/mini`。
+- 开发 CloudRun 的用户测试数据通过 HMAC 调用 `https://mini-preview.haigooremote.com/api/mini`；岗位只读同步通过受限密钥调用 `https://haigooremote.com/api/mini`。生产 CloudRun 全部调用正式站。
 - `mini-preview` 是现有主域名下的开发子域名，不是新购买的顶级域名；当前架构仍不需要购买新域名。
 
 ## 2. 发布前密钥与数据
@@ -14,6 +14,7 @@
 - 开发 CloudRun 的 `MINI_GATEWAY_SHARED_SECRET` 对应 Vercel 的同名变量；生产 CloudRun 的该变量对应 Vercel `MINI_GATEWAY_PRODUCTION_SECRET`。
 - 开发和生产分别生成 `MINI_SESSION_SECRET`、`MINI_SYNC_SECRET`。
 - 开发 CloudRun 通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问受保护的 Vercel Preview；该密钥不得配置到生产服务。
+- 开发 CloudRun 使用 `MINI_JOBS_GATEWAY_SHARED_SECRET` 读取正式岗位；Vercel Production 对应 `MINI_GATEWAY_READONLY_SECRET`，代码只允许该密钥执行 `sync`，不得用生产通用 Gateway 密钥代替。
 - 两个环境使用同一个微信 AppID 时可使用同一个 AppSecret，但不得写入仓库。
 - 生产 CloudRun 只连接正式 Gateway；开发环境不得写入正式收藏、申请、订阅或浏览额度数据。
 - 发布前应用数据库迁移 `054`、`055`、`056`、`057`、`058`，记录执行时间和执行人。若测试库来自较早快照，还要核对网站基础迁移 `019`、`021`、`023`、`026`、`037`、`038`，否则会员岗位、企业内推、Logo 和小程序埋点会静默走兼容回退。
@@ -32,9 +33,13 @@
 
 截至 2026-07-28，生产服务状态为 `normal`，最小实例 1、最大实例 2、公网访问关闭，正式 Gateway 签名请求返回 200，无签名请求返回 401，首次全量缓存为 412 个岗位。
 
-开发 CloudRun 已切换到受保护的稳定 Preview Gateway `mini-preview.haigooremote.com`，Preview 使用独立测试数据库且已应用小程序迁移 054–058，并补齐其快照缺失的基础迁移 019、021、023、026、037、038。开发与生产密钥交叉请求均返回 401。不要改回临时 `*.vercel.app` 地址；腾讯云大陆容器对该地址曾出现 `ETIMEDOUT`。
+开发 CloudRun 的账号与交互接口使用受保护的稳定 Preview Gateway `mini-preview.haigooremote.com`；Preview 使用独立测试数据库且已应用小程序迁移 054–058，并补齐其快照缺失的基础迁移 019、021、023、026、037、038。岗位缓存使用正式站只读通道，账号、收藏、申请、订阅和浏览额度仍与生产隔离。不要改回临时 `*.vercel.app` 地址；腾讯云大陆容器对该地址曾出现 `ETIMEDOUT`。
+
+混合数据源下，CloudRun 会把收藏/申请所需的最小岗位快照通过账号 Gateway 的签名请求传给 Preview；只读密钥本身不能调用这些写动作。开发订阅结果按 Preview 中保存的主题从正式岗位缓存实时匹配，生产环境仍以正式订阅投递历史为准。
 
 Vercel Mini Gateway 有改动时执行 `npm run deploy:mini-preview`。脚本先验证新的不可变 Preview 部署，再更新稳定子域名，失败时不会覆盖上一个可用部署。CloudRun 代码有改动时执行 `npm run deploy:mini-cloudrun:dev`。执行 `npm run check:mini-gateway:dev` 可核对当前开发链路。
+
+首次配置正式岗位只读源时执行 `node scripts/deploy-mini-cloudrun.mjs --target=development --configure-jobs-source`。后续用 `npm run check:mini-jobs:dev` 验证正式岗位接口，用 `npm run check:mini-cache:dev` 验证开发缓存；截至 2026-07-28，开发缓存为 412 条岗位、242 条热门岗位，列表与详情集合均已完成全量重建。
 
 ## 4. 小程序构建与提交
 

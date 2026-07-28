@@ -5,6 +5,8 @@ import { execFileSync } from 'node:child_process'
 
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const originOverride = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length)
+const scope = process.argv.find((argument) => argument.startsWith('--scope='))?.split('=')[1] || 'account'
+const featured = process.argv.find((argument) => argument.startsWith('--featured='))?.split('=')[1]
 const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
@@ -17,8 +19,9 @@ const environments = {
 }
 
 if (!environments[target]) {
-  throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--origin=https://...]')
+  throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true]')
 }
+if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -46,14 +49,19 @@ const selected = environments[target]
 const service = await getCloudrunService(selected.envId)
 const detail = await service.detail({ serverName: selected.serviceName })
 const environment = parseEnvironment(detail.ServerConfig?.EnvParams)
-const origin = String(originOverride || environment.HAIGOO_API_ORIGIN || '').replace(/\/+$/, '')
-const gatewaySecret = String(environment.MINI_GATEWAY_SHARED_SECRET || '')
+const useJobsScope = scope === 'jobs'
+const origin = String(originOverride || (
+  useJobsScope ? environment.HAIGOO_JOBS_API_ORIGIN : environment.HAIGOO_API_ORIGIN
+) || '').replace(/\/+$/, '')
+const gatewaySecret = String((
+  useJobsScope ? environment.MINI_JOBS_GATEWAY_SHARED_SECRET : environment.MINI_GATEWAY_SHARED_SECRET
+) || '')
 const bypassSecret = String(environment.VERCEL_AUTOMATION_BYPASS_SECRET || '')
 
 if (!origin || !gatewaySecret) throw new Error('CloudRun gateway configuration is incomplete')
 
 const action = 'sync'
-const query = { page: '1', limit: '1' }
+const query = { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}) }
 const timestamp = String(Date.now())
 const bodyHash = crypto.createHash('sha256').update(stableJson(query)).digest('hex')
 const signature = crypto.createHmac('sha256', gatewaySecret)
@@ -64,7 +72,7 @@ const response = await fetch(`${origin}/api/mini?${params}`, {
   signal: AbortSignal.timeout(20000),
   headers: {
     Accept: 'application/json',
-    ...(bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {}),
+    ...(!useJobsScope && bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {}),
     'X-Haigoo-Mini-Timestamp': timestamp,
     'X-Haigoo-Mini-Signature': signature
   }
@@ -79,8 +87,12 @@ console.log(JSON.stringify({
   target,
   envId: selected.envId,
   serviceName: selected.serviceName,
+  scope,
   origin,
   status: response.status,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
+  sampleJobs: Array.isArray(payload.jobs)
+    ? payload.jobs.slice(0, 3).map((job) => ({ id: job.id, title: job.title, company: job.company }))
+    : [],
   totalJobs: Number(payload.total || 0)
 }, null, 2))

@@ -34,11 +34,15 @@
 
 ## 本地联调
 
-开发调用链固定为：
+开发调用链按数据类型隔离：
 
-`微信开发者工具 -> haigoo-dev/haigoo-mini -> https://mini-preview.haigooremote.com -> Vercel Preview 数据库`
+- 岗位只读：`微信开发者工具 -> haigoo-dev/haigoo-mini -> https://haigooremote.com -> 正式岗位数据`
+- 用户测试数据：`微信开发者工具 -> haigoo-dev/haigoo-mini -> https://mini-preview.haigooremote.com -> Vercel Preview 数据库`
 
 `mini-preview.haigooremote.com` 是受 Vercel Deployment Protection 保护的稳定开发入口；云托管通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问。不要把临时的 `*.vercel.app` 部署地址直接写入云托管：腾讯云大陆容器访问该地址曾出现 `ETIMEDOUT`，且临时部署更新后地址会变化。
+
+正式岗位通道使用独立的 `MINI_GATEWAY_READONLY_SECRET`，服务端只允许该密钥调用 `sync`。收藏、申请、订阅、登录、浏览额度和埋点仍写入 Preview 测试库，不会污染正式用户数据。
+开发环境收藏和申请会把正式岗位的最小快照随签名请求写入 Preview；订阅展示则根据 Preview 中保存的主题从 CloudBase 正式岗位缓存匹配，因此不会依赖 Preview 数据库中的旧测试岗位。生产环境仍使用正式投递历史。
 
 常用操作：
 
@@ -46,6 +50,7 @@
 2. 修改 `cloudrun/`：仓库根目录执行 `npm run deploy:mini-cloudrun:dev`。
 3. 修改 Vercel `/api/mini` 或数据库读取逻辑：仓库根目录执行 `npm run deploy:mini-preview`。脚本会先部署并签名验证不可变 Preview URL，成功后才把稳定子域名切到新部署，再执行一次验证。
 4. 任意时候可在仓库根目录执行 `npm run check:mini-gateway:dev`，确认开发 Gateway、签名、保护绕过和测试数据库连通性；成功结果应返回 HTTP 200 和测试库岗位总数。
+5. 执行 `npm run check:mini-jobs:dev` 可验证正式岗位只读通道；执行 `npm run check:mini-cache:dev` 可核对 CloudBase 岗位列表、详情、热门数量和全量同步状态。
 
 开发工具出现 `fetch failed` 时，优先查看 `haigoo-dev/haigoo-mini` 日志：
 

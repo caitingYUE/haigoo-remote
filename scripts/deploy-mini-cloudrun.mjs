@@ -10,9 +10,10 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const sourceDir = path.join(rootDir, 'cloudrun')
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const configureVercel = process.argv.includes('--configure-vercel')
+const configureJobsSource = process.argv.includes('--configure-jobs-source')
 
 if (!['development', 'production'].includes(target)) {
-  throw new Error('Usage: node scripts/deploy-mini-cloudrun.mjs --target=development|production [--configure-vercel]')
+  throw new Error('Usage: node scripts/deploy-mini-cloudrun.mjs --target=development|production [--configure-vercel] [--configure-jobs-source]')
 }
 
 const environments = {
@@ -20,7 +21,8 @@ const environments = {
     envId: 'haigoo-dev-d2gctbzxma401b345',
     serviceName: 'haigoo-mini',
     minNum: 0,
-    apiOrigin: 'https://mini-preview.haigooremote.com'
+    apiOrigin: 'https://mini-preview.haigooremote.com',
+    jobsApiOrigin: 'https://haigooremote.com'
   },
   production: {
     envId: 'cloud1-d8ggt7rbl273f83c7',
@@ -72,24 +74,32 @@ async function copyDeploymentSource() {
   return tempDir
 }
 
-function addVercelSecret(secret) {
+function upsertVercelSecret(name, secret, environment = 'production') {
   let result = spawnSync(
     'npx',
-    ['vercel', 'env', 'add', 'MINI_GATEWAY_PRODUCTION_SECRET', 'production', '--sensitive'],
+    ['vercel', 'env', 'add', name, environment, '--sensitive'],
     { cwd: rootDir, input: `${secret}\n`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
   )
   if (result.status !== 0 && `${result.stderr}\n${result.stdout}`.toLowerCase().includes('already exists')) {
     result = spawnSync(
       'npx',
-      ['vercel', 'env', 'update', 'MINI_GATEWAY_PRODUCTION_SECRET', 'production', '--sensitive', '--yes'],
+      ['vercel', 'env', 'update', name, environment, '--sensitive', '--yes'],
       { cwd: rootDir, input: `${secret}\n`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
     )
   }
   if (result.status !== 0) {
-    throw new Error(`Unable to configure Vercel production gateway secret: ${result.stderr || result.stdout}`)
+    throw new Error(`Unable to configure Vercel ${environment} secret ${name}: ${result.stderr || result.stdout}`)
   }
-  console.log('Vercel production gateway secret configured.')
-  console.log('After CloudRun is created, redeploy Vercel Production so the new secret reaches the function runtime.')
+  console.log(`Vercel ${environment} secret ${name} configured.`)
+}
+
+function deployVercelProduction() {
+  const result = spawnSync('npx', ['vercel', '--prod', '--yes'], {
+    cwd: rootDir,
+    encoding: 'utf8',
+    stdio: 'inherit'
+  })
+  if (result.status !== 0) throw new Error('Unable to redeploy Vercel Production')
 }
 
 const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
@@ -118,10 +128,24 @@ try {
 
 let targetEnvironment
 if (target === 'development') {
+  const jobsGatewaySecret = String(developmentEnvironment.MINI_JOBS_GATEWAY_SHARED_SECRET || '') || (
+    configureJobsSource ? randomSecret() : ''
+  )
+  if (!jobsGatewaySecret) {
+    throw new Error('Development CloudRun is missing MINI_JOBS_GATEWAY_SHARED_SECRET; run once with --configure-jobs-source')
+  }
+  if (configureJobsSource) {
+    upsertVercelSecret('MINI_GATEWAY_READONLY_SECRET', jobsGatewaySecret)
+    // The read-only scope is code-enforced, so publish the current gateway
+    // before switching CloudRun to the formal jobs source.
+    deployVercelProduction()
+  }
   targetEnvironment = {
     ...developmentEnvironment,
     TCB_ENV: deployment.envId,
     HAIGOO_API_ORIGIN: deployment.apiOrigin,
+    HAIGOO_JOBS_API_ORIGIN: deployment.jobsApiOrigin,
+    MINI_JOBS_GATEWAY_SHARED_SECRET: jobsGatewaySecret,
     NODE_ENV: 'production'
   }
 } else if (existingDetail) {
@@ -144,7 +168,7 @@ if (target === 'development') {
   if (!configureVercel) {
     throw new Error('The first production deployment requires --configure-vercel')
   }
-  addVercelSecret(targetEnvironment.MINI_GATEWAY_SHARED_SECRET)
+  upsertVercelSecret('MINI_GATEWAY_PRODUCTION_SECRET', targetEnvironment.MINI_GATEWAY_SHARED_SECRET)
 }
 
 for (const key of ['MINI_GATEWAY_SHARED_SECRET', 'MINI_SESSION_SECRET', 'WECHAT_MINI_APP_SECRET']) {
@@ -155,6 +179,9 @@ if (target === 'development' && !targetEnvironment.VERCEL_AUTOMATION_BYPASS_SECR
 }
 if (targetEnvironment.HAIGOO_API_ORIGIN !== deployment.apiOrigin) {
   throw new Error(`${target} CloudRun must use ${deployment.apiOrigin}`)
+}
+if (target === 'development' && targetEnvironment.HAIGOO_JOBS_API_ORIGIN !== deployment.jobsApiOrigin) {
+  throw new Error(`Development CloudRun jobs source must use ${deployment.jobsApiOrigin}`)
 }
 
 const baseConfig = existingDetail?.ServerConfig || developmentConfig

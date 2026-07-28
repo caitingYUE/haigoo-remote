@@ -10,9 +10,11 @@ import cloudbase from '@cloudbase/node-sdk'
 
 const port = Number(process.env.PORT || 8080)
 const apiOrigin = String(process.env.HAIGOO_API_ORIGIN || '').replace(/\/+$/, '')
+const jobsApiOrigin = String(process.env.HAIGOO_JOBS_API_ORIGIN || apiOrigin).replace(/\/+$/, '')
 const appId = String(process.env.WECHAT_MINI_APP_ID || '')
 const appSecret = String(process.env.WECHAT_MINI_APP_SECRET || '')
 const gatewaySecret = String(process.env.MINI_GATEWAY_SHARED_SECRET || '')
+const jobsGatewaySecret = String(process.env.MINI_JOBS_GATEWAY_SHARED_SECRET || gatewaySecret)
 const sessionSecret = String(process.env.MINI_SESSION_SECRET || '')
 const syncSecret = String(process.env.MINI_SYNC_SECRET || '')
 const vercelAutomationBypassSecret = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '')
@@ -29,7 +31,7 @@ const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CO
 const MAX_LOGO_BYTES = Math.max(64 * 1024, Math.min(8 * 1024 * 1024, Number(process.env.MINI_LOGO_MAX_BYTES || 2 * 1024 * 1024)))
 const CACHE_REFRESH_MS = 5 * 60 * 1000
 
-if (!apiOrigin || !appId || !appSecret || !gatewaySecret || !sessionSecret) {
+if (!apiOrigin || !jobsApiOrigin || !appId || !appSecret || !gatewaySecret || !jobsGatewaySecret || !sessionSecret) {
   throw new Error('Missing required Cloud Hosting environment variables')
 }
 
@@ -44,29 +46,32 @@ function stableJson(value) {
   return JSON.stringify(value ?? null)
 }
 
-function signGatewayRequest(method, action, timestamp, body) {
+function signGatewayRequest(method, action, timestamp, body, secret = gatewaySecret) {
   const bodyHash = crypto.createHash('sha256').update(stableJson(body || {})).digest('hex')
-  return crypto.createHmac('sha256', gatewaySecret)
+  return crypto.createHmac('sha256', secret)
     .update(`${method.toUpperCase()}:${action}:${timestamp}:${bodyHash}`)
     .digest('hex')
 }
 
 async function gatewayRequest(action, { method = 'GET', body = {}, query = {} } = {}) {
+  const useFormalJobsSource = action === 'sync' && jobsApiOrigin !== apiOrigin
+  const requestOrigin = useFormalJobsSource ? jobsApiOrigin : apiOrigin
+  const requestSecret = useFormalJobsSource ? jobsGatewaySecret : gatewaySecret
   const timestamp = String(Date.now())
   const params = new URLSearchParams({ action, ...Object.fromEntries(Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')) })
   const signedQuery = Object.fromEntries([...params.entries()].filter(([key]) => key !== 'action'))
   const signaturePayload = method === 'GET' ? signedQuery : body
-  const response = await fetch(`${apiOrigin}/api/mini?${params}`, {
+  const response = await fetch(`${requestOrigin}/api/mini?${params}`, {
     method,
     signal: AbortSignal.timeout(12000),
     headers: {
       Accept: 'application/json',
-      ...(vercelAutomationBypassSecret
+      ...(!useFormalJobsSource && vercelAutomationBypassSecret
         ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret }
         : {}),
       ...(method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
       'X-Haigoo-Mini-Timestamp': timestamp,
-      'X-Haigoo-Mini-Signature': signGatewayRequest(method, action, timestamp, signaturePayload)
+      'X-Haigoo-Mini-Signature': signGatewayRequest(method, action, timestamp, signaturePayload, requestSecret)
     },
     ...(method !== 'GET' ? { body: JSON.stringify(body) } : {})
   })
@@ -425,14 +430,16 @@ async function readAllListDocuments() {
 
 async function syncJobs({ force = false } = {}) {
   const state = await getSyncState()
-  const fullSyncDue = force || Boolean(state.fullSyncInProgress) || !state.cacheReady || !state.cursor || Date.now() - Number(state.lastFullSyncAt || 0) > 60 * 60 * 1000
+  const sourceChanged = String(state.jobsSourceOrigin || '') !== jobsApiOrigin
+  const restartFullSync = force || sourceChanged
+  const fullSyncDue = restartFullSync || Boolean(state.fullSyncInProgress) || !state.cacheReady || !state.cursor || Date.now() - Number(state.lastFullSyncAt || 0) > 60 * 60 * 1000
   const run = fullSyncDue
     ? {
         mode: 'full',
-        page: force ? 1 : Math.max(1, Number(state.fullSyncPage) || 1),
+        page: restartFullSync ? 1 : Math.max(1, Number(state.fullSyncPage) || 1),
         cursor: '',
-        newestCursor: force ? '' : String(state.fullSyncNewestCursor || ''),
-        syncRunId: force ? crypto.randomUUID() : String(state.fullSyncRunId || crypto.randomUUID())
+        newestCursor: restartFullSync ? '' : String(state.fullSyncNewestCursor || ''),
+        syncRunId: restartFullSync ? crypto.randomUUID() : String(state.fullSyncRunId || crypto.randomUUID())
       }
     : {
         mode: 'incremental',
@@ -443,9 +450,11 @@ async function syncJobs({ force = false } = {}) {
 
   let hasMore = true
   let pagesProcessed = 0
+  let jobsProcessed = 0
   while (hasMore && pagesProcessed < SYNC_MAX_PAGES_PER_RUN) {
     const batch = await gatewayRequest('sync', { query: buildSyncQuery(run) })
     const jobs = Array.isArray(batch.jobs) ? batch.jobs : []
+    jobsProcessed += jobs.length
     await writeBatch(jobs, { syncRunId: run.mode === 'full' ? run.syncRunId : '' })
     if (batch.nextCursor && batch.nextCursor > run.newestCursor) run.newestCursor = batch.nextCursor
     hasMore = Boolean(batch.hasMore)
@@ -456,6 +465,7 @@ async function syncJobs({ force = false } = {}) {
   const completed = !hasMore
   const nextState = {
     ...state,
+    jobsSourceOrigin: jobsApiOrigin,
     cacheReady: completed && run.mode === 'full' ? true : Boolean(state.cacheReady),
     fullSyncInProgress: run.mode === 'full' && !completed,
     lastSyncAt: Date.now(),
@@ -477,19 +487,43 @@ async function syncJobs({ force = false } = {}) {
   const cleanup = completed && run.mode === 'full'
     ? await removeStaleCacheDocuments(run.syncRunId)
     : { removed: 0 }
-  return { completed, mode: run.mode, pagesProcessed, staleRemoved: cleanup.removed }
+  return { completed, mode: run.mode, pagesProcessed, jobsProcessed, staleRemoved: cleanup.removed }
+}
+
+async function syncJobsToCompletion({ force = false } = {}) {
+  let nextForce = force
+  let batchesProcessed = 0
+  let pagesProcessed = 0
+  let jobsProcessed = 0
+  let staleRemoved = 0
+  let latest = null
+  const maxBatches = Math.ceil(LIST_INDEX_MAX_RECORDS / SYNC_PAGE_SIZE / SYNC_MAX_PAGES_PER_RUN) + 2
+  do {
+    latest = await syncJobs({ force: nextForce })
+    nextForce = false
+    batchesProcessed += 1
+    pagesProcessed += Number(latest.pagesProcessed || 0)
+    jobsProcessed += Number(latest.jobsProcessed || 0)
+    staleRemoved += Number(latest.staleRemoved || 0)
+    if (!latest.completed) await new Promise((resolve) => setImmediate(resolve))
+  } while (!latest.completed && batchesProcessed < maxBatches)
+  if (!latest?.completed) throw new Error(`Job sync did not finish after ${maxBatches} batches`)
+  return {
+    ...latest,
+    batchesProcessed,
+    pagesProcessed,
+    jobsProcessed,
+    staleRemoved,
+    jobsSourceOrigin: jobsApiOrigin
+  }
 }
 
 let syncPromise = null
 function scheduleSync({ force = false } = {}) {
   if (syncPromise) return syncPromise
-  syncPromise = syncJobs({ force })
+  syncPromise = syncJobsToCompletion({ force })
     .then((result) => {
-      if (!result.completed) {
-        // Yield between bounded batches so a cold cache never holds the Mini
-        // Program request open, while still allowing hydration to finish.
-        setTimeout(() => { void scheduleSync() }, 0)
-      }
+      console.log('[mini-cloudrun] sync completed', result)
       return result
     })
     .catch((error) => console.error('[mini-cloudrun] background sync failed', {
@@ -609,6 +643,99 @@ async function fetchUpstreamJob(jobId) {
   const batch = await gatewayRequest('sync', { query: { id: jobId, page: 1, limit: 1 } })
   const job = Array.isArray(batch.jobs) ? batch.jobs[0] : null
   return job ? publicJob(job) : null
+}
+
+async function fetchUpstreamJobSnapshot(jobId) {
+  const batch = await gatewayRequest('sync', { query: { id: jobId, page: 1, limit: 1 } })
+  const job = Array.isArray(batch.jobs) ? batch.jobs[0] : null
+  if (!job || String(job.id || job.jobId || '') !== String(jobId || '')) return null
+  return {
+    id: String(job.id || job.jobId || ''),
+    title: String(job.title || '').slice(0, 255),
+    company: String(job.company || '').slice(0, 255),
+    memberOnly: Boolean(job.memberOnly),
+    url: String(job.url || '').slice(0, 2048),
+    sourceUrl: String(job.sourceUrl || '').slice(0, 2048),
+    hiringEmail: String(job.hiringEmail || '').slice(0, 320),
+    emailType: String(job.emailType || '').slice(0, 50),
+    canRefer: Boolean(job.canRefer),
+    effectiveReferralContactCount: Math.max(0, Number(job.effectiveReferralContactCount || 0))
+  }
+}
+
+function subscriptionTopics(subscriptions = []) {
+  const topics = []
+  for (const subscription of subscriptions) {
+    if (String(subscription?.status || 'active') !== 'active') continue
+    let preferences = subscription?.preferences
+    if (typeof preferences === 'string') {
+      try {
+        preferences = JSON.parse(preferences)
+      } catch {
+        preferences = {}
+      }
+    }
+    const values = [
+      ...(Array.isArray(preferences?.topics) ? preferences.topics : []),
+      ...(Array.isArray(preferences?.customTopics) ? preferences.customTopics : []),
+      ...(preferences?.customTopic ? [preferences.customTopic] : []),
+      ...String(subscription?.topic || '').split(',')
+    ]
+    topics.push(...values.map((value) => String(value || '').trim()).filter(Boolean))
+  }
+  return [...new Set(topics)]
+}
+
+function subscriptionTopicTerms(topic) {
+  const normalized = String(topic || '').trim().toLowerCase()
+  const aliases = {
+    产品经理: ['产品经理', 'product manager', 'product management'],
+    设计: ['设计', 'designer', 'design', 'ux', 'ui'],
+    前端开发: ['前端', 'frontend', 'front-end'],
+    后端开发: ['后端', 'backend', 'back-end'],
+    市场营销: ['市场营销', '市场', 'marketing', 'growth'],
+    运营: ['运营', 'operations', 'content'],
+    销售: ['销售', 'sales', 'business development'],
+    人力资源: ['人力资源', '人事行政', '招聘', 'hr', 'recruiter', 'talent']
+  }
+  return [...new Set([normalized, ...(aliases[String(topic || '').trim()] || [])].map((value) => value.toLowerCase()).filter(Boolean))]
+}
+
+function subscriptionTermMatches(haystack, term) {
+  if (!term) return false
+  if (!/^[\x00-\x7F]+$/.test(term)) return haystack.includes(term)
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(haystack)
+}
+
+async function getSubscribedCachedJobs(subscriptions, limit = 18) {
+  const topics = subscriptionTopics(subscriptions)
+  if (topics.length === 0) return []
+  const terms = topics.flatMap(subscriptionTopicTerms)
+  const documents = await readAllListDocuments().catch(() => [])
+  return documents
+    .map(unwrapDocument)
+    .filter((item) => item?.payload && !['inactive', 'closed', 'expired'].includes(String(item.status || '').toLowerCase()))
+    .map((item) => {
+      const job = item.payload
+      const haystack = [
+        job.title,
+        job.company,
+        job.category,
+        job.location,
+        ...(Array.isArray(job.tags) ? job.tags : [])
+      ].join(' ').toLowerCase()
+      const score = terms.reduce((total, term) => total + (subscriptionTermMatches(haystack, term) ? 1 : 0), 0)
+      return { job, score }
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => (
+      b.score - a.score
+      || String(b.job?.publishedAt || '').localeCompare(String(a.job?.publishedAt || ''))
+      || String(b.job?.id || '').localeCompare(String(a.job?.id || ''))
+    ))
+    .slice(0, limit)
+    .map((item) => item.job)
 }
 
 async function listJobs(query) {
@@ -745,13 +872,7 @@ async function route(req, res) {
     if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true })
     if (req.method === 'POST' && url.pathname === '/internal/sync') {
       if (!syncSecret || req.headers['x-mini-sync-secret'] !== syncSecret) return send(res, 401, { error: 'Unauthorized' })
-      const result = await syncJobs({ force: url.searchParams.get('full') === 'true' })
-      if (!result.completed) {
-        // Manual full syncs are also resumable. This is important for logo
-        // backfills: one protected trigger can repopulate existing records
-        // without forcing an operator to repeatedly call the endpoint.
-        setTimeout(() => { void scheduleSync() }, 0)
-      }
+      const result = await syncJobsToCompletion({ force: url.searchParams.get('full') === 'true' })
       return send(res, 200, { success: true, ...result })
     }
     if (req.method === 'GET' && url.pathname === '/mini/jobs') {
@@ -909,9 +1030,13 @@ async function route(req, res) {
       const session = getSession(req)
       if (!session) return send(res, 401, { error: '微信登录已失效，请重新登录' })
       const data = await gatewayRequest('subscriptions', { query: { openid: session.openid } })
+      const deliveredJobs = await getCachedJobs(data.jobIds || [], 18)
+      const jobs = jobsSourceOrigin !== apiOrigin
+        ? await getSubscribedCachedJobs(data.subscriptions || [], 18)
+        : deliveredJobs
       return send(res, 200, {
         subscriptions: data.subscriptions || [],
-        jobs: await getCachedJobs(data.jobIds || [], 18)
+        jobs
       })
     }
     if (req.method === 'POST' && url.pathname === '/mini/subscriptions') {
@@ -948,11 +1073,14 @@ async function route(req, res) {
       const session = getSession(req)
       if (!session) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
       const body = await readBody(req)
+      const jobId = String(body.jobId || '').trim()
+      const [job] = body.favorite === false ? [] : await getCachedJobs([jobId], 1)
       const result = await gatewayRequest('favorites', {
         method: 'POST',
         body: {
           openid: session.openid,
-          jobId: body.jobId,
+          jobId,
+          jobSnapshot: job ? { id: job.id, title: job.title, company: job.company } : undefined,
           favorite: body.favorite !== false,
           idempotencyKey: body.idempotencyKey
         }
@@ -975,11 +1103,14 @@ async function route(req, res) {
       if (!session) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
       const body = await readBody(req)
       const jobId = decodeURIComponent(url.pathname.split('/')[3])
+      const jobSnapshot = await fetchUpstreamJobSnapshot(jobId)
+      if (!jobSnapshot) return send(res, 404, { error: '岗位不存在或已下线' })
       const application = await gatewayRequest('application', {
         method: 'POST',
         body: {
           openid: session.openid,
           jobId,
+          jobSnapshot,
           type: body.type,
           idempotencyKey: body.idempotencyKey
         }
