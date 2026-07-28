@@ -31,19 +31,195 @@
 .membership-page__note,
 .subscription-page__note { display: block; margin-top: 7px; color: #949bad; font-size: 18px; }
 
-.membership-service-list { display: flex; flex-direction: column; gap: 14px; margin-top: 19px; }
-.membership-service-card { display: flex; min-height: 142px; padding: 23px; }
-.membership-service-card__index {
-  display: flex; align-items: center; justify-content: center; width: 48px; height: 48px;
-  border-radius: 14px; background: #efedff; color: #5146e5; font-size: 19px; font-weight: 800; line-height: 1;
+.membership-page__consult {
+  padding: 8px 0 8px 18px;
+  color: #5146e5;
+  font-size: 19px;
+  font-weight: 700;
 }
-.membership-service-card__copy { flex: 1; min-width: 0; margin-left: 18px; }
-.membership-service-card__eyebrow,
-.membership-service-card__title,
-.membership-service-card__description { display: block; }
-.membership-service-card__eyebrow { color: #7469d9; font-size: 17px; font-weight: 700; }
-.membership-service-card__title { margin-top: 7px; color: #202a47; font-size: 24px; font-weight: 800; }
-.membership-service-card__description { margin-top: 7px; color: #758096; font-size: 18px; line-height: 1.5; }
+
+.membership-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 19px;
+}
+
+.membership-plan-card {
+  padding: 26px;
+  border: 1px solid #e1e5ed;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 7px 18px rgba(31, 39, 70, 0.035);
+}
+
+.membership-plan-card--featured {
+  border-color: #cfcaff;
+  background: #fbfaff;
+  box-shadow: 0 10px 24px rgba(81, 70, 229, 0.08);
+}
+
+.membership-plan-card__header,
+.membership-plan-card__price-row,
+.membership-plan-card__feature {
+  display: flex;
+  align-items: center;
+}
+
+.membership-plan-card__header {
+  justify-content: space-between;
+}
+
+.membership-plan-card__name,
+.membership-plan-card__club,
+.membership-plan-card__who {
+  display: block;
+}
+
+.membership-plan-card__name {
+  color: #141c31;
+  font-size: 27px;
+  font-weight: 800;
+}
+
+.membership-plan-card__club {
+  margin-top: 6px;
+  color: #8790a4;
+  font-size: 19px;
+}
+
+.membership-plan-card__badge {
+  padding: 7px 15px;
+  border: 1px solid #d7d2ff;
+  border-radius: 999px;
+  background: #f1efff;
+  color: #5146e5;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.membership-plan-card__price-row {
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.membership-plan-card__price {
+  color: #10182c;
+  font-size: 48px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.membership-plan-card__unit {
+  padding-bottom: 4px;
+  color: #98a0b1;
+  font-size: 19px;
+}
+
+.membership-plan-card__who {
+  margin-top: 21px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #f7f8fb;
+  color: #5e687d;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.membership-plan-card__features {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  margin-top: 21px;
+}
+
+.membership-plan-card__feature {
+  gap: 11px;
+  color: #354059;
+  font-size: 19px;
+  line-height: 1.4;
+}
+
+.membership-plan-card__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 68px;
+  margin-top: 24px;
+  border-radius: 999px;
+  background: #171d30;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.membership-plan-card--featured .membership-plan-card__button {
+  background: #5146e5;
+  box-shadow: 0 8px 17px rgba(81, 70, 229, 0.18);
+}
+
+.membership-page__heading--support {
+  margin-top: 40px;
+}
+
+.membership-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 19px;
+  padding-bottom: 26px;
+}
+
+.membership-contact-card {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  min-width: 0;
+  padding: 22px 14px 20px;
+  border: 1px solid #e1e5ed;
+  border-radius: 20px;
+  background: #fff;
+  text-align: center;
+}
+
+.membership-contact-card__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #efedff;
+}
+
+.membership-contact-card__title {
+  margin-top: 13px;
+  color: #1a2339;
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.membership-contact-card__copy {
+  min-height: 56px;
+  margin-top: 7px;
+  color: #8790a3;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.membership-contact-card__qr {
+  width: 184px;
+  height: 184px;
+  margin-top: 14px;
+}
+
+.membership-contact-card__action {
+  margin-top: 10px;
+  color: #6258d2;
+  font-size: 17px;
+  font-weight: 700;
+}
 
 .membership-primary-button,
 .subscription-save-button {

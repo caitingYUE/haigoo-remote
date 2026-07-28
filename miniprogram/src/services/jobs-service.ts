@@ -4,7 +4,7 @@ import { mapApiJob, type RawApiJob } from '../utils/job-format'
 import { requestJson } from './api-client'
 import { trackMiniEvent } from './analytics-service'
 import { loginWithWechat } from './mini-auth-service'
-import { getMiniSessionCacheKey, getMiniSessionToken } from './session'
+import { getMiniSessionCacheKey, getMiniSessionToken, hasAuthenticatedSession } from './session'
 
 interface RawJobsResponse {
   jobs?: RawApiJob[]
@@ -26,6 +26,12 @@ export interface JobsQuery {
   category?: string
   featured?: boolean
   sortBy?: 'default' | 'recent'
+}
+
+export interface BrowseStatus {
+  viewedCount: number
+  remaining: number | null
+  limited: boolean
 }
 
 const requestCache = new Map<string, { expiresAt: number; promise: Promise<JobsResponse> }>()
@@ -140,7 +146,9 @@ export async function fetchFeaturedJobs(): Promise<MiniJob[]> {
   await ensureBrowseSession()
   try {
     const data = await requestJson<RawJobsResponse>(
-      '/mini/jobs?featured=true&limit=6',
+      hasAuthenticatedSession()
+        ? '/mini/jobs?featured=true&limit=6&surface=home'
+        : '/mini/jobs?limit=6&surface=home',
       { authenticated: true }
     )
     return Array.isArray(data.jobs)
@@ -150,6 +158,15 @@ export async function fetchFeaturedJobs(): Promise<MiniJob[]> {
     if (process.env.TARO_ENV === 'h5') return previewJobs.filter((job) => job.featured)
     throw error
   }
+}
+
+export async function fetchBrowseStatus(): Promise<BrowseStatus | undefined> {
+  if (!hasAuthenticatedSession()) return undefined
+  const data = await requestJson<{ browse?: BrowseStatus }>(
+    '/mini/browse-status',
+    { authenticated: true }
+  )
+  return data.browse
 }
 
 export async function fetchJobById(id: string): Promise<MiniJob | null> {

@@ -1,5 +1,6 @@
-import { Button, ScrollView, Text, View } from '@tarojs/components'
-import { setNavigationBarTitle, setTabBarItem, showModal, showToast, useDidShow } from '@tarojs/taro'
+import { Button, Image, ScrollView, Text, View } from '@tarojs/components'
+import { Check, Message, QrCode } from '@nutui/icons-react-taro'
+import { previewImage, setNavigationBarTitle, setTabBarItem, showModal, showToast, useDidShow } from '@tarojs/taro'
 import { useCallback, useState } from 'react'
 import JobCard from '../../components/job-card'
 import { loginWithWechat } from '../../services/mini-auth-service'
@@ -9,11 +10,36 @@ import './index.scss'
 
 const SUBSCRIPTION_TOPICS = ['产品经理', '设计', '前端开发', '后端开发', '市场营销', '运营', '销售', '人力资源']
 const MAX_SUBSCRIPTION_TOPICS = 8
-const MEMBER_SERVICES = [
-  ['岗位机会', '不止浏览，更快找到机会', '解锁完整远程岗位库、会员岗位与更顺畅的申请路径。'],
-  ['岗位订阅', '匹配的岗位，主动找到你', '保存关注方向后，最新岗位会同步到邮箱和小程序。'],
-  ['求职支持', '从准备到申请的持续支持', '获得远程求职工具、成长内容与会员专属服务。']
+const MEMBER_PLANS = [
+  {
+    name: '远程入门启动方案',
+    clubName: 'Club Starter',
+    price: '¥99',
+    unit: '/ 30 天',
+    who: '适合首次尝试远程工作、准备第一轮有效申请的人。',
+    features: ['简历文字诊断', '简历修改建议', '3–5 个站内岗位推荐', '远程入门准备材料', '30 天网站会员权限']
+  },
+  {
+    name: '远程求职陪伴方案',
+    clubName: 'Club Member',
+    price: '¥499',
+    unit: '/ 6 个月',
+    who: '适合明确寻找远程工作、希望持续推进申请的人。',
+    featured: true,
+    features: ['工作方向与简历初步诊断', '英文简历优化或语音咨询', '定制远程求职准备材料', '定向岗位挖掘 5–10 个', '6 个月网站会员权限']
+  },
+  {
+    name: '远程职业共建方案',
+    clubName: 'Club Partner',
+    price: '¥998',
+    unit: '/ 年',
+    who: '适合长期远程工作者，将企业和行业连接沉淀为职业资源。',
+    features: ['包含 Club Member 全部支持', '一次年度远程职业规划', '优先参与主题交流', '共建讨论与同行连接', '岗位发布与品牌传播支持']
+  }
 ]
+
+const ADVISOR_QR = '/assets/haigoo-advisor.png'
+const COMMUNITY_QR = '/assets/haigoo-community.webp'
 
 export default function LearningPage() {
   const [isMember, setIsMember] = useState(false)
@@ -83,6 +109,22 @@ export default function LearningPage() {
     }
   }
 
+  const showAdvisor = (planName?: string) => {
+    showModal({
+      title: planName ? `了解${planName}` : '添加顾问咨询开通',
+      content: '当前版本暂不支持小程序内支付。添加 Haigoo 顾问后，可了解适合人群、服务边界和开通方式。',
+      confirmText: '查看顾问二维码',
+      success: ({ confirm }) => {
+        if (confirm) previewImage({ current: ADVISOR_QR, urls: [ADVISOR_QR] })
+      }
+    })
+  }
+
+  const showCommunity = () => {
+    showToast({ title: '长按二维码可识别加入交流群', icon: 'none' })
+    previewImage({ current: COMMUNITY_QR, urls: [COMMUNITY_QR] })
+  }
+
   if (!isMember) {
     return (
       <View className='page-shell membership-page'>
@@ -92,26 +134,64 @@ export default function LearningPage() {
           <Text className='membership-hero__copy'>会员服务将岗位机会、主动订阅与求职支持放到同一条成长路径里。</Text>
         </View>
         <View className='membership-page__heading'>
-          <Text className='membership-page__title'>会员服务</Text>
-          <Text className='membership-page__note'>后续将在小程序内支持开通</Text>
+          <View>
+            <Text className='membership-page__title'>三种会员方案</Text>
+            <Text className='membership-page__note'>按求职阶段选择适合自己的支持方式</Text>
+          </View>
+          <Text className='membership-page__consult' onClick={() => showAdvisor()}>咨询开通</Text>
         </View>
-        <View className='membership-service-list'>
-          {MEMBER_SERVICES.map(([eyebrow, title, description], index) => (
-            <View className='membership-service-card surface-card' key={title}>
-              <Text className='membership-service-card__index'>0{index + 1}</Text>
-              <View className='membership-service-card__copy'>
-                <Text className='membership-service-card__eyebrow'>{eyebrow}</Text>
-                <Text className='membership-service-card__title'>{title}</Text>
-                <Text className='membership-service-card__description'>{description}</Text>
+        <View className='membership-plan-list'>
+          {MEMBER_PLANS.map((plan) => (
+            <View className={`membership-plan-card ${plan.featured ? 'membership-plan-card--featured' : ''}`} key={plan.clubName}>
+              <View className='membership-plan-card__header'>
+                <View>
+                  <Text className='membership-plan-card__name'>{plan.name}</Text>
+                  <Text className='membership-plan-card__club'>{plan.clubName}</Text>
+                </View>
+                {plan.featured ? <Text className='membership-plan-card__badge'>推荐</Text> : null}
+              </View>
+              <View className='membership-plan-card__price-row'>
+                <Text className='membership-plan-card__price'>{plan.price}</Text>
+                <Text className='membership-plan-card__unit'>{plan.unit}</Text>
+              </View>
+              <Text className='membership-plan-card__who'>{plan.who}</Text>
+              <View className='membership-plan-card__features'>
+                {plan.features.map((feature) => (
+                  <View className='membership-plan-card__feature' key={feature}>
+                    <Check size={16} color='#5146e5' />
+                    <Text>{feature}</Text>
+                  </View>
+                ))}
+              </View>
+              <View className='membership-plan-card__button' onClick={() => showAdvisor(plan.clubName)}>
+                <Text>添加顾问了解</Text>
               </View>
             </View>
           ))}
         </View>
-        <Button className='membership-primary-button' onClick={() => showModal({
-          title: '会员服务',
-          content: '小程序支付能力正在准备中。当前可前往 Haigoo Remote 网站了解并开通会员服务。',
-          showCancel: false
-        })}>了解会员服务</Button>
+
+        <View className='membership-page__heading membership-page__heading--support'>
+          <View>
+            <Text className='membership-page__title'>咨询与交流</Text>
+            <Text className='membership-page__note'>无需在小程序内支付，也可以先了解服务</Text>
+          </View>
+        </View>
+        <View className='membership-contact-grid'>
+          <View className='membership-contact-card' onClick={() => showAdvisor()}>
+            <View className='membership-contact-card__icon'><Message size={23} color='#5146e5' /></View>
+            <Text className='membership-contact-card__title'>顾问咨询开通</Text>
+            <Text className='membership-contact-card__copy'>了解方案、适合人群与开通安排</Text>
+            <Image className='membership-contact-card__qr' src={ADVISOR_QR} mode='aspectFit' />
+            <Text className='membership-contact-card__action'>点击放大二维码</Text>
+          </View>
+          <View className='membership-contact-card' onClick={showCommunity}>
+            <View className='membership-contact-card__icon'><QrCode size={23} color='#5146e5' /></View>
+            <Text className='membership-contact-card__title'>微信交流群</Text>
+            <Text className='membership-contact-card__copy'>交流远程岗位、申请与求职准备</Text>
+            <Image className='membership-contact-card__qr' src={COMMUNITY_QR} mode='aspectFit' />
+            <Text className='membership-contact-card__action'>点击放大二维码</Text>
+          </View>
+        </View>
       </View>
     )
   }

@@ -37,6 +37,14 @@ export default defineConfig<'webpack5'>(async (merge) => {
         {
           from: path.resolve(__dirname, '../../public/avatars/user_icon1.png'),
           to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-avatar.png`)
+        },
+        {
+          from: path.resolve(__dirname, '../../public/series_assistant.png'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-advisor.png`)
+        },
+        {
+          from: path.resolve(__dirname, '../../public/Wechat_group.webp'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-community.webp`)
         }
       ],
       options: {

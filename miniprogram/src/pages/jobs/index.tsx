@@ -13,13 +13,14 @@ import {
 import { useCallback, useEffect, useRef, useState } from 'react'
 import JobCard from '../../components/job-card'
 import { MINI_JOB_CATEGORY_FILTERS } from '../../data/job-filters'
-import { clearJobsRequestCache, fetchJobs } from '../../services/jobs-service'
+import { clearJobsRequestCache, fetchBrowseStatus, fetchJobs } from '../../services/jobs-service'
 import { fetchFavorites, setJobFavorite } from '../../services/user-activity-service'
 import { hasAuthenticatedSession } from '../../services/session'
 import type { MiniJob } from '../../types'
 import './index.scss'
 
 export default function JobsPage() {
+  const [authenticated, setAuthenticated] = useState(hasAuthenticatedSession())
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
   const [sortBy, setSortBy] = useState<'default' | 'recent'>('default')
   const [keyword, setKeyword] = useState('')
@@ -45,6 +46,7 @@ export default function JobsPage() {
   }, [keyword])
 
   const loadJobs = useCallback(async (nextPage = 1, force = false) => {
+    if (!authenticated && nextPage > 1) return
     if (nextPage > 1 && loadingMoreRef.current) return
     const sequence = ++requestSequence.current
     if (force) {
@@ -63,9 +65,9 @@ export default function JobsPage() {
       const response = await fetchJobs({
         page: nextPage,
         limit: 20,
-        search: debouncedKeyword,
-        category: debouncedKeyword ? '' : activeFilter.value,
-        featured: !debouncedKeyword && activeFilter.featured,
+        search: authenticated ? debouncedKeyword : '',
+        category: authenticated && !debouncedKeyword ? activeFilter.value : '',
+        featured: authenticated && !debouncedKeyword && activeFilter.featured,
         sortBy
       })
       if (sequence !== requestSequence.current) return
@@ -99,7 +101,7 @@ export default function JobsPage() {
       }
       if (nextPage > 1) loadingMoreRef.current = false
     }
-  }, [activeCategoryIndex, debouncedKeyword, sortBy])
+  }, [activeCategoryIndex, authenticated, debouncedKeyword, sortBy])
 
   useEffect(() => {
     jobsRef.current = []
@@ -122,14 +124,28 @@ export default function JobsPage() {
     }
   }, [])
 
-  useDidShow(() => { syncFavorites() })
+  useDidShow(() => {
+    const nextAuthenticated = hasAuthenticatedSession()
+    setAuthenticated(nextAuthenticated)
+    if (!nextAuthenticated) {
+      setActiveCategoryIndex(0)
+      setKeyword('')
+      setDebouncedKeyword('')
+      setBrowse(undefined)
+    } else {
+      fetchBrowseStatus()
+        .then((nextBrowse) => setBrowse(nextBrowse))
+        .catch((browseError) => console.warn('[jobs] browse status sync failed', browseError))
+    }
+    void syncFavorites()
+  })
 
   usePullDownRefresh(() => {
     Promise.all([loadJobs(1, true), syncFavorites()]).finally(() => stopPullDownRefresh())
   })
 
   useReachBottom(() => {
-    if (!loading && !loadingMoreRef.current && hasMore && !browse?.limited) loadJobs(page + 1)
+    if (authenticated && !loading && !loadingMoreRef.current && hasMore && !browse?.limited) loadJobs(page + 1)
   })
 
   const handleToggleFavorite = async (job: MiniJob) => {
@@ -173,13 +189,31 @@ export default function JobsPage() {
   }
 
   const chooseSort = () => {
+    if (!authenticated) {
+      promptLogin('登录后切换排序')
+      return
+    }
     showActionSheet({
       itemList: ['默认排序', '最新发布'],
       success: ({ tapIndex }) => setSortBy(tapIndex === 1 ? 'recent' : 'default')
     })
   }
 
-  const isBrowseLimited = browse?.remaining != null
+  const promptLogin = (title = '登录后查看更多岗位') => {
+    showModal({
+      title,
+      content: '绑定 Haigoo 网站账号后，可搜索和筛选岗位，并同步收藏与申请记录。',
+      confirmText: '前往登录',
+      success: ({ confirm }) => {
+        if (confirm) navigateTo({ url: '/pages/account-bind/index' })
+      }
+    })
+  }
+
+  const visibleCategoryFilters = authenticated
+    ? MINI_JOB_CATEGORY_FILTERS
+    : MINI_JOB_CATEGORY_FILTERS.slice(0, 1)
+  const showAllowanceNotice = authenticated && browse?.remaining != null && (browse.limited || browse.remaining <= 20)
 
   return (
     <View className='page-shell jobs-page'>
@@ -190,13 +224,16 @@ export default function JobsPage() {
         </View>
       </View>
 
-      <View className='jobs-search surface-card'>
+      <View className='jobs-search surface-card' onClick={() => {
+        if (!authenticated) promptLogin('登录后搜索岗位')
+      }}>
         <Search size={23} color='#98a1b2' />
         <Input
           className='jobs-search__input'
           confirmType='search'
+          disabled={!authenticated}
           value={keyword}
-          placeholder='搜索岗位、公司或技能'
+          placeholder={authenticated ? '搜索岗位、公司或技能' : '登录后可搜索更多岗位'}
           placeholderClass='jobs-search__placeholder'
           onInput={(event) => setKeyword(event.detail.value)}
         />
@@ -210,7 +247,7 @@ export default function JobsPage() {
       {!debouncedKeyword ? (
         <ScrollView className='jobs-category-scroll' scrollX enhanced showScrollbar={false}>
           <View className='jobs-category-scroll__inner'>
-            {MINI_JOB_CATEGORY_FILTERS.map((category, index) => (
+            {visibleCategoryFilters.map((category, index) => (
               <View
                 className={`chip ${activeCategoryIndex === index ? 'chip--active' : ''}`}
                 key={category.label}
@@ -226,9 +263,13 @@ export default function JobsPage() {
       <View className='jobs-page__summary'>
         <View>
           <Text className='jobs-page__summary-main'>
-            {loading && jobs.length === 0 ? '正在加载岗位' : `共 ${total} 个在招岗位`}
+            {loading && jobs.length === 0
+              ? '正在加载岗位'
+              : authenticated
+                ? `共 ${total} 个在招岗位`
+                : `共 ${jobs.length} 个可浏览岗位`}
           </Text>
-          {isBrowseLimited ? <Text className='jobs-page__allowance'>免费浏览剩余 {browse?.remaining} 个</Text> : null}
+          {showAllowanceNotice ? <Text className='jobs-page__allowance'>免费版本剩余 {browse?.remaining} 次查看额度</Text> : null}
         </View>
         <View className='jobs-page__summary-sort' onClick={chooseSort}>
           <Text>{sortBy === 'recent' ? '最新发布' : '默认排序'}</Text>
@@ -270,9 +311,13 @@ export default function JobsPage() {
             {loadingMore ? <Text className='jobs-page__refreshing'>正在加载更多岗位…</Text> : null}
             {!hasMore && jobs.length > 20 ? <Text className='jobs-page__refreshing'>已加载全部岗位</Text> : null}
             {refreshing ? <Text className='jobs-page__refreshing'>正在刷新最新岗位…</Text> : null}
-            {isBrowseLimited ? (
+            {showAllowanceNotice ? (
               <View className='jobs-page__preview-note'>
-                <Text>{browse?.limited ? '已达到免费浏览上限，开通会员后可继续查看全部岗位' : '每个岗位只计入一次免费浏览额度，开通会员可查看全部岗位'}</Text>
+                <Text>免费版本可享有100次查看额度，完整可前往网站或升级会员。</Text>
+              </View>
+            ) : !authenticated ? (
+              <View className='jobs-page__preview-note' onClick={() => promptLogin()}>
+                <Text>登录后可搜索、筛选岗位，并同步收藏与申请记录。</Text>
               </View>
             ) : null}
           </>

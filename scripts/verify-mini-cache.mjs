@@ -38,13 +38,30 @@ if (!secretId || !secretKey) {
 
 const app = cloudbase.init({ env: envId, secretId, secretKey })
 const db = app.database()
-const [listCount, detailCount, featuredCount, stateResult, sampleResult] = await Promise.all([
+
+async function readAll(collectionName, total) {
+  const pageSize = 100
+  const pages = Math.ceil(total / pageSize)
+  const results = await Promise.all(Array.from({ length: pages }, (_, page) => (
+    db.collection(collectionName).skip(page * pageSize).limit(pageSize).get()
+  )))
+  return results.flatMap((result) => Array.isArray(result.data) ? result.data : [])
+}
+
+const [listCount, detailCount, featuredCount, rankedCount, stateResult, sampleResult] = await Promise.all([
   db.collection('mini_job_list').count(),
   db.collection('mini_jobs').count(),
   db.collection('mini_job_list').where({ featured: true }).count(),
+  db.collection('mini_job_list').where({ defaultRank: db.command.exists(true) }).count(),
   db.collection('mini_sync_state').doc('jobs').get(),
   db.collection('mini_job_list').limit(3).get()
 ])
+const allListDocuments = (await readAll('mini_job_list', Number(listCount.total || 0)))
+  .map(unwrapDocument)
+  .filter(Boolean)
+const cachedLogoCount = allListDocuments.filter((item) => (
+  String(item.payload?.cachedLogoUrl || item.payload?.cachedCompanyLogoUrl || '').startsWith('cloud://')
+)).length
 const state = unwrapDocument(stateResult.data?.[0]) || {}
 const samples = (Array.isArray(sampleResult.data) ? sampleResult.data : [])
   .map(unwrapDocument)
@@ -53,7 +70,9 @@ const samples = (Array.isArray(sampleResult.data) ? sampleResult.data : [])
     id: item.jobId || item.payload?.id,
     title: item.payload?.title,
     company: item.payload?.company,
-    featured: Boolean(item.featured)
+    featured: Boolean(item.featured),
+    defaultRank: Number.isFinite(Number(item.defaultRank)) ? Number(item.defaultRank) : null,
+    hasCachedLogo: String(item.cachedLogoUrl || item.payload?.cachedLogoUrl || '').startsWith('cloud://')
   }))
 
 console.log(JSON.stringify({
@@ -62,10 +81,13 @@ console.log(JSON.stringify({
   listDocuments: Number(listCount.total || 0),
   detailDocuments: Number(detailCount.total || 0),
   featuredDocuments: Number(featuredCount.total || 0),
+  rankedDocuments: Number(rankedCount.total || 0),
+  cachedLogoDocuments: cachedLogoCount,
   state: {
     cacheReady: Boolean(state.cacheReady),
     fullSyncInProgress: Boolean(state.fullSyncInProgress),
     jobsSourceOrigin: state.jobsSourceOrigin || null,
+    cacheModelVersion: state.cacheModelVersion || null,
     lastSyncAt: state.lastSyncAt || null,
     lastFullSyncAt: state.lastFullSyncAt || null
   },

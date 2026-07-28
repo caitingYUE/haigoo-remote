@@ -1,7 +1,7 @@
 import { Image, Text, View } from '@tarojs/components'
 import { Heart, Internation, Store } from '@nutui/icons-react-taro'
 import { navigateTo } from '@tarojs/taro'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { MiniJob } from '../../types'
 import './index.scss'
 
@@ -30,6 +30,10 @@ export default function JobCard({
 }: JobCardProps) {
   const [logoFailed, setLogoFailed] = useState(false)
   const showEyebrow = Boolean(job.featured || job.matchScore)
+
+  useEffect(() => {
+    setLogoFailed(false)
+  }, [job.logoUrl])
 
   const openDetail = () => {
     navigateTo({ url: `/pages/job-detail/index?id=${encodeURIComponent(job.id)}` })

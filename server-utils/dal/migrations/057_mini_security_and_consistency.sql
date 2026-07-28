@@ -2,7 +2,7 @@
 --
 -- 1. Keep password-reset credentials separate from email-verification tokens.
 -- 2. Serialize the free-user browse allowance per WeChat identity so concurrent
---    list/search/detail requests cannot collectively exceed 100 unique jobs.
+--    detail requests cannot collectively exceed 100 unique jobs.
 
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS reset_token VARCHAR(255);

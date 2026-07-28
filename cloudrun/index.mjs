@@ -30,6 +30,7 @@ const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_
 const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 2)))
 const MAX_LOGO_BYTES = Math.max(64 * 1024, Math.min(8 * 1024 * 1024, Number(process.env.MINI_LOGO_MAX_BYTES || 2 * 1024 * 1024)))
 const CACHE_REFRESH_MS = 5 * 60 * 1000
+const CACHE_MODEL_VERSION = '2026-07-28-detail-quota-hot-logo-v2'
 
 if (!apiOrigin || !jobsApiOrigin || !appId || !appSecret || !gatewaySecret || !jobsGatewaySecret || !sessionSecret) {
   throw new Error('Missing required Cloud Hosting environment variables')
@@ -122,7 +123,7 @@ function appOriginUrl(value) {
   const source = String(value || '').trim()
   if (!source) return ''
   if (/^https?:\/\//i.test(source)) return source
-  return `${apiOrigin}${source.startsWith('/') ? '' : '/'}${source}`
+  return `${jobsApiOrigin}${source.startsWith('/') ? '' : '/'}${source}`
 }
 
 function byteLimitTransform(maxBytes) {
@@ -179,9 +180,13 @@ async function cacheLogo(jobId, source, existing = null) {
 }
 
 function publicJob(job, logoFileId = '') {
-  const { url, sourceUrl, hiringEmail, ...safeJob } = job
+  const { url, sourceUrl, hiringEmail, isFeatured, ...safeJob } = job
+  const isHotApplication = Boolean(job.isHotApplication || Number(job.applicationCount || 0) >= 10)
   return {
     ...safeJob,
+    isFeatured: isHotApplication,
+    isHotApplication,
+    editorialFeatured: Boolean(isFeatured),
     // Never hand a Vercel or third-party image URL to the Mini Program.  When
     // a cache upload fails the UI intentionally falls back to its local icon.
     cachedLogoUrl: logoFileId || '',
@@ -219,13 +224,14 @@ function compactJobPayload(payload = {}) {
   return compact
 }
 
-function jobListDocument({ id, _id, jobId, status, featured, payload, lastSeenSyncId }) {
+function jobListDocument({ id, _id, jobId, status, featured, defaultRank, payload, lastSeenSyncId }) {
   const compactPayload = compactJobPayload(payload)
   return {
     _id: id || _id,
     jobId,
     status: status || 'active',
     featured: Boolean(featured),
+    defaultRank: defaultRank != null && Number.isFinite(Number(defaultRank)) ? Number(defaultRank) : null,
     publishedAt: compactPayload.publishedAt || '',
     category: compactPayload.category || '',
     lastSeenSyncId: lastSeenSyncId || '',
@@ -290,7 +296,7 @@ async function runWithConcurrency(items, concurrency, worker) {
   }
 }
 
-async function storeJob(job, { syncRunId = '' } = {}) {
+async function storeJob(job, { syncRunId = '', defaultRank = null } = {}) {
   const id = jobDocumentId(job.id)
   const existingResult = await db.collection(jobsCollection).doc(id).get().catch(() => ({ data: [] }))
   const existing = unwrapDocument(existingResult.data?.[0])
@@ -299,16 +305,18 @@ async function storeJob(job, { syncRunId = '' } = {}) {
   // every job upsert erased it, which caused each periodic sync to download the
   // same logo again and briefly made clients fall back to the local placeholder.
   const logoFileId = existing?.logoSource === logoSource ? existing.logoFileId || '' : ''
+  const payload = publicJob(job, logoFileId)
   const data = {
     _id: id,
     jobId: job.id,
     status: job.status || 'active',
-    featured: Boolean(job.isFeatured),
+    featured: Boolean(payload.isHotApplication),
+    defaultRank: defaultRank != null && Number.isFinite(Number(defaultRank)) ? Number(defaultRank) : existing?.defaultRank ?? null,
     updatedAt: job.updatedAt || new Date().toISOString(),
     logoSource,
     logoFileId,
     lastSeenSyncId: syncRunId || existing?.lastSeenSyncId || '',
-    payload: publicJob(job, logoFileId)
+    payload
   }
   await db.collection(jobsCollection).doc(id).set(withoutDocumentId(data))
   await db.collection(jobListCollection).doc(id).set(withoutDocumentId(jobListDocument(data)))
@@ -337,6 +345,7 @@ async function cacheJobLogo(task) {
     jobId: current.jobId,
     status: current.status,
     featured: current.featured,
+    defaultRank: current.defaultRank,
     lastSeenSyncId: current.lastSeenSyncId,
     payload: {
       ...(current.payload || {}),
@@ -378,8 +387,13 @@ function scheduleLogoCache(jobs) {
     })
 }
 
-async function writeBatch(jobs, { syncRunId = '' } = {}) {
-  await runWithConcurrency(jobs, WRITE_CONCURRENCY, (job) => storeJob(job, { syncRunId }))
+async function writeBatch(jobs, { syncRunId = '', defaultRankStart = null } = {}) {
+  await runWithConcurrency(jobs.map((job, index) => ({ job, index })), WRITE_CONCURRENCY, ({ job, index }) => (
+    storeJob(job, {
+      syncRunId,
+      defaultRank: defaultRankStart != null && Number.isFinite(Number(defaultRankStart)) ? Number(defaultRankStart) + index : null
+    })
+  ))
   // Logo IO is intentionally detached from the cache write. A slow third-party
   // image must never delay the job list, the detail endpoint, or sync progress.
   scheduleLogoCache(jobs)
@@ -430,7 +444,9 @@ async function readAllListDocuments() {
 
 async function syncJobs({ force = false } = {}) {
   const state = await getSyncState()
-  const sourceChanged = String(state.jobsSourceOrigin || '') !== jobsApiOrigin
+  const sourceChanged =
+    String(state.jobsSourceOrigin || '') !== jobsApiOrigin ||
+    String(state.cacheModelVersion || '') !== CACHE_MODEL_VERSION
   const restartFullSync = force || sourceChanged
   const fullSyncDue = restartFullSync || Boolean(state.fullSyncInProgress) || !state.cacheReady || !state.cursor || Date.now() - Number(state.lastFullSyncAt || 0) > 60 * 60 * 1000
   const run = fullSyncDue
@@ -452,10 +468,14 @@ async function syncJobs({ force = false } = {}) {
   let pagesProcessed = 0
   let jobsProcessed = 0
   while (hasMore && pagesProcessed < SYNC_MAX_PAGES_PER_RUN) {
+    const pageBeingProcessed = run.page
     const batch = await gatewayRequest('sync', { query: buildSyncQuery(run) })
     const jobs = Array.isArray(batch.jobs) ? batch.jobs : []
     jobsProcessed += jobs.length
-    await writeBatch(jobs, { syncRunId: run.mode === 'full' ? run.syncRunId : '' })
+    await writeBatch(jobs, {
+      syncRunId: run.mode === 'full' ? run.syncRunId : '',
+      defaultRankStart: run.mode === 'full' ? (pageBeingProcessed - 1) * SYNC_PAGE_SIZE : null
+    })
     if (batch.nextCursor && batch.nextCursor > run.newestCursor) run.newestCursor = batch.nextCursor
     hasMore = Boolean(batch.hasMore)
     run.page += 1
@@ -466,6 +486,7 @@ async function syncJobs({ force = false } = {}) {
   const nextState = {
     ...state,
     jobsSourceOrigin: jobsApiOrigin,
+    cacheModelVersion: CACHE_MODEL_VERSION,
     cacheReady: completed && run.mode === 'full' ? true : Boolean(state.cacheReady),
     fullSyncInProgress: run.mode === 'full' && !completed,
     lastSyncAt: Date.now(),
@@ -579,7 +600,10 @@ function buildJobsResponse(items, query) {
   const compareDefault = (a, b) => {
     const searchDifference = searchScore(b) - searchScore(a)
     if (searchDifference) return searchDifference
-    const featuredDifference = Number(Boolean(b.featured)) - Number(Boolean(a.featured))
+    const rankA = a.defaultRank != null && Number.isFinite(Number(a.defaultRank)) ? Number(a.defaultRank) : Number.MAX_SAFE_INTEGER
+    const rankB = b.defaultRank != null && Number.isFinite(Number(b.defaultRank)) ? Number(b.defaultRank) : Number.MAX_SAFE_INTEGER
+    if (rankA !== rankB) return rankA - rankB
+    const featuredDifference = Number(Boolean(b.payload?.editorialFeatured)) - Number(Boolean(a.payload?.editorialFeatured))
     if (featuredDifference) return featuredDifference
     const publishedDifference = String(b.payload?.publishedAt || '').localeCompare(String(a.payload?.publishedAt || ''))
     if (publishedDifference) return publishedDifference
@@ -783,6 +807,19 @@ async function enforceBrowseAllowance(session, jobs) {
   return { jobs: jobs.filter((job) => allowed.has(String(job?.id || ''))), browse }
 }
 
+async function getBrowseStatus(session) {
+  if (!session?.openid || !session?.userId) return null
+  return gatewayRequest('browse', {
+    method: 'POST',
+    body: { openid: session.openid, consume: false, mode: 'status' }
+  })
+}
+
+async function canVisitorOpenJob(jobId) {
+  const preview = await listJobs({ page: 1, limit: 20, sortBy: 'default' })
+  return preview.jobs.some((job) => String(job?.id || '') === String(jobId || ''))
+}
+
 async function getCachedJobs(jobIds, limit = 100) {
   const records = await Promise.all((Array.isArray(jobIds) ? jobIds : []).slice(0, limit).map(async (jobId) => {
     const result = await db.collection(jobsCollection).doc(jobDocumentId(jobId)).get().catch(() => ({ data: [] }))
@@ -877,11 +914,24 @@ async function route(req, res) {
     }
     if (req.method === 'GET' && url.pathname === '/mini/jobs') {
       const session = getSession(req)
-      const result = await listJobs(Object.fromEntries(url.searchParams))
-      const { jobs, browse } = await enforceBrowseAllowance(session, result.jobs)
+      const query = Object.fromEntries(url.searchParams)
+      const isVisitor = !session?.userId
+      const isHomePreview = isVisitor && query.surface === 'home'
+      const result = await listJobs(isVisitor
+        ? isHomePreview
+          ? { page: 1, limit: 6, ...(query.featured === 'true' ? { featured: 'true' } : {}), sortBy: 'default' }
+          : { page: 1, limit: 20, sortBy: 'default' }
+        : query)
+      const browse = isVisitor ? null : await getBrowseStatus(session)
       return send(res, 200, {
         ...result,
-        jobs,
+        ...(isVisitor ? {
+          total: result.jobs.length,
+          page: 1,
+          pageSize: result.jobs.length,
+          totalPages: 1,
+          categories: []
+        } : {}),
         browse: browse ? {
           viewedCount: browse.viewedCount,
           remaining: browse.remaining,
@@ -894,11 +944,21 @@ async function route(req, res) {
       const result = await db.collection(jobsCollection).doc(jobDocumentId(jobId)).get().catch(() => ({ data: [] }))
       const job = unwrapDocument(result.data?.[0])?.payload
       if (job) {
-        const { jobs, browse } = await enforceBrowseAllowance(getSession(req), [job])
+        const session = getSession(req)
+        if (!session?.userId) {
+          if (!await canVisitorOpenJob(jobId)) {
+            return send(res, 401, {
+              code: 'ACCOUNT_BIND_REQUIRED',
+              error: '登录后可继续查看更多岗位'
+            })
+          }
+          return send(res, 200, { job, access: { visitorPreview: true } })
+        }
+        const { jobs, browse } = await enforceBrowseAllowance(session, [job])
         if (jobs.length === 0) {
           return send(res, 403, {
             code: 'MINI_BROWSE_LIMIT_REACHED',
-            error: '免费用户最多浏览 100 个岗位，开通会员后可继续查看全部岗位',
+            error: '免费版本可享有100次查看额度，完整可前往网站或升级会员。',
             browse: { viewedCount: browse?.viewedCount || 100, remaining: browse?.remaining || 0 }
           })
         }
@@ -909,15 +969,31 @@ async function route(req, res) {
       const upstreamJob = await fetchUpstreamJob(jobId)
       void scheduleSync()
       if (!upstreamJob) return send(res, 404, { error: '岗位不存在或已下线' })
-      const { jobs, browse } = await enforceBrowseAllowance(getSession(req), [upstreamJob])
+      const session = getSession(req)
+      if (!session?.userId) {
+        if (!await canVisitorOpenJob(jobId)) {
+          return send(res, 401, {
+            code: 'ACCOUNT_BIND_REQUIRED',
+            error: '登录后可继续查看更多岗位'
+          })
+        }
+        return send(res, 200, { job: upstreamJob, source: 'upstream-cold-cache', access: { visitorPreview: true } })
+      }
+      const { jobs, browse } = await enforceBrowseAllowance(session, [upstreamJob])
       if (jobs.length === 0) {
         return send(res, 403, {
           code: 'MINI_BROWSE_LIMIT_REACHED',
-          error: '免费用户最多浏览 100 个岗位，开通会员后可继续查看全部岗位',
+          error: '免费版本可享有100次查看额度，完整可前往网站或升级会员。',
           browse: { viewedCount: browse?.viewedCount || 100, remaining: browse?.remaining || 0 }
         })
       }
       return send(res, 200, { job: jobs[0], source: 'upstream-cold-cache', browse })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/browse-status') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 200, { authenticated: false, browse: null })
+      const browse = await getBrowseStatus(session)
+      return send(res, 200, { authenticated: true, browse })
     }
     if (req.method === 'POST' && url.pathname === '/mini/auth/session') {
       const body = await readBody(req)

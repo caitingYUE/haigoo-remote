@@ -88,6 +88,10 @@ export default function JobDetailPage() {
     loadJob()
   }, [loadJob])
 
+  useEffect(() => {
+    setLogoFailed(false)
+  }, [job?.logoUrl])
+
   useShareAppMessage(() => ({
     title: job ? `${job.title}｜${job.company}` : 'Haigoo Remote 远程岗位',
     path: `/pages/job-detail/index?id=${encodeURIComponent(jobId)}`

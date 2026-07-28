@@ -7,6 +7,7 @@ export interface JobCategoryFilter {
 // Keep these values aligned with the website homepage's manual-selection tabs.
 // The mini-program applies the same category rules to the complete job pool.
 export const MINI_JOB_CATEGORY_FILTERS: JobCategoryFilter[] = [
+  { label: '全部', value: '' },
   { label: '🔥 热门', value: '', featured: true },
   { label: '自由职业', value: 'freelance' },
   { label: '人事行政', value: '人力资源,招聘,财务,会计,法务,行政,管理,客户服务,HR,Recruiter,Talent Acquisition,Finance,Legal,Admin' },

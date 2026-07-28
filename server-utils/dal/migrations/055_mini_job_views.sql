@@ -1,5 +1,8 @@
 -- Mini Program-only browsing allowance for free users.
--- A job counts once per WeChat identity, regardless of list/search/detail entry.
+-- A job counts once per WeChat identity when its detail page is opened.
+-- List/search results never write to this table. The application versions the
+-- app_id scope whenever the quota policy changes so obsolete counters do not
+-- reduce a user's current allowance.
 
 CREATE TABLE IF NOT EXISTS mini_job_views (
     app_id VARCHAR(128) NOT NULL,

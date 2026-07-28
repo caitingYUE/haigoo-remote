@@ -7,6 +7,7 @@ const target = process.argv.find((argument) => argument.startsWith('--target='))
 const originOverride = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length)
 const scope = process.argv.find((argument) => argument.startsWith('--scope='))?.split('=')[1] || 'account'
 const featured = process.argv.find((argument) => argument.startsWith('--featured='))?.split('=')[1]
+const includeLogo = process.argv.includes('--include-logo')
 const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
@@ -92,7 +93,17 @@ console.log(JSON.stringify({
   status: response.status,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
   sampleJobs: Array.isArray(payload.jobs)
-    ? payload.jobs.slice(0, 3).map((job) => ({ id: job.id, title: job.title, company: job.company }))
+    ? payload.jobs.slice(0, 3).map((job) => ({
+        id: job.id,
+        title: job.title,
+        company: job.company,
+        ...(includeLogo ? {
+          logo: job.logo || null,
+          companyLogo: job.companyLogo || null,
+          cachedLogoUrl: job.cachedLogoUrl || null,
+          cachedCompanyLogoUrl: job.cachedCompanyLogoUrl || null
+        } : {})
+      }))
     : [],
   totalJobs: Number(payload.total || 0)
 }, null, 2))
