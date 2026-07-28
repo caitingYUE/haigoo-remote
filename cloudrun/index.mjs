@@ -180,7 +180,16 @@ async function cacheLogo(jobId, source, existing = null) {
 }
 
 function publicJob(job, logoFileId = '') {
-  const { url, sourceUrl, hiringEmail, isFeatured, ...safeJob } = job
+  const {
+    url,
+    sourceUrl,
+    hiringEmail,
+    isFeatured,
+    canRefer: _canRefer,
+    effectiveReferralContactCount: _referralContactCount,
+    hasReferral: _hasReferral,
+    ...safeJob
+  } = job
   const isHotApplication = Boolean(job.isHotApplication || Number(job.applicationCount || 0) >= 10)
   return {
     ...safeJob,
@@ -608,8 +617,6 @@ function buildJobsResponse(items, query) {
     if (publishedDifference) return publishedDifference
     const memberDifference = Number(Boolean(b.payload?.memberOnly)) - Number(Boolean(a.payload?.memberOnly))
     if (memberDifference) return memberDifference
-    const referralDifference = Number(Boolean(b.payload?.canRefer)) - Number(Boolean(a.payload?.canRefer))
-    if (referralDifference) return referralDifference
     const trustedDifference = Number(Boolean(b.payload?.isTrusted)) - Number(Boolean(a.payload?.isTrusted))
     if (trustedDifference) return trustedDifference
     return compareStableId(a, b)

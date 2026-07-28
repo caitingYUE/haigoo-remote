@@ -97,6 +97,7 @@ assert.ok(gateway.includes("MINI_BROWSE_QUOTA_VERSION || 'detail-v2'"), 'detail-
 assert.ok(cloudrun.includes('CACHE_MODEL_VERSION'), 'job cache schema changes must trigger a full rebuild')
 assert.ok(cloudrun.includes('editorialFeatured'), 'website-default sorting must remain separate from hot-application filtering')
 assert.ok(cloudrun.includes('defaultRankStart'), 'default Mini Program ordering must preserve the website sync order')
+assert.ok(cloudrun.includes('canRefer: _canRefer') && !cloudrun.includes('referralDifference'), 'unsupported referral metadata must not enter Mini Program cache or sorting')
 assert.ok(cloudrun.includes('`${jobsApiOrigin}${source.startsWith'), 'relative formal Logo URLs must resolve against the formal job origin')
 assert.ok(cloudrun.includes("'x-vercel-protection-bypass'"), 'development CloudRun must support protected Preview gateways')
 assert.ok(deployScript.includes("apiOrigin: 'https://haigooremote.com'"), 'production deployment must pin the formal gateway origin')
