@@ -4,16 +4,29 @@ import { trackMiniEvent } from './analytics-service'
 
 export interface ApplicationResponse {
   success?: boolean
-  usage?: number
-  limit?: number
-  remaining?: number
-  isMember?: boolean
+  usage?: ApplicationUsageItem
   type?: 'website' | 'email' | 'referral'
   websiteUrl?: string
   hiringEmail?: string
   emailType?: string
   code?: string
   applicationStatus?: 'entry_opened' | 'applied'
+}
+
+export interface ApplicationUsageItem {
+  usage?: number
+  limit?: number
+  remaining?: number
+  isMember?: boolean
+  sharedAccess?: boolean
+}
+
+export interface ApplicationUsage {
+  success?: boolean
+  isMember: boolean
+  website: ApplicationUsageItem
+  email: ApplicationUsageItem
+  referral: ApplicationUsageItem
 }
 
 function createIdempotencyKey(jobId: string, type: string) {
@@ -39,6 +52,13 @@ async function requestApplication(job: MiniJob, type: 'website' | 'email' | 'ref
 export const unlockWebsiteApplication = (job: MiniJob) => requestApplication(job, 'website')
 export const unlockEmailApplication = (job: MiniJob) => requestApplication(job, 'email')
 export const unlockReferralApplication = (job: MiniJob) => requestApplication(job, 'referral')
+
+export function fetchApplicationUsage() {
+  return requestJson<ApplicationUsage>(
+    '/mini/application-usage',
+    { authenticated: true }
+  )
+}
 
 export function confirmApplicationCompleted(job: MiniJob, type: 'website' | 'email' | 'referral') {
   return requestJson<{ success?: boolean; status?: 'applied' }>(

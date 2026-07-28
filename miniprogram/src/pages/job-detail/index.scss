@@ -204,6 +204,146 @@
   white-space: nowrap;
 }
 
+.job-detail-application {
+  margin-top: 24px;
+  padding: 24px;
+}
+
+.job-detail-application__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.job-detail-application__eyebrow,
+.job-detail-application__title {
+  display: block;
+}
+
+.job-detail-application__eyebrow {
+  color: #5146e5;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.job-detail-application__title {
+  margin-top: 7px;
+  color: #151e34;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.job-detail-application__club {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #5146e5;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.job-detail-application__quota {
+  margin-top: 17px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #f2f0ff;
+  color: #655daa;
+  font-size: 19px;
+  line-height: 1.55;
+}
+
+.job-detail-application__methods {
+  display: flex;
+  flex-direction: column;
+  margin-top: 10px;
+}
+
+.job-detail-application__method {
+  display: flex;
+  align-items: center;
+  min-height: 88px;
+  padding: 14px 0;
+  border-bottom: 1px solid #ececf2;
+}
+
+.job-detail-application__method:last-child {
+  border-bottom: 0;
+}
+
+.job-detail-application__method:active {
+  opacity: 0.72;
+}
+
+.job-detail-application__method-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 15px;
+  background: #f1efff;
+}
+
+.job-detail-application__method-copy {
+  flex: 1;
+  min-width: 0;
+  margin-left: 14px;
+}
+
+.job-detail-application__method-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.job-detail-application__method-title {
+  color: #1a243a;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.job-detail-application__method-quota {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #eeecff;
+  color: #5146e5;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.job-detail-application__method-description {
+  display: block;
+  margin-top: 5px;
+  color: #8790a2;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.job-detail-application__method-action {
+  flex-shrink: 0;
+  margin-left: 12px;
+  color: #5146e5;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.job-detail-application__empty {
+  display: block;
+  padding: 22px 0 8px;
+  color: #9299a8;
+  font-size: 20px;
+  text-align: center;
+}
+
 .job-detail-tabs {
   display: flex;
   margin-top: 30px;

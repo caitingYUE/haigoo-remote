@@ -2,8 +2,11 @@ import { Button, Image, Text, View } from '@tarojs/components'
 import {
   Heart,
   Internation,
+  Link,
   Loading,
+  Mail,
   Share2,
+  StarFill,
   Store
 } from '@nutui/icons-react-taro'
 import {
@@ -12,30 +15,31 @@ import {
   showActionSheet,
   showModal,
   showToast,
+  switchTab,
   useRouter,
   useShareAppMessage
 } from '@tarojs/taro'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   confirmApplicationCompleted,
+  fetchApplicationUsage,
   unlockEmailApplication,
   unlockReferralApplication,
-  unlockWebsiteApplication
+  unlockWebsiteApplication,
+  type ApplicationUsage
 } from '../../services/application-service'
 import { ApiRequestError } from '../../services/api-client'
 import { fetchJobById } from '../../services/jobs-service'
 import { fetchFavorites, setJobFavorite } from '../../services/user-activity-service'
-import { hasAuthenticatedSession } from '../../services/session'
+import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import type { MiniJob } from '../../types'
+import { getApplicationMethods, type ApplicationMethod } from '../../utils/job-application'
 import { buildJobDetailSections } from '../../utils/job-content'
 import './index.scss'
 
 function getApplicationSummary(job: MiniJob): string {
   if (job.memberOnly) return 'Club 会员岗位'
-  if (job.application.hasWebsiteApply) return '企业官网申请'
-  if (job.application.hasEmailApply) return job.application.emailType || '邮箱直申'
-  if (job.application.hasReferral) return '企业内推'
-  return '暂无申请入口'
+  return getApplicationMethods(job).map((method) => method.shortLabel).join(' · ') || '暂无申请入口'
 }
 
 function getApplicationError(error: unknown): string {
@@ -43,6 +47,7 @@ function getApplicationError(error: unknown): string {
   if (error.statusCode === 401) return '登录状态已失效，请重新登录'
   if (error.payload.emailVerificationRequired) return '请先绑定并验证邮箱后再申请岗位'
   if (error.payload.code === 'ACCOUNT_BIND_REQUIRED') return '请先绑定 Haigoo 网站账号后再申请岗位'
+  if (error.payload.code === 'MEMBER_REQUIRED') return '该岗位为 Club 专属岗位，请先了解并开通会员服务'
   if (error.statusCode === 403) return '当前免费申请次数已用完，可在网站了解更多服务'
   return error.message || '申请入口暂时无法打开，请稍后重试'
 }
@@ -59,6 +64,27 @@ export default function JobDetailPage() {
   const [favorited, setFavorited] = useState(false)
   const [favoritePending, setFavoritePending] = useState(false)
   const [activeTab, setActiveTab] = useState<'job' | 'company'>('job')
+  const [applicationUsage, setApplicationUsage] = useState<ApplicationUsage | null>(null)
+  const [applicationUsageLoading, setApplicationUsageLoading] = useState(false)
+  const [applicationUsageError, setApplicationUsageError] = useState('')
+
+  const refreshApplicationUsage = useCallback(async () => {
+    if (!hasAuthenticatedSession()) {
+      setApplicationUsage(null)
+      setApplicationUsageError('')
+      return
+    }
+    setApplicationUsageLoading(true)
+    setApplicationUsageError('')
+    try {
+      setApplicationUsage(await fetchApplicationUsage())
+    } catch (usageError) {
+      setApplicationUsage(null)
+      setApplicationUsageError(usageError instanceof Error ? usageError.message : '申请额度暂时无法读取')
+    } finally {
+      setApplicationUsageLoading(false)
+    }
+  }, [])
 
   const loadJob = useCallback(async () => {
     if (!jobId) {
@@ -74,7 +100,10 @@ export default function JobDetailPage() {
       if (!nextJob) throw new Error('岗位不存在或已下线')
       setJob(nextJob)
       if (hasAuthenticatedSession()) {
-        const favorites = await fetchFavorites().catch(() => null)
+        const [favorites] = await Promise.all([
+          fetchFavorites().catch(() => null),
+          refreshApplicationUsage()
+        ])
         if (favorites) setFavorited(favorites.favoriteJobIds.includes(jobId))
       }
     } catch (loadError) {
@@ -82,7 +111,7 @@ export default function JobDetailPage() {
     } finally {
       setLoading(false)
     }
-  }, [jobId])
+  }, [jobId, refreshApplicationUsage])
 
   useEffect(() => {
     loadJob()
@@ -174,7 +203,22 @@ export default function JobDetailPage() {
     confirmApplied('referral', '网站岗位链接已复制，请在浏览器查看内推说明。')
   }
 
+  const openClubIntroduction = () => {
+    showModal({
+      title: 'Club 专属岗位',
+      content: '该岗位的申请入口仅向 Club 会员开放，可先查看会员方案并添加顾问咨询。',
+      confirmText: '了解 Club',
+      success: ({ confirm }) => {
+        if (confirm) switchTab({ url: '/pages/learning/index' })
+      }
+    })
+  }
+
   const runApplicationAction = async (type: 'website' | 'email' | 'referral') => {
+    if (job?.memberOnly && !getMiniUser()?.isMember) {
+      openClubIntroduction()
+      return
+    }
     setApplying(true)
     try {
       if (type === 'website') await copyWebsiteApplication()
@@ -188,6 +232,7 @@ export default function JobDetailPage() {
       })
     } finally {
       setApplying(false)
+      void refreshApplicationUsage()
     }
   }
 
@@ -197,16 +242,19 @@ export default function JobDetailPage() {
       promptLogin('申请')
       return
     }
-
-    const options: Array<{ label: string; type: 'website' | 'email' | 'referral' }> = []
-    if (job.application.hasWebsiteApply) options.push({ label: '复制官网申请链接', type: 'website' })
-    if (job.application.hasEmailApply) {
-      options.push({
-        label: `复制${job.application.emailType || '招聘邮箱'}与申请文案`,
-        type: 'email'
-      })
+    if (job.memberOnly && !getMiniUser()?.isMember) {
+      openClubIntroduction()
+      return
     }
-    if (job.application.hasReferral) options.push({ label: '复制网站链接，查看内推方式', type: 'referral' })
+
+    const options = getApplicationMethods(job).map((method) => ({
+      ...method,
+      label: method.type === 'website'
+        ? '复制官网申请链接'
+        : method.type === 'email'
+          ? `复制${method.label}与申请文案`
+          : '复制网站链接，查看 Club 内推方式'
+    }))
 
     if (options.length === 0) {
       showToast({ title: '该岗位暂无可用申请入口', icon: 'none' })
@@ -282,6 +330,21 @@ export default function JobDetailPage() {
     visibleJob.category,
     visibleJob.experienceLevel
   ].filter(Boolean) as string[]
+  const applicationMethods = getApplicationMethods(visibleJob)
+  const isActiveMember = Boolean(getMiniUser()?.isMember)
+
+  const getMethodUsage = (type: ApplicationMethod) => {
+    if (!applicationUsage) return null
+    if (type === 'website') return applicationUsage.website
+    if (type === 'email') return applicationUsage.email
+    return applicationUsage.referral
+  }
+
+  const getMethodDescription = (type: ApplicationMethod) => {
+    if (type === 'website') return '复制企业官网申请链接，在浏览器中继续'
+    if (type === 'email') return '复制招聘邮箱与申请文案，在邮箱客户端发送'
+    return '复制网站岗位链接，查看 Club 内推说明'
+  }
 
   return (
     <View className='job-detail-page'>
@@ -351,6 +414,71 @@ export default function JobDetailPage() {
           <View>
             <Text className='job-detail-stats__label'>行业类型</Text>
             <Text className='job-detail-stats__value'>{visibleJob.companyIndustry || '待确认'}</Text>
+          </View>
+        </View>
+
+        <View className='job-detail-application surface-card'>
+          <View className='job-detail-application__heading'>
+            <View>
+              <Text className='job-detail-application__eyebrow'>APPLICATION OPTIONS</Text>
+              <Text className='job-detail-application__title'>选择申请方式</Text>
+            </View>
+            {visibleJob.memberOnly ? (
+              <View className='job-detail-application__club'>
+                <StarFill size={13} color='#ffffff' />
+                <Text>Club 专属</Text>
+              </View>
+            ) : null}
+          </View>
+
+          <View className='job-detail-application__quota'>
+            {!hasAuthenticatedSession() ? (
+              <Text>登录后可查看免费申请额度，并同步网站申请记录。</Text>
+            ) : isActiveMember || applicationUsage?.isMember ? (
+              <Text>Club 会员申请入口不限次数。</Text>
+            ) : applicationUsageLoading ? (
+              <Text>正在同步你的免费申请额度…</Text>
+            ) : applicationUsageError ? (
+              <Text>{applicationUsageError}</Text>
+            ) : (
+              <Text>免费申请额度会与网站同步，重复打开同一岗位或企业不重复计次。</Text>
+            )}
+          </View>
+
+          <View className='job-detail-application__methods'>
+            {applicationMethods.length > 0 ? applicationMethods.map((method) => {
+              const usage = getMethodUsage(method.type)
+              const MethodIcon = method.type === 'website' ? Link : method.type === 'email' ? Mail : StarFill
+              const quota = !isActiveMember && usage && Number(usage.limit) >= 0
+                ? `剩余 ${Math.max(0, Number(usage.remaining || 0))}/${Number(usage.limit || 0)} 次`
+                : isActiveMember
+                  ? '不限次数'
+                  : ''
+              return (
+                <View
+                  className='job-detail-application__method'
+                  key={method.type}
+                  onClick={() => {
+                    if (!hasAuthenticatedSession()) promptLogin('申请')
+                    else runApplicationAction(method.type)
+                  }}
+                >
+                  <View className='job-detail-application__method-icon'>
+                    <MethodIcon size={19} color='#5146e5' />
+                  </View>
+                  <View className='job-detail-application__method-copy'>
+                    <View className='job-detail-application__method-title-row'>
+                      <Text className='job-detail-application__method-title'>{method.label}</Text>
+                      {quota ? <Text className='job-detail-application__method-quota'>{quota}</Text> : null}
+                    </View>
+                    <Text className='job-detail-application__method-description'>{getMethodDescription(method.type)}</Text>
+                  </View>
+                  <Text className='job-detail-application__method-action'>打开</Text>
+                </View>
+              )
+            }) : (
+              <Text className='job-detail-application__empty'>该岗位暂无可用申请入口</Text>
+            )}
           </View>
         </View>
 
@@ -457,9 +585,13 @@ export default function JobDetailPage() {
             ? '暂无申请入口'
             : !hasAuthenticatedSession()
               ? '前往申请（需登录）'
+              : visibleJob.memberOnly && !isActiveMember
+                ? '了解 Club 权益'
               : applying
                 ? '正在打开'
-                : '前往申请'}
+                : applicationMethods.length > 1
+                  ? '选择申请方式'
+                  : '前往申请'}
         </Button>
       </View>
     </View>

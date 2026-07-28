@@ -1174,6 +1174,19 @@ async function route(req, res) {
         jobs: await getCachedJobs(jobIds)
       })
     }
+    if (req.method === 'GET' && url.pathname === '/mini/application-usage') {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, {
+          code: 'ACCOUNT_BIND_REQUIRED',
+          error: '请先登录并绑定 Haigoo 网站账号'
+        })
+      }
+      const usage = await gatewayRequest('application_usage', {
+        query: { openid: session.openid }
+      })
+      return send(res, 200, usage)
+    }
     if (req.method === 'POST' && /^\/mini\/jobs\/[^/]+\/application$/.test(url.pathname)) {
       const session = getSession(req)
       if (!session) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })

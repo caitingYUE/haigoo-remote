@@ -1,8 +1,9 @@
 import { Image, Text, View } from '@tarojs/components'
-import { Heart, Internation, Store } from '@nutui/icons-react-taro'
+import { Heart, Internation, StarFill, Store } from '@nutui/icons-react-taro'
 import { navigateTo } from '@tarojs/taro'
 import { useEffect, useState } from 'react'
 import type { MiniJob } from '../../types'
+import { getApplicationMethods } from '../../utils/job-application'
 import './index.scss'
 
 interface JobCardProps {
@@ -13,14 +14,6 @@ interface JobCardProps {
   onToggleFavorite?: (job: MiniJob) => void
 }
 
-function getApplicationLabel(job: MiniJob): string {
-  const methods: string[] = []
-  if (job.application.hasWebsiteApply) methods.push('官网申请')
-  if (job.application.hasEmailApply) methods.push(job.application.emailType || '邮箱直申')
-  if (job.application.hasReferral) methods.push('内推机会')
-  return methods[0] || '申请方式待确认'
-}
-
 export default function JobCard({
   job,
   compact = false,
@@ -29,7 +22,8 @@ export default function JobCard({
   onToggleFavorite
 }: JobCardProps) {
   const [logoFailed, setLogoFailed] = useState(false)
-  const showEyebrow = Boolean(job.featured || job.matchScore)
+  const showEyebrow = Boolean(job.featured || job.memberOnly || job.matchScore)
+  const applicationMethods = getApplicationMethods(job)
 
   useEffect(() => {
     setLogoFailed(false)
@@ -43,7 +37,18 @@ export default function JobCard({
     <View className={`job-card ${compact ? 'job-card--compact' : ''}`} onClick={openDetail}>
       {showEyebrow ? (
         <View className='job-card__eyebrow-row'>
-          <Text className='job-card__recommended'>{job.featured ? '热门岗位' : job.matchLabel || '岗位匹配'}</Text>
+          <View className='job-card__signals'>
+            {job.featured ? <Text className='job-card__hot'>🔥热门申请</Text> : null}
+            {job.memberOnly ? (
+              <View className='job-card__club'>
+                <StarFill size={13} color='#ffffff' />
+                <Text>Club</Text>
+              </View>
+            ) : null}
+            {!job.featured && !job.memberOnly && job.matchScore ? (
+              <Text className='job-card__recommended'>{job.matchLabel || '岗位匹配'}</Text>
+            ) : null}
+          </View>
           {job.matchScore ? (
             <View className='job-card__match'>
               <Internation size={16} color='#5146e5' />
@@ -82,11 +87,14 @@ export default function JobCard({
         {job.tags.slice(0, compact ? 2 : 4).map((tag) => (
           <Text className='job-card__tag' key={tag}>{tag}</Text>
         ))}
-        {job.memberOnly ? <Text className='job-card__tag job-card__tag--club'>Club 岗位</Text> : null}
       </View>
 
       <View className='job-card__application-row'>
-        <Text className='job-card__application-method'>{getApplicationLabel(job)}</Text>
+        <View className='job-card__application-methods'>
+          {applicationMethods.length > 0 ? applicationMethods.map((method) => (
+            <Text className='job-card__application-method' key={method.type}>{method.shortLabel}</Text>
+          )) : <Text className='job-card__application-method job-card__application-method--muted'>申请方式待确认</Text>}
+        </View>
         <Text className='job-card__published'>{job.publishedLabel}</Text>
       </View>
 

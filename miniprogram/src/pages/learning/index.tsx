@@ -1,5 +1,5 @@
 import { Button, Image, ScrollView, Text, View } from '@tarojs/components'
-import { Check, Message, QrCode } from '@nutui/icons-react-taro'
+import { Check } from '@nutui/icons-react-taro'
 import { previewImage, setNavigationBarTitle, setTabBarItem, showModal, showToast, useDidShow } from '@tarojs/taro'
 import { useCallback, useState } from 'react'
 import JobCard from '../../components/job-card'
@@ -130,7 +130,7 @@ export default function LearningPage() {
       <View className='page-shell membership-page'>
         <View className='membership-hero'>
           <Text className='membership-hero__eyebrow'>HAIGOO REMOTE CLUB</Text>
-          <Text className='membership-hero__title'>让每一次远程求职{'\n'}都更有准备</Text>
+          <Text className='membership-hero__title'>打开全球机会{'\n'}从远程开始</Text>
           <Text className='membership-hero__copy'>会员服务将岗位机会、主动订阅与求职支持放到同一条成长路径里。</Text>
         </View>
         <View className='membership-page__heading'>
@@ -178,14 +178,12 @@ export default function LearningPage() {
         </View>
         <View className='membership-contact-grid'>
           <View className='membership-contact-card' onClick={() => showAdvisor()}>
-            <View className='membership-contact-card__icon'><Message size={23} color='#5146e5' /></View>
             <Text className='membership-contact-card__title'>顾问咨询开通</Text>
             <Text className='membership-contact-card__copy'>了解方案、适合人群与开通安排</Text>
             <Image className='membership-contact-card__qr' src={ADVISOR_QR} mode='aspectFit' />
             <Text className='membership-contact-card__action'>点击放大二维码</Text>
           </View>
           <View className='membership-contact-card' onClick={showCommunity}>
-            <View className='membership-contact-card__icon'><QrCode size={23} color='#5146e5' /></View>
             <Text className='membership-contact-card__title'>微信交流群</Text>
             <Text className='membership-contact-card__copy'>交流远程岗位、申请与求职准备</Text>
             <Image className='membership-contact-card__qr' src={COMMUNITY_QR} mode='aspectFit' />

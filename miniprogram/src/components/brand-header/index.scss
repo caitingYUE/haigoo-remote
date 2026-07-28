@@ -4,24 +4,50 @@
   min-height: 62px;
 }
 
-.brand-header__logo {
-  width: 206px;
-  height: 45px;
-  transform: scale(2.05);
-  transform-origin: left center;
+.brand-header__brand {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
-.brand-header__search {
+.brand-header__brand-cn {
+  flex-shrink: 0;
+  color: #14213e;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.brand-header__logo {
+  width: 160px;
+  height: 42px;
+  margin-left: 10px;
+  transform: scale(1.72);
+  transform-origin: center;
+}
+
+.brand-header__status {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 52px;
+  gap: 5px;
+  min-width: 74px;
   height: 52px;
   margin-left: auto;
+  padding: 0 12px;
   border: 1px solid #e3e7f1;
-  border-radius: 17px;
-  background: #fff;
+  border-radius: 999px;
+  background: #f3f1ff;
   box-shadow: 0 5px 15px rgba(31, 39, 70, 0.05);
+  color: #5146e5;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.brand-header__status--club {
+  border-color: #5146e5;
+  background: #5146e5;
+  color: #fff;
 }
 
 .brand-header__avatar {

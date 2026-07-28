@@ -54,9 +54,25 @@
 
 .jobs-category-scroll__inner {
   display: flex;
+  align-items: center;
   width: max-content;
   gap: 10px;
   padding-right: 28px;
+}
+
+.jobs-category-login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 52px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #5146e5;
+  box-shadow: 0 7px 16px rgba(81, 70, 229, 0.2);
+  color: #fff;
+  font-size: 19px;
+  font-weight: 800;
 }
 
 .jobs-page__summary {

@@ -138,6 +138,22 @@
   color: #949caf;
 }
 
+.home-page__club-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-page__club-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #efedff;
+}
+
 .home-job-scroll {
   width: calc(100vw - 30px);
   margin-right: -30px;

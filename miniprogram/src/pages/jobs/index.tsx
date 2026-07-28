@@ -1,5 +1,5 @@
 import { Input, ScrollView, Text, View } from '@tarojs/components'
-import { Close, Loading, Search } from '@nutui/icons-react-taro'
+import { Close, Loading, Search, User } from '@nutui/icons-react-taro'
 import {
   navigateTo,
   showActionSheet,
@@ -256,6 +256,12 @@ export default function JobsPage() {
                 <Text>{category.label}</Text>
               </View>
             ))}
+            {!authenticated ? (
+              <View className='jobs-category-login' onClick={() => promptLogin()}>
+                <User size={16} color='#ffffff' />
+                <Text>登录查看完整岗位</Text>
+              </View>
+            ) : null}
           </View>
         </ScrollView>
       ) : null}

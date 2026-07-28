@@ -1,9 +1,10 @@
 import { Image, Input, ScrollView, Text, View } from '@tarojs/components'
-import { ArrowRight, Loading, Search, ShieldCheck } from '@nutui/icons-react-taro'
+import { ArrowRight, Loading, Search, ShieldCheck, StarFill } from '@nutui/icons-react-taro'
 import { stopPullDownRefresh, switchTab, useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useState } from 'react'
 import BrandHeader from '../../components/brand-header'
 import JobCard from '../../components/job-card'
+import WebsiteNotice from '../../components/website-notice'
 import { fetchFeaturedJobs } from '../../services/jobs-service'
 import { fetchSubscriptionFeed, type SubscriptionFeed } from '../../services/subscription-service'
 import { getMiniUser } from '../../services/session'
@@ -55,18 +56,18 @@ export default function HomePage() {
 
   return (
     <View className='page-shell home-page'>
-      <BrandHeader />
+      <BrandHeader isMember={isMember} />
 
       <View className='home-welcome'>
         <Image className='home-welcome__website-bg' src='/assets/home-hero-bg.webp' mode='aspectFill' />
         <View className='home-welcome__overlay' />
         <View className='home-welcome__content'>
-          <Text className='home-welcome__eyebrow'>全球远程工作平台</Text>
+          <Text className='home-welcome__eyebrow'>全球远程工作探索</Text>
           <View className='home-welcome__title'>
             <Text className='home-welcome__title-line'>发现更多真实可靠的</Text>
             <Text className='home-welcome__title-line'>远程工作机会</Text>
           </View>
-          <Text className='home-welcome__copy'>聚合全球在招岗位，清晰标注全球远程与地区远程范围。</Text>
+          <Text className='home-welcome__copy'>人工精选全球远程工作，大部分可直连HR/负责人邮箱。</Text>
           <View className='home-welcome__button' onClick={handleSearch}>
             <Text>浏览远程岗位</Text>
           </View>
@@ -87,7 +88,7 @@ export default function HomePage() {
       <View className='section'>
         <View className='section-heading-row'>
           <View>
-            <Text className='section-title'>精选远程岗位</Text>
+            <Text className='section-title'>今日精选推荐</Text>
             <Text className='home-page__section-note'>精选真实在招的全球远程机会</Text>
           </View>
           <Text className='section-action' onClick={() => switchTab({ url: '/pages/jobs/index' })}>查看全部</Text>
@@ -118,9 +119,14 @@ export default function HomePage() {
       <View className='section'>
         <View className='section-heading-row'>
           <View>
-            <Text className='section-title'>{isMember ? '我订阅的岗位更新' : '了解会员服务'}</Text>
+            <View className='home-page__club-heading'>
+              <View className='home-page__club-icon'>
+                <StarFill size={15} color='#5146e5' />
+              </View>
+              <Text className='section-title'>{isMember ? '我订阅的岗位更新' : '了解会员服务'}</Text>
+            </View>
             <Text className='home-page__section-note'>
-              {isMember ? '与邮箱每日摘要同步的最新匹配岗位' : '岗位机会、主动订阅与持续求职支持'}
+              {isMember ? '与邮件订阅同步的最新关注岗位' : '岗位申请、更新订阅与远程求职支持'}
             </Text>
           </View>
           <Text className='section-action' onClick={() => switchTab({ url: '/pages/learning/index' })}>
@@ -143,6 +149,7 @@ export default function HomePage() {
         )}
       </View>
 
+      <WebsiteNotice />
     </View>
   )
 }

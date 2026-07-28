@@ -18,6 +18,12 @@ const profile = read('./miniprogram/src/pages/profile/index.tsx')
 const jobsService = read('./miniprogram/src/services/jobs-service.ts')
 const jobsPage = read('./miniprogram/src/pages/jobs/index.tsx')
 const jobFilters = read('./miniprogram/src/data/job-filters.ts')
+const jobCard = read('./miniprogram/src/components/job-card/index.tsx')
+const jobApplication = read('./miniprogram/src/utils/job-application.ts')
+const jobDetail = read('./miniprogram/src/pages/job-detail/index.tsx')
+const brandHeader = read('./miniprogram/src/components/brand-header/index.tsx')
+const homePage = read('./miniprogram/src/pages/index/index.tsx')
+const websiteNotice = read('./miniprogram/src/components/website-notice/index.tsx')
 const membershipPage = read('./miniprogram/src/pages/learning/index.tsx')
 const processedJobs = read('./lib/api-handlers/processed-jobs.js')
 const projectConfig = JSON.parse(read('./miniprogram/project.config.json'))
@@ -34,6 +40,7 @@ for (const action of [
   'delete_account',
   'feedback',
   'events',
+  'application_usage',
   'application_status'
 ]) {
   assert.match(gateway, new RegExp(`['"]${action}['"]`), `gateway must expose ${action}`)
@@ -45,6 +52,7 @@ for (const route of [
   '/mini/account/delete',
   '/mini/feedback',
   '/mini/events',
+  '/mini/application-usage',
   'application-status'
 ]) {
   assert.ok(cloudrun.includes(route), `CloudRun must proxy ${route}`)
@@ -105,10 +113,21 @@ assert.ok(jobsService.includes('getMiniSessionCacheKey()'), 'job response cache 
 assert.ok(jobsService.includes("'/mini/browse-status'"), 'the job list must refresh remaining quota without consuming it')
 assert.ok(jobsPage.includes('browse.remaining <= 20'), 'quota copy must only appear near the free limit')
 assert.ok(jobsPage.includes('免费版本可享有100次查看额度，完整可前往网站或升级会员。'), 'quota copy must use the approved customer-facing message')
+assert.ok(jobsPage.includes('登录查看完整岗位'), 'guest job filters must expose a prominent login entry')
 assert.ok(jobFilters.indexOf("{ label: '全部'") < jobFilters.indexOf("{ label: '🔥 热门'"), 'all jobs must appear before the hot tab')
 assert.ok(processedJobs.includes('HAVING COUNT(DISTINCT hot_uji.user_id) >= 10'), 'hot jobs must follow the website application threshold')
+assert.ok(jobCard.includes('🔥热门申请'), 'hot job cards must use the approved red application label')
+assert.ok(jobCard.includes("getApplicationMethods(job)"), 'job cards must render every available application method')
+assert.ok(jobApplication.includes("methods.push({ type: 'website'") && jobApplication.includes("methods.push({ type: 'email'"), 'website and email application labels must coexist')
+assert.ok(jobApplication.includes('BOSS邮箱直申') && jobApplication.includes('HR邮箱直申'), 'direct-email labels must match the website vocabulary')
+assert.ok(jobDetail.includes('fetchApplicationUsage') && jobDetail.includes('免费申请额度会与网站同步'), 'job detail must expose synchronized application quotas')
+assert.ok(jobDetail.includes("applicationMethods.length > 1") && jobDetail.includes('选择申请方式'), 'job detail must support multiple application entry points')
+assert.ok(brandHeader.includes('海狗远程') && brandHeader.includes("isMember ? 'Club' : 'Free'"), 'home header must show the Chinese brand and membership status')
+assert.ok(homePage.includes('home-page__club-icon'), 'home membership service must include a Club icon')
+assert.ok(websiteNotice.includes('https://haigooremote.com/') && websiteNotice.includes('小程序主要展示岗位信息'), 'home and profile website notice must use the formal domain')
 assert.ok(membershipPage.includes('Club Starter') && membershipPage.includes('Club Member') && membershipPage.includes('Club Partner'), 'the free membership tab must explain all three plans')
 assert.ok(membershipPage.includes('haigoo-advisor.png') && membershipPage.includes('haigoo-community.webp'), 'membership consultation and community QR entries must be present')
+assert.ok(!membershipPage.includes('membership-contact-card__icon'), 'consultation cards must not render decorative placeholder icons')
 assert.ok(app.includes('getUpdateManager'), 'Mini Program must prompt for ready updates')
 assert.ok(!profile.includes('简历与职业方向'), 'unfinished resume entry must stay hidden')
 assert.ok(!profile.includes('推荐偏好'), 'unfinished preference entry must stay hidden')

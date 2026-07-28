@@ -2,6 +2,7 @@ import { Text, View } from '@tarojs/components'
 import { ArrowRight, Articles, Heart, Mail, Setting, User } from '@nutui/icons-react-taro'
 import { navigateTo, setTabBarItem, showModal, showToast, switchTab, useDidShow } from '@tarojs/taro'
 import { useState } from 'react'
+import WebsiteNotice from '../../components/website-notice'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import './index.scss'
@@ -133,6 +134,7 @@ export default function ProfilePage() {
         </View>
       </View>
 
+      <WebsiteNotice />
       <Text className='profile-page__version'>Haigoo Remote Mini Program · Cloud</Text>
     </View>
   )

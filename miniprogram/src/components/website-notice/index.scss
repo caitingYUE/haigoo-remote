@@ -1,0 +1,36 @@
+.website-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 34px;
+  padding: 20px 22px;
+  border: 1px solid #e4e6ef;
+  border-radius: 18px;
+  background: #fff;
+  color: #7c8599;
+}
+
+.website-notice__copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.website-notice__url {
+  overflow: hidden;
+  color: #5146e5;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.website-notice__action {
+  flex-shrink: 0;
+  color: #5146e5;
+  font-size: 17px;
+  font-weight: 700;
+}
