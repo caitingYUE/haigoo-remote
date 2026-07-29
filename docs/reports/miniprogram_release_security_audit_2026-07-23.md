@@ -67,3 +67,17 @@ CloudRun 仍报告腾讯 `@cloudbase/node-sdk@3.18.3` 固定依赖的旧 Axios �
 - [x] 开发 CloudRun 已使用受保护的独立 Preview Gateway/测试数据库，且双向交叉密钥验证均被拒绝。
 - [ ] 微信后台隐私保护指引与小程序内政策一致。
 - [ ] CloudRun 公网访问、最小实例和回滚版本已确认；监控、余额告警和自动续费仍需在控制台确认。
+
+## 2026-07-29 提审候选版本
+
+- 提审候选代码为 `1e909d56`，已推送 `main`；本次只纳入小程序体验调整和发布文档，不包含工作区内其他审计产物或图片。
+- 根项目类型检查、Mini Gateway 签名测试、小程序上线契约检查、小程序类型检查和微信生产构建全部通过。
+- 正式微信项目已重新生成到 `miniprogram/.wechat-production/`，约 808 KiB，不包含 source map；产物只包含生产环境 `cloud1-d8ggt7rbl273f83c7 / haigoo-mini-prod`。
+- Vercel Production 已由 `main` 自动部署并处于 `Ready`；正式 `/api/mini` 对未签名请求继续返回 `401`。
+- CloudRun 滚动部署尚未完成：本机 CloudBase CLI 当前登录的腾讯云账号只能看到另一个 `cloud1-3go1p0gr31c64b98` 环境，看不到正式 `cloud1-d8ggt7rbl273f83c7` 和开发 `haigoo-dev-d2gctbzxma401b345`。部署脚本在读取目标环境前安全中止，未修改任何 CloudRun 服务。切换到正确腾讯云账号后，仍需部署 `1e909d56` 并完成签名冒烟与全量缓存核验。
+
+本次重新执行 `npm audit --omit=dev`：
+
+- 网站运行依赖：0 Critical、7 High、2 Moderate。新增结果主要来自 `brace-expansion`/`react-router` 传递依赖和既有管理员导入使用的 `xlsx`；正式提审前应继续按受控入口和输入限制管理，并在兼容版本可用后升级。
+- 小程序依赖：3 Critical、8 High、8 Moderate，仍全部位于 Taro/webpack 本地构建链或未打入微信运行包的依赖路径。`npm audit fix --force` 会把 Taro 降到不兼容的大版本，不能用于提审分支；维持既有构建链例外并等待 Taro 兼容更新。
+- CloudRun 运行依赖：0 Critical、4 High、1 Moderate，来自腾讯 `@cloudbase/node-sdk` 固定的 Axios 与 lodash 依赖。当前 SDK 已是项目锁定兼容版本，CloudRun 公网访问关闭，客户端不能控制 SDK 目标 URL 或集合名；腾讯 SDK 发布兼容修复后应优先升级。
