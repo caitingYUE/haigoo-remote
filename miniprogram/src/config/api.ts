@@ -12,3 +12,11 @@ export function resolvePublicUrl(value?: string): string | undefined {
   // the in-app company icon rather than a non-whitelisted web origin.
   return undefined
 }
+
+export function resolveMiniAvatarUrl(value?: string): string | undefined {
+  const url = String(value || '').trim()
+  if (!url) return undefined
+  const localAvatar = url.match(/\/avatars\/(user_icon(?:1[0-5]|[1-9])\.png)(?:[?#].*)?$/i)
+  if (localAvatar?.[1]) return `/assets/avatars/${localAvatar[1]}`
+  return resolvePublicUrl(url)
+}

@@ -22,7 +22,7 @@ export default function JobCard({
   onToggleFavorite
 }: JobCardProps) {
   const [logoFailed, setLogoFailed] = useState(false)
-  const showEyebrow = Boolean(job.featured || job.memberOnly || job.matchScore)
+  const showEyebrow = Boolean(job.featured || job.memberOnly || job.isNew || job.matchScore)
   const applicationMethods = getApplicationMethods(job)
 
   useEffect(() => {
@@ -39,6 +39,7 @@ export default function JobCard({
         <View className='job-card__eyebrow-row'>
           <View className='job-card__signals'>
             {job.featured ? <Text className='job-card__hot'>🔥 热门申请</Text> : null}
+            {job.isNew ? <Text className='job-card__new'>New</Text> : null}
             {job.memberOnly ? (
               <View className='job-card__club'>
                 <MiniIcon name='club' size={14} />

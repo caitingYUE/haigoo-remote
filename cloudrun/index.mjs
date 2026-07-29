@@ -766,6 +766,21 @@ async function getSubscribedCachedJobs(subscriptions, limit = 18) {
     .map((item) => item.job)
 }
 
+async function getSubscriptionOptions(limit = 120) {
+  const documents = await readAllListDocuments().catch(() => [])
+  const counts = new Map()
+  for (const record of documents.map(unwrapDocument)) {
+    if (!record?.payload || ['inactive', 'closed', 'expired'].includes(String(record.status || '').toLowerCase())) continue
+    const category = String(record.payload.category || '').trim()
+    if (!category || ['其他', 'other', 'unspecified'].includes(category.toLowerCase())) continue
+    counts.set(category, Number(counts.get(category) || 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([value, count]) => ({ value, label: value, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label, 'zh-CN'))
+    .slice(0, Math.max(1, Math.min(200, Number(limit) || 120)))
+}
+
 async function listJobs(query) {
   if (query.search) {
     const state = await getSyncState()
@@ -1109,14 +1124,23 @@ async function route(req, res) {
     if (req.method === 'GET' && url.pathname === '/mini/subscriptions') {
       const session = getSession(req)
       if (!session) return send(res, 401, { error: '微信登录已失效，请重新登录' })
-      const data = await gatewayRequest('subscriptions', { query: { openid: session.openid } })
+      const [data, options] = await Promise.all([
+        gatewayRequest('subscriptions', { query: { openid: session.openid } }),
+        getSubscriptionOptions()
+      ])
       const deliveredJobs = await getCachedJobs(data.jobIds || [], 18)
-      const jobs = jobsSourceOrigin !== apiOrigin
-        ? await getSubscribedCachedJobs(data.subscriptions || [], 18)
-        : deliveredJobs
+      const matchedJobs = await getSubscribedCachedJobs(data.subscriptions || [], 18)
+      const jobs = [...deliveredJobs, ...matchedJobs]
+        .filter((job, index, source) => source.findIndex((item) => String(item?.id || '') === String(job?.id || '')) === index)
+        .slice(0, 18)
       return send(res, 200, {
         subscriptions: data.subscriptions || [],
-        jobs
+        jobs,
+        options,
+        limits: {
+          recommended: 5,
+          maximum: 8
+        }
       })
     }
     if (req.method === 'POST' && url.pathname === '/mini/subscriptions') {

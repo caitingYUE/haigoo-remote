@@ -45,6 +45,16 @@
   letter-spacing: 0.3px;
 }
 
+.job-card__new {
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: #16a36a;
+  color: #fff;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
 .job-card__club {
   display: flex;
   align-items: center;

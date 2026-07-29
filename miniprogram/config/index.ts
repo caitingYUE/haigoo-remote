@@ -27,24 +27,24 @@ export default defineConfig<'webpack5'>(async (merge) => {
     copy: {
       patterns: [
         {
-          from: path.resolve(__dirname, '../../public/pic_lists/Home_pics/background05.webp'),
-          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.webp`)
+          from: path.resolve(__dirname, '../assets/static/home-hero-bg.jpg'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.jpg`)
         },
         {
           from: path.resolve(__dirname, '../../public/assets/brandlogo.png'),
           to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-brand-logo.png`)
         },
         {
-          from: path.resolve(__dirname, '../../public/avatars/user_icon1.png'),
-          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-avatar.png`)
+          from: path.resolve(__dirname, '../../public/avatars'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/avatars`)
         },
         {
           from: path.resolve(__dirname, '../../public/series_assistant.png'),
           to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-advisor.png`)
         },
         {
-          from: path.resolve(__dirname, '../../public/Wechat_group.webp'),
-          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-community.webp`)
+          from: path.resolve(__dirname, '../assets/static/haigoo-community.png'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-community.png`)
         },
         {
           from: path.resolve(__dirname, '../assets/icons'),

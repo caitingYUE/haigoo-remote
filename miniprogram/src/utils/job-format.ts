@@ -47,6 +47,8 @@ export interface RawApiJob {
   isTrusted?: boolean
   memberOnly?: boolean
   isFeatured?: boolean
+  isNew?: boolean
+  is_new?: boolean
   matchScore?: number
   displayMatchScore?: number
   displayBand?: MiniJob['displayBand']
@@ -218,6 +220,12 @@ export function mapApiJob(job: RawApiJob): MiniJob {
   )
   const displayBand = job.displayBand || (score >= 75 ? 'common' : 'hidden')
   const showMatchScore = displayBand !== 'hidden' && score >= 75
+  const publishedTime = job.publishedAt ? new Date(job.publishedAt).getTime() : 0
+  const isNew = typeof job.isNew === 'boolean'
+    ? job.isNew
+    : typeof job.is_new === 'boolean'
+      ? job.is_new
+      : Number.isFinite(publishedTime) && publishedTime > 0 && Date.now() - publishedTime <= 3 * 24 * 60 * 60 * 1000
 
   const translatedResponsibilities = normalizeArray(translations.responsibilities)
   const translatedRequirements = normalizeArray(translations.requirements)
@@ -244,6 +252,7 @@ export function mapApiJob(job: RawApiJob): MiniJob {
     displayBand,
     memberOnly: Boolean(job.memberOnly),
     featured: Boolean(job.isFeatured),
+    isNew,
     isTrusted: Boolean(job.isTrusted),
     sourceType: String(job.sourceType || job.source || '').trim() || undefined,
     status: String(job.status || '').trim() || undefined,

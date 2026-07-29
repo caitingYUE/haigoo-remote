@@ -1,5 +1,7 @@
 import { Image, Text, View } from '@tarojs/components'
 import { switchTab } from '@tarojs/taro'
+import { useEffect, useState } from 'react'
+import { resolveMiniAvatarUrl } from '../../config/api'
 import MiniIcon from '../mini-icon'
 import './index.scss'
 
@@ -16,6 +18,13 @@ export default function BrandHeader({
   isMember = false,
   avatar = ''
 }: BrandHeaderProps) {
+  const [avatarFailed, setAvatarFailed] = useState(false)
+  const avatarUrl = resolveMiniAvatarUrl(avatar)
+
+  useEffect(() => {
+    setAvatarFailed(false)
+  }, [avatarUrl])
+
   return (
     <View className={`brand-header ${compact ? 'brand-header--compact' : ''}`}>
       <View className='brand-header__brand'>
@@ -32,8 +41,13 @@ export default function BrandHeader({
             <Text>{isMember ? 'Club' : 'Free'}</Text>
           </View>
           <View className='brand-header__avatar' onClick={() => switchTab({ url: '/pages/profile/index' })}>
-            {avatar ? (
-              <Image className='brand-header__avatar-image' src={avatar} mode='aspectFill' />
+            {avatarUrl && !avatarFailed ? (
+              <Image
+                className='brand-header__avatar-image'
+                src={avatarUrl}
+                mode='aspectFill'
+                onError={() => setAvatarFailed(true)}
+              />
             ) : (
               <MiniIcon name='user' size={24} />
             )}

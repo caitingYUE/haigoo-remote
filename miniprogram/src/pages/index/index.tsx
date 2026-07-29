@@ -12,6 +12,13 @@ import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import type { MiniJob } from '../../types'
 import './index.scss'
 
+const EMPTY_SUBSCRIPTION_FEED: SubscriptionFeed = {
+  subscriptions: [],
+  jobs: [],
+  options: [],
+  limits: { recommended: 5, maximum: 8 }
+}
+
 export default function HomePage() {
   const [featuredJobs, setFeaturedJobs] = useState<MiniJob[]>([])
   const [jobsLoading, setJobsLoading] = useState(true)
@@ -19,7 +26,7 @@ export default function HomePage() {
   const [authenticated, setAuthenticated] = useState(hasAuthenticatedSession())
   const [isMember, setIsMember] = useState(false)
   const [userAvatar, setUserAvatar] = useState('')
-  const [subscriptionFeed, setSubscriptionFeed] = useState<SubscriptionFeed>({ subscriptions: [], jobs: [] })
+  const [subscriptionFeed, setSubscriptionFeed] = useState<SubscriptionFeed>(EMPTY_SUBSCRIPTION_FEED)
 
   const handleSearch = () => {
     switchTab({ url: '/pages/jobs/index' })
@@ -53,12 +60,12 @@ export default function HomePage() {
     setIsMember(member)
     setUserAvatar(nextAuthenticated ? String(user?.avatar || '') : '')
     if (!member) {
-      setSubscriptionFeed({ subscriptions: [], jobs: [] })
+      setSubscriptionFeed(EMPTY_SUBSCRIPTION_FEED)
       return
     }
     fetchSubscriptionFeed()
       .then(setSubscriptionFeed)
-      .catch(() => setSubscriptionFeed({ subscriptions: [], jobs: [] }))
+      .catch(() => setSubscriptionFeed(EMPTY_SUBSCRIPTION_FEED))
   })
 
   return (
@@ -66,7 +73,7 @@ export default function HomePage() {
       <BrandHeader authenticated={authenticated} isMember={isMember} avatar={userAvatar} />
 
       <View className='home-welcome'>
-        <Image className='home-welcome__website-bg' src='/assets/home-hero-bg.webp' mode='aspectFill' />
+        <Image className='home-welcome__website-bg' src='/assets/home-hero-bg.jpg' mode='aspectFill' />
         <View className='home-welcome__overlay' />
         <View className='home-welcome__content'>
           <Text className='home-welcome__eyebrow'>全球远程工作探索</Text>

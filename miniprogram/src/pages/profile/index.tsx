@@ -1,7 +1,8 @@
 import { Image, Text, View } from '@tarojs/components'
 import { navigateTo, setTabBarItem, showModal, showToast, switchTab, useDidShow } from '@tarojs/taro'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import MiniIcon, { type MiniIconName } from '../../components/mini-icon'
+import { resolveMiniAvatarUrl } from '../../config/api'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import './index.scss'
@@ -15,12 +16,18 @@ const profileMenus = [
 
 export default function ProfilePage() {
   const [, setSessionVersion] = useState(0)
+  const [avatarFailed, setAvatarFailed] = useState(false)
   const isAuthenticated = hasAuthenticatedSession()
   const user = getMiniUser()
+  const avatarUrl = resolveMiniAvatarUrl(user?.avatar)
+
+  useEffect(() => {
+    setAvatarFailed(false)
+  }, [avatarUrl])
 
   useDidShow(() => {
     setSessionVersion((value) => value + 1)
-    setTabBarItem({ index: 2, text: getMiniUser()?.isMember ? '订阅' : 'Club' })
+    setTabBarItem({ index: 2, text: 'Club' })
   })
 
   const handleLogin = async () => {
@@ -76,8 +83,13 @@ export default function ProfilePage() {
       <View className='profile-identity'>
         <View className='profile-identity__avatar-wrap'>
           <View className='profile-identity__avatar'>
-            {isAuthenticated && user?.avatar ? (
-              <Image className='profile-identity__avatar-image' src={user.avatar} mode='aspectFill' />
+            {isAuthenticated && avatarUrl && !avatarFailed ? (
+              <Image
+                className='profile-identity__avatar-image'
+                src={avatarUrl}
+                mode='aspectFill'
+                onError={() => setAvatarFailed(true)}
+              />
             ) : (
               <MiniIcon name='user' size={45} />
             )}

@@ -19,11 +19,26 @@ interface SubscriptionResponse {
   subscriptions?: MiniSubscription[]
   jobs?: RawApiJob[]
   subscription?: MiniSubscription
+  options?: SubscriptionOption[]
+  limits?: SubscriptionLimits
+}
+
+export interface SubscriptionOption {
+  value: string
+  label: string
+  count: number
+}
+
+export interface SubscriptionLimits {
+  recommended: number
+  maximum: number
 }
 
 export interface SubscriptionFeed {
   subscriptions: MiniSubscription[]
   jobs: MiniJob[]
+  options: SubscriptionOption[]
+  limits: SubscriptionLimits
 }
 
 export function getSubscriptionTopics(subscription?: MiniSubscription): string[] {
@@ -50,7 +65,20 @@ export async function fetchSubscriptionFeed(): Promise<SubscriptionFeed> {
   const data = await requestJson<SubscriptionResponse>('/mini/subscriptions', { authenticated: true })
   return {
     subscriptions: Array.isArray(data.subscriptions) ? data.subscriptions : [],
-    jobs: Array.isArray(data.jobs) ? data.jobs.map(mapApiJob).filter((job) => Boolean(job.id)) : []
+    jobs: Array.isArray(data.jobs) ? data.jobs.map(mapApiJob).filter((job) => Boolean(job.id)) : [],
+    options: Array.isArray(data.options)
+      ? data.options
+        .map((option) => ({
+          value: String(option.value || '').trim(),
+          label: String(option.label || option.value || '').trim(),
+          count: Math.max(0, Number(option.count || 0))
+        }))
+        .filter((option) => Boolean(option.value))
+      : [],
+    limits: {
+      recommended: Math.max(1, Number(data.limits?.recommended || 5)),
+      maximum: Math.max(1, Number(data.limits?.maximum || 8))
+    }
   }
 }
 

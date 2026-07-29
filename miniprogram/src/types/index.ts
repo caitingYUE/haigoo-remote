@@ -28,6 +28,7 @@ export interface MiniJob {
   displayBand?: 'hidden' | 'common' | 'high'
   memberOnly?: boolean
   featured?: boolean
+  isNew?: boolean
   isTrusted?: boolean
   sourceType?: string
   status?: string

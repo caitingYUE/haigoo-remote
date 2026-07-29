@@ -55,11 +55,6 @@
   gap: 12px;
 }
 
-.job-detail-actions__button--active {
-  border-color: #5146e5;
-  background: #5146e5;
-}
-
 .job-detail-actions__button {
   display: flex;
   align-items: center;
@@ -71,6 +66,12 @@
   border-radius: 50%;
   background: #fff;
   line-height: 1;
+}
+
+.job-detail-actions__button.job-detail-actions__button--active {
+  border-color: #5146e5;
+  background: #5146e5;
+  box-shadow: 0 6px 14px rgba(81, 70, 229, 0.2);
 }
 
 .job-detail-hero {
@@ -126,6 +127,48 @@
   color: #758096;
   font-size: 25px;
   line-height: 1.45;
+}
+
+.job-detail-hero__signals {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 20px;
+}
+
+.job-detail-hero__new,
+.job-detail-hero__hot,
+.job-detail-hero__club {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.job-detail-hero__new {
+  background: #16a36a;
+  color: #fff;
+}
+
+.job-detail-hero__hot {
+  background: #fff0f0;
+  color: #e5484d;
+}
+
+.job-detail-hero__club {
+  gap: 5px;
+  background: #5146e5;
+  color: #fff;
+}
+
+.job-detail-hero__club .mini-icon {
+  filter: brightness(0) invert(1);
 }
 
 .job-detail-translation {

@@ -175,15 +175,31 @@ export default function JobDetailPage() {
     if (!job) return
     const application = await unlockEmailApplication(job)
     if (!application.hiringEmail) throw new Error('该岗位暂无招聘邮箱')
-    const content = [
-      `收件人：${application.hiringEmail}`,
-      `主题：Application for ${job.originalTitle || job.title}`,
-      '',
+    const subject = `Application for ${job.originalTitle || job.title}`
+    const body = [
       `Hi ${job.company} team,`,
+      '',
       `I am writing to apply for the ${job.originalTitle || job.title} position. Please find my resume attached.`
     ].join('\n')
-    await setClipboardData({ data: content })
-    confirmApplied('email', '招聘邮箱和申请文案已复制，请在邮箱客户端完成发送。')
+    const clipboardContent = [
+      `收件人：${application.hiringEmail}`,
+      `主题：${subject}`,
+      '',
+      '邮件正文：',
+      body
+    ].join('\n')
+    const emailMethodLabel = getApplicationMethods(job).find((method) => method.type === 'email')?.label || '邮箱直申'
+    showModal({
+      title: `${emailMethodLabel}详情`,
+      content: clipboardContent,
+      cancelText: '取消',
+      confirmText: '复制全部',
+      success: async ({ confirm }) => {
+        if (!confirm) return
+        await setClipboardData({ data: clipboardContent })
+        confirmApplied('email', '招聘邮箱、邮件主题和正文已复制，请在邮箱客户端完成发送。')
+      }
+    })
   }
 
   const openClubIntroduction = () => {
@@ -353,6 +369,18 @@ export default function JobDetailPage() {
               <MiniIcon name='building' size={38} />
             )}
           </View>
+          {visibleJob.isNew || visibleJob.featured || visibleJob.memberOnly ? (
+            <View className='job-detail-hero__signals'>
+              {visibleJob.isNew ? <Text className='job-detail-hero__new'>New</Text> : null}
+              {visibleJob.featured ? <Text className='job-detail-hero__hot'>🔥 热门申请</Text> : null}
+              {visibleJob.memberOnly ? (
+                <View className='job-detail-hero__club'>
+                  <MiniIcon name='club' size={14} />
+                  <Text>Club</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
           <Text className='job-detail-hero__title'>{visibleJob.title}</Text>
           <Text className='job-detail-hero__company'>{visibleJob.company} · {visibleJob.location}</Text>
           {visibleJob.originalDescription ? (
