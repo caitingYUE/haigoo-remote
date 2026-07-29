@@ -20,6 +20,7 @@
     "test:mini-release": "node test-mini-release-readiness.js",
     "deploy:mini-preview": "node scripts/deploy-mini-preview.mjs",
     "configure:mini-payment-relay": "node scripts/configure-mini-payment-relay.mjs",
+    "check:mini-payment-runtime": "node scripts/verify-mini-payment-runtime.mjs",
     "deploy:mini-cloudrun:dev": "node scripts/deploy-mini-cloudrun.mjs --target=development",
     "check:mini-gateway:dev": "node scripts/verify-mini-gateway.mjs --target=development",
     "check:mini-jobs:dev": "node scripts/verify-mini-gateway.mjs --target=development --scope=jobs",
