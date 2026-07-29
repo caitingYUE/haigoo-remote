@@ -141,7 +141,6 @@ export default function ProfilePage() {
       <View className='profile-club'>
         <View className='profile-club__heading'>
           <View className='profile-club__icon'><MiniIcon name='club' size={20} /></View>
-          <Text className='profile-club__eyebrow'>HAIGOO REMOTE CLUB</Text>
         </View>
         <Text className='profile-club__title'>{user?.isMember ? '查看我订阅的岗位更新' : '了解 Club 权益'}</Text>
         <Text className='profile-club__copy'>岗位订阅、企业信息、申请辅助与远程职业咨询支持。</Text>

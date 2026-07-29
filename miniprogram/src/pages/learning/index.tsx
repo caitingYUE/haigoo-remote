@@ -1,10 +1,11 @@
-import { Button, Image, Input, Text, View } from '@tarojs/components'
+import { Button, Image, Input, ScrollView, Text, View } from '@tarojs/components'
 import { Check } from '@nutui/icons-react-taro'
 import { setNavigationBarTitle, setTabBarItem, showModal, showToast, useDidShow } from '@tarojs/taro'
 import { useCallback, useMemo, useState } from 'react'
 import JobCard from '../../components/job-card'
 import MiniIcon from '../../components/mini-icon'
 import WebsiteNotice from '../../components/website-notice'
+import { buildSubscriptionTopicGroups } from '../../data/subscription-topic-groups'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import {
   fetchSubscriptionFeed,
@@ -83,6 +84,7 @@ export default function LearningPage() {
   const [feed, setFeed] = useState<SubscriptionFeed>(EMPTY_FEED)
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [topicSearch, setTopicSearch] = useState('')
+  const [activeTopicGroup, setActiveTopicGroup] = useState(0)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [qrDialog, setQrDialog] = useState<QrDialog | null>(null)
@@ -125,22 +127,32 @@ export default function LearningPage() {
 
   useDidShow(() => { syncIdentity() })
 
-  const topicOptions = useMemo(() => {
+  const allTopicOptions = useMemo(() => {
     const optionMap = new Map<string, SubscriptionOption>()
     feed.options.forEach((option) => optionMap.set(option.value, option))
     selectedTopics.forEach((topic) => {
       if (!optionMap.has(topic)) optionMap.set(topic, { value: topic, label: topic, count: 0 })
     })
-    const search = normalizeSearch(topicSearch)
     return [...optionMap.values()]
+  }, [feed.options, selectedTopics])
+
+  const topicGroups = useMemo(
+    () => buildSubscriptionTopicGroups(allTopicOptions),
+    [allTopicOptions]
+  )
+
+  const topicOptions = useMemo(() => {
+    const search = normalizeSearch(topicSearch)
+    const groupOptions = topicGroups[activeTopicGroup]?.options || []
+    const source = search ? allTopicOptions : groupOptions
+    return [...source]
       .filter((option) => !search || fuzzyMatches(`${option.label}${option.value}`, search))
       .sort((a, b) => {
         const aSelected = selectedTopics.includes(a.value) ? 0 : 1
         const bSelected = selectedTopics.includes(b.value) ? 0 : 1
-        return aSelected - bSelected || b.count - a.count || a.label.localeCompare(b.label, 'zh-CN')
+        return aSelected - bSelected || a.label.localeCompare(b.label, 'zh-CN')
       })
-      .slice(0, search ? 30 : 24)
-  }, [feed.options, selectedTopics, topicSearch])
+  }, [activeTopicGroup, allTopicOptions, selectedTopics, topicGroups, topicSearch])
 
   const toggleTopic = (topic: string) => {
     setSelectedTopics((topics) => {
@@ -261,9 +273,8 @@ export default function LearningPage() {
       {isMember ? (
         <>
           <View className='subscription-hero'>
-            <Text className='subscription-hero__eyebrow'>MY JOB UPDATES</Text>
             <Text className='subscription-hero__title'>我订阅的岗位更新</Text>
-            <Text className='subscription-hero__copy'>保存方向后，每日新岗位会同时推送至邮箱，并沉淀在这里方便查看。</Text>
+            <Text className='subscription-hero__copy'>小程序与订阅邮件保持同步，方便随时查看最近一次发送的岗位更新。</Text>
           </View>
           <View className='subscription-page__heading'>
             <View>
@@ -284,6 +295,21 @@ export default function LearningPage() {
                 onInput={(event) => setTopicSearch(event.detail.value)}
               />
             </View>
+            {!topicSearch && topicGroups.length > 0 ? (
+              <ScrollView className='subscription-topic-groups' scrollX enhanced showScrollbar={false}>
+                <View className='subscription-topic-groups__inner'>
+                  {topicGroups.map((group, index) => (
+                    <View
+                      className={'subscription-topic-group ' + (activeTopicGroup === index ? 'subscription-topic-group--active' : '')}
+                      key={group.title}
+                      onClick={() => setActiveTopicGroup(index)}
+                    >
+                      <Text>{group.title}</Text>
+                    </View>
+                  ))}
+                </View>
+              </ScrollView>
+            ) : null}
             <View className='subscription-topic-list'>
               {topicOptions.map((topic) => (
                 <View
@@ -292,7 +318,6 @@ export default function LearningPage() {
                   onClick={() => toggleTopic(topic.value)}
                 >
                   <Text>{topic.label}</Text>
-                  {topic.count > 0 ? <Text className='subscription-topic__count'>{topic.count}</Text> : null}
                 </View>
               ))}
             </View>
@@ -304,8 +329,8 @@ export default function LearningPage() {
 
           <View className='subscription-page__heading subscription-page__heading--updates'>
             <View>
-              <Text className='subscription-page__title'>最新匹配岗位</Text>
-              <Text className='subscription-page__note'>保存后立即匹配当前岗位，后续与邮箱每日摘要同步</Text>
+              <Text className='subscription-page__title'>最近岗位更新</Text>
+              <Text className='subscription-page__note'>仅展示最近一次实际发送到邮箱的岗位，每次不超过 5 个</Text>
             </View>
           </View>
           {loading ? (
@@ -314,8 +339,8 @@ export default function LearningPage() {
             feed.jobs.map((job) => <JobCard job={job} key={job.id} />)
           ) : (
             <View className='subscription-empty surface-card'>
-              <Text className='subscription-empty__title'>{hasSubscription ? '暂时没有新的匹配岗位' : '保存方向后，匹配岗位会出现在这里'}</Text>
-              <Text className='subscription-empty__copy'>{hasSubscription ? '新的岗位更新会与邮件摘要同步出现。' : '你可以先从上方选择关注的岗位方向。'}</Text>
+              <Text className='subscription-empty__title'>{hasSubscription ? '暂时没有新的岗位更新' : '还没有设置订阅方向'}</Text>
+              <Text className='subscription-empty__copy'>{hasSubscription ? '当下一封岗位邮件发出后，小程序会同步展示相同岗位。' : '请先从上方选择关注的岗位方向并保存。'}</Text>
             </View>
           )}
           <WebsiteNotice />
@@ -323,7 +348,6 @@ export default function LearningPage() {
       ) : (
         <>
           <View className='membership-hero'>
-            <Text className='membership-hero__eyebrow'>HAIGOO REMOTE CLUB</Text>
             <Text className='membership-hero__title'>打开全球机会，从远程开始</Text>
             <Text className='membership-hero__copy'>免费版本，小程序远程岗位信息有限开放，网站全开放。你可以根据当前阶段，选择适合自己的 Club 权益方案。</Text>
           </View>

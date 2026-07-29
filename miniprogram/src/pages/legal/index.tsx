@@ -64,7 +64,6 @@ export default function LegalPage() {
   return (
     <View className='legal-page'>
       <View className='legal-page__hero'>
-        <Text className='legal-page__eyebrow'>HAIGOO REMOTE</Text>
         <Text className='legal-page__title'>{isTerms ? '用户服务协议' : '隐私政策'}</Text>
         <Text className='legal-page__version'>版本：2026-07-23 · 生效日期：正式发布之日</Text>
       </View>

@@ -10,17 +10,13 @@
   box-shadow: 0 8px 22px rgba(31, 39, 70, 0.045);
 }
 
-.membership-hero__eyebrow,
 .membership-hero__title,
 .membership-hero__copy,
-.subscription-hero__eyebrow,
 .subscription-hero__title,
 .subscription-hero__copy { display: block; }
 
-.membership-hero__eyebrow,
-.subscription-hero__eyebrow { color: #5146e5; font-size: 17px; font-weight: 800; letter-spacing: 1.6px; }
 .membership-hero__title,
-.subscription-hero__title { margin-top: 14px; color: #11182b; font-size: 36px; font-weight: 800; line-height: 1.35; }
+.subscription-hero__title { color: #11182b; font-size: 36px; font-weight: 800; line-height: 1.35; }
 .membership-hero__copy,
 .subscription-hero__copy { margin-top: 13px; color: #7d8699; font-size: 20px; line-height: 1.6; }
 
@@ -256,17 +252,40 @@
   margin-top: 18px;
 }
 
+.subscription-topic-groups {
+  width: 100%;
+  margin-top: 18px;
+  white-space: nowrap;
+}
+
+.subscription-topic-groups__inner {
+  display: inline-flex;
+  gap: 10px;
+  padding-right: 18px;
+}
+
+.subscription-topic-group {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 19px;
+  border-bottom: 4px solid transparent;
+  color: #7d8699;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.subscription-topic-group--active {
+  border-bottom-color: #5146e5;
+  color: #5146e5;
+}
+
 .subscription-topic {
   display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 54px; padding: 0 18px;
   border-radius: 999px; background: #efeffd; color: #7f78ba; font-size: 20px; font-weight: 700;
 }
 .subscription-topic--active { background: #5146e5; box-shadow: 0 7px 15px rgba(81, 70, 229, 0.16); color: #fff; }
-.subscription-topic__count {
-  min-width: 25px;
-  color: inherit;
-  font-size: 15px;
-  opacity: 0.72;
-}
 .subscription-topic-picker__empty {
   display: block;
   padding: 26px 8px 8px;

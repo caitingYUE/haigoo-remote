@@ -530,7 +530,6 @@ export default function JobDetailPage() {
           <View className='job-detail-company surface-card'>
             <View className='job-detail-company__heading'>
               <View>
-                <Text className='job-detail-company__eyebrow'>COMPANY PROFILE</Text>
                 <Text className='job-detail-company__name'>{visibleJob.company}</Text>
               </View>
               <View className='job-detail-company__logo'>

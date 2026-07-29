@@ -691,81 +691,6 @@ async function fetchUpstreamJobSnapshot(jobId) {
   }
 }
 
-function subscriptionTopics(subscriptions = []) {
-  const topics = []
-  for (const subscription of subscriptions) {
-    if (String(subscription?.status || 'active') !== 'active') continue
-    let preferences = subscription?.preferences
-    if (typeof preferences === 'string') {
-      try {
-        preferences = JSON.parse(preferences)
-      } catch {
-        preferences = {}
-      }
-    }
-    const values = [
-      ...(Array.isArray(preferences?.topics) ? preferences.topics : []),
-      ...(Array.isArray(preferences?.customTopics) ? preferences.customTopics : []),
-      ...(preferences?.customTopic ? [preferences.customTopic] : []),
-      ...String(subscription?.topic || '').split(',')
-    ]
-    topics.push(...values.map((value) => String(value || '').trim()).filter(Boolean))
-  }
-  return [...new Set(topics)]
-}
-
-function subscriptionTopicTerms(topic) {
-  const normalized = String(topic || '').trim().toLowerCase()
-  const aliases = {
-    产品经理: ['产品经理', 'product manager', 'product management'],
-    设计: ['设计', 'designer', 'design', 'ux', 'ui'],
-    前端开发: ['前端', 'frontend', 'front-end'],
-    后端开发: ['后端', 'backend', 'back-end'],
-    市场营销: ['市场营销', '市场', 'marketing', 'growth'],
-    运营: ['运营', 'operations', 'content'],
-    销售: ['销售', 'sales', 'business development'],
-    人力资源: ['人力资源', '人事行政', '招聘', 'hr', 'recruiter', 'talent']
-  }
-  return [...new Set([normalized, ...(aliases[String(topic || '').trim()] || [])].map((value) => value.toLowerCase()).filter(Boolean))]
-}
-
-function subscriptionTermMatches(haystack, term) {
-  if (!term) return false
-  if (!/^[\x00-\x7F]+$/.test(term)) return haystack.includes(term)
-  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'i').test(haystack)
-}
-
-async function getSubscribedCachedJobs(subscriptions, limit = 18) {
-  const topics = subscriptionTopics(subscriptions)
-  if (topics.length === 0) return []
-  const terms = topics.flatMap(subscriptionTopicTerms)
-  const documents = await readAllListDocuments().catch(() => [])
-  return documents
-    .map(unwrapDocument)
-    .filter((item) => item?.payload && !['inactive', 'closed', 'expired'].includes(String(item.status || '').toLowerCase()))
-    .map((item) => {
-      const job = item.payload
-      const haystack = [
-        job.title,
-        job.company,
-        job.category,
-        job.location,
-        ...(Array.isArray(job.tags) ? job.tags : [])
-      ].join(' ').toLowerCase()
-      const score = terms.reduce((total, term) => total + (subscriptionTermMatches(haystack, term) ? 1 : 0), 0)
-      return { job, score }
-    })
-    .filter((item) => item.score > 0)
-    .sort((a, b) => (
-      b.score - a.score
-      || String(b.job?.publishedAt || '').localeCompare(String(a.job?.publishedAt || ''))
-      || String(b.job?.id || '').localeCompare(String(a.job?.id || ''))
-    ))
-    .slice(0, limit)
-    .map((item) => item.job)
-}
-
 async function getSubscriptionOptions(limit = 120) {
   const documents = await readAllListDocuments().catch(() => [])
   const counts = new Map()
@@ -1128,11 +1053,7 @@ async function route(req, res) {
         gatewayRequest('subscriptions', { query: { openid: session.openid } }),
         getSubscriptionOptions()
       ])
-      const deliveredJobs = await getCachedJobs(data.jobIds || [], 18)
-      const matchedJobs = await getSubscribedCachedJobs(data.subscriptions || [], 18)
-      const jobs = [...deliveredJobs, ...matchedJobs]
-        .filter((job, index, source) => source.findIndex((item) => String(item?.id || '') === String(job?.id || '')) === index)
-        .slice(0, 18)
+      const jobs = await getCachedJobs(data.jobIds || [], 5)
       return send(res, 200, {
         subscriptions: data.subscriptions || [],
         jobs,
