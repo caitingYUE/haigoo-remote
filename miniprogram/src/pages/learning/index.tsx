@@ -3,6 +3,7 @@ import { Check } from '@nutui/icons-react-taro'
 import { previewImage, setNavigationBarTitle, setTabBarItem, showModal, showToast, useDidShow } from '@tarojs/taro'
 import { useCallback, useState } from 'react'
 import JobCard from '../../components/job-card'
+import WebsiteNotice from '../../components/website-notice'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import { fetchSubscriptionFeed, getSubscriptionTopics, saveSubscriptionTopics, type SubscriptionFeed } from '../../services/subscription-service'
 import { getMiniSessionToken, getMiniUser } from '../../services/session'
@@ -17,7 +18,7 @@ const MEMBER_PLANS = [
     price: '¥99',
     unit: '/ 30 天',
     who: '适合首次尝试远程工作、准备第一轮有效申请的人。',
-    features: ['简历文字诊断', '简历修改建议', '3–5 个站内岗位推荐', '远程入门准备材料', '30 天网站会员权限']
+    features: ['简历文字诊断', '简历修改建议', '3–5 个站内岗位推荐', '远程入门准备材料', '30 天网站及小程序会员权限']
   },
   {
     name: '远程求职陪伴方案',
@@ -26,7 +27,7 @@ const MEMBER_PLANS = [
     unit: '/ 6 个月',
     who: '适合明确寻找远程工作、希望持续推进申请的人。',
     featured: true,
-    features: ['工作方向与简历初步诊断', '英文简历优化或语音咨询', '定制远程求职准备材料', '定向岗位挖掘 5–10 个', '6 个月网站会员权限']
+    features: ['工作方向与简历初步诊断', '英文简历优化或语音咨询', '定制远程求职准备材料', '定向岗位挖掘 5–10 个', '6 个月网站及小程序会员权限']
   },
   {
     name: '远程职业共建方案',
@@ -130,9 +131,10 @@ export default function LearningPage() {
       <View className='page-shell membership-page'>
         <View className='membership-hero'>
           <Text className='membership-hero__eyebrow'>HAIGOO REMOTE CLUB</Text>
-          <Text className='membership-hero__title'>打开全球机会{'\n'}从远程开始</Text>
-          <Text className='membership-hero__copy'>会员服务将岗位机会、主动订阅与求职支持放到同一条成长路径里。</Text>
+          <Text className='membership-hero__title'>打开全球机会，从远程开始</Text>
+          <Text className='membership-hero__copy'>免费版本，小程序远程岗位信息有限开放，网站全开放。你可以根据当前阶段，选择适合自己的club权益方案。</Text>
         </View>
+        <WebsiteNotice />
         <View className='membership-page__heading'>
           <View>
             <Text className='membership-page__title'>Club 权益方案</Text>
@@ -173,7 +175,7 @@ export default function LearningPage() {
         <View className='membership-page__heading membership-page__heading--support'>
           <View>
             <Text className='membership-page__title'>咨询与交流</Text>
-            <Text className='membership-page__note'>无需在小程序内支付，也可以先了解服务</Text>
+            <Text className='membership-page__note'>添加顾问，了解方案或加入交流群</Text>
           </View>
         </View>
         <View className='membership-contact-grid'>

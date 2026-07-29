@@ -110,7 +110,6 @@ export default function JobCard({
               if (!favoritePending) onToggleFavorite(job)
             }}
           >
-            <MiniIcon name='favorite' size={24} className={favorited ? 'job-card__favorite-icon--active' : ''} />
             <Text>{favoritePending ? '处理中' : favorited ? '已收藏' : '收藏'}</Text>
           </View>
         ) : null}

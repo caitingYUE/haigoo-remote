@@ -270,7 +270,7 @@ export default function JobsPage() {
               ? '正在加载岗位'
               : authenticated
                 ? `共 ${total} 个在招岗位`
-                : `共 ${jobs.length} 个可浏览岗位`}
+                : `未登录可浏览 ${jobs.length} 个岗位`}
           </Text>
           {showAllowanceNotice ? <Text className='jobs-page__allowance'>免费版本剩余 {browse?.remaining} 次查看额度</Text> : null}
         </View>
