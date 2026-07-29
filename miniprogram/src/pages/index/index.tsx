@@ -78,10 +78,10 @@ export default function HomePage() {
         <View className='home-welcome__content'>
           <Text className='home-welcome__eyebrow'>全球远程工作探索</Text>
           <View className='home-welcome__title'>
-            <Text className='home-welcome__title-line'>发现更多真实可靠的</Text>
-            <Text className='home-welcome__title-line'>远程工作机会</Text>
+            <Text className='home-welcome__title-line'>用你喜欢的方式</Text>
+            <Text className='home-welcome__title-line'>工作和生活</Text>
           </View>
-          <Text className='home-welcome__copy'>人工精选全球远程工作，大部分可直连HR/负责人邮箱。</Text>
+          <Text className='home-welcome__copy'>可以全球旅居，也可以居家办公。Haigoo 帮你获得理想的远程工作，在喜欢的地方，做有价值的事。</Text>
           <View className='home-welcome__button' onClick={handleSearch}>
             <Text>浏览远程岗位</Text>
           </View>
