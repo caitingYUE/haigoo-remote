@@ -12,6 +12,7 @@ process.env.WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON = JSON.stringify({
 const {
   EXPECTED_PLAN_AMOUNTS,
   VIRTUAL_PAYMENT_PRODUCTS,
+  ensurePurchaseEligible,
   parseProductMap
 } = await import('./lib/services/wechat-virtual-payment-service.js')
 const {
@@ -38,6 +39,24 @@ assert.deepEqual(VIRTUAL_PAYMENT_PRODUCTS.club_starter_monthly, {
   durationMonths: 0,
   durationDays: 30
 })
+assert.doesNotThrow(() => ensurePurchaseEligible({
+  member_status: 'active',
+  member_type: 'annual',
+  member_expire_at: '2099-12-31T00:00:00.000Z'
+}, VIRTUAL_PAYMENT_PRODUCTS.club_annual))
+assert.throws(() => ensurePurchaseEligible({
+  member_status: 'active',
+  member_type: 'annual',
+  member_expire_at: '2099-12-31T00:00:00.000Z'
+}, VIRTUAL_PAYMENT_PRODUCTS.club_starter_monthly), (error) => (
+  error?.statusCode === 409 &&
+  error?.code === 'VIRTUAL_PAYMENT_PLAN_CHANGE_NOT_SUPPORTED'
+))
+assert.doesNotThrow(() => ensurePurchaseEligible({
+  member_status: 'inactive',
+  member_type: 'annual',
+  member_expire_at: '2020-01-01T00:00:00.000Z'
+}, VIRTUAL_PAYMENT_PRODUCTS.club_starter_monthly))
 
 const timestamp = '1785290000'
 const nonce = 'virtual-payment-test'
