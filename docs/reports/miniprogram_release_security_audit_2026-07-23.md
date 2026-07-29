@@ -76,6 +76,7 @@ CloudRun 仍报告腾讯 `@cloudbase/node-sdk@3.18.3` 固定依赖的旧 Axios �
 - Vercel Production 已由 `main` 自动部署并处于 `Ready`；正式 `/api/mini` 对未签名请求继续返回 `401`。
 - `cloud1/haigoo-mini-prod` 已滚动部署候选代码，服务状态 `normal`，访问类型为 `OA + MINIAPP`、公网关闭、最小实例 1、最大实例 2。正式签名 Gateway 返回 `200` 和 412 个真实岗位，未签名请求返回 `401`。
 - 生产缓存核验通过：`mini_job_list` 与 `mini_jobs` 各 412 条、热门岗位 35 条、默认排序 412 条、CloudBase Logo 402 条；`mini_sync_state` 为 Ready、无全量同步残留，上游固定为 `https://haigooremote.com`。
+- 微信开发者工具已将 `1.0.0` 上传为开发版本，版本说明为“首发提审候选：远程岗位、收藏申请、岗位订阅与 Club 权益”；微信实际接收包为 558,374 Byte（约 545.3 KiB）。
 
 本次重新执行 `npm audit --omit=dev`：
 
