@@ -4,8 +4,23 @@ import { execFileSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const envId = 'haigoo-dev-d2gctbzxma401b345'
-const serviceName = 'haigoo-mini'
+const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1] || 'development'
+const environments = {
+  development: {
+    envId: 'haigoo-dev-d2gctbzxma401b345',
+    serviceName: 'haigoo-mini'
+  },
+  production: {
+    envId: 'cloud1-d8ggt7rbl273f83c7',
+    serviceName: 'haigoo-mini-prod'
+  }
+}
+
+if (!environments[target]) {
+  throw new Error('Usage: node scripts/verify-mini-cache.mjs --target=development|production')
+}
+
+const { envId, serviceName } = environments[target]
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -25,18 +40,23 @@ const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).
 const require = createRequire(import.meta.url)
 require(path.join(globalModules, '@cloudbase/cli/node_modules/reflect-metadata'))
 const { getCloudrunService } = require(path.join(globalModules, '@cloudbase/cli/lib/commands/cloudrun/base.js'))
+const { checkAndGetCredential } = require(path.join(globalModules, '@cloudbase/cli/lib/utils/net/credential.js'))
 const cloudbase = require(path.join(rootDir, 'cloudrun/node_modules/@cloudbase/node-sdk'))
 
 const service = await getCloudrunService(envId)
 const detail = await service.detail({ serverName: serviceName })
 const environment = parseEnvironment(detail.ServerConfig?.EnvParams)
-const secretId = String(environment.TENCENTCLOUD_SECRETID || '')
-const secretKey = String(environment.TENCENTCLOUD_SECRETKEY || '')
+let secretId = String(environment.TENCENTCLOUD_SECRETID || '')
+let secretKey = String(environment.TENCENTCLOUD_SECRETKEY || '')
+let sessionToken = String(environment.TENCENTCLOUD_SESSIONTOKEN || '')
 if (!secretId || !secretKey) {
-  throw new Error('Development CloudRun does not expose credentials for the cache diagnostic')
+  const cliCredential = await checkAndGetCredential(true)
+  secretId = String(cliCredential.secretId || '')
+  secretKey = String(cliCredential.secretKey || '')
+  sessionToken = String(cliCredential.token || '')
 }
 
-const app = cloudbase.init({ env: envId, secretId, secretKey })
+const app = cloudbase.init({ env: envId, secretId, secretKey, sessionToken })
 const db = app.database()
 
 async function readAll(collectionName, total) {
@@ -76,6 +96,7 @@ const samples = (Array.isArray(sampleResult.data) ? sampleResult.data : [])
   }))
 
 console.log(JSON.stringify({
+  target,
   envId,
   serviceName,
   listDocuments: Number(listCount.total || 0),

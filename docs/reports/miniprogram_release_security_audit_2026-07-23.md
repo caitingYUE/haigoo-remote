@@ -74,7 +74,8 @@ CloudRun 仍报告腾讯 `@cloudbase/node-sdk@3.18.3` 固定依赖的旧 Axios �
 - 根项目类型检查、Mini Gateway 签名测试、小程序上线契约检查、小程序类型检查和微信生产构建全部通过。
 - 正式微信项目已重新生成到 `miniprogram/.wechat-production/`，约 808 KiB，不包含 source map；产物只包含生产环境 `cloud1-d8ggt7rbl273f83c7 / haigoo-mini-prod`。
 - Vercel Production 已由 `main` 自动部署并处于 `Ready`；正式 `/api/mini` 对未签名请求继续返回 `401`。
-- CloudRun 滚动部署尚未完成：本机 CloudBase CLI 当前登录的腾讯云账号只能看到另一个 `cloud1-3go1p0gr31c64b98` 环境，看不到正式 `cloud1-d8ggt7rbl273f83c7` 和开发 `haigoo-dev-d2gctbzxma401b345`。部署脚本在读取目标环境前安全中止，未修改任何 CloudRun 服务。切换到正确腾讯云账号后，仍需部署 `1e909d56` 并完成签名冒烟与全量缓存核验。
+- `cloud1/haigoo-mini-prod` 已滚动部署候选代码，服务状态 `normal`，访问类型为 `OA + MINIAPP`、公网关闭、最小实例 1、最大实例 2。正式签名 Gateway 返回 `200` 和 412 个真实岗位，未签名请求返回 `401`。
+- 生产缓存核验通过：`mini_job_list` 与 `mini_jobs` 各 412 条、热门岗位 35 条、默认排序 412 条、CloudBase Logo 402 条；`mini_sync_state` 为 Ready、无全量同步残留，上游固定为 `https://haigooremote.com`。
 
 本次重新执行 `npm audit --omit=dev`：
 
