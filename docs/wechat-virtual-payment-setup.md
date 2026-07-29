@@ -28,13 +28,13 @@ AppKey 只能保存在 CloudRun 环境变量中，不能放入 Vercel 前端变�
 
 使用“道具直购”创建并发布三个商品。商品 ID 可以自定义，价格必须与服务端方案一致：
 
-| 服务端方案 ID | 建议商品名称 | 微信后台价格（元） | 接口 `goodsPrice`（分） |
-| --- | --- | ---: | ---: |
-| `club_starter_monthly` | Club Starter 30 天权益 | 99 | 9900 |
-| `club_half_year` | Club Member 6 个月权益 | 499 | 49900 |
-| `club_annual` | Club Partner 1 年权益 | 998 | 99800 |
+| 服务端方案 ID | 微信 `productId` | 商品名称 | 微信后台价格（元） | 接口 `goodsPrice`（分） |
+| --- | --- | --- | ---: | ---: |
+| `club_starter_monthly` | `club_starter_monthly` | Club Starter 30 天权益 | 99 | 9900 |
+| `club_half_year` | `club_half_year` | Club Member 6 个月权益 | 499 | 49900 |
+| `club_annual` | `club_annual` | Club Partner 1 年权益 | 998 | 99800 |
 
-发布后记录三个 `productId`。代码不会接受客户端传入的价格，也不会在商品未配置时降级到二维码或转账。
+服务端会同时校验方案 ID、`productId`、价格、权益类型和期限；任一项不一致都会停止下单。代码不会接受客户端传入的价格，也不会在商品未配置时降级到二维码或转账。
 
 ### 3. 消息推送
 
@@ -72,11 +72,27 @@ Preview 与 Production 应分别配置对应环境的商品 ID 映射：
 
 ```dotenv
 WECHAT_MINI_APP_ID=当前小程序AppID
-WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON={"club_starter_monthly":"实际Starter商品ID","club_half_year":"实际Member商品ID","club_annual":"实际Partner商品ID"}
+WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON={"club_starter_monthly":"club_starter_monthly","club_half_year":"club_half_year","club_annual":"club_annual"}
 WECHAT_MESSAGE_TOKEN=与微信消息推送后台相同的Token
+WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET=Preview与Production共享的独立高强度随机密钥
 ```
 
 `WECHAT_MESSAGE_TOKEN` 必须配置在提供正式回调域名的 Production 环境。修改 Vercel 环境变量后需要重新部署。
+
+Production 还需要配置：
+
+```dotenv
+WECHAT_VIRTUAL_PAYMENT_SANDBOX_CALLBACK_ORIGIN=https://mini-preview.haigooremote.com
+VERCEL_AUTOMATION_BYPASS_SECRET=Preview部署保护的自动化绕过密钥
+```
+
+微信只有一个消息推送地址。正式地址收到 `Env=1` 的沙箱发货事件后，会使用 HMAC 签名安全转发到 Preview，由开发数据库完成沙箱订单与权益变更；`Env=0` 的现网事件始终只在 Production 处理。
+
+仓库提供一条原子化配置命令。它会从开发 CloudRun 读取现有 Preview 绕过密钥，生成独立的支付回调中继密钥，并同时写入 Vercel Preview 与 Production；执行后必须立即重新部署两个 Vercel 环境：
+
+```bash
+npm run configure:mini-payment-relay
+```
 
 ## 数据库迁移
 
@@ -84,6 +100,7 @@ WECHAT_MESSAGE_TOKEN=与微信消息推送后台相同的Token
 
 ```text
 server-utils/dal/migrations/059_wechat_virtual_payments.sql
+server-utils/dal/migrations/060_align_wechat_virtual_payment_products.sql
 ```
 
 迁移新增微信订单字段、交易号唯一索引、待支付订单索引和金额约束，不包含生产密钥。

@@ -21,6 +21,7 @@ const environments = {
     envId: 'haigoo-dev-d2gctbzxma401b345',
     serviceName: 'haigoo-mini',
     minNum: 0,
+    maxNum: 1,
     apiOrigin: 'https://mini-preview.haigooremote.com',
     jobsApiOrigin: 'https://haigooremote.com'
   },
@@ -28,6 +29,7 @@ const environments = {
     envId: 'cloud1-d8ggt7rbl273f83c7',
     serviceName: 'haigoo-mini-prod',
     minNum: 1,
+    maxNum: 2,
     apiOrigin: 'https://haigooremote.com'
   }
 }
@@ -47,13 +49,13 @@ function parseEnvironment(value) {
   return { ...value }
 }
 
-function safeConfig(baseConfig, environment, minNum) {
+function safeConfig(baseConfig, environment, minNum, maxNum) {
   return {
     OpenAccessTypes: ['OA', 'MINIAPP'],
     Cpu: baseConfig.Cpu ?? 0,
     Mem: baseConfig.Mem ?? 0,
     MinNum: minNum,
-    MaxNum: Math.max(2, Number(baseConfig.MaxNum || 2)),
+    MaxNum: Math.max(minNum, Number(maxNum)),
     PolicyDetails: baseConfig.PolicyDetails || [],
     CustomLogs: baseConfig.CustomLogs || '',
     EnvParams: JSON.stringify(environment),
@@ -68,7 +70,7 @@ function safeConfig(baseConfig, environment, minNum) {
 
 async function copyDeploymentSource() {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `haigoo-mini-${target}-`))
-  for (const filename of ['Dockerfile', 'index.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
+  for (const filename of ['Dockerfile', 'index.mjs', 'sync-policy.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
     await fs.copyFile(path.join(sourceDir, filename), path.join(tempDir, filename))
   }
   return tempDir
@@ -160,8 +162,16 @@ if (target === 'development') {
     WECHAT_MINI_APP_SECRET: developmentEnvironment.WECHAT_MINI_APP_SECRET,
     MINI_SYNC_SECRET: randomSecret(),
     MINI_SYNC_PAGES_PER_RUN: '3',
-    MINI_SYNC_WRITE_CONCURRENCY: '8',
-    MINI_LOGO_CONCURRENCY: '2',
+    MINI_SYNC_WRITE_CONCURRENCY: '4',
+    MINI_LOGO_CONCURRENCY: '1',
+    MINI_CACHE_REFRESH_MS: '3600000',
+    MINI_FULL_SYNC_INTERVAL_MS: '86400000',
+    MINI_SYNC_INTERVAL_MS: '3600000',
+    MINI_SYNC_LEASE_MS: '900000',
+    MINI_LOGO_RETRY_MS: '86400000',
+    MINI_LIST_MEMORY_CACHE_MS: '300000',
+    MINI_SYNC_STATE_MEMORY_CACHE_MS: '60000',
+    MINI_STALE_CLEANUP_MAX_RATIO: '0.2',
     MINI_LOGO_MAX_BYTES: developmentEnvironment.MINI_LOGO_MAX_BYTES || '2097152',
     NODE_ENV: 'production'
   }
@@ -171,8 +181,43 @@ if (target === 'development') {
   upsertVercelSecret('MINI_GATEWAY_PRODUCTION_SECRET', targetEnvironment.MINI_GATEWAY_SHARED_SECRET)
 }
 
-for (const key of ['MINI_GATEWAY_SHARED_SECRET', 'MINI_SESSION_SECRET', 'WECHAT_MINI_APP_SECRET']) {
+// Apply the current bounded synchronization policy to existing services too;
+// otherwise legacy 8-way workers and hourly full-sync settings survive deploys.
+targetEnvironment = {
+  ...targetEnvironment,
+  MINI_SYNC_PAGES_PER_RUN: '3',
+  MINI_SYNC_WRITE_CONCURRENCY: '4',
+  MINI_LOGO_CONCURRENCY: '1',
+  MINI_CACHE_REFRESH_MS: '3600000',
+  MINI_FULL_SYNC_INTERVAL_MS: '86400000',
+  MINI_SYNC_INTERVAL_MS: '3600000',
+  MINI_SYNC_LEASE_MS: '900000',
+  MINI_LOGO_RETRY_MS: '86400000',
+  MINI_LIST_MEMORY_CACHE_MS: '300000',
+  MINI_SYNC_STATE_MEMORY_CACHE_MS: '60000',
+  MINI_STALE_CLEANUP_MAX_RATIO: '0.2'
+}
+
+for (const key of [
+  'MINI_GATEWAY_SHARED_SECRET',
+  'MINI_SESSION_SECRET',
+  'WECHAT_MINI_APP_SECRET'
+]) {
   if (!targetEnvironment[key]) throw new Error(`Target CloudRun is missing ${key}`)
+}
+const hasPaymentOffer = Boolean(targetEnvironment.WECHAT_VIRTUAL_PAYMENT_OFFER_ID)
+const hasPaymentKey = Boolean(targetEnvironment.WECHAT_VIRTUAL_PAYMENT_APP_KEY)
+if (hasPaymentOffer !== hasPaymentKey) {
+  throw new Error('WECHAT_VIRTUAL_PAYMENT_OFFER_ID and WECHAT_VIRTUAL_PAYMENT_APP_KEY must be configured together')
+}
+if (target === 'production' && hasPaymentOffer && Number(targetEnvironment.WECHAT_VIRTUAL_PAYMENT_ENV || 0) !== 0) {
+  throw new Error('Production CloudRun must use WECHAT_VIRTUAL_PAYMENT_ENV=0')
+}
+if (target === 'development' && hasPaymentOffer && Number(targetEnvironment.WECHAT_VIRTUAL_PAYMENT_ENV) !== 1) {
+  throw new Error('Development CloudRun must use WECHAT_VIRTUAL_PAYMENT_ENV=1')
+}
+if (!hasPaymentOffer) {
+  console.warn('Virtual payment is not configured; payment endpoints will return 503 until both WeChat credentials are added')
 }
 if (target === 'development' && !targetEnvironment.VERCEL_AUTOMATION_BYPASS_SECRET) {
   throw new Error('Development CloudRun is missing VERCEL_AUTOMATION_BYPASS_SECRET')
@@ -190,7 +235,7 @@ try {
   await targetService.deploy({
     serverName: deployment.serviceName,
     targetPath: tempDir,
-    serverConfig: safeConfig(baseConfig, targetEnvironment, deployment.minNum)
+    serverConfig: safeConfig(baseConfig, targetEnvironment, deployment.minNum, deployment.maxNum)
   })
 } finally {
   await fs.rm(tempDir, { recursive: true, force: true })
@@ -204,6 +249,9 @@ if (accessTypes.includes('PUBLIC') || !accessTypes.includes('MINIAPP')) {
 }
 if (Number(deployedConfig.MinNum) !== deployment.minNum) {
   throw new Error(`Unexpected minimum instance count: ${deployedConfig.MinNum}`)
+}
+if (Number(deployedConfig.MaxNum) !== deployment.maxNum) {
+  throw new Error(`Unexpected maximum instance count: ${deployedConfig.MaxNum}`)
 }
 
 console.log(JSON.stringify({

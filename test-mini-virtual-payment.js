@@ -4,29 +4,39 @@ import fs from 'node:fs'
 
 process.env.WECHAT_MESSAGE_TOKEN = 'test-message-token'
 process.env.WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON = JSON.stringify({
-  club_starter_monthly: 'club_starter',
-  club_half_year: 'club_member',
-  club_annual: 'club_partner'
+  club_starter_monthly: 'club_starter_monthly',
+  club_half_year: 'club_half_year',
+  club_annual: 'club_annual'
 })
 
 const {
   EXPECTED_PLAN_AMOUNTS,
+  VIRTUAL_PAYMENT_PRODUCTS,
   parseProductMap
 } = await import('./lib/services/wechat-virtual-payment-service.js')
 const {
+  hasValidRelaySignature,
   hasValidSignature,
-  messageSignature
+  messageSignature,
+  relaySignature
 } = await import('./api/wechat-virtual-payment-notify.js')
 
 assert.deepEqual(parseProductMap(), {
-  club_starter_monthly: 'club_starter',
-  club_half_year: 'club_member',
-  club_annual: 'club_partner'
+  club_starter_monthly: 'club_starter_monthly',
+  club_half_year: 'club_half_year',
+  club_annual: 'club_annual'
 })
 assert.deepEqual(EXPECTED_PLAN_AMOUNTS, {
   club_starter_monthly: 9900,
   club_half_year: 49900,
   club_annual: 99800
+})
+assert.deepEqual(VIRTUAL_PAYMENT_PRODUCTS.club_starter_monthly, {
+  productId: 'club_starter_monthly',
+  amountCents: 9900,
+  memberType: 'starter',
+  durationMonths: 0,
+  durationDays: 30
 })
 
 const timestamp = '1785290000'
@@ -46,6 +56,31 @@ assert.equal(hasValidSignature({
 assert.equal(hasValidSignature({
   query: { signature: `${signature.slice(0, -1)}0`, timestamp, nonce }
 }), false)
+
+process.env.WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET = 'test-relay-secret'
+const relayNotification = {
+  Event: 'xpay_goods_deliver_notify',
+  Env: 1,
+  GoodsInfo: { ProductId: 'club_starter_monthly', Quantity: 1 }
+}
+const relayTimestamp = String(Date.now())
+const sandboxRelaySignature = relaySignature(
+  process.env.WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET,
+  relayTimestamp,
+  relayNotification
+)
+assert.equal(hasValidRelaySignature({
+  headers: {
+    'x-haigoo-payment-relay-timestamp': relayTimestamp,
+    'x-haigoo-payment-relay-signature': sandboxRelaySignature
+  }
+}, relayNotification), true)
+assert.equal(hasValidRelaySignature({
+  headers: {
+    'x-haigoo-payment-relay-timestamp': relayTimestamp,
+    'x-haigoo-payment-relay-signature': `${sandboxRelaySignature.slice(0, -1)}0`
+  }
+}, relayNotification), false)
 
 const cloudrun = fs.readFileSync(new URL('./cloudrun/index.mjs', import.meta.url), 'utf8')
 const miniClient = fs.readFileSync(new URL('./miniprogram/src/services/virtual-payment-service.ts', import.meta.url), 'utf8')

@@ -10,6 +10,7 @@ const cloudrun = read('./cloudrun/index.mjs')
 const migration = read('./server-utils/dal/migrations/056_mini_launch_readiness.sql')
 const hardeningMigration = read('./server-utils/dal/migrations/057_mini_security_and_consistency.sql')
 const referralContactsMigration = read('./server-utils/dal/migrations/058_trusted_company_referral_contacts.sql')
+const virtualPaymentMigration = read('./server-utils/dal/migrations/059_wechat_virtual_payments.sql')
 const auth = read('./api/auth.js')
 const userHelper = read('./server-utils/user-helper.js')
 const bugReports = read('./lib/api-handlers/bug-reports.js')
@@ -26,11 +27,14 @@ const miniIcon = read('./miniprogram/src/components/mini-icon/index.tsx')
 const homePage = read('./miniprogram/src/pages/index/index.tsx')
 const websiteNotice = read('./miniprogram/src/components/website-notice/index.tsx')
 const membershipPage = read('./miniprogram/src/pages/learning/index.tsx')
+const virtualPaymentClient = read('./miniprogram/src/services/virtual-payment-service.ts')
+const virtualPaymentCallback = read('./api/wechat-virtual-payment-notify.js')
 const processedJobs = read('./lib/api-handlers/processed-jobs.js')
 const projectConfig = JSON.parse(read('./miniprogram/project.config.json'))
 const developmentExample = read('./miniprogram/.env.development.example')
 const productionExample = read('./miniprogram/.env.production.example')
 const deployScript = read('./scripts/deploy-mini-cloudrun.mjs')
+const syncPolicy = read('./cloudrun/sync-policy.mjs')
 const taroConfig = read('./miniprogram/config/index.ts')
 const miniPackage = JSON.parse(read('./miniprogram/package.json'))
 const rootPackage = JSON.parse(read('./package.json'))
@@ -42,7 +46,9 @@ for (const action of [
   'feedback',
   'events',
   'application_usage',
-  'application_status'
+  'application_status',
+  'virtual_payment_create',
+  'virtual_payment_status'
 ]) {
   assert.match(gateway, new RegExp(`['"]${action}['"]`), `gateway must expose ${action}`)
 }
@@ -54,7 +60,8 @@ for (const route of [
   '/mini/feedback',
   '/mini/events',
   '/mini/application-usage',
-  'application-status'
+  'application-status',
+  '/mini/payments/orders'
 ]) {
   assert.ok(cloudrun.includes(route), `CloudRun must proxy ${route}`)
 }
@@ -66,6 +73,16 @@ assert.ok(hardeningMigration.includes('consume_mini_job_views'), 'browse allowan
 assert.ok(hardeningMigration.includes('pg_advisory_xact_lock'), 'concurrent browse requests must share an identity lock')
 assert.ok(hardeningMigration.includes('reset_token'), 'password reset must not overwrite email verification tokens')
 assert.ok(referralContactsMigration.includes('ADD COLUMN IF NOT EXISTS referral_contacts'), 'trusted-company referral contacts must have a repeatable migration')
+assert.ok(virtualPaymentMigration.includes('expected_amount_cents'), 'virtual payment amounts must use integer cents')
+assert.ok(virtualPaymentMigration.includes('provider_transaction_id'), 'provider transactions must be persisted for idempotency')
+assert.ok(virtualPaymentCallback.includes('hasValidSignature(req)'), 'virtual-payment notifications must authenticate WeChat message signatures')
+assert.ok(virtualPaymentCallback.includes("event === 'xpay_goods_deliver_notify'"), 'only the goods delivery event may grant Club entitlements')
+assert.ok(cloudrun.includes('requestVirtualPayment&${signData}'), 'CloudRun must create the official virtual-payment paySig')
+assert.ok(cloudrun.includes('virtualPaymentSignature(login.sessionKey, signData)'), 'CloudRun must bind payment to a fresh WeChat session key')
+assert.ok(virtualPaymentClient.includes('requestVirtualPayment'), 'the Mini Program must invoke the official virtual-payment API')
+assert.ok(virtualPaymentClient.includes("order.status === 'completed'"), 'client payment success must be confirmed against server order state')
+assert.ok(membershipPage.includes('purchaseClubPlan(plan.id)'), 'Club plan buttons must use official in-app payment')
+assert.ok(!membershipPage.includes('当前版本暂不支持小程序内支付'), 'Club purchase copy must not route around official payment')
 assert.ok(gateway.includes("['openid', openid]"), 'gateway must rate-limit OpenID independently')
 assert.ok(gateway.includes("['email', email]"), 'gateway must rate-limit email independently')
 assert.ok(gateway.includes("['client', clientKey]"), 'gateway must rate-limit client IP independently')
@@ -95,6 +112,12 @@ assert.ok(cloudrun.includes('canVisitorOpenJob'), 'visitor detail access must st
 assert.ok(cloudrun.includes("body: { openid: session.openid, consume: false, mode: 'status' }"), 'browse status checks must not consume quota')
 assert.ok(gateway.includes("MINI_BROWSE_QUOTA_VERSION || 'detail-v2'"), 'detail-only quota must not inherit legacy list-impression counters')
 assert.ok(cloudrun.includes('CACHE_MODEL_VERSION'), 'job cache schema changes must trigger a full rebuild')
+assert.ok(cloudrun.includes('runSyncWithLease'), 'job synchronization must be protected across CloudRun instances')
+assert.ok(cloudrun.includes('jobsUnchanged'), 'incremental synchronization must report skipped unchanged jobs')
+assert.ok(cloudrun.includes('LOGO_RETRY_MS'), 'failed Logo caching must use a retry backoff')
+assert.ok(cloudrun.includes('listUnavailable') && cloudrun.includes('if (!listUnavailable && state)'), 'transient cache reads must not trigger a forced full sync')
+assert.ok(syncPolicy.includes('fullSyncIntervalMs'), 'full synchronization must have a separate low-frequency policy')
+assert.ok(deployScript.includes("maxNum: 1"), 'development CloudRun must prevent duplicate autoscaled sync workers')
 assert.ok(cloudrun.includes('editorialFeatured'), 'website-default sorting must remain separate from hot-application filtering')
 assert.ok(cloudrun.includes('defaultRankStart'), 'default Mini Program ordering must preserve the website sync order')
 assert.ok(cloudrun.includes('getSubscriptionOptions'), 'member subscriptions must use real cached job categories')

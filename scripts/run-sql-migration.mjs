@@ -2,6 +2,7 @@ import 'dotenv/config'
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { neon } from '@neondatabase/serverless'
 
 const migrationName = String(process.argv[2] || '').trim()
@@ -12,8 +13,9 @@ if (!/^\d{3}_[a-z0-9_]+\.sql$/.test(migrationName)) {
 const databaseUrl = process.env.NEON_DATABASE_DATABASE_URL || process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('NEON_DATABASE_DATABASE_URL or DATABASE_URL is required')
 
-const migrationPath = path.resolve('server-utils/dal/migrations', migrationName)
-const migrationsRoot = path.resolve('server-utils/dal/migrations') + path.sep
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const migrationsRoot = path.join(projectRoot, 'server-utils', 'dal', 'migrations') + path.sep
+const migrationPath = path.join(migrationsRoot, migrationName)
 if (!migrationPath.startsWith(migrationsRoot) || !fs.existsSync(migrationPath)) {
   throw new Error(`Migration not found: ${migrationName}`)
 }

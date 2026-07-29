@@ -62,10 +62,12 @@ const db = app.database()
 async function readAll(collectionName, total) {
   const pageSize = 100
   const pages = Math.ceil(total / pageSize)
-  const results = await Promise.all(Array.from({ length: pages }, (_, page) => (
-    db.collection(collectionName).skip(page * pageSize).limit(pageSize).get()
-  )))
-  return results.flatMap((result) => Array.isArray(result.data) ? result.data : [])
+  const records = []
+  for (let page = 0; page < pages; page += 1) {
+    const result = await db.collection(collectionName).skip(page * pageSize).limit(pageSize).get()
+    records.push(...(Array.isArray(result.data) ? result.data : []))
+  }
+  return records
 }
 
 const [listCount, detailCount, featuredCount, rankedCount, stateResult, sampleResult] = await Promise.all([
@@ -82,6 +84,7 @@ const allListDocuments = (await readAll('mini_job_list', Number(listCount.total 
 const cachedLogoCount = allListDocuments.filter((item) => (
   String(item.payload?.cachedLogoUrl || item.payload?.cachedCompanyLogoUrl || '').startsWith('cloud://')
 )).length
+const hashedDocumentCount = allListDocuments.filter((item) => Boolean(item.sourceHash)).length
 const state = unwrapDocument(stateResult.data?.[0]) || {}
 const samples = (Array.isArray(sampleResult.data) ? sampleResult.data : [])
   .map(unwrapDocument)
@@ -99,18 +102,40 @@ console.log(JSON.stringify({
   target,
   envId,
   serviceName,
+  service: {
+    status: detail.BaseInfo?.Status || null,
+    minNum: Number(detail.ServerConfig?.MinNum || 0),
+    maxNum: Number(detail.ServerConfig?.MaxNum || 0)
+  },
+  syncPolicy: {
+    cacheRefreshMs: Number(environment.MINI_CACHE_REFRESH_MS || 0),
+    fullSyncIntervalMs: Number(environment.MINI_FULL_SYNC_INTERVAL_MS || 0),
+    timerMs: Number(environment.MINI_SYNC_INTERVAL_MS || 0),
+    leaseMs: Number(environment.MINI_SYNC_LEASE_MS || 0),
+    writeConcurrency: Number(environment.MINI_SYNC_WRITE_CONCURRENCY || 0),
+    logoConcurrency: Number(environment.MINI_LOGO_CONCURRENCY || 0),
+    listMemoryCacheMs: Number(environment.MINI_LIST_MEMORY_CACHE_MS || 0),
+    stateMemoryCacheMs: Number(environment.MINI_SYNC_STATE_MEMORY_CACHE_MS || 0),
+    staleCleanupMaxRatio: Number(environment.MINI_STALE_CLEANUP_MAX_RATIO || 0)
+  },
   listDocuments: Number(listCount.total || 0),
   detailDocuments: Number(detailCount.total || 0),
   featuredDocuments: Number(featuredCount.total || 0),
   rankedDocuments: Number(rankedCount.total || 0),
   cachedLogoDocuments: cachedLogoCount,
+  hashedDocuments: hashedDocumentCount,
   state: {
     cacheReady: Boolean(state.cacheReady),
     fullSyncInProgress: Boolean(state.fullSyncInProgress),
     jobsSourceOrigin: state.jobsSourceOrigin || null,
     cacheModelVersion: state.cacheModelVersion || null,
     lastSyncAt: state.lastSyncAt || null,
-    lastFullSyncAt: state.lastFullSyncAt || null
+    lastFullSyncAt: state.lastFullSyncAt || null,
+    syncLeaseOwner: state.syncLeaseOwner || null,
+    syncLeaseExpiresAt: state.syncLeaseExpiresAt || null,
+    staleCleanupSkippedAt: state.staleCleanupSkippedAt || null,
+    staleCleanupCandidates: Number(state.staleCleanupCandidates || 0),
+    staleCleanupRemovalRatio: Number(state.staleCleanupRemovalRatio || 0)
   },
   samples
 }, null, 2))

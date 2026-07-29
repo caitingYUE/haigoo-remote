@@ -7,6 +7,7 @@ import path from 'path'
 import { Readable, Transform } from 'stream'
 import { pipeline } from 'stream/promises'
 import cloudbase from '@cloudbase/node-sdk'
+import { isLeaseActive, stableJson, staleCleanupDecision, syncDecision } from './sync-policy.mjs'
 
 const port = Number(process.env.PORT || 8080)
 const apiOrigin = String(process.env.HAIGOO_API_ORIGIN || '').replace(/\/+$/, '')
@@ -29,11 +30,19 @@ const LIST_INDEX_FETCH_LIMIT = 1000
 const LIST_INDEX_MAX_RECORDS = 20000
 const MAX_REQUEST_BODY_BYTES = 1024 * 1024
 const SYNC_MAX_PAGES_PER_RUN = Math.max(1, Math.min(10, Number(process.env.MINI_SYNC_PAGES_PER_RUN || 3)))
-const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_WRITE_CONCURRENCY || 8)))
-const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 2)))
+const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_WRITE_CONCURRENCY || 4)))
+const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 1)))
 const MAX_LOGO_BYTES = Math.max(64 * 1024, Math.min(8 * 1024 * 1024, Number(process.env.MINI_LOGO_MAX_BYTES || 2 * 1024 * 1024)))
-const CACHE_REFRESH_MS = 5 * 60 * 1000
+const CACHE_REFRESH_MS = Math.max(5 * 60 * 1000, Number(process.env.MINI_CACHE_REFRESH_MS || 60 * 60 * 1000))
+const FULL_SYNC_INTERVAL_MS = Math.max(6 * 60 * 60 * 1000, Number(process.env.MINI_FULL_SYNC_INTERVAL_MS || 24 * 60 * 60 * 1000))
+const SYNC_TIMER_MS = Math.max(15 * 60 * 1000, Number(process.env.MINI_SYNC_INTERVAL_MS || 60 * 60 * 1000))
+const SYNC_LEASE_MS = Math.max(5 * 60 * 1000, Number(process.env.MINI_SYNC_LEASE_MS || 15 * 60 * 1000))
+const LOGO_RETRY_MS = Math.max(60 * 60 * 1000, Number(process.env.MINI_LOGO_RETRY_MS || 24 * 60 * 60 * 1000))
+const LIST_MEMORY_CACHE_MS = Math.max(30 * 1000, Number(process.env.MINI_LIST_MEMORY_CACHE_MS || 5 * 60 * 1000))
+const SYNC_STATE_MEMORY_CACHE_MS = Math.max(10 * 1000, Number(process.env.MINI_SYNC_STATE_MEMORY_CACHE_MS || 60 * 1000))
+const STALE_CLEANUP_MAX_RATIO = Math.max(0, Math.min(1, Number(process.env.MINI_STALE_CLEANUP_MAX_RATIO || 0.2)))
 const CACHE_MODEL_VERSION = '2026-07-28-real-application-modes-v3'
+const syncInstanceId = `${os.hostname()}:${process.pid}:${crypto.randomUUID()}`
 
 if (!apiOrigin || !jobsApiOrigin || !appId || !appSecret || !gatewaySecret || !jobsGatewaySecret || !sessionSecret) {
   throw new Error('Missing required Cloud Hosting environment variables')
@@ -41,14 +50,6 @@ if (!apiOrigin || !jobsApiOrigin || !appId || !appSecret || !gatewaySecret || !j
 
 const cloudApp = cloudbase.init({ env: process.env.TCB_ENV })
 const db = cloudApp.database()
-
-function stableJson(value) {
-  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`
-  if (value && typeof value === 'object') {
-    return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(',')}}`
-  }
-  return JSON.stringify(value ?? null)
-}
 
 function signGatewayRequest(method, action, timestamp, body, secret = gatewaySecret) {
   const bodyHash = crypto.createHash('sha256').update(stableJson(body || {})).digest('hex')
@@ -235,7 +236,21 @@ function compactJobPayload(payload = {}) {
   return compact
 }
 
-function jobListDocument({ id, _id, jobId, status, featured, defaultRank, payload, lastSeenSyncId }) {
+function jobListDocument({
+  id,
+  _id,
+  jobId,
+  status,
+  featured,
+  defaultRank,
+  payload,
+  lastSeenSyncId,
+  updatedAt,
+  sourceHash,
+  logoSource,
+  logoFileId,
+  logoLastAttemptAt
+}) {
   const compactPayload = compactJobPayload(payload)
   return {
     _id: id || _id,
@@ -246,6 +261,11 @@ function jobListDocument({ id, _id, jobId, status, featured, defaultRank, payloa
     publishedAt: compactPayload.publishedAt || '',
     category: compactPayload.category || '',
     lastSeenSyncId: lastSeenSyncId || '',
+    updatedAt: updatedAt || '',
+    sourceHash: sourceHash || '',
+    logoSource: logoSource || '',
+    logoFileId: logoFileId || '',
+    logoLastAttemptAt: Number(logoLastAttemptAt || 0),
     payload: compactPayload
   }
 }
@@ -259,15 +279,29 @@ function unwrapDocument(record) {
   return value
 }
 
+function documentFromResult(result) {
+  const value = Array.isArray(result?.data) ? result.data[0] : result?.data
+  return unwrapDocument(value)
+}
+
 function withoutDocumentId(record) {
   const data = { ...(record || {}) }
   delete data._id
   return data
 }
 
-async function getSyncState() {
-  const result = await db.collection(syncCollection).doc('jobs').get().catch(() => ({ data: [] }))
-  let state = result.data?.[0] || { _id: 'jobs', cursor: '', lastFullSyncAt: 0 }
+let syncStateCache = null
+
+async function getSyncState({ bypassCache = false } = {}) {
+  if (
+    !bypassCache &&
+    syncStateCache &&
+    Date.now() - syncStateCache.loadedAt < SYNC_STATE_MEMORY_CACHE_MS
+  ) {
+    return syncStateCache.state
+  }
+  const result = await db.collection(syncCollection).doc('jobs').get()
+  let state = documentFromResult(result) || { _id: 'jobs', cursor: '', lastFullSyncAt: 0 }
   if (typeof state?.data === 'string') {
     try {
       const parsed = JSON.parse(state.data)
@@ -279,19 +313,104 @@ async function getSyncState() {
   }
   // Read existing nested records written by the first deployment. New writes
   // below are flat documents, but this keeps the migration non-disruptive.
-  return unwrapDocument(state)
+  state = unwrapDocument(state)
+  syncStateCache = { state, loadedAt: Date.now() }
+  return state
 }
 
 async function setSyncState(value) {
   await db.collection(syncCollection).doc('jobs').set(withoutDocumentId({ _id: 'jobs', ...value }))
+  syncStateCache = { state: { _id: 'jobs', ...value }, loadedAt: Date.now() }
+}
+
+function sourceStateChanged(state = {}) {
+  return (
+    String(state.jobsSourceOrigin || '') !== jobsApiOrigin ||
+    String(state.cacheModelVersion || '') !== CACHE_MODEL_VERSION
+  )
+}
+
+async function acquireSyncLease({ force = false } = {}) {
+  let outcome = { acquired: false, reason: 'unknown', full: false, restartFull: false }
+  await db.runTransaction(async (transaction) => {
+    const reference = transaction.collection(syncCollection).doc('jobs')
+    const result = await reference.get()
+    const state = documentFromResult(result) || { _id: 'jobs', cursor: '', lastFullSyncAt: 0 }
+    const now = Date.now()
+    const decision = syncDecision({
+      state,
+      now,
+      force,
+      sourceChanged: sourceStateChanged(state),
+      cacheRefreshMs: CACHE_REFRESH_MS,
+      fullSyncIntervalMs: FULL_SYNC_INTERVAL_MS
+    })
+    if (!decision.due) {
+      outcome = { acquired: false, reason: 'fresh', full: false, restartFull: false }
+      return
+    }
+    if (isLeaseActive(state, now)) {
+      outcome = { acquired: false, reason: 'leased', full: decision.full, restartFull: false }
+      return
+    }
+    await reference.set(withoutDocumentId({
+      ...state,
+      syncLeaseOwner: syncInstanceId,
+      syncLeaseStartedAt: now,
+      syncLeaseExpiresAt: now + SYNC_LEASE_MS
+    }))
+    outcome = {
+      acquired: true,
+      reason: 'acquired',
+      full: decision.full,
+      restartFull: Boolean(force || sourceStateChanged(state) || (decision.full && !state.fullSyncInProgress))
+    }
+  })
+  syncStateCache = null
+  return outcome
+}
+
+async function releaseSyncLease() {
+  await db.runTransaction(async (transaction) => {
+    const reference = transaction.collection(syncCollection).doc('jobs')
+    const result = await reference.get()
+    const state = documentFromResult(result)
+    if (!state || state.syncLeaseOwner !== syncInstanceId) return
+    await reference.set(withoutDocumentId({
+      ...state,
+      syncLeaseOwner: '',
+      syncLeaseStartedAt: 0,
+      syncLeaseExpiresAt: 0
+    }))
+  }).catch((error) => {
+    console.warn('[mini-cloudrun] sync lease release failed', error?.message || error)
+  }).finally(() => {
+    syncStateCache = null
+  })
+}
+
+async function renewSyncLease() {
+  await db.runTransaction(async (transaction) => {
+    const reference = transaction.collection(syncCollection).doc('jobs')
+    const result = await reference.get()
+    const state = documentFromResult(result)
+    if (!state || state.syncLeaseOwner !== syncInstanceId) {
+      throw new Error('Synchronization lease ownership was lost')
+    }
+    await reference.set(withoutDocumentId({
+      ...state,
+      syncLeaseExpiresAt: Date.now() + SYNC_LEASE_MS
+    }))
+  })
 }
 
 async function runWithConcurrency(items, concurrency, worker) {
-  const queue = [...items]
+  let nextIndex = 0
   const failures = []
-  const workers = Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
-    while (queue.length > 0) {
-      const item = queue.shift()
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (nextIndex < items.length) {
+      const item = items[nextIndex]
+      nextIndex += 1
       try {
         await worker(item)
       } catch (error) {
@@ -307,15 +426,21 @@ async function runWithConcurrency(items, concurrency, worker) {
   }
 }
 
-async function storeJob(job, { syncRunId = '', defaultRank = null } = {}) {
+function jobSourceHash(job) {
+  return crypto.createHash('sha256').update(stableJson(job || {})).digest('hex')
+}
+
+async function storeJob(job, { syncRunId = '', defaultRank = null, existingIndex = null } = {}) {
   const id = jobDocumentId(job.id)
-  const existingResult = await db.collection(jobsCollection).doc(id).get().catch(() => ({ data: [] }))
-  const existing = unwrapDocument(existingResult.data?.[0])
+  const existing = existingIndex
   const logoSource = appOriginUrl(job.cachedCompanyLogoUrl || job.cachedLogoUrl || job.companyLogo || job.logo)
+  const sourceHash = jobSourceHash(job)
   // Keep a valid CloudBase file ID when the source has not changed. Previously
   // every job upsert erased it, which caused each periodic sync to download the
   // same logo again and briefly made clients fall back to the local placeholder.
-  const logoFileId = existing?.logoSource === logoSource ? existing.logoFileId || '' : ''
+  const cachedLogoFileId = existing?.logoFileId || existing?.payload?.cachedLogoUrl || existing?.payload?.cachedCompanyLogoUrl || ''
+  const logoFileId = !existing?.logoSource || existing.logoSource === logoSource ? cachedLogoFileId : ''
+  const logoLastAttemptAt = existing?.logoSource === logoSource ? Number(existing?.logoLastAttemptAt || 0) : 0
   const payload = publicJob(job, logoFileId)
   const data = {
     _id: id,
@@ -323,28 +448,60 @@ async function storeJob(job, { syncRunId = '', defaultRank = null } = {}) {
     status: job.status || 'active',
     featured: Boolean(payload.isHotApplication),
     defaultRank: defaultRank != null && Number.isFinite(Number(defaultRank)) ? Number(defaultRank) : existing?.defaultRank ?? null,
-    updatedAt: job.updatedAt || new Date().toISOString(),
+    updatedAt: job.updatedAt || existing?.updatedAt || '',
+    sourceHash,
     logoSource,
     logoFileId,
+    ...(logoLastAttemptAt > 0 ? { logoLastAttemptAt } : {}),
     lastSeenSyncId: syncRunId || existing?.lastSeenSyncId || '',
     payload
   }
-  await db.collection(jobsCollection).doc(id).set(withoutDocumentId(data))
-  await db.collection(jobListCollection).doc(id).set(withoutDocumentId(jobListDocument(data)))
+  // A full reconciliation still updates lastSeenSyncId for stale cleanup.
+  // Incremental runs can trust the compact list index hash and avoid one detail
+  // read plus two writes for every unchanged upstream record.
+  const changed = Boolean(syncRunId || !existing || existing.sourceHash !== sourceHash)
+  if (changed) {
+    await db.collection(jobsCollection).doc(id).set(withoutDocumentId(data))
+    await db.collection(jobListCollection).doc(id).set(withoutDocumentId(jobListDocument(data)))
+    invalidateListDocumentCache()
+  }
+  const logoDue = Boolean(
+    logoSource &&
+    !logoFileId &&
+    Date.now() - Number(logoLastAttemptAt || 0) >= LOGO_RETRY_MS
+  )
+  return {
+    changed,
+    logoTask: logoDue ? { jobId: job.id, logoSource } : null
+  }
 }
 
 async function cacheJobLogo(task) {
   const id = jobDocumentId(task.jobId)
   const currentResult = await db.collection(jobsCollection).doc(id).get().catch(() => ({ data: [] }))
-  const current = unwrapDocument(currentResult.data?.[0])
+  const current = documentFromResult(currentResult)
   // A later job update can replace the source while this task is waiting in the
   // queue. In that case leave the newer record alone; its own task will handle it.
   if (!current || current.logoSource !== task.logoSource) return
   const logoFileId = await cacheLogo(task.jobId, task.logoSource, current)
-  if (!logoFileId || logoFileId === current.logoFileId) return
+  const attemptedAt = Date.now()
+  if (!logoFileId) {
+    const attempted = {
+      ...current,
+      logoLastAttemptAt: attemptedAt
+    }
+    await Promise.all([
+      db.collection(jobsCollection).doc(id).set(withoutDocumentId(attempted)),
+      db.collection(jobListCollection).doc(id).set(withoutDocumentId(jobListDocument(attempted)))
+    ])
+    invalidateListDocumentCache()
+    return
+  }
+  if (logoFileId === current.logoFileId) return
   await db.collection(jobsCollection).doc(id).set(withoutDocumentId({
     ...current,
     logoFileId,
+    logoLastAttemptAt: attemptedAt,
     payload: {
       ...(current.payload || {}),
       cachedLogoUrl: logoFileId,
@@ -364,6 +521,7 @@ async function cacheJobLogo(task) {
       cachedCompanyLogoUrl: logoFileId
     }
   })))
+  invalidateListDocumentCache()
 }
 
 function buildSyncQuery(state = {}) {
@@ -377,10 +535,10 @@ function buildSyncQuery(state = {}) {
 let logoQueue = new Map()
 let logoWorkerPromise = null
 
-function scheduleLogoCache(jobs) {
-  for (const job of jobs) {
-    const jobId = String(job?.id || '').trim()
-    const logoSource = appOriginUrl(job?.cachedCompanyLogoUrl || job?.cachedLogoUrl || job?.companyLogo || job?.logo)
+function scheduleLogoCache(tasks) {
+  for (const task of tasks) {
+    const jobId = String(task?.jobId || '').trim()
+    const logoSource = String(task?.logoSource || '').trim()
     if (jobId && logoSource) logoQueue.set(jobId, { jobId, logoSource })
   }
   if (logoWorkerPromise) return
@@ -399,21 +557,46 @@ function scheduleLogoCache(jobs) {
 }
 
 async function writeBatch(jobs, { syncRunId = '', defaultRankStart = null } = {}) {
-  await runWithConcurrency(jobs.map((job, index) => ({ job, index })), WRITE_CONCURRENCY, ({ job, index }) => (
-    storeJob(job, {
+  if (jobs.length === 0) return { changed: 0, unchanged: 0, logoQueued: 0 }
+  const existingIndexes = new Map(
+    (await readAllListDocuments())
+      .map(unwrapDocument)
+      .filter((record) => record?._id)
+      .map((record) => [String(record._id), record])
+  )
+  const results = []
+  await runWithConcurrency(jobs.map((job, index) => ({ job, index })), WRITE_CONCURRENCY, async ({ job, index }) => {
+    const result = await storeJob(job, {
       syncRunId,
-      defaultRank: defaultRankStart != null && Number.isFinite(Number(defaultRankStart)) ? Number(defaultRankStart) + index : null
+      defaultRank: defaultRankStart != null && Number.isFinite(Number(defaultRankStart)) ? Number(defaultRankStart) + index : null,
+      existingIndex: existingIndexes.get(jobDocumentId(job.id)) || null
     })
-  ))
+    results.push(result)
+  })
   // Logo IO is intentionally detached from the cache write. A slow third-party
   // image must never delay the job list, the detail endpoint, or sync progress.
-  scheduleLogoCache(jobs)
+  const logoTasks = results.map((result) => result.logoTask).filter(Boolean)
+  scheduleLogoCache(logoTasks)
+  return {
+    changed: results.filter((result) => result.changed).length,
+    unchanged: results.filter((result) => !result.changed).length,
+    logoQueued: logoTasks.length
+  }
 }
 
 async function removeStaleCacheDocuments(syncRunId) {
   if (!syncRunId) return { removed: 0 }
-  const records = await readAllListDocuments()
+  const records = await readAllListDocuments({ bypassCache: true })
   const stale = records.filter((record) => String(record?.lastSeenSyncId || '') !== syncRunId)
+  const cleanup = staleCleanupDecision({
+    total: records.length,
+    stale: stale.length,
+    maxRemovalRatio: STALE_CLEANUP_MAX_RATIO
+  })
+  if (!cleanup.allowed) {
+    console.error('[mini-cloudrun] stale cleanup blocked by safety threshold', cleanup)
+    return { removed: 0, skipped: true, candidates: stale.length, removalRatio: cleanup.removalRatio }
+  }
   const fileIds = []
   await runWithConcurrency(stale, WRITE_CONCURRENCY, async (record) => {
     const id = String(record?._id || '').trim()
@@ -431,10 +614,24 @@ async function removeStaleCacheDocuments(syncRunId) {
       console.warn('[mini-cloudrun] stale logo cleanup failed', error?.message || error)
     })
   }
-  return { removed: stale.length }
+  if (stale.length > 0) invalidateListDocumentCache()
+  return { removed: stale.length, skipped: false, candidates: stale.length, removalRatio: cleanup.removalRatio }
 }
 
-async function readAllListDocuments() {
+let listDocumentCache = null
+
+function invalidateListDocumentCache() {
+  listDocumentCache = null
+}
+
+async function readAllListDocuments({ bypassCache = false } = {}) {
+  if (
+    !bypassCache &&
+    listDocumentCache &&
+    Date.now() - listDocumentCache.loadedAt < LIST_MEMORY_CACHE_MS
+  ) {
+    return listDocumentCache.records
+  }
   const records = []
   let offset = 0
   while (offset < LIST_INDEX_MAX_RECORDS) {
@@ -450,16 +647,21 @@ async function readAllListDocuments() {
   if (records.length >= LIST_INDEX_MAX_RECORDS) {
     throw new Error(`List cache exceeds safety cap: ${LIST_INDEX_MAX_RECORDS}`)
   }
+  listDocumentCache = { records, loadedAt: Date.now() }
   return records
 }
 
 async function syncJobs({ force = false } = {}) {
-  const state = await getSyncState()
-  const sourceChanged =
-    String(state.jobsSourceOrigin || '') !== jobsApiOrigin ||
-    String(state.cacheModelVersion || '') !== CACHE_MODEL_VERSION
+  const state = await getSyncState({ bypassCache: true })
+  const sourceChanged = sourceStateChanged(state)
   const restartFullSync = force || sourceChanged
-  const fullSyncDue = restartFullSync || Boolean(state.fullSyncInProgress) || !state.cacheReady || !state.cursor || Date.now() - Number(state.lastFullSyncAt || 0) > 60 * 60 * 1000
+  const fullSyncDue = syncDecision({
+    state,
+    force,
+    sourceChanged,
+    cacheRefreshMs: CACHE_REFRESH_MS,
+    fullSyncIntervalMs: FULL_SYNC_INTERVAL_MS
+  }).full
   const run = fullSyncDue
     ? {
         mode: 'full',
@@ -478,15 +680,21 @@ async function syncJobs({ force = false } = {}) {
   let hasMore = true
   let pagesProcessed = 0
   let jobsProcessed = 0
+  let jobsWritten = 0
+  let jobsUnchanged = 0
+  let logosQueued = 0
   while (hasMore && pagesProcessed < SYNC_MAX_PAGES_PER_RUN) {
     const pageBeingProcessed = run.page
     const batch = await gatewayRequest('sync', { query: buildSyncQuery(run) })
     const jobs = Array.isArray(batch.jobs) ? batch.jobs : []
     jobsProcessed += jobs.length
-    await writeBatch(jobs, {
+    const writes = await writeBatch(jobs, {
       syncRunId: run.mode === 'full' ? run.syncRunId : '',
       defaultRankStart: run.mode === 'full' ? (pageBeingProcessed - 1) * SYNC_PAGE_SIZE : null
     })
+    jobsWritten += writes.changed
+    jobsUnchanged += writes.unchanged
+    logosQueued += writes.logoQueued
     if (batch.nextCursor && batch.nextCursor > run.newestCursor) run.newestCursor = batch.nextCursor
     hasMore = Boolean(batch.hasMore)
     run.page += 1
@@ -501,6 +709,13 @@ async function syncJobs({ force = false } = {}) {
     cacheReady: completed && run.mode === 'full' ? true : Boolean(state.cacheReady),
     fullSyncInProgress: run.mode === 'full' && !completed,
     lastSyncAt: Date.now(),
+    ...(completed && run.mode === 'full'
+      ? {
+          staleCleanupSkippedAt: 0,
+          staleCleanupCandidates: 0,
+          staleCleanupRemovalRatio: 0
+        }
+      : {}),
     ...(run.mode === 'full'
       ? {
           fullSyncPage: completed ? 1 : run.page,
@@ -518,8 +733,27 @@ async function syncJobs({ force = false } = {}) {
   await setSyncState(nextState)
   const cleanup = completed && run.mode === 'full'
     ? await removeStaleCacheDocuments(run.syncRunId)
-    : { removed: 0 }
-  return { completed, mode: run.mode, pagesProcessed, jobsProcessed, staleRemoved: cleanup.removed }
+    : { removed: 0, skipped: false, candidates: 0, removalRatio: 0 }
+  if (cleanup.skipped) {
+    await setSyncState({
+      ...nextState,
+      staleCleanupSkippedAt: Date.now(),
+      staleCleanupCandidates: cleanup.candidates,
+      staleCleanupRemovalRatio: cleanup.removalRatio
+    })
+  }
+  return {
+    completed,
+    mode: run.mode,
+    pagesProcessed,
+    jobsProcessed,
+    jobsWritten,
+    jobsUnchanged,
+    logosQueued,
+    staleRemoved: cleanup.removed,
+    staleCleanupSkipped: Boolean(cleanup.skipped),
+    staleCleanupCandidates: Number(cleanup.candidates || 0)
+  }
 }
 
 async function syncJobsToCompletion({ force = false } = {}) {
@@ -527,7 +761,12 @@ async function syncJobsToCompletion({ force = false } = {}) {
   let batchesProcessed = 0
   let pagesProcessed = 0
   let jobsProcessed = 0
+  let jobsWritten = 0
+  let jobsUnchanged = 0
+  let logosQueued = 0
   let staleRemoved = 0
+  let staleCleanupSkipped = false
+  let staleCleanupCandidates = 0
   let latest = null
   const maxBatches = Math.ceil(LIST_INDEX_MAX_RECORDS / SYNC_PAGE_SIZE / SYNC_MAX_PAGES_PER_RUN) + 2
   do {
@@ -536,8 +775,16 @@ async function syncJobsToCompletion({ force = false } = {}) {
     batchesProcessed += 1
     pagesProcessed += Number(latest.pagesProcessed || 0)
     jobsProcessed += Number(latest.jobsProcessed || 0)
+    jobsWritten += Number(latest.jobsWritten || 0)
+    jobsUnchanged += Number(latest.jobsUnchanged || 0)
+    logosQueued += Number(latest.logosQueued || 0)
     staleRemoved += Number(latest.staleRemoved || 0)
-    if (!latest.completed) await new Promise((resolve) => setImmediate(resolve))
+    staleCleanupSkipped ||= Boolean(latest.staleCleanupSkipped)
+    staleCleanupCandidates += Number(latest.staleCleanupCandidates || 0)
+    if (!latest.completed) {
+      await renewSyncLease()
+      await new Promise((resolve) => setImmediate(resolve))
+    }
   } while (!latest.completed && batchesProcessed < maxBatches)
   if (!latest?.completed) throw new Error(`Job sync did not finish after ${maxBatches} batches`)
   return {
@@ -545,7 +792,12 @@ async function syncJobsToCompletion({ force = false } = {}) {
     batchesProcessed,
     pagesProcessed,
     jobsProcessed,
+    jobsWritten,
+    jobsUnchanged,
+    logosQueued,
     staleRemoved,
+    staleCleanupSkipped,
+    staleCleanupCandidates,
     jobsSourceOrigin: jobsApiOrigin
   }
 }
@@ -553,9 +805,10 @@ async function syncJobsToCompletion({ force = false } = {}) {
 let syncPromise = null
 function scheduleSync({ force = false } = {}) {
   if (syncPromise) return syncPromise
-  syncPromise = syncJobsToCompletion({ force })
+  syncPromise = runSyncWithLease({ force })
     .then((result) => {
-      console.log('[mini-cloudrun] sync completed', result)
+      if (result.skipped) console.log('[mini-cloudrun] sync skipped', result)
+      else console.log('[mini-cloudrun] sync completed', result)
       return result
     })
     .catch((error) => console.error('[mini-cloudrun] background sync failed', {
@@ -570,6 +823,18 @@ function scheduleSync({ force = false } = {}) {
     }))
     .finally(() => { syncPromise = null })
   return syncPromise
+}
+
+async function runSyncWithLease({ force = false } = {}) {
+  const lease = await acquireSyncLease({ force })
+  if (!lease.acquired) {
+    return { skipped: true, reason: lease.reason, mode: lease.full ? 'full' : 'incremental' }
+  }
+  try {
+    return await syncJobsToCompletion({ force: lease.restartFull })
+  } finally {
+    await releaseSyncLease()
+  }
 }
 
 function buildJobsResponse(items, query) {
@@ -711,29 +976,39 @@ async function getSubscriptionOptions(limit = 120) {
 
 async function listJobs(query) {
   if (query.search) {
-    const state = await getSyncState()
-    if (Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
+    const state = await getSyncState().catch((error) => {
+      console.warn('[mini-cloudrun] sync state unavailable during search', error?.message || error)
+      return null
+    })
+    if (state && Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
     return fetchUpstreamJobs(query)
   }
+  let listUnavailable = false
   const [state, result] = await Promise.all([
-    getSyncState(),
+    getSyncState().catch((error) => {
+      console.warn('[mini-cloudrun] sync state unavailable while serving cache', error?.message || error)
+      return null
+    }),
     readAllListDocuments().catch((error) => {
       console.warn('[mini-cloudrun] list cache unavailable, falling back upstream', error?.message || error)
+      listUnavailable = true
       return []
     })
   ])
   const cached = result.map(unwrapDocument).filter((item) => item?.payload)
-  if (!state.cacheReady || cached.length === 0) {
+  if (listUnavailable || cached.length === 0 || (state && !state.cacheReady)) {
     // The first visitor gets a prompt upstream response. Full cache hydration is
     // deliberately best-effort work after the HTTP response is released.
     const response = await fetchUpstreamJobs(query)
     // An empty index alongside an old full cache means this is the first
     // deployment with the lightweight list collection. Rebuild it once, while
     // still answering the current request from Vercel immediately.
-    void scheduleSync({ force: Boolean(state.cacheReady && cached.length === 0) })
+    if (!listUnavailable && state) {
+      void scheduleSync({ force: Boolean(state.cacheReady && cached.length === 0) })
+    }
     return response
   }
-  if (Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
+  if (state && Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
   return buildJobsResponse(cached, query)
 }
 
@@ -880,7 +1155,7 @@ async function route(req, res) {
     if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true })
     if (req.method === 'POST' && url.pathname === '/internal/sync') {
       if (!syncSecret || req.headers['x-mini-sync-secret'] !== syncSecret) return send(res, 401, { error: 'Unauthorized' })
-      const result = await syncJobsToCompletion({ force: url.searchParams.get('full') === 'true' })
+      const result = await runSyncWithLease({ force: url.searchParams.get('full') === 'true' })
       return send(res, 200, { success: true, ...result })
     }
     if (req.method === 'GET' && url.pathname === '/mini/jobs') {
@@ -933,8 +1208,11 @@ async function route(req, res) {
             browse: { viewedCount: browse?.viewedCount || 100, remaining: browse?.remaining || 0 }
           })
         }
-        const state = await getSyncState()
-        if (Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
+        const state = await getSyncState().catch((error) => {
+          console.warn('[mini-cloudrun] sync state unavailable while serving job detail', error?.message || error)
+          return null
+        })
+        if (state && Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
         return send(res, 200, { job: jobs[0], browse })
       }
       const upstreamJob = await fetchUpstreamJob(jobId)
@@ -1296,6 +1574,7 @@ server.listen(port, () => {
 })
 
 // The production service keeps one minimum instance during launch week. This
-// timer makes the cache refresh hourly without exposing a public cron URL.
-const syncTimer = setInterval(() => { void scheduleSync() }, 60 * 60 * 1000)
+// timer requests an incremental refresh. The shared database lease and freshness
+// policy make it safe when CloudRun starts more than one container.
+const syncTimer = setInterval(() => { void scheduleSync() }, SYNC_TIMER_MS)
 syncTimer.unref()

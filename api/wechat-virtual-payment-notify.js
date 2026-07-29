@@ -26,6 +26,80 @@ function parseBody(body) {
   return JSON.parse(text)
 }
 
+function canonicalJson(value) {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(',')}]`
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(',')}}`
+  }
+  return JSON.stringify(value)
+}
+
+function relaySignature(secret, timestamp, notification) {
+  return crypto
+    .createHmac('sha256', String(secret || ''))
+    .update(`${String(timestamp || '')}.${canonicalJson(notification)}`)
+    .digest('hex')
+}
+
+function hasValidRelaySignature(req, notification) {
+  const secret = String(process.env.WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET || '')
+  const timestamp = String(req.headers?.['x-haigoo-payment-relay-timestamp'] || '')
+  const signature = String(req.headers?.['x-haigoo-payment-relay-signature'] || '')
+  const timestampMs = Number(timestamp)
+  if (
+    !secret ||
+    !signature ||
+    !Number.isFinite(timestampMs) ||
+    Math.abs(Date.now() - timestampMs) > 5 * 60 * 1000
+  ) {
+    return false
+  }
+  const expected = relaySignature(secret, timestamp, notification)
+  return signature.length === expected.length
+    && crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+}
+
+async function forwardSandboxNotification(notification) {
+  const origin = String(process.env.WECHAT_VIRTUAL_PAYMENT_SANDBOX_CALLBACK_ORIGIN || '')
+    .trim()
+    .replace(/\/+$/, '')
+  const secret = String(process.env.WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET || '')
+  if (!/^https:\/\/[A-Za-z0-9.-]+$/.test(origin) || !secret) {
+    throw Object.assign(new Error('微信沙箱支付回调转发尚未配置'), {
+      statusCode: 503,
+      code: 'VIRTUAL_PAYMENT_SANDBOX_RELAY_NOT_CONFIGURED'
+    })
+  }
+  const timestamp = String(Date.now())
+  const headers = {
+    'content-type': 'application/json',
+    'x-haigoo-payment-relay-timestamp': timestamp,
+    'x-haigoo-payment-relay-signature': relaySignature(secret, timestamp, notification)
+  }
+  const bypassSecret = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '')
+  if (bypassSecret) headers['x-vercel-protection-bypass'] = bypassSecret
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 8_000)
+  try {
+    const response = await fetch(`${origin}/api/wechat-virtual-payment-notify`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(notification),
+      signal: controller.signal
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (!response.ok || Number(payload?.ErrCode || 0) !== 0) {
+      throw new Error(`sandbox callback returned ${response.status}`)
+    }
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 function success(res) {
   return res.status(200).json({ ErrCode: 0, ErrMsg: 'success' })
 }
@@ -42,11 +116,10 @@ function success(res) {
  * configured and the corresponding decryptor is enabled.
  */
 export default async function handler(req, res) {
-  if (!hasValidSignature(req)) {
-    return res.status(401).json({ ErrCode: 401, ErrMsg: 'invalid signature' })
-  }
-
   if (req.method === 'GET') {
+    if (!hasValidSignature(req)) {
+      return res.status(401).json({ ErrCode: 401, ErrMsg: 'invalid signature' })
+    }
     const echo = String(req.query?.echostr || '')
     return res.status(200).send(echo)
   }
@@ -57,6 +130,14 @@ export default async function handler(req, res) {
 
   try {
     const notification = parseBody(req.body)
+    const validWechatSignature = hasValidSignature(req)
+    const validRelaySignature = hasValidRelaySignature(req, notification)
+    if (!validWechatSignature && !validRelaySignature) {
+      return res.status(401).json({ ErrCode: 401, ErrMsg: 'invalid signature' })
+    }
+    if (validRelaySignature && Number(notification?.Env) !== 1) {
+      return res.status(400).json({ ErrCode: 400, ErrMsg: 'invalid relay environment' })
+    }
     if (notification?.Encrypt || req.query?.encrypt_type === 'aes') {
       return res.status(503).json({
         ErrCode: 503,
@@ -65,6 +146,15 @@ export default async function handler(req, res) {
     }
     const event = String(notification?.Event || '')
     if (event === 'xpay_goods_deliver_notify') {
+      if (
+        validWechatSignature &&
+        !validRelaySignature &&
+        process.env.VERCEL_ENV === 'production' &&
+        Number(notification?.Env) === 1
+      ) {
+        await forwardSandboxNotification(notification)
+        return success(res)
+      }
       await wechatVirtualPaymentService.completeOrder(notification)
       return success(res)
     }
@@ -93,6 +183,9 @@ export default async function handler(req, res) {
 }
 
 export {
+  canonicalJson,
+  hasValidRelaySignature,
   hasValidSignature,
-  messageSignature
+  messageSignature,
+  relaySignature
 }
