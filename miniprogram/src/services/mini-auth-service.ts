@@ -2,6 +2,7 @@ import Taro from '@tarojs/taro'
 import { requestJson } from './api-client'
 import { trackMiniEvent } from './analytics-service'
 import { clearMiniSession, getMiniSessionToken, saveMiniSession } from './session'
+import { MINI_AGREEMENT_VERSION, MINI_PRIVACY_VERSION } from '../config/legal'
 
 interface MiniUser {
   userId?: string
@@ -18,9 +19,6 @@ interface SessionResponse {
   user?: MiniUser | null
   message?: string
 }
-
-export const MINI_AGREEMENT_VERSION = '2026-07-23'
-export const MINI_PRIVACY_VERSION = '2026-07-23'
 
 export async function loginWithWechat() {
   const login = await Taro.login()

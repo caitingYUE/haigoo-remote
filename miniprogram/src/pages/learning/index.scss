@@ -155,6 +155,11 @@
   box-shadow: 0 8px 17px rgba(81, 70, 229, 0.18);
 }
 
+.membership-plan-card__button--disabled {
+  opacity: 0.58;
+  box-shadow: none;
+}
+
 .membership-page__heading--support {
   margin-top: 40px;
 }

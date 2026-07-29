@@ -1,0 +1,2 @@
+export const MINI_AGREEMENT_VERSION = '2026-07-29'
+export const MINI_PRIVACY_VERSION = '2026-07-29'

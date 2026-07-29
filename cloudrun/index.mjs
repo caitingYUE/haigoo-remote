@@ -18,6 +18,9 @@ const jobsGatewaySecret = String(process.env.MINI_JOBS_GATEWAY_SHARED_SECRET || 
 const sessionSecret = String(process.env.MINI_SESSION_SECRET || '')
 const syncSecret = String(process.env.MINI_SYNC_SECRET || '')
 const vercelAutomationBypassSecret = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '')
+const virtualPaymentOfferId = String(process.env.WECHAT_VIRTUAL_PAYMENT_OFFER_ID || '').trim()
+const virtualPaymentAppKey = String(process.env.WECHAT_VIRTUAL_PAYMENT_APP_KEY || '').trim()
+const virtualPaymentEnv = Number(process.env.WECHAT_VIRTUAL_PAYMENT_ENV || 0) === 1 ? 1 : 0
 const jobsCollection = 'mini_jobs'
 const jobListCollection = 'mini_job_list'
 const syncCollection = 'mini_sync_state'
@@ -793,7 +796,10 @@ async function exchangeCode(code) {
       error.payload = { code: 'WECHAT_LOGIN_FAILED', error: error.message }
       throw error
     }
-    return payload.openid
+    return {
+      openid: String(payload.openid || ''),
+      sessionKey: String(payload.session_key || '')
+    }
   } catch (error) {
     if (error?.statusCode) throw error
     const unavailable = new Error('微信登录服务暂时不可用，请稍后重试')
@@ -801,6 +807,27 @@ async function exchangeCode(code) {
     unavailable.payload = { code: 'WECHAT_SERVICE_UNAVAILABLE', error: unavailable.message }
     throw unavailable
   }
+}
+
+function virtualPaymentConfig() {
+  if (
+    !/^[A-Za-z0-9._:-]{1,128}$/.test(virtualPaymentOfferId) ||
+    virtualPaymentAppKey.length < 16
+  ) {
+    const error = new Error('微信虚拟支付尚未完成配置')
+    error.statusCode = 503
+    error.payload = { code: 'VIRTUAL_PAYMENT_NOT_CONFIGURED', error: error.message }
+    throw error
+  }
+  return {
+    offerId: virtualPaymentOfferId,
+    appKey: virtualPaymentAppKey,
+    env: virtualPaymentEnv
+  }
+}
+
+function virtualPaymentSignature(key, value) {
+  return crypto.createHmac('sha256', key).update(value).digest('hex')
 }
 
 function readBody(req) {
@@ -941,7 +968,7 @@ async function route(req, res) {
     }
     if (req.method === 'POST' && url.pathname === '/mini/auth/session') {
       const body = await readBody(req)
-      const openid = await exchangeCode(String(body.code || ''))
+      const { openid } = await exchangeCode(String(body.code || ''))
       const session = await gatewayRequest('session', { method: 'POST', body: { openid } })
       return send(res, 200, { ...session, token: sessionToken({ openid, userId: session.user?.userId || null }) })
     }
@@ -1045,6 +1072,89 @@ async function route(req, res) {
         }
       })
       return send(res, 202, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/payments/orders') {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, {
+          code: 'ACCOUNT_BIND_REQUIRED',
+          error: '请先登录并绑定 Haigoo 网站账号'
+        })
+      }
+      const body = await readBody(req)
+      const login = await exchangeCode(String(body.code || ''))
+      if (!login.sessionKey || login.openid !== session.openid) {
+        return send(res, 401, {
+          code: 'WECHAT_PAYMENT_IDENTITY_MISMATCH',
+          error: '微信支付身份已失效，请重新操作'
+        })
+      }
+      const config = virtualPaymentConfig()
+      const created = await gatewayRequest('virtual_payment_create', {
+        method: 'POST',
+        body: {
+          openid: session.openid,
+          planId: String(body.planId || ''),
+          idempotencyKey: String(body.idempotencyKey || ''),
+          agreementVersion: String(body.agreementVersion || ''),
+          privacyVersion: String(body.privacyVersion || ''),
+          acceptedAt: body.acceptedAt,
+          virtualEnv: config.env,
+          clientKey: requestClientKey(req)
+        }
+      })
+      const order = created.order || {}
+      if (
+        !/^[A-Za-z0-9_*-]{6,32}$/.test(String(order.paymentId || '')) ||
+        !String(order.productId || '') ||
+        !Number.isSafeInteger(Number(order.amountCents)) ||
+        Number(order.amountCents) <= 0
+      ) {
+        const error = new Error('微信虚拟支付订单返回无效')
+        error.statusCode = 503
+        error.payload = { code: 'VIRTUAL_PAYMENT_ORDER_INVALID', error: error.message }
+        throw error
+      }
+      const signData = JSON.stringify({
+        offerId: config.offerId,
+        buyQuantity: 1,
+        env: config.env,
+        currencyType: 'CNY',
+        productId: String(order.productId),
+        goodsPrice: Number(order.amountCents),
+        outTradeNo: String(order.paymentId),
+        attach: String(order.attach || '')
+      })
+      return send(res, 201, {
+        success: true,
+        order: {
+          paymentId: String(order.paymentId),
+          planId: String(order.planId || ''),
+          amountCents: Number(order.amountCents),
+          currency: 'CNY',
+          status: String(order.status || 'pending')
+        },
+        payment: {
+          mode: 'short_series_goods',
+          signData,
+          paySig: virtualPaymentSignature(config.appKey, `requestVirtualPayment&${signData}`),
+          signature: virtualPaymentSignature(login.sessionKey, signData)
+        }
+      })
+    }
+    if (req.method === 'GET' && /^\/mini\/payments\/orders\/[^/]+$/.test(url.pathname)) {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, {
+          code: 'ACCOUNT_BIND_REQUIRED',
+          error: '请先登录并绑定 Haigoo 网站账号'
+        })
+      }
+      const paymentId = decodeURIComponent(url.pathname.split('/').pop())
+      const result = await gatewayRequest('virtual_payment_status', {
+        query: { openid: session.openid, paymentId }
+      })
+      return send(res, 200, result)
     }
     if (req.method === 'GET' && url.pathname === '/mini/subscriptions') {
       const session = getSession(req)

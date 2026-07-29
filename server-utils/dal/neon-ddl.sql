@@ -214,3 +214,15 @@ CREATE TABLE IF NOT EXISTS payment_records (
 
 ALTER TABLE payment_records
 ADD COLUMN IF NOT EXISTS metadata JSONB DEFAULT '{}'::jsonb;
+
+ALTER TABLE payment_records
+    ADD COLUMN IF NOT EXISTS provider VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS provider_transaction_id VARCHAR(128),
+    ADD COLUMN IF NOT EXISTS provider_status VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS app_id VARCHAR(64),
+    ADD COLUMN IF NOT EXISTS openid VARCHAR(128),
+    ADD COLUMN IF NOT EXISTS product_id VARCHAR(128),
+    ADD COLUMN IF NOT EXISTS expected_amount_cents INTEGER,
+    ADD COLUMN IF NOT EXISTS paid_amount_cents INTEGER,
+    ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS callback_received_at TIMESTAMPTZ;

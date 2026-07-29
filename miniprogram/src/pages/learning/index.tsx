@@ -1,6 +1,6 @@
 import { Button, Image, Input, ScrollView, Text, View } from '@tarojs/components'
 import { Check } from '@nutui/icons-react-taro'
-import { setNavigationBarTitle, setTabBarItem, showModal, showToast, useDidShow } from '@tarojs/taro'
+import { setNavigationBarTitle, setTabBarItem, showModal, showToast, switchTab, useDidShow } from '@tarojs/taro'
 import { useCallback, useMemo, useState } from 'react'
 import JobCard from '../../components/job-card'
 import MiniIcon from '../../components/mini-icon'
@@ -14,7 +14,8 @@ import {
   type SubscriptionFeed,
   type SubscriptionOption
 } from '../../services/subscription-service'
-import { getMiniSessionToken, getMiniUser } from '../../services/session'
+import { getMiniSessionToken, getMiniUser, hasAuthenticatedSession } from '../../services/session'
+import { purchaseClubPlan } from '../../services/virtual-payment-service'
 import './index.scss'
 
 const DEFAULT_MAX_SUBSCRIPTION_TOPICS = 8
@@ -27,23 +28,26 @@ const EMPTY_FEED: SubscriptionFeed = {
 
 const MEMBER_PLANS = [
   {
+    id: 'club_starter_monthly',
     name: '远程入门启动方案',
     clubName: 'Club Starter',
     price: '¥99',
     unit: '/ 30 天',
     who: '适合首次尝试远程工作、准备第一轮有效申请的人。',
-    features: ['简历文字诊断', '简历修改建议', '3–5 个站内岗位推荐', '远程入门准备材料', '30 天网站及小程序会员权限']
+    features: ['简历文字诊断', '简历修改建议', '3–5 个站内岗位推荐', '远程入门准备材料', '30 天网站及小程序 Club 权益']
   },
   {
+    id: 'club_half_year',
     name: '远程求职陪伴方案',
     clubName: 'Club Member',
     price: '¥499',
     unit: '/ 6 个月',
     who: '适合明确寻找远程工作、希望持续推进申请的人。',
     featured: true,
-    features: ['工作方向与简历初步诊断', '英文简历优化或语音咨询', '定制远程求职准备材料', '定向岗位挖掘 5–10 个', '6 个月网站及小程序会员权限']
+    features: ['工作方向与简历初步诊断', '英文简历优化或语音咨询', '定制远程求职准备材料', '定向岗位挖掘 5–10 个', '6 个月网站及小程序 Club 权益']
   },
   {
+    id: 'club_annual',
     name: '远程职业共建方案',
     clubName: 'Club Partner',
     price: '¥998',
@@ -87,6 +91,7 @@ export default function LearningPage() {
   const [activeTopicGroup, setActiveTopicGroup] = useState(0)
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [payingPlanId, setPayingPlanId] = useState('')
   const [qrDialog, setQrDialog] = useState<QrDialog | null>(null)
   const [qrFailed, setQrFailed] = useState(false)
 
@@ -186,9 +191,51 @@ export default function LearningPage() {
     setQrFailed(false)
     setQrDialog({
       title: planName ? `了解 ${planName}` : '添加顾问了解',
-      copy: '当前版本暂不支持小程序内支付。添加 Haigoo 顾问后，可了解适合人群、服务边界和开通方式。',
+      copy: '添加 Haigoo 顾问，了解适合人群、方案内容与服务边界。购买 Club 权益请使用页面内的微信官方支付。',
       image: ADVISOR_QR
     })
+  }
+
+  const handlePurchase = async (plan: typeof MEMBER_PLANS[number]) => {
+    if (payingPlanId) return
+    if (!hasAuthenticatedSession()) {
+      const result = await showModal({
+        title: '登录后购买 Club 权益',
+        content: '请先在“我的”页面绑定 Haigoo 网站账号，再返回此页完成微信支付。',
+        confirmText: '前往登录'
+      })
+      if (result.confirm) await switchTab({ url: '/pages/profile/index' })
+      return
+    }
+    const confirmation = await showModal({
+      title: `确认购买 ${plan.clubName}`,
+      content: `${plan.name}，价格 ${plan.price}${plan.unit}。支付成功后，网站与小程序 Club 权益将同步生效。点击“微信支付”即表示已阅读并同意用户服务协议和隐私政策。`,
+      confirmText: '微信支付'
+    })
+    if (!confirmation.confirm) return
+
+    setPayingPlanId(plan.id)
+    try {
+      const order = await purchaseClubPlan(plan.id)
+      if (order.status === 'completed') {
+        await loginWithWechat()
+        await syncIdentity()
+        showToast({ title: 'Club 权益已开通', icon: 'success' })
+        return
+      }
+      showModal({
+        title: '支付结果确认中',
+        content: '微信正在确认支付结果。请稍后重新进入 Club 页面，到账后权益会自动生效。',
+        showCancel: false
+      })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '微信支付未完成，请稍后重试'
+      if (message !== '已取消支付') {
+        showModal({ title: '支付未完成', content: message, showCancel: false })
+      }
+    } finally {
+      setPayingPlanId('')
+    }
   }
 
   const openCommunity = () => {
@@ -209,7 +256,7 @@ export default function LearningPage() {
           <Text className='membership-page__title'>Club 权益方案</Text>
           <Text className='membership-page__note'>按求职阶段选择适合自己的支持方式</Text>
         </View>
-        <Text className='membership-page__consult' onClick={() => openAdvisor()}>咨询开通</Text>
+        <Text className='membership-page__consult' onClick={() => openAdvisor()}>咨询方案</Text>
       </View>
       <View className='membership-plan-list'>
         {MEMBER_PLANS.map((plan) => (
@@ -234,8 +281,11 @@ export default function LearningPage() {
                 </View>
               ))}
             </View>
-            <View className='membership-plan-card__button' onClick={() => openAdvisor(plan.clubName)}>
-              <Text>添加顾问了解</Text>
+            <View
+              className={`membership-plan-card__button ${payingPlanId === plan.id ? 'membership-plan-card__button--disabled' : ''}`}
+              onClick={() => handlePurchase(plan)}
+            >
+              <Text>{payingPlanId === plan.id ? '正在拉起微信支付…' : isMember ? '续费 Club 权益' : '立即开通'}</Text>
             </View>
           </View>
         ))}
@@ -253,8 +303,8 @@ export default function LearningPage() {
       </View>
       <View className='membership-contact-grid'>
         <View className='membership-contact-card' onClick={() => openAdvisor()}>
-          <Text className='membership-contact-card__title'>顾问咨询开通</Text>
-          <Text className='membership-contact-card__copy'>了解方案、适合人群与开通安排</Text>
+          <Text className='membership-contact-card__title'>顾问咨询</Text>
+          <Text className='membership-contact-card__copy'>了解方案内容、适合人群与服务边界</Text>
           <Image className='membership-contact-card__qr' src={ADVISOR_QR} mode='aspectFit' />
           <Text className='membership-contact-card__action'>点击放大二维码</Text>
         </View>
