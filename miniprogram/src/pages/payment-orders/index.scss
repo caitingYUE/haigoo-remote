@@ -1,0 +1,249 @@
+.payment-orders-page {
+  padding-top: 24px;
+}
+
+.payment-orders-heading__title,
+.payment-orders-heading__copy {
+  display: block;
+}
+
+.payment-orders-heading__title {
+  color: #11182b;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.payment-orders-heading__copy {
+  margin-top: 8px;
+  color: #8992a5;
+  font-size: 21px;
+  line-height: 1.5;
+}
+
+.payment-orders-state {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  margin-top: 26px;
+  padding: 64px 32px;
+  text-align: center;
+}
+
+.payment-orders-state__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
+  background: #efedff;
+}
+
+.payment-orders-state__title,
+.payment-orders-state__copy {
+  display: block;
+}
+
+.payment-orders-state__title {
+  margin-top: 20px;
+  color: #202940;
+  font-size: 26px;
+  font-weight: 750;
+}
+
+.payment-orders-state__copy {
+  margin-top: 12px;
+  color: #8a93a6;
+  font-size: 20px;
+  line-height: 1.55;
+}
+
+.payment-orders-state__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 66px;
+  margin-top: 24px;
+  padding: 0 28px;
+  border-radius: 999px;
+  background: #5146e5;
+  color: #fff;
+  font-size: 21px;
+  font-weight: 750;
+}
+
+.payment-orders-state__retry {
+  margin-top: 16px;
+  color: #5146e5;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.payment-orders-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 28px;
+  color: #8a93a5;
+  font-size: 19px;
+}
+
+.payment-orders-summary > text:first-child {
+  color: #343e56;
+  font-weight: 700;
+}
+
+.payment-orders-list {
+  margin-top: 14px;
+}
+
+.payment-order-card {
+  padding: 26px;
+}
+
+.payment-order-card + .payment-order-card {
+  margin-top: 18px;
+}
+
+.payment-order-card__header,
+.payment-order-card__amount-row,
+.payment-order-card__detail,
+.payment-order-card__order-id {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.payment-order-card__plan,
+.payment-order-card__amount,
+.payment-order-card__method {
+  display: block;
+}
+
+.payment-order-card__plan {
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+  color: #171f33;
+  font-size: 26px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-order-card__status {
+  flex-shrink: 0;
+  margin-left: 18px;
+  padding: 8px 13px;
+  border-radius: 999px;
+  background: #f0eff8;
+  color: #6e7282;
+  font-size: 18px;
+  font-weight: 750;
+}
+
+.payment-order-card__status--completed {
+  background: #eaf8f0;
+  color: #218657;
+}
+
+.payment-order-card__status--refunded {
+  background: #eef1f6;
+  color: #657083;
+}
+
+.payment-order-card__status--failed,
+.payment-order-card__status--incomplete {
+  background: #fff0ef;
+  color: #b05550;
+}
+
+.payment-order-card__status--pending {
+  background: #fff7e6;
+  color: #976819;
+}
+
+.payment-order-card__amount-row {
+  margin-top: 24px;
+  padding: 20px 0;
+  border-top: 1px solid #eceef3;
+  border-bottom: 1px solid #eceef3;
+}
+
+.payment-order-card__amount {
+  color: #11182b;
+  font-size: 34px;
+  font-weight: 800;
+}
+
+.payment-order-card__method {
+  color: #7e8799;
+  font-size: 19px;
+}
+
+.payment-order-card__details {
+  padding-top: 14px;
+}
+
+.payment-order-card__detail {
+  min-height: 48px;
+  color: #8b93a4;
+  font-size: 18px;
+}
+
+.payment-order-card__detail > text:last-child,
+.payment-order-card__order-id {
+  color: #4c566d;
+}
+
+.payment-order-card__order-id {
+  min-width: 0;
+  margin-left: 20px;
+}
+
+.payment-order-card__order-id > text:first-child {
+  overflow: hidden;
+  max-width: 310px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payment-order-card__copy {
+  flex-shrink: 0;
+  margin-left: 10px;
+  color: #5146e5;
+  font-weight: 700;
+}
+
+.payment-orders-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70px;
+  margin-top: 20px;
+  border: 1px solid #dedbf7;
+  border-radius: 18px;
+  background: #f5f3ff;
+  color: #5146e5;
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.payment-orders-more--disabled {
+  opacity: 0.55;
+}
+
+.payment-orders-support {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 24px;
+  padding: 22px 4px;
+  color: #858ea0;
+  font-size: 19px;
+}
+
+.payment-orders-support__action {
+  color: #5146e5;
+  font-weight: 700;
+}

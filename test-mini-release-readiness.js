@@ -15,7 +15,9 @@ const auth = read('./api/auth.js')
 const userHelper = read('./server-utils/user-helper.js')
 const bugReports = read('./lib/api-handlers/bug-reports.js')
 const app = read('./miniprogram/src/app.ts')
+const appConfig = read('./miniprogram/src/app.config.ts')
 const profile = read('./miniprogram/src/pages/profile/index.tsx')
+const paymentOrdersPage = read('./miniprogram/src/pages/payment-orders/index.tsx')
 const jobsService = read('./miniprogram/src/services/jobs-service.ts')
 const jobsPage = read('./miniprogram/src/pages/jobs/index.tsx')
 const jobFilters = read('./miniprogram/src/data/job-filters.ts')
@@ -30,6 +32,7 @@ const membershipPage = read('./miniprogram/src/pages/learning/index.tsx')
 const miniAuthService = read('./miniprogram/src/services/mini-auth-service.ts')
 const miniSession = read('./miniprogram/src/services/session.ts')
 const virtualPaymentClient = read('./miniprogram/src/services/virtual-payment-service.ts')
+const virtualPaymentService = read('./lib/services/wechat-virtual-payment-service.js')
 const virtualPaymentCallback = read('./api/wechat-virtual-payment-notify.js')
 const processedJobs = read('./lib/api-handlers/processed-jobs.js')
 const projectConfig = JSON.parse(read('./miniprogram/project.config.json'))
@@ -50,7 +53,8 @@ for (const action of [
   'application_usage',
   'application_status',
   'virtual_payment_create',
-  'virtual_payment_status'
+  'virtual_payment_status',
+  'virtual_payment_list'
 ]) {
   assert.match(gateway, new RegExp(`['"]${action}['"]`), `gateway must expose ${action}`)
 }
@@ -83,6 +87,12 @@ assert.ok(cloudrun.includes('requestVirtualPayment&${signData}'), 'CloudRun must
 assert.ok(cloudrun.includes('virtualPaymentSignature(login.sessionKey, signData)'), 'CloudRun must bind payment to a fresh WeChat session key')
 assert.ok(virtualPaymentClient.includes('requestVirtualPayment'), 'the Mini Program must invoke the official virtual-payment API')
 assert.ok(virtualPaymentClient.includes("order.status === 'completed'"), 'client payment success must be confirmed against server order state')
+assert.ok(virtualPaymentClient.includes('getVirtualPaymentOrders'), 'the Mini Program must expose authenticated payment-order history')
+assert.ok(appConfig.includes("'pages/payment-orders/index'"), 'the audited order-center path must be registered')
+assert.ok(profile.includes("navigateTo({ url: '/pages/payment-orders/index' })"), 'the profile must expose the order center')
+assert.ok(paymentOrdersPage.includes('getVirtualPaymentOrders'), 'the order center must read persisted payment orders')
+assert.ok(paymentOrdersPage.includes('订单号') && paymentOrdersPage.includes('payment-order-card__status'), 'the order center must expose auditable transaction details')
+assert.ok(virtualPaymentService.includes("provider = 'wechat_virtual'"), 'order history must be restricted to WeChat virtual-payment records')
 assert.ok(membershipPage.includes('purchaseClubPlan(plan.id)'), 'Club plan buttons must use official in-app payment')
 assert.ok(!membershipPage.includes('当前版本暂不支持小程序内支付'), 'Club purchase copy must not route around official payment')
 assert.ok(miniAuthService.includes('memberType: session.user?.memberType'), 'Mini auth must preserve the current Club plan type')

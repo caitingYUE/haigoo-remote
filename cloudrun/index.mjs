@@ -1420,6 +1420,23 @@ async function route(req, res) {
         }
       })
     }
+    if (req.method === 'GET' && url.pathname === '/mini/payments/orders') {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, {
+          code: 'ACCOUNT_BIND_REQUIRED',
+          error: '请先登录并绑定 Haigoo 网站账号'
+        })
+      }
+      const result = await gatewayRequest('virtual_payment_list', {
+        query: {
+          openid: session.openid,
+          page: Math.max(1, Number(url.searchParams.get('page')) || 1),
+          pageSize: Math.min(50, Math.max(1, Number(url.searchParams.get('pageSize')) || 20))
+        }
+      })
+      return send(res, 200, result)
+    }
     if (req.method === 'GET' && /^\/mini\/payments\/orders\/[^/]+$/.test(url.pathname)) {
       const session = getSession(req)
       if (!session?.userId) {

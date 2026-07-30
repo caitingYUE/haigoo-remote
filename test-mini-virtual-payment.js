@@ -104,6 +104,7 @@ assert.equal(hasValidRelaySignature({
 const cloudrun = fs.readFileSync(new URL('./cloudrun/index.mjs', import.meta.url), 'utf8')
 const miniClient = fs.readFileSync(new URL('./miniprogram/src/services/virtual-payment-service.ts', import.meta.url), 'utf8')
 const membershipPage = fs.readFileSync(new URL('./miniprogram/src/pages/learning/index.tsx', import.meta.url), 'utf8')
+const orderCenter = fs.readFileSync(new URL('./miniprogram/src/pages/payment-orders/index.tsx', import.meta.url), 'utf8')
 
 assert.ok(cloudrun.includes('requestVirtualPayment&${signData}'), 'paySig must bind the API method and the exact signData string')
 assert.ok(cloudrun.includes('virtualPaymentSignature(login.sessionKey, signData)'), 'session_key must sign the exact signData string')
@@ -111,5 +112,7 @@ assert.ok(miniClient.includes("mode: 'short_series_goods'"), 'the client must us
 assert.ok(miniClient.includes("order.status === 'completed'"), 'client success must be followed by server order confirmation')
 assert.ok(membershipPage.includes('立即开通'), 'Club plans must expose the official in-app purchase entry')
 assert.ok(!membershipPage.includes('当前版本暂不支持小程序内支付'), 'the release must not direct purchases around official payment')
+assert.ok(orderCenter.includes('getVirtualPaymentOrders'), 'users must have an in-app order history')
+assert.ok(orderCenter.includes('支付成功') && orderCenter.includes('已退款'), 'the order center must distinguish terminal payment states')
 
 console.log('mini virtual-payment checks passed')

@@ -11,6 +11,7 @@ const profileMenus = [
   { key: 'applications', icon: 'application' as MiniIconName, title: '申请入口记录', description: '区分已打开入口与已完成申请' },
   { key: 'favorites', icon: 'favorite' as MiniIconName, title: '收藏岗位', description: '与 Haigoo 网站收藏实时共享' },
   { key: 'learning', icon: 'subscription' as MiniIconName, title: '岗位订阅', description: '查看同步到邮箱和小程序的岗位更新' },
+  { key: 'orders', icon: 'club' as MiniIconName, title: 'Club 订单', description: '查看支付状态、金额与订单号' },
   { key: 'settings', icon: 'settings' as MiniIconName, title: '账号与安全', description: '密码、退出、解绑、注销与帮助反馈' }
 ]
 
@@ -73,6 +74,10 @@ export default function ProfilePage() {
     }
     if (key === 'favorites' || key === 'applications') {
       navigateTo({ url: `/pages/activity/index?tab=${key}` })
+      return
+    }
+    if (key === 'orders') {
+      navigateTo({ url: '/pages/payment-orders/index' })
       return
     }
     if (key === 'settings') navigateTo({ url: '/pages/account-settings/index' })

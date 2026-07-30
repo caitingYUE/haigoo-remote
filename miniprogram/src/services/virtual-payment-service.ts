@@ -16,12 +16,21 @@ interface VirtualPaymentOrder {
   amountCents: number
   currency: string
   status: 'pending' | 'completed' | 'failed' | 'refunded' | string
+  createdAt?: string | null
   paidAt?: string | null
 }
 
 interface CreateVirtualPaymentResponse {
   order: VirtualPaymentOrder
   payment: VirtualPaymentParams
+}
+
+interface VirtualPaymentOrderList {
+  orders: VirtualPaymentOrder[]
+  page: number
+  pageSize: number
+  total: number
+  hasMore: boolean
 }
 
 interface VirtualPaymentFailure {
@@ -75,6 +84,13 @@ export async function getVirtualPaymentOrder(paymentId: string) {
     { authenticated: true }
   )
   return response.order
+}
+
+export async function getVirtualPaymentOrders(page = 1, pageSize = 20) {
+  return requestJson<VirtualPaymentOrderList>(
+    `/mini/payments/orders?page=${Math.max(1, page)}&pageSize=${Math.min(50, Math.max(1, pageSize))}`,
+    { authenticated: true }
+  )
 }
 
 async function waitForPaymentConfirmation(paymentId: string) {
@@ -137,5 +153,6 @@ export async function purchaseClubPlan(planId: string) {
 }
 
 export type {
-  VirtualPaymentOrder
+  VirtualPaymentOrder,
+  VirtualPaymentOrderList
 }

@@ -8,6 +8,7 @@ export default defineAppConfig({
     'pages/account-settings/index',
     'pages/legal/index',
     'pages/activity/index',
+    'pages/payment-orders/index',
     'pages/job-detail/index'
   ],
   window: {
