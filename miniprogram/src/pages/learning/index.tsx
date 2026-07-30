@@ -29,6 +29,7 @@ const EMPTY_FEED: SubscriptionFeed = {
 const MEMBER_PLANS = [
   {
     id: 'club_starter_monthly',
+    memberType: 'starter',
     name: '远程入门启动方案',
     clubName: 'Club Starter',
     price: '¥99',
@@ -38,6 +39,7 @@ const MEMBER_PLANS = [
   },
   {
     id: 'club_half_year',
+    memberType: 'half_year',
     name: '远程求职陪伴方案',
     clubName: 'Club Member',
     price: '¥499',
@@ -48,6 +50,7 @@ const MEMBER_PLANS = [
   },
   {
     id: 'club_annual',
+    memberType: 'annual',
     name: '远程职业共建方案',
     clubName: 'Club Partner',
     price: '¥998',
@@ -85,6 +88,7 @@ function fuzzyMatches(value: string, query: string) {
 
 export default function LearningPage() {
   const [isMember, setIsMember] = useState(false)
+  const [memberType, setMemberType] = useState('none')
   const [feed, setFeed] = useState<SubscriptionFeed>(EMPTY_FEED)
   const [selectedTopics, setSelectedTopics] = useState<string[]>([])
   const [topicSearch, setTopicSearch] = useState('')
@@ -103,8 +107,10 @@ export default function LearningPage() {
         console.warn('[subscription] identity refresh failed', error)
       })
     }
-    const member = Boolean(getMiniUser()?.isMember)
+    const miniUser = getMiniUser()
+    const member = Boolean(miniUser?.isMember)
     setIsMember(member)
+    setMemberType(member ? String(miniUser?.memberType || 'none') : 'none')
     setTabBarItem({ index: 2, text: 'Club' })
     setNavigationBarTitle({ title: 'Club' })
     if (!member) {
@@ -259,36 +265,56 @@ export default function LearningPage() {
         <Text className='membership-page__consult' onClick={() => openAdvisor()}>咨询方案</Text>
       </View>
       <View className='membership-plan-list'>
-        {MEMBER_PLANS.map((plan) => (
-          <View className={`membership-plan-card ${plan.featured ? 'membership-plan-card--featured' : ''}`} key={plan.clubName}>
-            <View className='membership-plan-card__header'>
-              <View>
-                <Text className='membership-plan-card__name'>{plan.name}</Text>
-                <Text className='membership-plan-card__club'>{plan.clubName}</Text>
-              </View>
-              {plan.featured ? <Text className='membership-plan-card__badge'>推荐</Text> : null}
-            </View>
-            <View className='membership-plan-card__price-row'>
-              <Text className='membership-plan-card__price'>{plan.price}</Text>
-              <Text className='membership-plan-card__unit'>{plan.unit}</Text>
-            </View>
-            <Text className='membership-plan-card__who'>{plan.who}</Text>
-            <View className='membership-plan-card__features'>
-              {plan.features.map((feature) => (
-                <View className='membership-plan-card__feature' key={feature}>
-                  <Check size={16} color='#5146e5' />
-                  <Text>{feature}</Text>
-                </View>
-              ))}
-            </View>
+        {MEMBER_PLANS.map((plan) => {
+          const isCurrentPlan = isMember && memberType === plan.memberType
+          const canPurchase = !isMember || isCurrentPlan
+          const buttonLabel = payingPlanId === plan.id
+            ? '正在拉起微信支付…'
+            : isCurrentPlan
+              ? '续费当前方案'
+              : isMember
+                ? '到期后可更换'
+                : '立即开通'
+          return (
             <View
-              className={`membership-plan-card__button ${payingPlanId === plan.id ? 'membership-plan-card__button--disabled' : ''}`}
-              onClick={() => handlePurchase(plan)}
+              className={`membership-plan-card ${plan.featured ? 'membership-plan-card--featured' : ''}`}
+              key={plan.clubName}
             >
-              <Text>{payingPlanId === plan.id ? '正在拉起微信支付…' : isMember ? '续费 Club 权益' : '立即开通'}</Text>
+              <View className='membership-plan-card__header'>
+                <View>
+                  <Text className='membership-plan-card__name'>{plan.name}</Text>
+                  <Text className='membership-plan-card__club'>{plan.clubName}</Text>
+                </View>
+                {isCurrentPlan
+                  ? <Text className='membership-plan-card__badge'>当前方案</Text>
+                  : plan.featured
+                    ? <Text className='membership-plan-card__badge'>推荐</Text>
+                    : null}
+              </View>
+              <View className='membership-plan-card__price-row'>
+                <Text className='membership-plan-card__price'>{plan.price}</Text>
+                <Text className='membership-plan-card__unit'>{plan.unit}</Text>
+              </View>
+              <Text className='membership-plan-card__who'>{plan.who}</Text>
+              <View className='membership-plan-card__features'>
+                {plan.features.map((feature) => (
+                  <View className='membership-plan-card__feature' key={feature}>
+                    <Check size={16} color='#5146e5' />
+                    <Text>{feature}</Text>
+                  </View>
+                ))}
+              </View>
+              <View
+                className={`membership-plan-card__button ${payingPlanId === plan.id || !canPurchase ? 'membership-plan-card__button--disabled' : ''}`}
+                onClick={() => {
+                  if (canPurchase) void handlePurchase(plan)
+                }}
+              >
+                <Text>{buttonLabel}</Text>
+              </View>
             </View>
-          </View>
-        ))}
+          )
+        })}
       </View>
     </>
   )

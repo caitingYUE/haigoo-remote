@@ -9,6 +9,7 @@ interface MiniSession {
   email?: string
   avatar?: string
   isMember?: boolean
+  memberType?: string
 }
 
 function getMiniSession(): MiniSession | null {
