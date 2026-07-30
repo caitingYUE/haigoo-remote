@@ -92,6 +92,8 @@ assert.ok(appConfig.includes("'pages/payment-orders/index'"), 'the audited order
 assert.ok(profile.includes("navigateTo({ url: '/pages/payment-orders/index' })"), 'the profile must expose the order center')
 assert.ok(paymentOrdersPage.includes('getVirtualPaymentOrders'), 'the order center must read persisted payment orders')
 assert.ok(paymentOrdersPage.includes('订单号') && paymentOrdersPage.includes('payment-order-card__status'), 'the order center must expose auditable transaction details')
+assert.ok(appConfig.includes("lazyCodeLoading: 'requiredComponents'"), 'the production app must enable required-component injection')
+assert.ok(miniPackage.scripts['build:weapp:prod'].includes('check:weapp:prod'), 'production builds must enforce the WeChat media-size quality gate')
 assert.ok(virtualPaymentService.includes("provider = 'wechat_virtual'"), 'order history must be restricted to WeChat virtual-payment records')
 assert.ok(membershipPage.includes('purchaseClubPlan(plan.id)'), 'Club plan buttons must use official in-app payment')
 assert.ok(!membershipPage.includes('当前版本暂不支持小程序内支付'), 'Club purchase copy must not route around official payment')
