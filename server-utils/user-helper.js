@@ -14,6 +14,7 @@ import {
     getPlanConfigByType,
     normalizeMemberType
 } from '../lib/shared/membership.js'
+import { rebasePendingMembershipEntitlements } from '../lib/services/membership-redemption-code-service.js'
 
 const DEFAULT_FREE_WEBSITE_APPLY_LIMIT = 20
 const DEFAULT_FREE_REFERRAL_LIMIT = 3
@@ -1385,6 +1386,19 @@ const userHelper = {
 
             if (!result?.[0]) {
                 return { success: false, error: '更新失败，请稍后重试' }
+            }
+
+            if (isAdmin && (
+                memberType !== undefined ||
+                updates.memberExpireAt !== undefined ||
+                updates.memberStatus !== undefined
+            )) {
+                const baseAt = result[0].member_expire_at || new Date().toISOString()
+                try {
+                    await rebasePendingMembershipEntitlements(userId, baseAt)
+                } catch (error) {
+                    console.error('[user-helper] Failed to rebase pending redemption entitlements:', error?.message || error)
+                }
             }
 
             // 获取更新后的用户信息

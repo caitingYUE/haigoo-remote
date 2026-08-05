@@ -28,6 +28,8 @@ import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
 import { subscriptionsService } from '../lib/services/subscriptions-service.js'
 import { isMembershipActive } from '../lib/shared/membership.js'
 import { MAX_SUBSCRIPTION_TOPICS } from '../lib/shared/subscription-limits.js'
+import { reconcileUserMembershipEntitlements } from '../lib/services/membership-redemption-code-service.js'
+import { notifyMembershipActivated } from '../lib/services/membership-notification-service.js'
 
 // Google OAuth Client ID
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -578,9 +580,19 @@ async function handleGetMe(req, res) {
     return res.status(401).json({ success: false, error: '认证令牌无效或已过期' })
   }
 
-  const user = await getUserById(payload.userId)
+  let user = await getUserById(payload.userId)
   if (!user) {
     return res.status(404).json({ success: false, error: '用户不存在' })
+  }
+
+  const reconciliation = await reconcileUserMembershipEntitlements(payload.userId)
+  if (reconciliation?.activated) {
+    user = await getUserById(payload.userId)
+    try {
+      await notifyMembershipActivated(user)
+    } catch (error) {
+      console.error('[Auth] Failed to send scheduled membership activation notification:', error?.message || error)
+    }
   }
 
   if (user.status !== 'active') {

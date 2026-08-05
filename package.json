@@ -18,6 +18,8 @@
     "test:mini-payment": "node test-mini-virtual-payment.js",
     "test:mini-sync": "node test-mini-sync-performance.js",
     "test:mini-release": "node test-mini-release-readiness.js",
+    "test:membership-redemption": "node test-membership-redemption.js",
+    "bootstrap:membership-codes": "node scripts/bootstrap-membership-codes.mjs",
     "deploy:mini-preview": "node scripts/deploy-mini-preview.mjs",
     "configure:mini-payment-relay": "node scripts/configure-mini-payment-relay.mjs",
     "check:mini-payment-runtime": "node scripts/verify-mini-payment-runtime.mjs",

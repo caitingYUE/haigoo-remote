@@ -1,7 +1,7 @@
 import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
-import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Minus, Users, Building2, Quote, Star, Globe2, Loader2, Calendar, Volume2, BookOpen, PlayCircle } from 'lucide-react'
+import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Minus, Users, Building2, Quote, Star, Globe2, Loader2, Calendar, Volume2, BookOpen, PlayCircle, KeyRound } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useLanguage } from '../contexts/LanguageContext'
 import { trackingService } from '../services/tracking-service'
@@ -23,6 +23,37 @@ type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedbac
 
 interface ProfileCenterPageProps {
   publicAboutOnly?: boolean
+}
+
+interface UpcomingMembershipEntitlement {
+  id: string
+  memberType: 'starter' | 'half_year' | 'annual'
+  durationMonths: number
+  startsAt: string
+  expiresAt: string
+  activationState: 'scheduled'
+}
+
+interface MembershipRedemptionResult {
+  memberType: 'starter' | 'half_year' | 'annual'
+  durationMonths: number
+  startsAt: string
+  expiresAt: string
+  activationState: 'active' | 'scheduled'
+}
+
+function formatRedemptionCodeInput(value: string) {
+  const compact = String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 19)
+  if (!compact) return ''
+  const groups = [compact.slice(0, 2), compact.slice(2, 3)]
+  for (let index = 3; index < compact.length; index += 4) groups.push(compact.slice(index, index + 4))
+  return groups.filter(Boolean).join('-')
+}
+
+function formatMembershipDate(value?: string, locale = 'zh-CN') {
+  const date = value ? new Date(value) : null
+  if (!date || Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' })
 }
 
 function formatClipTime(ms?: number) {
@@ -867,7 +898,7 @@ const ResumePreviewPane = memo(function ResumePreviewPane({
 })
 
 export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCenterPageProps = {}) {
-  const { user: authUser, token, isAuthenticated, isMember, isTrialMember, logout } = useAuth()
+  const { user: authUser, token, isAuthenticated, isMember, isTrialMember, logout, refreshUser } = useAuth()
   const { isEnglish, text } = useLanguage()
   const location = useLocation()
   const navigate = useNavigate()
@@ -963,11 +994,17 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [membershipPlans, setMembershipPlans] = useState<EmbeddedMembershipPlan[]>(EMBEDDED_STATIC_MEMBERSHIP_PLANS)
   const [membershipStatus, setMembershipStatus] = useState<any>(null)
+  const [membershipRedemptionAvailable, setMembershipRedemptionAvailable] = useState(false)
   const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<EmbeddedMembershipPlan | null>(null)
   const [showMembershipPlanChooserModal, setShowMembershipPlanChooserModal] = useState(false)
   const [showMembershipPaymentModal, setShowMembershipPaymentModal] = useState(false)
   const [returnToMembershipPlansOnPaymentClose, setReturnToMembershipPlansOnPaymentClose] = useState(false)
   const [showMembershipAssistantModal, setShowMembershipAssistantModal] = useState(false)
+  const [showMembershipRedemptionModal, setShowMembershipRedemptionModal] = useState(false)
+  const [redemptionCode, setRedemptionCode] = useState('')
+  const [redemptionSubmitting, setRedemptionSubmitting] = useState(false)
+  const [redemptionError, setRedemptionError] = useState('')
+  const [redemptionResult, setRedemptionResult] = useState<MembershipRedemptionResult | null>(null)
   const [clubAdvisorCopy, setClubAdvisorCopy] = useState(DEFAULT_CLUB_ADVISOR_COPY)
   const [memberRecommendedJobs, setMemberRecommendedJobs] = useState<Job[]>([])
   const [loadingMemberRecommendations, setLoadingMemberRecommendations] = useState(false)
@@ -1121,6 +1158,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         const res = await fetch('/api/membership?action=plans')
         const data = await res.json()
         if (!mounted) return
+        setMembershipRedemptionAvailable(data?.redemptionEnabled === true)
+        if (data?.redemptionEnabled === true) {
+          trackingService.featureExposure('membership_redemption_code', {
+            page_key: 'membership',
+            module: 'profile_membership_status_card',
+            source_key: 'profile_membership_tab'
+          })
+        }
         if (data?.success && Array.isArray(data.plans) && data.plans.length > 0) {
           const mergedPlans = EMBEDDED_STATIC_MEMBERSHIP_PLANS.map((fallback) => {
             const livePlan = data.plans.find((plan: EmbeddedMembershipPlan) => plan.memberType === fallback.memberType)
@@ -1136,7 +1181,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     const fetchMembershipStatus = async () => {
       try {
         const storedToken = token || localStorage.getItem('haigoo_auth_token')
-        if (!storedToken) return
+        if (!storedToken) {
+          if (mounted) setMembershipStatus(null)
+          return
+        }
         const res = await fetch('/api/membership?action=status', {
           headers: { Authorization: `Bearer ${storedToken}` }
         })
@@ -1191,6 +1239,22 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
   const activeMemberType = membershipStatus?.memberType || authUser?.memberType
   const activeMembershipExpireAt = membershipStatus?.expireAt || authUser?.memberExpireAt
+  const upcomingMembershipEntitlements: UpcomingMembershipEntitlement[] = Array.isArray(membershipStatus?.upcomingEntitlements)
+    ? membershipStatus.upcomingEntitlements
+    : []
+  const membershipRedemptionEnabled = membershipRedemptionAvailable
+    && membershipStatus?.redemptionEnabled !== false
+  useEffect(() => {
+    if (!membershipRedemptionEnabled || !isAuthenticated) return
+    const params = new URLSearchParams(location.search)
+    if (params.get('redeem') !== '1') return
+    setRedemptionError('')
+    setRedemptionResult(null)
+    setShowMembershipRedemptionModal(true)
+    params.delete('redeem')
+    const query = params.toString()
+    navigate(`${location.pathname}${query ? `?${query}` : ''}`, { replace: true })
+  }, [isAuthenticated, location.pathname, location.search, membershipRedemptionEnabled, navigate])
   const displayMembershipPlans = useMemo(() => {
     return (['starter', 'half_year', 'annual'] as EmbeddedMemberType[]).map((memberType) => {
       const clubPlan = CLUB_SERVICE_PLANS.find((item) => item.id === memberType)
@@ -1214,6 +1278,74 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     if (!isMember) return false
     const normalizedActiveType = activeMemberType === 'year' ? 'annual' : activeMemberType
     return normalizedActiveType === planId
+  }
+
+  const openMembershipRedemption = () => {
+    trackingService.track('membership_code_redeem_open', {
+      page_key: 'membership',
+      module: 'profile_membership_status_card',
+      feature_key: 'membership_redemption_code',
+      source_key: 'profile_membership_tab'
+    })
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent('/profile?tab=membership&redeem=1')}`)
+      return
+    }
+    setRedemptionError('')
+    setRedemptionResult(null)
+    setShowMembershipRedemptionModal(true)
+  }
+
+  const closeMembershipRedemption = () => {
+    setShowMembershipRedemptionModal(false)
+    setRedemptionCode('')
+    setRedemptionError('')
+    setRedemptionResult(null)
+  }
+
+  const submitMembershipRedemption = async () => {
+    const storedToken = token || localStorage.getItem('haigoo_auth_token')
+    if (!storedToken) {
+      navigate(`/login?redirect=${encodeURIComponent('/profile?tab=membership')}`)
+      return
+    }
+    if (!redemptionCode.trim()) {
+      setRedemptionError('请输入兑换码')
+      return
+    }
+    setRedemptionSubmitting(true)
+    setRedemptionError('')
+    try {
+      const response = await fetch('/api/membership?action=redeem_code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${storedToken}` },
+        body: JSON.stringify({
+          code: redemptionCode,
+          page_key: 'membership',
+          source_key: 'profile_membership_tab'
+        })
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok || !data?.success) {
+        setRedemptionError(data?.error || '兑换失败，请稍后重试')
+        return
+      }
+      setRedemptionResult(data.redemption)
+      const statusResponse = await fetch('/api/membership?action=status', {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      })
+      const statusData = await statusResponse.json().catch(() => ({}))
+      if (statusData?.success) setMembershipStatus(statusData.membership)
+      await refreshUser()
+      showSuccess(
+        data.redemption?.activationState === 'active' ? '会员权益已生效' : '兑换成功，权益已排期',
+        data.redemption?.activationState === 'active' ? '现在即可使用对应会员权益。' : '当前会员结束后将自动切换，无需再次操作。'
+      )
+    } catch (_error) {
+      setRedemptionError('网络异常，请稍后重试')
+    } finally {
+      setRedemptionSubmitting(false)
+    }
   }
 
   const openMembershipPayment = (plan: EmbeddedMembershipPlan, options?: { returnToPlansOnClose?: boolean }) => {
@@ -4082,20 +4214,30 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="mt-1 text-xs font-bold text-[#6f63f6]">{text(`剩余 ${Math.max(membershipDaysRemaining, 0)} 天`, `${Math.max(membershipDaysRemaining, 0)} days remaining`)}</div>
               ) : null}
             </div>
-            <div className={`mt-4 grid gap-2 ${isMember ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <button
                 type="button"
                 onClick={openMembershipPlanChooser}
-                className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${memberPrimaryButtonClass}`}
+                className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${memberPrimaryButtonClass} ${isMember || !membershipRedemptionEnabled ? 'sm:col-span-2' : ''}`}
               >
                   {isMember ? text('查看我的权益', 'View my benefits') : text('添加顾问了解', 'Contact an advisor')}
                 <ArrowRight className="h-4 w-4" />
               </button>
+              {membershipRedemptionEnabled ? (
+                <button
+                  type="button"
+                  onClick={openMembershipRedemption}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#d9d3ff] bg-white px-4 py-2.5 text-sm font-black text-[#6f63f6] transition-all hover:-translate-y-0.5 hover:bg-[#f8f6ff]"
+                >
+                  <KeyRound className="h-4 w-4" />
+                  {text('兑换会员码', 'Redeem code')}
+                </button>
+              ) : null}
               {isMember ? (
                 <button
                   type="button"
                   onClick={() => setShowCertificateModal(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-full border border-[#e5e0ff] bg-white px-4 py-2.5 text-sm font-black text-[#6f63f6] transition-all hover:-translate-y-0.5"
+                  className={`inline-flex items-center justify-center gap-1.5 rounded-full border border-[#e5e0ff] bg-white px-4 py-2.5 text-sm font-black text-[#6f63f6] transition-all hover:-translate-y-0.5 ${membershipRedemptionEnabled ? '' : 'sm:col-span-2'}`}
                 >
                   {text('证书', 'Certificate')}
                   <Download className="h-4 w-4" />
@@ -4105,6 +4247,26 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           </div>
         </div>
       </section>
+
+        {upcomingMembershipEntitlements.length > 0 ? (
+          <section className="relative mb-5 overflow-hidden rounded-[22px] border border-[#ddd8ff] bg-[#faf9ff] p-4 shadow-[0_20px_58px_-48px_rgba(92,76,190,0.38)] sm:rounded-[26px] sm:p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#ece9ff] text-[#6f63f6]"><Calendar className="h-5 w-5" /></div>
+              <div><h2 className="text-base font-black text-slate-950">{text('待生效会员权益', 'Upcoming membership')}</h2><p className="mt-0.5 text-xs font-semibold text-slate-500">{text('将按以下顺序自动衔接，无需再次操作。', 'These benefits will start automatically in order.')}</p></div>
+            </div>
+            <div className="mt-4 grid gap-3 lg:grid-cols-2">
+              {upcomingMembershipEntitlements.map((item, index) => {
+                const label = item.memberType === 'starter' ? text('月度会员', 'Monthly') : item.memberType === 'half_year' ? text('半年会员', 'Six-month') : text('年度会员', 'Annual')
+                return (
+                  <div key={item.id} className="rounded-[18px] border border-white bg-white/90 px-4 py-3 shadow-sm">
+                    <div className="flex items-center justify-between gap-3"><span className="text-sm font-black text-slate-900">{index + 1}. {label}</span><span className="rounded-full bg-[#f0edff] px-2.5 py-1 text-[11px] font-black text-[#6f63f6]">{item.durationMonths} 个月</span></div>
+                    <div className="mt-2 text-xs font-semibold text-slate-500">{formatMembershipDate(item.startsAt, isEnglish ? 'en-US' : 'zh-CN')} – {formatMembershipDate(item.expiresAt, isEnglish ? 'en-US' : 'zh-CN')}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </section>
+        ) : null}
 
         {!isMember ? (
         <section className="relative mb-5 grid overflow-hidden rounded-[24px] border border-[#dfe8ef] bg-white/88 p-2 shadow-[0_26px_72px_-58px_rgba(64,78,102,0.28)] sm:mb-5 sm:rounded-[28px] sm:p-3 md:grid-cols-2 xl:grid-cols-5">
@@ -5562,6 +5724,40 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   >
                     {aboutFeedbackSubmitting ? '提交中...' : '提交审核'}
                   </button>
+                </div>
+              </div>
+            </div>
+          ), modalRoot)}
+          {modalRoot && membershipRedemptionEnabled && showMembershipRedemptionModal && createPortal((
+            <div className="fixed inset-0 z-[10000] isolate flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+              <button type="button" aria-label="关闭会员兑换弹窗" className="fixed inset-0 z-0 cursor-default bg-slate-950/62 backdrop-blur-md" onClick={closeMembershipRedemption} />
+              <div role="dialog" aria-modal="true" aria-labelledby="membership-redemption-title" className="relative z-10 w-full max-w-lg overflow-hidden rounded-[24px] border border-white/20 bg-[#fffdf9] p-5 shadow-[0_34px_96px_-42px_rgba(15,23,42,0.74)] sm:rounded-[30px] sm:p-7">
+                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(239,236,255,0.72),rgba(255,255,255,0.92)_48%,rgba(238,247,255,0.72))]" />
+                <button type="button" aria-label={text('关闭会员兑换弹窗', 'Close redemption dialog')} onClick={closeMembershipRedemption} className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-400 shadow-sm hover:text-slate-700">×</button>
+                <div className="relative">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ece9ff] text-[#6f63f6]"><KeyRound className="h-6 w-6" /></div>
+                  {redemptionResult ? (
+                    <div className="mt-5">
+                      <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700"><CheckCircle className="h-4 w-4" />兑换成功</div>
+                      <h3 id="membership-redemption-title" className="mt-4 text-2xl font-black text-slate-950">{redemptionResult.activationState === 'active' ? text('会员权益已生效', 'Membership activated') : text('会员权益已成功排期', 'Membership scheduled')}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{redemptionResult.activationState === 'active' ? text('现在即可使用对应会员权益。', 'Your membership benefits are ready to use.') : text('当前会员结束后将自动切换，无需再次操作。', 'It will start automatically after your current membership ends.')}</p>
+                      <div className="mt-5 rounded-[20px] border border-[#e2ddff] bg-white/86 p-4">
+                        <div className="flex items-center justify-between gap-3"><span className="text-sm font-black text-slate-900">{redemptionResult.memberType === 'starter' ? text('月度会员', 'Monthly') : redemptionResult.memberType === 'half_year' ? text('半年会员', 'Six-month') : text('年度会员', 'Annual')}</span><span className="rounded-full bg-[#f0edff] px-3 py-1 text-xs font-black text-[#6f63f6]">{redemptionResult.durationMonths} {text('个月', 'months')}</span></div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-xs"><div><div className="font-bold text-slate-400">{text('生效时间', 'Starts')}</div><div className="mt-1 font-black text-slate-800">{formatMembershipDate(redemptionResult.startsAt, isEnglish ? 'en-US' : 'zh-CN')}</div></div><div><div className="font-bold text-slate-400">{text('权益至', 'Ends')}</div><div className="mt-1 font-black text-slate-800">{formatMembershipDate(redemptionResult.expiresAt, isEnglish ? 'en-US' : 'zh-CN')}</div></div></div>
+                      </div>
+                      <button type="button" onClick={closeMembershipRedemption} className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#6f63f6] px-5 py-3 text-sm font-black text-white hover:bg-[#5d50df]">完成</button>
+                    </div>
+                  ) : (
+                    <div className="mt-5">
+                      <div className="inline-flex rounded-full border border-[#e5e0ff] bg-white/84 px-3 py-1 text-xs font-black text-[#6f63f6]">Haigoo Remote Club</div>
+                      <h3 id="membership-redemption-title" className="mt-4 text-2xl font-black text-slate-950">{text('兑换会员权益', 'Redeem membership')}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">{text('输入从合作平台获得的兑换码。每个兑换码仅可使用一次，已有会员权益将自动顺延。', 'Enter the code received from a partner platform. Each code can be used once and active membership will be extended in order.')}</p>
+                      <label className="mt-5 block"><span className="text-sm font-black text-slate-800">{text('会员兑换码', 'Membership code')}</span><input autoFocus value={redemptionCode} onChange={event => setRedemptionCode(formatRedemptionCodeInput(event.target.value))} onKeyDown={event => { if (event.key === 'Enter') void submitMembershipRedemption() }} placeholder="HG-M-XXXX-XXXX-XXXX-XXXX" autoComplete="off" spellCheck={false} className="mt-2 h-14 w-full rounded-2xl border border-[#dcd7ff] bg-white px-4 font-mono text-base font-black uppercase tracking-[0.08em] text-slate-900 outline-none transition focus:border-[#8a7cff] focus:ring-4 focus:ring-[#ece9ff]" /></label>
+                      {redemptionError ? <div className="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{redemptionError}</div> : null}
+                      <button type="button" onClick={() => void submitMembershipRedemption()} disabled={redemptionSubmitting || !redemptionCode.trim()} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-3.5 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] transition hover:bg-[#5d50df] disabled:cursor-not-allowed disabled:opacity-60">{redemptionSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}{redemptionSubmitting ? text('兑换中...', 'Redeeming...') : text('确认兑换', 'Redeem')}</button>
+                      <p className="mt-3 text-center text-xs font-semibold text-slate-400">{text('兑换码有效期以发放信息为准，兑换成功后无法转赠。', 'Code validity follows the issue terms. Redeemed benefits cannot be transferred.')}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

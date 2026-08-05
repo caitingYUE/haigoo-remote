@@ -5,6 +5,7 @@ import subscriptionsHandler from '../lib/api-handlers/subscriptions.js'
 import bugReportsHandler from '../lib/api-handlers/bug-reports.js'
 import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
 import adminMessagesHandler from '../lib/api-handlers/admin-messages.js'
+import membershipCodesHandler from '../lib/api-handlers/membership-codes.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
 import { getLegacyMembershipLevel, MEMBER_TYPES } from '../lib/shared/membership.js'
 
@@ -46,16 +47,32 @@ async function ensureFeedbackReviewColumns() {
 }
 
 export default async function handler(req, res) {
+    const { action } = req.query
     // Basic CORS and headers
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
+    if (action === 'membership-codes') {
+        const allowedOrigins = new Set([
+            'http://localhost:3000',
+            'http://localhost:5173',
+            'https://haigoo-admin.vercel.app',
+            'https://haigooremote.com',
+            'https://www.haigooremote.com'
+        ])
+        const origin = String(req.headers?.origin || '')
+        if (allowedOrigins.has(origin)) {
+            res.setHeader('Access-Control-Allow-Origin', origin)
+            res.setHeader('Vary', 'Origin')
+        } else {
+            res.removeHeader('Access-Control-Allow-Origin')
+        }
+    }
+
     if (req.method === 'OPTIONS') {
         return res.status(200).end()
     }
-
-    const { action } = req.query
 
     console.log(`[admin-ops] Action: ${action}, Method: ${req.method}`)
 
@@ -66,6 +83,10 @@ export default async function handler(req, res) {
             return res.status(adminCheck.error === 'Forbidden' ? 403 : 401).json({ success: false, error: adminCheck.error || 'Unauthorized' })
         }
         return await subscriptionsHandler(req, res)
+    }
+
+    if (action === 'membership-codes') {
+        return await membershipCodesHandler(req, res)
     }
 
     // Dispatch to Bug Reports Handler

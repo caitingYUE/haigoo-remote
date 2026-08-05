@@ -26,7 +26,8 @@ import {
   Building,
   FileText,
   Mail,
-  BookOpen
+  BookOpen,
+  Ticket
 } from 'lucide-react';
 import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { rssService } from '../services/rss-service';
@@ -46,6 +47,7 @@ const AdminTrustedCompaniesPage = lazy(() => import('./AdminTrustedCompaniesPage
 const AdminTagManagementPage = lazy(() => import('./AdminTagManagementPage'));
 const AdminApplicationsPage = lazy(() => import('./AdminApplicationsPage'));
 const AdminSubscriptionsPage = lazy(() => import('./AdminSubscriptionsPage'));
+const AdminMembershipCodesPage = lazy(() => import('./AdminMembershipCodesPage'));
 const AdminFeedbackList = lazy(() => import('../components/AdminFeedbackList'));
 const AdminTrackingManagement = lazy(() => import('../components/admin/AdminTrackingManagement'));
 const AdminTrackingDashboard = lazy(() => import('../components/admin/AdminTrackingDashboard'));
@@ -74,6 +76,7 @@ const ADMIN_TAB_IDS = new Set([
   'resumes',
   'users',
   'subscriptions',
+  'membership-codes',
   'job-applications',
   'feedback',
   'tracking'
@@ -1008,6 +1011,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'resumes', label: '简历数据', icon: FileText },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'subscriptions', label: '邮件订阅', icon: Mail },
+    { id: 'membership-codes', label: '会员兑换码', icon: Ticket },
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
     { id: 'tracking', label: '埋点管理', icon: Activity }
@@ -1167,6 +1171,11 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'subscriptions' && (
                 <Suspense fallback={renderLazyFallback('正在加载邮件订阅...')}>
                   <AdminSubscriptionsPage />
+                </Suspense>
+              )}
+              {activeTab === 'membership-codes' && (
+                <Suspense fallback={renderLazyFallback('正在加载会员兑换码...')}>
+                  <AdminMembershipCodesPage />
                 </Suspense>
               )}
               {activeTab === 'job-applications' && (
