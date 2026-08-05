@@ -22,6 +22,9 @@ export interface MembershipCodeRow {
   redeemedByName?: string | null
   voidedAt?: string | null
   voidReason?: string | null
+  distributed: boolean
+  distributedAt?: string | null
+  distributedBy?: string | null
 }
 
 export interface MembershipCodeBatch {
@@ -41,7 +44,7 @@ export interface MembershipCodesResponse {
   isSuperAdmin: boolean
   decryptionErrorCount?: number
   codes: MembershipCodeRow[]
-  summary: Record<'total' | 'unused' | 'used' | 'expired' | 'voided' | RedemptionMemberType, number>
+  summary: Record<'total' | 'unused' | 'used' | 'expired' | 'voided' | 'distributed' | RedemptionMemberType, number>
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
   batches: MembershipCodeBatch[]
   channels: string[]
@@ -93,6 +96,20 @@ export const membershipRedemptionCodeService = {
       body: JSON.stringify({ operation: 'void', codeId, reason })
     })
     if (!response.ok) throw new Error(await readError(response))
+  },
+
+  async updateDistribution(codeId: string, distributed: boolean) {
+    const response = await fetch('/api/admin-ops?action=membership-codes', {
+      method: 'PATCH',
+      headers: authHeaders(true),
+      body: JSON.stringify({ operation: 'distribution', codeId, distributed })
+    })
+    if (!response.ok) throw new Error(await readError(response))
+    const data = await response.json() as {
+      success: true
+      distribution: Pick<MembershipCodeRow, 'distributed' | 'distributedAt' | 'distributedBy'>
+    }
+    return data.distribution
   },
 
   async updateBatch(batchId: string, name: string, channel: string) {

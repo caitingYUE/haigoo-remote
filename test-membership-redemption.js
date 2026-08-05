@@ -71,4 +71,21 @@ assert.ok(rateLimitTableSql && batchTableSql, 'migration tables must be parseabl
 assert.ok(!rateLimitTableSql.includes('batch_id'), 'rate-limit schema must not contain membership batch constraints')
 assert.ok(batchTableSql.includes('membership_code_batches_identity_plan_unique'))
 
+const distributionMigration = fs.readFileSync(
+  new URL('./server-utils/dal/migrations/065_membership_code_distribution.sql', import.meta.url),
+  'utf8'
+)
+for (const requiredDistributionInvariant of [
+  'distributed_at',
+  'distributed_by',
+  'membership_redemption_codes_distribution_state_check',
+  "'distribution'",
+  'membership_code_admin_audit_target_check'
+]) {
+  assert.ok(
+    distributionMigration.includes(requiredDistributionInvariant),
+    `distribution migration must include ${requiredDistributionInvariant}`
+  )
+}
+
 console.log('Membership redemption code tests passed')

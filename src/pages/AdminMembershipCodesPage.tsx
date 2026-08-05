@@ -62,6 +62,7 @@ export default function AdminMembershipCodesPage() {
   const [editTarget, setEditTarget] = useState<MembershipCodeBatch | null>(null)
   const [editForm, setEditForm] = useState({ name: '', channel: '' })
   const [actionLoading, setActionLoading] = useState(false)
+  const [distributionUpdating, setDistributionUpdating] = useState('')
   const [form, setForm] = useState({
     name: '', channel: '外部平台（待分配）', memberType: 'starter' as RedemptionMemberType, quantity: 50
   })
@@ -83,7 +84,7 @@ export default function AdminMembershipCodesPage() {
           isSuperAdmin: errorData.isSuperAdmin,
           decryptionErrorCount: 0,
           codes: [],
-          summary: { total: 0, unused: 0, used: 0, expired: 0, voided: 0, starter: 0, half_year: 0, annual: 0 },
+          summary: { total: 0, unused: 0, used: 0, expired: 0, voided: 0, distributed: 0, starter: 0, half_year: 0, annual: 0 },
           pagination: { page: 1, pageSize: 25, total: 0, totalPages: 1 },
           batches: [],
           channels: []
@@ -226,6 +227,31 @@ export default function AdminMembershipCodesPage() {
     }
   }
 
+  const updateDistribution = async (row: MembershipCodeRow, distributed: boolean) => {
+    setDistributionUpdating(row.id)
+    setError('')
+    try {
+      const result = await membershipRedemptionCodeService.updateDistribution(row.id, distributed)
+      setData(current => {
+        if (!current) return current
+        const delta = row.distributed === result.distributed ? 0 : result.distributed ? 1 : -1
+        return {
+          ...current,
+          codes: current.codes.map(item => item.id === row.id ? { ...item, ...result } : item),
+          summary: {
+            ...current.summary,
+            distributed: Math.max(0, Number(current.summary.distributed || 0) + delta)
+          }
+        }
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '分发状态更新失败')
+      await load(page)
+    } finally {
+      setDistributionUpdating('')
+    }
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 sm:p-6">
       <div className="mx-auto max-w-[1500px] space-y-5">
@@ -256,6 +282,7 @@ export default function AdminMembershipCodesPage() {
               ))}
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+              <span className="rounded-full bg-indigo-100 px-3 py-1.5 text-indigo-700">已分发 {Number(data?.summary?.distributed || 0)}</span>
               <span className="rounded-full bg-white px-3 py-1.5">月度 {Number(data?.summary?.starter || 0)}</span>
               <span className="rounded-full bg-white px-3 py-1.5">半年 {Number(data?.summary?.half_year || 0)}</span>
               <span className="rounded-full bg-white px-3 py-1.5">年度 {Number(data?.summary?.annual || 0)}</span>
@@ -307,7 +334,7 @@ export default function AdminMembershipCodesPage() {
 
         <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-[1180px] w-full divide-y divide-slate-100">
+            <table className="min-w-[1260px] w-full divide-y divide-slate-100">
               <thead className="bg-slate-50 text-left text-xs font-black uppercase tracking-wide text-slate-500">
                 <tr>{['兑换码', '会员权益', '批次 / 渠道', '兑换有效期', '状态', '兑换用户', '操作'].map(label => <th key={label} className="px-4 py-3">{label}</th>)}</tr>
               </thead>
@@ -330,7 +357,21 @@ export default function AdminMembershipCodesPage() {
                       <td className="px-4 py-4"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black ${statusClass(row.status)}`}>{STATUS_LABELS[row.status]}</span></td>
                       <td className="px-4 py-4 text-xs leading-5"><div className="font-semibold text-slate-700">{row.redeemedByEmail || row.redeemedByName || '-'}</div><div>{row.redeemedAt ? formatDate(row.redeemedAt) : '-'}</div></td>
                       <td className="px-4 py-4">
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <label
+                            className={`inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition ${row.distributed ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-600'} ${row.status !== 'unused' || distributionUpdating === row.id ? 'cursor-not-allowed opacity-60' : 'hover:border-indigo-200 hover:bg-indigo-50'}`}
+                            title={row.distributedAt ? `分发时间：${formatDate(row.distributedAt)}${row.distributedBy ? `；操作人：${row.distributedBy}` : ''}` : '勾选后标记为已分发'}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={row.distributed}
+                              disabled={row.status !== 'unused' || distributionUpdating === row.id}
+                              onChange={event => void updateDistribution(row, event.target.checked)}
+                              className="h-4 w-4 accent-indigo-600"
+                              aria-label={`将兑换码 ${row.code} 标记为${row.distributed ? '未分发' : '已分发'}`}
+                            />
+                            已分发
+                          </label>
                           {data.isSuperAdmin && !row.isMasked ? <button type="button" aria-label={`复制兑换码 ${row.code}`} onClick={() => void copyText(row.code, row.id)} className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-200" title="复制兑换码">{copied === row.id ? <Check className="h-4 w-4 text-emerald-600" /> : <Clipboard className="h-4 w-4" />}</button> : null}
                           {data.isSuperAdmin && row.status === 'unused' ? <button type="button" onClick={() => openVoid(row)} className="rounded-lg border border-rose-100 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-rose-100">作废</button> : null}
                         </div>
