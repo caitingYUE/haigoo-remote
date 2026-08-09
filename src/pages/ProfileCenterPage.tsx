@@ -1,4 +1,4 @@
-import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { Clock, FileText, Upload, CheckCircle, Heart, MessageSquare, Crown, ChevronLeft, ChevronRight, Trash2, Sparkles, ArrowRight, Briefcase, Settings, Download, Home, Send, Eye, ShieldCheck, Check, Minus, Users, Building2, Quote, Star, Globe2, Loader2, Calendar, Volume2, BookOpen, PlayCircle, KeyRound } from 'lucide-react'
@@ -12,6 +12,8 @@ import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { fetchDailyMemberRecommendations } from '../utils/member-recommendations'
 import { LinkedInLogo } from '../components/SocialIcons'
 import { corporateEnglishPublicService, type CorporateEnglishPublicClip } from '../services/corporate-english-public-service'
+import PayPalCheckoutButton from '../components/PayPalCheckoutButton'
+import { paypalPaymentClient, type PayPalCaptureResult, type PayPalOrder, type PayPalPublicConfig } from '../services/paypal-payment-service'
 
 const LazyJobDetailModal = lazy(() => import('../components/JobDetailModal'))
 const LazyMembershipUpgradeModal = lazy(() => import('../components/MembershipUpgradeModal').then((module) => ({ default: module.MembershipUpgradeModal })))
@@ -19,7 +21,7 @@ const LazyMembershipCertificateModal = lazy(() => import('../components/Membersh
 const LazyMyApplicationsTab = lazy(() => import('../components/MyApplicationsTab'))
 const LazyGeneratedPlanView = lazy(() => import('../components/GeneratedPlanView'))
 
-type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'about' | 'settings'
+type TabKey = 'custom-plan' | 'resume' | 'favorites' | 'applications' | 'feedback' | 'membership' | 'orders' | 'about' | 'settings'
 
 interface ProfileCenterPageProps {
   publicAboutOnly?: boolean
@@ -29,6 +31,7 @@ interface UpcomingMembershipEntitlement {
   id: string
   memberType: 'starter' | 'half_year' | 'annual'
   durationMonths: number
+  durationDays?: number
   startsAt: string
   expiresAt: string
   activationState: 'scheduled'
@@ -54,6 +57,22 @@ function formatMembershipDate(value?: string, locale = 'zh-CN') {
   const date = value ? new Date(value) : null
   if (!date || Number.isNaN(date.getTime())) return '-'
   return date.toLocaleDateString(locale, { year: 'numeric', month: '2-digit', day: '2-digit' })
+}
+
+const PAYPAL_ORDER_STATUS_LABELS: Record<string, string> = {
+  pending: '待支付',
+  capture_pending: '确认中',
+  completed: '已生效',
+  scheduled: '已排期',
+  partially_refunded: '部分退款',
+  refunded: '已退款',
+  failed: '失败',
+  review_required: '争议处理中'
+}
+
+function paypalOrderStatusLabel(order: PayPalOrder) {
+  if (order.status === 'completed' && order.startsAt && new Date(order.startsAt).getTime() > Date.now()) return '已排期'
+  return PAYPAL_ORDER_STATUS_LABELS[order.status] || order.status
 }
 
 function formatClipTime(ms?: number) {
@@ -455,8 +474,8 @@ const CLUB_SERVICE_COMPARISON_FULL_ROWS = [
 
 const CLUB_MEMBERSHIP_FAQS = [
   {
-    question: '为什么需要添加顾问才能开通？',
-    answer: '顾问会先了解你的阶段、目标与适配度，确认适合后再帮你开通对应权限和提供支持，避免盲目加入，对双方更负责。'
+    question: '有哪些开通方式？',
+    answer: '选择方案后，可以使用 PayPal 在线付款；如果暂时无法使用 PayPal，也可以添加顾问，由顾问协助完成开通。已有兑换码的用户仍可直接兑换会员权益。'
   },
   {
     question: '这几项权益适合谁，核心差别是什么？',
@@ -464,7 +483,7 @@ const CLUB_MEMBERSHIP_FAQS = [
   },
   {
     question: '加入会员后发现不适合自己怎么办？',
-    answer: '如果投递一段时间效果不理想，建议先找顾问复盘方向、简历和投递策略；再次尝试仍无改善，可按剩余有效时间申请退款。Haigoo 更希望长期陪伴并真正帮到你，而不是做一次性服务。'
+    answer: '你可以先联系顾问复盘使用情况，也可以在“我的订单”中提交退款申请。我们会根据订单和剩余权益核对可退金额，并在订单中更新处理进度。'
   },
   {
     question: '语音咨询可以咨询哪些内容？',
@@ -912,7 +931,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const initialTab: TabKey = (() => {
     if (publicAboutOnly) return 'about'
     const t = new URLSearchParams(location.search).get('tab') as TabKey | null
-    return t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'about', 'settings'].includes(t) ? t : 'resume'
+    return t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'orders', 'about', 'settings'].includes(t) ? t : 'resume'
   })()
 
   const [tab, setTab] = useState<TabKey>(initialTab)
@@ -930,7 +949,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     }
     const searchParams = new URLSearchParams(location.search)
     const urlTab = searchParams.get('tab') as TabKey | null
-    if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'membership', 'about', 'settings'].includes(urlTab)) {
+    if (urlTab && ['custom-plan', 'resume', 'favorites', 'applications', 'feedback', 'membership', 'orders', 'about', 'settings'].includes(urlTab)) {
       setTab(urlTab)
     }
   }, [location.search, publicAboutOnly])
@@ -994,11 +1013,19 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const [showCertificateModal, setShowCertificateModal] = useState(false)
   const [membershipPlans, setMembershipPlans] = useState<EmbeddedMembershipPlan[]>(EMBEDDED_STATIC_MEMBERSHIP_PLANS)
   const [membershipStatus, setMembershipStatus] = useState<any>(null)
-  const [membershipRedemptionAvailable, setMembershipRedemptionAvailable] = useState(false)
   const [selectedMembershipPlan, setSelectedMembershipPlan] = useState<EmbeddedMembershipPlan | null>(null)
   const [showMembershipPlanChooserModal, setShowMembershipPlanChooserModal] = useState(false)
   const [showMembershipPaymentModal, setShowMembershipPaymentModal] = useState(false)
+  const [membershipActivationMethod, setMembershipActivationMethod] = useState<'paypal' | 'advisor'>('paypal')
   const [returnToMembershipPlansOnPaymentClose, setReturnToMembershipPlansOnPaymentClose] = useState(false)
+  const [paypalOrders, setPaypalOrders] = useState<PayPalOrder[]>([])
+  const [paypalOrdersLoading, setPaypalOrdersLoading] = useState(false)
+  const [paypalConfig, setPaypalConfig] = useState<PayPalPublicConfig | null>(null)
+  const [paypalConfigLoading, setPaypalConfigLoading] = useState(false)
+  const [paypalOrderMessage, setPaypalOrderMessage] = useState('')
+  const [refundTarget, setRefundTarget] = useState<PayPalOrder | null>(null)
+  const [refundReason, setRefundReason] = useState('')
+  const [refundSubmitting, setRefundSubmitting] = useState(false)
   const [showMembershipAssistantModal, setShowMembershipAssistantModal] = useState(false)
   const [showMembershipRedemptionModal, setShowMembershipRedemptionModal] = useState(false)
   const [redemptionCode, setRedemptionCode] = useState('')
@@ -1158,7 +1185,6 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         const res = await fetch('/api/membership?action=plans')
         const data = await res.json()
         if (!mounted) return
-        setMembershipRedemptionAvailable(data?.redemptionEnabled === true)
         if (data?.redemptionEnabled === true) {
           trackingService.featureExposure('membership_redemption_code', {
             page_key: 'membership',
@@ -1242,8 +1268,14 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const upcomingMembershipEntitlements: UpcomingMembershipEntitlement[] = Array.isArray(membershipStatus?.upcomingEntitlements)
     ? membershipStatus.upcomingEntitlements
     : []
-  const membershipRedemptionEnabled = membershipRedemptionAvailable
-    && membershipStatus?.redemptionEnabled !== false
+  const membershipQueueEndAt = [activeMembershipExpireAt, ...upcomingMembershipEntitlements.map(item => item.expiresAt)]
+    .filter(Boolean)
+    .map(value => new Date(String(value)).getTime())
+    .filter(value => Number.isFinite(value) && value > Date.now())
+    .reduce((latest, value) => Math.max(latest, value), 0)
+  // 兑换码是既有销售渠道的固定入口。后端仍会在提交时校验配置和数据库就绪状态，
+  // 但前端入口不再因 PayPal 开关或短暂的 readiness 探测失败而隐藏。
+  const membershipRedemptionEnabled = true
   useEffect(() => {
     if (!membershipRedemptionEnabled || !isAuthenticated) return
     const params = new URLSearchParams(location.search)
@@ -1274,11 +1306,132 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       return plan
     })
   }, [membershipPlans])
+
+  const loadPayPalOrders = useCallback(async () => {
+    if (!isAuthenticated) {
+      setPaypalOrders([])
+      return
+    }
+    setPaypalOrdersLoading(true)
+    try {
+      const result = await paypalPaymentClient.listOrders(1, 20)
+      setPaypalOrders(result.orders)
+    } catch (error) {
+      console.error('[ProfileCenter] Failed to load PayPal orders:', error)
+    } finally {
+      setPaypalOrdersLoading(false)
+    }
+  }, [isAuthenticated])
+
+  const refreshMembershipAfterPayment = useCallback(async () => {
+    const storedToken = token || localStorage.getItem('haigoo_auth_token')
+    if (storedToken) {
+      const response = await fetch('/api/membership?action=status', {
+        headers: { Authorization: `Bearer ${storedToken}` }
+      })
+      const data = await response.json().catch(() => ({}))
+      if (data?.success) setMembershipStatus(data.membership)
+    }
+    await Promise.all([refreshUser(), loadPayPalOrders()])
+  }, [loadPayPalOrders, refreshUser, token])
+
+  useEffect(() => {
+    if (tab === 'orders' && isAuthenticated) void loadPayPalOrders()
+  }, [isAuthenticated, loadPayPalOrders, tab])
+
+  useEffect(() => {
+    if (!showMembershipPaymentModal || paypalConfig) return
+    let cancelled = false
+    setPaypalConfigLoading(true)
+    paypalPaymentClient.config()
+      .then((config) => {
+        if (!cancelled) setPaypalConfig(config)
+      })
+      .catch(() => {
+        if (!cancelled) setPaypalConfig({ enabled: false, environment: 'live', clientId: '', currency: 'CNY', sdkVersion: 'v6', sdkUrl: '' })
+      })
+      .finally(() => {
+        if (!cancelled) setPaypalConfigLoading(false)
+      })
+    return () => { cancelled = true }
+  }, [paypalConfig, showMembershipPaymentModal])
+
+  useEffect(() => {
+    if (showMembershipPaymentModal && paypalConfig && !paypalConfig.enabled) {
+      setMembershipActivationMethod('advisor')
+    }
+  }, [paypalConfig, showMembershipPaymentModal])
+
+  useEffect(() => {
+    if (!isAuthenticated || tab !== 'membership') return
+    const params = new URLSearchParams(location.search)
+    const checkoutPlanId = params.get('checkout')
+    if (!checkoutPlanId) return
+    const plan = displayMembershipPlans.find(item => item.id === checkoutPlanId)
+    if (!plan) return
+    setSelectedMembershipPlan(plan)
+    setMembershipActivationMethod('paypal')
+    setReturnToMembershipPlansOnPaymentClose(false)
+    setPaypalOrderMessage('')
+    setShowMembershipPaymentModal(true)
+    params.delete('checkout')
+    const query = params.toString()
+    navigate(`${location.pathname}${query ? `?${query}` : ''}`, { replace: true })
+  }, [displayMembershipPlans, isAuthenticated, location.pathname, location.search, navigate, tab])
+
+  const handlePayPalCreated = useCallback((order: PayPalOrder) => {
+    setPaypalOrderMessage('订单已创建，请在 PayPal 完成付款。')
+    trackingService.track('membership_paypal_order_created', {
+      page_key: 'membership', payment_id: order.paymentId, plan_id: order.planId
+    })
+  }, [])
+
+  const handlePayPalPending = useCallback((result?: PayPalCaptureResult) => {
+    setPaypalOrderMessage(`付款结果正在确认中${result?.order?.paymentId ? '，你可以前往“我的订单”查看进度' : ''}。请勿重复付款。`)
+    void loadPayPalOrders()
+  }, [loadPayPalOrders])
+
+  const handlePayPalCancel = useCallback(() => {
+    setPaypalOrderMessage('你已取消本次付款，可以重新选择开通方式。')
+  }, [])
+
+  const handlePayPalSuccess = useCallback(async (result: PayPalCaptureResult) => {
+    await refreshMembershipAfterPayment()
+    setShowMembershipPaymentModal(false)
+    setShowMembershipPlanChooserModal(false)
+    setReturnToMembershipPlansOnPaymentClose(false)
+    navigate('/profile?tab=orders')
+    trackingService.track('membership_payment_success', {
+      page_key: 'membership', provider: 'paypal', payment_id: result.order.paymentId,
+      plan_id: result.order.planId, activation_state: result.entitlement?.activationState
+    })
+    showSuccess(
+      result.entitlement?.activationState === 'scheduled' ? '付款成功，权益已排期' : '付款成功，会员权益已生效',
+      `${result.entitlement?.expiresAt ? `权益至 ${formatMembershipDate(result.entitlement.expiresAt)}。` : ''}你可以在“我的订单”查看详情。`
+    )
+  }, [navigate, refreshMembershipAfterPayment, showSuccess])
+
+  const submitPayPalRefund = useCallback(async () => {
+    if (!refundTarget || !refundReason.trim()) return
+    setRefundSubmitting(true)
+    try {
+      const result = await paypalPaymentClient.requestRefund(refundTarget.paymentId, refundReason.trim())
+      setRefundTarget(null)
+      setRefundReason('')
+      await loadPayPalOrders()
+      showSuccess('退款申请已提交', `当前预计可退 ¥${(result.refund.estimatedAmountCents / 100).toFixed(2)}，最终金额与处理结果会在订单中更新。`)
+    } catch (error) {
+      showError('退款申请失败', error instanceof Error ? error.message : '请稍后重试')
+    } finally {
+      setRefundSubmitting(false)
+    }
+  }, [loadPayPalOrders, refundReason, refundTarget, showError, showSuccess])
   const isCurrentClubServicePlan = (planId: ClubServicePlanId) => {
     if (!isMember) return false
     const normalizedActiveType = activeMemberType === 'year' ? 'annual' : activeMemberType
     return normalizedActiveType === planId
   }
+  const isClubServicePlanScheduled = (planId: ClubServicePlanId) => upcomingMembershipEntitlements.some(item => item.memberType === planId)
 
   const openMembershipRedemption = () => {
     trackingService.track('membership_code_redeem_open', {
@@ -1376,10 +1529,17 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       price: plan.price
     })
 
+    if (!isAuthenticated) {
+      navigate(`/login?redirect=${encodeURIComponent(`/profile?tab=membership&checkout=${plan.id}`)}`)
+      return
+    }
+
     setSelectedMembershipPlan(plan)
+    setMembershipActivationMethod('paypal')
     setReturnToMembershipPlansOnPaymentClose(Boolean(options?.returnToPlansOnClose))
-    setClubAdvisorCopy(DEFAULT_CLUB_ADVISOR_COPY)
-    setShowMembershipAssistantModal(true)
+    setPaypalOrderMessage('')
+    setShowMembershipPlanChooserModal(false)
+    setShowMembershipPaymentModal(true)
   }
 
   const closeMembershipPaymentToPlans = () => {
@@ -1388,35 +1548,6 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       setShowMembershipPlanChooserModal(true)
     }
     setReturnToMembershipPlansOnPaymentClose(false)
-  }
-
-  const handleMembershipAdvisorAdded = async () => {
-    setShowMembershipPaymentModal(false)
-    setShowMembershipPlanChooserModal(false)
-    setReturnToMembershipPlansOnPaymentClose(false)
-    showSuccess('已记录顾问添加状态', '顾问会协助确认适合方案、服务边界和开通方式。')
-
-    try {
-      const storedToken = token || localStorage.getItem('haigoo_auth_token')
-      if (storedToken) {
-        const res = await fetch('/api/membership?action=status', {
-          headers: { Authorization: `Bearer ${storedToken}` }
-        })
-        const data = await res.json()
-        if (data?.success) setMembershipStatus(data.membership)
-      }
-    } catch (error) {
-      console.error('[ProfileCenter] Failed to refresh membership status:', error)
-    }
-
-    trackingService.track('membership_advisor_added_click', {
-      page_key: 'profile',
-      module: 'profile_membership_advisor',
-      source_key: 'profile_membership_tab',
-      entity_type: 'plan',
-      entity_id: selectedMembershipPlan?.id,
-      plan_id: selectedMembershipPlan?.id
-    })
   }
 
   const handleRemoveFavorite = async (jobId: string) => {
@@ -1495,7 +1626,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   useEffect(() => {
     const sp = new URLSearchParams(location.search)
     const t = sp.get('tab') as TabKey | null
-    if (t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'about', 'settings'].includes(t)) {
+    if (t && ['resume', 'favorites', 'applications', 'feedback', 'membership', 'orders', 'about', 'settings'].includes(t)) {
       setTab(t as TabKey)
       if (t === 'favorites') {
         setFavoriteSubTab(sp.get('type') === 'audio' ? 'audio' : 'jobs')
@@ -3559,7 +3690,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const membershipExpireLabel = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
     ? membershipExpireDate.toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')
     : text('长期有效', 'No expiration')
-  const membershipStatusExpireLabel = isMember ? membershipExpireLabel : text('顾问协助开通', 'Contact an advisor')
+  const membershipStatusExpireLabel = isMember ? membershipExpireLabel : text('在线付款或顾问协助', 'Pay online or ask an advisor')
   const membershipDaysRemaining = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
     ? Math.ceil((membershipExpireDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
     : null
@@ -3907,7 +4038,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       memberBenefitsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
-    openClubServiceAdvisor('profile_membership_status_card')
+    clubServicePlansRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     trackingService.track('membership_plan_chooser_open', {
       page_key: 'profile',
       module: 'profile_membership_status_card',
@@ -4037,19 +4168,22 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       quarter: '适合持续推进远程求职、深入了解企业文化的人。',
       quarter_pro: '适合同时准备口语、远程求职和深入了解企业文化的人。',
       year: '适合精力有限、需要人工一对一服务的高效能人士。',
-      starter: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'starter')?.description || '',
-      half_year: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'half_year')?.description || '',
-      annual: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'annual')?.description || ''
+      starter: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'starter')?.who || '',
+      half_year: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'half_year')?.who || '',
+      annual: CLUB_SERVICE_PLANS.find((plan) => plan.id === 'annual')?.who || ''
     }
 
   const getMembershipPlanCta = (memberType: EmbeddedMemberType, current = false) => {
-      if (current) return '当前方案'
+      if (!isAuthenticated) return '登录后开通'
+      if (['starter', 'half_year', 'annual'].includes(memberType)) {
+        if (isClubServicePlanScheduled(memberType as ClubServicePlanId)) return '已排期'
+        if (current) return '续费并顺延'
+        if (isMember) return '购买，下期切换'
+        return '立即开通'
+      }
       if (memberType === 'trial_week') return '添加顾问体验'
-      if (memberType === 'starter') return '了解 Club Starter'
       if (memberType === 'quarter') return '添加顾问开通'
       if (memberType === 'quarter_pro') return '咨询深度服务方案'
-      if (memberType === 'half_year') return '了解 Club Member'
-      if (memberType === 'annual') return '了解 Club Partner'
       return '添加顾问了解'
     }
 
@@ -4075,8 +4209,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
   const visibleClubComparisonRows = CLUB_SERVICE_COMPARISON_FULL_ROWS
 
-  const renderClubServicePlanCard = (plan: ClubServicePlan, sourceKey: string) => {
+  const renderClubServicePlanCard = (plan: ClubServicePlan, _sourceKey: string) => {
     const isCurrentPlan = isCurrentClubServicePlan(plan.id)
+    const isScheduledPlan = isClubServicePlanScheduled(plan.id)
     const isSelected = selectedCareerStage === plan.id
     const planRank: Record<ClubServicePlanId, number> = { starter: 1, half_year: 2, annual: 3 }
     const normalizedActiveType = activeMemberType === 'year' ? 'annual' : activeMemberType
@@ -4091,13 +4226,13 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       : isRecommended
         ? 'border-[#ded8ff] bg-white shadow-[0_28px_72px_-58px_rgba(111,99,246,0.22)]'
         : 'border-[#e3e8ef] bg-white shadow-[0_22px_60px_-52px_rgba(64,78,102,0.2)]'
-    const buttonLabel = isCurrentPlan
-      ? text('当前方案', 'Current plan')
-      : isUpgradePlan
-        ? text(`升级为 ${plan.clubName}`, `Upgrade to ${plan.clubName}`)
+    const buttonLabel = isScheduledPlan
+      ? text('已排期', 'Scheduled')
+      : isCurrentPlan
+        ? text('续费当前方案', 'Renew this plan')
         : translateClubCopy(plan.cta, isEnglish)
     const [priceAmount, pricePeriod] = translateClubCopy(plan.price, isEnglish).split(' / ')
-    const buttonClass = isCurrentPlan
+    const buttonClass = isScheduledPlan
       ? 'cursor-default border border-slate-200 bg-slate-100 text-slate-400'
       : isSelected || isRecommended
         ? 'bg-[#6f63f6] text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] hover:bg-[#5d50df]'
@@ -4146,20 +4281,98 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
           </div>
           <button
             type="button"
-            disabled={isCurrentPlan}
+            disabled={isScheduledPlan}
             onClick={() => {
-              if (!isCurrentPlan) openClubServiceAdvisor(sourceKey, plan.id)
+              if (isScheduledPlan) return
+              const paymentPlan = displayMembershipPlans.find((item) => item.memberType === plan.id)
+              if (paymentPlan) openMembershipPayment(paymentPlan)
             }}
             className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black transition-all ${buttonClass}`}
           >
             {buttonLabel}
-            {!isCurrentPlan ? <ArrowRight className="h-4 w-4" /> : null}
+            {!isScheduledPlan ? <ArrowRight className="h-4 w-4" /> : null}
           </button>
           {plan.note ? <p className="mt-3 text-center text-xs font-semibold leading-5 text-slate-400">{translateClubCopy(plan.note, isEnglish)}</p> : null}
         </div>
       </article>
     )
   }
+
+  const OrdersTab = () => (
+    <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-[28px] border border-[#ddd8ff] bg-white/92 p-5 shadow-[0_26px_72px_-56px_rgba(92,76,190,0.34)] sm:p-7">
+        <img src="/pic_lists/About_pics/about_bg.webp" alt="" aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-44 w-full object-cover object-[58%_36%] opacity-[0.13]" />
+        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-black text-slate-950 sm:text-4xl">{text('我的订单', 'My orders')}</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">{text('查看在线订单、权益生效进度和退款状态，也可以从已购方案快速续费。', 'Review online orders, benefit activation, refunds, and renew an existing plan.')}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => void loadPayPalOrders()} disabled={paypalOrdersLoading} className="inline-flex items-center justify-center gap-2 rounded-full border border-[#dfe8ef] bg-white px-4 py-2.5 text-sm font-black text-slate-600 hover:border-[#cfc8ff] hover:text-[#6f63f6] disabled:cursor-wait disabled:opacity-60">
+              {paypalOrdersLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{text('刷新状态', 'Refresh')}
+            </button>
+            <button type="button" onClick={() => navigate('/profile?tab=membership#club-service-plans')} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-2.5 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] hover:bg-[#5d50df]">
+              {text('选择 Club 方案', 'Choose a Club plan')}<ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="overflow-hidden rounded-[26px] border border-[#e3e8ef] bg-white/92 shadow-[0_22px_62px_-54px_rgba(64,78,102,0.28)]">
+        <div className="border-b border-[#edf2f6] px-5 py-4 sm:px-6">
+          <h2 className="text-lg font-black text-slate-950">{text('在线订单记录', 'Online order history')}</h2>
+          <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{text('顾问协助开通的服务仍由顾问跟进，不会显示在在线订单中。', 'Advisor-assisted services continue to be managed by your advisor and are not listed here.')}</p>
+        </div>
+        {paypalOrdersLoading ? (
+          <div className="flex min-h-[220px] items-center justify-center gap-2 text-sm font-semibold text-slate-400"><Loader2 className="h-5 w-5 animate-spin" />{text('正在加载订单…', 'Loading orders…')}</div>
+        ) : paypalOrders.length === 0 ? (
+          <div className="flex min-h-[260px] flex-col items-center justify-center px-5 py-10 text-center">
+            <h3 className="text-lg font-black text-slate-950">{text('暂无在线订单', 'No online orders yet')}</h3>
+            <p className="mt-2 max-w-md text-sm leading-6 text-slate-500">{text('选择 Club 方案后，可使用 PayPal 在线付款，订单进度会显示在这里。', 'Choose a Club plan and pay with PayPal to see its progress here.')}</p>
+            <button type="button" onClick={() => navigate('/profile?tab=membership#club-service-plans')} className="mt-5 inline-flex items-center gap-2 rounded-full bg-[#6f63f6] px-5 py-2.5 text-sm font-black text-white hover:bg-[#5d50df]">{text('去选择方案', 'Choose a plan')}<ArrowRight className="h-4 w-4" /></button>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#edf2f6]">
+            {paypalOrders.map((order) => {
+              const refundable = ['completed', 'partially_refunded'].includes(order.status) && order.refundRequestStatus !== 'requested'
+              const renewablePlan = displayMembershipPlans.find((plan) => plan.id === order.planId || plan.memberType === order.memberType)
+              const isInProgress = ['pending', 'capture_pending'].includes(order.status)
+              return (
+                <article key={order.paymentId} className="px-5 py-5 sm:px-6">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-base font-black text-slate-950">{order.planName}</h3>
+                        <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${order.status === 'failed' ? 'bg-rose-50 text-rose-600' : isInProgress ? 'bg-amber-50 text-amber-700' : 'bg-[#f0edff] text-[#6f63f6]'}`}>{paypalOrderStatusLabel(order)}</span>
+                        {order.refundRequestStatus === 'requested' ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-black text-amber-700">{text('退款申请处理中', 'Refund requested')}</span> : null}
+                      </div>
+                      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs font-semibold text-slate-500">
+                        <span>{text('实付', 'Paid')} ¥{(order.amountCents / 100).toFixed(2)}</span>
+                        <span>{text('下单时间', 'Ordered')} {formatMembershipDate(order.createdAt || undefined, isEnglish ? 'en-US' : 'zh-CN')}</span>
+                        <span className="break-all">{text('订单号', 'Order')} {order.paymentId}</span>
+                      </div>
+                      {order.startsAt ? <div className="mt-2 text-xs font-semibold text-slate-400">{text('权益时间', 'Benefit period')}：{formatMembershipDate(order.startsAt, isEnglish ? 'en-US' : 'zh-CN')} – {formatMembershipDate(order.expiresAt || undefined, isEnglish ? 'en-US' : 'zh-CN')}</div> : null}
+                      {order.refundedAmountCents > 0 ? <div className="mt-1 text-xs font-semibold text-slate-400">{text('已退款', 'Refunded')} ¥{(order.refundedAmountCents / 100).toFixed(2)}</div> : null}
+                    </div>
+                    <div className="flex shrink-0 flex-wrap gap-2">
+                      {isInProgress ? <button type="button" onClick={() => void loadPayPalOrders()} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600 hover:border-[#cfc8ff] hover:text-[#6f63f6]">{text('刷新进度', 'Refresh status')}</button> : null}
+                      {renewablePlan && !isInProgress ? <button type="button" onClick={() => openMembershipPayment(renewablePlan)} className="rounded-full bg-[#6f63f6] px-4 py-2 text-xs font-black text-white hover:bg-[#5d50df]">{['completed', 'partially_refunded'].includes(order.status) ? text('续费此方案', 'Renew this plan') : text('再次购买', 'Buy again')}</button> : null}
+                      {refundable ? <button type="button" onClick={() => { setRefundTarget(order); setRefundReason('') }} className="rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-black text-slate-600 hover:border-[#cfc8ff] hover:text-[#6f63f6]">{text('申请退款', 'Request refund')}</button> : null}
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      <section className="flex flex-col gap-4 rounded-[24px] border border-[#e6edf3] bg-[#fffdf8] p-5 sm:flex-row sm:items-center sm:justify-between">
+        <div><h2 className="text-base font-black text-slate-950">{text('订单需要帮助？', 'Need help with an order?')}</h2><p className="mt-1 text-sm leading-6 text-slate-500">{text('付款未完成、状态长时间未更新或对服务有疑问，都可以联系顾问。', 'Contact an advisor if payment did not complete, status is delayed, or you have questions.')}</p></div>
+        <button type="button" onClick={() => openClubServiceAdvisor('orders_support', undefined, MEMBER_SUPPORT_ADVISOR_COPY)} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-[#ddd8ff] bg-white px-5 py-2.5 text-sm font-black text-[#6f63f6] hover:bg-[#faf9ff]"><MessageSquare className="h-4 w-4" />{text('联系顾问', 'Contact advisor')}</button>
+      </section>
+    </div>
+  )
 
   const MembershipTab = () => (
     <div className="relative min-h-full overflow-hidden rounded-[22px] bg-[#fffdf9] px-3 py-4 sm:rounded-[30px] sm:px-5 sm:py-5">
@@ -4220,7 +4433,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 onClick={openMembershipPlanChooser}
                 className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${memberPrimaryButtonClass} ${isMember || !membershipRedemptionEnabled ? 'sm:col-span-2' : ''}`}
               >
-                  {isMember ? text('查看我的权益', 'View my benefits') : text('添加顾问了解', 'Contact an advisor')}
+                  {isMember ? text('查看我的权益', 'View my benefits') : text('选择适合方案', 'Choose a plan')}
                 <ArrowRight className="h-4 w-4" />
               </button>
               {membershipRedemptionEnabled ? (
@@ -4259,7 +4472,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 const label = item.memberType === 'starter' ? text('月度会员', 'Monthly') : item.memberType === 'half_year' ? text('半年会员', 'Six-month') : text('年度会员', 'Annual')
                 return (
                   <div key={item.id} className="rounded-[18px] border border-white bg-white/90 px-4 py-3 shadow-sm">
-                    <div className="flex items-center justify-between gap-3"><span className="text-sm font-black text-slate-900">{index + 1}. {label}</span><span className="rounded-full bg-[#f0edff] px-2.5 py-1 text-[11px] font-black text-[#6f63f6]">{item.durationMonths} 个月</span></div>
+                    <div className="flex items-center justify-between gap-3"><span className="text-sm font-black text-slate-900">{index + 1}. {label}</span><span className="rounded-full bg-[#f0edff] px-2.5 py-1 text-[11px] font-black text-[#6f63f6]">{item.durationMonths > 0 ? `${item.durationMonths} 个月` : `${item.durationDays || 0} 天`}</span></div>
                     <div className="mt-2 text-xs font-semibold text-slate-500">{formatMembershipDate(item.startsAt, isEnglish ? 'en-US' : 'zh-CN')} – {formatMembershipDate(item.expiresAt, isEnglish ? 'en-US' : 'zh-CN')}</div>
                   </div>
                 )
@@ -5288,6 +5501,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               {[
                 { id: 'resume', label: text('首页', 'Home'), icon: Home },
                 { id: 'membership', label: text('Club 权益', 'Club benefits'), icon: Crown },
+                { id: 'orders', label: text('订单', 'Orders'), icon: FileText },
                 { id: 'about', label: text('关于我们', 'About'), icon: Building2 },
                 { id: 'favorites', label: text('收藏', 'Saved'), icon: Heart },
                 { id: 'applications', label: text('申请', 'Applications'), icon: Briefcase },
@@ -5390,6 +5604,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   // { id: 'custom-plan', label: '定制方案', icon: Sparkles, badge: 'AI' },
                   { id: 'resume', label: text('首页', 'Home'), icon: Home },
                   { id: 'membership', label: text('Club 权益', 'Club benefits'), icon: Crown },
+                  { id: 'orders', label: text('我的订单', 'My orders'), icon: FileText },
                   { id: 'about', label: text('关于我们', 'About us'), icon: Building2 },
                   { id: 'favorites', label: text('我的收藏', 'Saved items'), icon: Heart },
                   { id: 'applications', label: text('我的申请', 'My applications'), icon: Briefcase },
@@ -5601,6 +5816,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
               )}
               {tab === 'feedback' && <FeedbackTab />}
               {tab === 'membership' && <MembershipTab />}
+              {tab === 'orders' && <OrdersTab />}
               {tab === 'about' && <AboutTab />}
               {tab === 'settings' && <SettingsTab />}
             </div>
@@ -5735,11 +5951,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(239,236,255,0.72),rgba(255,255,255,0.92)_48%,rgba(238,247,255,0.72))]" />
                 <button type="button" aria-label={text('关闭会员兑换弹窗', 'Close redemption dialog')} onClick={closeMembershipRedemption} className="absolute right-4 top-4 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-slate-400 shadow-sm hover:text-slate-700">×</button>
                 <div className="relative">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#ece9ff] text-[#6f63f6]"><KeyRound className="h-6 w-6" /></div>
                   {redemptionResult ? (
-                    <div className="mt-5">
-                      <div className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700"><CheckCircle className="h-4 w-4" />兑换成功</div>
-                      <h3 id="membership-redemption-title" className="mt-4 text-2xl font-black text-slate-950">{redemptionResult.activationState === 'active' ? text('会员权益已生效', 'Membership activated') : text('会员权益已成功排期', 'Membership scheduled')}</h3>
+                    <div>
+                      <h3 id="membership-redemption-title" className="pr-10 text-2xl font-black text-slate-950">{redemptionResult.activationState === 'active' ? text('会员权益已生效', 'Membership activated') : text('会员权益已成功排期', 'Membership scheduled')}</h3>
                       <p className="mt-2 text-sm leading-6 text-slate-600">{redemptionResult.activationState === 'active' ? text('现在即可使用对应会员权益。', 'Your membership benefits are ready to use.') : text('当前会员结束后将自动切换，无需再次操作。', 'It will start automatically after your current membership ends.')}</p>
                       <div className="mt-5 rounded-[20px] border border-[#e2ddff] bg-white/86 p-4">
                         <div className="flex items-center justify-between gap-3"><span className="text-sm font-black text-slate-900">{redemptionResult.memberType === 'starter' ? text('月度会员', 'Monthly') : redemptionResult.memberType === 'half_year' ? text('半年会员', 'Six-month') : text('年度会员', 'Annual')}</span><span className="rounded-full bg-[#f0edff] px-3 py-1 text-xs font-black text-[#6f63f6]">{redemptionResult.durationMonths} {text('个月', 'months')}</span></div>
@@ -5748,13 +5962,12 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       <button type="button" onClick={closeMembershipRedemption} className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#6f63f6] px-5 py-3 text-sm font-black text-white hover:bg-[#5d50df]">完成</button>
                     </div>
                   ) : (
-                    <div className="mt-5">
-                      <div className="inline-flex rounded-full border border-[#e5e0ff] bg-white/84 px-3 py-1 text-xs font-black text-[#6f63f6]">Haigoo Remote Club</div>
-                      <h3 id="membership-redemption-title" className="mt-4 text-2xl font-black text-slate-950">{text('兑换会员权益', 'Redeem membership')}</h3>
+                    <div>
+                      <h3 id="membership-redemption-title" className="pr-10 text-2xl font-black text-slate-950">{text('兑换会员权益', 'Redeem membership')}</h3>
                       <p className="mt-2 text-sm leading-6 text-slate-600">{text('输入从合作平台获得的兑换码。每个兑换码仅可使用一次，已有会员权益将自动顺延。', 'Enter the code received from a partner platform. Each code can be used once and active membership will be extended in order.')}</p>
                       <label className="mt-5 block"><span className="text-sm font-black text-slate-800">{text('会员兑换码', 'Membership code')}</span><input autoFocus value={redemptionCode} onChange={event => setRedemptionCode(formatRedemptionCodeInput(event.target.value))} onKeyDown={event => { if (event.key === 'Enter') void submitMembershipRedemption() }} placeholder="HG-M-XXXX-XXXX-XXXX-XXXX" autoComplete="off" spellCheck={false} className="mt-2 h-14 w-full rounded-2xl border border-[#dcd7ff] bg-white px-4 font-mono text-base font-black uppercase tracking-[0.08em] text-slate-900 outline-none transition focus:border-[#8a7cff] focus:ring-4 focus:ring-[#ece9ff]" /></label>
                       {redemptionError ? <div className="mt-3 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{redemptionError}</div> : null}
-                      <button type="button" onClick={() => void submitMembershipRedemption()} disabled={redemptionSubmitting || !redemptionCode.trim()} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-3.5 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] transition hover:bg-[#5d50df] disabled:cursor-not-allowed disabled:opacity-60">{redemptionSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}{redemptionSubmitting ? text('兑换中...', 'Redeeming...') : text('确认兑换', 'Redeem')}</button>
+                      <button type="button" onClick={() => void submitMembershipRedemption()} disabled={redemptionSubmitting || !redemptionCode.trim()} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-5 py-3.5 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] transition hover:bg-[#5d50df] disabled:cursor-not-allowed disabled:opacity-60">{redemptionSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}{redemptionSubmitting ? text('兑换中...', 'Redeeming...') : text('确认兑换', 'Redeem')}</button>
                       <p className="mt-3 text-center text-xs font-semibold text-slate-400">{text('兑换码有效期以发放信息为准，兑换成功后无法转赠。', 'Code validity follows the issue terms. Redeemed benefits cannot be transferred.')}</p>
                     </div>
                   )}
@@ -5784,13 +5997,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                 </button>
 
                 <div className="relative pr-12">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[#eadfcf] bg-white/86 px-3 py-1 text-xs font-black text-[#bd7a12] shadow-sm">
-                    <Crown className="h-3.5 w-3.5" />
-                    {isMember ? '咨询续费 / 了解服务' : '添加顾问了解'}
-                  </div>
-                  <h3 className="mt-4 text-2xl font-black leading-tight text-slate-950 sm:text-3xl">添加顾问了解 Haigoo Remote Club</h3>
+                  <h3 className="text-2xl font-black leading-tight text-slate-950 sm:text-3xl">{isMember ? '续费或选择下期方案' : '选择 Haigoo Remote Club 方案'}</h3>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-                    根据你的远程求职阶段了解半年或年度服务，顾问会协助说明适合人群、服务边界和开通方式。
+                    选择适合当前阶段的服务方案。已有权益时，新方案会在当前权益结束后自动接续。
                   </p>
                 </div>
 
@@ -5800,6 +6009,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                     const isHalfYear = plan.memberType === 'half_year'
                     const isAnnual = plan.memberType === 'annual'
                     const isCurrentPlan = isCurrentClubServicePlan(plan.memberType as ClubServicePlanId)
+                    const isScheduledPlan = isClubServicePlanScheduled(plan.memberType as ClubServicePlanId)
                     const planTitle = getMembershipPlanTitle(plan.memberType)
                     const ctaText = getMembershipPlanCta(plan.memberType, isCurrentPlan)
                     return (
@@ -5813,7 +6023,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                               : 'border-[#eadfcf] bg-[#fffdf8] shadow-[0_20px_50px_-42px_rgba(139,101,54,0.22)]'
                         }`}
                       >
-                        {isCurrentPlan ? (
+                        {isScheduledPlan ? (
+                          <div className="absolute right-5 top-5 rounded-full bg-amber-500 px-3 py-1 text-xs font-black text-white">已排期</div>
+                        ) : isCurrentPlan ? (
                           <div className="absolute right-5 top-5 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white">生效中</div>
                         ) : isAnnual ? (
                           <div className="absolute right-5 top-5 rounded-full bg-[#6f63f6] px-3 py-1 text-xs font-black text-white">推荐</div>
@@ -5837,10 +6049,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         </div>
                         <button
                           type="button"
-                          disabled={Boolean(plan.comingSoon)}
+                          disabled={Boolean(plan.comingSoon || isScheduledPlan)}
                           onClick={() => chooseMembershipPlan(plan)}
                           className={`mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-black transition-all ${
-                            plan.comingSoon
+                            plan.comingSoon || isScheduledPlan
                               ? 'cursor-not-allowed border border-slate-200 bg-white text-slate-400'
                               : isAnnual
                                 ? 'bg-[#6f63f6] text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.52)] hover:bg-[#5d50df]'
@@ -5850,7 +6062,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                           }`}
                         >
                           {plan.comingSoon ? '即将开放' : ctaText}
-                          {!plan.comingSoon ? <ArrowRight className="h-4 w-4" /> : null}
+                          {!plan.comingSoon && !isScheduledPlan ? <ArrowRight className="h-4 w-4" /> : null}
                         </button>
                       </article>
                     )
@@ -5924,18 +6136,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             <div className="fixed inset-0 z-[10000] isolate flex items-start justify-center overflow-y-auto p-3 sm:items-center sm:p-4">
               <button
                 type="button"
-                aria-label="关闭顾问服务弹窗"
+                aria-label="关闭开通方式弹窗"
                 className="fixed inset-0 z-0 cursor-default bg-slate-950/65 backdrop-blur-md"
                 onClick={closeMembershipPaymentToPlans}
               />
-              <div className="relative z-10 my-3 grid max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-[24px] border border-white/10 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.75)] sm:my-4 sm:rounded-[30px] md:grid-cols-[0.9fr_1.1fr]">
+              <div role="dialog" aria-modal="true" aria-labelledby="membership-payment-title" className="relative z-10 my-3 grid max-h-[calc(100dvh-1.5rem)] w-full max-w-4xl overflow-y-auto rounded-[24px] border border-white/10 bg-white shadow-[0_30px_90px_-40px_rgba(15,23,42,0.75)] sm:my-4 sm:rounded-[30px] md:grid-cols-[0.9fr_1.1fr]">
                 <div className="relative overflow-hidden border-b border-[#edf2f6] bg-[#fbfdff] p-4 sm:p-6 md:border-b-0 md:border-r">
                   <img src="/pic_lists/Home_pics/background03.webp" alt="" className="pointer-events-none absolute inset-x-0 bottom-0 h-32 w-full object-cover object-bottom opacity-35" />
                   <div className="relative">
-                    <div className="mb-5 flex items-center justify-between gap-4">
-                      <div className="inline-flex rounded-full bg-[#f0edff] px-3 py-1 text-xs font-black text-[#6f63f6]">会员服务方案</div>
+                    <div className="mb-2 flex justify-end md:hidden">
                       <button
                         type="button"
+                        aria-label="关闭开通方式弹窗"
                         className="flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm transition-colors hover:text-slate-700 md:hidden"
                         onClick={closeMembershipPaymentToPlans}
                       >
@@ -5949,74 +6161,91 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                         {getMembershipPlanUnit(selectedMembershipPlan.memberType)}
                       </span>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-500 sm:mt-4 sm:leading-7">{membershipPlanDescriptions[selectedMembershipPlan.memberType]}</p>
+                    <p className="mt-4 text-sm leading-6 text-slate-600 sm:leading-7"><span className="font-black text-slate-800">适合谁：</span>{membershipPlanDescriptions[selectedMembershipPlan.memberType]}</p>
 
-                    <p className="mt-5 rounded-[18px] border border-[#e6edf3] bg-white/82 px-4 py-3 text-xs font-semibold leading-5 text-slate-500">
-                      添加 Haigoo 顾问后，可了解会员方案、适合人群和开通方式。
-                    </p>
+                    <div className="mt-5 space-y-3 rounded-[18px] border border-[#e6edf3] bg-white/82 px-4 py-4 text-sm font-semibold leading-5 text-slate-500">
+                      <div className="flex justify-between gap-3"><span>方案周期</span><span className="font-black text-slate-800">{getMembershipPlanUnit(selectedMembershipPlan.memberType).replace('/ ', '')}</span></div>
+                      <div className="flex justify-between gap-3"><span>权益开始</span><span className="text-right font-black text-slate-800">{membershipQueueEndAt ? `${formatMembershipDate(new Date(membershipQueueEndAt).toISOString())} 后接续` : '开通成功后生效'}</span></div>
+                      <div className="border-t border-[#edf2f6] pt-3">
+                        <div className="mb-2 text-xs font-black tracking-[0.12em] text-slate-400">主要权益</div>
+                        <div className="space-y-2">
+                          {membershipPlanFeatures[selectedMembershipPlan.memberType].slice(0, 3).map((feature) => <div key={feature} className="flex items-start gap-2 text-xs leading-5 text-slate-600"><Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#6f63f6]" strokeWidth={3} />{feature}</div>)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="relative flex flex-col items-center justify-center p-4 text-center sm:p-8">
+                <div className="relative flex flex-col justify-center p-4 sm:p-8">
                   <button
                     type="button"
+                    aria-label="关闭开通方式弹窗"
                     className="absolute right-5 top-5 hidden h-9 w-9 items-center justify-center rounded-full bg-[#f7fbff] text-slate-400 transition-colors hover:text-slate-700 md:flex"
                     onClick={closeMembershipPaymentToPlans}
                   >
                     ×
                   </button>
 
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f0edff] text-[#6f63f6]">
-                    <MessageSquare className="h-7 w-7" />
+                  <h4 id="membership-payment-title" className="text-2xl font-black text-slate-950">选择开通方式</h4>
+                  <div className="mt-5 grid grid-cols-2 border-b border-slate-200" role="tablist" aria-label="会员开通方式">
+                    <button type="button" role="tab" aria-selected={membershipActivationMethod === 'paypal'} onClick={() => setMembershipActivationMethod('paypal')} className={`border-b-2 px-3 py-3 text-sm font-black transition-colors ${membershipActivationMethod === 'paypal' ? 'border-[#6f63f6] text-[#5d50df]' : 'border-transparent text-slate-400 hover:text-slate-700'}`}>PayPal 在线付款</button>
+                    <button type="button" role="tab" aria-selected={membershipActivationMethod === 'advisor'} onClick={() => setMembershipActivationMethod('advisor')} className={`border-b-2 px-3 py-3 text-sm font-black transition-colors ${membershipActivationMethod === 'advisor' ? 'border-[#6f63f6] text-[#5d50df]' : 'border-transparent text-slate-400 hover:text-slate-700'}`}>顾问协助开通</button>
                   </div>
-                  <h4 className="text-2xl font-black text-slate-950">添加顾问，了解 Club 服务</h4>
-                  <p className="mt-2 max-w-sm text-sm leading-6 text-slate-500">
-                    添加 Haigoo 顾问后，可了解会员方案、适合人群和开通方式。
-                  </p>
 
-                  <div className="mt-5 border border-[#edf2f6] bg-white p-4 shadow-[0_20px_55px_-42px_rgba(61,89,120,0.62)]">
-                    <img
-                      src="/series_assistant.png"
-                      alt="企业微信顾问二维码"
-                      className="h-40 w-40 object-contain sm:h-44 sm:w-44"
-                    />
-                  </div>
-                  <div className="mt-4 w-full max-w-sm space-y-1 rounded-2xl border border-[#e8eef5] bg-white px-4 py-3 text-left text-xs leading-5 text-slate-600">
-                    {[
-                      '添加 Haigoo 顾问',
-                      '发送注册邮箱和想了解的会员方案',
-                      '顾问确认后开通对应网站权限'
-                    ].map((step, index) => (
-                      <div key={step} className="flex items-center gap-2">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f0edff] text-[11px] font-black text-[#6f63f6]">{index + 1}</span>
-                        <span>{step}</span>
-                      </div>
-                    ))}
-                  </div>
-                  {isQuarterMember && selectedMembershipPlan.memberType === 'quarter_pro' ? (
-                    <div className="mt-4 w-full max-w-sm rounded-[18px] border border-[#d8d2ff] bg-[#fbfaff] px-4 py-3 text-left">
-                        <div className="text-sm font-black text-[#5d50df]">咨询深度服务方案</div>
-                        <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">
-                          你当前已开通长期权益，可联系顾问了解如何补差价调整为深度服务方案。
-                      </p>
-                      <div className="mt-3 flex items-center gap-3">
-                        <img src="/series_assistant.png" alt="企业微信顾问二维码" className="h-16 w-16 border border-[#e4dfff] bg-white object-contain p-1" />
-                        <div className="min-w-0 text-xs font-semibold leading-5 text-slate-600">
-                          <div>添加顾问咨询升级方式</div>
-                          <a href="mailto:hi@haigooremote.com" className="font-black text-[#2f6ed8] no-underline hover:underline">hi@haigooremote.com</a>
+                  {membershipActivationMethod === 'paypal' ? (
+                    <div role="tabpanel" className="pt-5">
+                      <p className="mb-4 text-sm leading-6 text-slate-500">使用 PayPal 完成一次性付款，开通成功后会员权益会自动更新。</p>
+                      {paypalConfigLoading ? (
+                        <div className="flex min-h-[52px] items-center justify-center gap-2 rounded-full bg-slate-50 text-sm font-black text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />正在加载付款方式…</div>
+                      ) : paypalConfig?.enabled ? (
+                        <PayPalCheckoutButton
+                          planId={selectedMembershipPlan.id}
+                          onCreated={handlePayPalCreated}
+                          onPending={handlePayPalPending}
+                          onSuccess={handlePayPalSuccess}
+                          onCancel={handlePayPalCancel}
+                        />
+                      ) : (
+                        <div className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-4 text-center text-sm font-semibold leading-6 text-slate-500">当前暂不支持 PayPal 在线付款，请切换至“顾问协助开通”。</div>
+                      )}
+                      {paypalOrderMessage ? <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs font-semibold leading-5 text-amber-800">{paypalOrderMessage}</div> : null}
+                    </div>
+                  ) : (
+                    <div role="tabpanel" className="pt-5">
+                      <div className="grid gap-5 sm:grid-cols-[150px_1fr] sm:items-center">
+                        <div className="mx-auto w-[150px] border border-slate-200 bg-white p-3 sm:mx-0">
+                          <img src="/series_assistant.png" alt="企业微信顾问二维码" className="h-full w-full object-contain" />
+                        </div>
+                        <div>
+                          <h5 className="text-lg font-black text-slate-950">添加 Haigoo 顾问</h5>
+                          <p className="mt-2 text-sm leading-6 text-slate-500">扫码添加后，发送注册邮箱和“{getMembershipPlanTitle(selectedMembershipPlan.memberType)}”，顾问会协助确认开通方式和服务安排。</p>
+                          <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs font-semibold leading-5 text-slate-500">
+                            <li>添加 Haigoo 顾问</li>
+                            <li>发送注册邮箱与所选方案</li>
+                            <li>确认开通与后续服务安排</li>
+                          </ol>
                         </div>
                       </div>
+                      <button type="button" onClick={closeMembershipPaymentToPlans} className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#6f63f6] px-5 py-3 text-sm font-black text-white hover:bg-[#5d50df]">完成</button>
                     </div>
-                  ) : null}
-
-                  <button
-                    type="button"
-                    onClick={handleMembershipAdvisorAdded}
-                    className="mt-5 inline-flex w-full max-w-sm items-center justify-center gap-2 rounded-full bg-[#6f63f6] px-6 py-3.5 text-sm font-black text-white shadow-[0_18px_40px_-24px_rgba(95,99,246,0.58)] transition-all hover:-translate-y-0.5 sm:mt-6"
-                  >
-                    <CheckCircle className="h-5 w-5" />
-                    我已添加顾问
-                  </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ), modalRoot)}
+          {modalRoot && refundTarget && createPortal((
+            <div className="fixed inset-0 z-[10010] flex items-center justify-center p-4">
+              <button type="button" aria-label="关闭退款申请" className="absolute inset-0 bg-slate-950/65 backdrop-blur-md" onClick={() => setRefundTarget(null)} />
+              <div role="dialog" aria-modal="true" aria-labelledby="refund-request-title" className="relative w-full max-w-lg rounded-[26px] bg-white p-5 shadow-2xl sm:p-6">
+                <button type="button" aria-label="关闭退款申请" className="absolute right-4 top-4 h-8 w-8 rounded-full bg-slate-100 text-slate-500" onClick={() => setRefundTarget(null)}>×</button>
+                <h3 id="refund-request-title" className="pr-10 text-xl font-black text-slate-950">申请退款</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-500">{refundTarget.planName} · 订单 {refundTarget.paymentId}</p>
+                <div className="mt-4 rounded-2xl border border-[#e5e0ff] bg-[#faf9ff] px-4 py-3 text-sm font-semibold leading-6 text-slate-600">提交后我们会核对订单与当前权益，并在审核完成后更新可退金额和处理结果。退款完成后将原路退回你的 PayPal 账户。</div>
+                <label className="mt-4 block text-sm font-black text-slate-700">退款原因</label>
+                <textarea value={refundReason} onChange={event => setRefundReason(event.target.value)} maxLength={500} rows={4} placeholder="请简要说明退款原因" className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-[#6f63f6]" />
+                <div className="mt-5 flex gap-3">
+                  <button type="button" onClick={() => setRefundTarget(null)} className="flex-1 rounded-full border border-slate-200 px-4 py-3 text-sm font-black text-slate-600">取消</button>
+                  <button type="button" disabled={refundSubmitting || !refundReason.trim()} onClick={() => void submitPayPalRefund()} className="flex-1 rounded-full bg-[#6f63f6] px-4 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-50">{refundSubmitting ? '提交中...' : '提交申请'}</button>
                 </div>
               </div>
             </div>

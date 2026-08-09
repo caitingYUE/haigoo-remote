@@ -198,6 +198,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const userMenuItems: { id: string; label: string; href: string; danger?: boolean }[] = [
     { id: 'profile-resume', label: text('首页', 'Home'), href: '/profile?tab=resume' },
     { id: 'membership', label: text('会员权益', 'Membership'), href: '/profile?tab=membership' },
+    { id: 'orders', label: text('我的订单', 'My orders'), href: '/profile?tab=orders' },
     { id: 'profile-about', label: text('关于我们', 'About us'), href: '/profile?tab=about' },
     { id: 'profile-favorites', label: text('我的收藏', 'Saved jobs'), href: '/profile?tab=favorites' },
     { id: 'profile-applications', label: text('我的申请', 'Applications'), href: '/profile?tab=applications' },

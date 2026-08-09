@@ -6,6 +6,7 @@ import bugReportsHandler from '../lib/api-handlers/bug-reports.js'
 import contactMinerHandler from '../lib/api-handlers/contact-miner.js'
 import adminMessagesHandler from '../lib/api-handlers/admin-messages.js'
 import membershipCodesHandler from '../lib/api-handlers/membership-codes.js'
+import paymentOrdersHandler from '../lib/api-handlers/payment-orders.js'
 import { systemSettingsService } from '../lib/services/system-settings-service.js'
 import { getLegacyMembershipLevel, MEMBER_TYPES } from '../lib/shared/membership.js'
 
@@ -87,6 +88,10 @@ export default async function handler(req, res) {
 
     if (action === 'membership-codes') {
         return await membershipCodesHandler(req, res)
+    }
+
+    if (action === 'payment-orders') {
+        return await paymentOrdersHandler(req, res)
     }
 
     // Dispatch to Bug Reports Handler

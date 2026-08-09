@@ -40,6 +40,10 @@ async function startServer() {
         console.log('Importing membership handler...');
         const membershipHandler = (await import('./lib/api-handlers/membership.js')).default;
         app.all('/api/membership', async (req, res) => { await membershipHandler(req, res); });
+        const paypalHandler = (await import('./lib/api-handlers/paypal.js')).default;
+        const paypalWebhookHandler = (await import('./lib/api-handlers/paypal-webhook.js')).default;
+        app.all('/api/paypal', async (req, res) => { await paypalHandler(req, res); });
+        app.all('/api/paypal-webhook', async (req, res) => { await paypalWebhookHandler(req, res); });
         console.log('Membership handler imported.');
 
         console.log('Importing data handler...');
