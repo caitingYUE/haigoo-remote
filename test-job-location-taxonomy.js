@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {
+  JOB_LOCATION_ADMIN_QUICK_TAGS,
   JOB_LOCATION_TAXONOMY,
   buildJobLocationAvailability,
   getJobLocationParentValue,
@@ -92,5 +93,10 @@ assert.deepEqual(
   JOB_LOCATION_TAXONOMY.map(group => group.label),
   ['中国远程', '亚太远程', '欧美远程', '拉美远程', '中东及非洲远程', '全球远程']
 )
+
+assert.ok(JOB_LOCATION_ADMIN_QUICK_TAGS.includes('欧美远程'))
+for (const removedSecondaryTag of ['东亚远程', '东南亚远程', '南亚远程', '中亚远程', '北亚远程', '大洋洲远程']) {
+  assert.equal(JOB_LOCATION_ADMIN_QUICK_TAGS.includes(removedSecondaryTag), false)
+}
 
 console.log('✅ Job location taxonomy tests passed')

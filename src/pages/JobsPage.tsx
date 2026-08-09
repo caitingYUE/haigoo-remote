@@ -422,14 +422,13 @@ export default function JobsPage() {
 
       const parentValue = getJobLocationParentValue(value)
       if (!parentValue || !available.has(parentValue)) return []
-      if (isAuthenticated || value === parentValue) return [value]
       return [parentValue]
     })))
 
     if (JSON.stringify(nextLocations) !== JSON.stringify(filters.location)) {
       setFilters(prev => normalizeJobFilters({ ...prev, location: nextLocations }))
     }
-  }, [availableLocationFilterValues, filters.location, isAuthenticated])
+  }, [availableLocationFilterValues, filters.location])
 
   useEffect(() => {
     if (industryOptions.length === 0 || filters.industry.length === 0) return
@@ -663,6 +662,7 @@ export default function JobsPage() {
       queryParams.append('limit', effectivePageSize.toString())
       queryParams.append('skipAggregations', 'true')
       queryParams.append('listMode', 'compact')
+      queryParams.append('status', 'active')
 
       // Explicitly handle sortBy
       if (sortBy === 'recent') {
@@ -866,6 +866,7 @@ export default function JobsPage() {
       queryParams.append('limit', effectivePageSize.toString())
       queryParams.append('sortBy', sortBy === 'recent' ? 'recent' : 'relevance')
       queryParams.append('isApproved', 'true')
+      queryParams.append('status', 'active')
 
       const hasKeywordSearch = Boolean(requestSearchTerm.trim())
       if (hasKeywordSearch) queryParams.append('search', requestSearchTerm.trim())
@@ -1436,7 +1437,6 @@ export default function JobsPage() {
                   experienceLevelOptions={experienceLevelOptions}
                   locationOptions={locationOptions}
                   availableLocationFilterValues={availableLocationFilterValues}
-                  showLocationChildren={isAuthenticated}
                   timezoneOptions={timezoneOptions}
                   searchTerm={searchTerm}
                   onSearchChange={(value) => {
