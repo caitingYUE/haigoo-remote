@@ -15,6 +15,7 @@ import {
 } from '../utils/salary-display';
 import { extractJobSkillKeywords } from '../utils/job-skill-extractor';
 import { appendTagInput, joinTagInput, splitTagInput } from '../utils/tag-input';
+import { JOB_LOCATION_ADMIN_QUICK_TAGS } from '../../lib/shared/job-location-taxonomy.js';
 
 const APPLICATION_GUIDE_LIMIT = 1200;
 
@@ -500,7 +501,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1.5"
               />
               <div className="flex flex-wrap gap-1 mt-1">
-                {['全球远程', '中国远程', '亚太远程', '香港远程', '台湾远程'].map(loc => (
+                {JOB_LOCATION_ADMIN_QUICK_TAGS.map(loc => (
                   <button
                     key={loc}
                     type="button"

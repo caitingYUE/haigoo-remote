@@ -17,6 +17,10 @@ import { readMatchScoreRefreshMarker } from '../utils/match-score-refresh'
 import { rememberLatestJobSearch } from '../utils/member-recommendations'
 import { buildSearchTermTrackingProperties } from '../utils/search-term-insights'
 import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js'
+import {
+  getJobLocationFilterOption,
+  getJobLocationParentValue
+} from '../../lib/shared/job-location-taxonomy.js'
 
 const JobDetailModal = lazy(() => import('../components/JobDetailModal'))
 const JobDetailPanel = lazy(() => import('../components/JobDetailPanel').then((module) => ({ default: module.JobDetailPanel })))
@@ -279,6 +283,13 @@ function buildFacetOptions(dynamicOpts?: any[], labelMap?: Map<string, string>) 
   return Array.from(result.values())
 }
 
+function readAvailableLocationFilterValues(aggregations: any) {
+  if (!Array.isArray(aggregations?.locationGroups)) return []
+  return aggregations.locationGroups
+    .filter((item: any) => Number(item?.count || 0) > 0 && getJobLocationFilterOption(item?.value))
+    .map((item: any) => String(item.value))
+}
+
 function hasUsableAggregations(aggregations: any) {
   if (!aggregations || typeof aggregations !== 'object') return false
   return ['category', 'industry', 'jobType', 'experienceLevel', 'location', 'timezone'].some((key) => Array.isArray(aggregations[key]))
@@ -379,6 +390,7 @@ export default function JobsPage() {
   const [jobTypeOptions, setJobTypeOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
   const [experienceLevelOptions, setExperienceLevelOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
   const [locationOptions, setLocationOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
+  const [availableLocationFilterValues, setAvailableLocationFilterValues] = useState<string[]>([]);
   const [timezoneOptions, setTimezoneOptions] = useState<{ label: string, value: string, count?: number }[]>([]);
 
   useEffect(() => {
@@ -399,6 +411,25 @@ export default function JobsPage() {
       setFilters(prev => normalizeJobFilters({ ...prev, category: [] }))
     }
   }, [filters.category.length, isAuthenticated])
+
+  useEffect(() => {
+    if (availableLocationFilterValues.length === 0 || filters.location.length === 0) return
+
+    const available = new Set(availableLocationFilterValues)
+    const nextLocations = Array.from(new Set(filters.location.flatMap(value => {
+      const option = getJobLocationFilterOption(value)
+      if (!option) return [value]
+      if (!available.has(value)) return []
+      if (isAuthenticated) return [value]
+
+      const parentValue = getJobLocationParentValue(value)
+      return parentValue && available.has(parentValue) ? [parentValue] : []
+    })))
+
+    if (JSON.stringify(nextLocations) !== JSON.stringify(filters.location)) {
+      setFilters(prev => normalizeJobFilters({ ...prev, location: nextLocations }))
+    }
+  }, [availableLocationFilterValues, filters.location, isAuthenticated])
 
   useEffect(() => {
     if (industryOptions.length === 0 || filters.industry.length === 0) return
@@ -766,6 +797,7 @@ export default function JobsPage() {
       // Update Dynamic Filter Options from Aggregations
       if (!loadMore && hasUsableAggregations(data.aggregations)) {
         const { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
+        setAvailableLocationFilterValues(readAvailableLocationFilterValues(data.aggregations));
 
         if (filters.category.length === 0) {
           setCategoryOptions(buildFacetOptions(category, CATEGORY_LABELS));
@@ -848,6 +880,7 @@ export default function JobsPage() {
 
       if (hasUsableAggregations(data.aggregations)) {
         let { category, industry, jobType, experienceLevel, location, timezone } = data.aggregations;
+        setAvailableLocationFilterValues(readAvailableLocationFilterValues(data.aggregations));
 
         if (hasVerifiedJobAccess && requestFilters.category.length > 0) {
           const categoryFacetParams = new URLSearchParams(queryParams)
@@ -1402,6 +1435,8 @@ export default function JobsPage() {
                   jobTypeOptions={jobTypeOptions}
                   experienceLevelOptions={experienceLevelOptions}
                   locationOptions={locationOptions}
+                  availableLocationFilterValues={availableLocationFilterValues}
+                  showLocationChildren={isAuthenticated}
                   timezoneOptions={timezoneOptions}
                   searchTerm={searchTerm}
                   onSearchChange={(value) => {
