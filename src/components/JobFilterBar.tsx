@@ -3,8 +3,10 @@ import { ArrowUpDown, Briefcase, Check, ChevronDown, Crown, MapPin, SlidersHoriz
 import { buildRoleOptionGroups } from '../constants/job-role-groups';
 import { useLanguage } from '../contexts/LanguageContext';
 import {
+  getJobLocationParentValue,
   JOB_LOCATION_FILTER_OPTIONS,
-  JOB_LOCATION_TAXONOMY
+  JOB_LOCATION_TAXONOMY,
+  resolveJobLocationPanelParent
 } from '../../lib/shared/job-location-taxonomy.js';
 
 interface FilterDropdownProps {
@@ -226,6 +228,7 @@ const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, 
   return (
     <button
       type="button"
+      aria-pressed={active}
       onClick={(event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -292,7 +295,7 @@ export default function JobFilterBar({
       .filter(group => availableLocationValueSet.has(group.value))
       .map(group => ({
         ...group,
-        visibleChildren: group.children.filter(child => availableLocationValueSet.has(child.value))
+        visibleChildren: group.children
       }))
   ), [availableLocationValueSet]);
   const visibleParentFilterValues = useMemo(
@@ -321,6 +324,25 @@ export default function JobFilterBar({
       setActiveRoleGroup(targetIndex);
     }
   }, [openDropdown, groupedCategories, filters.category]);
+
+  useEffect(() => {
+    if (openDropdown !== 'location') return;
+    if (previousOpenDropdownRef.current === 'location') return;
+    if (visibleLocationGroups.length === 0) return;
+
+    const selectedLocations = (filters.location || []).filter(value => visibleLocationFilterValueSet.has(value));
+    const effectiveLocations = selectedLocations.length > 0 ? selectedLocations : visibleParentFilterValues;
+    const targetGroup = visibleLocationGroups.find(group => (
+      effectiveLocations.some(value => getJobLocationParentValue(value) === group.value)
+    ));
+    setActiveLocationGroup(targetGroup?.key || visibleLocationGroups[0].key);
+  }, [
+    filters.location,
+    openDropdown,
+    visibleLocationFilterValueSet,
+    visibleLocationGroups,
+    visibleParentFilterValues
+  ]);
 
   useEffect(() => {
     previousOpenDropdownRef.current = openDropdown;
@@ -664,10 +686,18 @@ export default function JobFilterBar({
                   <button
                     key={option.key}
                     type="button"
+                    aria-pressed={isSelected}
                     onClick={(event) => {
                       event.preventDefault();
                       event.stopPropagation();
-                      setActiveLocationGroup(option.key);
+                      const nextPanelParent = resolveJobLocationPanelParent({
+                        selectedValues: selectedLocations,
+                        visibleParentValues: visibleParentFilterValues,
+                        toggledParentValue: option.value,
+                        willSelect: !isSelected
+                      });
+                      const nextPanelGroup = visibleLocationGroups.find(group => group.value === nextPanelParent);
+                      setActiveLocationGroup(nextPanelGroup?.key || option.key);
                       handleLocationGroupChange(option.key, !isSelected);
                     }}
                     className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-xs font-bold transition-colors ${
@@ -691,7 +721,7 @@ export default function JobFilterBar({
 
               {showLocationChildren && activeVisibleLocationGroup?.visibleChildren?.length ? (
                 <div className="min-w-0 rounded-xl border border-slate-100 bg-slate-50/70 p-3">
-                  <div className="mb-2 text-xs font-bold text-slate-900">
+                  <div className="mb-2 text-xs font-bold text-slate-900" aria-live="polite">
                     {isEnglish ? activeVisibleLocationGroup.labelEn : activeVisibleLocationGroup.label}
                   </div>
                   <div className="flex flex-wrap gap-2">

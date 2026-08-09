@@ -10,6 +10,8 @@ export interface JobLocationFilterOption {
 export interface JobLocationGroup extends JobLocationFilterOption {
   key: string
   children: JobLocationFilterOption[]
+  broadKeywords: string[]
+  broadExactValues: string[]
 }
 
 export const JOB_LOCATION_TAXONOMY: JobLocationGroup[]
@@ -18,5 +20,11 @@ export const JOB_LOCATION_ADMIN_QUICK_TAGS: string[]
 
 export function getJobLocationFilterOption(value: unknown): JobLocationFilterOption | null
 export function getJobLocationParentValue(value: unknown): string | null
+export function resolveJobLocationPanelParent(options: {
+  selectedValues: string[]
+  visibleParentValues: string[]
+  toggledParentValue: string
+  willSelect: boolean
+}): string
 export function matchesJobLocationFilter(location: unknown, filterValue: unknown): boolean
 export function buildJobLocationAvailability(locations: unknown[]): Array<{ value: string; count: number }>

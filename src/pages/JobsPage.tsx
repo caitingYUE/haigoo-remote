@@ -419,11 +419,11 @@ export default function JobsPage() {
     const nextLocations = Array.from(new Set(filters.location.flatMap(value => {
       const option = getJobLocationFilterOption(value)
       if (!option) return [value]
-      if (!available.has(value)) return []
-      if (isAuthenticated) return [value]
 
       const parentValue = getJobLocationParentValue(value)
-      return parentValue && available.has(parentValue) ? [parentValue] : []
+      if (!parentValue || !available.has(parentValue)) return []
+      if (isAuthenticated || value === parentValue) return [value]
+      return [parentValue]
     })))
 
     if (JSON.stringify(nextLocations) !== JSON.stringify(filters.location)) {
