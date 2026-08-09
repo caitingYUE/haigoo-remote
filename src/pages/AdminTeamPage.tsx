@@ -42,6 +42,7 @@ import { trackingService } from '../services/tracking-service';
 
 const DataManagementTabs = lazy(() => import('../components/DataManagementTabs'));
 const UserManagementPage = lazy(() => import('./UserManagementPage'));
+const AdminMemberCrmPage = lazy(() => import('./AdminMemberCrmPage'));
 const AdminCompanyManagementPage = lazy(() => import('./AdminCompanyManagementPage'));
 const AdminTrustedCompaniesPage = lazy(() => import('./AdminTrustedCompaniesPage'));
 const AdminTagManagementPage = lazy(() => import('./AdminTagManagementPage'));
@@ -74,6 +75,7 @@ const ADMIN_TAB_IDS = new Set([
   'trusted-companies',
   'tag-management',
   'resumes',
+  'member-crm',
   'users',
   'subscriptions',
   'membership-codes',
@@ -1009,6 +1011,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
     { id: 'tag-management', label: '标签管理', icon: Tag },
     { id: 'resumes', label: '简历数据', icon: FileText },
+    { id: 'member-crm', label: '会员 CRM', icon: Users },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'subscriptions', label: '邮件订阅', icon: Mail },
     { id: 'membership-codes', label: '会员兑换码', icon: Ticket },
@@ -1020,6 +1023,7 @@ const AdminTeamPage: React.FC = () => {
   const mobilePriorityTabs = tabs.filter(tab => [
     'dashboard',
     'core-metrics',
+    'member-crm',
     'users',
     'resumes',
     'feedback'
@@ -1161,6 +1165,11 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'job-bundles' && (
                 <Suspense fallback={renderLazyFallback('正在加载职位组合...')}>
                   <AdminJobBundles />
+                </Suspense>
+              )}
+              {activeTab === 'member-crm' && (
+                <Suspense fallback={renderLazyFallback('正在加载会员 CRM...')}>
+                  <AdminMemberCrmPage />
                 </Suspense>
               )}
               {activeTab === 'users' && (

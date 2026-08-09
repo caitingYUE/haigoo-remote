@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS member_service_entitlement_definitions (
 
 CREATE TABLE IF NOT EXISTS user_member_service_entitlements (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   entitlement_key TEXT NOT NULL REFERENCES member_service_entitlement_definitions(entitlement_key) ON DELETE RESTRICT,
   status TEXT NOT NULL DEFAULT 'available',
   total_quota INTEGER,
@@ -26,8 +26,8 @@ CREATE TABLE IF NOT EXISTS user_member_service_entitlements (
   expires_at TIMESTAMPTZ,
   metadata JSONB NOT NULL DEFAULT '{}'::jsonb,
   notes TEXT,
-  created_by UUID REFERENCES users(user_id) ON DELETE SET NULL,
-  updated_by UUID REFERENCES users(user_id) ON DELETE SET NULL,
+  created_by VARCHAR(255) REFERENCES users(user_id) ON DELETE SET NULL,
+  updated_by VARCHAR(255) REFERENCES users(user_id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(user_id, entitlement_key),
@@ -62,9 +62,9 @@ CREATE TABLE IF NOT EXISTS user_member_service_entitlements (
 
 CREATE TABLE IF NOT EXISTS user_member_service_entitlement_audit (
   id BIGSERIAL PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+  user_id VARCHAR(255) NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
   entitlement_key TEXT NOT NULL,
-  admin_user_id UUID REFERENCES users(user_id) ON DELETE SET NULL,
+  admin_user_id VARCHAR(255) REFERENCES users(user_id) ON DELETE SET NULL,
   before_snapshot JSONB,
   after_snapshot JSONB,
   reason TEXT,

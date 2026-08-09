@@ -71,7 +71,8 @@ function normalizeQueryIds(value) {
 async function findPublishableJobs({ ids = [], search = '', limit = JOB_SEARCH_LIMIT } = {}) {
   const normalizedIds = normalizeJobIds(ids);
   const keyword = String(search || '').trim();
-  const safeLimit = Math.min(Math.max(1, Number(limit) || JOB_SEARCH_LIMIT), JOB_SEARCH_LIMIT);
+  const maximum = normalizedIds.length > 0 ? MAX_BUNDLE_JOBS : JOB_SEARCH_LIMIT;
+  const safeLimit = Math.min(Math.max(1, Number(limit) || JOB_SEARCH_LIMIT), maximum);
   const conditions = ['is_approved = true', "status = 'active'"];
   const params = [];
 
@@ -109,6 +110,22 @@ async function assertPublishableJobIds(value) {
     throw error;
   }
   return jobIds;
+}
+
+async function buildJobSnapshots(jobIds, previousSnapshots = {}) {
+  const ids = normalizeJobIds(jobIds);
+  const previous = previousSnapshots && typeof previousSnapshots === 'object' ? previousSnapshots : {};
+  if (ids.length === 0) return {};
+  const rows = await findPublishableJobs({ ids, limit: MAX_BUNDLE_JOBS });
+  const byId = new Map(rows.map((row) => [String(row.id), row]));
+  const capturedAt = new Date().toISOString();
+  return ids.reduce((snapshots, id) => {
+    const job = byId.get(id);
+    snapshots[id] = job
+      ? { title: String(job.title || ''), company: String(job.company || ''), captured_at: capturedAt }
+      : previous[id] || { title: '', company: '', captured_at: capturedAt };
+    return snapshots;
+  }, {});
 }
 
 function toAllowedUser(user) {
@@ -301,11 +318,12 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: '结束时间需要晚于开始时间' });
       }
       const publishableJobIds = await assertPublishableJobIds(job_ids);
+      const jobSnapshots = await buildJobSnapshots(publishableJobIds);
 
       const result = await neonHelper.query(
         `INSERT INTO job_bundles 
-        (title, subtitle, content, job_ids, priority, start_time, end_time, visibility, is_active, allowed_user_ids, allowed_emails, career_items)
-        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb)
+        (title, subtitle, content, job_ids, priority, start_time, end_time, visibility, is_active, allowed_user_ids, allowed_emails, career_items, job_snapshots)
+        VALUES ($1, $2, $3, $4::jsonb, $5, $6, $7, $8, $9, $10::jsonb, $11::jsonb, $12::jsonb, $13::jsonb)
         RETURNING *`,
         [
           String(title).trim().slice(0, 255),
@@ -319,7 +337,8 @@ export default async function handler(req, res) {
           is_active !== undefined ? is_active : true,
           JSON.stringify(selectedUsers.map((user) => user.user_id)),
           JSON.stringify(selectedUsers.map((user) => user.email)),
-          JSON.stringify(normalizeCareerItems(career_items))
+          JSON.stringify(normalizeCareerItems(career_items)),
+          JSON.stringify(jobSnapshots)
         ]
       );
 
@@ -351,6 +370,9 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: '结束时间需要晚于开始时间' });
       }
       const publishableJobIds = job_ids === undefined ? undefined : await assertPublishableJobIds(job_ids);
+      const jobSnapshots = publishableJobIds === undefined
+        ? undefined
+        : await buildJobSnapshots(publishableJobIds, previous[0].job_snapshots || {});
 
       // Build dynamic update query
       const fields = [];
@@ -360,7 +382,10 @@ export default async function handler(req, res) {
       if (title !== undefined) { fields.push(`title = $${idx++}`); values.push(title); }
       if (subtitle !== undefined) { fields.push(`subtitle = $${idx++}`); values.push(subtitle); }
       if (content !== undefined) { fields.push(`content = $${idx++}`); values.push(content); }
-      if (publishableJobIds !== undefined) { fields.push(`job_ids = $${idx++}`); values.push(JSON.stringify(publishableJobIds)); }
+      if (publishableJobIds !== undefined) {
+        fields.push(`job_ids = $${idx++}::jsonb`); values.push(JSON.stringify(publishableJobIds));
+        fields.push(`job_snapshots = $${idx++}::jsonb`); values.push(JSON.stringify(jobSnapshots));
+      }
       if (priority !== undefined) { fields.push(`priority = $${idx++}`); values.push(priority); }
       if (start_time !== undefined) { fields.push(`start_time = $${idx++}`); values.push(start_time); }
       if (end_time !== undefined) { fields.push(`end_time = $${idx++}`); values.push(end_time); }

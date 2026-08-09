@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Edit3, Trash2, Search, X, Check, Copy, BookOpen, Video, Users, Loader2 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import './AdminJobBundles.css';
@@ -78,6 +78,7 @@ const AdminJobBundles: React.FC = () => {
   const [selectedAllowedUsers, setSelectedAllowedUsers] = useState<RegisteredUser[]>([]);
   const [searchingAllowedUsers, setSearchingAllowedUsers] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const deepLinkedBundleRef = useRef<number | null>(null);
 
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -208,6 +209,17 @@ const AdminJobBundles: React.FC = () => {
     fetchJobDetails(bundle.job_ids || []);
     setIsEditing(true);
   };
+
+  useEffect(() => {
+    const bundleId = Number(new URLSearchParams(window.location.search).get('bundleId'));
+    if (!Number.isInteger(bundleId) || bundleId <= 0 || loading || deepLinkedBundleRef.current === bundleId) return;
+    const target = bundles.find(bundle => bundle.id === bundleId);
+    if (!target) return;
+    deepLinkedBundleRef.current = bundleId;
+    handleEdit(target);
+  // handleEdit deliberately uses the current bundle snapshot loaded above; reopening is guarded by the ref.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bundles, loading]);
 
   const handleCreate = () => {
     setSaveError('');
