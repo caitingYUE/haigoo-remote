@@ -1208,13 +1208,32 @@ export default function AdminTrustedCompaniesPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">评分来源</label>
+                                    <div className="mb-1 flex items-center justify-between gap-3">
+                                        <label className="block text-sm font-medium text-gray-700">评分来源</label>
+                                        <div className="flex items-center gap-1.5" aria-label="评分来源快捷选项">
+                                            {['Glassdoor', 'TrustPilot'].map(source => (
+                                                <button
+                                                    key={source}
+                                                    type="button"
+                                                    aria-pressed={formData.ratingSource === source}
+                                                    onClick={() => setFormData({ ...formData, ratingSource: source })}
+                                                    className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                                                        formData.ratingSource === source
+                                                            ? 'border-indigo-300 bg-indigo-50 text-indigo-700'
+                                                            : 'border-gray-200 bg-white text-gray-600 hover:border-indigo-200 hover:text-indigo-700'
+                                                    }`}
+                                                >
+                                                    {source}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
                                     <input
                                         type="text"
                                         value={formData.ratingSource || ''}
                                         onChange={e => setFormData({ ...formData, ratingSource: e.target.value })}
                                         className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
-                                        placeholder="e.g. Glassdoor, Blind"
+                                        placeholder="可手动输入其他来源"
                                     />
                                 </div>
                             </div>

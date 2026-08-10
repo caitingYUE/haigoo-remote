@@ -20,11 +20,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const draft = await saveXiaohongshuDraft(req.body || {}, admin)
+    const result = await saveXiaohongshuDraft(req.body || {}, admin)
     return res.status(200).json({
       success: true,
       templateVersion: DRAFT_TEMPLATE_VERSION,
-      draft
+      ...result
     })
   } catch (error) {
     console.error('[admin content push draft] error:', error)
