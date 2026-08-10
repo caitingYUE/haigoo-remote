@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { buildAttentionReasons, deriveMembershipState, isConfirmedApplication } from './api/admin/member-crm.js'
+import { buildAttentionReasons, deriveMembershipState, encodeDbFile, isConfirmedApplication, sanitizeDbText } from './api/admin/member-crm.js'
 
 const now = new Date('2026-08-09T00:00:00.000Z')
 
@@ -22,5 +22,8 @@ assert.equal(isConfirmedApplication({ interaction_type: 'pending_apply', status:
 assert.equal(isConfirmedApplication({ interaction_type: 'pending_apply', status: 'applied' }), true)
 assert.equal(isConfirmedApplication({ interaction_type: 'referral', status: 'applied' }), true)
 assert.equal(isConfirmedApplication({ current_status: 'interviewing' }), true)
+
+assert.equal(sanitizeDbText(`A${String.fromCharCode(0)}B`), 'AB')
+assert.equal(encodeDbFile(Buffer.from([0, 1, 2, 255])), 'AAEC/w==')
 
 console.log('Member CRM status policy tests passed')

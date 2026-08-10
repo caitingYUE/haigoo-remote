@@ -16,6 +16,15 @@ const APPLICATION_STATUSES = [
   'entry_opened', 'pending', 'pending_apply', 'applied', 'reviewed', 'referred',
   'interviewing', 'offer', 'success', 'rejected', 'failed', 'withdrawn', 'closed'
 ]
+const SERVICE_FLOW = [
+  ['resume_diagnosis', '简历诊断和评估方案'],
+  ['job_recommendation', '岗位推荐与准备材料'],
+  ['custom_resume', '定制简历优化'],
+  ['consultation', '一对一语音咨询'],
+  ['application_followup', '申请跟进'],
+  ['supplemental', '其他补充服务']
+]
+const SERVICE_FLOW_TYPES = SERVICE_FLOW.map(([key]) => key)
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024
 const userIdSchema = z.string().trim().min(1).max(255)
 const FILE_TYPES = {
@@ -145,6 +154,17 @@ export function isConfirmedApplication(application) {
 
 function mapListRow(row) {
   const membershipState = deriveMembershipState(row)
+  const latestByType = new Map(parseJson(row.service_flow_snapshot, []).map((item) => [item.serviceType, item]))
+  const serviceFlow = SERVICE_FLOW.map(([key, label]) => {
+    const record = latestByType.get(key) || {}
+    return { key, label, status: record.status || 'not_started', completed: Boolean(record.completed), title: record.title || '', updatedAt: record.updatedAt || null }
+  })
+  const completedFlowCount = serviceFlow.filter((item) => item.completed).length
+  const currentFlow = serviceFlow.find((item) => ['planned', 'scheduled', 'in_progress'].includes(item.status)) || null
+  const currentIndex = currentFlow ? serviceFlow.indexOf(currentFlow) : -1
+  const nextFlow = (currentIndex >= 0
+    ? serviceFlow.slice(currentIndex + 1).find((item) => !item.completed)
+    : serviceFlow.find((item) => !item.completed)) || null
   const item = {
     userId: String(row.user_id),
     email: row.email || '',
@@ -163,6 +183,13 @@ function mapListRow(row) {
     activeRecommendationCount: toNumber(row.active_recommendation_count),
     unavailableRecommendationCount: toNumber(row.unavailable_recommendation_count),
     pendingServiceCount: toNumber(row.pending_service_count),
+    serviceFlow,
+    completedFlowCount,
+    currentServiceLabel: currentFlow?.label || (completedFlowCount === SERVICE_FLOW.length ? '全部完成' : ''),
+    nextServiceLabel: nextFlow?.label || '',
+    crmExcluded: Boolean(row.crm_excluded),
+    crmExcludedAt: row.crm_excluded_at || null,
+    crmExclusionReason: row.crm_exclusion_reason || '',
     hasServicePlan: Boolean(String(row.service_plan || '').trim())
   }
   return { ...item, attentionReasons: buildAttentionReasons(item) }
@@ -194,11 +221,14 @@ async function listMembers(req) {
   const membershipState = String(req.query.membershipState || 'all')
   const serviceStage = String(req.query.serviceStage || 'all')
   const attention = String(req.query.attention || 'all')
+  const visibility = ['active', 'excluded', 'all'].includes(String(req.query.visibility)) ? String(req.query.visibility) : 'active'
   const search = String(req.query.search || '').trim().toLowerCase()
   const allowedTypes = includeLegacy ? ALL_CRM_TYPES : CLUB_TYPES
 
   const params = [allowedTypes]
   const where = ['member_type = ANY($1)']
+  if (visibility === 'active') where.push('crm_excluded = FALSE')
+  if (visibility === 'excluded') where.push('crm_excluded = TRUE')
   if (memberType !== 'all' && ALL_CRM_TYPES.includes(memberType)) {
     params.push(memberType); where.push(`member_type = $${params.length}`)
   }
@@ -224,6 +254,8 @@ async function listMembers(req) {
         COALESCE(u.profile->>'fullName', '') AS full_name,
         COALESCE(crm.service_stage, 'not_started') AS service_stage,
         crm.last_contact_at, crm.next_follow_up_at, COALESCE(crm.service_plan, '') AS service_plan,
+        (excluded.user_id IS NOT NULL) AS crm_excluded, excluded.excluded_at AS crm_excluded_at,
+        COALESCE(excluded.reason, '') AS crm_exclusion_reason,
         CASE
           WHEN u.member_cycle_start_at IS NOT NULL AND u.member_expire_at IS NOT NULL AND u.member_cycle_start_at >= u.member_expire_at THEN 'anomaly'
           WHEN u.member_status = 'expired' OR (u.member_expire_at IS NOT NULL AND u.member_expire_at <= NOW()) THEN 'expired'
@@ -236,8 +268,10 @@ async function listMembers(req) {
         COALESCE(rec.active_count, 0)::int AS active_recommendation_count,
         COALESCE(rec.unavailable_count, 0)::int AS unavailable_recommendation_count,
         COALESCE(service.pending_count, 0)::int AS pending_service_count
+        , COALESCE(service.flow_snapshot, '[]'::jsonb) AS service_flow_snapshot
       FROM users u
       LEFT JOIN member_crm_profiles crm ON crm.user_id = u.user_id
+      LEFT JOIN member_crm_exclusions excluded ON excluded.user_id = u.user_id
       LEFT JOIN LATERAL (
         SELECT COUNT(*)::int AS application_count
         FROM user_job_interactions i
@@ -260,16 +294,42 @@ async function listMembers(req) {
           AND (COALESCE(b.allowed_user_ids, '[]'::jsonb) ? u.user_id::text OR COALESCE(b.allowed_emails, '[]'::jsonb) ? LOWER(u.email))
       ) rec ON TRUE
       LEFT JOIN LATERAL (
-        SELECT COUNT(*)::int AS pending_count FROM member_crm_service_records s
-        WHERE s.user_id = u.user_id AND s.archived_at IS NULL AND s.status NOT IN ('completed', 'cancelled')
+        SELECT
+          (SELECT COUNT(*)::int FROM member_crm_service_records pending
+            WHERE pending.user_id = u.user_id AND pending.archived_at IS NULL
+              AND pending.status NOT IN ('completed', 'cancelled')) AS pending_count,
+          (SELECT COALESCE(jsonb_agg(jsonb_build_object(
+              'serviceType', latest.service_type, 'title', latest.title,
+              'status', latest.status, 'completed', latest.completed, 'updatedAt', latest.updated_at
+            ) ORDER BY latest.updated_at DESC), '[]'::jsonb)
+            FROM (
+              SELECT record.service_type,
+                (array_agg(record.title ORDER BY
+                  CASE WHEN record.status IN ('in_progress','scheduled','planned') THEN 0
+                       WHEN record.status='completed' THEN 1 ELSE 2 END,
+                  record.updated_at DESC))[1] AS title,
+                (array_agg(record.status ORDER BY
+                  CASE WHEN record.status IN ('in_progress','scheduled','planned') THEN 0
+                       WHEN record.status='completed' THEN 1 ELSE 2 END,
+                  record.updated_at DESC))[1] AS status,
+                BOOL_OR(record.status='completed') AS completed,
+                (array_agg(record.updated_at ORDER BY
+                  CASE WHEN record.status IN ('in_progress','scheduled','planned') THEN 0
+                       WHEN record.status='completed' THEN 1 ELSE 2 END,
+                  record.updated_at DESC))[1] AS updated_at
+              FROM member_crm_service_records record
+              WHERE record.user_id = u.user_id AND record.archived_at IS NULL
+                AND record.service_type = ANY($3)
+              GROUP BY record.service_type
+            ) latest) AS flow_snapshot
       ) service ON TRUE
     )`
 
-  const baseParams = [allowedTypes, APPLICATION_TYPES]
+  const baseParams = [allowedTypes, APPLICATION_TYPES, SERVICE_FLOW_TYPES]
   const dynamicParams = params.slice(1)
   const remappedWhere = where.map((clause) => clause.replace(/\$(\d+)/g, (_, raw) => {
     const n = Number(raw)
-    return n === 1 ? '$1' : `$${n + 1}`
+    return n === 1 ? '$1' : `$${n + 2}`
   }))
   const allParams = [...baseParams, ...dynamicParams]
   const whereSql = remappedWhere.join(' AND ')
@@ -287,7 +347,7 @@ async function listMembers(req) {
       COUNT(*) FILTER (WHERE member_type = ANY($1) AND membership_state = 'expiring')::int AS expiring,
       COUNT(*) FILTER (WHERE member_type = ANY($1) AND next_follow_up_at IS NOT NULL AND next_follow_up_at <= NOW())::int AS follow_up_due,
       COUNT(*) FILTER (WHERE member_type = ANY($1) AND unavailable_recommendation_count > 0)::int AS recommendation_attention
-      FROM base`, [CLUB_TYPES, APPLICATION_TYPES])
+      FROM base WHERE crm_excluded = FALSE`, [CLUB_TYPES, APPLICATION_TYPES, SERVICE_FLOW_TYPES])
   ])
   const total = toNumber(countRows?.[0]?.total)
   const summary = summaryRows?.[0] || {}
@@ -321,8 +381,16 @@ async function getMemberDetail(userId, canEdit) {
   if (!row) return null
 
   const [serviceRows, entitlementRows, userResumeRows, crmResumeRows, siteRows, manualRows, eventRows, bundleRows, auditRows] = await Promise.all([
-    neonHelper.query(`SELECT s.*, COALESCE(admin.username, admin.email, '') AS created_by_name
+    neonHelper.query(`SELECT s.*, COALESCE(admin.username, admin.email, '') AS created_by_name,
+      COALESCE(documents.items, '[]'::jsonb) AS documents
       FROM member_crm_service_records s LEFT JOIN users admin ON admin.user_id = s.created_by
+      LEFT JOIN LATERAL (
+        SELECT jsonb_agg(jsonb_build_object(
+          'id', d.id, 'fileName', d.file_name, 'fileType', d.file_type,
+          'fileSize', d.file_size, 'notes', d.notes, 'createdAt', d.created_at
+        ) ORDER BY d.created_at DESC) AS items
+        FROM member_crm_service_documents d WHERE d.service_record_id=s.id
+      ) documents ON TRUE
       WHERE s.user_id = $1 AND s.archived_at IS NULL ORDER BY COALESCE(s.completed_at, s.scheduled_at, s.created_at) DESC`, [userId]),
     neonHelper.query(`SELECT d.entitlement_key, d.name, d.description, d.default_status, d.default_total_quota,
       e.status, e.total_quota, e.used_quota, e.remaining_quota, e.expires_at, e.metadata, e.notes
@@ -446,7 +514,7 @@ async function getMemberDetail(userId, canEdit) {
       id: item.id, userId: item.user_id, entitlementKey: item.entitlement_key || null, serviceType: item.service_type,
       title: item.title, status: item.status, scheduledAt: item.scheduled_at || null, completedAt: item.completed_at || null,
       details: item.details || '', outcome: item.outcome || '', createdAt: item.created_at, updatedAt: item.updated_at,
-      createdByName: item.created_by_name || ''
+      createdByName: item.created_by_name || '', documents: parseJson(item.documents, [])
     })),
     applications,
     userResumes: (userResumeRows || []).map((item) => ({
@@ -468,13 +536,29 @@ async function getMemberDetail(userId, canEdit) {
   }
 }
 
-async function parseMultipart(req) {
+export function sanitizeDbText(value) {
+  return String(value || '').split(String.fromCharCode(0)).join('').trim()
+}
+
+export function encodeDbFile(buffer) {
+  return Buffer.from(buffer || []).toString('base64')
+}
+
+function decodeDbFile(value) {
+  if (Buffer.isBuffer(value)) return value
+  if (value instanceof Uint8Array) return Buffer.from(value)
+  const text = String(value || '')
+  if (text.startsWith('\\x')) return Buffer.from(text.slice(2), 'hex')
+  return Buffer.from(text, 'base64')
+}
+
+async function parseMultipart(req, entityLabel = '文件') {
   return new Promise((resolve, reject) => {
     const chunks = []
     let total = 0
     req.on('data', (chunk) => {
       total += chunk.length
-      if (total > MAX_UPLOAD_BYTES + 1024 * 128) return reject(new Error('简历文件不能超过 10MB'))
+      if (total > MAX_UPLOAD_BYTES + 1024 * 128) return reject(new Error(`${entityLabel}不能超过 10MB`))
       chunks.push(chunk)
     })
     req.on('error', reject)
@@ -495,14 +579,19 @@ async function parseMultipart(req) {
           if (body.endsWith('\r\n')) body = body.slice(0, -2)
           const name = header.match(/name="([^"]+)"/)?.[1]
           if (!name) continue
-          const fileName = header.match(/filename="([^"]*)"/)?.[1]
-          if (fileName !== undefined) {
-            file = { fileName: path.basename(fileName), buffer: Buffer.from(body, 'binary') }
+          const rawFileName = header.match(/filename="([^"]*)"/)?.[1]
+          const encodedFileName = header.match(/filename\*=UTF-8''([^;\r\n]+)/i)?.[1]
+          if (rawFileName !== undefined || encodedFileName !== undefined) {
+            let decodedFileName = ''
+            try {
+              decodedFileName = encodedFileName ? decodeURIComponent(encodedFileName) : Buffer.from(rawFileName || '', 'binary').toString('utf8')
+            } catch { decodedFileName = rawFileName || '' }
+            file = { fileName: path.basename(sanitizeDbText(decodedFileName)), buffer: Buffer.from(body, 'binary') }
           } else {
-            fields[name] = Buffer.from(body, 'binary').toString('utf8')
+            fields[name] = sanitizeDbText(Buffer.from(body, 'binary').toString('utf8'))
           }
         }
-        if (!file?.buffer?.length) throw new Error('请选择简历文件')
+        if (!file?.buffer?.length) throw new Error(`请选择${entityLabel}`)
         resolve({ ...file, fields })
       } catch (error) { reject(error) }
     })
@@ -511,14 +600,16 @@ async function parseMultipart(req) {
 
 async function extractResumeText(buffer, extension) {
   try {
-    if (extension === 'txt') return { status: 'success', text: buffer.toString('utf8').trim() }
+    if (extension === 'txt') return { status: 'success', text: sanitizeDbText(buffer.toString('utf8')) }
     if (extension === 'docx') {
       const result = await mammoth.extractRawText({ buffer })
-      return { status: result.value.trim() ? 'success' : 'partial', text: result.value.trim() }
+      const text = sanitizeDbText(result.value)
+      return { status: text ? 'success' : 'partial', text }
     }
     if (extension === 'pdf') {
       const result = await pdfParse(buffer)
-      return { status: String(result.text || '').trim() ? 'success' : 'partial', text: String(result.text || '').trim() }
+      const text = sanitizeDbText(result.text)
+      return { status: text ? 'success' : 'partial', text }
     }
   } catch (error) {
     console.warn('[member-crm] Resume parse failed:', error.message)
@@ -534,14 +625,16 @@ export default async function handler(req, res) {
   if (!neonHelper.isConfigured) return res.status(503).json({ success: false, error: 'Database not configured' })
 
   const resource = String(req.query?.resource || 'members')
-  const isWrite = req.method !== 'GET' || resource === 'resume-file'
-  const auth = await requireAdmin(req, res, { write: isWrite && resource !== 'resume-file' })
+  const fileReadResources = ['resume-file', 'service-document-file']
+  const isWrite = req.method !== 'GET' || fileReadResources.includes(resource)
+  const auth = await requireAdmin(req, res, { write: isWrite && !fileReadResources.includes(resource) })
   if (!auth) return
   const adminId = auth.user.user_id || auth.user.userId
 
   try {
-    if (isWrite && resource !== 'resume-file') {
-      const targetUserId = userIdSchema.parse(req.method === 'DELETE' || resource === 'resumes'
+    if (isWrite && !fileReadResources.includes(resource)) {
+      const queryUserResources = ['resumes', 'service-documents']
+      const targetUserId = userIdSchema.parse(req.method === 'DELETE' || queryUserResources.includes(resource)
         ? req.query?.userId
         : req.body?.userId)
       if (!(await isCrmMember(targetUserId))) {
@@ -556,6 +649,36 @@ export default async function handler(req, res) {
       const detail = await getMemberDetail(userId, auth.canEdit)
       if (!detail) return res.status(404).json({ success: false, error: '会员不存在或不在 CRM 范围内' })
       return res.status(200).json({ success: true, data: detail })
+    }
+    if (req.method === 'PATCH' && resource === 'member-visibility') {
+      const input = z.object({
+        userId: userIdSchema,
+        action: z.enum(['exclude', 'restore']),
+        reason: z.string().trim().max(500).optional().default('')
+      }).parse(req.body || {})
+      if (input.action === 'exclude') {
+        await neonHelper.query(`WITH saved AS (
+            INSERT INTO member_crm_exclusions (user_id,reason,excluded_by)
+            VALUES ($1,$2,$3)
+            ON CONFLICT (user_id) DO UPDATE SET reason=EXCLUDED.reason,
+              excluded_by=EXCLUDED.excluded_by, excluded_at=NOW(), updated_at=NOW()
+            RETURNING user_id
+          ), audit_saved AS (
+            INSERT INTO member_crm_audit_log
+              (target_user_id,admin_user_id,action,entity_type,entity_id,metadata)
+            SELECT $1,$3,'member_excluded_from_crm','member',$1,
+              jsonb_build_object('reason',$2) FROM saved
+          ) SELECT user_id FROM saved`, [input.userId, input.reason, adminId])
+      } else {
+        await neonHelper.query(`WITH saved AS (
+            DELETE FROM member_crm_exclusions WHERE user_id=$1 RETURNING user_id
+          ), audit_saved AS (
+            INSERT INTO member_crm_audit_log
+              (target_user_id,admin_user_id,action,entity_type,entity_id)
+            SELECT $1,$2,'member_restored_to_crm','member',$1 FROM saved
+          ) SELECT user_id FROM saved`, [input.userId, adminId])
+      }
+      return res.status(200).json({ success: true, data: { userId: input.userId, excluded: input.action === 'exclude' } })
     }
     if (req.method === 'PATCH' && resource === 'profile') {
       const input = profileSchema.parse(req.body || {})
@@ -786,7 +909,7 @@ export default async function handler(req, res) {
     }
     if (req.method === 'POST' && resource === 'resumes') {
       const userId = userIdSchema.parse(req.query.userId)
-      const parsed = await parseMultipart(req)
+      const parsed = await parseMultipart(req, '简历')
       const extension = path.extname(parsed.fileName).toLowerCase().slice(1)
       if (!Object.prototype.hasOwnProperty.call(FILE_TYPES, extension)) return res.status(415).json({ success: false, error: '仅支持 PDF、DOCX、TXT 简历' })
       if (parsed.buffer.length > MAX_UPLOAD_BYTES) return res.status(413).json({ success: false, error: '简历文件不能超过 10MB' })
@@ -798,7 +921,7 @@ export default async function handler(req, res) {
       const rows = await neonHelper.query(`WITH saved AS (
           INSERT INTO member_crm_resume_documents
             (user_id, file_name, file_type, mime_type, file_size, file_content, parse_status, content_text, notes, uploaded_by)
-          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+          VALUES ($1,$2,$3,$4,$5,decode($6,'base64'),$7,$8,$9,$10)
           RETURNING id, file_name, file_type, file_size, parse_status, notes, created_at
         ), audit_saved AS (
           INSERT INTO member_crm_audit_log
@@ -806,9 +929,41 @@ export default async function handler(req, res) {
           SELECT $1,$10,'resume_uploaded','resume',saved.id,
             jsonb_build_object('fileName',$2,'fileSize',$5) FROM saved
         ) SELECT saved.* FROM saved`,
-        [userId, parsed.fileName, extension, FILE_TYPES[extension], parsed.buffer.length, parsed.buffer,
-          extracted.status, extracted.text, String(parsed.fields.notes || '').slice(0, 5000), adminId])
+        [userId, sanitizeDbText(parsed.fileName), extension, FILE_TYPES[extension], parsed.buffer.length, encodeDbFile(parsed.buffer),
+          extracted.status, sanitizeDbText(extracted.text), sanitizeDbText(parsed.fields.notes).slice(0, 5000), adminId])
       return res.status(201).json({ success: true, data: rows[0] })
+    }
+    if (req.method === 'POST' && resource === 'service-documents') {
+      const userId = userIdSchema.parse(req.query.userId)
+      const serviceId = z.string().uuid().parse(req.query.serviceId)
+      const target = await neonHelper.query(`SELECT id FROM member_crm_service_records
+        WHERE id=$1 AND user_id=$2 AND archived_at IS NULL`, [serviceId, userId])
+      if (!target?.[0]) return res.status(404).json({ success: false, error: '服务记录不存在' })
+      const parsed = await parseMultipart(req, '服务文档')
+      const extension = path.extname(parsed.fileName).toLowerCase().slice(1)
+      if (!Object.prototype.hasOwnProperty.call(FILE_TYPES, extension)) return res.status(415).json({ success: false, error: '服务文档仅支持 PDF、DOCX、TXT' })
+      if (parsed.buffer.length > MAX_UPLOAD_BYTES) return res.status(413).json({ success: false, error: '服务文档不能超过 10MB' })
+      if (extension !== 'txt') {
+        const detected = await fileTypeFromBuffer(parsed.buffer)
+        if (!detected || detected.ext !== extension) return res.status(415).json({ success: false, error: '文件内容与扩展名不一致' })
+      }
+      const rows = await neonHelper.query(`WITH saved AS (
+          INSERT INTO member_crm_service_documents
+            (service_record_id,user_id,file_name,file_type,mime_type,file_size,file_content,notes,uploaded_by)
+          VALUES ($1,$2,$3,$4,$5,$6,decode($7,'base64'),$8,$9)
+          RETURNING id,file_name,file_type,file_size,notes,created_at
+        ), audit_saved AS (
+          INSERT INTO member_crm_audit_log
+            (target_user_id,admin_user_id,action,entity_type,entity_id,metadata)
+          SELECT $2,$9,'service_document_uploaded','service_document',saved.id,
+            jsonb_build_object('serviceId',$1,'fileName',$3,'fileSize',$6) FROM saved
+        ) SELECT saved.* FROM saved`, [serviceId, userId, sanitizeDbText(parsed.fileName), extension,
+        FILE_TYPES[extension], parsed.buffer.length, encodeDbFile(parsed.buffer), sanitizeDbText(parsed.fields.notes).slice(0, 2000), adminId])
+      const saved = rows[0]
+      return res.status(201).json({ success: true, data: {
+        id: saved.id, fileName: saved.file_name, fileType: saved.file_type, fileSize: saved.file_size,
+        notes: saved.notes || '', createdAt: saved.created_at
+      } })
     }
     if (req.method === 'GET' && resource === 'resume-file') {
       const id = z.string().uuid().parse(req.query.id)
@@ -821,7 +976,21 @@ export default async function handler(req, res) {
       res.setHeader('Content-Type', file.mime_type || 'application/octet-stream')
       res.setHeader('X-Content-Type-Options', 'nosniff')
       res.setHeader('Content-Disposition', `${disposition}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(file.file_name)}`)
-      return res.send(file.file_content)
+      return res.send(decodeDbFile(file.file_content))
+    }
+    if (req.method === 'GET' && resource === 'service-document-file') {
+      const id = z.string().uuid().parse(req.query.id)
+      const rows = await neonHelper.query(`SELECT user_id,file_name,mime_type,file_content
+        FROM member_crm_service_documents WHERE id=$1`, [id])
+      const file = rows?.[0]
+      if (!file) return res.status(404).json({ success: false, error: '服务文档不存在' })
+      await writeAudit({ targetUserId: file.user_id, adminUserId: adminId, action: 'service_document_downloaded', entityType: 'service_document', entityId: id, metadata: { fileName: file.file_name } })
+      const disposition = req.query.disposition === 'inline' ? 'inline' : 'attachment'
+      const ascii = String(file.file_name).replace(/[^\x20-\x7E]+/g, '_').replace(/["\\]/g, '_') || `service-document-${id}`
+      res.setHeader('Content-Type', file.mime_type || 'application/octet-stream')
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      res.setHeader('Content-Disposition', `${disposition}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(file.file_name)}`)
+      return res.send(decodeDbFile(file.file_content))
     }
     if (req.method === 'DELETE' && resource === 'resumes') {
       const userId = userIdSchema.parse(req.query.userId)
@@ -838,9 +1007,32 @@ export default async function handler(req, res) {
       if (!rows?.[0]) return res.status(404).json({ success: false, error: '简历不存在' })
       return res.status(200).json({ success: true, data: { id } })
     }
+    if (req.method === 'DELETE' && resource === 'service-documents') {
+      const userId = userIdSchema.parse(req.query.userId)
+      const id = z.string().uuid().parse(req.query.id)
+      const rows = await neonHelper.query(`WITH saved AS (
+          DELETE FROM member_crm_service_documents WHERE id=$1 AND user_id=$2
+          RETURNING id,file_name,file_size,service_record_id
+        ), audit_saved AS (
+          INSERT INTO member_crm_audit_log
+            (target_user_id,admin_user_id,action,entity_type,entity_id,metadata)
+          SELECT $2,$3,'service_document_deleted','service_document',saved.id,
+            jsonb_build_object('serviceId',saved.service_record_id,'fileName',saved.file_name,'fileSize',saved.file_size)
+          FROM saved
+        ) SELECT saved.* FROM saved`, [id, userId, adminId])
+      if (!rows?.[0]) return res.status(404).json({ success: false, error: '服务文档不存在' })
+      return res.status(200).json({ success: true, data: { id } })
+    }
     return res.status(405).json({ success: false, error: 'Method not allowed' })
   } catch (error) {
     if (error instanceof z.ZodError) return res.status(400).json({ success: false, error: error.issues[0]?.message || '数据格式错误' })
+    const inputMessage = error instanceof Error ? error.message : ''
+    if (inputMessage === '上传格式无效' || inputMessage.startsWith('请选择')) {
+      return res.status(400).json({ success: false, error: inputMessage })
+    }
+    if (inputMessage.endsWith('不能超过 10MB')) {
+      return res.status(413).json({ success: false, error: inputMessage })
+    }
     console.error('[member-crm] API error:', error)
     return res.status(500).json({ success: false, error: '会员 CRM 暂时不可用，请稍后重试' })
   }

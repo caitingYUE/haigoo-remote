@@ -36,7 +36,30 @@ export interface MemberCrmListItem {
   activeRecommendationCount: number
   unavailableRecommendationCount: number
   pendingServiceCount: number
+  serviceFlow: Array<{
+    key: string
+    label: string
+    status: CrmServiceStatus | 'not_started'
+    completed: boolean
+    title: string
+    updatedAt: string | null
+  }>
+  completedFlowCount: number
+  currentServiceLabel: string
+  nextServiceLabel: string
+  crmExcluded: boolean
+  crmExcludedAt: string | null
+  crmExclusionReason: string
   attentionReasons: string[]
+}
+
+export interface CrmServiceDocument {
+  id: string
+  fileName: string
+  fileType: string
+  fileSize: number
+  notes: string
+  createdAt: string
 }
 
 export interface CrmServiceRecord {
@@ -53,6 +76,7 @@ export interface CrmServiceRecord {
   createdAt: string
   updatedAt: string
   createdByName?: string
+  documents: CrmServiceDocument[]
 }
 
 export interface CrmEntitlement {
@@ -104,6 +128,89 @@ export interface CrmResumeDocument {
   parseStatus: string
   notes?: string
   createdAt: string
+}
+
+export type CrmCareerRunStatus = 'running' | 'completed' | 'failed' | 'cancelled'
+export type CrmCareerArtifactStatus = 'draft' | 'approved' | 'archived'
+
+export interface CrmCareerEvidenceItem {
+  id: string
+  category: string
+  statement: string
+  sourceExcerpt: string
+  grade: 'A' | 'B' | 'C' | 'D' | 'U'
+}
+
+export interface CrmCareerPath {
+  roleName: string
+  whyFit: string
+  evidenceIds: string[]
+  mainGaps: string[]
+  preparationActions: string[]
+  confidence: 'high' | 'medium' | 'low'
+}
+
+export interface CrmResumeDiagnosisContent {
+  schemaVersion: 'member-crm-resume-diagnosis-v1'
+  summary: { headline: string; positioning: string; consultantBrief: string }
+  evidenceLedger: CrmCareerEvidenceItem[]
+  strengths: Array<{ title: string; explanation: string; confidence: string; evidenceIds: string[] }>
+  findings: Array<{
+    category: string; severity: 'high' | 'medium' | 'low'; title: string
+    detail: string; recommendation: string; evidenceIds: string[]
+  }>
+  candidateProfile: {
+    headline: string; seniority: 'entry' | 'mid' | 'senior_ic' | 'manager' | 'director' | 'uncertain'; primaryFunctions: string[]; transferableSkills: string[]
+    domainAssets: string[]; workStyleStrengths: string[]; languages: string[]; tools: string[]
+    targetRolesNow: string[]; targetRolesBridge: string[]; targetRolesLater: string[]
+    evidenceGaps: string[]; unverifiedClaims: string[]
+  }
+  careerPaths: { now: CrmCareerPath[]; bridge: CrmCareerPath[]; later: CrmCareerPath[] }
+  clarificationQuestions: Array<{ question: string; reason: string; priority: string }>
+  quality: { verifiedEvidenceCount: number; rejectedEvidenceCount: number; warnings: string[] }
+  localProfile: Record<string, unknown>
+}
+
+export interface CrmCareerArtifact {
+  id: string
+  runId: string
+  artifactType: 'resume_diagnosis'
+  version: number
+  status: CrmCareerArtifactStatus
+  content: CrmResumeDiagnosisContent
+  sourceRefs: Record<string, unknown>
+  consultantNotes: string
+  approvedAt: string | null
+  approvedByName: string
+  createdAt: string
+}
+
+export interface CrmCareerRun {
+  id: string
+  userId: string
+  workflowKey: 'resume_diagnosis'
+  status: CrmCareerRunStatus
+  sourceResumeKind: 'crm' | 'user'
+  sourceResumeId: string
+  sourceResumeName: string
+  provider: string
+  model: string
+  tokenUsage: Record<string, number>
+  inputOptions: { includeCrmContext?: boolean; consultantFocus?: string }
+  errorCode: string | null
+  errorMessage: string | null
+  createdAt: string
+  completedAt: string | null
+  cached: boolean
+  deduplicated?: boolean
+  artifact: CrmCareerArtifact | null
+}
+
+export interface CrmCareerWorkspace {
+  modelConfigured: boolean
+  provider: string
+  model: string
+  runs: CrmCareerRun[]
 }
 
 export interface CrmRecommendationJob {

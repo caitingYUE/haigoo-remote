@@ -1,4 +1,7 @@
 import type {
+  CrmCareerArtifact,
+  CrmCareerRun,
+  CrmCareerWorkspace,
   CrmApplication,
   CrmServiceRecord,
   MemberCrmDetail,
@@ -29,6 +32,28 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   })
   const data = await response.json().catch(() => ({}))
   if (!response.ok || data.success === false) throw new Error(data.error || '会员 CRM 请求失败')
+  return data.data as T
+}
+
+async function careerRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const { token, headers, ...rest } = options
+  const query = new URLSearchParams(path.split('?')[1] || '')
+  const resource = query.get('resource') || 'workspace'
+  const response = await trackingService.trackedFetch(`/api/admin/member-crm-agent${path}`, {
+    ...rest,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(headers || {})
+    }
+  }, {
+    module: 'member_crm',
+    feature_key: `member_crm_agent_${resource}`,
+    entity_type: 'member',
+    entity_id: query.get('userId') || undefined
+  })
+  const data = await response.json().catch(() => ({}))
+  if (!response.ok || data.success === false) throw new Error(data.error || 'CRM 顾问工具请求失败')
   return data.data as T
 }
 
@@ -63,6 +88,12 @@ export const memberCrmAdminService = {
     })
   },
 
+  setMemberVisibility(userId: string, action: 'exclude' | 'restore', reason = '', token?: string | null) {
+    return request<{ userId: string; excluded: boolean }>('?resource=member-visibility', {
+      method: 'PATCH', token, body: JSON.stringify({ userId, action, reason })
+    })
+  },
+
   saveService(userId: string, service: Partial<CrmServiceRecord>, token?: string | null) {
     return request<CrmServiceRecord>('?resource=services', {
       method: service.id ? 'PATCH' : 'POST', token, body: JSON.stringify({ userId, ...service })
@@ -73,6 +104,24 @@ export const memberCrmAdminService = {
     return request<{ id: string }>(`?resource=services&userId=${encodeURIComponent(userId)}&id=${encodeURIComponent(id)}`, {
       method: 'DELETE', token
     })
+  },
+
+  uploadServiceDocument(userId: string, serviceId: string, file: File, notes: string, token?: string | null) {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('notes', notes)
+    const query = new URLSearchParams({ resource: 'service-documents', userId, serviceId })
+    return request(`?${query.toString()}`, { method: 'POST', token, body: formData })
+  },
+
+  getServiceDocumentFile(id: string, token?: string | null, disposition: 'inline' | 'attachment' = 'attachment') {
+    const query = new URLSearchParams({ resource: 'service-document-file', id, disposition })
+    return fileRequest(`/api/admin/member-crm?${query.toString()}`, token)
+  },
+
+  deleteServiceDocument(userId: string, id: string, token?: string | null) {
+    const query = new URLSearchParams({ resource: 'service-documents', userId, id })
+    return request<{ id: string }>(`?${query.toString()}`, { method: 'DELETE', token })
   },
 
   createManualApplication(userId: string, application: Partial<CrmApplication>, token?: string | null) {
@@ -129,5 +178,34 @@ export const memberCrmAdminService = {
 
   getUserResumeFile(id: string, token?: string | null) {
     return fileRequest(`/api/resumes?action=download&id=${encodeURIComponent(id)}`, token)
+  },
+
+  careerWorkspace(userId: string, token?: string | null) {
+    return careerRequest<CrmCareerWorkspace>(`?resource=workspace&userId=${encodeURIComponent(userId)}`, { token })
+  },
+
+  runResumeDiagnosis(payload: {
+    userId: string
+    sourceResumeKind: 'crm' | 'user'
+    sourceResumeId: string
+    includeCrmContext?: boolean
+    consultantFocus?: string
+    force?: boolean
+  }, token?: string | null) {
+    return careerRequest<CrmCareerRun>('?resource=runs', {
+      method: 'POST', token, body: JSON.stringify({ ...payload, workflowKey: 'resume_diagnosis' })
+    })
+  },
+
+  updateCareerArtifact(payload: {
+    userId: string
+    artifactId: string
+    action: 'approve' | 'archive' | 'update_notes' | 'update_profile'
+    consultantNotes?: string
+    candidateProfile?: CrmCareerArtifact['content']['candidateProfile']
+  }, token?: string | null) {
+    return careerRequest<CrmCareerArtifact>('?resource=artifacts', {
+      method: 'PATCH', token, body: JSON.stringify(payload)
+    })
   }
 }
