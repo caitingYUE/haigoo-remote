@@ -263,7 +263,8 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                     job.id === editingJob.id ? { ...job, ...companyScopedUpdate } as ProcessedJobData : job
                 ));
 
-                await dataManagementService.updateProcessedJob(editingJob.id, companyScopedUpdate, 'admin');
+                const saved = await dataManagementService.updateProcessedJob(editingJob.id, companyScopedUpdate, 'admin');
+                if (!saved) throw new Error('职位更新未成功写入');
             } else {
                 // Create new job
                 const newJob = { ...editingJob, ...companyScopedUpdate } as ProcessedJobData;

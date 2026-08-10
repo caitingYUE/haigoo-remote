@@ -409,8 +409,9 @@ export class DataManagementService {
       updatedJob.isManuallyEdited = true;
       updatedJob.updatedAt = new Date().toISOString();
 
-      // 使用 append 模式进行增量更新 (Upsert)，避免覆盖其他数据
-      await this.saveProcessedJobs([updatedJob], 'append');
+      // 编辑保存必须使用显式 upsert。append 仍会经过新岗位的留存窗口筛选，
+      // 会导致管理员编辑较早岗位时请求成功但实际写入 0 条。
+      await this.saveProcessedJobs([updatedJob], 'upsert');
 
       return true;
     } catch (error) {
@@ -539,7 +540,7 @@ export class DataManagementService {
   }
 
   // 私有辅助方法
-  private async saveProcessedJobs(jobs: ProcessedJobData[], mode: 'append' | 'replace' = 'append'): Promise<void> {
+  private async saveProcessedJobs(jobs: ProcessedJobData[], mode: 'append' | 'replace' | 'upsert' = 'append'): Promise<void> {
     try {
       // 分片上传，避免 413（请求体过大）
       const CHUNK_SIZE = 200;
@@ -553,9 +554,16 @@ export class DataManagementService {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ jobs: chunk, mode: chunkMode })
         })
-        if (!resp.ok) {
-          const text = await resp.text()
-          throw new Error(`POST /api/data/processed-jobs failed: ${resp.status} ${text}`)
+        const result = await resp.json().catch(() => null) as {
+          success?: boolean;
+          saved?: number;
+          error?: string;
+        } | null;
+        if (!resp.ok || result?.success === false) {
+          throw new Error(result?.error || `POST /api/data/processed-jobs failed: ${resp.status}`)
+        }
+        if (chunkMode === 'upsert' && result?.saved !== chunk.length) {
+          throw new Error(`岗位更新未完整写入：期望 ${chunk.length} 条，实际 ${result?.saved ?? 0} 条`)
         }
       }
     } catch (error) {
