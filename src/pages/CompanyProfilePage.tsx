@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams } from 'react-router-dom'
-import { Briefcase, CheckCircle, ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Briefcase, Clock3 } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
@@ -10,6 +10,17 @@ import JobDetailModal from '../components/JobDetailModal'
 import { getCompanyLogoSources } from '../utils/company-logo'
 import { useReturnNavigation } from '../hooks/useReturnNavigation'
 import { useLanguage } from '../contexts/LanguageContext'
+
+const formatProfileDate = (value?: string) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    return new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(date)
+}
 
 export default function CompanyProfilePage() {
     const handleBack = useReturnNavigation('/jobs')
@@ -100,167 +111,175 @@ export default function CompanyProfilePage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="hg-company-detail-page min-h-screen pt-28">
+                <div className="haigoo-shell" aria-label={text('正在加载企业资料', 'Loading company profile')} aria-busy="true">
+                    <div className="border-t-2 border-[#101829] py-8">
+                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#52738c]">COMPANY PROFILE</p>
+                        <div className="mt-4 h-10 w-64 animate-pulse bg-[#dfe7e8]" />
+                        <div className="mt-5 h-4 w-full max-w-2xl animate-pulse bg-[#e6e1d8]" />
+                    </div>
+                    <div className="grid gap-6 border-y border-[#d9d3c9] py-8 md:grid-cols-3">
+                        {[0, 1, 2].map(item => <div key={item} className="h-24 animate-pulse bg-[#edf4f8]" />)}
+                    </div>
+                </div>
             </div>
         )
     }
 
     if (!company) {
         return (
-            <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-                <h1 className="text-2xl font-bold text-slate-900 mb-4">{text('未找到该企业', 'Company not found')}</h1>
-                <button type="button" onClick={handleBack} className="text-indigo-600 hover:underline">{text('返回', 'Back')}</button>
+            <div className="hg-company-detail-page flex min-h-screen flex-col items-center justify-center p-4 text-center">
+                <h1 className="font-[var(--hg-font-editorial)] text-3xl font-semibold text-[var(--hg-text-primary)]">{text('未找到该企业', 'Company not found')}</h1>
+                <button type="button" onClick={handleBack} className="mt-5 min-h-11 text-sm font-bold text-[var(--hg-action-brand)]">{text('返回远程企业', 'Back to remote companies')}</button>
             </div>
         )
     }
 
-    return (
-        <div className="min-h-screen bg-[#F0F4F8]">
-            {/* Header / Banner */}
-            <div className="bg-white border-b border-slate-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    <button
-                        onClick={handleBack}
-                        className="inline-flex items-center text-slate-500 hover:text-slate-900 mb-6 transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4 mr-1" />
-                        {text('返回', 'Back')}
-                    </button>
+    const updatedLabel = formatProfileDate(company.updatedAt)
 
-                    <div className="flex flex-col md:flex-row gap-8 items-start">
-                        {/* Logo */}
-                        <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-2xl shadow-sm border border-slate-100 p-2 flex-shrink-0">
+    return (
+        <div className="hg-company-detail-page min-h-screen">
+            <div className="haigoo-shell hg-company-detail hg-company-profile">
+                <button type="button" onClick={handleBack} className="hg-company-detail__back">
+                    <ArrowLeft aria-hidden="true" />
+                    {text('返回远程企业', 'Back to remote companies')}
+                </button>
+
+                <header className="hg-company-detail__hero">
+                    <div className="hg-company-detail__identity">
+                        <div className="hg-company-detail__logo">
                             {logoSrc ? (
                                 <img
                                     src={logoSrc}
                                     alt={company.name}
-                                    className="w-full h-full object-contain rounded-xl"
                                     onError={() => {
                                         if (logoSourceIndex < logoSources.length - 1) {
-                                            setLogoSourceIndex((idx) => idx + 1)
+                                            setLogoSourceIndex((index) => index + 1)
                                         } else {
                                             setLogoSourceIndex(logoSources.length)
                                         }
                                     }}
                                 />
                             ) : (
-                                <div className="w-full h-full bg-indigo-50 rounded-xl flex items-center justify-center text-indigo-600 font-bold text-4xl">
-                                    {company.name.charAt(0)}
-                                </div>
+                                <span aria-hidden="true">{company.name.charAt(0)}</span>
                             )}
                         </div>
-
-                        {/* Info */}
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-3xl font-bold text-slate-900">{company.name}</h1>
-                            </div>
-
-                            <div className="flex flex-wrap gap-4 text-slate-600 mb-6">
-                                {/* Links hidden as per request */}
-                            </div>
-
-                            <p className="text-slate-600 leading-relaxed max-w-3xl">
-                                {company.description || text('暂无详细介绍', 'No company description available.')}
-                            </p>
-
-                            {company.tags && company.tags.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mt-4">
-                                    {company.tags.map((tag, i) => (
-                                        <span key={i} className="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-sm">
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Actions - Hidden */}
-                        <div className="flex flex-col gap-3 w-full md:w-auto">
-                            {/* Careers link removed */}
+                        <div>
+                            <p className="haigoo-editorial-label">{text('COMPANY PROFILE · 企业资料', 'COMPANY PROFILE')}</p>
+                            <h1>{company.name}</h1>
+                            <p className="hg-company-detail__lead">{text('了解企业正在做什么，并查看最近公开的岗位。', 'Learn what the company does and review its latest public openings.')}</p>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            {/* Jobs Section */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="mb-6 flex flex-col lg:flex-row lg:items-end gap-4 lg:justify-between">
-                    <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                        <Briefcase className="w-5 h-5 text-indigo-600" />
-                        {text('在招职位', 'Open roles')} ({jobs.length})
-                    </h2>
-
-                    {/* Search & Filters */}
-                    <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                        {/* Search */}
-                        <div className="flex-1 sm:flex-none">
-                            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2 shadow-sm min-w-[260px]">
-                                <input
-                                    type="text"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder={text('搜索职位名称、地点、类型...', 'Search by title, location, or type...')}
-                                    className="w-full bg-transparent border-none focus:ring-0 text-sm text-slate-700"
-                                />
-                            </div>
+                    <dl className="hg-company-detail__hero-facts">
+                        <div>
+                            <dt>{text('行业', 'Industry')}</dt>
+                            <dd>{company.industry || text('待补充', 'Not available')}</dd>
                         </div>
+                        <div>
+                            <dt>{text('最近整理', 'Last updated')}</dt>
+                            <dd>{updatedLabel || text('待补充', 'Not available')}</dd>
+                        </div>
+                        <div>
+                            <dt>{text('公开在招', 'Public openings')}</dt>
+                            <dd>{(() => {
+                                const roles = [...new Set(jobs.map((job) => String((job as any).category || '').trim()).filter(Boolean))].slice(0, 3)
+                                return roles.length > 0 ? roles.join(' / ') : text('暂未公开', 'Not currently listed')
+                            })()}</dd>
+                        </div>
+                    </dl>
+                </header>
 
-                        {/* Type Filter */}
-                        <select
-                            value={typeFilter}
-                            onChange={e => setTypeFilter(e.target.value as any)}
-                            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 shadow-sm"
-                        >
-                            <option value="all">{text('全部类型', 'All types')}</option>
-                            <option value="full-time">{text('全职', 'Full-time')}</option>
-                            <option value="part-time">{text('兼职', 'Part-time')}</option>
-                            <option value="contract">{text('合同', 'Contract')}</option>
-                            <option value="internship">{text('实习', 'Internship')}</option>
-                        </select>
-
-                        {/* Remote Filter */}
-                        <select
-                            value={remoteFilter}
-                            onChange={e => setRemoteFilter(e.target.value as any)}
-                            className="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-700 shadow-sm"
-                        >
-                            <option value="all">{text('全部地点', 'All locations')}</option>
-                            <option value="remote">{text('仅远程', 'Remote only')}</option>
-                            <option value="onsite">{text('非远程', 'On-site')}</option>
-                        </select>
+                {company.tags && company.tags.length > 0 ? (
+                    <div className="hg-company-detail__taxonomy">
+                        <span>{text('关注方向', 'Focus areas')}</span>
+                        <div>
+                            {company.tags.slice(0, 10).map((tag, index) => (
+                                <span key={String(tag) + index}>{String(tag)}</span>
+                            ))}
+                        </div>
                     </div>
-                </div>
+                ) : null}
 
-                {/* Filtered Jobs */}
-                {filteredJobs.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 min-[900px]:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredJobs.map((job) => (
-                            <JobCardNew
-                                key={job.id}
-                                job={job}
-                                onClick={(job) => setSelectedJob(job)}
-                                className="h-[380px] w-full"
+                <article className="hg-company-profile__about">
+                    <p className="haigoo-editorial-label">{text('ABOUT · 关于企业', 'ABOUT')}</p>
+                    <h2>{text('它们在做什么', 'What the company does')}</h2>
+                    <p>{company.description || text('企业介绍正在整理中。', 'The company profile is being prepared.')}</p>
+                </article>
+
+                <section className="hg-company-detail__jobs" aria-labelledby="company-profile-open-roles">
+                    <header>
+                        <div>
+                            <p className="haigoo-editorial-label">{text('OPEN ROLES · 公开岗位', 'OPEN ROLES')}</p>
+                            <h2 id="company-profile-open-roles">{text('最近公开的岗位', 'Latest public openings')}</h2>
+                        </div>
+                    </header>
+
+                    <div className="hg-company-profile__filters">
+                        <label>
+                            <span>{text('搜索岗位', 'Search roles')}</span>
+                            <input
+                                type="search"
+                                value={searchTerm}
+                                onChange={(event) => setSearchTerm(event.target.value)}
+                                placeholder={text('岗位名称、地点或类型', 'Title, location, or type')}
                             />
-                        ))}
+                        </label>
+                        <label>
+                            <span>{text('工作类型', 'Employment type')}</span>
+                            <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value as typeof typeFilter)}>
+                                <option value="all">{text('全部类型', 'All types')}</option>
+                                <option value="full-time">{text('全职', 'Full-time')}</option>
+                                <option value="part-time">{text('兼职', 'Part-time')}</option>
+                                <option value="contract">{text('合同', 'Contract')}</option>
+                                <option value="internship">{text('实习', 'Internship')}</option>
+                            </select>
+                        </label>
+                        <label>
+                            <span>{text('工作地点', 'Work location')}</span>
+                            <select value={remoteFilter} onChange={(event) => setRemoteFilter(event.target.value as typeof remoteFilter)}>
+                                <option value="all">{text('全部地点', 'All locations')}</option>
+                                <option value="remote">{text('仅远程', 'Remote only')}</option>
+                                <option value="onsite">{text('非远程', 'On-site')}</option>
+                            </select>
+                        </label>
                     </div>
-                ) : (
-                    <div className="bg-white rounded-2xl p-12 text-center border border-dashed border-slate-200">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-400">
-                            <Briefcase className="w-8 h-8" />
+
+                    {filteredJobs.length > 0 ? (
+                        <div className="hg-company-detail__job-list">
+                            {filteredJobs.map((job) => (
+                                <JobCardNew
+                                    key={job.id}
+                                    job={job}
+                                    variant="list"
+                                    onClick={() => setSelectedJob(job)}
+                                    isActive={selectedJob?.id === job.id}
+                                    compactFeatured
+                                    hideMemberBackdrop
+                                />
+                            ))}
                         </div>
-                        <h3 className="text-lg font-medium text-slate-900 mb-1">{text('未找到匹配的职位', 'No matching roles')}</h3>
-                        <p className="text-slate-500">{text('试试调整搜索关键词或筛选条件。', 'Try changing your search or filters.')}</p>
-                    </div>
-                )}
+                    ) : (
+                        <div className="hg-company-detail__jobs-empty">
+                            <Briefcase aria-hidden="true" />
+                            <div>
+                                <h3>{text('没有匹配的公开岗位', 'No matching public openings')}</h3>
+                                <p>{text('试试缩短关键词，或调整一个筛选条件。', 'Try a shorter keyword or change a filter.')}</p>
+                            </div>
+                        </div>
+                    )}
+                </section>
+
+                <p className="hg-company-profile__source-note">
+                    <Clock3 aria-hidden="true" />
+                    {text('岗位与企业信息来自公开渠道，请以企业官方页面的最新信息为准。', 'Company and role information comes from public sources. Confirm the latest details on the official company page.')}
+                </p>
             </div>
 
-            {/* Job Detail Modal */}
-            {selectedJob && (
+            {selectedJob ? (
                 <JobDetailModal
                     job={selectedJob}
-                    isOpen={!!selectedJob}
+                    isOpen={Boolean(selectedJob)}
                     onClose={() => setSelectedJob(null)}
                     jobs={filteredJobs}
                     currentJobIndex={currentJobIndex}
@@ -271,7 +290,7 @@ export default function CompanyProfilePage() {
                         setSelectedJob(filteredJobs[nextIndex])
                     }}
                 />
-            )}
-        </div >
+            ) : null}
+        </div>
     )
 }

@@ -148,7 +148,7 @@ export default function AdminSubscriptionsPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#eff5fb] px-3 py-1 text-xs font-bold text-[#345d88]">
                 <Mail className="h-3.5 w-3.5" />
                 Member Email Digest
               </div>
@@ -189,13 +189,13 @@ export default function AdminSubscriptionsPage() {
                 value={search}
                 onChange={event => setSearch(event.target.value)}
                 placeholder="搜索邮箱、用户名或岗位方向"
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm outline-none focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
               />
             </label>
             <select
               value={status}
               onChange={event => setStatus(event.target.value)}
-              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+              className="h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 outline-none focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
             >
               <option value="all">全部状态</option>
               <option value="active">生效中</option>
@@ -204,7 +204,7 @@ export default function AdminSubscriptionsPage() {
             </select>
             <button
               type="submit"
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-indigo-600 px-5 text-sm font-bold text-white hover:bg-indigo-700"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#466f9d] px-5 text-sm font-bold text-white hover:bg-[#345d88]"
             >
               搜索
             </button>
@@ -263,7 +263,7 @@ export default function AdminSubscriptionsPage() {
                         <button
                           type="button"
                           onClick={() => openDeliveryHistory(subscription)}
-                          className="text-left font-bold text-slate-600 underline-offset-4 hover:text-indigo-600 hover:underline"
+                          className="text-left font-bold text-slate-600 underline-offset-4 hover:text-[#466f9d] hover:underline"
                         >
                           {formatDate(latestSentAt)}
                         </button>
@@ -272,7 +272,7 @@ export default function AdminSubscriptionsPage() {
                         <button
                           type="button"
                           onClick={() => openDeliveryHistory(subscription)}
-                          className="inline-flex rounded-full border border-indigo-100 bg-indigo-50 px-2.5 py-1 text-xs font-black text-indigo-700 hover:border-indigo-200 hover:bg-indigo-100"
+                          className="inline-flex rounded-full border border-[#dce9f5] bg-[#eff5fb] px-2.5 py-1 text-xs font-black text-[#345d88] hover:border-[#c9dce8] hover:bg-[#dce9f5]"
                         >
                           {sentCount}
                         </button>

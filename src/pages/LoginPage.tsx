@@ -8,7 +8,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.webp'
-import { loadGoogleIdentity } from '../utils/googleIdentity'
+import { initializeGoogleIdentity, loadGoogleIdentity } from '../utils/googleIdentity'
 import { useLanguage } from '../contexts/LanguageContext'
 import LanguageToggle from '../components/LanguageToggle'
 
@@ -66,12 +66,7 @@ export default function LoginPage() {
       if (!window.google?.accounts?.id) {
         return
       }
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-        auto_select: false,
-        cancel_on_tap_outside: true
-      })
+      initializeGoogleIdentity(GOOGLE_CLIENT_ID, handleGoogleCallback)
       const container = document.getElementById('googleSignInBtn')
       if (container) {
         window.google.accounts.id.renderButton(container, {
@@ -131,18 +126,18 @@ export default function LoginPage() {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="hg-auth-page">
       <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
-      <div className="w-full max-w-md">
+      <div className="hg-auth-shell">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="hg-auth-brand">
           <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">{text('欢迎回来', 'Welcome back')}</h1>
           <p className="text-slate-600 mt-2">{text('登录您的 Haigoo 账户', 'Log in to your Haigoo account')}</p>
         </div>
 
         {/* 登录表单 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="hg-auth-card p-8">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 错误提示 */}
             {error && (
@@ -169,7 +164,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                 placeholder="your@email.com"
               />
             </div>
@@ -182,7 +177,7 @@ export default function LoginPage() {
                 </label>
                 <Link 
                   to="/forgot-password" 
-                  className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                  className="text-xs text-[#466f9d] hover:text-[#345d88] font-medium"
                 >
                   {text('忘记密码？', 'Forgot password?')}
                 </Link>
@@ -194,7 +189,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all pr-10"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all pr-10"
                   placeholder="••••••••"
                 />
                 <button
@@ -215,7 +210,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              className="w-full bg-[#466f9d] text-white py-3 rounded-lg font-medium hover:bg-[#345d88] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
               {isLoading ? text('登录中...', 'Logging in...') : text('登录', 'Log in')}
             </button>
@@ -238,7 +233,7 @@ export default function LoginPage() {
           {/* 注册链接 */}
           <p className="text-center mt-6 text-sm text-slate-600">
             {text('还没有账户？', "Don't have an account?")}{' '}
-            <Link to="/register" className="text-indigo-600 font-medium hover:text-indigo-700">
+            <Link to="/register" className="text-[#466f9d] font-medium hover:text-[#345d88]">
               {text('立即注册', 'Sign up')}
             </Link>
           </p>

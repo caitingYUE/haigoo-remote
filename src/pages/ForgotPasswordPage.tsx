@@ -38,18 +38,18 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="hg-auth-page">
       <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
-      <div className="w-full max-w-md">
+      <div className="hg-auth-shell">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="hg-auth-brand">
           <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">{text('重置密码', 'Reset your password')}</h1>
           <p className="text-slate-600 mt-2">{text('我们将向您发送重置密码的链接', 'We will email you a password reset link')}</p>
         </div>
 
         {/* 表单 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="hg-auth-card p-8">
           {isSuccess ? (
             <div className="text-center py-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 to="/login"
-                className="inline-block w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
+                className="inline-block w-full bg-[#466f9d] text-white py-3 rounded-lg font-medium hover:bg-[#345d88] transition-all shadow-md hover:shadow-lg"
               >
                 {text('返回登录', 'Back to login')}
               </Link>
@@ -90,7 +90,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                     placeholder="your@email.com"
                   />
                 </div>
@@ -100,7 +100,7 @@ export default function ForgotPasswordPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#466f9d] text-white py-3 rounded-lg font-medium hover:bg-[#345d88] transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? text('发送中...', 'Sending...') : text('发送重置链接', 'Send reset link')}
               </button>

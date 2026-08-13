@@ -69,14 +69,14 @@ export default function VerifyEmailPage() {
   }, [token, email, verifyEmail, navigate, text])
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
+    <div className="hg-auth-page">
       <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 text-center">
+      <div className="hg-auth-card w-full max-w-md p-8 text-center">
         <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-6" />
         
         {status === 'verifying' && (
           <div className="flex flex-col items-center">
-            <Loader2 className="w-16 h-16 text-indigo-600 animate-spin mb-4" />
+            <Loader2 className="w-16 h-16 text-[#466f9d] animate-spin mb-4" />
             <h2 className="text-xl font-bold text-slate-900 mb-2">{text('正在验证', 'Verifying')}</h2>
             <p className="text-slate-600">{message}</p>
           </div>
@@ -91,7 +91,7 @@ export default function VerifyEmailPage() {
             <p className="text-slate-600 mb-6">{text('您的邮箱已成功验证，正在跳转至首页...', 'Your email is verified. Redirecting to home...')}</p>
             <Link 
               to="/" 
-              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#466f9d] text-white font-medium rounded-xl hover:bg-[#345d88] transition-colors"
             >
               {text('立即进入', 'Continue now')} <ArrowRight className="w-4 h-4" />
             </Link>
@@ -114,7 +114,7 @@ export default function VerifyEmailPage() {
               </Link>
               <Link 
                 to="/" 
-                className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+                className="px-6 py-3 bg-[#466f9d] text-white font-medium rounded-xl hover:bg-[#345d88] transition-colors"
               >
                 {text('返回首页', 'Back to home')}
               </Link>

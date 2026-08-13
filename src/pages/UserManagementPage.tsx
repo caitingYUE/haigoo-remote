@@ -161,7 +161,8 @@ function addCalendarMonths(date: Date, months: number) {
 }
 
 function getUserFreeWebsiteApplyLimit(user?: User | null) {
-  return Math.max(0, Number(user?.freeWebsiteApplyLimit ?? DEFAULT_FREE_WEBSITE_APPLY_LIMIT) || 0)
+  void user
+  return DEFAULT_FREE_WEBSITE_APPLY_LIMIT
 }
 
 function getUserFreeWebsiteApplyCount(user?: User | null) {
@@ -313,7 +314,7 @@ function getMemberPresentation(user: User) {
   const className = isPendingMember
     ? 'bg-amber-100 text-amber-700'
     : user.memberStatus === 'active'
-      ? 'bg-indigo-100 text-indigo-700'
+      ? 'bg-[#dce9f5] text-[#345d88]'
       : user.memberStatus === 'expired'
         ? 'bg-orange-100 text-orange-700'
         : 'bg-slate-100 text-slate-700'
@@ -923,7 +924,8 @@ export default function UserManagementPage() {
     const limit = key === 'website_apply' ? getUserFreeWebsiteApplyLimit(editingUser) : getUserFreeReferralLimit(editingUser)
     const remaining = Math.max(0, limit - used)
     const isBusy = updatingEntitlementKey === key
-    const canEdit = entitlementsUnlocked && !isMemberEntitlement && !isBusy && updatingId !== editingUser.user_id
+    const isComplianceFixed = key === 'website_apply'
+    const canEdit = entitlementsUnlocked && !isComplianceFixed && !isMemberEntitlement && !isBusy && updatingId !== editingUser.user_id
 
     return (
       <div className="rounded-lg border border-slate-200 bg-slate-50/70 p-3">
@@ -992,7 +994,7 @@ export default function UserManagementPage() {
                 <p className="text-sm text-slate-600 mb-1">总用户数</p>
                 <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
               </div>
-              <Users className="w-10 h-10 text-indigo-500 opacity-20" />
+              <Users className="w-10 h-10 text-[#587faa] opacity-20" />
             </div>
           </div>
 
@@ -1020,9 +1022,9 @@ export default function UserManagementPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-600 mb-1">今日新增</p>
-                <p className="text-2xl font-bold text-purple-600">{stats.newToday}</p>
+                <p className="text-2xl font-bold text-[#8f5e19]">{stats.newToday}</p>
               </div>
-              <TrendingUp className="w-10 h-10 text-purple-500 opacity-20" />
+              <TrendingUp className="w-10 h-10 text-[#b7791f] opacity-20" />
             </div>
           </div>
 
@@ -1049,7 +1051,7 @@ export default function UserManagementPage() {
                   placeholder="搜索用户（邮箱、用户名、UUID）"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
                 />
               </div>
             </div>
@@ -1061,7 +1063,7 @@ export default function UserManagementPage() {
                 setPage(1)
                 setStatusFilter(e.target.value as any)
               }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
             >
               <option value="all">全部状态</option>
               <option value="active">活跃</option>
@@ -1075,7 +1077,7 @@ export default function UserManagementPage() {
                 setPage(1)
                 setProviderFilter(e.target.value as any)
               }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
             >
               <option value="all">全部方式</option>
               <option value="email">邮箱登录</option>
@@ -1088,7 +1090,7 @@ export default function UserManagementPage() {
                 setPage(1)
                 setMemberFilter(e.target.value as MemberFilter)
               }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
             >
               <option value="all">全部会员</option>
               <option value="free">普通用户</option>
@@ -1103,7 +1105,7 @@ export default function UserManagementPage() {
                 setPage(1)
                 setPageSize(Number(e.target.value) || 25)
               }}
-              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
             >
               <option value={25}>25 条/页</option>
               <option value={50}>50 条/页</option>
@@ -1128,7 +1130,7 @@ export default function UserManagementPage() {
 
             <button
               onClick={exportUsers}
-              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-[#b7791f] text-white rounded-lg hover:bg-[#8f5e19] transition-colors flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
               导出CSV
@@ -1172,7 +1174,7 @@ export default function UserManagementPage() {
                             {user.avatar ? (
                               <img src={user.avatar} alt={user.username} className="h-10 w-10 rounded-full" />
                             ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-violet-500 to-purple-500 text-sm font-semibold text-white">
+                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-[#b7791f] to-[#b7791f] text-sm font-semibold text-white">
                                 {user.username[0]?.toUpperCase()}
                               </div>
                             )}
@@ -1216,7 +1218,7 @@ export default function UserManagementPage() {
                         className={`inline-flex min-h-[48px] items-center justify-center gap-1 rounded-xl border px-3 py-3 text-sm font-medium ${
                           isBusy
                             ? 'cursor-not-allowed bg-slate-100 text-slate-400'
-                            : 'border-indigo-200 bg-indigo-50 text-indigo-700'
+                            : 'border-[#c9dce8] bg-[#eff5fb] text-[#345d88]'
                         }`}
                       >
                         <Lock className="h-4 w-4" />
@@ -1286,7 +1288,7 @@ export default function UserManagementPage() {
                           {user.avatar ? (
                             <img src={user.avatar} alt={user.username} className="w-10 h-10 rounded-full" />
                           ) : (
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 flex items-center justify-center text-white font-semibold">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-[#b7791f] to-[#b7791f] flex items-center justify-center text-white font-semibold">
                               {user.username[0]?.toUpperCase()}
                             </div>
                           )}
@@ -1542,7 +1544,7 @@ export default function UserManagementPage() {
                       }}
                       className={`min-h-[46px] rounded-xl border px-3 py-2 text-sm font-medium ${
                         editMemberType === option.value
-                          ? 'border-violet-500 bg-violet-50 text-violet-700'
+                          ? 'border-[#b7791f] bg-[#fff8e8] text-[#8f5e19]'
                           : 'border-slate-200 bg-white text-slate-600'
                       }`}
                     >
@@ -1569,7 +1571,7 @@ export default function UserManagementPage() {
                   </select>
                 {editMemberType !== 'none' && (
                   <div>
-                    <div className="text-xs text-indigo-600 mb-3">保存后将按生效时间和当前会员类型自动计算到期时间，避免人工计算错误。</div>
+                    <div className="text-xs text-[#466f9d] mb-3">保存后将按生效时间和当前会员类型自动计算到期时间，避免人工计算错误。</div>
                     <label className="block text-xs text-slate-500 mb-1">生效时间</label>
                     <div className="flex flex-wrap gap-2 mb-2">
                       <button
@@ -1660,7 +1662,7 @@ export default function UserManagementPage() {
                 )}
 
                 <div className="grid gap-3 md:grid-cols-2">
-                  {renderEntitlementControl('website_apply', '直申次数')}
+                  {renderEntitlementControl('website_apply', '每月官网直申次数')}
                   {renderEntitlementControl('referral', '内推次数')}
                 </div>
               </div>
@@ -1671,7 +1673,7 @@ export default function UserManagementPage() {
                     <h4 className="font-semibold text-sm text-slate-900">会员权益管理</h4>
                     <p className="mt-1 text-xs text-slate-500">仅记录需人工运营的服务权益状态，页面权限不在此处配置。</p>
                   </div>
-                  <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-medium text-violet-700">
+                  <span className="rounded-full bg-[#fff8e8] px-3 py-1 text-xs font-medium text-[#8f5e19]">
                     {editMemberType === 'none' ? '未开通' : MEMBER_TYPE_OPTIONS.find(item => item.value === editMemberType)?.label}
                   </span>
                 </div>
@@ -1795,7 +1797,7 @@ export default function UserManagementPage() {
                         <span className="text-slate-500 block mb-1">职位类型</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.jobTypes.map(t => (
-                            <span key={t} className="px-2 py-0.5 bg-indigo-50 text-indigo-700 rounded text-xs">{t}</span>
+                            <span key={t} className="px-2 py-0.5 bg-[#eff5fb] text-[#345d88] rounded text-xs">{t}</span>
                           ))}
                         </div>
                       </div>
@@ -1805,7 +1807,7 @@ export default function UserManagementPage() {
                         <span className="text-slate-500 block mb-1">行业类型</span>
                         <div className="flex flex-wrap gap-1">
                           {editingUser.jobPreferences.industries.map(t => (
-                            <span key={t} className="px-2 py-0.5 bg-purple-50 text-purple-700 rounded text-xs">{t}</span>
+                            <span key={t} className="px-2 py-0.5 bg-[#fff8e8] text-[#8f5e19] rounded text-xs">{t}</span>
                           ))}
                         </div>
                       </div>
@@ -1866,7 +1868,7 @@ export default function UserManagementPage() {
                 <div className="flex gap-2 sm:justify-end">
                   <button onClick={() => setEditingUser(null)} className="flex-1 rounded-lg border px-4 py-2 sm:flex-none">取消</button>
                   {isSuperAdmin && (
-                    <button onClick={saveEdit} className="flex-1 rounded-lg bg-violet-600 px-4 py-2 text-white sm:flex-none">保存</button>
+                    <button onClick={saveEdit} className="flex-1 rounded-lg bg-[#b7791f] px-4 py-2 text-white sm:flex-none">保存</button>
                   )}
                 </div>
               </div>

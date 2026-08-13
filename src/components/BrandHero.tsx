@@ -53,7 +53,7 @@ export default function BrandHero() {
         <svg className="absolute right-0 top-0 w-[72%] h-full opacity-[0.25]" viewBox="0 0 800 200" xmlns="http://www.w3.org/2000/svg" aria-hidden>
           <defs>
             <linearGradient id="net" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#8B5CF6" />
+              <stop offset="0" stopColor="#b7791f" />
               <stop offset="1" stopColor="#06B6D4" />
             </linearGradient>
           </defs>

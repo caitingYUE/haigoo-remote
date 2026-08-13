@@ -690,7 +690,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
         <button
           onMouseDown={handleMouseDown}
           onClick={handleClick}
-          className={`bg-indigo-600 hover:bg-indigo-700 text-white p-4 rounded-full shadow-lg transition-colors duration-200 flex items-center gap-2 ${isDragging ? 'scale-105 shadow-xl' : ''}`}
+          className={`bg-[#466f9d] hover:bg-[#345d88] text-white p-4 rounded-full shadow-lg transition-colors duration-200 flex items-center gap-2 ${isDragging ? 'scale-105 shadow-xl' : ''}`}
           title="Cron Pipeline Test (Drag to move)"
         >
           <Terminal size={24} />
@@ -707,7 +707,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div>
                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                  <Terminal className="text-indigo-600" />
+                  <Terminal className="text-[#466f9d]" />
                   Cron Pipeline Simulator
                 </h3>
                 <p className="text-sm text-slate-500 mt-1">
@@ -730,7 +730,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
                     <button
                       onClick={() => setExecutionMode('pipeline')}
                       className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${executionMode === 'pipeline'
-                        ? 'bg-indigo-600 text-white shadow-sm'
+                        ? 'bg-[#466f9d] text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -739,7 +739,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
                     <button
                       onClick={() => setExecutionMode('single')}
                       className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${executionMode === 'single'
-                        ? 'bg-indigo-600 text-white shadow-sm'
+                        ? 'bg-[#466f9d] text-white shadow-sm'
                         : 'text-slate-600 hover:text-slate-900'
                         }`}
                     >
@@ -761,7 +761,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
               {results.map((result, index) => (
                 <div
                   key={index}
-                  className={`border rounded-lg p-4 transition-all duration-200 ${result.status === 'running' ? 'border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100' :
+                  className={`border rounded-lg p-4 transition-all duration-200 ${result.status === 'running' ? 'border-[#587faa] bg-[#eff5fb] ring-2 ring-[#dce9f5]' :
                     result.status === 'success' ? 'border-green-200 bg-green-50' :
                       result.status === 'error' ? 'border-red-200 bg-red-50' :
                         'border-slate-200 bg-white'
@@ -772,7 +772,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
                       <div className={`
                             w-8 h-8 rounded-full flex items-center justify-center
                             ${result.status === 'pending' ? 'bg-slate-100 text-slate-400' : ''}
-                            ${result.status === 'running' ? 'bg-indigo-100 text-indigo-600' : ''}
+                            ${result.status === 'running' ? 'bg-[#dce9f5] text-[#466f9d]' : ''}
                             ${result.status === 'success' ? 'bg-green-100 text-green-600' : ''}
                             ${result.status === 'error' ? 'bg-red-100 text-red-600' : ''}
                         `}>
@@ -795,7 +795,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
                     <div className="flex items-center gap-3">
                       <div className="text-sm">
                         {result.status === 'pending' && <span className="text-slate-400">Waiting...</span>}
-                        {result.status === 'running' && <span className="text-indigo-600 font-medium">Executing...</span>}
+                        {result.status === 'running' && <span className="text-[#466f9d] font-medium">Executing...</span>}
                         {result.status === 'success' && <span className="text-green-600 font-medium">Completed</span>}
                         {result.status === 'error' && <span className="text-red-600 font-medium">Failed</span>}
                       </div>
@@ -809,7 +809,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
                             px-3 py-1 rounded text-sm font-medium transition-colors flex items-center gap-1
                             ${isRunning || result.status === 'running'
                               ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                              : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'
+                              : 'bg-[#dce9f5] text-[#466f9d] hover:bg-[#c9dce8]'
                             }
                           `}
                         >
@@ -924,8 +924,8 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
                     className={`
                         px-6 py-2 rounded-lg font-medium text-white flex items-center gap-2 transition-all
                         ${isRunning
-                        ? 'bg-indigo-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 shadow-md hover:shadow-lg'
+                        ? 'bg-[#7f9fbc] cursor-not-allowed'
+                        : 'bg-[#466f9d] hover:bg-[#345d88] shadow-md hover:shadow-lg'
                       }
                     `}
                   >

@@ -472,7 +472,7 @@ export default function AdminCompanyManagementPage() {
                     企业库管理
                 </h1>
                 <div className="flex gap-2">
-                    <button onClick={handleRefresh} disabled={extracting} className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2">
+                    <button onClick={handleRefresh} disabled={extracting} className="px-4 py-2 bg-[#466f9d] text-white rounded hover:bg-[#345d88] disabled:opacity-50 flex items-center gap-2">
                         <Download className={`w-4 h-4 ${extracting ? 'animate-bounce' : ''}`} />
                         {extracting ? '提取中...' : '刷新数据'}
                     </button>
@@ -484,7 +484,7 @@ export default function AdminCompanyManagementPage() {
                         <Wand2 className={`w-4 h-4 ${crawling ? 'animate-spin' : ''}`} />
                         {crawling ? '抓取中...' : '自动补全并翻译'}
                     </button>
-                    <button onClick={handleAnalyzeIndustryAndTags} disabled={analyzing} className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50">
+                    <button onClick={handleAnalyzeIndustryAndTags} disabled={analyzing} className="px-4 py-2 bg-[#b7791f] text-white rounded hover:bg-[#8f5e19] disabled:opacity-50">
                         {analyzing ? '分析中...' : 'AI分析标签'}
                     </button>
                 </div>
@@ -501,7 +501,7 @@ export default function AdminCompanyManagementPage() {
                             setSearchQuery(e.target.value);
                             setPage(1);
                         }}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#587faa]"
                     />
                 </div>
                 <select
@@ -510,7 +510,7 @@ export default function AdminCompanyManagementPage() {
                         setIndustryFilter(e.target.value);
                         setPage(1);
                     }}
-                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 text-sm"
+                    className="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-[#587faa] text-sm"
                 >
                     <option value="">所有行业</option>
                     {tagConfig.companyIndustries.length > 0 ? (
@@ -536,7 +536,7 @@ export default function AdminCompanyManagementPage() {
 
             {loading ? (
                 <div className="flex justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#466f9d]" />
                 </div>
             ) : (
                 <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -595,7 +595,7 @@ export default function AdminCompanyManagementPage() {
                                             <span>{company.jobCount}</span>
                                             <button
                                                 onClick={() => handleViewJobs(company)}
-                                                className="text-indigo-600 hover:text-indigo-800"
+                                                className="text-[#466f9d] hover:text-[#2d4f73]"
                                                 title="查看岗位"
                                             >
                                                 <Eye className="w-4 h-4" />
@@ -605,7 +605,7 @@ export default function AdminCompanyManagementPage() {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <div className="flex gap-2">
                                             {company.url && (
-                                                <a href={company.url} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-indigo-600">
+                                                <a href={company.url} target="_blank" rel="noreferrer" title="官网" className="text-gray-400 hover:text-[#466f9d]">
                                                     <Globe className="w-4 h-4" />
                                                 </a>
                                             )}
@@ -623,7 +623,7 @@ export default function AdminCompanyManagementPage() {
                                             </button>
                                             <button
                                                 onClick={() => handleEditClick(company)}
-                                                className="text-gray-600 hover:text-indigo-600"
+                                                className="text-gray-600 hover:text-[#466f9d]"
                                                 title="编辑"
                                             >
                                                 <Edit2 className="w-4 h-4" />
@@ -665,7 +665,7 @@ export default function AdminCompanyManagementPage() {
                                     type="text"
                                     value={editForm.name || ''}
                                     onChange={e => setEditForm({ ...editForm, name: e.target.value })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                 />
                             </div>
 
@@ -675,7 +675,7 @@ export default function AdminCompanyManagementPage() {
                                     <select
                                         value={editForm.industry || ''}
                                         onChange={e => setEditForm({ ...editForm, industry: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                     >
                                         <option value="">选择行业</option>
                                         {tagConfig.companyIndustries.length > 0 ? (
@@ -700,7 +700,7 @@ export default function AdminCompanyManagementPage() {
                                         type="url"
                                         value={editForm.url || ''}
                                         onChange={e => setEditForm({ ...editForm, url: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                     />
                                 </div>
                             </div>
@@ -712,7 +712,7 @@ export default function AdminCompanyManagementPage() {
                                         type="url"
                                         value={editForm.linkedin || ''}
                                         onChange={e => setEditForm({ ...editForm, linkedin: e.target.value })}
-                                        className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="flex-1 px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                         placeholder="https://www.linkedin.com/company/..."
                                     />
                                     <button
@@ -732,7 +732,7 @@ export default function AdminCompanyManagementPage() {
                                         type="text"
                                         value={editForm.address || ''}
                                         onChange={e => setEditForm({ ...editForm, address: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                     />
                                 </div>
                                 <div>
@@ -741,7 +741,7 @@ export default function AdminCompanyManagementPage() {
                                         type="text"
                                         value={editForm.employeeCount || ''}
                                         onChange={e => setEditForm({ ...editForm, employeeCount: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                         placeholder="e.g. 1000+"
                                     />
                                 </div>
@@ -751,7 +751,7 @@ export default function AdminCompanyManagementPage() {
                                         type="text"
                                         value={editForm.foundedYear || ''}
                                         onChange={e => setEditForm({ ...editForm, foundedYear: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                         placeholder="e.g. 2010"
                                     />
                                 </div>
@@ -763,7 +763,7 @@ export default function AdminCompanyManagementPage() {
                                     type="text"
                                     value={joinTagInput(editForm.specialties)}
                                     onChange={e => setEditForm({ ...editForm, specialties: splitTagInput(e.target.value) })}
-                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                     placeholder="e.g. SaaS, AI, Cloud Computing"
                                 />
                             </div>
@@ -775,7 +775,7 @@ export default function AdminCompanyManagementPage() {
                                         type="url"
                                         value={editForm.logo || ''}
                                         onChange={e => setEditForm({ ...editForm, logo: e.target.value })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                     />
                                     {editForm.logo && <img src={editForm.logo} alt="Logo" className="w-10 h-10 object-contain border rounded" />}
                                 </div>
@@ -787,7 +787,7 @@ export default function AdminCompanyManagementPage() {
                                     value={editForm.description || ''}
                                     onChange={e => setEditForm({ ...editForm, description: e.target.value })}
                                     rows={4}
-                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                 />
                             </div>
 
@@ -798,7 +798,7 @@ export default function AdminCompanyManagementPage() {
                                         type="text"
                                         value={joinTagInput(editForm.tags)}
                                         onChange={e => setEditForm({ ...editForm, tags: joinTagInput(e.target.value) as any })}
-                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-[#587faa]"
                                         placeholder="例如: SaaS, AI, B2B"
                                     />
                                     {tagConfig.companyTags.length > 0 && (
@@ -823,7 +823,7 @@ export default function AdminCompanyManagementPage() {
                                                             setEditForm({ ...editForm, tags: newTags as any });
                                                         }
                                                     }}
-                                                    className="px-2 py-0.5 bg-gray-100 hover:bg-indigo-50 text-gray-600 hover:text-indigo-600 text-xs rounded transition-colors"
+                                                    className="px-2 py-0.5 bg-gray-100 hover:bg-[#eff5fb] text-gray-600 hover:text-[#466f9d] text-xs rounded transition-colors"
                                                 >
                                                     + {tag}
                                                 </button>
@@ -843,7 +843,7 @@ export default function AdminCompanyManagementPage() {
                             </button>
                             <button
                                 onClick={handleSaveCompany}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 flex items-center gap-2"
+                                className="px-4 py-2 bg-[#466f9d] text-white rounded hover:bg-[#345d88] flex items-center gap-2"
                             >
                                 <Save className="w-4 h-4" />
                                 保存
@@ -874,7 +874,7 @@ export default function AdminCompanyManagementPage() {
                                     placeholder="搜索岗位..."
                                     value={jobSearchTerm}
                                     onChange={(e) => setJobSearchTerm(e.target.value)}
-                                    className="w-full pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    className="w-full pl-9 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#587faa]"
                                 />
                             </div>
                         </div>
@@ -886,7 +886,7 @@ export default function AdminCompanyManagementPage() {
                                     .map(job => (
                                         <div key={job.id} className="p-3 bg-white border rounded hover:shadow-sm flex justify-between items-center">
                                             <div>
-                                                <div className="font-medium text-indigo-600">{job.title}</div>
+                                                <div className="font-medium text-[#466f9d]">{job.title}</div>
                                                 <div className="text-sm text-gray-500 mt-1 flex gap-3">
                                                     <span>{job.location}</span>
                                                     {job.salary && (
@@ -900,7 +900,7 @@ export default function AdminCompanyManagementPage() {
                                                 </div>
                                             </div>
                                             {job.sourceUrl && (
-                                                <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-indigo-600">
+                                                <a href={job.sourceUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-gray-400 hover:text-[#466f9d]">
                                                     <ExternalLink className="w-4 h-4" />
                                                 </a>
                                             )}

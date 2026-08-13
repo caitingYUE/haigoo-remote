@@ -474,7 +474,7 @@ export default function AdminTrackingDashboard() {
                 value: formatNum(data.overview.copilotSubmitUv),
                 description: '首页 Hero 需求输入去重人数',
                 footnote: `覆盖率 ${formatPercent(data.overview.totalUv > 0 ? data.overview.copilotSubmitUv / data.overview.totalUv : 0)}`,
-                icon: <Brain className="w-4 h-4 text-violet-600" />,
+                icon: <Brain className="w-4 h-4 text-[#b7791f]" />,
             },
             {
                 label: '会员成功用户',
@@ -543,7 +543,7 @@ export default function AdminTrackingDashboard() {
                 value: formatNum(quality.clientErrorUv),
                 description: `申请阻断 ${formatNum(quality.applicationBlockedPv)} 次`,
                 footnote: '可在用户管理的操作日志中按用户回溯',
-                icon: <Target className="w-4 h-4 text-violet-600" />,
+                icon: <Target className="w-4 h-4 text-[#b7791f]" />,
             },
         ];
     }, [data]);
@@ -564,7 +564,7 @@ export default function AdminTrackingDashboard() {
                 value: formatNum(summary.searchPv),
                 description: `${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]}`,
                 footnote: '仅统计已通过脱敏校验的搜索词',
-                icon: <Search className="w-4 h-4 text-indigo-600" />,
+                icon: <Search className="w-4 h-4 text-[#466f9d]" />,
             },
             {
                 label: '无结果率',
@@ -592,7 +592,7 @@ export default function AdminTrackingDashboard() {
                 value: formatNum(summary.submitUv),
                 description: `提交 PV ${formatNum(summary.submitPv)}`,
                 footnote: '包含游客与登录用户',
-                icon: <Brain className="w-4 h-4 text-violet-600" />,
+                icon: <Brain className="w-4 h-4 text-[#b7791f]" />,
             },
             {
                 label: '结果成功 UV',
@@ -619,7 +619,7 @@ export default function AdminTrackingDashboard() {
                 value: formatNum(data.resumeAssistant.frameworkSuccessUv),
                 description: `点击 UV ${formatNum(data.resumeAssistant.frameworkClickUv)} / PV ${formatNum(data.resumeAssistant.frameworkClickPv)}`,
                 footnote: `访问 UV ${formatNum(data.resumeAssistant.openUv)} / 刷新 UV ${formatNum(data.resumeAssistant.refreshUv)}`,
-                icon: <Brain className="w-4 h-4 text-violet-600" />,
+                icon: <Brain className="w-4 h-4 text-[#b7791f]" />,
             },
             {
                 label: '深度打磨 UV',
@@ -641,7 +641,7 @@ export default function AdminTrackingDashboard() {
     if (loading && !data) {
         return (
             <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#466f9d]"></div>
             </div>
         );
     }
@@ -652,7 +652,7 @@ export default function AdminTrackingDashboard() {
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div>
                         <div className="flex items-center gap-2 text-slate-900">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-indigo-50 text-indigo-600">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#eff5fb] text-[#466f9d]">
                                 <Activity className="h-5 w-5" />
                             </div>
                             <div>
@@ -665,7 +665,7 @@ export default function AdminTrackingDashboard() {
                     <div className="flex flex-wrap items-center gap-3">
                         <button
                             onClick={() => fetchData({ preserveData: true })}
-                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-[#c9dce8] hover:text-[#466f9d]"
                         >
                             <RefreshCcw className="h-4 w-4" />
                             刷新
@@ -686,7 +686,7 @@ export default function AdminTrackingDashboard() {
                                 key={option.key}
                                 onClick={() => setActiveView(option.key)}
                                 className={`rounded-2xl px-4 py-2 text-sm font-medium transition-all ${activeView === option.key
-                                        ? 'bg-white text-indigo-600 shadow-sm'
+                                        ? 'bg-white text-[#466f9d] shadow-sm'
                                         : 'text-slate-500 hover:text-slate-900'
                                     }`}
                                 title={option.description}
@@ -757,7 +757,7 @@ export default function AdminTrackingDashboard() {
                         <Panel
                             title="求职主漏斗"
                             subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 真实申请链路`}
-                            icon={<Target className="h-5 w-5 text-indigo-600" />}
+                            icon={<Target className="h-5 w-5 text-[#466f9d]" />}
                         >
                             <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                                 {data.coreFunnels.job.map((step) => (
@@ -794,7 +794,7 @@ export default function AdminTrackingDashboard() {
                     <Panel
                         title="外企英语视频播放"
                         subtitle={`${PERIOD_LABELS[period]} · ${SEGMENT_LABELS[segment]} · 按视频统计播放 UV/PV，兼看详情访问`}
-                        icon={<BookOpen className="h-5 w-5 text-violet-600" />}
+                        icon={<BookOpen className="h-5 w-5 text-[#b7791f]" />}
                     >
                         <CorporateEnglishVideoTable steps={data.coreFunnels.corporateEnglish || []} />
                     </Panel>
@@ -822,7 +822,7 @@ export default function AdminTrackingDashboard() {
                                             formatter={(value: any, name?: string) => [value, name === 'uv' ? 'UV' : 'PV']}
                                             contentStyle={{ borderRadius: '16px', borderColor: '#e2e8f0' }}
                                         />
-                                        <Line type="monotone" dataKey="uv" stroke="#4f46e5" strokeWidth={3} dot={false} />
+                                        <Line type="monotone" dataKey="uv" stroke="#345d88" strokeWidth={3} dot={false} />
                                         <Line type="monotone" dataKey="pv" stroke="#14b8a6" strokeWidth={2} dot={false} />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -909,7 +909,7 @@ export default function AdminTrackingDashboard() {
                                         setSearchOnlyEmpty(event.target.checked);
                                         setSearchPage(1);
                                     }}
-                                    className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                    className="h-4 w-4 rounded border-slate-300 text-[#466f9d] focus:ring-[#587faa]"
                                 />
                                 仅看无结果
                             </label>
@@ -919,7 +919,7 @@ export default function AdminTrackingDashboard() {
                                     setSearchSort(event.target.value as SearchSort);
                                     setSearchPage(1);
                                 }}
-                                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                                className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 outline-none focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
                             >
                                 <option value="searchPv">按搜索次数</option>
                                 <option value="searchUv">按搜索人数</option>
@@ -928,7 +928,7 @@ export default function AdminTrackingDashboard() {
                             </select>
                             <button
                                 onClick={() => fetchSearchInsights({ preserveData: true })}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-indigo-200 hover:text-indigo-600"
+                                className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-[#c9dce8] hover:text-[#466f9d]"
                             >
                                 <RefreshCcw className="h-4 w-4" />
                                 刷新搜索
@@ -944,7 +944,7 @@ export default function AdminTrackingDashboard() {
 
                     {searchInsightsLoading && !searchInsights ? (
                         <div className="flex h-48 items-center justify-center rounded-[28px] border border-slate-200 bg-white">
-                            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-indigo-600"></div>
+                            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-[#466f9d]"></div>
                         </div>
                     ) : searchInsights ? (
                         <>
@@ -958,7 +958,7 @@ export default function AdminTrackingDashboard() {
                                 <Panel
                                     title="热门搜索方向"
                                     subtitle="按规范化词组聚合，同义词已合并；用于判断用户正在关注的岗位方向。"
-                                    icon={<Search className="h-5 w-5 text-indigo-600" />}
+                                    icon={<Search className="h-5 w-5 text-[#466f9d]" />}
                                 >
                                     <SearchInsightTable
                                         terms={searchInsights.terms}
@@ -1028,7 +1028,7 @@ export default function AdminTrackingDashboard() {
                                                 ]}
                                                 contentStyle={{ borderRadius: '16px', borderColor: '#e2e8f0' }}
                                             />
-                                            <Line type="monotone" dataKey="searchPv" stroke="#4f46e5" strokeWidth={3} dot={false} />
+                                            <Line type="monotone" dataKey="searchPv" stroke="#345d88" strokeWidth={3} dot={false} />
                                             <Line type="monotone" dataKey="searchUv" stroke="#0ea5e9" strokeWidth={2} dot={false} />
                                             <Line type="monotone" dataKey="emptyPv" stroke="#f97316" strokeWidth={2} dot={false} />
                                         </LineChart>
@@ -1054,7 +1054,7 @@ export default function AdminTrackingDashboard() {
                         <Panel
                             title="岗位方向 Top 榜"
                             subtitle="帮助反推岗位供给与运营投放方向"
-                            icon={<Brain className="h-5 w-5 text-violet-600" />}
+                            icon={<Brain className="h-5 w-5 text-[#b7791f]" />}
                         >
                             <RankList items={data.copilotDemand.topDirections} emptyText="当前暂无方向输入数据" />
                         </Panel>
@@ -1072,7 +1072,7 @@ export default function AdminTrackingDashboard() {
                         <Panel
                             title="方向 x 类型矩阵"
                             subtitle="高频组合可直接指导岗位拓展优先级"
-                            icon={<MousePointerClick className="h-5 w-5 text-indigo-600" />}
+                            icon={<MousePointerClick className="h-5 w-5 text-[#466f9d]" />}
                         >
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-slate-200 text-sm">
@@ -1125,7 +1125,7 @@ export default function AdminTrackingDashboard() {
                                             formatter={(value: any, name?: string) => [value, name === 'submitUv' ? '提交 UV' : '提交 PV']}
                                             contentStyle={{ borderRadius: '16px', borderColor: '#e2e8f0' }}
                                         />
-                                        <Line type="monotone" dataKey="submitUv" stroke="#7c3aed" strokeWidth={3} dot={false} />
+                                        <Line type="monotone" dataKey="submitUv" stroke="#466f9d" strokeWidth={3} dot={false} />
                                         <Line type="monotone" dataKey="submitPv" stroke="#0ea5e9" strokeWidth={2} dot={false} />
                                     </LineChart>
                                 </ResponsiveContainer>
@@ -1152,7 +1152,7 @@ export default function AdminTrackingDashboard() {
                     <Panel
                         title="简历助手需求与会员引导"
                         subtitle="看免费用户从生成框架到点击升级的关键行为，便于评估简历助手价值与会员引导效率。"
-                        icon={<Brain className="h-5 w-5 text-violet-600" />}
+                        icon={<Brain className="h-5 w-5 text-[#b7791f]" />}
                     >
                         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                             {[
@@ -1293,7 +1293,7 @@ function MetricCard({
 function FunnelCard({ step }: { step: FunnelStep }) {
     return (
         <div
-            className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4 transition-colors hover:border-indigo-200 hover:bg-white"
+            className="rounded-[24px] border border-slate-200 bg-slate-50/70 p-4 transition-colors hover:border-[#c9dce8] hover:bg-white"
             title={FUNNEL_DEFINITIONS[step.stepId] || step.label}
         >
             <div className="flex items-start justify-between gap-3">
@@ -1334,7 +1334,7 @@ function CorporateEnglishSummaryCard({ step }: { step: FunnelStep }) {
             ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
             : step.stepId.includes('_clip_play')
                 ? 'bg-amber-50 text-amber-700 border-amber-100'
-                : 'bg-violet-50 text-violet-700 border-violet-100';
+                : 'bg-[#fff8e8] text-[#8f5e19] border-[#f8ecd3]';
     const tag = step.stepId.includes('_detail_view')
         ? '详情'
         : step.stepId.includes('_video_play')
@@ -1390,7 +1390,7 @@ function CorporateEnglishVideoTable({ steps }: { steps: FunnelStep[] }) {
                         <div className="text-sm font-semibold text-slate-900">视频播放排行</div>
                         <div className="mt-0.5 text-xs text-slate-500">按播放 UV、播放 PV 排序；最多展示前 12 条</div>
                     </div>
-                    <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+                    <div className="rounded-full bg-[#fff8e8] px-3 py-1 text-xs font-semibold text-[#8f5e19]">
                         {formatNum(videoSteps.length)} 条视频
                     </div>
                 </div>
@@ -1638,7 +1638,7 @@ function RankList({ items, emptyText }: { items: CopilotItem[]; emptyText: strin
                     </div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-white">
                         <div
-                            className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-sky-500"
+                            className="h-full rounded-full bg-gradient-to-r from-[#587faa] to-sky-500"
                             style={{ width: `${Math.max((item.uv / maxUv) * 100, 8)}%` }}
                         />
                     </div>
@@ -1672,7 +1672,7 @@ function SegmentedControl({
                     key={option.value}
                     onClick={() => onChange(option.value)}
                     className={`rounded-2xl px-3 py-2 text-sm font-medium transition-all ${value === option.value
-                            ? 'bg-white text-indigo-600 shadow-sm'
+                            ? 'bg-white text-[#466f9d] shadow-sm'
                             : 'text-slate-500 hover:text-slate-900'
                         }`}
                 >

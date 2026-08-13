@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Briefcase, Crown, Lock,
-  Share2, Check, Package, BookOpen, PlayCircle, PartyPopper
+  Share2, Check, Package, BookOpen, PlayCircle
 } from 'lucide-react';
 import JobCardNew from '../components/JobCardNew';
 import JobDetailModal from '../components/JobDetailModal';
@@ -136,7 +136,7 @@ export default function JobBundleDetailPage() {
         if (b.job_ids?.length > 0) await fetchJobs(b.job_ids);
         else setJobs([]);
       } else {
-        setError(text('组合包不存在或暂未对你开放', 'This collection is unavailable to your account.'));
+        setError(text('岗位合集不存在或暂未开放', 'This collection is currently unavailable.'));
       }
     } catch {
       setError(text('加载失败，请稍后重试', 'Could not load this collection. Please try again later.'));
@@ -243,10 +243,10 @@ export default function JobBundleDetailPage() {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center pt-20">
+      <div className="hg-bundle-page flex min-h-screen items-center justify-center pt-20">
         <div className="text-center text-slate-400">
-          <div className="w-8 h-8 rounded-full border-2 border-blue-200 border-t-blue-500 animate-spin mx-auto mb-3" />
-          <p className="text-sm">{text('加载中...', 'Loading...')}</p>
+          <div className="mx-auto mb-3 h-8 w-8 rounded-full border-2 border-[#ffd9c7] border-t-[#e96832] animate-spin" />
+          <p className="text-sm">{text('正在读取合集…', 'Loading collection…')}</p>
         </div>
       </div>
     );
@@ -255,11 +255,11 @@ export default function JobBundleDetailPage() {
   // ── Error state ───────────────────────────────────────────────────────────
   if (error || !bundle) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center pt-20">
-        <div className="text-center text-slate-400 p-8">
+      <div className="hg-bundle-page flex min-h-screen items-center justify-center pt-20">
+        <div className="hg-bundle-state p-8 text-center">
           <Package className="w-12 h-12 mx-auto mb-4 opacity-30" />
-          <p className="text-lg font-medium">{error || text('组合包不存在', 'This collection does not exist.')}</p>
-          <button onClick={handleBack} className="mt-4 text-blue-600 text-sm hover:underline">
+          <p className="text-lg font-medium">{error || text('岗位合集不存在', 'This collection does not exist.')}</p>
+          <button onClick={handleBack} className="mt-5 border-b border-[#e96832] pb-1 text-sm font-semibold text-[#c94f22] hover:text-[#182033]">
             ← {text('返回', 'Back')}
           </button>
         </div>
@@ -269,9 +269,9 @@ export default function JobBundleDetailPage() {
 
   if (bundle.access?.requires_login) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="hg-bundle-page min-h-screen">
         <div className="mx-auto max-w-md px-4 pb-10 pt-28 text-center sm:pt-32">
-          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full border border-[#ddd7ff] bg-[#f6f4ff] text-[#6f63f6]">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-[#f0c8b4] bg-[#fff4ec] text-[#c94f22]">
             <Lock className="h-8 w-8" />
           </div>
           <h1 className="text-2xl font-black text-slate-950">{text('需登录验证后访问', 'Sign in to verify access')}</h1>
@@ -279,7 +279,7 @@ export default function JobBundleDetailPage() {
           <button
             type="button"
             onClick={() => navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle.id))}`)}
-            className="mt-7 inline-flex items-center justify-center rounded-full bg-[#6f63f6] px-6 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.62)] transition hover:bg-[#5d50df]"
+            className="mt-7 inline-flex items-center justify-center bg-[#1b2440] px-6 py-3 text-sm font-black text-white transition hover:bg-[#313d62]"
           >
             {text('前往登录', 'Log in')}
           </button>
@@ -289,7 +289,7 @@ export default function JobBundleDetailPage() {
   }
 
   const isMemberBundle = bundle.visibility === 'member';
-  const isLocked = Boolean(bundle.access?.locked) || (isMemberBundle && !isMember);
+  const isLocked = Boolean(bundle.access?.locked) || (isMemberBundle && !isAuthenticated);
   const isPrivateExperience = bundle.visibility === 'specified' || isMemberBundle;
   const displayName = bundle.visibility === 'specified' ? getDisplayName(user) : '';
   const careerItems = bundle.career_items || [];
@@ -299,17 +299,17 @@ export default function JobBundleDetailPage() {
     (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
   const assistantSupportPanel = (
-    <div className="rounded-[22px] border border-[#eadfcf] bg-[#fffdf8] p-3.5 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.22)]">
+    <div className="hg-bundle-assistant border-y border-[#eadfcf] bg-[#fffdf8] py-3.5">
       <div className="flex items-start gap-3">
         <img
           src="/series_assistant.png"
           alt={text('海狗小助手二维码', 'Haigoo assistant QR code')}
-          className="h-[76px] w-[76px] rounded-2xl border border-[#dfe8ef] bg-white object-contain p-1"
+          className="h-[76px] w-[76px] border border-[#dfe8ef] bg-white object-contain p-1"
         />
         <div className="min-w-0">
           <div className="text-sm font-black text-slate-900">{text('海狗小助手', 'Haigoo Assistant')}</div>
           <p className="mt-1 text-xs leading-5 text-slate-500">
-            {text('扫码添加微信，咨询岗位、加入交流群、获取帮助。', 'Scan to connect on WeChat for role questions, community access, and support.')}
+            {text('扫码联系 Haigoo，获取页面使用帮助。', 'Scan to contact Haigoo for help using this page.')}
           </p>
         </div>
       </div>
@@ -319,39 +319,26 @@ export default function JobBundleDetailPage() {
   // ── Member lock screen ────────────────────────────────────────────────────
   if (isLocked) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="hg-bundle-page min-h-screen">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-8">
           <button onClick={handleBack}
             className="flex items-center text-slate-500 hover:text-[#3f7f67] transition-colors text-sm mb-12">
             <ArrowLeft className="w-4 h-4 mr-1" />{text('返回', 'Back')}
           </button>
           <div className="max-w-md mx-auto text-center py-12">
-            <div className="w-20 h-20 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto mb-6">
-              <Crown className="w-9 h-9 text-amber-500" />
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center border border-[#f0c8b4] bg-[#fff4ec]">
+              <Crown className="w-9 h-9 text-[#c94f22]" />
             </div>
             <h1 className="text-2xl font-bold text-slate-900 mb-2">{bundle.title}</h1>
             <p className="text-slate-500 mb-2 text-sm">{bundle.subtitle}</p>
-            <p className="text-sm text-amber-700 font-medium mb-8 flex items-center justify-center gap-1.5">
-              <Lock className="w-3.5 h-3.5" />{text('此精选合集仅对 Haigoo 会员开放', 'This curated collection is available to Haigoo members only.')}
+            <p className="mb-8 flex items-center justify-center gap-1.5 text-sm font-medium text-[#c94f22]">
+              <Lock className="w-3.5 h-3.5" />{text('登录后可查看完整信息合集', 'Sign in to view the full information collection.')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {!isAuthenticated ? (
-                <>
-                  <button onClick={() => navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle.id))}`)}
-                    className="px-6 py-3 rounded-xl bg-[#2b3448] text-white font-semibold hover:bg-slate-800 transition-colors text-sm">
-                    {text('登录账号', 'Log in')}
-                  </button>
-                  <button onClick={() => navigate('/profile?tab=membership#club-service-plans')}
-                    className="px-6 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors text-sm">
-                    {text('添加顾问了解', 'Contact an advisor')}
-                  </button>
-                </>
-              ) : (
-                <button onClick={() => navigate('/profile?tab=membership#club-service-plans')}
-                  className="px-6 py-3 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-colors text-sm">
-                  {text('咨询权益方案', 'Ask about membership')}
-                </button>
-              )}
+            <div className="flex justify-center">
+              <button onClick={() => navigate(`/login?redirect=${encodeURIComponent(getBundleDetailPath(bundle.id))}`)}
+                className="bg-[#2b3448] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800">
+                {text('登录账号', 'Log in')}
+              </button>
             </div>
           </div>
         </div>
@@ -361,18 +348,17 @@ export default function JobBundleDetailPage() {
 
   // ── Main page ─────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#f7f8fc]">
-      <main className="mx-auto max-w-[1720px] px-3 pb-3 pt-[76px] sm:px-5 sm:pt-[82px] lg:h-screen lg:overflow-hidden lg:pb-4">
-        <div className="grid gap-3 lg:h-[calc(100vh-96px)] lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-4">
-        <section className="min-w-0 overflow-hidden rounded-[24px] border border-[#e1e7f0] bg-white shadow-[0_24px_70px_-58px_rgba(33,47,70,0.18)] sm:rounded-[28px]">
-        <div className="h-full min-h-0 overflow-y-auto p-3 sm:p-4 lg:p-4.5">
+    <div className="hg-bundle-page min-h-screen">
+      <main className="hg-bundle-shell mx-auto max-w-[1560px] px-4 pb-16 pt-24 sm:px-8">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:items-start">
+        <section className="hg-bundle-column min-w-0">
+        <div>
         <button onClick={handleBack}
-          className="mb-3 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-[#e0e7f0] bg-white px-3.5 py-1.5 text-sm font-black text-slate-600 shadow-sm transition hover:border-[#bdb3ff] hover:text-[#6251f5] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]">
+          className="hg-bundle-back mb-8 inline-flex min-h-11 items-center gap-1.5 text-sm font-bold text-slate-600 transition hover:text-[#466f9d] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#466f9d]">
           <ArrowLeft className="h-4 w-4" />{text('返回', 'Back')}
         </button>
         {/* ── Hero Header ───────────────────────────────────────────────────── */}
-        <section className="relative mb-3 overflow-hidden rounded-[20px] border border-[#e5e2f8] bg-[linear-gradient(135deg,#fcfbff_0%,#ffffff_78%)] p-4 sm:rounded-[24px] sm:p-5">
-          <img src="/pic_lists/Home_pics/background04.webp" alt="" className="pointer-events-none absolute bottom-0 right-0 h-[54%] w-[38%] object-cover object-[68%_100%] opacity-[0.08]" />
+        <section className="hg-bundle-hero relative mb-10 overflow-hidden border-y border-[#deddd7] py-8">
 
           <div className="relative">
             <div className="min-w-0">
@@ -381,8 +367,8 @@ export default function JobBundleDetailPage() {
               </h1>
               {bundle.subtitle && <p className="mb-3 max-w-3xl text-sm font-medium leading-6 text-slate-500">{bundle.subtitle}</p>}
 
-              <p className="max-w-4xl border-l-2 border-[#cfc7ff] pl-3.5 text-sm leading-6 text-slate-600 sm:pl-4">
-                {bundle.content || text('本期推荐岗位已整理完成，下一次更新后会同步更多适合远程申请的机会。', 'This collection is ready. More remote opportunities will be added in the next update.')}
+              <p className="max-w-4xl border-l-2 border-[#466f9d] pl-3.5 text-sm leading-6 text-slate-600 sm:pl-4">
+                {bundle.content || text('本期岗位信息已整理完成，后续更新会继续补充到这里。', 'This collection is ready. Future updates will continue to appear here.')}
               </p>
 
               {!isPrivateExperience && <div className="mt-5 space-y-3 lg:hidden">
@@ -414,15 +400,15 @@ export default function JobBundleDetailPage() {
         </section>
 
         {/* ── Jobs Grid ────────────────────────────────────────────────────── */}
-        <section id="bundle-jobs" className="relative scroll-mt-24 overflow-hidden rounded-[20px] border border-[#e4e8f0] bg-[#fcfdff] p-4 sm:rounded-[24px] sm:p-5">
+        <section id="bundle-jobs" className="hg-bundle-jobs relative scroll-mt-24 border-t border-[#deddd7] py-7">
           <div className="relative mb-3 flex items-end justify-between gap-4">
             <div>
               <div className="flex min-w-0 items-center gap-2">
-                <h2 className="shrink-0 whitespace-nowrap text-[18px] font-bold text-slate-900 sm:text-xl">{text('推荐申请的岗位', 'Recommended roles')}</h2>
+                <h2 className="shrink-0 whitespace-nowrap text-[18px] font-bold text-slate-900 sm:text-xl">{text('合集中的岗位', 'Roles in this collection')}</h2>
                 <span className="rounded-full bg-[#eef2f7] px-2 py-0.5 text-xs font-semibold text-slate-500">{jobs.length}</span>
-                {displayName && <span title={displayName} className="min-w-0 max-w-[10rem] truncate whitespace-nowrap text-sm font-semibold text-[#7568ed] sm:text-base">@{displayName}</span>}
+                {displayName && <span title={displayName} className="min-w-0 max-w-[10rem] truncate whitespace-nowrap text-sm font-semibold text-[#466f9d] sm:text-base">@{displayName}</span>}
               </div>
-              <p className="mt-1 text-xs leading-5 text-slate-500">{text('根据你的背景推荐，点击岗位可查看完整信息。', 'Recommended from your background. Open a role for full details.')}</p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">{text('按合集主题整理，点击岗位可查看公开信息与官方申请入口。', 'Organised by collection theme. Open a role to view public information and its official application link.')}</p>
             </div>
           </div>
 
@@ -442,7 +428,7 @@ export default function JobBundleDetailPage() {
           </div>
 
           {jobs.length === 0 && (
-            <div className="relative overflow-hidden rounded-[20px] border border-[#e3edf4] bg-white py-8 text-center text-slate-400 shadow-sm">
+            <div className="relative border-y border-[#e3edf4] bg-white py-10 text-center text-slate-400">
               <Briefcase className="w-10 h-10 mx-auto mb-3 opacity-30" />
               <p className="font-medium">{text('暂无职位数据', 'No roles available')}</p>
               <p className="mt-1 text-sm">{text('下一次更新后会同步更多适合远程申请的机会。', 'More remote opportunities will be added in the next update.')}</p>
@@ -452,38 +438,38 @@ export default function JobBundleDetailPage() {
         </div>
         </section>
 
-        <aside className="relative min-h-0 overflow-y-auto rounded-[24px] border border-[#ded9ff] bg-[#fdfcff] shadow-[0_24px_70px_-58px_rgba(95,99,246,0.20)] sm:rounded-[28px]">
-          <div className="sticky top-0 z-10 border-b border-[#ebe8ff] bg-[#fdfcff] px-4 pb-3 pt-4 sm:px-5 sm:pt-5">
+        <aside className="hg-bundle-plan relative border-l border-[#deddd7] pl-7 lg:sticky lg:top-24">
+          <div className="border-y border-[#deddd7] py-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
-                <p className="mb-1 text-[11px] font-bold tracking-[0.08em] text-[#7c70eb]">{text('求职准备', 'JOB PREPARATION')}</p>
+                <p className="mb-1 text-[11px] font-bold tracking-[0.1em] text-[#466f9d]">{text('求职准备', 'JOB PREPARATION')}</p>
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <h2 className="shrink-0 whitespace-nowrap text-[18px] font-bold text-slate-900 sm:text-xl">{text('专属于你的准备方案', 'Your preparation plan')}</h2>
-                  {displayName && <span title={displayName} className="min-w-0 max-w-[8rem] truncate whitespace-nowrap text-sm font-semibold text-[#7568ed] sm:text-base">@{displayName}</span>}
+                  <h2 className="shrink-0 whitespace-nowrap text-[18px] font-bold text-slate-900 sm:text-xl">{text('配套准备内容', 'Preparation material')}</h2>
+                  {displayName && <span title={displayName} className="min-w-0 max-w-[8rem] truncate whitespace-nowrap text-sm font-semibold text-[#466f9d] sm:text-base">@{displayName}</span>}
                 </div>
               </div>
-              <span className="shrink-0 rounded-full border border-[#e0d9ff] bg-[#f4f1ff] px-3 py-1.5 text-xs font-bold text-[#6251f5]">{completedCareerCount}/{careerItems.length}</span>
+              <span className="shrink-0 border border-[#c9dce8] bg-[#eff5fb] px-3 py-1.5 text-xs font-bold text-[#466f9d]">{completedCareerCount}/{careerItems.length}</span>
             </div>
-            {careerItems.length > 0 && <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#eceafb]" aria-label={text(`准备进度：${completedCareerCount}/${careerItems.length}`, `Preparation progress: ${completedCareerCount}/${careerItems.length}`)}>
-              <div className="h-full rounded-full bg-[#6f63f6] transition-all duration-500" style={{ width: `${(completedCareerCount / careerItems.length) * 100}%` }} />
+            {careerItems.length > 0 && <div className="mt-3 h-1.5 overflow-hidden bg-[#dce9f5]" aria-label={text(`准备进度：${completedCareerCount}/${careerItems.length}`, `Preparation progress: ${completedCareerCount}/${careerItems.length}`)}>
+              <div className="h-full bg-[#466f9d] transition-all duration-500" style={{ width: `${(completedCareerCount / careerItems.length) * 100}%` }} />
             </div>}
-            <div className="mt-3 grid grid-cols-2 rounded-xl bg-[#f0f3f8] p-1 text-sm font-bold">
-              <button type="button" onClick={() => setActiveCareerTab('learning')} className={`min-h-10 rounded-lg px-3 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6] ${activeCareerTab === 'learning' ? 'bg-white text-[#5f52de] shadow-sm' : 'text-slate-500'}`}>{text('准备内容', 'Preparation')}</button>
-              <button type="button" onClick={() => setActiveCareerTab('records')} className={`min-h-10 rounded-lg px-3 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6] ${activeCareerTab === 'records' ? 'bg-white text-[#5f52de] shadow-sm' : 'text-slate-500'}`}>{text('成长记录', 'Growth log')}</button>
+            <div className="mt-4 grid grid-cols-2 border-b border-[#deddd7] text-sm font-bold">
+              <button type="button" onClick={() => setActiveCareerTab('learning')} className={`min-h-11 border-b-2 px-3 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#466f9d] ${activeCareerTab === 'learning' ? 'border-[#466f9d] text-[#345d88]' : 'border-transparent text-slate-500'}`}>{text('准备内容', 'Preparation')}</button>
+              <button type="button" onClick={() => setActiveCareerTab('records')} className={`min-h-11 border-b-2 px-3 py-1.5 transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#466f9d] ${activeCareerTab === 'records' ? 'border-[#466f9d] text-[#345d88]' : 'border-transparent text-slate-500'}`}>{text('成长记录', 'Growth log')}</button>
             </div>
           </div>
 
           <div className="p-3 sm:p-4">
             {activeCareerTab === 'learning' ? (
-              careerItems.length ? <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              careerItems.length ? <div className="grid grid-cols-1 gap-5">
                 {careerItems.map((item) => {
                   const completed = completedVideoIds.has(item.video_id)
                   const introduction = item.guidance || item.description || text('打开视频，完成这一步的远程求职准备。', 'Open the video to complete this preparation step.')
                   const duration = formatVideoDuration(item.duration_ms, isEnglish)
-                  return <article key={item.video_id} className={`overflow-hidden rounded-[18px] border p-2.5 transition ${completed ? 'border-[#d8d2ff] bg-[#faf9ff]' : 'border-[#e1e5ef] bg-white hover:border-[#cfc6ff]'}`}>
-                    <a href={item.href || '/careerlearning'} target="_blank" rel="noreferrer" onClick={() => handleOpenVideo(item.video_id)} aria-label={text(`打开准备内容：${item.title}`, `Open preparation: ${item.title}`)} className="group relative block aspect-video overflow-hidden rounded-[13px] border border-slate-100 bg-[#f5f3ff] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]">
-                      {item.cover_image_url ? <img src={item.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" /> : <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#f5f3ff,#e8f4ff)]"><PlayCircle className="h-10 w-10 text-[#7a6ff7]" /></div>}
-                      <span className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-[#6251f5] shadow-sm"><PlayCircle className="h-5 w-5" /></span>
+                  return <article key={item.video_id} className={`overflow-hidden border-b pb-5 transition ${completed ? 'border-[#9fbbd2]' : 'border-[#deddd7]'}`}>
+                    <a href={item.href || '/careerlearning'} target="_blank" rel="noreferrer" onClick={() => handleOpenVideo(item.video_id)} aria-label={text(`打开准备内容：${item.title}`, `Open preparation: ${item.title}`)} className="group relative block aspect-video overflow-hidden border border-[#dce9f5] bg-[#eff5fb] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#466f9d]">
+                      {item.cover_image_url ? <img src={item.cover_image_url} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]" /> : <div className="absolute inset-0 flex items-center justify-center bg-[linear-gradient(135deg,#eff5fb,#fffdf8)]"><PlayCircle className="h-10 w-10 text-[#466f9d]" /></div>}
+                      <span className="absolute bottom-3 right-3 inline-flex h-9 w-9 items-center justify-center bg-white/92 text-[#466f9d] shadow-sm"><PlayCircle className="h-5 w-5" /></span>
                     </a>
                     <div className="px-0.5 pt-2.5">
                       <div className="flex items-start justify-between gap-2">
@@ -493,16 +479,16 @@ export default function JobBundleDetailPage() {
                       <p className="mt-1 line-clamp-2 min-h-10 text-xs leading-5 text-slate-500">{introduction}</p>
                     </div>
                     <div className="mt-2 flex items-center justify-between gap-2 border-t border-slate-100 px-0.5 pt-2.5">
-                      <span className={`text-xs font-bold ${completed ? 'text-[#6251f5]' : 'text-slate-400'}`}>{completed ? text('准备完成，撒花！🎉', 'Ready to go! 🎉') : text('看完就来点亮它吧', 'Light this up when ready')}</span>
-                      <button type="button" disabled={savingProgress} onClick={() => handleToggleVideoComplete(item.video_id)} className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6] disabled:cursor-not-allowed disabled:opacity-60 ${completed ? 'bg-[#eeeaff] text-[#6251f5] hover:bg-[#e4dfff]' : 'bg-[#6f63f6] text-white hover:bg-[#5d50df]'}`}>
-                        {completed ? <><PartyPopper className="h-3.5 w-3.5" />{text('已点亮', 'Celebrated')}</> : <><Check className="h-3.5 w-3.5" />{text('完成准备', 'Mark ready')}</>}
+                      <span className={`text-xs font-bold ${completed ? 'text-[#466f9d]' : 'text-slate-400'}`}>{completed ? text('已完成这项准备', 'This step is complete') : text('完成后可在这里记录进度', 'Mark this step when complete')}</span>
+                      <button type="button" disabled={savingProgress} onClick={() => handleToggleVideoComplete(item.video_id)} className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 px-3 py-1.5 text-xs font-bold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#466f9d] disabled:cursor-not-allowed disabled:opacity-60 ${completed ? 'bg-[#dce9f5] text-[#466f9d] hover:bg-[#c9dce8]' : 'bg-[#466f9d] text-white hover:bg-[#345d88]'}`}>
+                        <Check className="h-3.5 w-3.5" />{completed ? text('已完成', 'Completed') : text('完成准备', 'Mark ready')}
                       </button>
                     </div>
                   </article>
                 })}
-              </div> : <div className="rounded-[20px] border border-dashed border-[#d8d2ff] bg-[#faf9ff] px-5 py-10 text-center"><BookOpen className="mx-auto h-8 w-8 text-[#8f83ff]" /><p className="mt-3 text-sm font-black text-slate-700">{text('顾问正在为你整理成长内容', 'Your career plan is being prepared')}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text('组合更新后，视频和具体使用建议会显示在这里。', 'Videos and instructions will appear here once the plan is updated.')}</p></div>
+              </div> : <div className="border-y border-dashed border-[#c9dce8] px-5 py-10 text-center"><BookOpen className="mx-auto h-8 w-8 text-[#587faa]" /><p className="mt-3 text-sm font-black text-slate-700">{text('配套内容正在整理中', 'Preparation material is being organised')}</p><p className="mt-1 text-xs leading-5 text-slate-500">{text('合集更新后，视频和使用建议会显示在这里。', 'Videos and guidance will appear here after the collection is updated.')}</p></div>
             ) : (
-              <div className="relative space-y-0 before:absolute before:bottom-5 before:left-[15px] before:top-5 before:w-px before:bg-[#ded9ff]">{growthRecords.length ? growthRecords.map((record, index) => <article key={record.id} className="relative pb-5 pl-10 last:pb-0"><span className="absolute left-0 top-3 flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f2efff] text-xs font-black text-[#6658ef] shadow-sm">{index + 1}</span><div className="rounded-[18px] border border-slate-200 bg-white p-3.5 shadow-[0_16px_35px_-30px_rgba(48,58,95,0.42)]"><p className="text-sm leading-6 text-slate-700">{record.content}</p><time className="mt-2 block text-xs font-semibold text-slate-400">{new Date(record.created_at).toLocaleString(isEnglish ? 'en-US' : 'zh-CN', { dateStyle: 'medium', timeStyle: 'short' })}</time></div></article>) : <p className="relative px-2 py-10 text-center text-sm leading-6 text-slate-400">{text('你的申请经历和学习成长会记录在这里，开始你的远程之旅吧！', 'Your applications and learning milestones will appear here. Start your remote journey!')}</p>}</div>
+              <div className="relative space-y-0 before:absolute before:bottom-5 before:left-[15px] before:top-5 before:w-px before:bg-[#c9dce8]">{growthRecords.length ? growthRecords.map((record, index) => <article key={record.id} className="relative pb-5 pl-10 last:pb-0"><span className="absolute left-0 top-3 flex h-8 w-8 items-center justify-center border border-[#c9dce8] bg-[#eff5fb] text-xs font-black text-[#466f9d] shadow-sm">{index + 1}</span><div className="border border-slate-200 bg-white p-3.5 shadow-[0_16px_35px_-30px_rgba(48,58,95,0.42)]"><p className="text-sm leading-6 text-slate-700">{record.content}</p><time className="mt-2 block text-xs font-semibold text-slate-400">{new Date(record.created_at).toLocaleString(isEnglish ? 'en-US' : 'zh-CN', { dateStyle: 'medium', timeStyle: 'short' })}</time></div></article>) : <p className="relative px-2 py-10 text-center text-sm leading-6 text-slate-400">{text('你的申请经历和学习成长会记录在这里，开始你的远程之旅吧！', 'Your applications and learning milestones will appear here. Start your remote journey!')}</p>}</div>
             )}
           </div>
         </aside>

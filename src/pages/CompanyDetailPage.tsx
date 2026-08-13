@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Globe, Building2, Briefcase, MapPin, Users, Calendar, Star, Info, Mail, Lock } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Briefcase, Calendar, Clock3, Globe, Lock, Mail, MapPin, Star, Users } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Job } from '../types'
 import { processedJobsService } from '../services/processed-jobs-service'
@@ -13,6 +13,17 @@ import { getCompanyLogoSources } from '../utils/company-logo'
 import { LocationTooltip } from '../components/LocationTooltip'
 import { useReturnNavigation } from '../hooks/useReturnNavigation'
 import { useLanguage } from '../contexts/LanguageContext'
+
+const formatCompanyDate = (value?: string) => {
+    if (!value) return ''
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return ''
+    return new Intl.DateTimeFormat('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+    }).format(date)
+}
 
 export default function CompanyDetailPage() {
     const { companyName } = useParams<{ companyName: string }>()
@@ -42,8 +53,11 @@ export default function CompanyDetailPage() {
     }), [companyInfo?.id, companyInfo?.cachedLogoUrl, companyInfo?.logo, companyInfo?.updatedAt])
     const companyLogoSourceKey = useMemo(() => companyLogoSources.join('|'), [companyLogoSources])
     const hiringLine = useMemo(() => {
-        return jobs.length > 0 ? text(`${jobs.length} 个在招岗位`, `${jobs.length} open role${jobs.length === 1 ? '' : 's'}`) : text('暂无在招岗位', 'No open roles')
-    }, [jobs.length, text])
+        const roles = [...new Set(jobs.map((job) => String((job as any).category || '').trim()).filter(Boolean))].slice(0, 3)
+        return roles.length > 0
+            ? text(`在招 ${roles.join(' / ')}`, `Hiring ${roles.join(' / ')}`)
+            : text('暂未公开', 'Not currently listed')
+    }, [jobs, text])
     const [companyLogoIndex, setCompanyLogoIndex] = useState(0)
     const companyLogoSrc = companyLogoSources[companyLogoIndex] || ''
 
@@ -231,17 +245,24 @@ export default function CompanyDetailPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-indigo-50/30 to-orange-50/20 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+            <div className="hg-company-detail-page min-h-screen pt-28">
+                <div className="haigoo-shell" aria-label={text('正在加载企业资料', 'Loading company profile')} aria-busy="true">
+                    <div className="border-t-2 border-[#101829] py-8">
+                        <p className="text-[11px] font-black uppercase tracking-[0.18em] text-[#52738c]">COMPANY PROFILE</p>
+                        <div className="mt-4 h-10 w-64 animate-pulse bg-[#dfe7e8]" />
+                        <div className="mt-5 h-4 w-full max-w-2xl animate-pulse bg-[#e6e1d8]" />
+                        <div className="mt-2 h-4 w-2/3 max-w-xl animate-pulse bg-[#edf1ee]" />
+                    </div>
+                    <div className="grid gap-6 border-y border-[#d9d3c9] py-8 md:grid-cols-3">
+                        {[0, 1, 2].map(item => <div key={item} className="h-24 animate-pulse bg-[#edf4f8]" />)}
+                    </div>
+                </div>
             </div>
         )
     }
 
-    const companyDecor = {
-        bg: '/pic_lists/Home_pics/background04.webp',
-    }
     const displayCompanyName = companyInfo?.name || decodedCompanyName || text('企业详情', 'Company details')
-    const companyDescription = companyInfo?.description || text('暂无简介', 'No company description available.')
+    const companyDescription = companyInfo?.description || text('企业介绍正在整理中。', 'The company profile is being prepared.')
     const isRemoteAddress = Boolean(companyInfo?.address && (companyInfo.address.includes('远程') || companyInfo.address.toLowerCase().includes('remote')))
     const companyTags = Array.isArray(companyInfo?.tags)
         ? companyInfo.tags.map((tag) => String(tag).trim()).filter(Boolean)
@@ -249,331 +270,235 @@ export default function CompanyDetailPage() {
     const companySpecialties = Array.isArray(companyInfo?.specialties)
         ? companyInfo.specialties.map((specialty) => String(specialty).trim()).filter(Boolean)
         : []
-    const LockedText = ({ className = 'w-24' }: { className?: string }) => (
-        <span className={`inline-block h-3 rounded-full bg-slate-300/75 blur-[3px] ${className}`} aria-hidden="true" />
-    )
-    const LockedField = ({ className = 'w-24' }: { className?: string }) => (
-        <>
+    const updatedLabel = formatCompanyDate(companyInfo?.updatedAt)
+    const officialSource = companyInfo?.careersPage || companyInfo?.website || ''
+    const officialSourceLabel = companyInfo?.careersPage
+        ? text('官方 Careers 页面', 'Official Careers page')
+        : text('官方网站', 'Official website')
+    const loginRedirect = '/login?redirect=' + encodeURIComponent(location.pathname + location.search)
+    const LockedField = ({ width = '70%' }: { width?: string }) => (
+        <span className="hg-company-detail__locked-field" style={{ width }}>
             <span className="sr-only">{text('登录后可见', 'Log in to view')}</span>
-            <LockedText className={className} />
-        </>
+        </span>
     )
 
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f9fbff_46%,#fffdf8_100%)]">
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[1080px] overflow-hidden">
-                <img
-                    src={companyDecor.bg}
-                    alt=""
-                    className="absolute inset-x-0 top-0 h-[900px] w-full object-cover object-[58%_44%] opacity-[0.32] saturate-[0.98]"
-                />
-                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,248,0.34)_0%,rgba(255,253,248,0.64)_48%,rgba(249,252,255,0.84)_78%,rgba(255,253,248,0.98)_100%)]" />
-                <div className="absolute inset-x-0 bottom-0 h-56 bg-[linear-gradient(180deg,rgba(255,253,248,0)_0%,#fffdf8_86%)]" />
-            </div>
-            {/* Header */}
-            <div className="relative z-10 pt-[82px] lg:pt-[90px]">
-                {/* Back Button Section */}
-                <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 pb-4">
-                    <button
-                        onClick={handleBack}
-                        className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-[#6f63f6] transition-colors"
-                    >
-                        <ArrowLeft className="w-4 h-4" />
-                        <span className="text-sm">{text('返回', 'Back')}</span>
-                    </button>
-                </div>
+        <div className="hg-company-detail-page min-h-screen">
+            <div className="haigoo-shell hg-company-detail">
+                <button type="button" onClick={handleBack} className="hg-company-detail__back">
+                    <ArrowLeft aria-hidden="true" />
+                    {text('返回远程企业', 'Back to remote companies')}
+                </button>
 
-                <div className="max-w-[1420px] mx-auto px-4 sm:px-6 lg:px-8 pb-7">
-                    <div className="relative overflow-visible rounded-[30px] border border-[#eadfcf]/90 bg-[#fffdf8]/78 p-3 shadow-[0_26px_78px_-62px_rgba(139,101,54,0.34)] backdrop-blur-[2px] sm:p-4 lg:p-5">
-
-                        <div className="relative">
-                            <section className="relative overflow-hidden rounded-[26px] bg-[linear-gradient(135deg,rgba(255,253,248,0.88)_0%,rgba(255,255,255,0.68)_48%,rgba(249,252,255,0.46)_100%)] p-4 sm:p-5 lg:min-h-[154px]">
+                <header className="hg-company-detail__hero">
+                    <div className="hg-company-detail__identity">
+                        <div className="hg-company-detail__logo">
+                            {companyLogoSrc ? (
                                 <img
-                                    src={companyDecor.bg}
-                                    alt=""
-                                    className="pointer-events-none absolute bottom-0 right-0 hidden h-[190px] w-[52%] object-cover object-[68%_62%] opacity-[0.52] lg:block"
+                                    src={companyLogoSrc}
+                                    alt={displayCompanyName}
+                                    onError={() => {
+                                        if (companyLogoIndex < companyLogoSources.length - 1) {
+                                            setCompanyLogoIndex((index) => index + 1)
+                                        } else {
+                                            setCompanyLogoIndex(companyLogoSources.length)
+                                        }
+                                    }}
                                 />
-                                <div className="pointer-events-none absolute bottom-0 right-0 hidden h-[190px] w-[68%] bg-[linear-gradient(90deg,rgba(255,253,248,0.92)_0%,rgba(255,253,248,0.52)_42%,rgba(255,253,248,0.22)_72%,rgba(255,253,248,0.58)_100%)] lg:block" />
-                                <div className="relative z-10 flex items-start gap-4">
-                                    {companyLogoSrc ? (
-                                        <div className="h-[74px] w-[74px] flex-shrink-0 overflow-hidden rounded-[22px] border border-[#dfeaf1] bg-white/94 p-2 shadow-[0_22px_48px_-32px_rgba(62,91,120,0.62)] sm:h-20 sm:w-20 lg:h-[88px] lg:w-[88px]">
-                                            <img
-                                                src={companyLogoSrc}
-                                                alt={displayCompanyName}
-                                                className="h-full w-full object-contain"
-                                                onError={(e) => {
-                                                    if (companyLogoIndex < companyLogoSources.length - 1) {
-                                                        setCompanyLogoIndex((idx) => idx + 1)
-                                                        return
-                                                    }
-                                                    const parent = e.currentTarget.parentElement!;
-                                                    parent.classList.remove('bg-white', 'p-2', 'border', 'border-slate-100');
-                                                    parent.classList.add('bg-gradient-to-br', 'from-indigo-500', 'to-indigo-600');
-                                                    parent.innerHTML = `<span class="text-white font-bold text-2xl">${displayCompanyName.charAt(0)}</span>`;
-                                                }}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className="flex h-[74px] w-[74px] flex-shrink-0 items-center justify-center rounded-[22px] bg-gradient-to-br from-[#8f8afe] to-[#6f63f6] shadow-[0_22px_48px_-32px_rgba(111,99,246,0.7)] sm:h-20 sm:w-20 lg:h-[88px] lg:w-[88px]">
-                                            <span className="text-2xl font-bold text-white sm:text-3xl">
-                                                {displayCompanyName.charAt(0)}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    <div className="min-w-0 flex-1 pt-0.5 lg:pt-2">
-                                        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                                            <h1 className="min-w-0 max-w-full truncate text-[30px] font-black leading-none tracking-normal text-slate-950 sm:text-[38px]">
-                                                {displayCompanyName}
-                                            </h1>
-                                            {companyInfo?.industry && (
-                                                <div className="flex items-center gap-1.5 rounded-full border border-[#dfd8ff] bg-[#f2efff]/86 px-2.5 py-1 text-xs font-bold text-[#6f63f6] shadow-sm shadow-slate-200/30">
-                                                    <Building2 className="w-3.5 h-3.5" />
-                                                    {canShowCompanyDetails ? <span>{companyInfo.industry}</span> : <LockedField className="w-20" />}
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-1.5 rounded-full border border-[#dfeaf1] bg-white/88 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/30">
-                                                <Briefcase className="w-3.5 h-3.5 text-slate-500" />
-                                                <span className="max-w-[260px] truncate">{hiringLine}</span>
-                                            </div>
-                                        </div>
-
-                                        {(companyTags.length > 0 || companySpecialties.length > 0) && (
-                                            <div className="mt-3 space-y-2">
-                                                {companyTags.length > 0 && (
-                                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                                        <span className="shrink-0 text-xs font-black text-slate-500">{text('标签', 'Tags')}</span>
-                                                        {companyTags.slice(0, 8).map((tag, index) => (
-                                                            <span key={tag} className="rounded-full border border-[#d7e8ee] bg-white/86 px-2.5 py-1 text-xs font-bold text-slate-600 shadow-sm shadow-slate-200/20">
-                                                                {canShowCompanyDetails ? tag : <LockedField className={index % 2 === 0 ? 'w-20' : 'w-16'} />}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                {companySpecialties.length > 0 && (
-                                                    <div className="flex min-w-0 flex-wrap items-center gap-2">
-                                                        <span className="shrink-0 text-xs font-black text-slate-500">{text('领域/专长', 'Specialties')}</span>
-                                                        {companySpecialties.slice(0, 8).map((specialty, index) => (
-                                                            <span key={specialty} className="rounded-full border border-[#e2e9f0] bg-white/72 px-2.5 py-1 text-xs font-bold text-slate-600">
-                                                                {canShowCompanyDetails ? specialty : <LockedField className={index % 2 === 0 ? 'w-28' : 'w-20'} />}
-                                                            </span>
-                                                        ))}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            </section>
+                            ) : (
+                                <span aria-hidden="true">{displayCompanyName.charAt(0)}</span>
+                            )}
                         </div>
-
-                        <section className="relative z-20 mt-3 overflow-visible rounded-[24px] border border-[#dfe8ef] bg-white/76 shadow-[0_22px_56px_-44px_rgba(62,91,120,0.26)] backdrop-blur-[2px]">
-                            <div className="flex items-center gap-2 border-b border-[#edf2f6] bg-white/48 px-4 py-3">
-                                <Info className="w-4 h-4 text-[#6f63f6]" />
-                                <h2 className="text-sm font-black text-slate-900">{text('企业简介与信息', 'Company overview')}</h2>
-                            </div>
-
-                            <div className="p-4 sm:p-5">
-                                <div className="relative overflow-hidden rounded-[22px] border border-[#e3edf4] bg-[linear-gradient(135deg,rgba(255,255,255,0.82)_0%,rgba(251,253,255,0.58)_100%)] p-4">
-                                    <div className="flex items-center gap-2 text-sm font-black text-slate-900">
-                                        <Building2 className="h-4 w-4 text-[#6f63f6]" />
-                                        <span>{text('关于我们', 'About us')}</span>
-                                    </div>
-                                    <div className="mt-3 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
-                                        {canShowCompanyDetails ? (
-                                            <p className="whitespace-pre-wrap text-sm leading-7 text-slate-600">{companyDescription}</p>
-                                        ) : (
-                                            <div className="space-y-3 py-1" aria-label={text('企业简介登录后可见', 'Log in to view the company profile')}>
-                                                <LockedText className="w-[92%]" />
-                                                <LockedText className="w-[86%]" />
-                                                <LockedText className="w-[76%]" />
-                                                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#dfe8ef] bg-white/80 px-2.5 py-1 text-xs font-black text-slate-500">
-                                                    <Lock className="h-3.5 w-3.5" />
-                                                    {text('登录后查看企业信息', 'Log in to view company details')}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                                    {canShowCompanyDetails && companyInfo?.website ? (
-                                        <a
-                                            href={companyInfo.website}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm transition-all hover:border-[#cfe0ea] hover:shadow-md"
-                                        >
-                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50">
-                                                <Globe className="w-5 h-5 text-[#6f63f6]" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="mb-0.5 text-xs font-medium text-slate-500">{text('官方网站', 'Website')}</div>
-                                                <div className="truncate text-sm font-bold text-[#6f63f6]">{text('点击访问', 'Visit website')}</div>
-                                            </div>
-                                        </a>
-                                    ) : !canShowCompanyDetails && companyInfo?.website ? (
-                                        <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm">
-                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-indigo-50">
-                                                <Globe className="w-5 h-5 text-[#6f63f6]" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="mb-0.5 text-xs font-medium text-slate-500">{text('官方网站', 'Website')}</div>
-                                                <div className="truncate text-sm font-bold text-[#6f63f6]"><LockedField className="w-20" /></div>
-                                            </div>
-                                        </div>
-                                    ) : (
-                                        <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/72 p-3">
-                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-slate-50">
-                                                <Globe className="w-5 h-5 text-slate-400" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="mb-0.5 text-xs font-medium text-slate-500">{text('官方网站', 'Website')}</div>
-                                                <div className="truncate text-sm font-bold text-slate-400">{text('待补充', 'Not available')}</div>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm">
-                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50">
-                                            <Users className="w-5 h-5 text-[#49a982]" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="mb-0.5 text-xs font-medium text-slate-500">{text('员工人数', 'Company size')}</div>
-                                            <div className="truncate text-sm font-bold text-slate-900">
-                                                {canShowCompanyDetails ? (companyInfo?.employeeCount || text('规模未知', 'Unknown')) : <LockedField className="w-24" />}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="relative flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm">
-                                        <div
-                                            className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-sky-50 ${companyInfo?.address && !isRemoteAddress ? 'cursor-help hover:bg-sky-100' : ''}`}
-                                            onMouseEnter={() => {
-                                                if (companyInfo?.address && !isRemoteAddress) setShowLocationTooltip(true)
-                                            }}
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                if (companyInfo?.address && !isRemoteAddress) setShowLocationTooltip(!showLocationTooltip)
-                                            }}
-                                        >
-                                            <MapPin className="w-5 h-5 text-[#5d94c7]" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="mb-0.5 text-xs font-medium text-slate-500">{text('总部地址', 'Headquarters')}</div>
-                                            <div className="truncate text-sm font-bold text-slate-900" title={canShowCompanyDetails ? (companyInfo?.address || text('总部未知', 'Unknown')) : text('登录后可见', 'Log in to view')}>
-                                                {canShowCompanyDetails ? (companyInfo?.address || text('总部未知', 'Unknown')) : <LockedField className="w-28" />}
-                                            </div>
-                                        </div>
-                                        {canShowCompanyDetails && companyInfo?.address && showLocationTooltip && !isRemoteAddress && (
-                                            <div className="absolute left-0 top-full z-[80] mt-2">
-                                                <LocationTooltip
-                                                    location={companyInfo.address}
-                                                    onClose={() => setShowLocationTooltip(false)}
-                                                    floating
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm">
-                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-amber-50">
-                                            <Calendar className="w-5 h-5 text-[#c28932]" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="mb-0.5 text-xs font-medium text-slate-500">{text('成立年份', 'Founded')}</div>
-                                            <div className="truncate text-sm font-bold text-slate-900">
-                                                {canShowCompanyDetails ? (companyInfo?.foundedYear || text('年份未知', 'Unknown')) : <LockedField className="w-16" />}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm">
-                                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-orange-50">
-                                            <Star className="w-5 h-5 text-[#f2a43d]" />
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="mb-0.5 text-xs font-medium text-slate-500">{text('企业评分', 'Company rating')}</div>
-                                            <div className="truncate text-sm font-bold text-slate-900">
-                                                {canShowCompanyDetails ? (companyInfo?.companyRating || text('暂无评分', 'Not rated')) : <LockedField className="w-14" />}
-                                            </div>
-                                            {canShowCompanyDetails && companyInfo?.ratingSource && (
-                                                <div className="truncate text-[10px] text-slate-400" title={`${text('评分来源', 'Rating source')}: ${companyInfo.ratingSource}`}>
-                                                    {text('来源', 'Source')}: {companyInfo.ratingSource}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {isMember && companyInfo?.hiringEmail && (
-                                        <div
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(companyInfo.hiringEmail || '')
-                                                alert(`${text('邮箱已复制', 'Email copied')}: ${companyInfo.hiringEmail}`)
-                                            }}
-                                            className="group/email relative flex min-w-0 cursor-pointer items-center gap-3 rounded-2xl border border-[#e3edf4] bg-white/90 p-3 shadow-sm transition-all hover:border-[#cfe0ea]"
-                                            title={text('点击复制完整邮箱', 'Click to copy the full email address')}
-                                        >
-                                            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 transition-colors group-hover/email:bg-emerald-100">
-                                                <Mail className="w-5 h-5 text-[#49a982]" />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <div className="truncate text-sm font-bold text-slate-900 group-hover/email:text-indigo-700">
-                                                    {companyInfo.hiringEmail}
-                                                </div>
-                                                <div className="mt-0.5 truncate text-[10px] text-slate-400">
-                                                    {companyInfo.emailType || text('招聘邮箱', 'Hiring email')}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </section>
-
-                    {/* Job Listings - Full Width */}
-                        <div className="relative z-0 mt-6 border-t border-[#e6edf3]/80 pt-5">
-                            <div className="mb-4 flex items-center justify-between">
-                            <h2 className="flex items-center gap-2 text-xl font-black text-slate-900">
-                                {text('在招岗位', 'Open roles')}
-                                <span className="rounded-full border border-[#dfe8ef] bg-white/90 px-2.5 py-1 text-xs font-bold text-slate-600">
-                                    {jobs.length}
-                                </span>
-                            </h2>
-                            </div>
-
-                        {jobs.length === 0 ? (
-                                <div className="relative overflow-hidden rounded-[24px] border border-[#e3edf4] bg-white/84 py-14 text-center shadow-sm">
-                                    <Briefcase className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-                                    <div className="mb-2 text-lg font-bold text-slate-400">{text('暂无在招岗位', 'No open roles')}</div>
-                                <p className="text-slate-500">{text('该公司目前没有开放的职位', 'This company does not have any open roles right now.')}</p>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:gap-7">
-                                {jobs.map((job) => (
-                                    <JobCardNew
-                                        key={job.id}
-                                        job={job}
-                                        variant="list"
-                                        onClick={() => handleJobClick(job)}
-                                        isActive={selectedJob?.id === job.id}
-                                        matchScore={job.displayMatchScore || job.matchScore || job.recommendationScore || undefined}
-                                        showApplicationMethodIcons
-                                        compactFeatured
-                                        hideMemberBackdrop
-                                    />
-                                ))}
-                            </div>
-                        )}
+                        <div>
+                            <p className="haigoo-editorial-label">{text('COMPANY PROFILE · 企业资料', 'COMPANY PROFILE')}</p>
+                            <h1>{displayCompanyName}</h1>
+                            <p className="hg-company-detail__lead">
+                                {text('从公开资料认识这家公司，再回到官方页面确认最新机会。', 'Use public information to understand the company, then confirm the latest openings at the source.')}
+                            </p>
                         </div>
                     </div>
-                </div>
+
+                    <dl className="hg-company-detail__hero-facts">
+                        <div>
+                            <dt>{text('行业', 'Industry')}</dt>
+                            <dd>{canShowCompanyDetails ? (companyInfo?.industry || text('待补充', 'Not available')) : <LockedField width="58%" />}</dd>
+                        </div>
+                        <div>
+                            <dt>{text('最近整理', 'Last updated')}</dt>
+                            <dd>{updatedLabel || text('待补充', 'Not available')}</dd>
+                        </div>
+                        <div>
+                            <dt>{text('岗位方向', 'Role categories')}</dt>
+                            <dd>{hiringLine}</dd>
+                        </div>
+                    </dl>
+                </header>
+
+                {(companyTags.length > 0 || companySpecialties.length > 0) ? (
+                    <div className="hg-company-detail__taxonomy">
+                        <span>{text('关注方向', 'Focus areas')}</span>
+                        <div>
+                            {[...companyTags, ...companySpecialties].slice(0, 10).map((item, index) => (
+                                <span key={item + index}>
+                                    {canShowCompanyDetails ? item : <LockedField width={index % 2 === 0 ? '5.5rem' : '4rem'} />}
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                ) : null}
+
+                <section className="hg-company-detail__overview">
+                    <article className="hg-company-detail__about">
+                        <p className="haigoo-editorial-label">{text('ABOUT · 关于企业', 'ABOUT')}</p>
+                        <h2>{text('它们在做什么', 'What the company does')}</h2>
+                        {canShowCompanyDetails ? (
+                            <p className="hg-company-detail__description">{companyDescription}</p>
+                        ) : (
+                            <div className="hg-company-detail__locked-copy">
+                                <LockedField width="94%" />
+                                <LockedField width="88%" />
+                                <LockedField width="72%" />
+                                <div>
+                                    <Lock aria-hidden="true" />
+                                    <span>{text('登录后查看企业简介与公开资料。', 'Log in to view the company overview and public profile.')}</span>
+                                    <button type="button" onClick={() => navigate(loginRedirect)}>
+                                        {text('登录查看', 'Log in to view')}
+                                        <ArrowUpRight aria-hidden="true" />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </article>
+
+                    <aside className="hg-company-detail__facts" aria-labelledby="company-facts-title">
+                        <div className="hg-company-detail__facts-heading">
+                            <p className="haigoo-editorial-label">{text('PUBLIC FACTS · 公开资料', 'PUBLIC FACTS')}</p>
+                            <h2 id="company-facts-title">{text('企业资料', 'Company facts')}</h2>
+                        </div>
+
+                        <div className="hg-company-detail__fact-row">
+                            <Globe aria-hidden="true" />
+                            <span>{officialSourceLabel}</span>
+                            {canShowCompanyDetails && officialSource ? (
+                                <a href={officialSource} target="_blank" rel="noopener noreferrer">
+                                    {text('打开来源', 'Open source')}
+                                    <ArrowUpRight aria-hidden="true" />
+                                </a>
+                            ) : canShowCompanyDetails ? (
+                                <strong>{text('待补充', 'Not available')}</strong>
+                            ) : (
+                                <LockedField width="5.5rem" />
+                            )}
+                        </div>
+
+                        <div className="hg-company-detail__fact-row">
+                            <Users aria-hidden="true" />
+                            <span>{text('员工人数', 'Company size')}</span>
+                            <strong>{canShowCompanyDetails ? (companyInfo?.employeeCount || text('待补充', 'Not available')) : <LockedField width="5.5rem" />}</strong>
+                        </div>
+
+                        <div className="hg-company-detail__fact-row hg-company-detail__fact-row--location">
+                            <MapPin aria-hidden="true" />
+                            <span>{text('总部地址', 'Headquarters')}</span>
+                            <button
+                                type="button"
+                                disabled={!canShowCompanyDetails || !companyInfo?.address}
+                                onMouseEnter={() => {
+                                    if (companyInfo?.address && !isRemoteAddress) setShowLocationTooltip(true)
+                                }}
+                                onMouseLeave={() => setShowLocationTooltip(false)}
+                                onClick={() => {
+                                    if (companyInfo?.address && !isRemoteAddress) setShowLocationTooltip((value) => !value)
+                                }}
+                            >
+                                {canShowCompanyDetails ? (companyInfo?.address || text('待补充', 'Not available')) : <LockedField width="6.5rem" />}
+                            </button>
+                            {canShowCompanyDetails && companyInfo?.address && showLocationTooltip && !isRemoteAddress ? (
+                                <div className="hg-company-detail__location-tooltip">
+                                    <LocationTooltip
+                                        location={companyInfo.address}
+                                        onClose={() => setShowLocationTooltip(false)}
+                                        floating
+                                    />
+                                </div>
+                            ) : null}
+                        </div>
+
+                        <div className="hg-company-detail__fact-row">
+                            <Calendar aria-hidden="true" />
+                            <span>{text('成立年份', 'Founded')}</span>
+                            <strong>{canShowCompanyDetails ? (companyInfo?.foundedYear || text('待补充', 'Not available')) : <LockedField width="4.5rem" />}</strong>
+                        </div>
+
+                        <div className="hg-company-detail__fact-row">
+                            <Star aria-hidden="true" />
+                            <span>{text('公开评分', 'Public rating')}</span>
+                            <strong>
+                                {canShowCompanyDetails ? (companyInfo?.companyRating || text('暂无公开评分', 'No public rating')) : <LockedField width="4.5rem" />}
+                                {canShowCompanyDetails && companyInfo?.ratingSource ? (
+                                    <small>{text('来源', 'Source')}: {companyInfo.ratingSource}</small>
+                                ) : null}
+                            </strong>
+                        </div>
+
+                        {isMember && companyInfo?.hiringEmail ? (
+                            <button
+                                type="button"
+                                className="hg-company-detail__fact-row hg-company-detail__member-email"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(companyInfo.hiringEmail || '')
+                                    alert(text('招聘邮箱已复制', 'Hiring email copied'))
+                                }}
+                            >
+                                <Mail aria-hidden="true" />
+                                <span>{companyInfo.emailType || text('会员招聘邮箱', 'Member hiring email')}</span>
+                                <strong>{companyInfo.hiringEmail}</strong>
+                            </button>
+                        ) : null}
+
+                        <p className="hg-company-detail__source-note">
+                            <Clock3 aria-hidden="true" />
+                            {text('公开信息可能随时变化，请以企业官方页面的最新信息为准。', 'Public information can change. Confirm the latest details on the official company page.')}
+                        </p>
+                    </aside>
+                </section>
+
+                <section className="hg-company-detail__jobs" aria-labelledby="company-open-roles-title">
+                    <header>
+                        <div>
+                            <p className="haigoo-editorial-label">{text('OPEN ROLES · 公开岗位', 'OPEN ROLES')}</p>
+                            <h2 id="company-open-roles-title">{text('最近公开的岗位', 'Latest public openings')}</h2>
+                        </div>
+                    </header>
+
+                    {jobs.length === 0 ? (
+                        <div className="hg-company-detail__jobs-empty">
+                            <Briefcase aria-hidden="true" />
+                            <div>
+                                <h3>{text('目前没有公开在招岗位', 'No public openings right now')}</h3>
+                                <p>{text('我们会继续关注公开渠道的岗位状态；也可以稍后回到企业官网查看。', 'We will keep monitoring public sources. You can also check the company site again later.')}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="hg-company-detail__job-list">
+                            {jobs.map((job) => (
+                                <JobCardNew
+                                    key={job.id}
+                                    job={job}
+                                    variant="list"
+                                    onClick={() => handleJobClick(job)}
+                                    isActive={selectedJob?.id === job.id}
+                                    showApplicationMethodIcons
+                                    compactFeatured
+                                    hideMemberBackdrop
+                                />
+                            ))}
+                        </div>
+                    )}
+                </section>
             </div>
 
-            {/* Job Listings - Removed from here, moved to main column */}
-
-            {/* Job Detail Modal */}
-            {isJobDetailOpen && selectedJob && (
+            {isJobDetailOpen && selectedJob ? (
                 <JobDetailModal
                     job={selectedJob}
                     isOpen={isJobDetailOpen}
@@ -585,7 +510,7 @@ export default function CompanyDetailPage() {
                     onNavigateJob={handleNavigateJob}
                     variant="center"
                 />
-            )}
+            ) : null}
         </div>
     )
 }

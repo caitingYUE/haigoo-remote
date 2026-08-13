@@ -40,9 +40,9 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
     // 免费用户看到的蒙版版本
     if (!isMember) {
         return (
-            <div className={`bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border-2 border-indigo-200 ${className}`}>
+            <div className={`bg-gradient-to-br from-[#eff5fb] to-[#fff8e8] rounded-xl p-6 border-2 border-[#c9dce8] ${className}`}>
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-lg">
+                    <div className="bg-gradient-to-r from-[#466f9d] to-[#b7791f] p-2 rounded-lg">
                         <Crown className="w-5 h-5 text-white" />
                     </div>
                     <h3 className="text-lg font-bold text-slate-900">会员专属 - 企业风险评估</h3>
@@ -77,7 +77,7 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                     <div className="absolute inset-0 flex items-center justify-center">
                         <button
                             onClick={() => navigate('/profile?tab=membership#club-service-plans')}
-                            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
+                            className="bg-gradient-to-r from-[#466f9d] to-[#b7791f] hover:from-[#345d88] hover:to-[#8f5e19] text-white px-8 py-3 rounded-xl font-bold shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center gap-2"
                         >
                             <Lock className="w-5 h-5" />
                             解锁会员查看完整评估
@@ -85,8 +85,8 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
                     </div>
                 </div>
 
-                <div className="mt-4 pt-4 border-t border-indigo-200">
-                    <p className="text-xs text-center text-indigo-700 flex items-center justify-center gap-1.5">
+                <div className="mt-4 pt-4 border-t border-[#c9dce8]">
+                    <p className="text-xs text-center text-[#345d88] flex items-center justify-center gap-1.5">
                         <Sparkles className="w-3.5 h-3.5" />
                         了解会员服务，获取企业友好度、回复率、风险提示等深度评估信息
                     </p>
@@ -109,13 +109,13 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
     };
 
     return (
-        <div className={`bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-200 ${className}`}>
+        <div className={`bg-gradient-to-br from-[#eff5fb] to-[#fff8e8] rounded-xl p-6 border border-[#c9dce8] ${className}`}>
             <div className="flex items-center gap-3 mb-5">
-                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-2 rounded-lg">
+                <div className="bg-gradient-to-r from-[#466f9d] to-[#b7791f] p-2 rounded-lg">
                     <Crown className="w-5 h-5 text-white" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-indigo-500" />
+                    <Sparkles className="w-5 h-5 text-[#587faa]" />
                     会员专属 - 企业风险评估
                 </h3>
             </div>
@@ -197,10 +197,10 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
             {haigooComment && (
                 <div className="bg-white rounded-lg p-4 mb-4 shadow-sm">
                     <p className="font-semibold text-slate-900 mb-2 flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-indigo-500" />
+                        <MessageSquare className="w-4 h-4 text-[#587faa]" />
                         Haigoo 人工点评
                     </p>
-                    <p className="text-sm text-slate-700 leading-relaxed italic border-l-4 border-indigo-300 pl-3">
+                    <p className="text-sm text-slate-700 leading-relaxed italic border-l-4 border-[#9fbbd2] pl-3">
                         "{haigooComment}"
                     </p>
                 </div>
@@ -210,7 +210,7 @@ export const RiskRatingDisplay: React.FC<RiskRatingDisplayProps> = ({
             {hiddenFields && Object.keys(hiddenFields).length > 0 && (
                 <div className="bg-white rounded-lg p-4 shadow-sm">
                     <p className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-                        <Lock className="w-4 h-4 text-indigo-500" />
+                        <Lock className="w-4 h-4 text-[#587faa]" />
                         会员解锁信息
                     </p>
                     <div className="space-y-2 text-sm">

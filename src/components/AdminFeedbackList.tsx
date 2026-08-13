@@ -219,7 +219,7 @@ export default function AdminFeedbackList() {
                                             <td>
                                                 {feedback.source === 'about_testimonial' ? (
                                                     <div className="flex flex-col gap-1 items-start">
-                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-violet-100 text-violet-800">
+                                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#f8ecd3] text-[#6f4711]">
                                                             <MessageSquare className="w-3 h-3 mr-1" /> 关于我们留言
                                                         </span>
                                                         <span className={`text-[10px] px-1.5 py-0.5 rounded border ${
@@ -252,7 +252,7 @@ export default function AdminFeedbackList() {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#fff8e8] text-[#6f4711]">
                                                         <MessageSquare className="w-3 h-3 mr-1" /> 我要反馈
                                                     </span>
                                                 )}
@@ -260,15 +260,15 @@ export default function AdminFeedbackList() {
                                             <td className="min-w-[350px]">
                                                 <div className="text-sm text-slate-900 break-words">{feedback.content}</div>
                                                 {feedback.source === 'about_testimonial' && (
-                                                    <div className="mt-2 text-xs bg-violet-50 p-2 rounded border border-violet-100 text-slate-700">
-                                                        <div className="font-semibold text-violet-700 mb-1">页面展示信息</div>
+                                                    <div className="mt-2 text-xs bg-[#fff8e8] p-2 rounded border border-[#f8ecd3] text-slate-700">
+                                                        <div className="font-semibold text-[#8f5e19] mb-1">页面展示信息</div>
                                                         <div>名称：{feedback.displayName || '-'}</div>
                                                         <div>身份：{feedback.displayTitle || '-'}</div>
                                                     </div>
                                                 )}
                                                 {feedback.companyName && (
-                                                    <div className="mt-2 text-xs bg-indigo-50 p-2 rounded border border-indigo-100">
-                                                        <div className="font-semibold text-indigo-700 mb-1 flex items-center gap-1">
+                                                    <div className="mt-2 text-xs bg-[#eff5fb] p-2 rounded border border-[#dce9f5]">
+                                                        <div className="font-semibold text-[#345d88] mb-1 flex items-center gap-1">
                                                             <Briefcase className="w-3 h-3" /> 招聘需求信息
                                                         </div>
                                                         <div className="grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 text-slate-700">
@@ -276,7 +276,7 @@ export default function AdminFeedbackList() {
                                                             <span className="font-medium">{feedback.companyName}</span>
                                                             
                                                             <span className="text-slate-500">官网:</span>
-                                                            <a href={feedback.companyWebsite} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline truncate">
+                                                            <a href={feedback.companyWebsite} target="_blank" rel="noreferrer" className="text-[#466f9d] hover:underline truncate">
                                                                 {feedback.companyWebsite}
                                                             </a>
                                                         </div>
@@ -284,7 +284,7 @@ export default function AdminFeedbackList() {
                                                 )}
                                                 {feedback.replyContent && (
                                                     <div className="mt-2 text-xs bg-slate-50 p-2 rounded border border-slate-100 text-slate-600">
-                                                        <div className="font-semibold text-indigo-600 mb-1">管理员回复:</div>
+                                                        <div className="font-semibold text-[#466f9d] mb-1">管理员回复:</div>
                                                         {feedback.replyContent}
                                                         <div className="text-slate-400 mt-1">{new Date(feedback.repliedAt!).toLocaleString()}</div>
                                                     </div>
@@ -299,7 +299,7 @@ export default function AdminFeedbackList() {
                                                         <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">Job ID: {feedback.jobId}</span>
                                                         {feedback.source && <span className="text-xs text-slate-500">来源: {feedback.source}</span>}
                                                         {feedback.sourceUrl && (
-                                                            <a href={feedback.sourceUrl} target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline text-xs">
+                                                            <a href={feedback.sourceUrl} target="_blank" rel="noreferrer" className="text-[#466f9d] hover:underline text-xs">
                                                                 查看原始链接
                                                             </a>
                                                         )}
@@ -331,7 +331,7 @@ export default function AdminFeedbackList() {
                                                     {!feedback.replyContent && (
                                                         <button
                                                             onClick={() => handleReply(feedback.id)}
-                                                            className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                            className="p-1.5 text-[#466f9d] hover:bg-[#eff5fb] rounded transition-colors"
                                                             title="回复用户"
                                                         >
                                                             <Reply className="w-4 h-4" />

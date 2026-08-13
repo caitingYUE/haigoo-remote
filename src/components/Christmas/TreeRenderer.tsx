@@ -35,7 +35,7 @@ interface TreeRendererProps {
 // Palettes based on Style
 const PALETTES = {
     engineering: ['#0369a1', '#0ea5e9', '#0284c7', '#2563eb', '#475569', '#334155'], // Blue/Tech/Slate
-    creative: ['#be185d', '#db2777', '#7c3aed', '#9333ea', '#ea580c', '#d97706'], // Pink/Purple/Orange
+    creative: ['#be185d', '#db2777', '#466f9d', '#31594e', '#ea580c', '#d97706'], // Pink/Blue/Green/Orange
     growth: ['#dc2626', '#15803d', '#166534', '#b45309', '#f59e0b', '#991b1b'] // Red/Green/Gold (Classic)
 };
 

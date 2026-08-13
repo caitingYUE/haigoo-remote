@@ -310,7 +310,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 <button
                   onClick={handleSubmit}
                   disabled={isSaving}
-                  className="px-2.5 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[11px] font-medium shadow-sm"
+                  className="px-2.5 py-1 bg-[#466f9d] text-white rounded hover:bg-[#345d88] transition-colors disabled:opacity-70 flex items-center gap-1.5 text-[11px] font-medium shadow-sm"
                 >
                   {isSaving ? (
                     <>
@@ -335,7 +335,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-4 space-y-3 overflow-y-auto">
           {/* Approval Action Bar */}
-          <div className="flex items-center justify-between gap-4 bg-indigo-50/50 px-3 py-2.5 rounded-lg border border-indigo-100">
+          <div className="flex items-center justify-between gap-4 bg-[#eff5fb]/50 px-3 py-2.5 rounded-lg border border-[#dce9f5]">
             <div className="flex items-center gap-3">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
                 {formData.isApproved ? <CheckCircle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
@@ -357,7 +357,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               }}
               className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors flex items-center gap-2 ${formData.isApproved
                 ? 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
-                : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                : 'bg-[#466f9d] text-white hover:bg-[#345d88] shadow-sm'
                 }`}
             >
               {formData.isApproved ? '撤销审核' : '通过审核'}
@@ -376,14 +376,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <label className={`rounded-lg border px-3 py-2 cursor-pointer transition-colors ${formData.referralContactMode === 'inherit_all' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
+              <label className={`rounded-lg border px-3 py-2 cursor-pointer transition-colors ${formData.referralContactMode === 'inherit_all' ? 'border-[#587faa] bg-[#eff5fb]' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
                 <div className="flex items-start gap-3">
                   <input
                     type="radio"
                     name="referralContactMode"
                     checked={formData.referralContactMode === 'inherit_all'}
                     onChange={() => setFormData(prev => ({ ...prev, referralContactMode: 'inherit_all' }))}
-                    className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                    className="mt-1 w-4 h-4 text-[#466f9d] border-slate-300 focus:ring-[#587faa]"
                   />
                   <div>
                     <div className="text-[13px] font-medium text-slate-900">默认全部通用</div>
@@ -392,14 +392,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 </div>
               </label>
 
-              <label className={`rounded-lg border px-3 py-2 cursor-pointer transition-colors ${formData.referralContactMode === 'custom' ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
+              <label className={`rounded-lg border px-3 py-2 cursor-pointer transition-colors ${formData.referralContactMode === 'custom' ? 'border-[#587faa] bg-[#eff5fb]' : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'}`}>
                 <div className="flex items-start gap-3">
                   <input
                     type="radio"
                     name="referralContactMode"
                     checked={formData.referralContactMode === 'custom'}
                     onChange={() => setFormData(prev => ({ ...prev, referralContactMode: 'custom' }))}
-                    className="mt-1 w-4 h-4 text-indigo-600 border-slate-300 focus:ring-indigo-500"
+                    className="mt-1 w-4 h-4 text-[#466f9d] border-slate-300 focus:ring-[#587faa]"
                   />
                   <div>
                     <div className="text-[13px] font-medium text-slate-900">自定义关联</div>
@@ -431,13 +431,13 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         return (
                           <label
                             key={contactId}
-                            className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${formData.selectedReferralContactIds.includes(contactId) ? 'border-indigo-300 bg-indigo-50/70' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                            className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${formData.selectedReferralContactIds.includes(contactId) ? 'border-[#9fbbd2] bg-[#eff5fb]/70' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
                           >
                             <input
                               type="checkbox"
                               checked={formData.selectedReferralContactIds.includes(contactId)}
                               onChange={() => toggleReferralContact(contactId)}
-                              className="mt-1 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                              className="mt-1 w-4 h-4 text-[#466f9d] rounded border-slate-300 focus:ring-[#587faa]"
                             />
                             <div className="min-w-0">
                               <div className="text-[13px] text-slate-800 break-words">{formatReferralContactLabel(contact)}</div>
@@ -465,7 +465,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
                 required
               />
             </div>
@@ -476,7 +476,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="text"
                 value={formData.company}
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
                 required
               />
             </div>
@@ -487,7 +487,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="text"
                 value={(formData as any).translations?.title || ''}
                 onChange={(e) => updateTranslationField('title', e.target.value)}
-                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[13px] text-slate-800 focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
                 placeholder="前台中文标题"
               />
             </div>
@@ -498,7 +498,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="text"
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 mb-1.5"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa] mb-1.5"
               />
               <div className="flex flex-wrap gap-1 mt-1">
                 {JOB_LOCATION_ADMIN_QUICK_TAGS.map(loc => (
@@ -520,7 +520,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="text"
                 value={formData.timezone}
                 onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
                 placeholder="例如: UTC+8, PST, America/New_York"
               />
             </div>
@@ -531,7 +531,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="datetime-local"
                 value={formData.publishedAt}
                 onChange={(e) => setFormData({ ...formData, publishedAt: e.target.value })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
               />
             </div>
 
@@ -570,14 +570,14 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 </div>
 
                 <div className="p-3 space-y-2.5">
-                  <div className="rounded-lg border border-indigo-100 bg-[linear-gradient(135deg,rgba(238,242,255,0.72),rgba(248,250,252,0.92))] px-3 py-2 flex items-center justify-between gap-3">
+                  <div className="rounded-lg border border-[#dce9f5] bg-[linear-gradient(135deg,rgba(238,242,255,0.72),rgba(248,250,252,0.92))] px-3 py-2 flex items-center justify-between gap-3">
                     <div>
                       <div className="text-[11px] font-medium text-slate-500">前台展示预览</div>
                       <div className="mt-0.5 text-[15px] font-semibold text-slate-900">{salaryPreview}</div>
                     </div>
                     <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                       formData.salaryEditorMode === 'structured'
-                        ? 'bg-indigo-600 text-white'
+                        ? 'bg-[#466f9d] text-white'
                         : 'bg-slate-100 text-slate-600'
                     }`}>
                       {formData.salaryEditorMode === 'structured' ? '规范存储' : '原文直存'}
@@ -592,7 +592,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                           <select
                             value={formData.salaryCurrency}
                             onChange={(e) => setFormData({ ...formData, salaryCurrency: e.target.value as SupportedSalaryCurrency })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
                           >
                             {SALARY_CURRENCY_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>{option.label}</option>
@@ -604,7 +604,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                           <select
                             value={formData.salaryPeriod}
                             onChange={(e) => setFormData({ ...formData, salaryPeriod: e.target.value as SupportedSalaryPeriod })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
                           >
                             {SALARY_PERIOD_OPTIONS.map((option) => (
                               <option key={option.value} value={option.value}>{option.label}</option>
@@ -624,7 +624,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                                 onClick={() => setFormData({ ...formData, salaryValueMode: option.value as SupportedSalaryValueMode })}
                                 className={`rounded-md border px-2 py-1.5 text-[12px] font-semibold transition-colors ${
                                   formData.salaryValueMode === option.value
-                                    ? 'border-indigo-600 bg-indigo-600 text-white'
+                                    ? 'border-[#466f9d] bg-[#466f9d] text-white'
                                     : 'border-slate-200 bg-white text-slate-600'
                                 }`}
                               >
@@ -645,7 +645,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                             min="0"
                             value={formData.salaryMin}
                             onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
-                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                            className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
                             placeholder="例如 45000"
                           />
                         </div>
@@ -657,7 +657,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                               min="0"
                               value={formData.salaryMax}
                               onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
-                              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                              className="w-full rounded-md border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
                               placeholder="例如 65000"
                             />
                           </div>
@@ -674,7 +674,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         type="text"
                         value={formData.salary}
                         onChange={(e) => setFormData({ ...formData, salary: e.target.value })}
-                        className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
+                        className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa] bg-white"
                         placeholder="例如: $80,000 - $120,000 / year"
                       />
                       <p className="text-[11px] leading-5 text-slate-500">
@@ -692,7 +692,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                 type="url"
                 value={(formData as any).url || ''}
                 onChange={(e) => setFormData({ ...formData, url: e.target.value } as any)}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
                 placeholder="https://..."
               />
             </div>
@@ -702,7 +702,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               <select
                 value={formData.jobType}
                 onChange={(e) => setFormData({ ...formData, jobType: e.target.value as 'full-time' | 'part-time' | 'contract' | 'freelance' | 'internship' })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
               >
                 <option value="full-time">全职</option>
                 <option value="part-time">兼职</option>
@@ -717,7 +717,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               <select
                 value={formData.region || ''}
                 onChange={(e) => setFormData({ ...formData, region: (e.target.value || undefined) as 'domestic' | 'overseas' | undefined })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
               >
                 <option value="">未设置</option>
                 <option value="domestic">国内</option>
@@ -730,7 +730,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               <select
                 value={formData.experienceLevel}
                 onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value as 'Entry' | 'Mid' | 'Senior' | 'Lead' | 'Executive' })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
               >
                 <option value="Entry">初级</option>
                 <option value="Mid">中级</option>
@@ -745,7 +745,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value as JobCategory })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
               >
                 {/* Dynamically populated categories or fallback */}
                 {availableCategories.length > 0 ? (
@@ -774,7 +774,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     type="checkbox"
                     checked={formData.isFeatured}
                     onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                    className="w-3.5 h-3.5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                    className="w-3.5 h-3.5 text-[#466f9d] rounded border-slate-300 focus:ring-[#587faa]"
                   />
                   <span className="text-[13px] font-medium text-slate-700">首页精选展示</span>
                   <Star className={`w-3.5 h-3.5 ${formData.isFeatured ? 'text-yellow-500 fill-current' : 'text-slate-400'}`} />
@@ -787,7 +787,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsGuideEditorExpanded(value => !value)}
-                        className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500 hover:border-indigo-200 hover:text-indigo-600"
+                        className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-500 hover:border-[#c9dce8] hover:text-[#466f9d]"
                       >
                         {isGuideEditorExpanded ? '收起' : '展开'}
                       </button>
@@ -798,7 +798,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     value={formData.featuredReason}
                     maxLength={APPLICATION_GUIDE_LIMIT}
                     onChange={(e) => setFormData({ ...formData, featuredReason: e.target.value.slice(0, APPLICATION_GUIDE_LIMIT) })}
-                    className={`${isGuideEditorExpanded ? 'min-h-[180px]' : 'min-h-[72px]'} w-full resize-y rounded-md border border-slate-300 bg-white px-2.5 py-2 text-[13px] leading-5 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500`}
+                    className={`${isGuideEditorExpanded ? 'min-h-[180px]' : 'min-h-[72px]'} w-full resize-y rounded-md border border-slate-300 bg-white px-2.5 py-2 text-[13px] leading-5 focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]`}
                     placeholder="填写投递重点、申请路径、邮件/官网申请注意事项。"
                   />
                 </div>
@@ -823,7 +823,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
                     setFormData({ ...formData, tags: joinTagInput([...splitTagInput(formData.tags), ...extractedTags]) });
                   }}
-                  className="flex items-center gap-1 text-[10px] text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors font-medium border border-indigo-50"
+                  className="flex items-center gap-1 text-[10px] text-[#466f9d] bg-[#eff5fb] hover:bg-[#dce9f5] px-1.5 py-0.5 rounded transition-colors font-medium border border-[#eff5fb]"
                   title="自动扫描职位描述并提取岗位关键词"
                 >
                   <Sparkles className="w-2.5 h-2.5" />
@@ -835,7 +835,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: joinTagInput(e.target.value) })}
-                  className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500"
+                  className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
                   placeholder="例如: React, TypeScript, Node.js"
                 />
                 {jdSuggestedTags.length > 0 && (
@@ -848,7 +848,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                         onClick={() => {
                           setFormData({ ...formData, tags: appendTagInput(formData.tags, tag) });
                         }}
-                        className="px-1.5 py-0.5 bg-slate-50 hover:bg-indigo-50 text-slate-500 hover:text-indigo-600 text-[10px] rounded transition-colors border border-slate-100 hover:border-indigo-100 shadow-sm"
+                        className="px-1.5 py-0.5 bg-slate-50 hover:bg-[#eff5fb] text-slate-500 hover:text-[#466f9d] text-[10px] rounded transition-colors border border-slate-100 hover:border-[#dce9f5] shadow-sm"
                       >
                         + {tag}
                       </button>
@@ -866,17 +866,17 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows={8}
-                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa] leading-relaxed"
                   />
                 </div>
 
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50/40 p-3">
+                <div className="rounded-xl border border-[#dce9f5] bg-[#eff5fb]/40 p-3">
                   <div className="mb-2 flex items-center justify-between gap-2">
                     <label className="block text-[13px] font-medium text-slate-700">翻译后正文</label>
                     <button
                       type="button"
                       onClick={() => updateTranslationField('description', formData.description)}
-                      className="inline-flex items-center gap-1 rounded-md border border-indigo-100 bg-white px-2 py-1 text-[10px] font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#dce9f5] bg-white px-2 py-1 text-[10px] font-semibold text-[#466f9d] transition hover:bg-[#eff5fb]"
                       title="使用原始正文覆盖翻译正文"
                     >
                       <ArrowDown className="w-2.5 h-2.5" />
@@ -887,7 +887,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     value={(formData as any).translations?.description || ''}
                     onChange={(e) => updateTranslationField('description', e.target.value)}
                     rows={8}
-                    className="w-full rounded-md border border-indigo-100 bg-white px-2.5 py-2 text-[13px] leading-relaxed text-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    className="w-full rounded-md border border-[#dce9f5] bg-white px-2.5 py-2 text-[13px] leading-relaxed text-slate-800 focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
                     placeholder="人工修正后的中文岗位正文"
                   />
                 </div>
@@ -898,7 +898,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     value={formData.requirements}
                     onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
                     rows={4}
-                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa] leading-relaxed"
                     placeholder="例如:&#10;3+ years React experience&#10;TypeScript proficiency"
                   />
                 </div>
@@ -909,7 +909,7 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
                     value={formData.benefits}
                     onChange={(e) => setFormData({ ...formData, benefits: e.target.value })}
                     rows={4}
-                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 leading-relaxed"
+                    className="w-full px-2.5 py-2 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa] leading-relaxed"
                     placeholder="例如:&#10;Remote work&#10;Health insurance"
                   />
                 </div>

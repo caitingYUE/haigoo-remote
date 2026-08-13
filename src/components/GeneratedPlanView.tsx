@@ -223,7 +223,7 @@ export default function GeneratedPlanView({
         <div className="flex flex-col h-full overflow-hidden relative z-30">
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
                 <div>
-                    <div className="text-[10px] font-bold text-indigo-500 uppercase tracking-[0.15em] mb-0.5">
+                    <div className="text-[10px] font-bold text-[#587faa] uppercase tracking-[0.15em] mb-0.5">
                         AI Copilot · 专属方案
                     </div>
                     <h3 className="text-lg font-bold text-slate-900 leading-tight">
@@ -244,10 +244,10 @@ export default function GeneratedPlanView({
             </div>
 
             <div className="space-y-4 flex-1 overflow-y-auto custom-scrollbar relative pr-2 pb-4">
-                <div className="absolute left-[15px] top-6 bottom-6 w-px bg-gradient-to-b from-indigo-200 via-slate-100 to-transparent pointer-events-none z-0" />
+                <div className="absolute left-[15px] top-6 bottom-6 w-px bg-gradient-to-b from-[#c9dce8] via-slate-100 to-transparent pointer-events-none z-0" />
 
                 <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.4s_ease-out]">
-                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
+                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-[#466f9d] border-[#466f9d] text-white">
                         <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
@@ -268,14 +268,14 @@ export default function GeneratedPlanView({
                         {!isMember && (
                             <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700">
                                 <Lock className="w-3.5 h-3.5 mt-0.5 flex-none" />
-                                <span>调整默认项并重新生成方案为会员功能。</span>
+                                <span>调整默认项并重新生成方案属于职业咨询工具功能。</span>
                             </div>
                         )}
                     </div>
                 </div>
 
                 <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.5s_ease-out]">
-                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
+                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-[#466f9d] border-[#466f9d] text-white">
                         <CheckCircle2 className="w-4 h-4" />
                     </div>
                     <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
@@ -305,8 +305,8 @@ export default function GeneratedPlanView({
                                     ))}
                                 </ul>
                             </div>
-                            <div className="rounded-xl border border-indigo-100 bg-white px-3 py-3">
-                                <div className="text-xs font-bold text-indigo-700 mb-2">建议优先动作</div>
+                            <div className="rounded-xl border border-[#dce9f5] bg-white px-3 py-3">
+                                <div className="text-xs font-bold text-[#345d88] mb-2">建议优先动作</div>
                                 <ul className="space-y-1.5 text-[11px] text-slate-600">
                                     {(suitability.action_focus || []).slice(0, 4).map((item: string, idx: number) => (
                                         <li key={idx} className="leading-relaxed">• {item}</li>
@@ -318,7 +318,7 @@ export default function GeneratedPlanView({
                 </div>
 
                 <div className="relative pl-10 z-10 animate-[fadeSlideIn_0.6s_ease-out]">
-                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-indigo-600 border-indigo-600 text-white">
+                    <div className="absolute left-0 top-0.5 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold border-2 shadow-sm bg-[#466f9d] border-[#466f9d] text-white">
                         <Sparkles className="w-4 h-4" />
                     </div>
                     <div className="bg-slate-50/80 rounded-xl p-4 border border-slate-100/60 shadow-sm">
@@ -336,7 +336,7 @@ export default function GeneratedPlanView({
                                         type="button"
                                         onClick={handleExpandInterview}
                                         disabled={expanding}
-                                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                                        className="px-3 py-1.5 rounded-lg bg-[#466f9d] text-white text-xs font-semibold hover:bg-[#345d88] disabled:opacity-60 transition-colors"
                                     >
                                         {expanding ? '拓展中...' : '再拓展 10 题'}
                                     </button>
@@ -351,7 +351,7 @@ export default function GeneratedPlanView({
                         )}
 
                         {isGuest && (
-                            <div className="mb-3 rounded-xl border border-indigo-100 bg-indigo-50 px-3 py-2.5 text-[11px] text-indigo-700">
+                            <div className="mb-3 rounded-xl border border-[#dce9f5] bg-[#eff5fb] px-3 py-2.5 text-[11px] text-[#345d88]">
                                 登录并上传简历后可生成 5 道更贴合自己的英文面试提纲。
                             </div>
                         )}
@@ -359,7 +359,7 @@ export default function GeneratedPlanView({
                         {!isGuest && !isMember && (
                             <div className="mb-3 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2.5 text-[11px] text-amber-700 flex items-start gap-2">
                                 <Crown className="w-3.5 h-3.5 mt-0.5 flex-none" />
-                                <span>当前可查看基础面试提纲。了解会员服务后可逐批拓展到 30 道，并生成每道题的回答草稿。</span>
+                                <span>当前可查看基础面试提纲；更完整的题目拆解与回答草稿属于职业咨询工具功能。</span>
                             </div>
                         )}
 
@@ -377,7 +377,7 @@ export default function GeneratedPlanView({
                                     <div key={item.id || idx} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                                             <div className="min-w-0">
-                                                <div className="text-[11px] font-bold text-indigo-600 mb-1">Question {idx + 1}</div>
+                                                <div className="text-[11px] font-bold text-[#466f9d] mb-1">Question {idx + 1}</div>
                                                 <div className="text-sm font-semibold text-slate-900 leading-relaxed">{item.question}</div>
                                                 {item.focus && <div className="mt-2 text-[11px] text-slate-500">考察重点：{item.focus}</div>}
                                                 {item.hint && <div className="mt-1 text-[11px] text-slate-500">回答提示：{item.hint}</div>}
@@ -387,7 +387,7 @@ export default function GeneratedPlanView({
                                                     type="button"
                                                     onClick={() => handleGenerateAnswer(item)}
                                                     disabled={isAnswerLoading}
-                                                    className="sm:ml-4 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-indigo-200 bg-indigo-50 text-indigo-700 text-xs font-semibold hover:bg-indigo-100 disabled:opacity-60 transition-colors"
+                                                    className="sm:ml-4 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#c9dce8] bg-[#eff5fb] text-[#345d88] text-xs font-semibold hover:bg-[#dce9f5] disabled:opacity-60 transition-colors"
                                                 >
                                                     {isAnswerLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
                                                     生成回答
@@ -419,17 +419,17 @@ export default function GeneratedPlanView({
 
             <div className="mt-4 pt-4 border-t border-slate-100 flex-shrink-0 flex flex-col items-center gap-3">
                 {showSavedHint && !isGuest && (
-                    <div className="w-full rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div className="w-full rounded-2xl border border-[#dce9f5] bg-[#eff5fb] px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
-                            <div className="text-sm font-bold text-indigo-900">方案已同步到个人中心</div>
-                            <div className="text-xs text-indigo-700 mt-1">后续可在个人中心继续查看完整方案，并结合会员权益做拓展与深度打磨。</div>
+                            <div className="text-sm font-bold text-[#243f5c]">方案已同步到个人中心</div>
+                            <div className="text-xs text-[#345d88] mt-1">后续可在个人中心继续查看完整方案，并按自己的节奏持续完善。</div>
                         </div>
                         {showProfileCta && (
                             <Link
                                 to="/profile?tab=custom-plan"
                                 target={openInNewTab ? '_blank' : undefined}
                                 rel={openInNewTab ? 'noopener noreferrer' : undefined}
-                                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-indigo-700 border border-indigo-200 text-sm font-semibold hover:bg-indigo-100 transition-colors no-underline hover:no-underline"
+                                className="inline-flex items-center justify-center px-4 py-2 rounded-xl bg-white text-[#345d88] border border-[#c9dce8] text-sm font-semibold hover:bg-[#dce9f5] transition-colors no-underline hover:no-underline"
                             >
                                 去个人中心查看
                             </Link>
@@ -441,7 +441,7 @@ export default function GeneratedPlanView({
                         to="/jobs"
                         target={openInNewTab ? '_blank' : undefined}
                         rel={openInNewTab ? 'noopener noreferrer' : undefined}
-                        className="flex-1 py-2.5 bg-indigo-600 text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-indigo-500 hover:text-white transition-colors shadow-sm no-underline hover:no-underline"
+                        className="flex-1 py-2.5 bg-[#466f9d] text-white rounded-xl text-sm font-bold flex justify-center items-center gap-2 hover:bg-[#587faa] hover:text-white transition-colors shadow-sm no-underline hover:no-underline"
                     >
                         去大厅查看更多岗位 <ArrowRight className="w-4 h-4" />
                     </Link>

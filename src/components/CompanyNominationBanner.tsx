@@ -23,16 +23,16 @@ export const CompanyNominationBanner: React.FC<CompanyNominationBannerProps> = (
 
     return (
         <div
-            className={`bg-gradient-to-r from-violet-50 to-purple-50 border border-violet-100 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative group cursor-pointer text-left h-full ${className}`}
+            className={`bg-gradient-to-r from-[#fff8e8] to-[#fff8e8] border border-[#f8ecd3] rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 relative group cursor-pointer text-left h-full ${className}`}
             onClick={handleClick}
         >
             {/* Background Decoration */}
             <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-                <Briefcase className="w-24 h-24 text-violet-600 -rotate-12 translate-x-4 -translate-y-4" />
+                <Briefcase className="w-24 h-24 text-[#b7791f] -rotate-12 translate-x-4 -translate-y-4" />
             </div>
 
             <div className="p-4 flex items-start gap-4 relative z-10 h-full">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md shadow-violet-200 mt-1">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#b7791f] to-[#b7791f] flex items-center justify-center shrink-0 shadow-md shadow-[#e7c98e] mt-1">
                     <Briefcase className="w-5 h-5 text-white" />
                 </div>
 
@@ -40,7 +40,7 @@ export const CompanyNominationBanner: React.FC<CompanyNominationBannerProps> = (
                     <div>
                         <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-bold text-slate-900 text-base">我要招聘</h4>
-                            <span className="px-2 py-0.5 bg-white/60 text-violet-700 text-xs font-bold rounded-full border border-violet-100 whitespace-nowrap">Hire Remote</span>
+                            <span className="px-2 py-0.5 bg-white/60 text-[#8f5e19] text-xs font-bold rounded-full border border-[#f8ecd3] whitespace-nowrap">Hire Remote</span>
                         </div>
 
                         <p className="text-sm text-slate-600 leading-relaxed mb-2">
@@ -48,7 +48,7 @@ export const CompanyNominationBanner: React.FC<CompanyNominationBannerProps> = (
                         </p>
                     </div>
 
-                    <div className="flex items-center text-xs text-violet-600 font-bold group-hover:translate-x-1 transition-transform mt-auto">
+                    <div className="flex items-center text-xs text-[#b7791f] font-bold group-hover:translate-x-1 transition-transform mt-auto">
                         立即发布 <ArrowRight className="w-3 h-3 ml-1" />
                     </div>
                 </div>

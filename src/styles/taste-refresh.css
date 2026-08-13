@@ -1,0 +1,819 @@
+/*
+ * Taste-inspired visual refresh.
+ * The reference informs light, depth, spacing and motion. Haigoo keeps its
+ * own information architecture, content, imagery and membership semantics.
+ */
+
+html {
+  background: var(--hg-bg-page);
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 3%, rgba(255, 107, 44, 0.09), transparent 25rem),
+    radial-gradient(circle at 92% 1%, rgba(255, 255, 255, 0.98), transparent 32rem),
+    var(--hg-bg-page);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--hg-harbour-100);
+  color: var(--hg-ink-950);
+}
+
+.haigoo-editorial-label,
+.hg-product-kicker,
+.hg-career-kicker {
+  color: var(--hg-harbour-600);
+  letter-spacing: 0.1em;
+}
+
+.haigoo-site-header__bar {
+  width: calc(100% - 1.5rem);
+  max-width: 94rem;
+  margin: 0.65rem auto 0;
+  border: 1px solid rgba(220, 228, 236, 0.86);
+  border-radius: 1.25rem;
+  background: var(--hg-header-bg);
+  box-shadow: 0 18px 48px -32px rgba(29, 40, 54, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+
+.haigoo-site-header__wordmark strong {
+  color: var(--hg-ink-950);
+}
+
+.haigoo-site-header__wordmark span,
+.haigoo-site-header__brand-cn {
+  color: var(--hg-ink-700);
+}
+
+.haigoo-site-header__brand-cn {
+  border-left-color: var(--hg-border-subtle);
+}
+
+.haigoo-site-header__nav-link::after {
+  bottom: -0.65rem;
+  height: 2px;
+  border-radius: var(--hg-radius-pill);
+  background: var(--hg-harbour-500);
+}
+
+.haigoo-site-header__nav-link:hover,
+.haigoo-site-header__nav-link[aria-current="page"] {
+  color: var(--hg-ink-950);
+}
+
+.haigoo-language-toggle,
+.hg-notification-trigger,
+.hg-header-account-trigger,
+.hg-header-account-avatar {
+  border-radius: var(--hg-radius-pill) !important;
+}
+
+.haigoo-language-toggle:hover,
+.haigoo-language-toggle:focus-visible,
+.hg-notification-trigger:hover,
+.hg-notification-trigger[aria-expanded="true"] {
+  border-color: var(--hg-sand-300) !important;
+  background: var(--hg-harbour-50) !important;
+  color: var(--hg-harbour-600) !important;
+}
+
+.haigoo-site-header__primary-action {
+  background: var(--hg-harbour-500);
+  box-shadow: 0 12px 28px -18px rgba(255, 107, 44, 0.72);
+}
+
+.haigoo-site-header__primary-action:hover {
+  background: var(--hg-action-brand-hover);
+}
+
+.hg-header-account-menu,
+.hg-notification-popover {
+  overflow: hidden;
+  border: 1px solid rgba(220, 228, 236, 0.9) !important;
+  border-radius: 1.25rem !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: var(--hg-shadow-modal) !important;
+  backdrop-filter: blur(22px) saturate(140%);
+}
+
+.hg-notification-popover {
+  border-top-color: var(--hg-harbour-500) !important;
+}
+
+.hg-notification-popover [class*="bg-[#eff5fb]"] {
+  background: var(--hg-harbour-50) !important;
+}
+
+.hg-notification-popover [class*="text-[#466f9d]"] {
+  color: var(--hg-harbour-600) !important;
+}
+
+.haigoo-home {
+  min-height: 100dvh;
+  padding-top: 5.25rem;
+  background:
+    radial-gradient(circle at 10% 4%, rgba(255, 107, 44, 0.1), transparent 25rem),
+    radial-gradient(circle at 84% 10%, rgba(255, 255, 255, 0.95), transparent 30rem),
+    var(--hg-bg-page);
+}
+
+.haigoo-home__hero {
+  padding-block: clamp(1.5rem, 2.8vw, 3rem) clamp(3rem, 5vw, 5rem);
+}
+
+.haigoo-home__hero::after {
+  display: none;
+}
+
+.haigoo-home__hero-grid {
+  gap: clamp(2rem, 4vw, 5rem);
+}
+
+.haigoo-home__hero-copy {
+  padding-right: 0;
+}
+
+.haigoo-home__title,
+.haigoo-home__title-line,
+.haigoo-home__story h2,
+.haigoo-home__section-header h2,
+.haigoo-career__header h2,
+.haigoo-brand-footer h3,
+.hg-product-title,
+.hg-profile-home-hero__copy h1,
+.hg-workspace-hero h1,
+.hg-profile-collection-header h2,
+.hg-application-header h2,
+.hg-career-masthead h1,
+.hg-career-lead h2,
+.hg-career-section-header h2,
+.hg-career-category-rail h2,
+.hg-career-story h3,
+.hg-career-lock-copy h2,
+.hg-career-notes-document h1,
+.hg-auth-brand h1,
+.hg-member-center__hero h1 {
+  font-family: var(--hg-font-sans) !important;
+}
+
+.haigoo-home__title {
+  max-width: 11ch;
+  margin-top: 1rem;
+  font-size: clamp(3.25rem, 5vw, 5.8rem);
+  font-weight: 760;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+}
+
+.haigoo-home__title-line-top,
+.haigoo-home__title-line {
+  width: auto;
+  font-size: 1em;
+  font-weight: 760;
+  letter-spacing: -0.065em;
+  line-height: 0.98;
+}
+
+.haigoo-home__title-mark {
+  color: var(--hg-harbour-500);
+}
+
+.haigoo-home__intro {
+  max-width: 35rem;
+  margin-top: 1.5rem;
+  color: var(--hg-text-secondary);
+  font-size: clamp(1rem, 1.15vw, 1.1rem);
+  line-height: 1.72;
+}
+
+.haigoo-home__search {
+  max-width: 37rem;
+  min-height: 4rem;
+  margin-top: 1.65rem;
+  border-color: rgba(220, 228, 236, 0.86);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 22px 54px -34px rgba(32, 47, 65, 0.42), 0 8px 28px -20px rgba(255, 107, 44, 0.36);
+}
+
+.haigoo-home__search:focus-within {
+  border-color: var(--hg-harbour-500);
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.12), 0 22px 54px -34px rgba(32, 47, 65, 0.42);
+}
+
+.haigoo-home__search button {
+  background: var(--hg-ink-950);
+}
+
+.haigoo-home__search button:hover {
+  background: var(--hg-harbour-500);
+}
+
+.haigoo-home__categories {
+  max-width: 39rem;
+  gap: 0.55rem;
+  margin-top: 1.4rem;
+}
+
+.haigoo-home__category,
+.haigoo-home__category:first-child,
+.haigoo-home__category:last-child {
+  min-height: 2.35rem;
+  border: 1px solid var(--hg-border-subtle);
+  border-radius: var(--hg-radius-pill);
+  background: rgba(255, 255, 255, 0.78);
+  padding: 0 0.9rem;
+  box-shadow: 0 8px 22px -20px rgba(32, 47, 65, 0.38);
+}
+
+.haigoo-home__category svg {
+  color: var(--hg-harbour-500);
+}
+
+.haigoo-home__category:hover {
+  border-color: var(--hg-sand-300);
+  background: var(--hg-harbour-50);
+  color: var(--hg-harbour-600);
+  transform: translateY(-1px);
+}
+
+.haigoo-home__story {
+  min-height: clamp(32rem, 42vw, 41rem);
+  border: 1px solid rgba(255, 255, 255, 0.92);
+  border-radius: 2rem;
+  background: var(--hg-bg-surface);
+  box-shadow: 0 38px 86px -48px rgba(30, 42, 57, 0.5), 0 18px 42px -28px rgba(255, 107, 44, 0.28);
+  transform: translateY(0.75rem);
+  transition: transform 380ms var(--hg-ease-enter), box-shadow 380ms var(--hg-ease-enter);
+}
+
+.haigoo-home__story:hover {
+  box-shadow: 0 44px 94px -46px rgba(30, 42, 57, 0.54), 0 22px 50px -26px rgba(255, 107, 44, 0.34);
+  transform: translateY(0.25rem);
+}
+
+.haigoo-home__story > img {
+  filter: saturate(1.08) brightness(1.04);
+}
+
+.haigoo-home__story-shade {
+  background: linear-gradient(180deg, rgba(22, 26, 34, 0.01) 24%, rgba(22, 26, 34, 0.62) 100%);
+}
+
+.haigoo-home__story-switcher {
+  top: 1.15rem;
+  right: 1.15rem;
+  border-color: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  backdrop-filter: blur(18px) saturate(150%);
+}
+
+.haigoo-home__story-switcher button[aria-pressed="true"] {
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 24px -18px rgba(15, 23, 42, 0.55);
+}
+
+.haigoo-home__story-kicker {
+  letter-spacing: 0.08em;
+}
+
+.haigoo-home__story-avatar {
+  border-radius: 0.9rem;
+}
+
+.haigoo-home__promise {
+  padding-block: 0.75rem 0;
+}
+
+.haigoo-home__promise-grid {
+  gap: 0.75rem;
+  border: 0;
+  background: transparent;
+}
+
+.haigoo-home__promise-title,
+.haigoo-home__promise-item {
+  min-height: 8.5rem;
+  border: 1px solid rgba(220, 228, 236, 0.86);
+  border-radius: var(--hg-radius-card);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--hg-shadow-floating);
+}
+
+.haigoo-home__promise-title {
+  border-color: var(--hg-ink-950);
+  background: var(--hg-ink-950);
+}
+
+.haigoo-home__promise-title p {
+  color: #ff9b70;
+}
+
+.haigoo-home__promise-item {
+  border-right: 1px solid rgba(220, 228, 236, 0.86);
+}
+
+.haigoo-home__section {
+  padding-block: clamp(4rem, 6vw, 6.75rem);
+}
+
+.haigoo-home__section-header {
+  align-items: end;
+  padding-bottom: 1.5rem;
+}
+
+.haigoo-home__section-header .haigoo-editorial-label,
+.haigoo-career__header .haigoo-editorial-label {
+  display: none;
+}
+
+.haigoo-home__section-header h2,
+.haigoo-career__header h2 {
+  font-weight: 740;
+  letter-spacing: -0.05em;
+}
+
+.haigoo-home__section-header p:not(.haigoo-editorial-label),
+.haigoo-career__header p:not(.haigoo-editorial-label) {
+  color: var(--hg-text-secondary);
+}
+
+.haigoo-home__section-link {
+  color: var(--hg-ink-700);
+}
+
+.haigoo-home__section-link:hover {
+  color: var(--hg-harbour-600);
+}
+
+.haigoo-home__tabs {
+  width: fit-content;
+  max-width: 100%;
+  gap: 0.3rem;
+  border: 1px solid var(--hg-border-subtle);
+  border-radius: var(--hg-radius-pill);
+  background: rgba(255, 255, 255, 0.84);
+  padding: 0.3rem;
+  box-shadow: 0 12px 28px -24px rgba(34, 48, 66, 0.34);
+}
+
+.haigoo-home__tab {
+  min-height: 2.4rem;
+  border: 0;
+  border-radius: var(--hg-radius-pill);
+  padding-inline: 1rem;
+}
+
+.haigoo-home__tab:hover,
+.haigoo-home__tab[aria-selected="true"] {
+  background: var(--hg-ink-950);
+  color: var(--hg-ivory-50);
+}
+
+.haigoo-home__jobs {
+  display: grid;
+  gap: 0.75rem;
+  border: 0;
+}
+
+.haigoo-home__job-row {
+  min-height: 7.75rem;
+  border: 1px solid rgba(220, 228, 236, 0.82);
+  border-radius: var(--hg-radius-card);
+  background: rgba(255, 255, 255, 0.88);
+  padding-inline: 1.4rem;
+  box-shadow: 0 16px 42px -34px rgba(28, 41, 58, 0.42);
+  transition: transform var(--hg-duration-standard) var(--hg-ease-enter), border-color var(--hg-duration-standard), box-shadow var(--hg-duration-standard);
+}
+
+.haigoo-home__job-row:hover {
+  border-color: var(--hg-sand-300);
+  background: var(--hg-bg-surface);
+  box-shadow: var(--hg-shadow-floating);
+  transform: translateY(-2px);
+}
+
+.haigoo-home__job-arrow {
+  border-color: var(--hg-border-default);
+  background: var(--hg-bg-surface);
+  color: var(--hg-harbour-600);
+}
+
+.haigoo-home__company {
+  overflow: hidden;
+  border: 1px solid rgba(220, 228, 236, 0.84);
+  border-radius: var(--hg-radius-card);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 48px -38px rgba(30, 43, 60, 0.42);
+  transition: transform var(--hg-duration-standard) var(--hg-ease-enter), box-shadow var(--hg-duration-standard);
+}
+
+.haigoo-home__company:hover {
+  box-shadow: var(--hg-shadow-floating);
+  transform: translateY(-3px);
+}
+
+.haigoo-home__company-content {
+  padding: 1.25rem;
+}
+
+.haigoo-home__company-image {
+  border-radius: calc(var(--hg-radius-card) - 0.25rem);
+}
+
+.haigoo-home__community {
+  border: 1px solid rgba(220, 228, 236, 0.86);
+  border-radius: var(--hg-radius-container);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--hg-shadow-floating);
+}
+
+.haigoo-career__card {
+  overflow: hidden;
+  border: 1px solid rgba(220, 228, 236, 0.82);
+  border-radius: var(--hg-radius-card);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 48px -38px rgba(30, 43, 60, 0.42);
+  transition: transform var(--hg-duration-standard) var(--hg-ease-enter), box-shadow var(--hg-duration-standard);
+}
+
+.haigoo-career__card:hover {
+  box-shadow: var(--hg-shadow-floating);
+  transform: translateY(-3px);
+}
+
+.haigoo-career__media {
+  background: linear-gradient(145deg, #fff6f1, #f2f5f8);
+}
+
+.haigoo-brand-footer {
+  border-top-color: var(--hg-border-subtle);
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.hg-jobs-page,
+.hg-profile-page,
+.hg-career-page,
+.hg-career-watch-page,
+.hg-career-notes-page,
+.hg-member-center {
+  background:
+    radial-gradient(circle at 8% 0%, rgba(255, 107, 44, 0.07), transparent 22rem),
+    var(--hg-bg-page) !important;
+}
+
+.hg-product-title {
+  font-weight: 740;
+  letter-spacing: -0.055em;
+}
+
+.hg-jobs-list-shell,
+.hg-jobs-detail-shell {
+  border: 1px solid rgba(220, 228, 236, 0.9) !important;
+  border-radius: var(--hg-radius-container) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: var(--hg-shadow-floating) !important;
+}
+
+.hg-jobs-detail-shell {
+  margin-left: 0.75rem;
+}
+
+.hg-job-filter-bar {
+  margin: 0.75rem;
+  border: 1px solid var(--hg-border-subtle) !important;
+  border-radius: var(--hg-radius-card) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 12px 28px -26px rgba(34, 48, 66, 0.38) !important;
+}
+
+.hg-job-filter-bar button,
+.hg-job-filter-bar [role="dialog"],
+.hg-job-detail-panel button,
+.hg-job-detail-tag,
+.hg-job-detail-apply,
+.hg-job-detail-fact,
+.hg-job-detail-open-role {
+  border-radius: var(--hg-radius-control) !important;
+}
+
+.hg-job-row {
+  width: calc(100% - 1rem);
+  min-height: 7.75rem !important;
+  margin: 0.45rem 0.5rem;
+  border: 1px solid var(--hg-border-subtle) !important;
+  border-radius: var(--hg-radius-card) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 12px 34px -30px rgba(31, 45, 63, 0.42) !important;
+}
+
+.hg-job-row:hover {
+  border-color: var(--hg-sand-300) !important;
+  background: var(--hg-bg-surface) !important;
+  transform: translateY(-1px);
+}
+
+.hg-job-row[data-active="true"] {
+  border-color: var(--hg-sand-300) !important;
+  background: var(--hg-harbour-50) !important;
+  box-shadow: inset 3px 0 0 var(--hg-harbour-500), 0 16px 36px -30px rgba(255, 107, 44, 0.48) !important;
+}
+
+.hg-job-detail-language-toggle button[aria-pressed="true"] {
+  background: var(--hg-harbour-500) !important;
+  color: var(--hg-ivory-50) !important;
+}
+
+.hg-profile-nav-surface {
+  border: 1px solid rgba(220, 228, 236, 0.86) !important;
+  border-radius: var(--hg-radius-container) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  box-shadow: var(--hg-shadow-floating) !important;
+  backdrop-filter: blur(18px) !important;
+}
+
+.hg-profile-sidebar {
+  border-right: 0;
+  padding: 1.25rem;
+}
+
+.hg-profile-collapse,
+.hg-profile-nav-item,
+.hg-profile-member-status,
+.hg-profile-collapsed-home,
+.hg-profile-mobile-home button {
+  border-radius: var(--hg-radius-control) !important;
+}
+
+.hg-profile-nav-item.is-active {
+  background: var(--hg-harbour-50);
+  color: var(--hg-harbour-600);
+  box-shadow: inset 3px 0 0 var(--hg-harbour-500);
+}
+
+.hg-profile-home-hero,
+.hg-profile-member-summary,
+.hg-profile-mobile-home,
+.hg-workspace-hero {
+  border: 1px solid rgba(220, 228, 236, 0.86) !important;
+  border-radius: var(--hg-radius-container) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  padding: clamp(1.5rem, 3vw, 2.5rem) !important;
+  box-shadow: var(--hg-shadow-floating) !important;
+}
+
+.hg-profile-home-hero__copy h1,
+.hg-workspace-hero h1,
+.hg-career-masthead h1 {
+  font-weight: 740;
+}
+
+.hg-profile-home-stats,
+.hg-workspace-quicklinks {
+  gap: 0.75rem;
+  border: 0;
+}
+
+.hg-profile-home-stat,
+.hg-workspace-quicklink {
+  border: 1px solid var(--hg-border-subtle);
+  border-radius: var(--hg-radius-card);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 34px -30px rgba(31, 45, 63, 0.4);
+}
+
+.hg-profile-home-stat:hover,
+.hg-workspace-quicklink:hover {
+  border-color: var(--hg-sand-300);
+  background: var(--hg-harbour-50);
+}
+
+.hg-consulting-story,
+.hg-consulting-outcome,
+.hg-consulting-capability,
+.hg-career-lead-media,
+.hg-career-story,
+.hg-career-soft-panel,
+.hg-career-lock-media {
+  border: 1px solid var(--hg-border-subtle) !important;
+  border-radius: var(--hg-radius-card) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 16px 42px -34px rgba(28, 41, 58, 0.4) !important;
+}
+
+.hg-consulting-story,
+.hg-consulting-outcome {
+  padding: 1.5rem !important;
+}
+
+.hg-consulting-capability {
+  margin-top: 0.65rem;
+  padding: 0.95rem 1.1rem !important;
+}
+
+.hg-contact-dialog {
+  border-radius: var(--hg-radius-container);
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.hg-career-masthead {
+  border: 1px solid rgba(220, 228, 236, 0.86);
+  border-radius: var(--hg-radius-container);
+  background: rgba(255, 255, 255, 0.88);
+  padding: clamp(1.5rem, 3vw, 2.75rem);
+  box-shadow: var(--hg-shadow-floating);
+}
+
+.hg-career-index {
+  border-top-color: var(--hg-harbour-500);
+}
+
+.hg-career-primary-action,
+.hg-profile-document__primary-action {
+  background: var(--hg-harbour-500) !important;
+  box-shadow: 0 12px 28px -18px rgba(255, 107, 44, 0.66) !important;
+}
+
+.hg-career-filter,
+.hg-career-secondary-action,
+.hg-career-notes-index-link {
+  border-radius: var(--hg-radius-pill);
+}
+
+.hg-career-filter.is-active {
+  border-color: var(--hg-ink-950);
+  background: var(--hg-ink-950);
+}
+
+.hg-auth-page {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 107, 44, 0.14), transparent 24rem),
+    radial-gradient(circle at 80% 6%, rgba(255, 255, 255, 0.96), transparent 26rem),
+    var(--hg-bg-page) !important;
+}
+
+.hg-auth-card {
+  border-color: rgba(220, 228, 236, 0.9);
+  border-radius: var(--hg-radius-container) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  box-shadow: var(--hg-shadow-modal) !important;
+}
+
+.hg-auth-card input,
+.hg-auth-card button[type="submit"],
+.hg-auth-card a[class*="bg-indigo"] {
+  border-radius: var(--hg-radius-control) !important;
+}
+
+.hg-auth-card input:focus {
+  border-color: var(--hg-harbour-500) !important;
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.12) !important;
+}
+
+.hg-member-center__hero,
+.hg-member-benefit-card,
+.hg-member-promise,
+.hg-member-help,
+.hg-member-faq {
+  border: 1px solid rgba(220, 228, 236, 0.86) !important;
+  border-radius: var(--hg-radius-container) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: var(--hg-shadow-floating) !important;
+}
+
+.hg-member-center button,
+.hg-member-benefit-card > button {
+  border-radius: var(--hg-radius-control) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .haigoo-home__hero-copy {
+    animation: hg-taste-rise 680ms var(--hg-ease-enter) both;
+  }
+
+  .haigoo-home__story {
+    animation: hg-taste-rise 760ms 90ms var(--hg-ease-enter) both;
+  }
+
+  .haigoo-home__promise-grid {
+    animation: hg-taste-rise 620ms 180ms var(--hg-ease-enter) both;
+  }
+}
+
+@keyframes hg-taste-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 63.99rem) {
+  .haigoo-site-header__bar {
+    width: calc(100% - 1rem);
+    margin-top: 0.45rem;
+    border-radius: 1rem;
+  }
+
+  .haigoo-home {
+    padding-top: 5rem;
+  }
+
+  .haigoo-home__story {
+    transform: none;
+  }
+
+  .hg-jobs-detail-shell {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 47.99rem) {
+  .haigoo-home__hero {
+    padding-top: 1rem;
+  }
+
+  .haigoo-home__title {
+    max-width: none;
+    font-size: clamp(2.6rem, 12vw, 3.5rem);
+  }
+
+  .haigoo-home__title-line-top,
+  .haigoo-home__title-line {
+    white-space: normal;
+  }
+
+  .haigoo-home__title-mark {
+    display: none;
+  }
+
+  .haigoo-home__categories {
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+  }
+
+  .haigoo-home__promise-grid {
+    gap: 0.65rem;
+  }
+
+  .haigoo-home__promise-title,
+  .haigoo-home__promise-item {
+    border-radius: var(--hg-radius-card);
+  }
+
+  .haigoo-home__tabs {
+    width: max-content;
+  }
+
+  .haigoo-home__job-row {
+    padding: 1.2rem;
+  }
+
+  .hg-jobs-list-shell,
+  .hg-jobs-detail-shell,
+  .hg-profile-nav-surface,
+  .hg-profile-home-hero,
+  .hg-profile-member-summary,
+  .hg-profile-mobile-home,
+  .hg-workspace-hero,
+  .hg-career-masthead {
+    border-radius: var(--hg-radius-card) !important;
+  }
+
+  .hg-profile-home-stats,
+  .hg-workspace-quicklinks {
+    gap: 0.55rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haigoo-home__story,
+  .haigoo-home__category,
+  .haigoo-home__job-row,
+  .haigoo-home__company,
+  .haigoo-career__card,
+  .hg-job-row {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .haigoo-site-header__bar,
+  .hg-header-account-menu,
+  .hg-notification-popover,
+  .hg-profile-nav-surface {
+    background: #ffffff !important;
+  }
+}

@@ -80,8 +80,13 @@ export default function LandingPage() {
   useEffect(() => {
     let cancelled = false
 
-    processedJobsService.getFeaturedHomeJobs()
-      .then(featuredJobsData => {
+    processedJobsService.getProcessedJobs(1, 6, {
+      isApproved: true,
+      status: 'active',
+      sortBy: 'recent',
+      skipAggregations: true
+    })
+      .then(({ jobs: featuredJobsData }) => {
         if (cancelled) return
         setFeaturedJobs(featuredJobsData)
         localStorage.setItem(FEATURED_JOBS_CACHE_KEY, JSON.stringify({
@@ -124,7 +129,7 @@ export default function LandingPage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-[#fbfaf6]">
+    <div className="min-h-screen bg-[var(--hg-bg-page)]">
       <HomeHero
         stats={undefined}
         featuredJobs={featuredJobs}

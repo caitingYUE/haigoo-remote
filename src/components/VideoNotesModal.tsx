@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { useNotificationHelpers } from './NotificationSystem'
 import { VideoNotesArticle } from './VideoNotesArticle'
 import { corporateEnglishPublicService, type CorporateEnglishPublicModuleVideo } from '../services/corporate-english-public-service'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 export interface VideoNotesModalVideo {
   videoId: string
@@ -61,45 +62,47 @@ export function VideoNotesModal({ video, onClose }: { video: VideoNotesModalVide
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/50 p-3 backdrop-blur-sm sm:p-6" role="dialog" aria-modal="true" aria-label={`${video.title}视频笔记`} onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
-      <div className="flex h-[calc(100dvh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden rounded-[24px] border border-white/80 bg-white shadow-[0_30px_90px_rgba(15,23,42,0.32)] sm:h-[calc(100dvh-3rem)]">
-        <header className="flex shrink-0 items-start gap-4 border-b border-[#dbe8f4] px-5 py-4 sm:px-7">
+    <div className="hg-video-notes-backdrop fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="video-notes-dialog-title" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
+      <div className="hg-video-notes-dialog flex h-[calc(100dvh-1.5rem)] w-full max-w-6xl flex-col overflow-hidden sm:h-[calc(100dvh-3rem)]">
+        <header className="hg-video-notes-header flex shrink-0 items-start gap-4 px-5 py-4 sm:px-7 sm:py-5">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2 text-xs font-black tracking-[0.08em] text-[#6251f5]"><BookOpen className="h-4 w-4" />视频笔记{notesCharacterCount ? <span className="font-semibold tracking-normal text-slate-400">· {notesCharacterCount.toLocaleString('zh-CN')} 字</span> : null}</div>
-            <h2 className="mt-1 line-clamp-2 text-xl font-black leading-tight text-slate-950 sm:text-2xl">{video.title}</h2>
+            <div className="hg-video-notes-meta flex items-center gap-2 text-xs font-black"><BookOpen className="h-4 w-4" />视频笔记{notesCharacterCount ? <span>{notesCharacterCount.toLocaleString('zh-CN')} 字</span> : null}</div>
+            <h2 id="video-notes-dialog-title" className="mt-1.5 line-clamp-2 text-xl font-black leading-tight text-slate-950 sm:text-2xl">{video.title}</h2>
           </div>
-          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dbe8f4] text-slate-600 transition hover:border-[#6251f5] hover:text-[#6251f5]" onClick={copyShareLink} aria-label="复制视频笔记分享链接" title="复制分享链接"><Share2 className="h-4 w-4" /></button>
-          <button type="button" className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#dbe8f4] text-slate-600 transition hover:border-slate-400 hover:text-slate-950" onClick={onClose} aria-label="关闭视频笔记"><X className="h-5 w-5" /></button>
+          <div className="hg-video-notes-toolbar flex shrink-0 gap-2">
+            <button type="button" onClick={copyShareLink} aria-label="复制视频笔记分享链接" title="复制分享链接"><Share2 className="h-4 w-4" /></button>
+            <button type="button" onClick={onClose} aria-label="关闭视频笔记"><X className="h-5 w-5" /></button>
+          </div>
         </header>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-12 pt-6 sm:px-10 sm:pb-16">
+        <div className="hg-video-notes-body min-h-0 flex-1 overflow-y-auto px-5 pb-12 pt-6 sm:px-10 sm:pb-16">
           {loading ? (
-            <div className="flex min-h-[280px] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-[#6251f5]" /></div>
+            <div className="flex min-h-[280px] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin" /></div>
           ) : loadError ? (
-            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-rose-100 bg-rose-50/50 px-6 text-center">
+            <div className="hg-video-notes-state flex min-h-[300px] flex-col items-center justify-center px-6 text-center">
               <h3 className="text-xl font-black text-slate-950">视频笔记加载失败</h3>
               <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{loadError}</p>
-              <button type="button" className="mt-5 inline-flex h-10 items-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white transition hover:bg-[#5142df]" onClick={() => window.location.reload()}>重新加载</button>
+              <button type="button" className="hg-video-notes-primary mt-5 inline-flex h-10 items-center px-5 text-sm font-black" onClick={() => window.location.reload()}>重新加载</button>
             </div>
           ) : detail?.isLocked ? (
-            <div className="flex min-h-[300px] flex-col items-center justify-center rounded-2xl border border-[#e2dcff] bg-[#faf9ff] px-6 text-center">
-              <Lock className="h-8 w-8 text-[#6251f5]" />
-              <h3 className="mt-4 text-xl font-black text-slate-950">{detail.loginRequired ? '登录后查看视频笔记' : '开通 Club 查看完整笔记'}</h3>
-              <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{detail.loginRequired ? '登录后即可继续查看该视频笔记。' : '该视频笔记为 Club 权益内容，升级后可查看。'}</p>
-              <Link
+            <div className="hg-career-notes-lock flex min-h-[300px] flex-col items-center justify-center px-6 text-center">
+              <Lock className="h-8 w-8" />
+              <h3 className="mt-4 text-xl font-black text-slate-950">{detail.loginRequired ? '登录后查看视频笔记' : '当前内容暂未开放'}</h3>
+              <p className="mt-2 max-w-md text-sm leading-6 text-slate-600">{detail.loginRequired ? '登录后即可继续查看该视频笔记。' : '你仍可浏览当前已开放的职业成长内容。'}</p>
+              {detail.loginRequired || COMPLIANCE_FEATURES.membershipPromotionBanners ? <Link
                 to={detail.loginRequired ? `/login?redirect=${encodeURIComponent(notePath)}` : '/profile?tab=membership#club-service-plans'}
                 onClick={onClose}
-                className="mt-5 inline-flex h-10 items-center gap-2 rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm hover:bg-[#5142df] hover:text-white hover:no-underline"
+                className="hg-video-notes-primary mt-5 inline-flex h-10 items-center gap-2 px-5 text-sm font-black hover:text-white hover:no-underline"
               >
-                {detail.loginRequired ? '前往登录' : '前往开通 Club'}
+                {detail.loginRequired ? '前往登录' : '查看 Private 内容'}
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </Link> : null}
             </div>
           ) : (
             <VideoNotesArticle notes={detail?.videoNotes || []} />
           )}
         </div>
-        <footer className="flex shrink-0 justify-end border-t border-[#dbe8f4] bg-[#fbfcfe] px-5 py-4 sm:px-7">
-          <Link to={notePath} className="inline-flex h-10 items-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm hover:bg-[#5142df] hover:text-white hover:no-underline">进入笔记主页</Link>
+        <footer className="hg-video-notes-footer flex shrink-0 justify-end px-5 py-4 sm:px-7">
+          <Link to={notePath} className="hg-video-notes-primary inline-flex h-10 items-center px-5 text-sm font-black hover:text-white hover:no-underline">进入笔记主页</Link>
         </footer>
       </div>
     </div>,

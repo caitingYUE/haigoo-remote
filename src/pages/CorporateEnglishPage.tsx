@@ -24,6 +24,8 @@ import {
   Volume2
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useLanguage } from '../contexts/LanguageContext'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import {
   CorporateEnglishCompanyDetail,
@@ -115,7 +117,7 @@ const pronunciationTypeMeta: Record<CorporateEnglishPronunciationMarkType, {
 }> = {
   stress: {
     label: '重读',
-    className: 'rounded-md bg-[#eeeaff] px-1 font-black text-[#4f46e5] shadow-[inset_0_-2px_0_rgba(79,70,229,0.20)]',
+    className: 'rounded-md bg-[#dce9f5] px-1 font-black text-[#345d88] shadow-[inset_0_-2px_0_rgba(79,70,229,0.20)]',
     hint: '语义重心，读清楚'
   },
   weak: {
@@ -253,36 +255,39 @@ function CompanyLogo({ company }: { company: CorporateEnglishPublicCompany }) {
       <img
         src={activeLogo}
         alt={company.name}
-        className="h-11 w-11 rounded-2xl border border-[#eadff8] bg-white object-contain p-1.5 shadow-[0_8px_20px_rgba(105,82,190,0.08)]"
+        className="h-11 w-11 rounded-2xl border border-[#dce9f5] bg-white object-contain p-1.5 shadow-[0_8px_20px_rgba(105,82,190,0.08)]"
         loading="lazy"
         onError={() => setLogoIndex((index) => index + 1)}
       />
     )
   }
   return (
-    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#eadff8] bg-[#fff7e8] text-[#8b6f42] shadow-[0_8px_20px_rgba(105,82,190,0.08)]">
+    <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#dce9f5] bg-[#fff7e8] text-[#8b6f42] shadow-[0_8px_20px_rgba(105,82,190,0.08)]">
       <Building2 className="h-5 w-5" />
     </div>
   )
 }
 
 function AccessBadge({ tier, sampleLabel = false }: { tier?: 'free' | 'vip'; sampleLabel?: boolean }) {
-  const isFree = tier === 'free'
+  const { membershipCapabilities } = useAuth()
+  const { isEnglish } = useLanguage()
+  const isOpen = tier === 'free' || membershipCapabilities.canAccessCorporateEnglishVideos
   return (
     <span className={`inline-flex h-6 items-center rounded-full border px-2.5 text-[11px] font-black tracking-wide ${
-      isFree
-        ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-        : 'border-[#eadff8] bg-[#f5f2ff] text-[#6251f5]'
+      isOpen
+        ? 'border-[#ffc1a6] bg-[#fff2eb] text-[#c34720]'
+        : 'border-slate-200 bg-slate-100 text-slate-500'
     }`}>
-      {isFree ? (sampleLabel ? '免费样例' : 'FREE') : 'Club'}
+      {isOpen ? (isEnglish ? 'Open' : '开放') : (isEnglish ? 'Private' : '不开放')}
     </span>
   )
 }
 
 function MemberOnlyHint() {
+  const { isEnglish } = useLanguage()
   return (
-    <span className="inline-flex h-6 items-center rounded-full border border-slate-200 bg-slate-50 px-2.5 text-[11px] font-black text-slate-500">
-      仅会员
+    <span className="inline-flex h-6 items-center rounded-full border border-slate-200 bg-slate-100 px-2.5 text-[11px] font-black text-slate-500">
+      {isEnglish ? 'Private' : '不开放'}
     </span>
   )
 }
@@ -298,7 +303,8 @@ function ModuleVideoCard({
 }) {
   const cardRef = useRef<HTMLElement | null>(null)
   const trackedRef = useRef(false)
-  const isFree = video.accessTier === 'free'
+  const { isEnglish } = useLanguage()
+  const isOpen = !video.isLocked
   const sourceUrl = isExternalUrl(video.videoSource) ? normalizeExternalUrl(video.videoSource) : ''
 
   useEffect(() => {
@@ -351,9 +357,9 @@ function ModuleVideoCard({
           <button
             type="button"
             onClick={() => onLockedAction(video)}
-            className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#f5f2ff] text-center text-[#6251f5]"
+            className="flex h-full w-full flex-col items-center justify-center gap-3 bg-[#eff5fb] text-center text-[#466f9d]"
           >
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_12px_30px_rgba(98,81,245,0.16)]">
+            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-[0_12px_30px_rgba(70,111,157,0.16)]">
               {video.loginRequired ? <Lock className="h-6 w-6" /> : <PlayCircle className="h-8 w-8" />}
             </span>
             <span className="px-5 text-base font-black text-slate-700">
@@ -366,11 +372,11 @@ function ModuleVideoCard({
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-2">
             <span className={`inline-flex h-7 items-center rounded-full border px-3 text-xs font-black ${
-              isFree
-                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                : 'border-[#eadff8] bg-[#f5f2ff] text-[#6251f5]'
+              isOpen
+                ? 'border-[#ffc1a6] bg-[#fff2eb] text-[#c34720]'
+                : 'border-slate-200 bg-slate-100 text-slate-500'
             }`}>
-              {isFree ? '免费' : '会员'}
+              {isOpen ? (isEnglish ? 'Open' : '开放') : (isEnglish ? 'Private' : '不开放')}
             </span>
             {video.category ? (
               <span className="inline-flex h-7 items-center rounded-full bg-slate-100 px-3 text-xs font-black text-slate-600">
@@ -396,7 +402,7 @@ function ModuleVideoCard({
                 href={sourceUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-1 flex min-w-0 items-center gap-1 break-all font-semibold text-[#6251f5] hover:text-[#4f46e5]"
+                className="mt-1 flex min-w-0 items-center gap-1 break-all font-semibold text-[#466f9d] hover:text-[#345d88]"
               >
                 <span>{video.videoSource}</span>
                 <ExternalLink className="h-3.5 w-3.5 shrink-0" />
@@ -419,9 +425,9 @@ function ModuleVideoCard({
           <button
             type="button"
             onClick={() => onLockedAction(video)}
-            className="mt-auto inline-flex h-10 w-fit items-center justify-center rounded-full bg-[#6d5dfc] px-5 text-sm font-black text-white transition hover:bg-[#5847ee]"
+            className="mt-auto inline-flex h-10 w-fit items-center justify-center rounded-full bg-[#466f9d] px-5 text-sm font-black text-white transition hover:bg-[#345d88]"
           >
-            {video.loginRequired ? '去登录' : '了解会员服务'}
+            {video.loginRequired ? '去登录' : COMPLIANCE_FEATURES.membershipPromotionBanners ? '查看 Private 内容' : '暂未开放'}
           </button>
         ) : null}
       </div>
@@ -448,8 +454,8 @@ function ModuleSwitcher({
             aria-pressed={active}
             className={`inline-flex h-9 min-w-0 items-center justify-center rounded-[12px] px-1 text-[13px] font-black leading-none transition ${
               active
-                ? 'bg-[#6d5dfc] text-white shadow-[0_8px_18px_rgba(109,93,252,0.18)]'
-                : 'bg-[#eef1f6] text-slate-700 hover:bg-white hover:text-[#6251f5] hover:shadow-[0_6px_16px_rgba(36,47,76,0.08)]'
+                ? 'bg-[#466f9d] text-white shadow-[0_8px_18px_rgba(109,93,252,0.18)]'
+                : 'bg-[#eef1f6] text-slate-700 hover:bg-white hover:text-[#466f9d] hover:shadow-[0_6px_16px_rgba(36,47,76,0.08)]'
             }`}
             title={tab.label}
           >
@@ -514,7 +520,7 @@ function ModuleVideoLibrary({
               <button
                 type="button"
                 onClick={onToggleCollapse}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#dce9f5] bg-white text-slate-500 transition hover:border-[#9fbbd2] hover:text-[#466f9d]"
                 aria-label="展开分类列表"
                 title="展开分类列表"
               >
@@ -530,7 +536,7 @@ function ModuleVideoLibrary({
                 <button
                   type="button"
                   onClick={onToggleCollapse}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#dce9f5] bg-white text-slate-500 transition hover:border-[#9fbbd2] hover:text-[#466f9d]"
                   aria-label="收起分类列表"
                   title="收起分类列表"
                 >
@@ -545,7 +551,7 @@ function ModuleVideoLibrary({
         <div className={`min-h-0 flex-1 space-y-2 overflow-y-auto ${isCollapsed ? 'p-2' : 'p-3'}`}>
           {!isCollapsed ? (
             <div className="mb-1 flex items-center gap-2 px-1 text-xs font-black uppercase tracking-wide text-slate-400">
-              <Menu className="h-3.5 w-3.5 text-[#6251f5]" />
+              <Menu className="h-3.5 w-3.5 text-[#466f9d]" />
               {categoryListTitle}
             </div>
           ) : null}
@@ -559,7 +565,7 @@ function ModuleVideoLibrary({
                   onClick={() => onCategoryChange(category)}
                   className={`flex w-full items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-sm font-bold transition ${
                     active
-                      ? 'border-[#d7ccff] bg-[#f4f0ff] text-[#6251f5]'
+                      ? 'border-[#c9dce8] bg-[#eff5fb] text-[#466f9d]'
                       : 'border-transparent text-slate-600 hover:border-[#efe5d8] hover:bg-[#fffaf0]'
                   }`}
                 >
@@ -578,7 +584,7 @@ function ModuleVideoLibrary({
       <main className="min-w-0 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1">
         {loading ? (
           <div className="flex min-h-[420px] items-center justify-center rounded-[24px] border border-[#e5edf3] bg-white">
-            <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#466f9d]" />
           </div>
         ) : videos.length > 0 ? (
           <div className="max-w-[1180px] space-y-5 pb-8">
@@ -588,7 +594,7 @@ function ModuleVideoLibrary({
           </div>
         ) : (
           <div className="rounded-[24px] border border-dashed border-[#d8e4ee] bg-white p-12 text-center">
-            <Video className="mx-auto h-10 w-10 text-indigo-500" />
+            <Video className="mx-auto h-10 w-10 text-[#587faa]" />
             <h2 className="mt-4 text-xl font-black text-slate-900">内容准备中</h2>
             <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
               后台发布 {moduleTab.label} 视频后，这里会按分类展示。
@@ -619,16 +625,16 @@ function UpgradeLockOverlay({
     <div className={`absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] px-4 ${
       isVideo
         ? 'bg-white/82 backdrop-blur-[5px]'
-        : 'bg-[#f3f0ff]/24 backdrop-blur-[3px]'
+        : 'bg-[#eff5fb]/24 backdrop-blur-[3px]'
     }`}>
       <div className={`max-w-[320px] text-center ${
         isVideo
           ? 'rounded-[22px] border border-white/90 bg-white p-5 shadow-[0_18px_54px_-34px_rgba(15,23,42,0.5)]'
-          : 'rounded-[18px] border border-[#d8d2ff]/80 bg-white/86 p-4 shadow-[0_16px_44px_-34px_rgba(95,81,245,0.34)] backdrop-blur-xl'
+          : 'rounded-[18px] border border-[#c9dce8]/80 bg-white/86 p-4 shadow-[0_16px_44px_-34px_rgba(95,81,245,0.34)] backdrop-blur-xl'
       }`}>
         <div className={`mx-auto flex h-10 w-10 items-center justify-center rounded-full shadow-sm ${
           usePurpleTone
-            ? 'bg-[#f5f2ff] text-[#6251f5]'
+            ? 'bg-[#eff5fb] text-[#466f9d]'
             : 'bg-emerald-50 text-emerald-600'
         }`}>
           <Lock className="h-4 w-4" />
@@ -639,7 +645,7 @@ function UpgradeLockOverlay({
           type="button"
           onClick={onUpgrade}
           className={`mt-3 inline-flex h-9 items-center justify-center rounded-full px-4 text-xs font-black text-white transition ${
-            usePurpleTone ? 'bg-[#6d5dfc] hover:bg-[#5a49e8]' : 'bg-emerald-600 hover:bg-emerald-700'
+            usePurpleTone ? 'bg-[#466f9d] hover:bg-[#345d88]' : 'bg-emerald-600 hover:bg-emerald-700'
           }`}
         >
           {ctaLabel}
@@ -659,14 +665,14 @@ function LearningPanelLockOverlay({
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[inherit] bg-[#fbfcff] px-6">
       <div className="w-full max-w-[250px] text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#ded6ff] bg-white text-[#6251f5] shadow-[0_12px_28px_-22px_rgba(78,64,180,0.45)]">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#c9dce8] bg-white text-[#466f9d] shadow-[0_12px_28px_-22px_rgba(78,64,180,0.45)]">
           <Lock className="h-4 w-4" />
         </div>
         <h3 className="mt-4 text-base font-black leading-6 text-slate-950">企业文化、CEO商业思维等内容</h3>
         <button
           type="button"
           onClick={onUpgrade}
-          className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[#6d5dfc] px-6 text-sm font-black text-white shadow-[0_16px_32px_-22px_rgba(109,93,252,0.72)] transition hover:bg-[#5a49e8]"
+          className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[#466f9d] px-6 text-sm font-black text-white shadow-[0_16px_32px_-22px_rgba(109,93,252,0.72)] transition hover:bg-[#345d88]"
         >
           {ctaLabel}
         </button>
@@ -779,7 +785,7 @@ function LearningSidePanel({
                   {activeTab === 'culture' ? '使命、价值观与工作方式' : activeTab === 'ceo' ? '增长、管理与长期判断' : activeTab === 'resources' ? '可继续阅读的外部材料' : activeTab === 'jobs' ? '与公司页同步的在招岗位' : '已收藏的跟读片段'}
                 </p>
               </div>
-              <span className="rounded-full border border-[#eadff8] bg-[#f7f4ff] px-3 py-1 text-xs font-black text-[#6251f5]">
+              <span className="rounded-full border border-[#dce9f5] bg-[#f4f8fb] px-3 py-1 text-xs font-black text-[#466f9d]">
                 {currentTab.count} 条
               </span>
             </div>
@@ -792,7 +798,7 @@ function LearningSidePanel({
                       href={companyDetailPath}
                       target="_blank"
                       rel="noreferrer"
-                      className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] no-underline hover:border-[#cbbfff] hover:bg-[#f6f2ff] hover:no-underline"
+                      className="mb-3 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#dce9f5] bg-white px-3 py-2 text-xs font-black text-[#466f9d] no-underline hover:border-[#9fbbd2] hover:bg-[#f4f8fb] hover:no-underline"
                     >
                       进入企业页
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -804,11 +810,11 @@ function LearningSidePanel({
                       href={`${companyDetailPath}?jobId=${encodeURIComponent(job.id)}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
+                      className="group block w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left no-underline transition hover:border-[#c9dce8] hover:bg-[#f4f8fb] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#c9dce8]"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="line-clamp-2 text-sm font-bold text-slate-900">{job.title}</div>
-                        <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[#6251f5]" />
+                        <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-[#466f9d]" />
                       </div>
                       <div className="mt-1 text-xs text-slate-500">{job.location || '远程'} · {job.category || job.jobType || '岗位'}</div>
                     </a>
@@ -819,7 +825,7 @@ function LearningSidePanel({
               )
             ) : isFavoriteTab ? (
               !isAuthenticated ? (
-                <button type="button" onClick={onNavigateLogin} className="w-full rounded-2xl border border-[#eadff8] bg-[#fffdf8] px-3 py-3 text-sm font-bold text-slate-700 hover:border-[#cbbfff] hover:text-[#6251f5]">
+                <button type="button" onClick={onNavigateLogin} className="w-full rounded-2xl border border-[#dce9f5] bg-[#fffdf8] px-3 py-3 text-sm font-bold text-slate-700 hover:border-[#9fbbd2] hover:text-[#466f9d]">
                   登录后查看收藏片段
                 </button>
               ) : favorites.length ? (
@@ -829,7 +835,7 @@ function LearningSidePanel({
                       key={clip.clipId}
                       type="button"
                       onClick={onNavigateFavorites}
-                      className="w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left hover:border-[#d8ccff] hover:bg-[#f6f2ff]"
+                      className="w-full rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-left hover:border-[#c9dce8] hover:bg-[#f4f8fb]"
                     >
                       <div className="line-clamp-2 text-sm font-bold text-slate-900">{clip.clipTitle || clip.materialTitle}</div>
                       <div className="mt-1 text-xs text-slate-500">{clip.companyName} · {formatTime(clip.startMs)}</div>
@@ -838,7 +844,7 @@ function LearningSidePanel({
                   <button
                     type="button"
                     onClick={onNavigateFavorites}
-                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#eadff8] bg-white px-3 py-2 text-xs font-black text-[#6251f5] hover:border-[#cbbfff] hover:bg-[#f6f2ff]"
+                    className="inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-[#dce9f5] bg-white px-3 py-2 text-xs font-black text-[#466f9d] hover:border-[#9fbbd2] hover:bg-[#f4f8fb]"
                   >
                     查看全部音频收藏
                     <ChevronRight className="h-3.5 w-3.5" />
@@ -856,10 +862,10 @@ function LearningSidePanel({
                       href={resource.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="group flex min-h-[92px] items-start justify-between gap-3 rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-sm font-bold text-[#6251f5] no-underline transition hover:border-[#d8ccff] hover:bg-[#f6f2ff] hover:text-[#4f46e5] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#d8ccff]"
+                      className="group flex min-h-[92px] items-start justify-between gap-3 rounded-2xl border border-[#f0e8dc] bg-[#fffdf8] p-3 text-sm font-bold text-[#466f9d] no-underline transition hover:border-[#c9dce8] hover:bg-[#f4f8fb] hover:text-[#345d88] hover:no-underline focus:outline-none focus:ring-2 focus:ring-[#c9dce8]"
                     >
                       <span className="flex min-w-0 gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#8a7bff]">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white text-[#7f9fbc]">
                           <Link2 className="h-4 w-4" />
                         </span>
                         <span className="min-w-0">
@@ -867,7 +873,7 @@ function LearningSidePanel({
                           <span className="mt-2 block truncate text-xs font-semibold text-slate-400">{normalizeExternalUrl(resource.url)}</span>
                         </span>
                       </span>
-                      <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-[#8a7bff] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      <ExternalLink className="mt-1 h-4 w-4 shrink-0 text-[#7f9fbc] transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </a>
                   ))}
                 </div>
@@ -884,15 +890,15 @@ function LearningSidePanel({
                       if (!activeInsightTab) return
                       setActiveInsightIndexes((prev) => ({ ...prev, [activeInsightTab]: index }))
                     }}
-                    className={`w-full rounded-2xl border p-4 text-left transition hover:border-[#d7ccff] hover:bg-[#f7f4ff] focus:outline-none focus:ring-2 focus:ring-[#d8ccff] ${
+                    className={`w-full rounded-2xl border p-4 text-left transition hover:border-[#c9dce8] hover:bg-[#f4f8fb] focus:outline-none focus:ring-2 focus:ring-[#c9dce8] ${
                       index === activeInsightIndex
-                        ? 'border-[#d7ccff] bg-[#f7f4ff]'
+                        ? 'border-[#c9dce8] bg-[#f4f8fb]'
                         : 'border-[#f0e8dc] bg-[#fffdf8]'
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-                        index === activeInsightIndex ? 'bg-[#6d5dfc] text-white' : 'bg-white text-[#8a7bff]'
+                        index === activeInsightIndex ? 'bg-[#466f9d] text-white' : 'bg-white text-[#7f9fbc]'
                       }`}>
                         {index + 1}
                       </span>
@@ -929,15 +935,15 @@ function LearningSidePanel({
                 onClick={() => setActiveTab(tab.key)}
                 className={`relative flex h-[70px] w-full flex-col items-center justify-center gap-1 rounded-2xl border text-[11px] font-black transition ${
                   isActive
-                    ? 'border-[#d7ccff] bg-white text-[#6251f5] shadow-[0_14px_30px_-24px_rgba(109,93,252,0.75)]'
-                    : 'border-transparent bg-transparent text-slate-500 hover:border-[#e3ddff] hover:bg-white/70 hover:text-[#6251f5]'
+                    ? 'border-[#c9dce8] bg-white text-[#466f9d] shadow-[0_14px_30px_-24px_rgba(109,93,252,0.75)]'
+                    : 'border-transparent bg-transparent text-slate-500 hover:border-[#c9dce8] hover:bg-white/70 hover:text-[#466f9d]'
                 }`}
                 title={tab.title}
               >
                 {tab.icon}
                 <span className="leading-none">{tab.title.replace('CEO ', '')}</span>
                 <span className={`absolute right-1.5 top-1.5 rounded-full px-1 text-[10px] leading-4 ${
-                  isActive ? 'bg-[#f3f0ff] text-[#6251f5]' : 'bg-white text-slate-400'
+                  isActive ? 'bg-[#eff5fb] text-[#466f9d]' : 'bg-white text-slate-400'
                 }`}>
                   {tab.count}
                 </span>
@@ -1091,7 +1097,7 @@ function ClipCard({
     <article className="rounded-[24px] border border-[#d9ccff] bg-white/90 p-4 shadow-[0_16px_48px_rgba(103,84,186,0.09)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold text-[#6d5dfc]">
+          <div className="flex items-center gap-2 text-xs font-bold text-[#466f9d]">
             <Headphones className="h-4 w-4" />
             <span>{formatTime(clip.startMs)} - {formatTime(clip.endMs)}</span>
           </div>
@@ -1108,7 +1114,7 @@ function ClipCard({
             ? 'border-amber-200 bg-amber-50 text-amber-700'
             : clip.isLocked
               ? 'cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400'
-            : 'border-[#eadff8] bg-white text-slate-600 hover:border-[#cbbfff] hover:text-[#6251f5]'
+            : 'border-[#dce9f5] bg-white text-slate-600 hover:border-[#9fbbd2] hover:text-[#466f9d]'
             }`}
         >
           {clip.isFavorited ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
@@ -1165,8 +1171,8 @@ function ClipCard({
       {tagGroups.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {tagGroups.map((group) => (
-            <span key={group.title} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#ded6ff] bg-[#f5f2ff] px-3 py-1.5 text-xs font-bold text-[#6251f5]">
-              <span className="shrink-0 text-[#8a7bff]">{group.title}</span>
+            <span key={group.title} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#c9dce8] bg-[#eff5fb] px-3 py-1.5 text-xs font-bold text-[#466f9d]">
+              <span className="shrink-0 text-[#7f9fbc]">{group.title}</span>
               <span className="min-w-0 truncate">{group.tags.map((tag) => `#${tag}`).join(' ')}</span>
             </span>
           ))}
@@ -1178,7 +1184,7 @@ function ClipCard({
         <div className="rounded-2xl border border-[#eee7dd] bg-[#fffdf8] p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-400">
-                <BookOpen className="h-4 w-4 text-[#8a7bff]" />
+                <BookOpen className="h-4 w-4 text-[#7f9fbc]" />
                 Script
             </div>
             {pronunciationTypes.length > 0 ? (
@@ -1190,8 +1196,8 @@ function ClipCard({
                     onClick={() => togglePronunciationType(type)}
                     className={`rounded-full border px-3 py-1.5 transition ${
                       activePronunciationTypes.includes(type)
-                        ? 'border-[#cfc5ff] bg-[#6d5dfc] text-white shadow-[0_8px_18px_-14px_rgba(109,93,252,0.8)]'
-                        : 'border-[#eadff8] bg-white text-slate-700 shadow-sm hover:border-[#cbbfff] hover:bg-[#f6f2ff] hover:text-[#6251f5]'
+                        ? 'border-[#9fbbd2] bg-[#466f9d] text-white shadow-[0_8px_18px_-14px_rgba(109,93,252,0.8)]'
+                        : 'border-[#dce9f5] bg-white text-slate-700 shadow-sm hover:border-[#9fbbd2] hover:bg-[#f4f8fb] hover:text-[#466f9d]'
                     }`}
                     title={`${pronunciationTypeMeta[type].label}：${pronunciationTypeMeta[type].hint}，点击${activePronunciationTypes.includes(type) ? '关闭' : '开启'}`}
                   >
@@ -1203,7 +1209,7 @@ function ClipCard({
             <button
               type="button"
               onClick={() => setShowScript((value) => !value)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#ded6ff] bg-white text-[#6251f5] transition hover:bg-[#f5f2ff]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#c9dce8] bg-white text-[#466f9d] transition hover:bg-[#eff5fb]"
               title={showScript ? '隐藏原文' : '显示原文'}
               aria-label={showScript ? '隐藏原文' : '显示原文'}
             >
@@ -1218,7 +1224,7 @@ function ClipCard({
                     key={`${line}-${lineIndex}`}
                     className={`relative rounded-xl px-3 py-2 transition ${lineIndex === activeLineIndex ? 'pl-5 text-slate-950' : ''}`}
                   >
-                    {lineIndex === activeLineIndex ? <span className="absolute bottom-2 left-1 top-2 w-0.5 rounded-full bg-[#6d5dfc]" /> : null}
+                    {lineIndex === activeLineIndex ? <span className="absolute bottom-2 left-1 top-2 w-0.5 rounded-full bg-[#466f9d]" /> : null}
                     {renderMarkedLine(line, pronunciationMarks, visiblePronunciationTypes)}
                   </p>
                 ))}
@@ -1509,9 +1515,15 @@ export default function CorporateEnglishPage() {
       navigate('/login')
       return
     }
-    openMembershipModal('starter')
-  }, [isAuthenticated, navigate, openMembershipModal])
-  const lockedCtaLabel = isAuthenticated ? '了解会员服务' : '需登录'
+    if (COMPLIANCE_FEATURES.membershipPromotionBanners) {
+      openMembershipModal('starter')
+      return
+    }
+    showWarning('当前内容暂未开放', '你仍可浏览全部公开岗位信息和免费职业成长内容。')
+  }, [isAuthenticated, navigate, openMembershipModal, showWarning])
+  const lockedCtaLabel = isAuthenticated
+    ? (COMPLIANCE_FEATURES.membershipPromotionBanners ? '查看 Private 内容' : '暂未开放')
+    : '需登录'
 
   const handleModuleVideoLockedAction = useCallback((video: CorporateEnglishPublicModuleVideo) => {
     if (video.loginRequired || !isAuthenticated) {
@@ -1519,8 +1531,12 @@ export default function CorporateEnglishPage() {
       navigate('/login')
       return
     }
-    showWarning('会员内容', video.lockReason || '升级会员后可播放该视频。')
-    openMembershipModal('starter')
+    if (COMPLIANCE_FEATURES.membershipPromotionBanners) {
+      showWarning('Private 内容', video.lockReason || '该内容对当前账号暂未开放。')
+      openMembershipModal('starter')
+      return
+    }
+    showWarning('当前内容暂未开放', '你仍可播放页面中的免费内容。')
   }, [isAuthenticated, navigate, openMembershipModal, showWarning])
 
   const trackClipPlay = useCallback((clip: CorporateEnglishPublicClip) => {
@@ -1539,7 +1555,7 @@ export default function CorporateEnglishPage() {
 
   const toggleFavorite = async (clip: CorporateEnglishPublicClip) => {
     if (clip.isLocked) {
-      showWarning(isAuthenticated ? '了解会员服务' : '请先登录', isAuthenticated ? '人工精选和剪辑后的跟读音频、口语练习重点、字幕等内容。' : '登录后可以收藏跟读片段')
+      showWarning(isAuthenticated ? (COMPLIANCE_FEATURES.membershipPromotionBanners ? 'Private 内容' : '当前内容暂未开放') : '请先登录', isAuthenticated ? '该跟读片段当前暂未开放。' : '登录后可以收藏跟读片段')
       handleLockedAction()
       return
     }
@@ -1583,7 +1599,7 @@ export default function CorporateEnglishPage() {
           </div>
         ) : loadingCompanies ? (
           <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-[#e5edf3] bg-white">
-            <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+            <Loader2 className="h-6 w-6 animate-spin text-[#466f9d]" />
           </div>
         ) : (
           <>
@@ -1595,7 +1611,7 @@ export default function CorporateEnglishPage() {
                     <button
                       type="button"
                       onClick={() => setIsCompanyListCollapsed((value) => !value)}
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#dce9f5] bg-white text-slate-500 transition hover:border-[#9fbbd2] hover:text-[#466f9d]"
                       aria-label="展开企业列表"
                       title="展开企业列表"
                     >
@@ -1611,7 +1627,7 @@ export default function CorporateEnglishPage() {
                       <button
                         type="button"
                         onClick={() => setIsCompanyListCollapsed((value) => !value)}
-                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadff8] bg-white text-slate-500 transition hover:border-[#cbbfff] hover:text-[#6251f5]"
+                        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#dce9f5] bg-white text-slate-500 transition hover:border-[#9fbbd2] hover:text-[#466f9d]"
                         aria-label="收起企业列表"
                         title="收起企业列表"
                       >
@@ -1628,7 +1644,7 @@ export default function CorporateEnglishPage() {
               <div className={`min-h-0 flex-1 space-y-2 overflow-y-auto ${isCompanyListCollapsed ? 'p-2' : 'p-3'}`}>
                 {!isCompanyListCollapsed ? (
                   <div className="mb-1 flex items-center gap-2 px-1 text-xs font-black uppercase tracking-wide text-slate-400">
-                    <Menu className="h-3.5 w-3.5 text-[#6251f5]" />
+                    <Menu className="h-3.5 w-3.5 text-[#466f9d]" />
                     企业列表
                   </div>
                 ) : null}
@@ -1640,7 +1656,7 @@ export default function CorporateEnglishPage() {
                       if (companies.length > 0) setSelectedCompanyId(company.companyId)
                     }}
                     className={`flex w-full items-center rounded-2xl border text-left transition ${isCompanyListCollapsed ? 'justify-center p-2' : 'gap-3 p-3'} ${selectedCompanyId === company.companyId || companies.length === 0
-                      ? 'border-[#d7ccff] bg-[#f4f0ff]'
+                      ? 'border-[#c9dce8] bg-[#eff5fb]'
                       : 'border-transparent hover:border-[#efe5d8] hover:bg-[#fffaf0]'
                     }`}
                     title={company.name}
@@ -1654,7 +1670,7 @@ export default function CorporateEnglishPage() {
                         </span>
                         <span className="flex shrink-0 flex-col items-end gap-1">
                           <AccessBadge tier={company.accessTier} />
-                          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-[#6251f5]">{company.clipCount || 0}</span>
+                          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-bold text-[#466f9d]">{company.clipCount || 0}</span>
                         </span>
                       </>
                     ) : null}
@@ -1665,7 +1681,7 @@ export default function CorporateEnglishPage() {
             <main className="min-w-0 space-y-4 lg:h-full lg:min-h-0 lg:overflow-y-auto lg:pr-1">
               {loadingDetail ? (
                 <div className="flex min-h-[420px] items-center justify-center rounded-2xl border border-[#e5edf3] bg-white">
-                  <Loader2 className="h-6 w-6 animate-spin text-indigo-600" />
+                  <Loader2 className="h-6 w-6 animate-spin text-[#466f9d]" />
                 </div>
               ) : detail && activeVideo ? (
                 <>
@@ -1695,10 +1711,10 @@ export default function CorporateEnglishPage() {
                             if (!isLoginLockedVideoTab) setActiveVideoId(video.materialId)
                           }}
                           className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition ${isLoginLockedVideoTab
-                            ? 'cursor-not-allowed border-[#eadff8] bg-white/70 text-slate-300'
+                            ? 'cursor-not-allowed border-[#dce9f5] bg-white/70 text-slate-300'
                             : activeVideo.materialId === video.materialId
-                            ? 'border-[#d7ccff] bg-[#6d5dfc] text-white shadow-[0_10px_24px_rgba(109,93,252,0.20)]'
-                            : 'border-[#eadff8] bg-white text-slate-600 hover:border-[#cbbfff] hover:text-[#6251f5]'
+                            ? 'border-[#c9dce8] bg-[#466f9d] text-white shadow-[0_10px_24px_rgba(109,93,252,0.20)]'
+                            : 'border-[#dce9f5] bg-white text-slate-600 hover:border-[#9fbbd2] hover:text-[#466f9d]'
                             }`}
                         >
                           {isLoginLockedVideoTab ? <Lock className="h-3.5 w-3.5" /> : null}
@@ -1721,7 +1737,7 @@ export default function CorporateEnglishPage() {
                           ) : (
                             <div className="flex h-full items-center justify-center bg-[#fffaf0] text-slate-500">
                               <div className="text-center">
-                                <PlayCircle className="mx-auto h-10 w-10 text-[#8a7bff]" />
+                                <PlayCircle className="mx-auto h-10 w-10 text-[#7f9fbc]" />
                                 <p className="mt-2 text-sm font-bold">该内容暂未配置视频</p>
                               </div>
                             </div>
@@ -1741,7 +1757,7 @@ export default function CorporateEnglishPage() {
                             href={activeSourceVideoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-xs font-black text-[#6251f5] shadow-[0_12px_30px_rgba(15,23,42,0.16)] backdrop-blur transition hover:bg-white hover:text-[#4f46e5] hover:no-underline"
+                            className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-full border border-white/70 bg-white/90 px-3 py-1.5 text-xs font-black text-[#466f9d] shadow-[0_12px_30px_rgba(15,23,42,0.16)] backdrop-blur transition hover:bg-white hover:text-[#345d88] hover:no-underline"
                           >
                             视频来源
                             <ExternalLink className="h-3.5 w-3.5" />
@@ -1762,14 +1778,14 @@ export default function CorporateEnglishPage() {
                             href={activeSourceVideoUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-[#eadff8] bg-white px-3 py-1.5 text-xs font-black text-[#6251f5] shadow-sm transition hover:bg-[#f6f2ff] hover:text-[#4f46e5] hover:no-underline"
+                            className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-[#dce9f5] bg-white px-3 py-1.5 text-xs font-black text-[#466f9d] shadow-sm transition hover:bg-[#f4f8fb] hover:text-[#345d88] hover:no-underline"
                           >
                             视频来源
                             <ExternalLink className="h-3.5 w-3.5" />
                           </a>
                         ) : null}
                         <div className="text-center">
-                          <PlayCircle className="mx-auto h-10 w-10 text-[#8a7bff]" />
+                          <PlayCircle className="mx-auto h-10 w-10 text-[#7f9fbc]" />
                           <p className="mt-2 text-sm font-bold">该内容暂未配置视频</p>
                         </div>
                       </div>
@@ -1785,7 +1801,7 @@ export default function CorporateEnglishPage() {
                         {activeVideo.speakerEmail ? (
                           <a
                             href={`mailto:${activeVideo.speakerEmail}`}
-                            className="inline-flex items-center gap-1 font-bold text-[#6251f5] no-underline hover:text-[#4f46e5]"
+                            className="inline-flex items-center gap-1 font-bold text-[#466f9d] no-underline hover:text-[#345d88]"
                           >
                             <Mail className="h-3.5 w-3.5" />
                             Email
@@ -1796,7 +1812,7 @@ export default function CorporateEnglishPage() {
                             href={normalizeExternalUrl(activeVideo.speakerLinkedin)}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-1 font-bold text-[#6251f5] no-underline hover:text-[#4f46e5]"
+                            className="inline-flex items-center gap-1 font-bold text-[#466f9d] no-underline hover:text-[#345d88]"
                           >
                             <Linkedin className="h-3.5 w-3.5" />
                             LinkedIn
@@ -1830,12 +1846,12 @@ export default function CorporateEnglishPage() {
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2">
-                          <Volume2 className="h-5 w-5 text-[#8a7bff]" />
+                          <Volume2 className="h-5 w-5 text-[#7f9fbc]" />
                           <h2 className="text-xl font-black text-slate-950">跟读素材</h2>
                         </div>
                         <p className="mt-1 text-sm text-slate-500">影子跟读是练习口语最高效的方法，以下素材均由人工精选剪辑</p>
                       </div>
-                      <span className="rounded-full border border-[#eadff8] bg-white px-3 py-1 text-xs font-bold text-[#6251f5]">
+                      <span className="rounded-full border border-[#dce9f5] bg-white px-3 py-1 text-xs font-bold text-[#466f9d]">
                         {activeVideo.clips.length} 个片段
                       </span>
                     </div>
@@ -1851,13 +1867,13 @@ export default function CorporateEnglishPage() {
                                   onClick={() => setActiveClipId(clip.clipId)}
                                   className={`flex max-w-[220px] shrink-0 items-center gap-2 rounded-full border px-3 py-2 text-left text-sm transition ${
                                     activeClip?.clipId === clip.clipId
-                                      ? 'border-[#cfc5ff] bg-[#6d5dfc] text-white shadow-[0_12px_28px_-22px_rgba(109,93,252,0.65)]'
-                                      : 'border-[#eadff8] bg-white text-slate-600 hover:border-[#cbbfff] hover:bg-[#f6f2ff] hover:text-[#6251f5]'
+                                      ? 'border-[#9fbbd2] bg-[#466f9d] text-white shadow-[0_12px_28px_-22px_rgba(109,93,252,0.65)]'
+                                      : 'border-[#dce9f5] bg-white text-slate-600 hover:border-[#9fbbd2] hover:bg-[#f4f8fb] hover:text-[#466f9d]'
                                   }`}
                                   title={clip.clipTitle || `片段 ${index + 1}`}
                                 >
                                   <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-black ${
-                                    activeClip?.clipId === clip.clipId ? 'bg-white/18 text-white' : 'bg-[#f5f2ff] text-[#6251f5]'
+                                    activeClip?.clipId === clip.clipId ? 'bg-white/18 text-white' : 'bg-[#eff5fb] text-[#466f9d]'
                                   }`}>
                                     {index + 1}
                                   </span>
@@ -1887,7 +1903,7 @@ export default function CorporateEnglishPage() {
                 </>
               ) : (
                 <div className="rounded-2xl border border-dashed border-[#d8e4ee] bg-white p-12 text-center">
-                  <Video className="mx-auto h-10 w-10 text-indigo-500" />
+                  <Video className="mx-auto h-10 w-10 text-[#587faa]" />
                   <h2 className="mt-4 text-xl font-black text-slate-900">外企英语内容准备中</h2>
                   <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">
                     后台保存并发布企业视频和跟读片段后，这里会自动展示视频、音频、字幕和标签。

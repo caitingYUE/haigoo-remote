@@ -62,6 +62,27 @@ function formatEmailDate(value) {
   })
 }
 
+function getMembershipEmailLabel(memberType, plan) {
+  const labels = {
+    trial_week: '体验会员',
+    starter: '月度会员',
+    quarter: 'Club 会员',
+    quarter_pro: 'Club 会员',
+    year: '年度会员',
+    half_year: '半年会员',
+    annual: '年度会员'
+  }
+  return labels[memberType] || plan?.shortLabel || 'Haigoo Club'
+}
+
+function getMembershipEmailBenefits(memberType, plan) {
+  return (plan?.features || [
+    '职业方向与申请建议',
+    '简历和求职材料支持',
+    '远程职业成长内容'
+  ]).slice(0, 5)
+}
+
 /**
  * 发送邮件（通用）via Resend API
  */
@@ -108,35 +129,34 @@ export async function sendVerificationEmail(to, username, token) {
   const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const verificationLink = `${siteUrl}/verify-email?token=${token}&email=${encodeURIComponent(to)}`
 
-  const subject = '验证您的 Haigoo 账户'
+  const subject = '请验证你的 Haigoo 邮箱'
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
-    .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-    .link { color: #4F46E5; word-break: break-all; }
+    body { margin:0; background:#f6f1e8; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.7; color:#1e293b; }
+    .container { max-width:600px; margin:0 auto; padding:28px 16px; }
+    .shell { overflow:hidden; border:1px solid #dfcdb6; border-radius:20px; background:#fffdf8; }
+    .hero { padding:28px; border-bottom:1px solid #e9e1d5; background:linear-gradient(135deg,#fff8e8,#fffdf8); }
+    .brand { color:#8f5e19; font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    .content { padding:28px; }
+    .button { display:inline-block; background-color:#1e293b; color:white !important; padding:13px 24px; text-decoration:none; border-radius:4px; font-weight:700; margin:16px 0; }
+    .footer { margin-top:28px; font-size:12px; color:#64748b; border-top:1px solid #e9e1d5; padding-top:18px; }
+    .link { color:#8f5e19; word-break:break-all; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>验证您的邮箱地址</h2>
-    <p>亲爱的 ${username}，</p>
-    <p>感谢您注册 Haigoo！请点击下方按钮验证您的邮箱地址：</p>
-    <div style="text-align: center;">
-      <a href="${verificationLink}" class="button">验证邮箱</a>
-    </div>
-    <p>或者复制以下链接到浏览器打开：</p>
+  <div class="container"><div class="shell">
+    <div class="hero"><div class="brand">Haigoo Remote</div><h2>验证你的邮箱</h2><p>欢迎加入 Haigoo，${escapeHtml(username || '你好')}。</p></div>
+    <div class="content"><p>点击下方按钮完成邮箱验证。验证后即可使用账号相关功能。</p>
+    <div><a href="${verificationLink}" class="button">验证邮箱</a></div>
+    <p>链接将在 24 小时后失效。若按钮无法打开，请复制此链接到浏览器：</p>
     <p><a href="${verificationLink}" class="link">${verificationLink}</a></p>
-    <p>此链接将在 24 小时后失效。</p>
-    <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p>
+    <div class="footer"><p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p></div>
     </div>
-  </div>
+  </div></div>
 </body>
 </html>
   `
@@ -150,36 +170,32 @@ export async function sendPasswordResetEmail(to, username, token) {
   const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const resetLink = `${siteUrl}/reset-password?token=${token}&email=${encodeURIComponent(to)}`
 
-  const subject = '重置您的 Haigoo 密码'
+  const subject = '重置你的 Haigoo 密码'
   const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; line-height: 1.6; color: #333; }
-    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .button { display: inline-block; background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 20px 0; }
-    .footer { margin-top: 40px; font-size: 12px; color: #666; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-    .link { color: #4F46E5; word-break: break-all; }
+    body { margin:0; background:#f6f1e8; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; line-height:1.7; color:#1e293b; }
+    .container { max-width:600px; margin:0 auto; padding:28px 16px; }
+    .shell { overflow:hidden; border:1px solid #dfcdb6; border-radius:20px; background:#fffdf8; }
+    .hero { padding:28px; border-bottom:1px solid #e9e1d5; background:linear-gradient(135deg,#fff8e8,#fffdf8); }
+    .brand { color:#8f5e19; font-size:12px; font-weight:800; letter-spacing:.16em; text-transform:uppercase; }
+    .content { padding:28px; }
+    .button { display:inline-block; background-color:#1e293b; color:white !important; padding:13px 24px; text-decoration:none; border-radius:4px; font-weight:700; margin:16px 0; }
+    .footer { margin-top:28px; font-size:12px; color:#64748b; border-top:1px solid #e9e1d5; padding-top:18px; }
+    .link { color:#8f5e19; word-break:break-all; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>重置密码</h2>
-    <p>亲爱的 ${username}，</p>
-    <p>我们收到了您重置密码的请求。如果您没有发起此请求，请忽略此邮件。</p>
-    <p>请点击下方按钮重置您的密码：</p>
-    <div style="text-align: center;">
-      <a href="${resetLink}" class="button">重置密码</a>
-    </div>
-    <p>或者复制以下链接到浏览器打开：</p>
-    <p><a href="${resetLink}" class="link">${resetLink}</a></p>
-    <p>此链接将在 1 小时后失效。</p>
-    <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p>
-    </div>
-  </div>
+  <div class="container"><div class="shell">
+    <div class="hero"><div class="brand">Haigoo Remote</div><h2>重置密码</h2><p>${escapeHtml(username || '你好')}，我们收到了重置密码请求。</p></div>
+    <div class="content"><p>点击下方按钮设置新密码。若这不是你的操作，请忽略此邮件，账户不会受到影响。</p>
+    <div><a href="${resetLink}" class="button">设置新密码</a></div>
+    <p>链接将在 1 小时后失效。若按钮无法打开，请复制此链接到浏览器：</p><p><a href="${resetLink}" class="link">${resetLink}</a></p>
+    <div class="footer"><p>&copy; ${new Date().getFullYear()} 行渡科技（杭州）有限责任公司 版权所有</p></div>
+  </div></div></div>
 </body>
 </html>
   `
@@ -202,16 +218,13 @@ export async function sendMembershipActivatedEmail({
   const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const displayName = escapeHtml(username || '你好')
   const displayEmail = escapeHtml(accountEmail || to)
-  const displayMemberType = escapeHtml(plan?.name || '海狗远程俱乐部会员')
+  const membershipLabel = getMembershipEmailLabel(normalizedType, plan)
+  const displayMemberType = escapeHtml(membershipLabel)
   const effectiveAt = formatEmailDate(memberStartAt)
   const expireAt = formatEmailDate(memberExpireAt)
-  const benefits = (plan?.features || [
-    'AI 简历优化与求职辅助',
-    '邮箱直申与关键人脉能力',
-    '更多远程岗位与企业信息查看'
-  ]).slice(0, 5)
+  const benefits = getMembershipEmailBenefits(normalizedType, plan)
 
-  const subject = `你的 ${plan?.shortLabel || 'Haigoo'} 会员已生效`
+  const subject = `你的 ${membershipLabel}已生效`
   const html = `
 <!DOCTYPE html>
 <html>
@@ -222,8 +235,8 @@ export async function sendMembershipActivatedEmail({
     body { margin: 0; padding: 0; background: #f6f8fc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; }
     .wrapper { max-width: 640px; margin: 0 auto; padding: 28px 16px; }
     .shell { overflow: hidden; border-radius: 24px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 20px 60px -42px rgba(15, 23, 42, 0.2); }
-    .hero { padding: 28px 28px 24px; background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%); border-bottom: 1px solid #e2e8f0; }
-    .brand { font-size: 12px; font-weight: 800; letter-spacing: 0.18em; color: #4f46e5; text-transform: uppercase; }
+    .hero { padding: 28px 28px 24px; background: linear-gradient(180deg, #fff8e8 0%, #ffffff 100%); border-bottom: 1px solid #e2e8f0; }
+    .brand { font-size: 12px; font-weight: 800; letter-spacing: 0.18em; color: #8f5e19; text-transform: uppercase; }
     .title { margin: 12px 0 8px; font-size: 28px; line-height: 1.2; font-weight: 800; color: #0f172a; }
     .subtitle { margin: 0; font-size: 15px; line-height: 1.8; color: #475569; }
     .content { padding: 28px; }
@@ -235,9 +248,9 @@ export async function sendMembershipActivatedEmail({
     .section-title { margin: 24px 0 12px; font-size: 16px; font-weight: 800; color: #0f172a; }
     .benefit { padding: 11px 0; border-bottom: 1px solid #eef2f7; font-size: 14px; line-height: 1.7; color: #334155; }
     .benefit:last-child { border-bottom: none; }
-    .cta { display: inline-block; margin-top: 24px; padding: 13px 24px; border-radius: 999px; background: #4f46e5; color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .cta { display: inline-block; margin-top: 24px; padding: 13px 24px; border-radius: 4px; background: #b7791f; color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 700; }
     .foot { margin-top: 24px; font-size: 13px; line-height: 1.8; color: #64748b; }
-    .support { color: #4f46e5; text-decoration: none; font-weight: 700; }
+    .support { color: #8f5e19; text-decoration: none; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -245,8 +258,8 @@ export async function sendMembershipActivatedEmail({
     <div class="shell">
       <div class="hero">
         <div class="brand">Haigoo Remote Club</div>
-        <h1 class="title">会员权益已生效</h1>
-        <p class="subtitle">Hi，${displayName}。您的会员已经开通成功，现在可以开始使用更完整的求职能力了。</p>
+        <h1 class="title">会员服务已生效</h1>
+        <p class="subtitle">Hi，${displayName}。本期服务已开始，可前往个人中心查看可用内容和有效期。</p>
       </div>
       <div class="content">
         <div class="panel">
@@ -259,7 +272,7 @@ export async function sendMembershipActivatedEmail({
             <div class="value">${escapeHtml(effectiveAt)}</div>
           </div>
           <div class="row">
-            <div class="label">失效时间</div>
+            <div class="label">到期时间</div>
             <div class="value">${escapeHtml(expireAt)}</div>
           </div>
           <div class="row">
@@ -277,7 +290,7 @@ export async function sendMembershipActivatedEmail({
           ${benefits.map((item) => `<div class="benefit">${escapeHtml(item)}</div>`).join('')}
         </div>
 
-        <a class="cta" href="${siteUrl}/membership">前往 Club 权益页</a>
+        <a class="cta" href="${siteUrl}/membership">查看咨询服务</a>
 
         <div class="foot">
           如果您在使用过程中有任何问题，欢迎随时联系官方支持邮箱：
@@ -309,15 +322,16 @@ export async function sendMembershipExpiredEmail({
   const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
   const displayName = escapeHtml(username || '你好')
   const displayEmail = escapeHtml(accountEmail || to)
-  const displayMemberType = escapeHtml(plan?.name || '海狗远程俱乐部会员')
+  const membershipLabel = getMembershipEmailLabel(normalizedType, plan)
+  const displayMemberType = escapeHtml(membershipLabel)
   const expireAt = formatEmailDate(memberExpireAt)
   const fallbackBenefits = [
-    '您的账号权益已退回免费用户版本',
-    '仍可继续浏览和使用免费用户可用功能',
-    '如需恢复 Club 权益，可前往 Club 权益页添加顾问了解恢复方式'
+    '公开岗位信息仍可继续浏览',
+    '登录后每月可使用 20 次官网直申',
+    '有新的求职安排时，可在个人中心联系顾问'
   ]
 
-  const subject = `你的 ${plan?.shortLabel || 'Haigoo'} 会员已到期`
+  const subject = `你的 ${membershipLabel}已到期`
   const html = `
 <!DOCTYPE html>
 <html>
@@ -328,8 +342,8 @@ export async function sendMembershipExpiredEmail({
     body { margin: 0; padding: 0; background: #f6f8fc; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #0f172a; }
     .wrapper { max-width: 640px; margin: 0 auto; padding: 28px 16px; }
     .shell { overflow: hidden; border-radius: 24px; border: 1px solid #e2e8f0; background: #ffffff; box-shadow: 0 20px 60px -42px rgba(15, 23, 42, 0.2); }
-    .hero { padding: 28px 28px 24px; background: linear-gradient(180deg, #fff7ed 0%, #ffffff 100%); border-bottom: 1px solid #e2e8f0; }
-    .brand { font-size: 12px; font-weight: 800; letter-spacing: 0.18em; color: #ea580c; text-transform: uppercase; }
+    .hero { padding: 28px 28px 24px; background: linear-gradient(180deg, #fff8e8 0%, #ffffff 100%); border-bottom: 1px solid #e2e8f0; }
+    .brand { font-size: 12px; font-weight: 800; letter-spacing: 0.18em; color: #8f5e19; text-transform: uppercase; }
     .title { margin: 12px 0 8px; font-size: 28px; line-height: 1.2; font-weight: 800; color: #0f172a; }
     .subtitle { margin: 0; font-size: 15px; line-height: 1.8; color: #475569; }
     .content { padding: 28px; }
@@ -341,9 +355,9 @@ export async function sendMembershipExpiredEmail({
     .section-title { margin: 24px 0 12px; font-size: 16px; font-weight: 800; color: #0f172a; }
     .benefit { padding: 11px 0; border-bottom: 1px solid #ffedd5; font-size: 14px; line-height: 1.7; color: #7c2d12; }
     .benefit:last-child { border-bottom: none; }
-    .cta { display: inline-block; margin-top: 24px; padding: 13px 24px; border-radius: 999px; background: #ea580c; color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 700; }
+    .cta { display: inline-block; margin-top: 24px; padding: 13px 24px; border-radius: 4px; background: #b7791f; color: #ffffff !important; text-decoration: none; font-size: 14px; font-weight: 700; }
     .foot { margin-top: 24px; font-size: 13px; line-height: 1.8; color: #64748b; }
-    .support { color: #ea580c; text-decoration: none; font-weight: 700; }
+    .support { color: #8f5e19; text-decoration: none; font-weight: 700; }
   </style>
 </head>
 <body>
@@ -351,8 +365,8 @@ export async function sendMembershipExpiredEmail({
     <div class="shell">
       <div class="hero">
         <div class="brand">Haigoo Remote Club</div>
-        <h1 class="title">会员权益已失效</h1>
-        <p class="subtitle">Hi，${displayName}。您的会员已到期，账号权益已退回免费用户版本，如需恢复 Club 权益，可前往 Club 权益页添加顾问了解恢复方式。</p>
+        <h1 class="title">会员已到期</h1>
+        <p class="subtitle">Hi，${displayName}。本期会员服务已结束，公开岗位浏览和每月官网直申仍可继续使用。</p>
       </div>
       <div class="content">
         <div class="panel">
@@ -361,7 +375,7 @@ export async function sendMembershipExpiredEmail({
             <div class="value">${displayMemberType}</div>
           </div>
           <div class="row">
-            <div class="label">失效时间</div>
+            <div class="label">到期时间</div>
             <div class="value">${escapeHtml(expireAt)}</div>
           </div>
           <div class="row">
@@ -379,10 +393,10 @@ export async function sendMembershipExpiredEmail({
           ${fallbackBenefits.map((item) => `<div class="benefit">${escapeHtml(item)}</div>`).join('')}
         </div>
 
-        <a class="cta" href="${siteUrl}/membership">前往 Club 权益页咨询恢复权益</a>
+        <a class="cta" href="${siteUrl}/membership">联系顾问了解服务</a>
 
         <div class="foot">
-          如需恢复全部 Club 权益，可通过 Club 权益页添加顾问了解恢复方式。若有疑问，欢迎联系：
+          如需确认账户状态或了解后续服务，欢迎联系：
           <a class="support" href="mailto:hi@haigooremote.com">hi@haigooremote.com</a><br />
           海狗网站：<a class="support" href="${siteUrl}">${siteUrl}</a>
         </div>
@@ -410,7 +424,7 @@ export async function sendSubscriptionWelcomeEmail(to, topic) {
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #818cf8 0%, #4F46E5 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .header { background: linear-gradient(135deg, #7fa0be 0%, #466f9d 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
     .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
     .footer { text-align: center; color: #999; font-size: 12px; margin-top: 20px; }
   </style>
@@ -478,7 +492,7 @@ export async function sendDailyDigestEmail(to, jobs, topic, options = {}) {
   }
 
   const jobsHtml = [
-    renderSection('订阅方向匹配', `与你关注的「${label}」方向直接相关`, primaryJobs, '#4F46E5'),
+    renderSection('订阅方向匹配', `与你关注的「${label}」方向直接相关`, primaryJobs, '#466f9d'),
     renderSection('相关岗位推荐', '与你关注方向相近，作为补充推荐', relatedJobs, '#0f766e')
   ].join('')
 
@@ -491,10 +505,10 @@ export async function sendDailyDigestEmail(to, jobs, topic, options = {}) {
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f6f8fc; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #818cf8 0%, #4F46E5 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
+    .header { background: linear-gradient(135deg, #7fa0be 0%, #466f9d 100%); color: white; padding: 40px 30px; text-align: center; border-radius: 16px 16px 0 0; }
     .content { background: #ffffff; padding: 40px 30px; border-radius: 0 0 16px 16px; }
     .footer { text-align: center; color: #9ca3af; font-size: 13px; margin-top: 30px; padding-bottom: 20px; }
-    .btn-primary { display: inline-block; background: #4F46E5; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 20px; }
+    .btn-primary { display: inline-block; background: #466f9d; color: white; padding: 14px 32px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 20px; }
   </style>
 </head>
 <body>

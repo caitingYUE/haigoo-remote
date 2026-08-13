@@ -316,7 +316,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                             placeholder="搜索职位..."
                             value={searchTerm}
                             onChange={e => setSearchTerm(e.target.value)}
-                            className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                            className="w-full pl-9 pr-4 py-2 rounded-lg border-slate-300 text-sm focus:ring-[#587faa] focus:border-[#587faa]"
                         />
                     </div>
                     <button
@@ -328,7 +328,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                         {translating ? '翻译中...' : '一键翻译本页'}
                     </button>
                     <button
-                        className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
+                        className="px-4 py-2 bg-[#466f9d] text-white rounded-lg hover:bg-[#345d88] flex items-center gap-2 text-sm font-medium transition-colors shadow-sm"
                         onClick={handleAddJob}
                     >
                         <Plus className="w-4 h-4" />
@@ -340,7 +340,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                 <div className="flex-1 overflow-y-auto p-0">
                     {loading ? (
                         <div className="flex justify-center py-20">
-                            <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                            <Loader2 className="w-8 h-8 animate-spin text-[#466f9d]" />
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
@@ -396,7 +396,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                                             href={job.url}
                                                             target="_blank"
                                                             rel="noreferrer"
-                                                            className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors"
+                                                            className="p-1.5 text-slate-400 hover:text-[#466f9d] rounded hover:bg-[#eff5fb] transition-colors"
                                                             title="查看原网页"
                                                         >
                                                             <ExternalLink className="w-4 h-4" />
@@ -405,14 +405,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                                     <button
                                                         onClick={() => handleTranslate([job.id])}
                                                         disabled={translating}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors disabled:opacity-50"
+                                                        className="p-1.5 text-slate-400 hover:text-[#466f9d] rounded hover:bg-[#eff5fb] transition-colors disabled:opacity-50"
                                                         title={job.isTranslated ? '重新翻译' : '翻译'}
                                                     >
                                                         <Languages className={`w-4 h-4 ${job.isTranslated ? 'text-green-600' : ''}`} />
                                                     </button>
                                                     <button
                                                         onClick={() => handleEditJob(job)}
-                                                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded hover:bg-indigo-50 transition-colors"
+                                                        className="p-1.5 text-slate-400 hover:text-[#466f9d] rounded hover:bg-[#eff5fb] transition-colors"
                                                         title="编辑"
                                                     >
                                                         <Edit2 className="w-4 h-4" />

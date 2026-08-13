@@ -76,10 +76,10 @@ export function MatchDetailsPanel({
         <button
           type="button"
           onClick={onUploadResume}
-          className={`flex w-full items-center justify-between gap-3 rounded-[18px] border border-[#dce8ef] bg-white/88 px-4 py-3 text-left shadow-[0_16px_36px_-32px_rgba(52,76,92,0.28)] transition hover:border-[#d8d2ff] hover:bg-white ${className}`}
+          className={`flex w-full items-center justify-between gap-3 rounded-[18px] border border-[#dce8ef] bg-white/88 px-4 py-3 text-left shadow-[0_16px_36px_-32px_rgba(52,76,92,0.28)] transition hover:border-[#c9dce8] hover:bg-white ${className}`}
         >
           <span className="min-w-0 text-[13px] font-bold text-slate-700">上传简历后可查看岗位匹配度</span>
-          <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[#6f63f6] px-3 text-[12px] font-black text-white">
+          <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[#466f9d] px-3 text-[12px] font-black text-white">
             <Upload className="h-3.5 w-3.5" />
             上传简历
           </span>
@@ -97,7 +97,7 @@ export function MatchDetailsPanel({
           <button
             type="button"
             onClick={onUploadResume}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#6f63f6] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition hover:brightness-[1.03]"
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#466f9d] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition hover:brightness-[1.03]"
           >
             <Upload className="h-4 w-4" />
             上传简历
@@ -111,11 +111,11 @@ export function MatchDetailsPanel({
 
   return (
     <div className={`relative overflow-hidden rounded-[22px] border border-[#e1e8f4] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(251,253,255,0.96))] p-5 shadow-[0_22px_54px_-44px_rgba(95,99,246,0.18)] ${className}`}>
-      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-[#d8d2ff]/25 blur-3xl" />
+      <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-[#c9dce8]/25 blur-3xl" />
       <div className="relative">
         <div className="mb-4 flex items-center gap-2">
           <h4 className="text-base font-black tracking-tight text-slate-900">岗位匹配分析</h4>
-          <span className="inline-flex items-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
+          <span className="inline-flex items-center rounded-full border border-[#c9dce8] bg-[#eff5fb] px-2 py-0.5 text-[10px] font-black text-[#466f9d]">
             高匹配
           </span>
         </div>
@@ -129,7 +129,7 @@ export function MatchDetailsPanel({
             {scoreItems.map((item) => (
               <div key={item.label} className="rounded-xl border border-[#e3e9f6] bg-white/92 px-2.5 py-2 text-center shadow-[0_10px_20px_-18px_rgba(95,99,246,0.24)]">
                 <div className="text-[10px] font-black text-slate-500">{item.label}</div>
-                <div className="mt-1 text-sm font-black text-[#6f63f6]">{item.value}</div>
+                <div className="mt-1 text-sm font-black text-[#466f9d]">{item.value}</div>
               </div>
             ))}
           </div>

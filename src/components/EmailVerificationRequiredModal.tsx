@@ -83,7 +83,7 @@ export default function EmailVerificationRequiredModal({
         </button>
 
         <div className="pr-10">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f3f0ff] text-[#6251f5]">
+          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eff5fb] text-[#466f9d]">
             <Mail className="h-5 w-5" />
           </span>
           <h2 id="email-verification-title" className="mt-4 text-xl font-black text-slate-950">验证邮箱后继续</h2>
@@ -109,7 +109,7 @@ export default function EmailVerificationRequiredModal({
             type="button"
             onClick={handleResend}
             disabled={isResending}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#6251f5] px-5 text-sm font-black text-white transition hover:bg-[#5142df] disabled:cursor-wait disabled:opacity-70"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-[#466f9d] px-5 text-sm font-black text-white transition hover:bg-[#345d88] disabled:cursor-wait disabled:opacity-70"
           >
             <Send className="h-4 w-4" />
             {isResending ? '发送中…' : '重新发送验证邮件'}
@@ -118,7 +118,7 @@ export default function EmailVerificationRequiredModal({
             type="button"
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 transition hover:border-[#d8d2ff] hover:text-[#6251f5] disabled:cursor-wait disabled:opacity-70"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-slate-200 bg-white px-5 text-sm font-black text-slate-600 transition hover:border-[#c9dce8] hover:text-[#466f9d] disabled:cursor-wait disabled:opacity-70"
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             {isRefreshing ? '刷新中…' : '我已验证，刷新状态'}

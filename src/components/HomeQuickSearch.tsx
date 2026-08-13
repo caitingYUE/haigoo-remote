@@ -114,7 +114,7 @@ export default function HomeQuickSearch({
         className={`group inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-medium transition-all ${
           isHot
             ? 'border-rose-200 bg-rose-50 text-rose-700 hover:border-rose-300 hover:bg-rose-100'
-            : 'border-slate-200 bg-white text-slate-600 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700'
+            : 'border-slate-200 bg-white text-slate-600 hover:border-[#c9dce8] hover:bg-[#eff5fb] hover:text-[#345d88]'
         }`}
       >
         {isHot ? <span className="text-sm leading-none" aria-hidden="true">🔥</span> : null}
@@ -144,7 +144,7 @@ export default function HomeQuickSearch({
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-3 sm:flex-row">
               <label className="group flex min-w-0 flex-1 items-center gap-3 rounded-full border border-[#dfeaf1] bg-[#fbfdff] px-4 py-3 shadow-sm transition-all focus-within:border-[#bcd9f2] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#dceeff]">
-                <Search className="h-5 w-5 flex-shrink-0 text-slate-400 transition-colors group-focus-within:text-[#4f63f6]" />
+                <Search className="h-5 w-5 flex-shrink-0 text-slate-400 transition-colors group-focus-within:text-[#466f9d]" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
@@ -155,7 +155,7 @@ export default function HomeQuickSearch({
 
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#4f63f6] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-500/18 transition-all hover:-translate-y-0.5 hover:bg-[#4052db] hover:shadow-xl hover:shadow-indigo-500/20"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#466f9d] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[rgba(70,111,157,0.18)] transition-all hover:-translate-y-0.5 hover:bg-[#345d88] hover:shadow-xl hover:shadow-[rgba(70,111,157,0.20)]"
               >
                 搜索岗位
                 <ArrowRight className="h-4 w-4" />

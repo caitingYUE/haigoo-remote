@@ -3,7 +3,7 @@ import { CLOUD_ENV_ID, CLOUD_SERVICE_NAME } from '../config/api'
 import { getMiniSessionToken } from './session'
 
 interface ApiRequestOptions {
-  method?: 'GET' | 'POST'
+  method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: Record<string, unknown>
   authenticated?: boolean
 }
@@ -41,14 +41,14 @@ function getRequestFailureMessage(error: unknown): string {
     return '请求域名尚未生效，请在开发者工具刷新域名配置后重试'
   }
   if (normalized.includes('timeout')) {
-    return '岗位接口响应超时，请检查网络后重试'
+    return '服务响应超时，请检查网络后重试'
   }
   if (
     normalized.includes('ssl') ||
     normalized.includes('certificate') ||
     normalized.includes('tls')
   ) {
-    return '岗位接口 HTTPS 校验失败，请检查服务器证书'
+    return '服务 HTTPS 校验失败，请检查服务器证书'
   }
   if (normalized.includes('network') || normalized.includes('request:fail')) {
     return detail ? `网络请求失败：${detail}` : '网络请求失败，请检查当前网络'
@@ -85,7 +85,7 @@ export async function requestJson<T>(
         // Cloud Hosting can contain multiple services. This is required by
         // callContainer to route the Mini Program request to haigoo-mini.
         'X-WX-SERVICE': CLOUD_SERVICE_NAME,
-        ...(options.method === 'POST' ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.method && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
         ...(options.authenticated && getMiniSessionToken()
           ? { Authorization: `Bearer ${getMiniSessionToken()}` }
           : {})

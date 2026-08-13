@@ -25,7 +25,9 @@ export default function Layout({ children }: LayoutProps) {
   const { isEnglish, text } = useLanguage()
   const [showHappinessCard, setShowHappinessCard] = useState(false)
   const [showUpgradeNotice, setShowUpgradeNotice] = useState(shouldShowSiteUpgradeNotice)
-  const [isDesktopViewport, setIsDesktopViewport] = useState(false)
+  const [isDesktopViewport, setIsDesktopViewport] = useState(() => (
+    typeof window === 'undefined' ? true : window.matchMedia('(min-width: 1024px)').matches
+  ))
 
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
@@ -36,33 +38,31 @@ export default function Layout({ children }: LayoutProps) {
   const isBundle = pathname.startsWith('/job-bundles/') || pathname.startsWith('/b/')
   const isJobDetailPage = pathname.startsWith('/job/') || pathname.startsWith('/j/')
   const isProfile = pathname.startsWith('/profile')
+  const isCareerWatchPage = pathname.startsWith('/careerlearning/watch/') || pathname.startsWith('/corporate-english/watch/')
   const hideFooter = isHome || pathname.startsWith('/resume') || isJobsPage || isProfile || isAbout || isBundle || isCorporateEnglish
   const showFooterMembershipCta = !(isCompanies || isBundle || (!isAuthenticated && isJobDetailPage))
-  const lockViewport = isJobsPage && isDesktopViewport
+  // Desktop comparison/reading workspaces need two independently scrollable
+  // columns. Mobile and tablet keep the simpler document scroll model.
+  const lockViewport = isDesktopViewport && (isJobsPage || isCareerWatchPage)
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)')
+    const handleViewportChange = (event: MediaQueryListEvent) => setIsDesktopViewport(event.matches)
+    setIsDesktopViewport(mediaQuery.matches)
+    mediaQuery.addEventListener('change', handleViewportChange)
+    return () => mediaQuery.removeEventListener('change', handleViewportChange)
+  }, [])
 
   useEffect(() => {
     const pageName = isJobsPage
       ? text('远程工作', 'Remote Jobs')
       : isCompanies
-        ? text('精选企业', 'Featured Companies')
+        ? text('远程企业', 'Remote Companies')
         : isCorporateEnglish
           ? text('职业成长', 'Career Growth')
           : text('全球远程工作平台', 'Global Remote Work')
     document.title = `${pageName} | Haigoo Remote`
   }, [isEnglish, isJobsPage, isCompanies, isCorporateEnglish, text])
-
-  useEffect(() => {
-    const syncViewport = () => {
-      setIsDesktopViewport(window.innerWidth >= 1024)
-    }
-
-    syncViewport()
-    window.addEventListener('resize', syncViewport)
-
-    return () => {
-      window.removeEventListener('resize', syncViewport)
-    }
-  }, [])
 
   useEffect(() => {
     // Listen for custom event from Header to open Happiness Card
@@ -85,7 +85,7 @@ export default function Layout({ children }: LayoutProps) {
   }, [showUpgradeNotice])
 
   return (
-    <div className={`${lockViewport ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col ${isProfile ? 'bg-slate-50' : 'landing-bg-page'}`}>
+    <div className={`${lockViewport ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[var(--hg-bg-page)]`}>
       {showUpgradeNotice && (
         <div className="fixed inset-x-0 top-0 z-[70] bg-slate-900/92 text-white backdrop-blur-md">
           <div className="mx-auto flex h-10 max-w-7xl items-center justify-center px-4 text-center text-sm font-medium">
@@ -96,7 +96,7 @@ export default function Layout({ children }: LayoutProps) {
 
       <Header showUpgradeNotice={showUpgradeNotice} />
 
-      <main className={`flex-1 relative ${lockViewport ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
+      <main id="main-content" tabIndex={-1} className={`relative min-h-0 flex-1 ${lockViewport ? 'overflow-hidden' : 'overflow-y-auto overflow-x-hidden'}`}>
         <div className={`relative z-10 ${lockViewport ? 'h-full' : `animate-in fade-in slide-in-from-bottom-2 duration-500 ${(isHome || isMembership || isCompanies || isCorporateEnglish || isAbout || isBundle || isProfile || isJobsPage) ? '' : 'pt-20'}`}`}>
           {children}
         </div>

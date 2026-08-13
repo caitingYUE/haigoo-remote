@@ -547,7 +547,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       key={tabKey}
       onClick={() => setActiveTab(tabKey as any)}
       className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all duration-200 ${activeTab === tabKey
-        ? 'bg-indigo-600 text-white shadow-lg'
+        ? 'bg-[#466f9d] text-white shadow-lg'
         : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'
         }`}
     >
@@ -634,7 +634,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 placeholder="搜索岗位/公司..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full px-3 py-2.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#587faa] focus:border-[#587faa]"
               />
             </div>
 
@@ -649,7 +649,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleAddJob()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#466f9d] text-white text-sm font-medium rounded-lg hover:bg-[#345d88] focus:ring-2 focus:ring-[#587faa] focus:ring-offset-2 transition-colors"
             >
               <Plus className="w-4 h-4" />
               新增职位
@@ -691,8 +691,8 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 <div className="flex items-center gap-1">
                   发布日期
                   <div className="flex flex-col">
-                    <ArrowUp className={`w-2 h-2 ${processedDataFilters.sortBy === 'published_at_asc' ? 'text-indigo-600' : 'text-slate-300'}`} />
-                    <ArrowDown className={`w-2 h-2 -mt-0.5 ${processedDataFilters.sortBy === 'published_at_desc' ? 'text-indigo-600' : 'text-slate-300'}`} />
+                    <ArrowUp className={`w-2 h-2 ${processedDataFilters.sortBy === 'published_at_asc' ? 'text-[#466f9d]' : 'text-slate-300'}`} />
+                    <ArrowDown className={`w-2 h-2 -mt-0.5 ${processedDataFilters.sortBy === 'published_at_desc' ? 'text-[#466f9d]' : 'text-slate-300'}`} />
                   </div>
                 </div>
               </th>
@@ -742,12 +742,12 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   {/* 2. 岗位分类 */}
                   <td className="px-3 py-2 w-28">
                     <Tooltip content={job.category || '未分类'} maxLines={1} clampChildren={false}>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.category === '前端开发' ? 'bg-indigo-100 text-indigo-800' :
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.category === '前端开发' ? 'bg-[#dce9f5] text-[#2d4f73]' :
                         job.category === '后端开发' ? 'bg-green-100 text-green-800' :
-                          job.category === '全栈开发' ? 'bg-purple-100 text-purple-800' :
+                          job.category === '全栈开发' ? 'bg-[#fff8e8] text-[#6f4711]' :
                             job.category === 'UI/UX设计' ? 'bg-pink-100 text-pink-800' :
                               job.category === '数据分析' ? 'bg-yellow-100 text-yellow-800' :
-                                job.category === '运维/SRE' ? 'bg-indigo-100 text-indigo-800' :
+                                job.category === '运维/SRE' ? 'bg-[#dce9f5] text-[#2d4f73]' :
                                   job.category === '产品经理' ? 'bg-orange-100 text-orange-800' :
                                     job.category === '市场营销' ? 'bg-red-100 text-red-800' :
                                       'bg-slate-100 text-slate-800'
@@ -776,10 +776,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                               job.experienceLevel === 'Executive' ? '管理层' : '未定义'
                     } maxLines={1} clampChildren={false}>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${job.experienceLevel === 'Entry' ? 'bg-green-100 text-green-800' :
-                        job.experienceLevel === 'Mid' ? 'bg-indigo-100 text-indigo-800' :
+                        job.experienceLevel === 'Mid' ? 'bg-[#dce9f5] text-[#2d4f73]' :
                           job.experienceLevel === 'Senior' ? 'bg-orange-100 text-orange-800' :
                             job.experienceLevel === 'Lead' ? 'bg-red-100 text-red-800' :
-                              job.experienceLevel === 'Executive' ? 'bg-purple-100 text-purple-800' :
+                              job.experienceLevel === 'Executive' ? 'bg-[#fff8e8] text-[#6f4711]' :
                                 'bg-slate-100 text-slate-800'
                         }`}>
                         {job.experienceLevel === 'Entry' ? '初级' :
@@ -804,7 +804,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                         href={job.companyWebsite}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs mt-1 truncate"
+                        className="inline-flex items-center gap-1 text-[#466f9d] hover:text-[#2d4f73] text-xs mt-1 truncate"
                       >
                         <ExternalLink className="w-2 h-2" />
                         企业官网
@@ -830,9 +830,9 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       return (
                         <Tooltip content={normalizedType} maxLines={1} clampChildren={false}>
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs truncate ${normalizedType === '全职' ? 'bg-green-100 text-green-800' :
-                            normalizedType === '兼职' ? 'bg-indigo-100 text-indigo-800' :
+                            normalizedType === '兼职' ? 'bg-[#dce9f5] text-[#2d4f73]' :
                               normalizedType === '合同工' ? 'bg-orange-100 text-orange-800' :
-                                normalizedType === '自由职业' ? 'bg-purple-100 text-purple-800' :
+                                normalizedType === '自由职业' ? 'bg-[#fff8e8] text-[#6f4711]' :
                                   normalizedType === '实习' ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-slate-100 text-slate-800'
                             }`}>
@@ -861,7 +861,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     const r = job.region;
                     const label = r === 'domestic' ? '国内' : r === 'overseas' ? '海外' : '未分类';
                     const cls = r === 'domestic'
-                      ? 'bg-indigo-100 text-indigo-800'
+                      ? 'bg-[#dce9f5] text-[#2d4f73]'
                       : r === 'overseas'
                         ? 'bg-blue-100 text-blue-800'
                         : 'bg-slate-100 text-slate-800';
@@ -917,7 +917,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                           href={job.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 text-xs truncate"
+                          className="inline-flex items-center gap-1 text-[#466f9d] hover:text-[#2d4f73] text-xs truncate"
                         >
                           <LinkIcon className="w-2 h-2" />
                           链接
@@ -955,14 +955,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleViewDetail(job)}
-                        className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                        className="p-1 text-slate-400 hover:text-[#466f9d] transition-colors"
                         title="查看详情"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => handleEditJob(job)}
-                        className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"
+                        className="p-1 text-slate-400 hover:text-[#466f9d] transition-colors"
                         title="编辑"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -1035,7 +1035,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   key={p}
                   onClick={() => setProcessedDataPage(p)}
                   className={`px-3 py-1 text-sm border rounded-lg transition-colors ${processedDataPage === p
-                    ? 'bg-indigo-600 text-white border-indigo-600'
+                    ? 'bg-[#466f9d] text-white border-[#466f9d]'
                     : 'border-slate-300 hover:bg-slate-50 text-slate-700'
                     }`}
                 >
@@ -1061,7 +1061,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     if (!jobStats) {
       return (
         <div className="flex items-center justify-center py-20">
-          <Loader className="w-7 h-7 animate-spin text-indigo-600 mr-2" />
+          <Loader className="w-7 h-7 animate-spin text-[#466f9d] mr-2" />
           <span className="text-slate-500">加载中...</span>
         </div>
       );
@@ -1127,7 +1127,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-            <BarChart3 className="w-4 h-4 text-indigo-500" />{title}
+            <BarChart3 className="w-4 h-4 text-[#587faa]" />{title}
           </h3>
           {selected.length > 0 && (
             <button onClick={() => onToggle('__clear__')} className="text-xs text-slate-400 hover:text-red-500">
@@ -1144,7 +1144,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 onClick={() => onToggle(label)}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-full border transition-all ${active
                   ? `${colorClass} text-white border-transparent font-medium shadow-sm`
-                  : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:text-indigo-600'
+                  : 'bg-white border-slate-200 text-slate-600 hover:border-[#9fbbd2] hover:text-[#466f9d]'
                   }`}
               >
                 {label}
@@ -1166,7 +1166,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     }) => (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
         <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-indigo-500" />{title}
+          <BarChart3 className="w-4 h-4 text-[#587faa]" />{title}
         </h3>
         <div className="space-y-2.5">
           {rows.map(({ label, count }) => {
@@ -1179,7 +1179,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                 </div>
                 <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                   <div
-                    className={`h-full rounded-full transition-all ${colorFn ? colorFn(label) : 'bg-indigo-400'}`}
+                    className={`h-full rounded-full transition-all ${colorFn ? colorFn(label) : 'bg-[#7f9fbc]'}`}
                     style={{ width: `${Math.max(pct, 1)}%` }}
                   />
                 </div>
@@ -1191,14 +1191,14 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
     );
 
     const typeColor = (l: string) => {
-      if (l === '全职') return 'bg-green-400'; if (l === '兼职') return 'bg-indigo-400';
-      if (l === '合同工') return 'bg-orange-400'; if (l === '自由职业') return 'bg-purple-400';
+      if (l === '全职') return 'bg-green-400'; if (l === '兼职') return 'bg-[#7f9fbc]';
+      if (l === '合同工') return 'bg-orange-400'; if (l === '自由职业') return 'bg-[#d9a758]';
       if (l === '实习') return 'bg-yellow-400'; return 'bg-slate-400';
     };
     const levelColor = (l: string) => {
-      if (l.includes('初级')) return 'bg-green-400'; if (l.includes('中级')) return 'bg-indigo-400';
+      if (l.includes('初级')) return 'bg-green-400'; if (l.includes('中级')) return 'bg-[#7f9fbc]';
       if (l.includes('高级')) return 'bg-orange-400'; if (l.includes('专家')) return 'bg-red-400';
-      if (l.includes('管理')) return 'bg-purple-400'; return 'bg-slate-400';
+      if (l.includes('管理')) return 'bg-[#d9a758]'; return 'bg-slate-400';
     };
 
     return (
@@ -1217,7 +1217,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
         </div>
 
         {/* ── Cross-filter section ── */}
-        <div className="bg-gradient-to-br from-indigo-50 to-slate-50 rounded-2xl border border-indigo-100 p-5 space-y-4">
+        <div className="bg-gradient-to-br from-[#eff5fb] to-slate-50 rounded-2xl border border-[#dce9f5] p-5 space-y-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold text-slate-700">交叉筛选分析</span>
             <span className="text-xs text-slate-400">多选条件组合看岗位数量</span>
@@ -1237,7 +1237,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
               items={jobStats.byCategory}
               selected={sfCategories}
               onToggle={clearCategories}
-              colorClass="bg-indigo-500"
+              colorClass="bg-[#587faa]"
             />
             <FilterChips
               title="岗位级别"
@@ -1260,10 +1260,10 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <div className="bg-white rounded-xl border border-slate-200 p-4">
               <div className="flex items-center justify-between mb-3">
                 <span className="text-sm font-semibold text-slate-700">
-                  筛选结果：<span className="text-indigo-600">{filteredJobs.length}</span> 条符合条件的岗位
+                  筛选结果：<span className="text-[#466f9d]">{filteredJobs.length}</span> 条符合条件的岗位
                 </span>
                 <div className="flex gap-1 flex-wrap justify-end">
-                  {[...sfCategories.map(v => ({ v, color: 'bg-indigo-100 text-indigo-700' })),
+                  {[...sfCategories.map(v => ({ v, color: 'bg-[#dce9f5] text-[#345d88]' })),
                   ...sfLevels.map(v => ({ v, color: 'bg-orange-100 text-orange-700' })),
                   ...sfJobTypes.map(v => ({ v, color: 'bg-green-100 text-green-700' }))
                   ].map(({ v, color }) => (
@@ -1279,7 +1279,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                       <div key={key} className="flex items-center gap-3 text-xs">
                         <span className="text-slate-600 min-w-0 flex-1 truncate">{key}</span>
                         <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-400 rounded-full" style={{ width: `${Math.max(pct, 2)}%` }} />
+                          <div className="h-full bg-[#7f9fbc] rounded-full" style={{ width: `${Math.max(pct, 2)}%` }} />
                         </div>
                         <span className="text-slate-500 tabular-nums w-14 text-right">{count} 件 ({pct}%)</span>
                       </div>
@@ -1320,7 +1320,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
           <div className="flex gap-2 items-center">
             <select
-              className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="px-3 py-1.5 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-[#587faa]"
               value={processedDataFilters.isApproved === undefined ? '' : processedDataFilters.isApproved.toString()}
               onChange={(e) => {
                 const val = e.target.value;
@@ -1338,7 +1338,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
 
             <Tooltip content={
               <div className="text-left space-y-2">
-                <p className="font-semibold text-indigo-200">当前后台数据流程：</p>
+                <p className="font-semibold text-[#c9dce8]">当前后台数据流程：</p>
                 <ol className="list-decimal list-inside space-y-1 text-xs">
                   <li><span className="font-medium text-white">抓取 RSS：</span>拉取最近 7 天的 RSS 原始数据，写入后台参考池。</li>
                   <li><span className="font-medium text-white">处理草稿：</span>把原始 RSS 转成待审核岗位草稿，不会直接上前台。</li>
@@ -1355,13 +1355,13 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
             <button
               onClick={handleRefreshProcessedOnly}
               disabled={syncing}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-indigo-300 text-indigo-700 bg-indigo-50 rounded-md hover:bg-indigo-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm border border-[#9fbbd2] text-[#345d88] bg-[#eff5fb] rounded-md hover:bg-[#dce9f5] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               <RefreshCw className={`w-3 h-3 ${syncing ? 'animate-spin' : ''}`} />
               {syncing ? '刷新中...' : '刷新处理后数据'}
             </button>
             {syncing && syncStatusText && (
-              <span className="text-xs text-indigo-600 animate-pulse hidden md:inline-block">{syncStatusText}</span>
+              <span className="text-xs text-[#466f9d] animate-pulse hidden md:inline-block">{syncStatusText}</span>
             )}
           </div>
           {/* 按需：导出数据按钮已移除 */}
@@ -1371,7 +1371,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       {/* 内容区域 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <Loader className="w-8 h-8 animate-spin text-indigo-600" />
+          <Loader className="w-8 h-8 animate-spin text-[#466f9d]" />
           <span className="ml-2 text-slate-600">加载中...</span>
         </div>
       ) : (
@@ -1684,7 +1684,7 @@ const DetailModal: React.FC<{
                   <h3 className="font-medium text-slate-900 mb-2">技能标签</h3>
                   <div className="flex flex-wrap gap-2">
                     {item.tags.map((tag, index) => (
-                      <span key={index} className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">
+                      <span key={index} className="px-2 py-1 bg-[#dce9f5] text-[#2d4f73] rounded-full text-sm">
                         {tag}
                       </span>
                     ))}
@@ -1698,9 +1698,9 @@ const DetailModal: React.FC<{
 
                   {/* 翻译内容展示 */}
                   {(item as any).translations?.description && (
-                    <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-4">
-                      <div className="flex items-center gap-2 mb-2 text-indigo-800 font-medium">
-                        <span className="text-xs bg-indigo-200 px-2 py-0.5 rounded text-indigo-800">中文翻译</span>
+                    <div className="mb-4 bg-[#eff5fb] border border-[#dce9f5] rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2 text-[#2d4f73] font-medium">
+                        <span className="text-xs bg-[#c9dce8] px-2 py-0.5 rounded text-[#2d4f73]">中文翻译</span>
                       </div>
                       <div className="text-sm text-slate-800 whitespace-pre-wrap leading-relaxed">
                         {(item as any).translations.description}
@@ -1720,7 +1720,7 @@ const DetailModal: React.FC<{
                   <ul className="text-sm text-slate-700 space-y-1">
                     {item.requirements.map((req, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <span className="text-indigo-600 mt-1">•</span>
+                        <span className="text-[#466f9d] mt-1">•</span>
                         {req}
                       </li>
                     ))}
@@ -1761,13 +1761,13 @@ const DetailModal: React.FC<{
                   <div className="space-y-2 text-sm">
                     <div>
                       <span className="font-medium">原文链接:</span>
-                      <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-2 text-indigo-600 hover:text-indigo-800">
+                      <a href={item.link} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#466f9d] hover:text-[#2d4f73]">
                         查看原文
                       </a>
                     </div>
                     <div>
                       <span className="font-medium">RSS URL:</span>
-                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-indigo-600 hover:text-indigo-800 break-all">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="ml-2 text-[#466f9d] hover:text-[#2d4f73] break-all">
                         {item.url}
                       </a>
                     </div>

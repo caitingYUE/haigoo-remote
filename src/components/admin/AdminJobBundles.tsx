@@ -503,10 +503,10 @@ const AdminJobBundles: React.FC = () => {
           <div className="form-section">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h3 className="mb-1 flex items-center gap-2"><BookOpen className="h-4 w-4 text-indigo-500" />职业成长内容</h3>
+                <h3 className="mb-1 flex items-center gap-2"><BookOpen className="h-4 w-4 text-[#587faa]" />职业成长内容</h3>
                 <p className="text-xs text-slate-500">从已发布的职业成长视频中选择，并为每一项补充仅在本组合页显示的观看说明。</p>
               </div>
-              <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">已选 {careerItems.length}</span>
+              <span className="rounded-full bg-[#eff5fb] px-3 py-1 text-xs font-semibold text-[#466f9d]">已选 {careerItems.length}</span>
             </div>
             <div className="career-plan-editor">
               <div className="career-video-picker">

@@ -3,10 +3,10 @@ import type { FormEvent } from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import brandLogoPng from '../assets/brandlogo.webp'
 import { useNotificationHelpers } from './NotificationSystem'
 import { useLanguage } from '../contexts/LanguageContext'
 import LanguageToggle from './LanguageToggle'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 interface HeaderProps {
   showUpgradeNotice?: boolean
@@ -14,18 +14,6 @@ interface HeaderProps {
 
 function formatHeaderDisplayName(name: string, memberType?: string | null) {
   const normalized = name.replace(/\s*\((Old Quarter|New Quarter|Quarter|VIP|Starter|Member|Partner)\)\s*/gi, '').trim()
-  if ((memberType === 'quarter' || memberType === 'quarter_pro') && normalized) {
-    return `${normalized}（VIP）`
-  }
-  if (memberType === 'starter' && normalized) {
-    return `${normalized}（Starter）`
-  }
-  if (memberType === 'half_year' && normalized) {
-    return `${normalized}（Member）`
-  }
-  if ((memberType === 'annual' || memberType === 'year') && normalized) {
-    return `${normalized}（Partner）`
-  }
   return normalized || name
 }
 
@@ -69,12 +57,12 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const isQuarterMember = memberType === 'quarter'
   const shouldShowMemberTextBadge = isMember && isTrialMember && !isQuarterMember && !isDeepLegacyMember
   const userDisplayName = formatHeaderDisplayName(user?.username || '用户', memberType)
-  const memberAvatarRingClass = isMember ? 'ring-2 ring-[#8f8afe] border-2 border-white' : ''
-  const memberBadgeBgClass = 'bg-[#f0edff]'
-  const memberBadgeIconClass = 'text-[#6f63f6] fill-[#6f63f6]'
-  const memberNameClass = isMember ? 'text-[#6f63f6]' : 'text-slate-700'
-  const memberTextBadge = 'Trial'
-  const memberTextBadgeClass = 'border-[#d8d2ff] bg-[#f0edff] text-[#5d50df]'
+  const memberAvatarRingClass = isMember ? 'ring-2 ring-[#ffb28f] border-2 border-white' : ''
+  const memberBadgeBgClass = 'bg-[#fff2eb]'
+  const memberBadgeIconClass = 'text-[#d84b1f] fill-[#d84b1f]'
+  const memberNameClass = isMember ? 'text-[#8f5e19]' : 'text-slate-700'
+  const memberTextBadge = isEnglish ? 'Trail' : '体验会员'
+  const memberTextBadgeClass = 'border-[#e7c98e] bg-[#fff8e8] text-[#8f5e19]'
 
   const handleMarkRead = async (id?: string) => {
     try {
@@ -197,14 +185,16 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   // 用户菜单选项
   const userMenuItems: { id: string; label: string; href: string; danger?: boolean }[] = [
     { id: 'profile-resume', label: text('首页', 'Home'), href: '/profile?tab=resume' },
-    { id: 'membership', label: text('会员权益', 'Membership'), href: '/profile?tab=membership' },
+    ...(isMember || !COMPLIANCE_FEATURES.nonMemberProfileUtilitiesOnHome ? [
+      { id: 'profile-favorites', label: text('我的收藏', 'Saved jobs'), href: '/profile?tab=favorites' },
+      { id: 'profile-applications', label: text('我的申请', 'My applications'), href: '/profile?tab=applications' },
+    ] : []),
+    { id: 'membership', label: text('咨询服务', 'Consulting service'), href: '/profile?tab=membership' },
     { id: 'profile-about', label: text('关于我们', 'About us'), href: '/profile?tab=about' },
-    { id: 'profile-favorites', label: text('我的收藏', 'Saved jobs'), href: '/profile?tab=favorites' },
-    { id: 'profile-applications', label: text('我的申请', 'Applications'), href: '/profile?tab=applications' },
-    { id: 'profile-feedback', label: text('我要反馈', 'Feedback'), href: '/profile?tab=feedback' }
+    { id: 'profile-feedback', label: text('意见反馈', 'Feedback'), href: '/profile?tab=feedback' },
+    { id: 'profile-settings', label: text('账户设置', 'Account settings'), href: '/profile?tab=settings' },
   ]
 
-  const isHome = location.pathname === '/'
   const isJobsPage = location.pathname === '/jobs' || location.pathname.startsWith('/jobs/')
   useEffect(() => {
     if (!isJobsPage) return
@@ -250,35 +240,36 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   }
 
   return (
+    <>
+    <a className="haigoo-skip-link" href="#main-content">{text('跳到主要内容', 'Skip to main content')}</a>
     <header
-      className={`fixed left-0 right-0 z-50 transition-all duration-300 pointer-events-none ${showUpgradeNotice ? 'top-10' : 'top-0'}`}
+      className={`haigoo-site-header pointer-events-none fixed left-0 right-0 z-50 transition-[top] duration-300 ${showUpgradeNotice ? 'top-10' : 'top-0'}`}
       role="banner"
     >
-      <div className="w-full pointer-events-auto border-b border-[#e5edf3] bg-[#fffdf8] shadow-[0_14px_42px_-38px_rgba(139,101,54,0.34)] transition-all duration-300">
+      <div className="haigoo-site-header__bar pointer-events-auto w-full transition-[width,margin,border-radius] duration-300">
         <div className="mx-auto flex h-14 w-full max-w-[1800px] items-center gap-2 px-3 sm:px-4 md:h-16 lg:gap-3 xl:px-5 2xl:gap-4 2xl:px-6">
           {/* Logo */}
           <div className="flex items-center group shrink-0">
             {/* Logo Image with Optical Adjustment */}
             <Link
               to={path('/')}
-              className="flex items-center focus:outline-none rounded-lg transition-all duration-200 no-underline hover:no-underline gap-2"
+              className="haigoo-site-header__brand flex items-center gap-3 focus:outline-none no-underline hover:no-underline"
               aria-label={text('Haigoo 首页', 'Haigoo home')}
             >
-              <span className="flex h-9 w-[118px] items-center overflow-hidden">
-                <img src={brandLogoPng} alt="HaigooRemote" className="h-[52px] w-auto max-w-none -translate-x-2 -translate-y-[1px]" />
-              </span>
-              {!isEnglish ? <span className="hidden md:block text-[14px] font-bold tracking-tight text-slate-900">海狗远程</span> : null}
+              <span className="haigoo-site-header__wordmark"><strong>HAIGOO</strong><span>REMOTE</span></span>
+              {!isEnglish ? <span className="haigoo-site-header__brand-cn hidden md:block">海狗远程</span> : null}
             </Link>
           </div>
 
-          <form onSubmit={submitHeaderSearch} className="hidden min-w-0 shrink xl:block xl:flex-[0_1_300px] 2xl:flex-[0_1_420px]">
-            <div className="relative w-full min-w-[210px] max-w-[420px]">
+          {isJobsPage ? <form onSubmit={submitHeaderSearch} className="hidden min-w-0 shrink xl:block xl:flex-[0_1_300px] 2xl:flex-[0_1_420px]">
+            <div className="haigoo-site-header__search relative w-full min-w-[210px] max-w-[420px]">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={headerSearchTerm}
                 onChange={(event) => setHeaderSearchTerm(event.target.value)}
-                placeholder={text('搜索岗位、公司、技能...', 'Search jobs, companies, skills...')}
-                className="h-10 w-full rounded-full border border-[#dfeaf1] bg-white pl-9 pr-10 text-sm font-medium text-slate-800 outline-none transition-colors placeholder:text-slate-400 focus:border-[#b9d9f5] focus:bg-white focus:ring-2 focus:ring-[#9ecbf2]/20"
+                placeholder={text('搜索岗位、公司或技能', 'Search roles, companies, or skills')}
+                aria-label={text('搜索岗位、公司或技能', 'Search roles, companies, or skills')}
+                className="h-10 w-full rounded-full border-0 bg-transparent pl-9 pr-10 text-sm font-medium text-slate-800 outline-none placeholder:text-slate-400"
               />
               {headerSearchTerm ? (
                 <button
@@ -292,62 +283,48 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 </button>
               ) : null}
             </div>
-          </form>
+          </form> : null}
 
           {/* Main Navigation */}
           <div className="ml-auto hidden min-w-0 shrink items-center gap-3 lg:flex xl:gap-4 2xl:gap-6">
             <Link
               to={path('/')}
-              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/'
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
+              className="haigoo-site-header__nav-link whitespace-nowrap"
+              aria-current={location.pathname === '/' ? 'page' : undefined}
             >
               {text('首页', 'Home')}
             </Link>
 
             <Link
               to={path('/jobs')}
-              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname === '/jobs'
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
+              className="haigoo-site-header__nav-link whitespace-nowrap"
+              aria-current={isJobsPage ? 'page' : undefined}
             >
               {text('远程工作', 'Remote jobs')}
             </Link>
 
             <Link
+              to={path('/trusted-companies')}
+              className="haigoo-site-header__nav-link whitespace-nowrap"
+              aria-current={location.pathname.startsWith('/trusted-companies') ? 'page' : undefined}
+            >
+              {text('远程企业', 'Remote companies')}
+            </Link>
+
+            <Link
               to={path('/careerlearning')}
-              className={`relative inline-flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english')
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
+              className="haigoo-site-header__nav-link whitespace-nowrap"
+              aria-current={location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english') ? 'page' : undefined}
             >
               {text('职业成长', 'Career growth')}
-              <span className="absolute left-full top-0 ml-px -translate-y-1.5 text-[10px] font-black leading-none text-emerald-500">
-                {text('新', 'New')}
-              </span>
             </Link>
 
             <Link
-              to={path('/trusted-companies')}
-              className={`whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/trusted-companies')
-                  ? 'text-slate-900 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
+              to={path('/profile?tab=resume')}
+              className="haigoo-site-header__nav-link whitespace-nowrap"
+              aria-current={location.pathname.startsWith('/profile') ? 'page' : undefined}
             >
-              {text('精选企业', 'Companies')}
-            </Link>
-
-            <Link
-              to={path('/profile?tab=membership')}
-              className={`flex items-center gap-1 whitespace-nowrap text-sm transition-colors no-underline hover:no-underline ${location.pathname.startsWith('/profile')
-                  ? 'text-indigo-600 font-bold'
-                  : 'text-slate-500 font-medium hover:text-indigo-600'
-                }`}
-            >
-              <Crown className="w-4 h-4" />
-              {text('Club 权益', 'Club benefits')}
+              {text('个人中心', 'Personal center')}
             </Link>
           </div>
 
@@ -365,7 +342,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 </Link>
                 <Link
                   to={path('/register')}
-                  className="hidden px-6 py-2.5 text-sm font-medium text-white rounded-full transition-all shadow-md hover:shadow-lg no-underline hover:no-underline bg-indigo-600 hover:bg-indigo-700 hover:text-white md:inline-flex"
+                  className="haigoo-site-header__primary-action hidden min-h-11 items-center rounded-full px-6 text-sm font-semibold transition-colors no-underline md:inline-flex"
                 >
                   {text('注册', 'Sign up')}
                 </Link>
@@ -379,15 +356,17 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 <div ref={notificationRef} className="relative">
                   <button
                     onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                    className={`p-3 relative rounded-[18px] border min-w-[44px] min-h-[44px] flex items-center justify-center transition focus:outline-none focus:ring-2 focus:ring-[#d8d2ff] focus:ring-offset-2 ${
+                    className={`hg-notification-trigger relative flex h-11 w-11 items-center justify-center rounded-full border p-0 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#f5b391] focus-visible:ring-offset-2 ${
                       isNotificationOpen
-                        ? 'border-[#d8d2ff] bg-[#f5f2ff] text-[#6251f5] shadow-[0_14px_30px_-22px_rgba(98,81,245,0.55)]'
-                        : 'border-transparent text-slate-400 hover:border-[#e6e0ff] hover:bg-[#faf8ff] hover:text-[#6251f5]'
+                        ? 'border-[#f5b391] bg-[#fff4ee] text-[#a83c17]'
+                        : 'border-transparent text-slate-400 hover:border-[#e1e5eb] hover:bg-[#f6f7fa] hover:text-[#c94f22]'
                     }`}
                     aria-label={text(`通知，有 ${unreadCount} 条新消息`, `Notifications, ${unreadCount} unread`)}
+                    aria-expanded={isNotificationOpen}
+                    aria-haspopup="dialog"
                     title={text('通知', 'Notifications')}
                   >
-                    <Bell className="h-6 w-6" aria-hidden="true" />
+                    <Bell className="h-[21px] w-[21px]" aria-hidden="true" />
                     {unreadCount > 0 && (
                       <span
                         className="absolute -top-1 -right-1 flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold border-2 border-white"
@@ -399,14 +378,14 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   </button>
 
                   {isNotificationOpen && (
-                    <div className={`fixed left-3 right-3 z-50 rounded-xl border border-slate-100 bg-white py-2 shadow-lg animate-in fade-in-0 zoom-in-95 duration-200 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 ${showUpgradeNotice ? 'top-28' : 'top-16'}`}>
-                      <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
+                    <div className={`hg-notification-popover fixed left-3 right-3 z-50 overflow-hidden border border-[#e1e5eb] bg-white shadow-[0_28px_72px_-28px_rgba(15,23,42,0.38)] animate-in fade-in-0 zoom-in-95 duration-200 sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[23rem] ${showUpgradeNotice ? 'top-28' : 'top-16'}`} role="dialog" aria-label={text('消息中心', 'Message center')}>
+                      <div className="flex items-center justify-between border-b border-[#e6e1d8] px-4 py-3.5">
                         <h3 className="text-sm font-semibold text-slate-900">{text('消息通知', 'Notifications')}</h3>
                         <div className="flex gap-2">
-                          <button onClick={() => handleMarkRead()} className="text-xs text-indigo-600 hover:text-indigo-800" title={text('全部已读', 'Mark all as read')}>
+                          <button onClick={() => handleMarkRead()} disabled={notifications.length === 0 || unreadCount === 0} className="inline-flex h-9 w-9 items-center justify-center border border-transparent text-[#466f9d] hover:border-[#c9dce8] hover:bg-[#eff5fb] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-transparent disabled:hover:bg-transparent" title={text('全部已读', 'Mark all as read')} aria-label={text('全部已读', 'Mark all as read')}>
                             <Check className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete()} className="text-xs text-slate-400 hover:text-red-600" title={text('清空全部', 'Clear all')}>
+                          <button onClick={() => handleDelete()} disabled={notifications.length === 0} className="inline-flex h-9 w-9 items-center justify-center border border-transparent text-slate-400 hover:border-red-100 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-transparent disabled:hover:bg-transparent" title={text('清空全部', 'Clear all')} aria-label={text('清空全部', 'Clear all')}>
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -418,11 +397,11 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                           </div>
                         ) : (
                           notifications.map(notification => (
-                            <div key={notification.id} className={`px-4 py-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 relative group ${!notification.isRead ? 'bg-indigo-50/30' : ''}`}>
+                            <div key={notification.id} className={`group relative border-b border-[#e6e1d8] px-4 py-3.5 last:border-0 hover:bg-[#f4f8fb] ${!notification.isRead ? 'bg-[#eff5fb] shadow-[inset_3px_0_0_#466f9d]' : ''}`}>
                               <div className="flex justify-between items-start mb-1">
-                                <span className={`text-xs font-medium px-1.5 py-0.5 rounded ${notification.type === 'feedback_reply' ? 'bg-blue-100 text-blue-700' :
-                                    notification.type === 'application_update' ? 'bg-green-100 text-green-700' :
-                                      'bg-slate-100 text-slate-600'
+                                <span className={`border px-2 py-1 text-[11px] font-bold ${notification.type === 'feedback_reply' ? 'border-[#c9dce8] bg-[#eff5fb] text-[#466f9d]' :
+                                    notification.type === 'application_update' ? 'border-[#d7e5d2] bg-[#f3f6f0] text-[#4e6250]' :
+                                      'border-[#e7c98e] bg-[#fff8e8] text-[#8f5e19]'
                                   }`}>
                                   {notification.type === 'feedback_reply' ? text('反馈回复', 'Feedback reply') : notification.type === 'application_update' ? text('申请更新', 'Application update') : text('系统消息', 'System message')}
                                 </span>
@@ -431,9 +410,9 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                               <h4 className={`text-sm font-medium mb-1 ${!notification.isRead ? 'text-slate-900' : 'text-slate-700'}`}>{notification.title}</h4>
                               <p className="text-xs text-slate-600 leading-relaxed">{notification.content}</p>
 
-                              <div className="absolute top-2 right-2 hidden group-hover:flex gap-1 bg-white/80 rounded shadow-sm p-1">
+                              <div className="absolute right-2 top-2 hidden gap-1 border border-[#e6e1d8] bg-[#fffdf8]/95 p-1 shadow-sm group-hover:flex">
                                 {!notification.isRead && (
-                                  <button onClick={(e) => { e.stopPropagation(); handleMarkRead(notification.id) }} className="p-1 hover:text-indigo-600 text-slate-400" title={text('标为已读', 'Mark as read')}>
+                                  <button onClick={(e) => { e.stopPropagation(); handleMarkRead(notification.id) }} className="p-1 text-slate-400 hover:bg-[#eff5fb] hover:text-[#466f9d]" title={text('标为已读', 'Mark as read')}>
                                     <Check className="w-3 h-3" />
                                   </button>
                                 )}
@@ -452,13 +431,13 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 {/* User Menu - 优化用户菜单设计 */}
                 <div
                   ref={userMenuRef}
-                  className="relative hidden md:block"
+                  className="relative hidden lg:block"
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                 >
                   <button
                     ref={userMenuButtonRef}
-                    className="flex max-w-[210px] items-center gap-1.5 rounded-lg p-1.5 text-slate-700 transition-all duration-200 hover:bg-slate-50 hover:text-slate-900 focus:outline-none 2xl:gap-2 2xl:p-2"
+                    className="hg-header-account-trigger flex max-w-[210px] items-center gap-1.5 p-1.5 text-slate-700 transition-[background-color,color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9a6c] focus-visible:ring-offset-2 2xl:gap-2 2xl:p-2"
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"
@@ -470,7 +449,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                         <img
                           src={user.avatar}
                           alt={userDisplayName}
-                          className={`w-8 h-8 rounded-full shadow-sm ${memberAvatarRingClass}`}
+                          className={`hg-header-account-avatar w-8 h-8 ${memberAvatarRingClass}`}
                         />
                         {isMember && (
                           <div className={`absolute -top-1.5 -right-1.5 rounded-full p-0.5 border border-white shadow-sm ${memberBadgeBgClass}`}>
@@ -481,7 +460,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                     ) : (
                       <div className="relative">
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm bg-gradient-to-r from-haigoo-primary to-haigoo-secondary ${memberAvatarRingClass}`}
+                          className={`hg-header-account-avatar flex h-8 w-8 items-center justify-center bg-[#1b2440] ${memberAvatarRingClass}`}
                           role="img"
                           aria-label={text('用户头像', 'User avatar')}
                         >
@@ -502,11 +481,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                         {memberTextBadge}
                       </span>
                     )}
-                    {!isMember && (
-                      <span className="hidden 2xl:inline-flex h-5 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
-                        FREE
-                      </span>
-                    )}
                     <ChevronDown
                       className={`h-4 w-4 transition-transform duration-200 ${isUserMenuOpen ? 'rotate-180' : ''}`}
                       aria-hidden="true"
@@ -516,23 +490,23 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   {/* 优化下拉菜单设计 */}
                   {isUserMenuOpen && (
                     <div
-                      className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-lg border border-slate-100 py-2 z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      className="hg-header-account-menu absolute right-0 z-50 mt-2 w-72 animate-in fade-in-0 zoom-in-95 duration-200"
                       role="menu"
                       aria-labelledby="user-menu-button"
                       aria-orientation="vertical"
                     >
                       {/* 用户信息 */}
-                      <div className="px-4 py-3 border-b border-slate-100" role="presentation">
+                      <div className="hg-header-account-summary" role="presentation">
                         <div className="flex items-center space-x-3">
                           {user?.avatar ? (
                             <img
                               src={user.avatar}
                               alt={userDisplayName}
-                              className="w-10 h-10 rounded-full"
+                              className="hg-header-account-avatar h-10 w-10"
                             />
                           ) : (
                             <div
-                              className="w-10 h-10 bg-gradient-to-r from-haigoo-primary to-haigoo-secondary rounded-full flex items-center justify-center"
+                              className="hg-header-account-avatar flex h-10 w-10 items-center justify-center bg-[#1b2440]"
                               role="img"
                               aria-label={text('用户头像', 'User avatar')}
                             >
@@ -547,25 +521,34 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                                   {memberTextBadge}
                                 </span>
                               )}
-                              {!isMember && (
-                                <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
-                                  FREE
-                                </span>
-                              )}
+                              {isMember ? <span className="hg-header-member-tag inline-flex h-5 shrink-0 items-center border px-2 text-[10px] font-bold leading-none">Haigoo Club Member</span> : null}
                             </div>
                             <p className="text-xs text-slate-500 truncate" title={user?.profile?.title || user?.email}>{user?.profile?.title || user?.email}</p>
                           </div>
                         </div>
                       </div>
 
-                      {/* 简化的菜单选项 - 这里可以放其他普通菜单项，暂时为空或保留其他非敏感项 */}
+                      <div className="hg-header-account-links" role="group" aria-label={text('我的 Haigoo', 'My Haigoo')}>
+                        {userMenuItems.map((item) => (
+                          <Link
+                            key={item.id}
+                            to={path(item.href)}
+                            className="hg-header-account-link"
+                            role="menuitem"
+                            tabIndex={isUserMenuOpen ? 0 : -1}
+                            onClick={() => setIsUserMenuOpen(false)}
+                          >
+                            {item.label}
+                          </Link>
+                        ))}
+                      </div>
 
                       {/* 账户操作区域 */}
-                      <div className="pt-1" role="group" aria-label={text('账户操作', 'Account actions')}>
+                      <div className="hg-header-account-actions" role="group" aria-label={text('账户操作', 'Account actions')}>
                         {/* 退出登录 - 调整为常规颜色 */}
                         <button
                           onClick={handleLogout}
-                          className="block w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-all duration-200 focus:outline-none focus:bg-slate-50"
+                          className="hg-header-account-link hg-header-account-logout"
                           role="menuitem"
                           tabIndex={isUserMenuOpen ? 0 : -1}
                           aria-label={text('退出登录', 'Log out')}
@@ -586,7 +569,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               ref={mobileMenuButtonRef}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               onKeyDown={(e) => handleKeyDown(e, () => setIsMenuOpen(!isMenuOpen))}
-              className="md:hidden p-3 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-haigoo-primary min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="lg:hidden p-3 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-haigoo-primary min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-expanded={isMenuOpen}
               aria-controls="mobile-menu"
               aria-label={isMenuOpen ? text('关闭移动菜单', 'Close mobile menu') : text('打开移动菜单', 'Open mobile menu')}
@@ -599,7 +582,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <nav
-            className="absolute left-3 right-3 top-full mt-3 max-h-[calc(100dvh-4.75rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[#e5edf3] bg-[#fffdf8] pb-[env(safe-area-inset-bottom)] shadow-[0_20px_48px_-36px_rgba(139,101,54,0.46)] md:hidden"
+            className="absolute left-3 right-3 top-full mt-3 max-h-[calc(100dvh-4.75rem)] overflow-y-auto overscroll-contain rounded-2xl border border-[#e5edf3] bg-[#fffdf8] pb-[env(safe-area-inset-bottom)] shadow-[0_20px_48px_-36px_rgba(139,101,54,0.46)] lg:hidden"
             id="mobile-menu"
             role="navigation"
             aria-label={text('移动端导航', 'Mobile navigation')}
@@ -608,7 +591,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               <Link
                 to={path('/')}
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/'
-                  ? 'bg-indigo-50 text-indigo-700'
+                  ? 'bg-[#eff5fb] text-[#345d88]'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 onClick={() => setIsMenuOpen(false)}
@@ -618,58 +601,42 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               <Link
                 to={path('/jobs')}
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname === '/jobs'
-                  ? 'bg-indigo-50 text-indigo-700'
+                  ? 'bg-[#eff5fb] text-[#345d88]'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {text('全部岗位', 'All jobs')}
-              </Link>
-              <Link
-                to={path('/careerlearning')}
-                className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english')
-                  ? 'bg-indigo-50 text-indigo-700'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                <span className="relative inline-flex items-center">
-                  {text('职业成长', 'Career growth')}
-                  <span className="ml-0.5 -translate-y-1 text-[10px] font-black leading-none text-emerald-500">
-                    {text('新', 'New')}
-                  </span>
-                </span>
+                {text('远程工作', 'Remote jobs')}
               </Link>
               <Link
                 to={path('/trusted-companies')}
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
-                  ? 'bg-indigo-50 text-indigo-700'
+                  ? 'bg-[#eff5fb] text-[#345d88]'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {text('精选企业', 'Companies')}
+                {text('远程企业', 'Remote companies')}
               </Link>
               <Link
-                to={path('/profile?tab=about')}
-                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${(location.pathname === '/about') || (location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') === 'about')
-                  ? 'bg-indigo-50 text-indigo-700'
+                to={path('/careerlearning')}
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english')
+                  ? 'bg-[#eff5fb] text-[#345d88]'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                {text('关于我们', 'About us')}
+                {text('职业成长', 'Career growth')}
               </Link>
               <Link
-                to={path('/profile?tab=membership')}
-                className={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/profile')
-                  ? 'bg-indigo-50 text-indigo-700'
+                to={path('/profile?tab=resume')}
+                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/profile')
+                  ? 'bg-[#eff5fb] text-[#345d88]'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                <Crown className="h-4 w-4" />
-                {text('Club 权益', 'Club benefits')}
+                {text('个人中心', 'Personal center')}
               </Link>
 
               {/* 移动端用户菜单 */}
@@ -695,11 +662,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                       <div className="min-w-0 flex-1">
                         <div className="flex min-w-0 items-center gap-2">
                           <p className="truncate text-sm font-medium text-slate-900">{userDisplayName}</p>
-                          {!isMember && (
-                            <span className="inline-flex h-5 shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 text-[10px] font-bold leading-none text-slate-600">
-                              FREE
-                            </span>
-                          )}
+                          {isMember ? <span className="hg-header-member-tag inline-flex h-5 shrink-0 items-center border px-2 text-[10px] font-bold leading-none">Club Member</span> : null}
                         </div>
                         <p className="text-xs text-slate-500">{user?.profile?.title || user?.email}</p>
                       </div>
@@ -712,7 +675,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                           key={item.id}
                           to={path(item.href)}
                           className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-haigoo-primary focus:ring-offset-2 ${isActive
-                              ? 'bg-indigo-50 text-indigo-700'
+                              ? 'bg-[#eff5fb] text-[#345d88]'
                               : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
                             }`}
                           onClick={() => setIsMenuOpen(false)}
@@ -748,7 +711,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                   </Link>
                   <Link
                     to={path('/register')}
-                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-slate-900 rounded-lg hover:bg-indigo-600 hover:text-white transition-all"
+                    className="block w-full text-center px-4 py-3 text-base font-medium text-white bg-slate-900 rounded-lg hover:bg-[#466f9d] hover:text-white transition-all"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     {text('注册', 'Sign up')}
@@ -760,5 +723,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
         )}
       </div>
     </header>
+    </>
   )
 }

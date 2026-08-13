@@ -30,7 +30,7 @@ interface EmailConnectModalProps {
     subject: string
     body: string
     email: string
-  }) => void
+  }) => boolean | void | Promise<boolean | void>
 }
 
 function normalizeResumeText(resume: Partial<ResumeOption> | null | undefined) {
@@ -311,10 +311,10 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
     }
   }
 
-  const handleOpenEmail = () => {
+  const handleOpenEmail = async () => {
     if (!contact || !recipientEmail) return
 
-    onOpenEmail?.({
+    const canContinue = await onOpenEmail?.({
       contact,
       resumeId: selectedResume?.id || '',
       resumeName: selectedResume?.fileName || '',
@@ -322,6 +322,8 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
       body: draftBody,
       email: recipientEmail,
     })
+
+    if (canContinue === false) return
 
     window.location.href = `mailto:${recipientEmail}?subject=${encodeURIComponent(draftSubject)}&body=${encodeURIComponent(draftBody)}`
   }
@@ -418,7 +420,7 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
                 onInput={syncBodyEditorValue}
                 onBlur={syncBodyEditorValue}
                 onKeyDown={handleBodyKeyDown}
-                className="min-h-[360px] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 text-[15px] leading-7 text-slate-900 outline-none transition-colors focus:border-indigo-200 focus:ring-2 focus:ring-indigo-100"
+                className="min-h-[360px] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 text-[15px] leading-7 text-slate-900 outline-none transition-colors focus:border-[#c9dce8] focus:ring-2 focus:ring-[#dce9f5]"
               />
               <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                 如需更个性化的邮件内容，可以先在个人中心上传英文或中英双语简历，系统会自动参考简历优化文案。

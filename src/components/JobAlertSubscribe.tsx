@@ -14,7 +14,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
           <div className="text-sm font-semibold text-slate-900">加入企业微信群</div>
           <div className="text-xs text-slate-500">每日精选岗位推送 + 同行交流</div>
         </div>
-        <button onClick={() => navigate('/community')} className="cta-btn rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">
+        <button onClick={() => navigate('/community')} className="cta-btn rounded-lg bg-[#466f9d] px-4 py-2 text-sm font-semibold text-white">
           去加群
         </button>
       </div>
@@ -39,7 +39,7 @@ export default function JobAlertSubscribe({ variant = 'card', theme = 'dark' }: 
         </div>
         <button
           onClick={() => navigate('/community')}
-          className={`${isLight ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-white text-indigo-700 hover:bg-indigo-50'} inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors`}
+          className={`${isLight ? 'bg-slate-950 text-white hover:bg-slate-800' : 'bg-white text-[#345d88] hover:bg-[#eff5fb]'} inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-colors`}
         >
           前往社群中心
           <ArrowRight className="h-4 w-4" />

@@ -135,7 +135,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
     const colors = [
       { bg: 'rgba(49, 130, 206, 0.12)', text: '#3182CE' },
       { bg: 'rgba(16, 185, 129, 0.12)', text: '#10B981' },
-      { bg: 'rgba(139, 92, 246, 0.12)', text: '#8B5CF6' },
+      { bg: 'rgba(183, 121, 31, 0.12)', text: '#b7791f' },
       { bg: 'rgba(236, 72, 153, 0.12)', text: '#EC4899' },
       { bg: 'rgba(245, 158, 11, 0.12)', text: '#F59E0B' },
       { bg: 'rgba(6, 182, 212, 0.12)', text: '#06B6D4' },
@@ -143,7 +143,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
       { bg: 'rgba(107, 114, 128, 0.12)', text: '#6B7280' },
       { bg: 'rgba(34, 197, 94, 0.12)', text: '#22C55E' },
       { bg: 'rgba(37, 99, 235, 0.12)', text: '#2563EB' },
-      { bg: 'rgba(124, 58, 237, 0.12)', text: '#7C3AED' },
+      { bg: 'rgba(70, 111, 157, 0.12)', text: '#466f9d' },
       { bg: 'rgba(217, 119, 6, 0.12)', text: '#D97706' }
     ];
     const idx = Math.max(0, companyInitial.charCodeAt(0) % colors.length);
@@ -178,8 +178,8 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
     return (
       <article
         className={`group bg-white rounded-lg p-3 shadow-sm border transition-all duration-200 cursor-pointer relative flex items-start gap-3 ${isActive
-          ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30'
-          : 'border-slate-200 hover:shadow-md hover:border-indigo-200'
+          ? 'border-[#587faa] ring-1 ring-[#587faa] bg-[#eff5fb]/30'
+          : 'border-slate-200 hover:shadow-md hover:border-[#c9dce8]'
           }`}
         onClick={handleCardClick}
         onKeyDown={handleCardKeyDown}
@@ -207,13 +207,13 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start gap-2">
-            <h2 className="font-semibold text-slate-900 text-base leading-tight truncate hover:text-indigo-600 transition-colors" title={job.translations?.title || job.title}>
+            <h2 className="font-semibold text-slate-900 text-base leading-tight truncate hover:text-[#466f9d] transition-colors" title={job.translations?.title || job.title}>
               {job.translations?.title || job.title}
             </h2>
             {onSave && (
               <button
                 onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
-                className={`flex-shrink-0 p-1 rounded-md transition-colors ${isSaved ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`}
+                className={`flex-shrink-0 p-1 rounded-md transition-colors ${isSaved ? 'text-[#466f9d] bg-[#eff5fb]' : 'text-slate-400 hover:text-[#466f9d] hover:bg-slate-50'}`}
               >
                 <Bookmark className={`h-4 w-4 ${isSaved ? 'fill-current' : ''}`} />
               </button>
@@ -249,8 +249,8 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
   return (
     <article
       className={`group bg-white rounded-xl p-5 shadow-sm border transition-all duration-200 cursor-pointer relative flex flex-col h-full ${isActive
-        ? 'border-indigo-500 ring-1 ring-indigo-500 bg-indigo-50/30'
-        : 'border-slate-200 hover:shadow-md hover:border-indigo-200'
+        ? 'border-[#587faa] ring-1 ring-[#587faa] bg-[#eff5fb]/30'
+        : 'border-slate-200 hover:shadow-md hover:border-[#c9dce8]'
         }`}
       onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
@@ -274,7 +274,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
           <div className="flex items-start justify-between gap-2">
             <h2
               id={`job-${job.id}-title`}
-              className="font-bold text-slate-900 text-lg leading-tight truncate hover:text-indigo-600 transition-colors mb-1"
+              className="font-bold text-slate-900 text-lg leading-tight truncate hover:text-[#466f9d] transition-colors mb-1"
               title={job.translations?.title || job.title}
             >
               {job.translations?.title || job.title}
@@ -282,7 +282,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             {onSave && (
               <button
                 onClick={(e) => { e.stopPropagation(); onSave(job.id); }}
-                className={`p-1.5 -mr-1.5 rounded-lg transition-colors ${isSaved ? 'text-indigo-600 bg-indigo-50' : 'text-slate-400 hover:text-indigo-600 hover:bg-slate-50'}`}
+                className={`p-1.5 -mr-1.5 rounded-lg transition-colors ${isSaved ? 'text-[#466f9d] bg-[#eff5fb]' : 'text-slate-400 hover:text-[#466f9d] hover:bg-slate-50'}`}
                 title={isSaved ? '已收藏' : '收藏'}
               >
                 <Bookmark className={`h-5 w-5 ${isSaved ? 'fill-current' : ''}`} />
@@ -297,7 +297,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="font-medium truncate max-w-[200px] hover:text-indigo-600 hover:underline"
+                className="font-medium truncate max-w-[200px] hover:text-[#466f9d] hover:underline"
                 title={job.translations?.company || job.company}
               >
                 {job.translations?.company || job.company}
@@ -317,7 +317,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
             {/* Source Badges - Modified: Only show Referral badge as requested */}
             <div className="flex items-center gap-2 flex-wrap">
               {sourceType === 'referral' && (
-                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700 border border-indigo-200" title="通过岗位相关联系人邮箱直接投递，提高简历到达关键招聘方的效率">
+                <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-[#dce9f5] text-[#345d88] border border-[#c9dce8]" title="通过岗位相关联系人邮箱直接投递，提高简历到达关键招聘方的效率">
                   <Target className="w-3 h-3" />
                   邮箱直申
                 </div>
@@ -362,7 +362,7 @@ export default function JobCard({ job, onSave, isSaved, onClick, isActive, varia
       <div className="flex-1 mb-4 min-h-[3rem]">
         {job.summary ? (
           <div className="flex items-start gap-2">
-            <svg className="w-4 h-4 text-indigo-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-[#587faa] flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
             </svg>
             <p className="text-slate-700 text-sm font-medium leading-relaxed">

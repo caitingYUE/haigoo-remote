@@ -1,0 +1,1487 @@
+/*
+ * Haigoo palette cohesion layer
+ *
+ * Public product rule:
+ * - orange = brand, focus, selection and primary emphasis
+ * - ink = primary text and high-commitment actions
+ * - copper-gold = small membership identity only
+ * - semantic status colors stay local to icons and one-pixel borders
+ */
+
+:root {
+  --hg-canvas: #f6f7fa;
+  --hg-surface: #ffffff;
+  --hg-surface-soft: #f1f3f6;
+  --hg-ink: #182033;
+  --hg-ink-soft: #344054;
+  --hg-muted: #667085;
+  --hg-line: #e1e5eb;
+  --hg-line-strong: #cfd6df;
+  --hg-accent-50: #fff4ee;
+  --hg-accent-100: #ffe2d2;
+  --hg-accent-300: #f5b391;
+  --hg-accent-500: #e96832;
+  --hg-accent-600: #c94f22;
+  --hg-accent-700: #a83c17;
+
+  --hg-bg-page: var(--hg-canvas);
+  --hg-bg-surface: var(--hg-surface);
+  --hg-bg-subtle: var(--hg-surface-soft);
+  --hg-bg-cool-subtle: var(--hg-surface-soft);
+  --hg-text-primary: var(--hg-ink);
+  --hg-text-secondary: var(--hg-ink-soft);
+  --hg-text-muted: var(--hg-muted);
+  --hg-border-subtle: var(--hg-line);
+  --hg-border-default: var(--hg-line-strong);
+  --hg-action-primary: var(--hg-ink);
+  --hg-action-primary-hover: #253047;
+  --hg-action-brand: var(--hg-accent-600);
+  --hg-action-brand-hover: var(--hg-accent-700);
+  --hg-focus-ring: var(--hg-accent-600);
+
+  /* Backwards-compatible aliases resolve to the single public accent. */
+  --hg-harbour-50: var(--hg-accent-50);
+  --hg-harbour-100: var(--hg-accent-100);
+  --hg-harbour-500: var(--hg-accent-500);
+  --hg-harbour-600: var(--hg-accent-600);
+  --hg-apricot-50: var(--hg-accent-50);
+  --hg-apricot-400: #f28a56;
+  --hg-apricot-600: var(--hg-accent-600);
+  --hg-sand-100: var(--hg-accent-50);
+  --hg-sand-300: var(--hg-accent-300);
+  --hg-sand-600: var(--hg-accent-600);
+
+  /* Historical member identity is now quiet and neutral; orange remains the only UI accent. */
+  --hg-member-gold-50: #f3f4f6;
+  --hg-member-gold-100: #e9ecf0;
+  --hg-member-gold-300: #cfd6df;
+  --hg-member-gold-500: #344054;
+  --hg-member-gold-600: #253047;
+
+  --hg-shadow-subtle: 0 1px 2px rgba(24, 32, 51, 0.05);
+  --hg-shadow-floating: 0 18px 48px -36px rgba(24, 32, 51, 0.32);
+  --hg-shadow-modal: 0 30px 80px -34px rgba(24, 32, 51, 0.42);
+}
+
+html,
+body {
+  background: var(--hg-canvas);
+  scrollbar-color: #bcc5d0 transparent;
+}
+
+body {
+  background:
+    radial-gradient(circle at 7% 1%, rgba(233, 104, 50, 0.055), transparent 24rem),
+    var(--hg-canvas);
+}
+
+::selection {
+  background: var(--hg-accent-100);
+  color: var(--hg-ink);
+}
+
+/* Feedback: neutral surface first, semantic color second. */
+.hg-toast {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--hg-line);
+  border-radius: 0.9rem;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 0.9rem 0.8rem 0.9rem 1rem;
+  color: var(--hg-ink);
+  box-shadow: var(--hg-shadow-modal);
+  backdrop-filter: blur(16px) saturate(130%);
+}
+
+.hg-toast::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  background: var(--hg-accent-500);
+  content: "";
+}
+
+.hg-toast--success { border-color: var(--hg-success-200); }
+.hg-toast--success::before { background: var(--hg-success-700); }
+.hg-toast--success .hg-toast__icon { color: var(--hg-success-700); }
+.hg-toast--error { border-color: var(--hg-danger-200); }
+.hg-toast--error::before { background: var(--hg-danger-700); }
+.hg-toast--error .hg-toast__icon { color: var(--hg-danger-700); }
+.hg-toast--warning { border-color: var(--hg-warning-200); }
+.hg-toast--warning::before { background: var(--hg-warning-700); }
+.hg-toast--warning .hg-toast__icon { color: var(--hg-warning-700); }
+.hg-toast--info .hg-toast__icon { color: var(--hg-accent-600); }
+
+.hg-toast__action {
+  border-bottom: 1px solid currentColor;
+  color: var(--hg-accent-700);
+  text-underline-offset: 0.2em;
+}
+
+.hg-toast__action:hover { color: var(--hg-ink); }
+.hg-toast__close { border-radius: 50%; }
+.hg-toast__close:hover { background: var(--hg-surface-soft); }
+
+/* Membership is recognizable, but no longer competes with the page accent. */
+.hg-member-badge {
+  background: var(--hg-member-gold-500);
+  box-shadow: 0 10px 20px -15px rgba(120, 67, 22, 0.72);
+}
+
+.hg-header-member-tag {
+  border-color: var(--hg-member-gold-300) !important;
+  background: var(--hg-member-gold-50) !important;
+  color: var(--hg-member-gold-600) !important;
+}
+
+:where(.hg-member-center, .hg-member-subscription, .hg-membership-certificate, .hg-job-detail-panel)
+  [class~="text-[#b7791f]"],
+:where(.hg-member-center, .hg-member-subscription, .hg-membership-certificate, .hg-job-detail-panel)
+  [class~="text-[#8f5e19]"] {
+  color: var(--hg-member-gold-600) !important;
+}
+
+:where(.hg-member-center, .hg-member-subscription, .hg-membership-certificate, .hg-job-detail-panel)
+  [class~="bg-[#b7791f]"],
+:where(.hg-member-center, .hg-member-subscription, .hg-membership-certificate, .hg-job-detail-panel)
+  [class~="bg-[#8f5e19]"] {
+  background-color: var(--hg-member-gold-500) !important;
+}
+
+.hg-member-center [class~="text-[#466f9d]"],
+.hg-member-center [class~="text-[#345d88]"],
+.hg-member-center [class~="text-[#5f55e8]"],
+.hg-member-center [class~="text-indigo-600"],
+.hg-member-center [class~="text-purple-600"],
+.hg-member-center [class~="text-violet-600"] {
+  color: var(--hg-member-gold-600) !important;
+}
+
+.hg-member-center [class~="bg-[#eff5fb]"],
+.hg-member-center [class~="bg-[#dce9f5]"],
+.hg-member-center [class~="bg-indigo-50"],
+.hg-member-center [class~="bg-purple-50"],
+.hg-member-center [class~="bg-violet-50"] {
+  background: var(--hg-member-gold-50) !important;
+}
+
+.hg-member-center [class~="border-[#c9dce8]"],
+.hg-member-center [class~="border-[#dce9f5]"],
+.hg-member-center [class~="border-indigo-200"],
+.hg-member-center [class~="border-purple-200"],
+.hg-member-center [class~="border-violet-200"] {
+  border-color: var(--hg-member-gold-300) !important;
+}
+
+/* Legacy blue, violet and editorial-green utilities now resolve by role. */
+:where(
+  .haigoo-home,
+  .hg-jobs-page,
+  .hg-job-detail-panel,
+  .hg-profile-page,
+  .hg-consulting-page,
+  .hg-career-page,
+  .hg-career-watch-page,
+  .hg-career-notes-page,
+  .hg-auth-page,
+  .hg-companies-page,
+  .hg-company-detail-page,
+  .hg-bundle-page,
+  .hg-about__page
+) :is(
+  [class~="text-[#466f9d]"],
+  [class~="text-[#345d88]"],
+  [class~="text-[#587faa]"],
+  [class~="text-[#5f55e8]"],
+  [class~="text-[#5b50e6]"],
+  [class~="text-[#7c70f4]"],
+  [class~="text-[#6f63f6]"],
+  [class~="text-[#4f8fe8]"],
+  [class~="text-[#5f83f7]"],
+  [class~="text-[#31594e]"]
+) {
+  color: var(--hg-accent-600) !important;
+}
+
+:where(
+  .haigoo-home,
+  .hg-jobs-page,
+  .hg-job-detail-panel,
+  .hg-profile-page,
+  .hg-consulting-page,
+  .hg-career-page,
+  .hg-career-watch-page,
+  .hg-career-notes-page,
+  .hg-auth-page,
+  .hg-companies-page,
+  .hg-company-detail-page,
+  .hg-bundle-page,
+  .hg-about__page
+) :is(
+  [class~="bg-[#466f9d]"],
+  [class~="bg-[#345d88]"],
+  [class~="bg-[#587faa]"],
+  [class~="bg-[#5f55e8]"],
+  [class~="bg-[#5b50e6]"],
+  [class~="bg-[#7c70f4]"],
+  [class~="bg-[#6f63f6]"],
+  [class~="bg-[#4f8fe8]"],
+  [class~="bg-[#5f83f7]"],
+  [class~="bg-[#31594e]"]
+) {
+  background-color: var(--hg-accent-600) !important;
+  background-image: none !important;
+}
+
+:where(
+  .haigoo-home,
+  .hg-jobs-page,
+  .hg-job-detail-panel,
+  .hg-profile-page,
+  .hg-consulting-page,
+  .hg-career-page,
+  .hg-career-watch-page,
+  .hg-career-notes-page,
+  .hg-auth-page,
+  .hg-companies-page,
+  .hg-company-detail-page,
+  .hg-bundle-page,
+  .hg-about__page
+) :is(
+  [class~="bg-[#eff5fb]"],
+  [class~="bg-[#f4f8fb]"],
+  [class~="bg-[#ede9fe]"],
+  [class~="bg-[#eef4f1]"],
+  [class~="bg-[#e8f1f8]"]
+) {
+  background-color: var(--hg-accent-50) !important;
+  background-image: none !important;
+}
+
+:where(
+  .haigoo-home,
+  .hg-jobs-page,
+  .hg-job-detail-panel,
+  .hg-profile-page,
+  .hg-consulting-page,
+  .hg-career-page,
+  .hg-career-watch-page,
+  .hg-career-notes-page,
+  .hg-auth-page,
+  .hg-companies-page,
+  .hg-company-detail-page,
+  .hg-bundle-page,
+  .hg-about__page
+) :is(
+  [class~="border-[#c9dce8]"],
+  [class~="border-[#dce9f5]"],
+  [class~="border-[#9fbbd2]"],
+  [class~="border-[#dccff7]"],
+  [class~="border-[#e2d7ff]"],
+  [class~="border-[#cdbfff]"],
+  [class~="border-[#31594e]"]
+) {
+  border-color: var(--hg-accent-300) !important;
+}
+
+:where(
+  .haigoo-home,
+  .hg-jobs-page,
+  .hg-job-detail-panel,
+  .hg-profile-page,
+  .hg-consulting-page,
+  .hg-career-page,
+  .hg-career-watch-page,
+  .hg-career-notes-page,
+  .hg-auth-page,
+  .hg-companies-page,
+  .hg-company-detail-page,
+  .hg-bundle-page,
+  .hg-about__page
+) :is([class~="text-indigo-600"], [class~="text-purple-600"], [class~="text-violet-600"]) {
+  color: var(--hg-accent-600) !important;
+}
+
+:where(
+  .haigoo-home,
+  .hg-jobs-page,
+  .hg-job-detail-panel,
+  .hg-profile-page,
+  .hg-consulting-page,
+  .hg-career-page,
+  .hg-career-watch-page,
+  .hg-career-notes-page,
+  .hg-auth-page,
+  .hg-companies-page,
+  .hg-company-detail-page,
+  .hg-bundle-page,
+  .hg-about__page
+) :is([class~="bg-indigo-50"], [class~="bg-purple-50"], [class~="bg-violet-50"]) {
+  background-color: var(--hg-accent-50) !important;
+  background-image: none !important;
+}
+
+/* Dense job workspace: one palette, one radius logic, no nested ghost cards. */
+.hg-jobs-list-shell,
+.hg-jobs-detail-shell {
+  border-color: var(--hg-line) !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  box-shadow: none !important;
+}
+
+.hg-job-filter-bar {
+  margin: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--hg-line) !important;
+  border-radius: 0 !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: none !important;
+}
+
+.hg-job-row {
+  border-color: var(--hg-line) !important;
+  background: var(--hg-surface) !important;
+  box-shadow: none !important;
+}
+
+.hg-job-row:hover {
+  border-color: var(--hg-line-strong) !important;
+  background: #fafbfc !important;
+}
+
+.hg-job-row[data-active="true"] {
+  border-color: var(--hg-accent-300) !important;
+  background: var(--hg-accent-50) !important;
+  box-shadow: inset 3px 0 0 var(--hg-accent-500) !important;
+}
+
+.hg-job-row__arrow { color: var(--hg-accent-600) !important; }
+
+.hg-job-detail-panel,
+.hg-job-detail-header,
+.hg-job-detail-panel main,
+.hg-job-detail-tabs,
+.hg-job-detail-panel [class~="bg-[#fffdf8]"] {
+  background: var(--hg-surface) !important;
+}
+
+.hg-job-detail-header,
+.hg-job-detail-tabs,
+.hg-job-detail-stats,
+.hg-job-detail-stat {
+  border-color: var(--hg-line) !important;
+}
+
+.hg-job-detail-stat > div:first-child { color: var(--hg-muted) !important; }
+
+.hg-job-detail-language-toggle button[aria-pressed="true"],
+.hg-job-detail-tabs button.is-active::after {
+  background: var(--hg-accent-500) !important;
+}
+
+.hg-job-detail-actions-compact button,
+.hg-job-detail-actions-wide button {
+  border-color: var(--hg-line-strong) !important;
+  background: var(--hg-surface) !important;
+  color: var(--hg-ink-soft) !important;
+  box-shadow: none !important;
+}
+
+.hg-job-detail-actions-compact button:hover,
+.hg-job-detail-actions-wide button:hover {
+  border-color: var(--hg-accent-300) !important;
+  color: var(--hg-accent-700) !important;
+}
+
+.hg-job-detail-actions-compact button:has(svg.fill-current),
+.hg-job-detail-actions-wide button:has(svg.fill-current) {
+  border-color: var(--hg-accent-300) !important;
+  background: var(--hg-accent-50) !important;
+  color: var(--hg-accent-700) !important;
+}
+
+.hg-job-detail-panel button[class*="bg-gradient"],
+.hg-job-detail-panel button[class~="from-[#466f9d]"] {
+  background: var(--hg-accent-600) !important;
+  color: #fff !important;
+}
+
+.hg-job-detail-panel h3::before,
+.hg-job-detail-panel h4::before {
+  background: var(--hg-accent-300) !important;
+}
+
+.hg-job-detail-panel [class~="bg-[#7fbf91]"] {
+  background: var(--hg-accent-300) !important;
+}
+
+.hg-job-detail-panel [class~="border-[#c9dce8]"][class~="bg-[#eff5fb]"][class~="text-[#466f9d]"] {
+  border-color: var(--hg-member-gold-300) !important;
+  background: var(--hg-member-gold-50) !important;
+  color: var(--hg-member-gold-600) !important;
+}
+
+.hg-profile-nav-item.is-active {
+  background: var(--hg-accent-50) !important;
+  color: var(--hg-accent-700) !important;
+  box-shadow: inset 3px 0 0 var(--hg-accent-500) !important;
+}
+
+/* Homepage thesis: one composition, aligned title mark, readable switch states. */
+.haigoo-home__hero-grid {
+  align-items: stretch !important;
+  grid-template-columns: repeat(12, minmax(0, 1fr)) !important;
+}
+
+.haigoo-home__hero-copy {
+  display: flex;
+  min-height: clamp(31rem, 40vw, 38rem);
+  flex-direction: column;
+  justify-content: center;
+}
+
+.haigoo-home__title {
+  max-width: 10.5ch !important;
+  font-size: clamp(3.15rem, 4.75vw, 5.35rem) !important;
+  font-weight: 700 !important;
+  line-height: 1.02 !important;
+}
+
+.haigoo-home__title-line {
+  display: flex !important;
+  align-items: baseline;
+  gap: 0.16em;
+  overflow: visible;
+}
+
+.haigoo-home__title-mark-wrap {
+  display: inline-flex;
+  width: 0.5em;
+  height: 0.5em;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transform: translateY(-0.05em);
+}
+
+.haigoo-home__title-mark {
+  position: static !important;
+  width: 100% !important;
+  height: 100% !important;
+  color: var(--hg-accent-500) !important;
+  stroke-width: 1.65;
+}
+
+.haigoo-home__story {
+  min-height: clamp(31rem, 40vw, 38rem) !important;
+  border-color: var(--hg-line) !important;
+  border-radius: 1.25rem !important;
+  box-shadow: 0 24px 60px -42px rgba(24, 32, 51, 0.36) !important;
+  transform: none !important;
+}
+
+.haigoo-home__story:hover { transform: none !important; }
+
+.haigoo-home__story-switcher {
+  border-color: rgba(255, 255, 255, 0.72) !important;
+  background: rgba(24, 32, 51, 0.46) !important;
+}
+
+.haigoo-home__story-switcher button {
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.26);
+}
+
+.haigoo-home__story-switcher button[aria-pressed="true"] {
+  background: #fff !important;
+  color: var(--hg-ink) !important;
+  text-shadow: none;
+}
+
+/* Career access language and color are consistent across the homepage and library. */
+.hg-career-access {
+  display: inline-flex;
+  min-height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  padding: 0.25rem 0.65rem;
+  color: var(--hg-ink-soft);
+  font-size: 0.68rem;
+  font-weight: 720;
+  letter-spacing: 0.03em;
+  box-shadow: 0 10px 22px -18px rgba(24, 32, 51, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.hg-career-access--open {
+  border-color: rgba(233, 104, 50, 0.34);
+  background: rgba(255, 247, 242, 0.96);
+  color: var(--hg-accent-700);
+}
+
+.hg-career-access--private {
+  border-color: rgba(24, 32, 51, 0.74);
+  background: rgba(24, 32, 51, 0.9);
+  color: #fff;
+}
+
+.hg-career-access--closed {
+  border-color: rgba(207, 214, 223, 0.92);
+  background: rgba(243, 244, 246, 0.94);
+  color: var(--hg-muted);
+}
+
+.haigoo-career {
+  padding-inline: clamp(0.25rem, 1vw, 0.75rem);
+}
+
+.haigoo-career__header {
+  padding-inline: 0.25rem;
+}
+
+.haigoo-career__header h2 {
+  font-size: clamp(2rem, 2.8vw, 3rem) !important;
+  font-weight: 680 !important;
+  letter-spacing: -0.045em !important;
+  line-height: 1.08 !important;
+}
+
+.haigoo-career__card h3 {
+  color: var(--hg-ink) !important;
+  font-weight: 680 !important;
+  line-height: 1.42 !important;
+}
+
+.haigoo-career__card [class~="text-[#2f6ed8]"] {
+  color: var(--hg-accent-600) !important;
+}
+
+/* Career index: the masthead and content share one reading rhythm. */
+.hg-career-page > div {
+  max-width: 1380px !important;
+}
+
+.hg-career-masthead {
+  border: 0 !important;
+  border-bottom: 1px solid var(--hg-line-strong) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: clamp(2.5rem, 5vw, 4.5rem) clamp(0.5rem, 1.5vw, 1.25rem) clamp(2.25rem, 4vw, 3.75rem) !important;
+  box-shadow: none !important;
+}
+
+.hg-career-masthead h1 {
+  max-width: 11.5em !important;
+  font-size: clamp(2.65rem, 4.15vw, 4.45rem) !important;
+  font-weight: 690 !important;
+  letter-spacing: -0.055em !important;
+  line-height: 1.08 !important;
+}
+
+.hg-career-index {
+  border-top: 1px solid var(--hg-line-strong) !important;
+}
+
+.hg-career-lead {
+  border-bottom: 0 !important;
+  padding: clamp(2.5rem, 4vw, 4rem) clamp(0.5rem, 1.5vw, 1.25rem) !important;
+}
+
+.hg-career-lead h2,
+.hg-career-section-header h2,
+.hg-career-category-rail h2,
+.hg-career-story h3 {
+  font-weight: 670 !important;
+  line-height: 1.12 !important;
+}
+
+.hg-career-chapter {
+  margin-top: clamp(2.5rem, 5vw, 4.5rem) !important;
+  border-top-color: var(--hg-line-strong) !important;
+  padding-inline: clamp(0.5rem, 1.5vw, 1.25rem);
+}
+
+.hg-watch-dossier-tabs button {
+  min-height: 3.5rem !important;
+  flex-direction: row !important;
+  gap: 0.35rem !important;
+  padding-inline: 0.45rem !important;
+}
+
+/* Profile: text and records lead; decorative icon tiles and glass cards recede. */
+.hg-profile-page > .pointer-events-none { display: none !important; }
+
+.hg-profile-page {
+  background: var(--hg-canvas) !important;
+}
+
+.hg-profile-nav-surface,
+.hg-profile-sidebar {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.hg-profile-sidebar {
+  border-right: 1px solid var(--hg-line) !important;
+  padding: 0.5rem 1.5rem 0.5rem 0.25rem !important;
+}
+
+.hg-profile-collapse {
+  width: auto !important;
+  min-width: 3rem;
+  border: 0 !important;
+  background: transparent !important;
+  padding-inline: 0.4rem;
+}
+
+.hg-profile-nav-item {
+  border-radius: 0.45rem !important;
+  padding-left: 0.85rem !important;
+}
+
+.hg-profile-home-hero,
+.hg-profile-member-summary,
+.hg-profile-mobile-home,
+.hg-workspace-hero {
+  border: 0 !important;
+  border-bottom: 1px solid var(--hg-line-strong) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: clamp(1.25rem, 2.5vw, 2.25rem) 0 !important;
+  box-shadow: none !important;
+}
+
+.hg-profile-home-hero__copy h1,
+.hg-workspace-hero h1 {
+  font-size: clamp(2.15rem, 3.2vw, 3.4rem) !important;
+  font-weight: 680 !important;
+  line-height: 1.08 !important;
+}
+
+.hg-profile-home-stats,
+.hg-workspace-quicklinks {
+  gap: 0 !important;
+  border-top: 0 !important;
+  border-bottom: 1px solid var(--hg-line) !important;
+}
+
+.hg-profile-home-stat,
+.hg-workspace-quicklink {
+  min-height: 6.25rem !important;
+  border: 0 !important;
+  border-right: 1px solid var(--hg-line) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 1rem 1.35rem !important;
+  box-shadow: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.hg-profile-home-stat:last-child,
+.hg-workspace-quicklink:last-child { border-right: 0 !important; }
+
+.hg-profile-home-stat:hover,
+.hg-workspace-quicklink:hover { background: #fff !important; }
+
+.hg-workspace-columns { gap: clamp(2.5rem, 4vw, 4.5rem) !important; }
+.hg-workspace-panel { border-top: 1px solid var(--hg-line-strong) !important; }
+.hg-profile-collection-header,
+.hg-application-header { min-height: 4.75rem !important; }
+
+/* Consulting and historical member services use the same product shell. */
+.hg-consulting-page,
+.hg-member-center {
+  background: var(--hg-canvas) !important;
+}
+
+.hg-consulting-page h1 {
+  font-size: clamp(2.45rem, 3.8vw, 4rem) !important;
+  font-weight: 680 !important;
+  line-height: 1.04 !important;
+}
+
+.hg-consulting-page > section svg,
+.hg-profile-empty > svg { display: none !important; }
+
+.hg-consulting-story,
+.hg-consulting-outcome,
+.hg-consulting-capability {
+  border-color: var(--hg-line) !important;
+  border-radius: 0.75rem !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.hg-consulting-capability svg,
+.hg-consulting-page article > svg { color: var(--hg-accent-600) !important; }
+
+.hg-consulting-page [class~="border-[#e2d2af]"],
+.hg-consulting-page [class~="border-[#e6d7b9]"] { border-color: var(--hg-line) !important; }
+
+.hg-consulting-page [class~="bg-[#fffaf0]"],
+.hg-consulting-page [class~="bg-[#fffdf8]"] { background: #fff !important; }
+
+.hg-consulting-page [class~="bg-[#b7791f]"],
+.hg-consulting-page [class~="bg-[#8f5e19]"] { background: var(--hg-accent-600) !important; }
+
+.hg-consulting-page [class~="text-[#b7791f]"],
+.hg-consulting-page [class~="text-[#8f5e19]"] { color: var(--hg-accent-700) !important; }
+
+.hg-member-center__hero,
+.hg-member-benefits,
+.hg-member-benefit-card,
+.hg-member-promise,
+.hg-member-help,
+.hg-member-faq {
+  border-color: var(--hg-line) !important;
+  border-radius: 0.9rem !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.hg-member-center__hero {
+  border-top: 3px solid var(--hg-accent-500) !important;
+  padding: clamp(1.5rem, 3vw, 2.5rem) !important;
+}
+
+.hg-member-center__hero > .absolute,
+.hg-member-benefit-card > img,
+.hg-member-center__status > img { display: none !important; }
+
+.hg-member-center__status {
+  border-color: var(--hg-line) !important;
+  background: var(--hg-surface-soft) !important;
+}
+
+.hg-member-center__status > .relative > div:first-child,
+.hg-member-benefit-card > div:first-child > div:first-child {
+  display: none !important;
+}
+
+/* Membership is communicated through wording and hierarchy, not decorative icons. */
+.hg-member-center > .relative svg {
+  display: none !important;
+}
+
+.hg-member-benefits > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+
+.hg-member-benefit-card {
+  min-height: 13rem !important;
+  padding: 1.25rem !important;
+}
+
+.hg-member-benefit-card > button:not(:disabled),
+.hg-member-center__status button:first-of-type {
+  background: var(--hg-accent-600) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+
+.hg-member-benefit-card span[class*="border-[#c9dce8]"] {
+  border-color: var(--hg-line-strong) !important;
+  background: var(--hg-surface-soft) !important;
+  color: var(--hg-ink-soft) !important;
+}
+
+/* Job discovery: every filter and selected row uses the same accent semantics. */
+.hg-job-filter-bar button[aria-pressed="true"],
+.hg-job-filter-bar button[aria-expanded="true"] {
+  border-color: var(--hg-accent-300) !important;
+  background: var(--hg-accent-50) !important;
+  color: var(--hg-accent-700) !important;
+}
+
+.hg-job-row h3 { color: var(--hg-ink) !important; }
+.hg-job-row:hover h3,
+.hg-job-row[data-active="true"] h3 { color: var(--hg-accent-700) !important; }
+
+@media (max-width: 63.99rem) {
+  .haigoo-home__hero-copy { min-height: auto; }
+  .haigoo-home__story { min-height: 30rem !important; }
+  .hg-member-benefits > .grid { grid-template-columns: 1fr !important; }
+  .hg-profile-sidebar { border-right: 0 !important; }
+}
+
+@media (max-width: 47.99rem) {
+  .haigoo-home__title-line { white-space: normal !important; }
+  .haigoo-home__title-mark-wrap { width: 0.45em; height: 0.45em; }
+  .hg-career-masthead h1 span { white-space: normal !important; }
+  .hg-profile-home-stat,
+  .hg-workspace-quicklink { border-right: 0 !important; border-bottom: 1px solid var(--hg-line) !important; }
+}
+
+.hg-career-index,
+.hg-career-chapter,
+.hg-companies-directory__header {
+  border-color: var(--hg-line-strong) !important;
+}
+
+.hg-companies-standards svg,
+.hg-companies-intake svg,
+.hg-company-detail-page svg[class*="text-[#4e6250]"] {
+  color: var(--hg-accent-600) !important;
+}
+
+/* Modal/popover depth is allowed; normal content surfaces stay quiet. */
+.hg-header-account-menu,
+.hg-notification-popover,
+.hg-share-dialog__panel,
+.hg-contact-dialog,
+.hg-certificate-modal__panel {
+  border-color: var(--hg-line) !important;
+  background: rgba(255, 255, 255, 0.985) !important;
+  box-shadow: var(--hg-shadow-modal) !important;
+}
+
+@media (max-width: 63.99rem) {
+  .hg-job-filter-bar {
+    border-radius: var(--hg-radius-card) var(--hg-radius-card) 0 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hg-toast,
+  .hg-job-row,
+  .hg-job-detail-panel button {
+    animation: none !important;
+    transition-duration: 0.01ms !important;
+    transform: none !important;
+  }
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .hg-toast,
+  .hg-header-account-menu,
+  .hg-notification-popover {
+    background: #fff !important;
+  }
+}
+
+/* 2026-08-13 polish: one bright system, with structure doing more work than color. */
+.haigoo-home__story.is-companies {
+  overflow: visible !important;
+  border: 0 !important;
+  background:
+    radial-gradient(circle at 86% 12%, rgba(233, 104, 50, 0.16), transparent 38%),
+    linear-gradient(145deg, #eef1f4, #fff 72%) !important;
+}
+
+.haigoo-home__company-stage {
+  position: absolute;
+  inset: 0;
+  padding: 4.6rem 4.5rem 1.3rem 1.25rem;
+}
+.haigoo-home__story.has-single-story .haigoo-home__company-stage { padding-top: 1.3rem; }
+
+.haigoo-home__company-feature {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1rem;
+  background: #fff;
+  grid-template-rows: minmax(0, 1.55fr) minmax(8.9rem, 0.7fr);
+  padding: 0;
+  color: var(--hg-ink);
+  text-align: left;
+  box-shadow: 0 24px 58px -36px rgba(24, 32, 51, 0.4);
+  transition: transform 220ms ease, box-shadow 220ms ease;
+}
+
+.haigoo-home__company-feature:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 30px 70px -38px rgba(24, 32, 51, 0.46);
+}
+.haigoo-home__company-feature--loading { pointer-events: none; }
+.haigoo-home__company-feature--loading:hover { transform: none; box-shadow: 0 24px 58px -36px rgba(24, 32, 51, 0.4); }
+
+.haigoo-home__company-feature-image { min-height: 0; overflow: hidden; background: var(--hg-surface-soft); }
+.haigoo-home__company-feature-image img { width: 100%; height: 100%; object-fit: cover; animation: hg-company-enter 420ms ease both; }
+.haigoo-home__company-feature-copy { display: grid; min-width: 0; align-content: center; gap: 0.35rem; padding: 1rem 1.2rem 1.1rem; }
+.haigoo-home__company-feature-copy .haigoo-editorial-label { color: var(--hg-accent-600); font-size: 0.62rem; }
+.haigoo-home__company-feature-copy strong { overflow: hidden; color: var(--hg-ink); font-size: clamp(1.15rem, 1.8vw, 1.6rem); font-weight: 720; letter-spacing: -0.025em; text-overflow: ellipsis; white-space: nowrap; }
+.haigoo-home__company-feature-copy > span:not(.haigoo-editorial-label):not(.haigoo-home__company-feature-link) { overflow: hidden; color: var(--hg-muted); font-size: 0.78rem; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+.haigoo-home__company-feature-link { display: inline-flex; align-items: center; gap: 0.35rem; margin-top: 0.2rem; color: var(--hg-accent-700); font-size: 0.75rem; font-weight: 720; }
+
+.haigoo-home__company-stack {
+  position: absolute;
+  top: 6.8rem;
+  right: 0.85rem;
+  bottom: 4.5rem;
+  z-index: 1;
+  width: 5.4rem;
+  pointer-events: none;
+}
+
+.haigoo-home__company-stack > span {
+  --stack-offset: calc(var(--company-stack-index) * 1.05rem);
+  position: absolute;
+  top: var(--stack-offset);
+  right: calc(var(--company-stack-index) * -0.55rem);
+  bottom: calc(1.2rem + var(--stack-offset));
+  width: 4.7rem;
+  overflow: hidden;
+  border: 4px solid #fff;
+  border-radius: 0.85rem;
+  background: var(--hg-surface-soft);
+  box-shadow: 0 18px 40px -28px rgba(24, 32, 51, 0.55);
+  opacity: calc(0.88 - var(--company-stack-index) * 0.2);
+}
+
+.haigoo-home__company-stack img { width: 100%; height: 100%; object-fit: cover; }
+.haigoo-home__company-dots { position: absolute; right: 1.1rem; bottom: 1.1rem; z-index: 4; display: flex; gap: 0.38rem; }
+.haigoo-home__company-dots button { width: 0.45rem; height: 0.45rem; border: 0; border-radius: 999px; background: var(--hg-line-strong); padding: 0; transition: width 180ms ease, background 180ms ease; }
+.haigoo-home__company-dots button[aria-current="true"] { width: 1.4rem; background: var(--hg-accent-500); }
+.haigoo-home__company-dots button:focus-visible { outline: 2px solid var(--hg-accent-500); outline-offset: 3px; }
+.haigoo-home__company-stage-empty { display: grid; height: 100%; place-items: center; color: var(--hg-muted); font-size: 0.9rem; }
+
+.haigoo-home__story-switcher {
+  top: 1rem !important;
+  right: 1rem !important;
+  border: 1px solid var(--hg-line) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 10px 28px -24px rgba(24, 32, 51, 0.45);
+  backdrop-filter: blur(12px) !important;
+}
+
+.haigoo-home__story-switcher button { color: var(--hg-muted) !important; text-shadow: none !important; }
+.haigoo-home__story-switcher button[aria-pressed="true"] { background: var(--hg-ink) !important; color: #fff !important; }
+.haigoo-home__story.is-daily { overflow: hidden; border-color: var(--hg-line) !important; background: linear-gradient(145deg, #243049, var(--hg-ink)) !important; }
+.haigoo-home__story.is-daily .haigoo-home__story-switcher { border-color: rgba(255,255,255,.18) !important; background: rgba(255,255,255,.1) !important; }
+.haigoo-home__story.is-daily .haigoo-home__story-switcher button { color: rgba(255,255,255,.78) !important; }
+.haigoo-home__story.is-daily .haigoo-home__story-switcher button[aria-pressed="true"] { background: #fff !important; color: var(--hg-ink) !important; }
+
+@keyframes hg-company-enter {
+  from { opacity: 0.45; transform: scale(1.025); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Career cards keep a deliberate reading inset after the radius update. */
+.haigoo-career__header { padding-inline: 0.5rem !important; }
+.haigoo-career__header > div { padding-inline: 0 !important; }
+.haigoo-career__header .haigoo-home__section-link { margin-right: 0.25rem; }
+.haigoo-career__grid { gap: clamp(1rem, 1.6vw, 1.5rem) !important; }
+.haigoo-career__card { min-width: 0; }
+.haigoo-career__media-label { top: 0.85rem; left: 0.85rem; max-width: calc(100% - 7rem); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haigoo-career__card .hg-career-access { max-width: 6rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.haigoo-career__notes-link { right: 0.85rem; bottom: 0.85rem; }
+.haigoo-career__content { min-width: 0; }
+.haigoo-career__content h3 { min-height: 3.2rem !important; }
+
+.hg-career-chapter .hg-career-story > div:nth-child(2),
+.hg-career-chapter .hg-career-story > h3,
+.hg-career-chapter .hg-career-story > p {
+  margin-right: 1.1rem !important;
+  margin-left: 1.1rem !important;
+}
+.hg-career-chapter .hg-career-story > div:nth-child(2) { padding-top: 0.05rem; }
+.hg-career-chapter .hg-career-story > p:last-child { padding-bottom: 0.35rem; }
+
+/* The resume preview needs a resolved height; min-height alone collapses an iframe. */
+.hg-resume-library__preview {
+  height: clamp(36rem, calc(100dvh - 14rem), 52rem);
+  min-height: 36rem !important;
+}
+.hg-resume-preview-pane,
+.hg-resume-preview-frame { height: 100% !important; min-height: 100% !important; }
+
+/* A collapsed workspace uses icons only and has one unambiguous expand control. */
+.hg-profile-sidebar[data-collapsed="true"] { padding-right: 1rem !important; }
+.hg-profile-sidebar[data-collapsed="true"] .hg-profile-sidebar-nav { padding-top: 3.2rem; }
+.hg-profile-collapse { border: 1px solid var(--hg-line) !important; border-radius: 999px !important; background: #fff !important; }
+.hg-profile-collapse:hover { border-color: var(--hg-accent-300) !important; background: var(--hg-accent-50) !important; color: var(--hg-accent-700) !important; }
+.hg-profile-sidebar[data-collapsed="true"] .hg-profile-collapse { right: 0.85rem !important; }
+.hg-profile-sidebar[data-collapsed="true"] .hg-profile-nav-item { width: 2.85rem; margin-inline: auto; border-radius: 0.75rem !important; }
+
+/* Subscription belongs to the company journey, rather than reading like a pasted banner. */
+.haigoo-home__subscription {
+  margin-top: 0 !important;
+  border-top: 1px solid var(--hg-line);
+  padding-block: clamp(2.5rem, 4vw, 4rem) !important;
+}
+.hg-member-subscription {
+  overflow: hidden !important;
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 1rem !important;
+  background: #fff !important;
+  padding: clamp(1.25rem, 2.5vw, 2rem) !important;
+  box-shadow: var(--hg-shadow-floating) !important;
+}
+.hg-member-subscription::before { position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--hg-accent-500); content: ""; }
+.hg-member-subscription [class~="border-[#e7c98e]"] { border-color: var(--hg-accent-300) !important; }
+.hg-member-subscription [class~="bg-[#fff8e8]"] { background: var(--hg-accent-50) !important; }
+.hg-member-subscription [class~="text-[#8f5e19]"] { color: var(--hg-accent-700) !important; }
+.hg-member-subscription [class~="bg-[#eff5fb]"] { background: var(--hg-accent-50) !important; }
+.hg-member-subscription [class~="border-[#9fbbd2]"] { border-color: var(--hg-accent-300) !important; }
+.hg-member-subscription [class~="text-[#466f9d]"],
+.hg-member-subscription [class~="text-[#587faa]"] { color: var(--hg-accent-700) !important; }
+.hg-member-subscription [class~="bg-[#466f9d]"] { background: var(--hg-accent-600) !important; }
+.hg-member-subscription [class~="hover:bg-[#345d88]"]:hover { background: var(--hg-accent-700) !important; }
+.hg-member-subscription button { border-radius: 0.75rem; }
+
+/* Member actions keep contrast in every interactive state. */
+.hg-member-benefit-card button:not(:disabled),
+.hg-member-benefit-card button:not(:disabled):hover,
+.hg-member-benefit-card button:not(:disabled):focus-visible,
+.hg-member-benefit-card button:not(:disabled):active {
+  border-color: var(--hg-accent-600) !important;
+  background: var(--hg-accent-600) !important;
+  color: #fff !important;
+  opacity: 1 !important;
+}
+.hg-member-benefit-card button:not(:disabled):hover { background: var(--hg-accent-700) !important; }
+
+/* Notifications use one selected outline; focus rings appear only for keyboard users. */
+.hg-notification-trigger[aria-expanded="true"] {
+  border-color: var(--hg-accent-300) !important;
+  background: var(--hg-accent-50) !important;
+  color: var(--hg-accent-700) !important;
+  box-shadow: none !important;
+}
+.hg-notification-popover { border-top-color: var(--hg-line) !important; }
+
+.hg-redemption-dialog { background: linear-gradient(145deg, #fff 0%, #fff 72%, var(--hg-accent-50) 145%) !important; }
+
+@media (max-width: 63.99rem) {
+  .haigoo-home__story.is-companies { overflow: hidden !important; }
+  .haigoo-home__company-stage { padding-right: 3.8rem; }
+  .haigoo-career__header { align-items: start; }
+}
+
+@media (max-width: 47.99rem) {
+  .haigoo-home__company-stage { padding: 4.3rem 1rem 1rem; }
+  .haigoo-home__company-stack { display: none; }
+  .haigoo-home__company-feature { grid-template-rows: minmax(0, 1.35fr) minmax(8.5rem, 0.7fr); }
+  .haigoo-career__header { grid-template-columns: 1fr !important; gap: 1rem !important; padding-inline: 0.25rem !important; }
+  .haigoo-career__header .haigoo-home__section-link { justify-self: start; margin: 0; }
+  .hg-resume-library__preview { height: 34rem; min-height: 34rem !important; padding: 0.75rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .haigoo-home__company-feature,
+  .haigoo-home__company-feature-image img,
+  .haigoo-home__company-dots button { animation: none !important; transition: none !important; transform: none !important; }
+}
+
+/* Final launch detail pass: compact role references, readable overlays, and one surface language. */
+.haigoo-home__story-copy--daily {
+  inset: 0;
+  overflow-y: auto;
+  padding: 4.6rem 1.15rem 1.1rem !important;
+  scrollbar-width: thin;
+}
+
+.haigoo-home__daily-card {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+}
+
+.haigoo-home__daily-list {
+  display: grid;
+  border-top: 1px solid rgb(255 255 255 / 0.22);
+}
+
+.haigoo-home__daily-role {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.2rem 0.75rem !important;
+  align-items: center;
+  min-height: 4.35rem;
+  margin: 0 !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgb(255 255 255 / 0.2) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  padding: 0.7rem 0.25rem !important;
+  transform: none !important;
+}
+
+.haigoo-home__daily-role:hover,
+.haigoo-home__daily-role:focus-visible {
+  background: rgb(255 255 255 / 0.08) !important;
+}
+
+.haigoo-home__daily-role span,
+.haigoo-home__daily-role strong { min-width: 0; }
+.haigoo-home__daily-role span { grid-column: 1; margin: 0 !important; }
+.haigoo-home__daily-role strong {
+  display: -webkit-box;
+  grid-column: 1;
+  overflow: hidden;
+  font-size: 0.95rem !important;
+  line-height: 1.32 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.haigoo-home__daily-role-arrow { grid-column: 2; grid-row: 1 / span 2; width: 1rem; }
+.haigoo-home__daily-footer { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-top: auto; padding-top: 0.9rem; }
+.haigoo-home__daily-link { align-self: flex-start; margin-top: 0 !important; padding-top: 0; }
+.haigoo-home__daily-updated { color: var(--hg-text-muted); font-size: 0.7rem; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; white-space: nowrap; }
+
+.haigoo-home__community-qr {
+  grid-template-columns: 1fr !important;
+  justify-items: start;
+  gap: 0.75rem !important;
+}
+
+.haigoo-home__community-qr img {
+  width: clamp(8.5rem, 10vw, 10.5rem) !important;
+  height: clamp(8.5rem, 10vw, 10.5rem) !important;
+  border-radius: 0.75rem;
+  padding: 0.25rem;
+}
+
+.hg-company-entry__footer { gap: 1rem; }
+.hg-company-entry__roles {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--hg-text-secondary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hg-haigoo-company-card__mark {
+  border: 0 !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hg-haigoo-company-card__mark img { background: transparent !important; }
+
+/* The profile rail scrolls independently and begins close to its first useful item. */
+.hg-profile-sidebar {
+  position: sticky !important;
+  top: 6.5rem !important;
+  align-self: flex-start !important;
+  max-height: calc(100dvh - 7.25rem);
+  min-height: 0 !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-top: 0.25rem !important;
+  padding-bottom: 1rem !important;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.hg-profile-sidebar > .flex { gap: 0.9rem !important; }
+.hg-profile-sidebar-intro > div:first-child { padding-bottom: 0.8rem !important; }
+.hg-profile-sidebar-intro > .pt-4 { padding-top: 0.75rem !important; }
+.hg-profile-member-summary { padding-block: 0.75rem !important; }
+.hg-profile-member-summary > div:last-child { margin-top: 0.65rem !important; padding-top: 0.65rem !important; }
+.hg-profile-sidebar-nav { padding-top: 0 !important; }
+
+/* Subscription menus must escape the card instead of being clipped by it. */
+.haigoo-home__subscription { position: relative; z-index: 12; overflow: visible !important; }
+.hg-member-subscription { overflow: visible !important; isolation: auto !important; }
+.hg-member-subscription [class*="top-[calc(100%+8px)]"] { z-index: 80 !important; }
+
+/* Long English titles keep full glyph height and a stable three-line measure. */
+.hg-career-story h3,
+.hg-career-chapter .hg-career-story > h3 {
+  display: -webkit-box !important;
+  min-height: 4.55rem !important;
+  overflow: hidden !important;
+  overflow-wrap: anywhere;
+  padding-bottom: 0.16rem;
+  font-size: clamp(1rem, 1.2vw, 1.18rem) !important;
+  line-height: 1.28 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Video notes use the same bright reading surface and orange focus language. */
+.hg-video-notes-backdrop {
+  background: rgb(24 32 51 / 0.58) !important;
+  backdrop-filter: blur(8px) saturate(0.82) !important;
+}
+
+.hg-video-notes-dialog {
+  border: 1px solid rgb(255 255 255 / 0.35) !important;
+  border-radius: 1rem !important;
+  background: #fff !important;
+  box-shadow: 0 2rem 6rem -2.5rem rgb(24 32 51 / 0.68) !important;
+}
+
+.hg-video-notes-header,
+.hg-video-notes-footer { border-color: var(--hg-line) !important; background: #fff !important; }
+.hg-video-notes-header { border-bottom: 1px solid var(--hg-line); }
+.hg-video-notes-footer { border-top: 1px solid var(--hg-line); }
+.hg-video-notes-meta { color: var(--hg-accent-700) !important; letter-spacing: 0 !important; }
+.hg-video-notes-meta span { color: var(--hg-text-muted); font-weight: 650; }
+.hg-video-notes-toolbar button {
+  display: inline-flex;
+  width: 2.55rem;
+  height: 2.55rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hg-line);
+  border-radius: 0.75rem;
+  background: #fff;
+  color: var(--hg-text-secondary);
+}
+.hg-video-notes-toolbar button:hover { border-color: var(--hg-accent-300); background: var(--hg-accent-50); color: var(--hg-accent-700); }
+.hg-video-notes-body { background: linear-gradient(180deg, #fff 0%, var(--hg-surface-soft) 135%); }
+.hg-video-notes-body > * { width: min(100%, 48rem); margin-inline: auto; }
+.hg-video-notes-body .animate-spin,
+.hg-career-notes-lock > svg { color: var(--hg-accent-600) !important; }
+.hg-video-notes-state { border: 1px solid var(--hg-line); border-radius: 0.875rem; background: #fff; }
+.hg-video-notes-primary {
+  justify-content: center;
+  border-radius: 0.75rem !important;
+  background: var(--hg-ink-950) !important;
+  color: #fff !important;
+}
+.hg-video-notes-primary:hover { background: var(--hg-accent-700) !important; }
+.hg-video-notes-article { color: var(--hg-text-secondary); }
+.hg-video-notes-article h2,
+.hg-video-notes-article h3 { font-family: var(--hg-font-sans) !important; letter-spacing: -0.02em; }
+.hg-video-notes-quote { border-color: var(--hg-accent-500) !important; background: var(--hg-accent-50); }
+
+/* Member consulting now follows the same calm structure as the public consulting page. */
+.hg-member-center { background: transparent !important; }
+.hg-member-center__hero {
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 1rem !important;
+  background: linear-gradient(135deg, #fff 0%, #fff 68%, var(--hg-accent-50) 150%) !important;
+  padding: clamp(1.4rem, 3vw, 2.4rem) !important;
+}
+.hg-member-center__hero h1 { max-width: 18ch !important; font-weight: 760 !important; line-height: 1.08 !important; }
+.hg-member-center__status {
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 0.875rem !important;
+  background: rgb(255 255 255 / 0.82) !important;
+  padding: 1rem !important;
+}
+.hg-member-center__status [class*="rounded-[20px]"] {
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 0.75rem !important;
+  background: var(--hg-surface-soft) !important;
+}
+.hg-member-benefits { padding-inline: 0 !important; }
+.hg-member-benefits > .grid { gap: 0.9rem !important; }
+.hg-member-benefit-card {
+  min-height: 12rem !important;
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 0.875rem !important;
+  background: #fff !important;
+  padding: 1rem !important;
+}
+.hg-member-benefit-card:nth-child(even) { border-left: 1px solid var(--hg-line) !important; }
+.hg-member-benefit-card > div:first-of-type > div:first-child { background: var(--hg-accent-50) !important; color: var(--hg-accent-700) !important; }
+.hg-member-footer-grid {
+  gap: 1rem !important;
+  border: 0 !important;
+}
+.hg-member-promise,
+.hg-member-help {
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 1rem !important;
+  background: #fff !important;
+  padding: clamp(1.1rem, 2.2vw, 1.5rem) !important;
+}
+.hg-member-promise > .pointer-events-none,
+.hg-member-help > img { display: none !important; }
+.hg-member-promise > .relative > .grid > div {
+  border: 1px solid var(--hg-line) !important;
+  border-radius: 0.75rem !important;
+  background: var(--hg-surface-soft) !important;
+  padding: 0.9rem !important;
+}
+.hg-member-promise > .relative > .grid > div > div:first-child { background: var(--hg-accent-50) !important; color: var(--hg-accent-700) !important; }
+.hg-member-help { border-left: 1px solid var(--hg-line) !important; }
+
+@media (min-width: 48rem) {
+  .hg-member-benefits > .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+
+@media (max-width: 47.99rem) {
+  .haigoo-home__story-copy--daily { padding: 4.35rem 0.85rem 0.85rem !important; }
+  .haigoo-home__daily-role { min-height: 4rem; }
+  .hg-video-notes-header { padding-right: 0.85rem !important; padding-left: 1rem !important; }
+  .hg-video-notes-toolbar { gap: 0.35rem; }
+  .hg-video-notes-toolbar button { width: 2.35rem; height: 2.35rem; }
+  .hg-profile-sidebar { position: static !important; max-height: none; overflow: visible; }
+  .hg-member-promise > .relative > .grid > div { border-top: 1px solid var(--hg-line) !important; }
+}
+
+/* Launch polish: light role references, accountable limits, and shared service trust. */
+.haigoo-home__story.is-daily {
+  border-color: #f0c8b4 !important;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(233, 104, 50, 0.12), transparent 31%),
+    linear-gradient(145deg, #fffaf6 0%, #fff4ec 100%) !important;
+  color: var(--hg-ink-950) !important;
+}
+
+.haigoo-home__story.is-daily .haigoo-home__story-switcher {
+  border-color: rgba(201, 79, 34, 0.2) !important;
+  background: rgba(255, 255, 255, 0.74) !important;
+}
+
+.haigoo-home__story.is-daily .haigoo-home__story-switcher button { color: var(--hg-text-muted) !important; }
+.haigoo-home__story.is-daily .haigoo-home__story-switcher button[aria-pressed="true"] {
+  background: var(--hg-ink-950) !important;
+  color: #fff !important;
+}
+
+.haigoo-home__story.is-daily .haigoo-home__daily-card,
+.haigoo-home__story.is-daily .haigoo-home__daily-role { color: var(--hg-ink-950) !important; }
+.haigoo-home__story.is-daily .haigoo-home__daily-role {
+  border-color: rgba(201, 79, 34, 0.18) !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+}
+.haigoo-home__story.is-daily .haigoo-home__daily-role:hover,
+.haigoo-home__story.is-daily .haigoo-home__daily-role:focus-visible { background: #fff !important; }
+.haigoo-home__story.is-daily .haigoo-home__daily-role span { color: var(--hg-text-muted) !important; font-weight: 560 !important; }
+.haigoo-home__story.is-daily .haigoo-home__daily-role strong { color: var(--hg-ink-950) !important; font-weight: 520 !important; }
+.haigoo-home__story.is-daily .haigoo-home__daily-role-arrow,
+.haigoo-home__story.is-daily .haigoo-home__daily-link { color: var(--hg-accent-700) !important; }
+
+.haigoo-home__usage-note {
+  display: grid;
+  align-items: center;
+  gap: 1rem 2rem;
+  padding-top: 1.15rem;
+  padding-bottom: 1.15rem;
+  border-top: 1px solid var(--hg-line);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.haigoo-home__usage-note strong { color: var(--hg-ink-950); font-size: 0.88rem; font-weight: 720; }
+.haigoo-home__usage-note p { max-width: 62rem; margin: 0.32rem 0 0; color: var(--hg-text-muted); font-size: 0.78rem; line-height: 1.65; }
+.haigoo-home__usage-note button {
+  display: inline-flex;
+  min-height: 2.6rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--hg-accent-700);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.haigoo-home__usage-note button:hover { color: var(--hg-ink-950); }
+
+.haigoo-home__advisor-modal { position: fixed; inset: 0; z-index: 10000; display: grid; place-items: center; padding: 1rem; }
+.haigoo-home__advisor-backdrop { position: absolute; inset: 0; border: 0; background: rgba(24, 32, 51, 0.56); backdrop-filter: blur(7px); }
+.haigoo-home__advisor-dialog {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  width: min(100%, 36rem);
+  gap: 1.2rem;
+  padding: clamp(1.35rem, 3vw, 2rem);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 2rem 5rem -2.4rem rgba(24, 32, 51, 0.65);
+  grid-template-columns: minmax(0, 1fr) 9.5rem;
+}
+.haigoo-home__advisor-dialog h2 { margin: 0.6rem 0 0; color: var(--hg-ink-950); font-size: clamp(1.45rem, 3vw, 2rem); line-height: 1.18; }
+.haigoo-home__advisor-dialog p:not(.haigoo-editorial-label) { margin: 0.8rem 0 0; color: var(--hg-text-muted); font-size: 0.88rem; line-height: 1.75; }
+.haigoo-home__advisor-dialog > a { align-self: end; color: var(--hg-accent-700); font-size: 0.82rem; font-weight: 700; text-decoration: none; }
+.haigoo-home__advisor-close { position: absolute; top: 0.8rem; right: 0.8rem; display: grid; width: 2.5rem; height: 2.5rem; place-items: center; border: 1px solid var(--hg-line); border-radius: 0.7rem; background: #fff; color: var(--hg-text-muted); }
+.haigoo-home__advisor-qr { grid-row: 1 / span 2; grid-column: 2; align-self: center; padding: 0.45rem; border: 1px solid var(--hg-line); background: #fff; }
+.haigoo-home__advisor-qr img { display: block; width: 100%; aspect-ratio: 1; object-fit: contain; }
+
+.hg-workspace-usage {
+  display: grid;
+  border-top: 1px solid var(--hg-line);
+  border-bottom: 1px solid var(--hg-line);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.hg-workspace-usage__item { min-width: 0; padding: 1.1rem 1.25rem; }
+.hg-workspace-usage__item + .hg-workspace-usage__item { border-left: 1px solid var(--hg-line); }
+.hg-workspace-usage__item span,
+.hg-workspace-usage__item small { display: block; color: var(--hg-text-muted); font-size: 0.72rem; line-height: 1.55; }
+.hg-workspace-usage__item strong { display: block; margin-top: 0.35rem; color: var(--hg-ink-950); font-size: 1.25rem; font-weight: 620; letter-spacing: -0.02em; }
+.hg-workspace-usage__item small { margin-top: 0.28rem; }
+
+.hg-workspace-usage-note {
+  display: grid;
+  align-items: end;
+  gap: 1.25rem 2rem;
+  margin-top: 1.25rem;
+  padding: 1.35rem 1.45rem;
+  border: 1px solid var(--hg-line);
+  border-radius: 1rem;
+  background: linear-gradient(135deg, #fffaf6, #fff 68%);
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.hg-workspace-usage-note h2 { margin: 0.35rem 0 0; color: var(--hg-ink-950); font-size: 1.05rem; font-weight: 680; letter-spacing: -0.015em; }
+.hg-workspace-usage-note p { max-width: 52rem; margin: 0.55rem 0 0; color: var(--hg-text-muted); font-size: 0.82rem; line-height: 1.75; }
+.hg-workspace-usage-note button { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.5rem; border: 0; background: transparent; color: var(--hg-accent-700); font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+.hg-workspace-usage-note button:hover { color: var(--hg-ink-950); }
+
+.hg-company-detail-page { background: #fff !important; background-image: none !important; }
+.hg-company-detail { padding-bottom: clamp(3rem, 6vw, 5rem); }
+.hg-company-detail__jobs { margin-inline: calc(-1 * clamp(0rem, 1vw, 0.8rem)); padding: clamp(3.5rem, 6vw, 5.5rem) clamp(0rem, 1vw, 0.8rem) 0; background: #fff; }
+.hg-company-detail__jobs > header { justify-content: flex-start; }
+
+.hg-consulting-trust-footer {
+  display: grid;
+  width: min(100%, 82.5rem);
+  margin: 2rem auto 0;
+  border-top: 1px solid var(--hg-line);
+  border-left: 1px solid var(--hg-line);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.hg-consulting-trust-footer > article {
+  display: flex;
+  min-height: 13rem;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.5rem;
+  border-right: 1px solid var(--hg-line);
+  border-bottom: 1px solid var(--hg-line);
+  background: #fff;
+}
+.hg-consulting-trust-footer > article > svg { width: 1.05rem; height: 1.05rem; color: var(--hg-accent-600); }
+.hg-consulting-trust-footer h3 { margin: 1.5rem 0 0; color: var(--hg-ink-950); font-size: 0.96rem; font-weight: 720; }
+.hg-consulting-trust-footer p { margin: 0.45rem 0 0; color: var(--hg-text-muted); font-size: 0.76rem; line-height: 1.75; }
+.hg-consulting-trust-footer__help h3 { margin-top: 0 !important; font-size: 1.1rem !important; }
+.hg-consulting-trust-footer__help button {
+  display: inline-flex;
+  width: 100%;
+  min-height: 2.8rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: auto;
+  border: 0;
+  background: var(--hg-accent-700);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 720;
+}
+.hg-consulting-trust-footer__help button:hover { background: var(--hg-ink-950); }
+.hg-consulting-trust-footer__help button svg { width: 1rem; }
+
+@media (max-width: 63.99rem) {
+  .hg-consulting-trust-footer { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 47.99rem) {
+  .haigoo-home__usage-note { grid-template-columns: 1fr; }
+  .haigoo-home__usage-note button { justify-self: start; padding: 0; }
+  .haigoo-home__advisor-dialog { grid-template-columns: 1fr; }
+  .haigoo-home__advisor-qr { width: 9.5rem; grid-row: auto; grid-column: auto; }
+  .hg-workspace-usage { grid-template-columns: 1fr; }
+  .hg-workspace-usage__item + .hg-workspace-usage__item { border-top: 1px solid var(--hg-line); border-left: 0; }
+  .hg-workspace-usage-note { align-items: start; grid-template-columns: 1fr; }
+  .hg-workspace-usage-note button { justify-self: start; padding: 0; }
+  .haigoo-home__daily-footer { align-items: flex-start; flex-direction: column; gap: 0.4rem; }
+  .hg-consulting-trust-footer { grid-template-columns: 1fr; }
+  .hg-consulting-trust-footer > article { min-height: 0; }
+}

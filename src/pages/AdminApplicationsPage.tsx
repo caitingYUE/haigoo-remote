@@ -68,7 +68,7 @@ export default function AdminApplicationsPage() {
 
     const userSortItems = [
         { key: 'total_applications', label: '总申请', tone: 'bg-blue-50 text-blue-700 border-blue-100' },
-        { key: 'email_count', label: '邮箱', tone: 'bg-indigo-50 text-indigo-700 border-indigo-100' },
+        { key: 'email_count', label: '邮箱', tone: 'bg-[#eff5fb] text-[#345d88] border-[#dce9f5]' },
         { key: 'official_count', label: '官网', tone: 'bg-emerald-50 text-emerald-700 border-emerald-100' },
         { key: 'platform_count', label: '三方', tone: 'bg-slate-50 text-slate-700 border-slate-100' }
     ] as const
@@ -220,8 +220,8 @@ export default function AdminApplicationsPage() {
             'pending': 'bg-yellow-100 text-yellow-800',
             'pending_apply': 'bg-blue-50 text-blue-600',
             'applied': 'bg-blue-100 text-blue-800',
-            'reviewed': 'bg-indigo-100 text-indigo-800',
-            'referred': 'bg-purple-100 text-purple-800',
+            'reviewed': 'bg-[#dce9f5] text-[#2d4f73]',
+            'referred': 'bg-[#fff8e8] text-[#6f4711]',
             'interviewing': 'bg-orange-100 text-orange-800',
             'success': 'bg-green-100 text-green-800',
             'rejected': 'bg-red-100 text-red-800',
@@ -264,7 +264,7 @@ export default function AdminApplicationsPage() {
                 <button
                     onClick={() => { setActiveTab('user'); setPage(1); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'user'
-                        ? 'border-indigo-600 text-indigo-600'
+                        ? 'border-[#466f9d] text-[#466f9d]'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -274,7 +274,7 @@ export default function AdminApplicationsPage() {
                 <button
                     onClick={() => { setActiveTab('email'); setPage(1); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'email'
-                        ? 'border-indigo-600 text-indigo-600'
+                        ? 'border-[#466f9d] text-[#466f9d]'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -284,7 +284,7 @@ export default function AdminApplicationsPage() {
                 <button
                     onClick={() => { setActiveTab('official'); setPage(1); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'official'
-                        ? 'border-indigo-600 text-indigo-600'
+                        ? 'border-[#466f9d] text-[#466f9d]'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -294,7 +294,7 @@ export default function AdminApplicationsPage() {
                 <button
                     onClick={() => { setActiveTab('trusted_platform'); setPage(1); }}
                     className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'trusted_platform'
-                        ? 'border-indigo-600 text-indigo-600'
+                        ? 'border-[#466f9d] text-[#466f9d]'
                         : 'border-transparent text-gray-500 hover:text-gray-700'
                         }`}
                 >
@@ -312,7 +312,7 @@ export default function AdminApplicationsPage() {
                         placeholder={activeTab === 'user' ? '搜索注册邮箱、用户、公司、岗位...' : '搜索用户、公司、岗位...'}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500"
+                        className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-[#587faa]"
                     />
                 </div>
             </div>
@@ -466,7 +466,7 @@ export default function AdminApplicationsPage() {
                                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                                     <button
                                                         onClick={() => setExpandedUsers(prev => ({ ...prev, [userRowKey]: !prev[userRowKey] }))}
-                                                        className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800"
+                                                        className="inline-flex items-center gap-1 text-[#466f9d] hover:text-[#2d4f73]"
                                                     >
                                                         {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                                                         {isExpanded ? '收起' : '查看'} {app.applications?.length || 0}
@@ -505,7 +505,7 @@ export default function AdminApplicationsPage() {
                                                                                         <a
                                                                                             href={`/api/resumes/${item.resume_id}/download`}
                                                                                             target="_blank"
-                                                                                            className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
+                                                                                            className="text-[#466f9d] hover:underline text-sm flex items-center gap-1"
                                                                                         >
                                                                                             <FileText className="w-3 h-3" />
                                                                                             {item.resume_name || item.resumeName}
@@ -593,7 +593,7 @@ export default function AdminApplicationsPage() {
                                                     <a
                                                         href={`/api/resumes/${app.resume_id}/download`}
                                                         target="_blank"
-                                                        className="text-indigo-600 hover:underline text-sm flex items-center gap-1"
+                                                        className="text-[#466f9d] hover:underline text-sm flex items-center gap-1"
                                                     >
                                                         <FileText className="w-3 h-3" />
                                                         {app.resume_name || app.resumeName}

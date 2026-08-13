@@ -184,7 +184,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
             />
 
             <div className="relative flex max-h-[88vh] w-full max-w-[560px] flex-col overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] transform transition-all">
-                <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] p-6 text-white flex-shrink-0">
+                <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)] p-6 text-white flex-shrink-0">
                     <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                     <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl"></div>
                     
@@ -194,7 +194,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                         </div>
                         <h2 className="text-xl font-bold text-white">申请内推</h2>
                     </div>
-                    <p className="relative z-10 text-indigo-100 text-sm">
+                    <p className="relative z-10 text-[#dce9f5] text-sm">
                         选择简历并补充信息后，我们会在 <strong>3 个工作日内</strong> 为你推进申请。
                     </p>
                 </div>
@@ -225,7 +225,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 disabled={isUploading}
-                                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                                className="text-sm text-[#466f9d] hover:text-[#345d88] font-medium flex items-center gap-1"
                             >
                                 {isUploading ? (
                                     '上传中...'
@@ -247,7 +247,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
 
                         {isLoadingResumes ? (
                             <div className="text-center py-8 text-slate-500">
-                                <div className="w-8 h-8 border-4 border-slate-300 border-t-indigo-600 rounded-full animate-spin mx-auto mb-2"></div>
+                                <div className="w-8 h-8 border-4 border-slate-300 border-t-[#466f9d] rounded-full animate-spin mx-auto mb-2"></div>
                                 加载简历中...
                             </div>
                         ) : resumes.length === 0 ? (
@@ -273,8 +273,8 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                                 {resumes.map((resume) => (
                                     <label
                                         key={resume.id}
-                                        className={`flex items-start gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all hover:border-indigo-300 ${selectedResumeId === resume.id
-                                                ? 'border-indigo-600 bg-indigo-50'
+                                        className={`flex items-start gap-3 p-3 border-2 rounded-xl cursor-pointer transition-all hover:border-[#9fbbd2] ${selectedResumeId === resume.id
+                                                ? 'border-[#466f9d] bg-[#eff5fb]'
                                                 : 'border-slate-200 bg-white'
                                             }`}
                                     >
@@ -288,7 +288,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                                         />
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2">
-                                                <FileText className="w-4 h-4 text-indigo-600" />
+                                                <FileText className="w-4 h-4 text-[#466f9d]" />
                                                 <span className="font-medium text-slate-900 text-sm">{resume.fileName}</span>
                                             </div>
                                             <p className="text-xs text-slate-500 mt-1">
@@ -296,7 +296,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                                             </p>
                                         </div>
                                         {selectedResumeId === resume.id && (
-                                            <CheckCircle className="w-5 h-5 text-indigo-600 flex-shrink-0" />
+                                            <CheckCircle className="w-5 h-5 text-[#466f9d] flex-shrink-0" />
                                         )}
                                     </label>
                                 ))}
@@ -313,7 +313,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="例如: 特别感兴趣该岗位的某个方向，或者您认为自己特别适合的理由..."
-                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent resize-none text-sm"
+                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#466f9d] focus:border-transparent resize-none text-sm"
                             rows={3}
                             maxLength={500}
                         />
@@ -345,7 +345,7 @@ export const ReferralApplicationModal: React.FC<ReferralApplicationModalProps> =
                     <button
                         onClick={handleSubmit}
                         disabled={isSubmitting || !selectedResumeId || resumes.length === 0}
-                        className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-xl"
+                        className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#466f9d] to-[#8f5e19] px-6 py-3 text-sm font-bold text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 hover:-translate-y-0.5 hover:shadow-xl"
                     >
                         {isSubmitting ? (
                             <>

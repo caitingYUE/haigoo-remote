@@ -14,7 +14,7 @@ export default function LanguageToggle({ className = '', showIcon = false }: Lan
     <button
       type="button"
       onClick={toggleLanguage}
-      className={`inline-flex h-9 min-w-[48px] items-center justify-center gap-1.5 rounded-full border border-[#dfe8ef] bg-white px-2.5 text-xs font-black tracking-wide text-slate-600 shadow-sm transition-colors hover:border-[#c8d7e5] hover:bg-slate-50 hover:text-[#6251f5] ${className}`}
+      className={`haigoo-language-toggle inline-flex h-9 min-w-[44px] items-center justify-center gap-1.5 border px-2.5 text-[11px] font-bold tracking-[0.12em] transition-colors ${className}`}
       aria-label={label}
       title={label}
     >

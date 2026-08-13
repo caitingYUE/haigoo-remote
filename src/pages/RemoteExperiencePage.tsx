@@ -202,7 +202,7 @@ export default function RemoteExperiencePage() {
     const colorMap: { [key: string]: string } = {
       '工作心得': 'bg-blue-100 text-blue-800',
       '数字游民': 'bg-green-100 text-green-800',
-      '工具推荐': 'bg-purple-100 text-purple-800',
+      '工具推荐': 'bg-[#fff8e8] text-[#6f4711]',
       '新手指南': 'bg-yellow-100 text-yellow-800',
       '面试技巧': 'bg-red-100 text-red-800',
       '健康管理': 'bg-pink-100 text-pink-800'

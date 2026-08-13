@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, Share2, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Share2, FileQuestion } from 'lucide-react'
 import { Job } from '../types'
 import { JobDetailPanel } from '../components/JobDetailPanel'
 import { useAuth } from '../contexts/AuthContext'
@@ -11,6 +11,7 @@ import { ShareJobModal } from '../components/ShareJobModal'
 import { decodeJobId, getJobSharePath } from '../utils/share-link-helper'
 import { useReturnNavigation } from '../hooks/useReturnNavigation'
 import { useLanguage } from '../contexts/LanguageContext'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 export default function JobDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -50,9 +51,9 @@ export default function JobDetailPage() {
       if (!id) return
       setLoading(true)
       try {
-        // 登录态优先走个性化匹配接口，确保详情页能拿到 matchLevel/matchDetails
+        // 个性化匹配代码保留；合规开关关闭时详情仅读取普通岗位数据。
         let resp: Response
-        if (isAuthenticated && token) {
+        if (COMPLIANCE_FEATURES.personalizedJobDiscovery && isAuthenticated && token) {
           const personalizedParams = new URLSearchParams({
             action: 'jobs_with_match_score',
             id: String(resolvedJobId),
@@ -71,7 +72,7 @@ export default function JobDetailPage() {
           resp = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(resolvedJobId)}`)
         }
 
-        if (!resp.ok) throw new Error(textRef.current('职位不存在或已下线', 'This job does not exist or is no longer available.'))
+        if (!resp.ok) throw new Error(textRef.current('该职位可能已下线、过期，或当前不可访问。', 'This job may be closed, expired, or unavailable to you.'))
         const data = await resp.json()
         if (data.jobs && data.jobs.length > 0) {
           const fetchedJob = data.jobs[0]
@@ -85,7 +86,7 @@ export default function JobDetailPage() {
             trackingService.track('view_job_detail', { jobId: resolvedJobId, title: fetchedJob.title })
           }
         } else {
-          setError(textRef.current('职位不存在或已下线', 'This job does not exist or is no longer available.'))
+          setError(textRef.current('该职位可能已下线、过期，或当前不可访问。', 'This job may be closed, expired, or unavailable to you.'))
           startRedirectCountdown()
         }
       } catch (err) {
@@ -182,23 +183,24 @@ export default function JobDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[#466f9d] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
 
   if (error || !job) {
     return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-sm max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8 text-red-500" />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-[#f7f5ef] p-4">
+        <div className="w-full max-w-xl border-y border-[#cfcbbf] bg-[#fffdf8] px-6 py-12 text-center sm:border-x sm:px-12">
+          <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center border border-[#9eb9ad] bg-[#eef4f0] text-[#31594e]">
+            <FileQuestion className="h-6 w-6" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mb-2">{text('无法加载职位', 'Could not load this job')}</h2>
-          <p className="text-slate-500 mb-6">{error || text('职位可能已过期或被删除', 'The job may have expired or been removed.')}</p>
+          <p className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-[#55746a]">Haigoo Remote · Job notice</p>
+          <h2 className="mb-3 font-serif text-3xl font-semibold tracking-tight text-[#101829]">{text('该职位链接已失效', 'This job link is no longer valid')}</h2>
+          <p className="mx-auto mb-8 max-w-md text-sm leading-7 text-slate-600">{error || text('该职位可能已下线、过期，或当前不可访问。', 'This job may be closed, expired, or unavailable to you.')}</p>
           <button
             onClick={() => navigate('/jobs')}
-            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            className="inline-flex h-11 items-center justify-center border border-[#1b2440] bg-[#1b2440] px-7 text-sm font-bold text-white transition-colors hover:border-[#31594e] hover:bg-[#31594e]"
           >
             {text('查看其他职位', 'Browse other jobs')}
           </button>
@@ -229,7 +231,7 @@ export default function JobDetailPage() {
         <div className="lg:mb-6 hidden lg:block">
           <button
             onClick={handleBack}
-            className="flex items-center text-slate-500 hover:text-indigo-600 transition-colors"
+            className="flex items-center text-slate-500 hover:text-[#466f9d] transition-colors"
           >
             <ArrowLeft className="w-4 h-4 mr-1" />
             {text('返回', 'Back')}

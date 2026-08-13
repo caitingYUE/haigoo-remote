@@ -15,8 +15,8 @@ const AdminTrackingManagement: React.FC = () => {
       <div className="card">
         <div className="card-header">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <Map className="w-6 h-6 text-indigo-600" />
+            <div className="p-2 bg-[#dce9f5] rounded-lg">
+              <Map className="w-6 h-6 text-[#466f9d]" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-900">全链路埋点设计方案</h2>
@@ -31,7 +31,7 @@ const AdminTrackingManagement: React.FC = () => {
         <div className="card-content">
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 mb-8">
             <h3 className="font-bold text-slate-800 mb-4 flex items-center">
-              <BarChart2 className="w-5 h-5 mr-2 text-indigo-600" />
+              <BarChart2 className="w-5 h-5 mr-2 text-[#466f9d]" />
               核心转化漏斗 (Core Funnel)
             </h3>
             <div className="flex items-center justify-between text-sm relative">
@@ -44,7 +44,7 @@ const AdminTrackingManagement: React.FC = () => {
                 { label: '会员订阅 (Revenue)', metric: '付费转化率' }
               ].map((step, index) => (
                 <div key={index} className="flex flex-col items-center relative z-10 bg-slate-50 px-2">
-                  <div className="w-10 h-10 rounded-full bg-white border-2 border-indigo-200 flex items-center justify-center font-bold text-indigo-600 mb-2 shadow-sm">
+                  <div className="w-10 h-10 rounded-full bg-white border-2 border-[#c9dce8] flex items-center justify-center font-bold text-[#466f9d] mb-2 shadow-sm">
                     {index + 1}
                   </div>
                   <span className="font-medium text-slate-900">{step.label}</span>
@@ -52,7 +52,7 @@ const AdminTrackingManagement: React.FC = () => {
                 </div>
               ))}
               {/* Connector Line */}
-              <div className="absolute top-5 left-0 w-full h-0.5 bg-indigo-100 -z-0"></div>
+              <div className="absolute top-5 left-0 w-full h-0.5 bg-[#dce9f5] -z-0"></div>
             </div>
           </div>
 
@@ -129,9 +129,9 @@ const AdminTrackingManagement: React.FC = () => {
 const TrackingSection = ({ title, icon, color, events }: any) => {
   const colorMap: Record<string, string> = {
     blue: 'text-blue-600 bg-blue-50 border-blue-100',
-    indigo: 'text-indigo-600 bg-indigo-50 border-indigo-100',
+    indigo: 'text-[#466f9d] bg-[#eff5fb] border-[#dce9f5]',
     green: 'text-green-600 bg-green-50 border-green-100',
-    purple: 'text-purple-600 bg-purple-50 border-purple-100',
+    purple: 'text-[#8f5e19] bg-[#fff8e8] border-[#f8ecd3]',
   };
 
   return (
@@ -153,7 +153,7 @@ const TrackingSection = ({ title, icon, color, events }: any) => {
           <tbody>
             {events.map((event: any) => (
               <tr key={event.id}>
-                <td className="font-mono text-xs text-indigo-600">{event.id}</td>
+                <td className="font-mono text-xs text-[#466f9d]">{event.id}</td>
                 <td className="font-medium">{event.name}</td>
                 <td className="text-slate-600 text-sm">{event.desc}</td>
                 <td className="text-xs text-slate-500 font-mono">{event.params}</td>

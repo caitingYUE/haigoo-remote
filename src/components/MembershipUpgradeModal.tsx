@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { CheckCircle2, Crown, Loader2, Sparkles, X } from 'lucide-react'
+import { CheckCircle2, Crown, Loader2, X } from 'lucide-react'
 import { trackingService } from '../services/tracking-service'
 
 interface MembershipUpgradeModalProps {
@@ -39,7 +39,7 @@ const FALLBACK_PLANS: Plan[] = [
     duration_days: 31,
     discountLabel: '工具服务',
     description: '适合远程入门或目标明确、希望通过网站信息和工具高效推进投递的用户。',
-    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长权益', 'AI 简历优化、岗位订阅等工具', '纯网站工具服务，不含语音咨询']
+    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长内容', '简历优化与岗位订阅工具', '申请进度与方向管理']
   },
   {
     id: 'club_half_year',
@@ -51,7 +51,7 @@ const FALLBACK_PLANS: Plan[] = [
     duration_days: 183,
     discountLabel: '长期陪伴',
     description: '适合正在认真探索远程工作，希望获得长期岗位资源和求职支持的用户。',
-    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长权益', 'AI 简历优化、岗位订阅等工具', '30-60 分钟语音 1V1 咨询']
+    features: ['全部精选岗位资源', '全部申请路径和联系人信息', '完整远程职业成长内容', '简历优化与岗位订阅工具', '一对一专业语音咨询']
   },
   {
     id: 'club_annual',
@@ -89,16 +89,16 @@ const PLAN_FEATURE_COPY: Partial<Record<Plan['memberType'], string[]>> = {
   starter: [
     '全部精选岗位资源',
     '全部申请路径和联系人信息',
-    '完整远程职业成长权益',
-    'AI 简历优化、岗位订阅等工具',
-    '纯网站工具服务，不含语音咨询'
+    '完整远程职业成长内容',
+    '简历优化与岗位订阅工具',
+    '申请进度与方向管理'
   ],
   half_year: [
     '全部精选岗位资源',
     '全部申请路径和联系人信息',
-    '完整远程职业成长权益',
-    'AI 简历优化、岗位订阅等工具',
-    '30-60 分钟语音 1V1 咨询'
+    '完整远程职业成长内容',
+    '简历优化与岗位订阅工具',
+    '一对一专业语音咨询'
   ],
   annual: [
     'Club Member 全部权益',
@@ -150,9 +150,10 @@ const getVisibleFeatures = (plan: Plan) => {
   const priority = [
     '全部精选岗位资源',
     '全部申请路径和联系人信息',
-    '完整远程职业成长权益',
-    'AI 简历优化、岗位订阅等工具',
-    '纯网站工具服务，不含语音咨询',
+    '完整远程职业成长内容',
+    '简历优化与岗位订阅工具',
+    '申请进度与方向管理',
+    '一对一专业语音咨询',
     'Club Member 全部权益',
     '1 次远程求职规划',
     '优先参与会员闭门交流',
@@ -303,26 +304,25 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[4000] flex items-start justify-center overflow-y-auto p-2 sm:items-center sm:p-4" role="dialog" aria-modal="true">
-      <div className="absolute inset-0 cursor-pointer bg-slate-950/50 backdrop-blur-sm" onClick={onClose} />
+    <div className="fixed inset-0 z-[4000] flex items-start justify-center overflow-y-auto p-2 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="membership-upgrade-title">
+      <div className="absolute inset-0 cursor-pointer bg-[#101829]/58 backdrop-blur-[3px]" onClick={onClose} />
 
-      <div className="relative my-2 max-h-[calc(100dvh-1rem)] w-full max-w-[1120px] overflow-y-auto rounded-[24px] border border-indigo-100 bg-[#fffdf9] shadow-[0_36px_120px_-52px_rgba(15,23,42,0.45)] animate-in fade-in zoom-in duration-200 sm:my-0 sm:rounded-[30px]">
+      <div className="relative my-2 max-h-[calc(100dvh-1rem)] w-full max-w-[1120px] overflow-y-auto border border-[#d9d3c9] border-t-2 border-t-[#101829] bg-[#fffdf8] shadow-[0_28px_72px_-28px_rgba(15,23,42,0.42)] animate-in fade-in zoom-in duration-200 sm:my-0">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 z-20 rounded-full border border-[#dce8ef] bg-white/85 p-2 text-slate-500 backdrop-blur transition-colors hover:border-indigo-200 hover:text-indigo-700"
+          className="absolute right-4 top-4 z-20 flex h-10 w-10 items-center justify-center border border-[#d9d3c9] bg-[#fffdf8] text-slate-500 transition-colors hover:border-[#90a59b] hover:text-[#31594e]"
           aria-label="关闭"
         >
           <X className="h-4 w-4" />
         </button>
 
-        <div className="relative overflow-hidden border-b border-[#edf1f5] bg-[linear-gradient(135deg,#f8fbff_0%,#fff8ea_56%,#ffffff_100%)] px-5 py-4 sm:px-7 sm:py-5">
-          <div className="pointer-events-none absolute right-8 top-5 h-28 w-28 rounded-full bg-[#e9ddff]/45 blur-3xl" />
+        <div className="relative overflow-hidden border-b border-[#d9d3c9] bg-[#f7f6f1] px-5 py-4 sm:px-7 sm:py-5">
           <div className="relative z-10 pr-12">
-            <div className="mb-2 inline-flex items-center gap-1.5 rounded-full border border-indigo-100 bg-white/75 px-3 py-1 text-xs font-black text-indigo-700">
+            <div className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-[0.16em] text-[#52738c]">
               <Crown className="h-3.5 w-3.5" />
               {modalCopy.eyebrow}
             </div>
-            <h3 className="text-[24px] font-black leading-tight tracking-tight text-slate-950 sm:text-[32px]">
+            <h3 id="membership-upgrade-title" className="font-[var(--hg-font-editorial)] text-[26px] font-semibold leading-tight tracking-[-0.03em] text-slate-950 sm:text-[34px]">
               {modalCopy.title}
             </h3>
             {modalCopy.description ? (
@@ -347,7 +347,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                 const selected = selectedPlan.id === plan.id
                 const isAnnualPlan = plan.memberType === 'annual'
                 const selectedClass = isAnnualPlan
-                  ? 'border-indigo-200 bg-[linear-gradient(135deg,rgba(238,242,255,0.95),rgba(255,255,255,0.98))] shadow-[0_20px_46px_-34px_rgba(79,70,229,0.35)]'
+                  ? 'border-[#c9dce8] bg-[linear-gradient(135deg,rgba(238,242,255,0.95),rgba(255,255,255,0.98))] shadow-[0_20px_46px_-34px_rgba(79,70,229,0.35)]'
                   : 'border-emerald-200 bg-[linear-gradient(135deg,rgba(236,253,245,0.95),rgba(255,255,255,0.98))] shadow-[0_20px_46px_-34px_rgba(16,185,129,0.28)]'
                 return (
                   <button
@@ -374,7 +374,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                     className={`w-full rounded-[22px] border p-4 text-left transition-all sm:rounded-[24px] sm:p-5 ${
                       selected
                         ? selectedClass
-                        : 'border-slate-100 bg-white hover:border-indigo-100 hover:bg-indigo-50/30'
+                        : 'border-slate-100 bg-white hover:border-[#dce9f5] hover:bg-[#eff5fb]/30'
                     }`}
                   >
                     <div className="space-y-4">
@@ -384,7 +384,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                           {copy.badge ? (
                             <span className={`rounded-full px-2.5 py-1 text-[11px] font-black ${
                               isAnnualPlan
-                                ? 'bg-[#f1efff] text-[#6f63f6]'
+                                ? 'bg-[#eff5fb] text-[#466f9d]'
                                 : 'bg-emerald-50 text-emerald-700'
                             }`}>
                               {copy.badge}
@@ -408,14 +408,14 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
                     <div className="mt-4 space-y-2.5">
                       {getVisibleFeatures(plan).map(feature => (
                         <div key={feature} className="flex min-w-0 items-start gap-2 text-sm font-semibold leading-5 text-slate-600">
-                          <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isAnnualPlan ? 'text-[#6f63f6]' : 'text-emerald-500'}`} />
+                          <CheckCircle2 className={`mt-0.5 h-4 w-4 shrink-0 ${isAnnualPlan ? 'text-[#466f9d]' : 'text-emerald-500'}`} />
                           <span>{feature}</span>
                         </div>
                       ))}
                     </div>
                     <div className={`mt-4 inline-flex rounded-full px-3 py-1.5 text-xs font-black ${
                       isAnnualPlan
-                        ? 'bg-[#f1efff] text-[#6f63f6]'
+                        ? 'bg-[#eff5fb] text-[#466f9d]'
                         : 'bg-emerald-50 text-emerald-700'
                     }`}>
                       {getPlanAdvisorCta(plan.memberType)}
@@ -427,7 +427,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
           </div>
           </div>
 
-          <div className="rounded-[22px] border border-[#e8eef5] bg-white p-3.5 shadow-[0_18px_46px_-38px_rgba(15,23,42,0.28)] sm:rounded-[24px] sm:p-4 lg:sticky lg:top-4">
+          <div className="border border-[#d9d3c9] border-t-2 border-t-[#31594e] bg-white p-3.5 sm:p-4 lg:sticky lg:top-4">
             <div>
               <div className="text-lg font-black text-slate-950">添加顾问，了解 Club 服务</div>
               <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">
@@ -435,7 +435,7 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
               </p>
             </div>
 
-            <div className="mt-3 border border-slate-100 bg-slate-50/70 p-3 sm:mt-4 sm:p-4">
+            <div className="mt-3 border border-[#d9d3c9] bg-[#f7f6f1] p-3 sm:mt-4 sm:p-4">
               <img
                 src="/series_assistant.png"
                 alt="企业微信顾问二维码"
@@ -443,20 +443,20 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
               />
             </div>
 
-            <div className="mt-3 rounded-[18px] border border-[#e8eef5] bg-[#fbfdff] px-4 py-3">
+            <div className="mt-3 divide-y divide-[#e6e1d8] border-y border-[#e6e1d8] px-1 py-1">
               {[
                 '添加 Haigoo 顾问',
                 '发送注册邮箱和想了解的会员方案',
                 '顾问确认后开通对应网站权限'
               ].map((step, index) => (
-                <div key={step} className="flex items-center gap-2 py-1 text-xs font-semibold leading-5 text-slate-600">
-                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#f0edff] text-[11px] font-black text-[#6f63f6]">{index + 1}</span>
+                <div key={step} className="grid grid-cols-[1.75rem_1fr] items-center gap-2 py-2 text-xs font-semibold leading-5 text-slate-600">
+                  <span className="font-[var(--hg-font-editorial)] text-sm font-semibold text-[#52738c]">0{index + 1}</span>
                   <span>{step}</span>
                 </div>
               ))}
             </div>
 
-            <div className="mt-3 rounded-[18px] border border-[#e8eef5] bg-white px-4 py-3 text-left text-xs leading-5 text-slate-600">
+            <div className="mt-3 border border-[#e6e1d8] bg-[#fffdf8] px-4 py-3 text-left text-xs leading-5 text-slate-600">
               <div className="grid grid-cols-[64px_1fr] gap-3 py-1">
                 <span className="font-black text-slate-500">服务主体</span>
                 <span className="font-semibold text-slate-700">行渡科技（杭州）有限责任公司</span>
@@ -470,9 +470,9 @@ export const MembershipUpgradeModal: React.FC<MembershipUpgradeModalProps> = ({
             <button
               type="button"
               onClick={handleAdvisorAdded}
-              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-sm font-black text-white transition-all hover:-translate-y-0.5 hover:bg-[#2f6ed8] disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 bg-[#101829] px-4 text-sm font-black text-white transition-colors hover:bg-[#31594e] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              <Sparkles className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4" />
               我已添加顾问
             </button>
 

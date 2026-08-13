@@ -117,7 +117,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     type="text"
                                     value={formData.companyName}
                                     onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/10 outline-none transition-all"
                                     placeholder={text('请输入企业名称', 'Enter the company name')}
                                     required
                                 />
@@ -134,7 +134,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     type="url"
                                     value={formData.companyWebsite}
                                     onChange={(e) => setFormData(prev => ({ ...prev, companyWebsite: e.target.value }))}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/10 outline-none transition-all"
                                     placeholder="https://..."
                                     required
                                 />
@@ -151,7 +151,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                     type="text"
                                     value={formData.contact}
                                     onChange={(e) => setFormData(prev => ({ ...prev, contact: e.target.value }))}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all"
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/10 outline-none transition-all"
                                     placeholder={text('HR 邮箱、微信或电话', 'HR email, WhatsApp, WeChat, or phone')}
                                     required
                                 />
@@ -167,7 +167,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                                 <textarea
                                     value={formData.recruitmentNeeds}
                                     onChange={(e) => setFormData(prev => ({ ...prev, recruitmentNeeds: e.target.value }))}
-                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 outline-none transition-all min-h-[100px] resize-none"
+                                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/10 outline-none transition-all min-h-[100px] resize-none"
                                     placeholder={text('简述需要招聘的岗位、人数或特殊要求...', 'Briefly describe the roles, headcount, or special requirements...')}
                                 />
                             </div>
@@ -184,7 +184,7 @@ export const CompanyNominationModal: React.FC<CompanyNominationModalProps> = ({ 
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-sm shadow-indigo-500/20 transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="px-6 py-2 text-sm font-bold text-white bg-[#466f9d] hover:bg-[#345d88] rounded-lg shadow-sm shadow-[rgba(70,111,157,0.20)] transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 {text('提交需求', 'Submit request')}

@@ -98,8 +98,8 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
       'pending': 'bg-yellow-100 text-yellow-800 border-yellow-200',
       'pending_apply': 'bg-blue-50 text-blue-600 border-blue-200',
       'applied': 'bg-blue-100 text-blue-800 border-blue-200',
-      'reviewed': 'bg-indigo-100 text-indigo-800 border-indigo-200',
-      'referred': 'bg-purple-100 text-purple-800 border-purple-200',
+      'reviewed': 'bg-[#dce9f5] text-[#2d4f73] border-[#c9dce8]',
+      'referred': 'bg-[#fff8e8] text-[#6f4711] border-[#e7c98e]',
       'interviewing': 'bg-orange-100 text-orange-800 border-orange-200',
       'success': 'bg-green-100 text-green-800 border-green-200',
       'rejected': 'bg-red-100 text-red-800 border-red-200',
@@ -111,44 +111,45 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
 
   const getStatusLabel = (status: string) => {
     const labels: Record<string, string> = {
-      'pending': '待处理',
-      'pending_apply': '待投递',
+      'pending': '想申请',
+      'pending_apply': '想申请',
       'applied': '已申请',
-      'reviewed': '简历已阅',
-      'referred': '已内推',
-      'interviewing': '面试中',
-      'success': '内推成功',
-      'rejected': '已拒绝',
-      'failed': '内推失败',
-      'offer': '已录用'
+      'reviewed': '已申请',
+      'referred': '已申请',
+      'interviewing': '面试',
+      'success': '已结束',
+      'rejected': '已结束',
+      'failed': '已结束',
+      'offer': '已结束'
     }
     return labels[status] || status
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">加载中...</div>
+    return <div className="hg-application-loading py-16 text-sm text-gray-500">正在读取申请记录…</div>
   }
 
   if (applications.length === 0) {
     return (
-      <div className="p-12 text-center bg-white rounded-xl border border-gray-100 shadow-sm">
-        <Briefcase className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900">暂无申请记录</h3>
-        <p className="text-gray-500 mt-2">您还没有投递过任何岗位，快去看看吧！</p>
+      <div className="hg-profile-empty min-h-[260px] py-12 text-left">
+        <Briefcase className="mb-4 h-5 w-5 text-[#466f9d]" />
+        <h3 className="text-lg font-semibold text-gray-900">还没有申请记录</h3>
+        <p className="mt-2 text-sm text-gray-500">通过官网直申后，可以在这里继续记录进展。</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Briefcase className="w-6 h-6" />
-          我的申请
+    <div className="hg-application-list space-y-4">
+      <header className="hg-application-header flex items-end justify-between gap-5">
+        <div>
+          <div className="hg-product-kicker">APPLICATIONS</div>
+          <h2>申请记录</h2>
+          <p>记录你主动申请过的岗位，以及后续进展。</p>
         </div>
-        <span className="text-xs font-normal text-gray-400">仅保留近1年的申请记录</span>
-      </h2>
-      <div className="space-y-4">
+        <span className="text-xs font-normal text-gray-400">保留近 1 年</span>
+      </header>
+      <div className="hg-application-records">
         {applications.map((app) => {
           const statusNode = (
             <div className="flex items-center gap-2">
@@ -157,12 +158,12 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
                   value={app.status}
                   onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
                   disabled={updatingId === app.id}
-                  className={`appearance-none pl-3 pr-7 py-0.5 rounded-full text-xs font-medium border cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500 disabled:opacity-70 ${getStatusColor(app.status)}`}
+                  className={`h-11 appearance-none rounded-full border pl-3 pr-8 text-xs font-medium cursor-pointer transition-colors focus:ring-2 focus:ring-offset-1 focus:ring-[#587faa] disabled:opacity-70 ${getStatusColor(app.status)}`}
                 >
-                  <option value="applied">已投递</option>
-                  <option value="interviewing">面试中</option>
-                  <option value="offer">已录用</option>
-                  <option value="rejected">已拒绝</option>
+                  <option value="applied">已申请</option>
+                  <option value="interviewing">面试</option>
+                  <option value="offer">结束 · 已录用</option>
+                  <option value="rejected">结束 · 未继续</option>
                   {['referred', 'reviewed', 'pending', 'pending_apply', 'success', 'failed'].includes(app.status) && (
                     <option value={app.status} disabled>{getStatusLabel(app.status)}</option>
                   )}
@@ -174,7 +175,7 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
 
           if (!app.job?.id) {
             return (
-              <div key={app.id} className="relative bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
+              <div key={app.id} className="hg-application-row relative flex items-center justify-between py-5">
                 <div>
                   <h3 className="font-bold text-lg text-slate-900 mb-1.5 truncate">{app.jobTitle}</h3>
                   <div className="flex items-center gap-1.5 text-sm text-slate-600 font-medium">
@@ -184,7 +185,12 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
                     该职位已失效或信息不全
                   </div>
                 </div>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(app.id); }} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg">
+                <button
+                  type="button"
+                  aria-label="删除这条申请记录"
+                  onClick={(e) => { e.stopPropagation(); handleDelete(app.id); }}
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-500"
+                >
                   <Trash2 className="w-5 h-5" />
                 </button>
               </div>
@@ -192,7 +198,7 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
           }
 
           return (
-            <div key={app.id} className="relative group flex flex-col gap-0 bg-white rounded-2xl shadow-sm border border-slate-100 hover:border-indigo-200 hover:shadow-md transition-all">
+            <div key={app.id} className="hg-application-row group relative flex flex-col gap-0 transition-colors">
               <JobCardNew
                 job={{ ...app.job, isFeatured: false, appliedAt: app.updatedAt } as any}
                 variant="list"
@@ -211,7 +217,7 @@ export default function MyApplicationsTab({ onViewJob }: { onViewJob?: (job: Job
                           href={`/api/resumes/${app.resumeId}/download`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-1.5 text-indigo-600 hover:text-indigo-700 hover:underline font-medium truncate max-w-[200px]"
+                          className="flex items-center gap-1.5 text-[#466f9d] hover:text-[#345d88] hover:underline font-medium truncate max-w-[200px]"
                         >
                           <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                           <span className="truncate">{app.resumeName}</span>

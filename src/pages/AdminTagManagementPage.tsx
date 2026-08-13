@@ -199,11 +199,11 @@ export default function AdminTagManagementPage() {
                         onChange={(e) => setNewValue({ ...newValue, [type]: e.target.value })}
                         onKeyPress={(e) => e.key === 'Enter' && handleAdd(type)}
                         placeholder="输入新标签..."
-                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        className="flex-1 px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent"
                     />
                     <button
                         onClick={() => handleAdd(type)}
-                        className="px-4 py-2 bg-indigo-600 text-white text-sm rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 whitespace-nowrap"
+                        className="px-4 py-2 bg-[#466f9d] text-white text-sm rounded-lg hover:bg-[#345d88] transition-colors flex items-center gap-2 whitespace-nowrap"
                     >
                         <Plus className="w-4 h-4" />
                         添加
@@ -225,7 +225,7 @@ export default function AdminTagManagementPage() {
                                     value={editValue}
                                     onChange={(e) => setEditValue(e.target.value)}
                                     onKeyPress={(e) => e.key === 'Enter' && handleSaveEdit()}
-                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                                    className="flex-1 px-2 py-1 text-sm border border-slate-300 rounded focus:ring-2 focus:ring-[#587faa] focus:border-transparent"
                                     autoFocus
                                 />
                                 <button
@@ -251,7 +251,7 @@ export default function AdminTagManagementPage() {
                                 <span className="flex-1 text-sm text-slate-900">{tag}</span>
                                 <button
                                     onClick={() => handleEdit(type, index, tag)}
-                                    className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors opacity-0 group-hover:opacity-100"
+                                    className="p-1.5 text-[#466f9d] hover:bg-[#eff5fb] rounded transition-colors opacity-0 group-hover:opacity-100"
                                     title="编辑"
                                 >
                                     <Edit2 className="w-4 h-4" />
@@ -269,7 +269,7 @@ export default function AdminTagManagementPage() {
                 ))}
                 {tags.length === 0 && (
                     <div className="text-center py-12 text-slate-400">
-                        <div className="text-4xl mb-2 text-indigo-500"><Tag className="w-10 h-10" /></div>
+                        <div className="text-4xl mb-2 text-[#587faa]"><Tag className="w-10 h-10" /></div>
                         <p className="text-sm">暂无标签</p>
                     </div>
                 )}
@@ -280,7 +280,7 @@ export default function AdminTagManagementPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#466f9d]"></div>
             </div>
         );
     }
@@ -317,7 +317,7 @@ export default function AdminTagManagementPage() {
                     'jobCategory',
                     config.jobCategories,
                     '用于岗位自动分类',
-                    'bg-gradient-to-r from-indigo-500 to-indigo-600'
+                    'bg-gradient-to-r from-[#587faa] to-[#466f9d]'
                 )}
 
                 {renderTagSection(
@@ -326,7 +326,7 @@ export default function AdminTagManagementPage() {
                     'companyIndustry',
                     config.companyIndustries,
                     '企业所属行业',
-                    'bg-gradient-to-r from-purple-500 to-purple-600'
+                    'bg-gradient-to-r from-[#b7791f] to-[#b7791f]'
                 )}
 
                 {renderTagSection(

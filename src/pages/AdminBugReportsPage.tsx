@@ -220,17 +220,17 @@ export default function AdminBugReportsPage() {
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                        <MessageSquare className="w-8 h-8 text-indigo-600" />
+                        <MessageSquare className="w-8 h-8 text-[#466f9d]" />
                         Bug Reports & Feedback
                     </h1>
-                    <Link to="/admin_team" className="text-indigo-600 hover:text-indigo-800">
+                    <Link to="/admin_team" className="text-[#466f9d] hover:text-[#2d4f73]">
                         Back to Dashboard
                     </Link>
                 </div>
 
                 {loading ? (
                     <div className="text-center py-12">
-                        <Loader2 className="w-8 h-8 animate-spin mx-auto text-indigo-600" />
+                        <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#466f9d]" />
                     </div>
                 ) : error ? (
                     <div className="bg-red-50 text-red-600 p-4 rounded-lg flex flex-col items-center gap-4">
@@ -274,7 +274,7 @@ export default function AdminBugReportsPage() {
                                                         <button 
                                                             onClick={() => fetchBugDetail(bug.id)}
                                                             disabled={loadingImage}
-                                                            className="text-xs text-indigo-600 hover:underline flex items-center gap-1"
+                                                            className="text-xs text-[#466f9d] hover:underline flex items-center gap-1"
                                                         >
                                                             {loadingImage ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
                                                             View Screenshot
@@ -286,7 +286,7 @@ export default function AdminBugReportsPage() {
                                                 {bug.user_nickname}
                                                 <div className="text-xs text-slate-400">{bug.user_id ? 'Member' : 'Anonymous'}</div>
                                                 {bug.contact_info && (
-                                                    <div className="text-xs text-indigo-600 mt-1 select-all">{bug.contact_info}</div>
+                                                    <div className="text-xs text-[#466f9d] mt-1 select-all">{bug.contact_info}</div>
                                                 )}
                                             </td>
                                             <td className="p-4 text-sm text-slate-500">
@@ -302,7 +302,7 @@ export default function AdminBugReportsPage() {
                                                     value={bug.status}
                                                     onChange={(e) => updateStatus(bug.id, e.target.value)}
                                                     disabled={updatingId === bug.id}
-                                                    className="text-sm border border-slate-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-indigo-500 outline-none"
+                                                    className="text-sm border border-slate-300 rounded px-2 py-1 bg-white focus:ring-2 focus:ring-[#587faa] outline-none"
                                                 >
                                                     <option value="open">Open</option>
                                                     <option value="in_progress">In Progress</option>
@@ -316,7 +316,7 @@ export default function AdminBugReportsPage() {
                                                         setReplyingId(bug.id);
                                                         setReplyContent(bug.admin_reply || '');
                                                     }}
-                                                    className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                                                    className="p-1.5 text-slate-500 hover:text-[#466f9d] hover:bg-[#eff5fb] rounded transition-colors"
                                                     title="Reply"
                                                 >
                                                     <MessageSquare className="w-4 h-4" />
@@ -400,7 +400,7 @@ export default function AdminBugReportsPage() {
                             onChange={(e) => setReplyContent(e.target.value)}
                             placeholder="Enter your reply here..."
                             rows={4}
-                            className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 outline-none mb-4 resize-none"
+                            className="w-full border border-slate-300 rounded-lg p-3 focus:ring-2 focus:ring-[#587faa] outline-none mb-4 resize-none"
                         />
                         <div className="flex justify-end gap-3">
                             <button 
@@ -412,7 +412,7 @@ export default function AdminBugReportsPage() {
                             <button 
                                 onClick={submitReply}
                                 disabled={isSendingReply}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                                className="px-4 py-2 bg-[#466f9d] text-white rounded-lg hover:bg-[#345d88] disabled:opacity-50 flex items-center gap-2"
                             >
                                 {isSendingReply && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Send Reply

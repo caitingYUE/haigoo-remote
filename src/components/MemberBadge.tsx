@@ -49,7 +49,7 @@ export const MemberBadge: React.FC<MemberBadgeProps> = ({
     if (variant === 'featured') {
         return (
             <span
-                className={`inline-flex items-center gap-1 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-300 text-purple-800 font-bold rounded-full ${sizeClasses[size]} ${className}`}
+                className={`inline-flex items-center gap-1 bg-gradient-to-r from-[#fff8e8] to-pink-50 border border-[#d9a758] text-[#6f4711] font-bold rounded-full ${sizeClasses[size]} ${className}`}
             >
                 <Sparkles className={iconSizes[size]} />
                 精选

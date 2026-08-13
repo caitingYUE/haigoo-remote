@@ -24,6 +24,7 @@ import { corporateEnglishPublicService, type CorporateEnglishCompanyDetail, type
 import { getCompanyLogoSources } from '../utils/company-logo'
 import EmailVerificationRequiredModal from './EmailVerificationRequiredModal'
 import { useLanguage } from '../contexts/LanguageContext'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 interface JobDetailPanelProps {
     job: Job
@@ -147,10 +148,6 @@ const inferRoleLabelFromText = (value: unknown) => {
     return ''
 }
 
-const DETAIL_BACKGROUND_FALLBACK = '/pic_lists/Jobs_pics/background01.webp'
-const TECH_BACKGROUND = '/pic_lists/Jobs_pics/job-tech-bg.webp'
-const PRODUCT_BACKGROUND = '/pic_lists/Jobs_pics/job-product-bg.webp'
-const NON_TECH_BACKGROUND = '/pic_lists/Jobs_pics/job-nontech-bg.webp'
 const FREE_USAGE_CACHE_TTL_MS = 60 * 1000
 const APPLICATION_GUIDE_MAX_COLLAPSED_CHARS = 260
 
@@ -231,44 +228,6 @@ function loadFreeUsageSnapshot(token: string): Promise<FreeUsageSnapshot> {
     return promise
 }
 
-function resolveDetailBackground(job: Job) {
-    const primaryCategory = String(job.category || '').toLowerCase()
-    if (/(招聘|人力|hr|财务|法务|行政|客服|客户服务|教育|课程|采购|心理|营养|非技术|综合)/i.test(primaryCategory)) {
-        return NON_TECH_BACKGROUND
-    }
-    if (/(产品|设计|运营|市场|营销|销售|内容|商务|增长|品牌|用户)/i.test(primaryCategory)) {
-        return PRODUCT_BACKGROUND
-    }
-    if (/(开发|工程|算法|数据|安全|运维|架构|技术支持|前端|后端|全栈|软件|测试)/i.test(primaryCategory)) {
-        return TECH_BACKGROUND
-    }
-
-    const text = [
-        job.category,
-        job.companyIndustry,
-        job.title,
-        job.translations?.title,
-        ...(job.skills || []),
-        ...(job.tags || []),
-    ].filter(Boolean).join(' ').toLowerCase()
-
-    if (!text.trim()) return DETAIL_BACKGROUND_FALLBACK
-
-    if (/(engineer|developer|frontend|backend|fullstack|software|devops|sre|qa|data|security|算法|工程|开发|前端|后端|全栈|测试|数据|安全|运维|架构|技术)/i.test(text)) {
-        return TECH_BACKGROUND
-    }
-
-    if (/(product|design|operation|growth|marketing|sales|content|community|产品|设计|运营|增长|市场|营销|销售|内容|用户|商务)/i.test(text)) {
-        return PRODUCT_BACKGROUND
-    }
-
-    if (/(hr|recruit|finance|legal|admin|support|customer|教育|行政|人事|招聘|财务|法务|客服|支持|非技术|综合)/i.test(text)) {
-        return NON_TECH_BACKGROUND
-    }
-
-    return DETAIL_BACKGROUND_FALLBACK
-}
-
 function HotApplicationBadge({ count }: { count: number }) {
     const { isEnglish } = useLanguage()
     return (
@@ -307,7 +266,7 @@ function ApplicationGuidePanel({
     const isUnlocked = accessMode === 'unlocked'
     const shouldCollapse = guide.length > APPLICATION_GUIDE_MAX_COLLAPSED_CHARS
     const displayGuide = isUnlocked && shouldCollapse && !expanded
-        ? `${guide.slice(0, APPLICATION_GUIDE_MAX_COLLAPSED_CHARS).trim()}...`
+        ? `${guide.slice(0, APPLICATION_GUIDE_MAX_COLLAPSED_CHARS).trim()}…`
         : guide
 
     const actionLabel = accessMode === 'guest'
@@ -338,7 +297,7 @@ function ApplicationGuidePanel({
                     <h4 className="truncate text-base font-black tracking-tight text-slate-900">{text('岗位申请指南', 'Application guide')}</h4>
                 </div>
                 {!isUnlocked ? (
-                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8d2ff] bg-[#f6f3ff] px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#c9dce8] bg-[#eff5fb] px-2 py-0.5 text-[10px] font-black text-[#466f9d]">
                         <Lock className="h-3 w-3" />
                         Club
                     </span>
@@ -352,7 +311,7 @@ function ApplicationGuidePanel({
                         <button
                             type="button"
                             onClick={() => setExpanded((value) => !value)}
-                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-black text-[#6f63f6] transition hover:text-[#5f55e8]"
+                            className="mt-3 inline-flex items-center gap-1.5 text-xs font-black text-[var(--hg-accent-700)] transition-colors hover:text-[var(--hg-ink)]"
                         >
                             {expanded ? text('收起', 'Show less') : text('展开', 'Show more')}
                             <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? 'rotate-180' : ''}`} />
@@ -366,10 +325,10 @@ function ApplicationGuidePanel({
                         type="button"
                         onClick={handleAction}
                         disabled={isUnlocking}
-                        className="mt-3 inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#6f63f6] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)] transition hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
+                        className="mt-3 inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-[var(--hg-member-gold-500)] px-4 text-sm font-black text-white shadow-[0_18px_32px_-24px_rgba(120,67,22,0.42)] transition-[filter] hover:brightness-[1.03] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         <Lock className="h-4 w-4" />
-                        {isUnlocking ? text('解锁中...', 'Unlocking...') : actionLabel}
+                        {isUnlocking ? text('解锁中…', 'Unlocking…') : actionLabel}
                     </button>
                 </div>
             )}
@@ -408,18 +367,20 @@ function CorporateVideoShortcut({
         <button
             type="button"
             onClick={onClick}
-            className="group mt-5 flex w-full items-center gap-4 overflow-hidden rounded-[22px] border border-[#e2d7ff] bg-[linear-gradient(135deg,rgba(255,255,255,0.98),rgba(246,248,255,0.98))] p-3 text-left shadow-[0_18px_42px_-36px_rgba(79,70,229,0.34)] transition hover:-translate-y-0.5 hover:border-[#cdbfff] hover:bg-white"
+            className="group mt-5 flex w-full items-center gap-4 overflow-hidden rounded-[22px] border border-[var(--hg-accent-100)] bg-white p-3 text-left shadow-[0_18px_42px_-36px_rgba(24,32,51,0.3)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[var(--hg-accent-300)] hover:shadow-[0_22px_46px_-34px_rgba(201,79,34,0.28)]"
         >
             <span className="relative flex aspect-video w-28 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-slate-950 text-white sm:w-40">
-                <span className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(139,124,255,0.72),transparent_32%),linear-gradient(135deg,rgba(18,24,56,0.96),rgba(48,45,126,0.94))]" />
+                <span className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(233,104,50,0.68),transparent_32%),linear-gradient(135deg,rgba(24,32,51,0.98),rgba(52,64,84,0.96))]" />
                 <span className="absolute right-3 top-3 max-w-[72%] truncate text-xs font-black text-white/16 sm:text-sm">
                     {companyName || 'Haigoo'}
                 </span>
-                <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/18 bg-white/94 text-sm font-black text-[#6251f5] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.65)] backdrop-blur sm:h-16 sm:w-16">
+                <span className="relative flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-white/18 bg-white/94 text-sm font-black text-[var(--hg-accent-700)] shadow-[0_18px_34px_-24px_rgba(0,0,0,0.65)] backdrop-blur sm:h-16 sm:w-16">
                     {activeLogo ? (
                         <img
                             src={activeLogo}
                             alt=""
+                            width="64"
+                            height="64"
                             className="h-full w-full object-contain p-2"
                             loading="lazy"
                             decoding="async"
@@ -427,17 +388,17 @@ function CorporateVideoShortcut({
                         />
                     ) : companyInitial}
                 </span>
-                <span className="absolute bottom-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#6251f5] shadow-sm">
+                <span className="absolute bottom-2 left-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-[var(--hg-accent-700)] shadow-sm">
                     <PlayCircle className="h-6 w-6" />
                 </span>
                 {!canAccess ? (
-                    <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-[#6f63f6]">
+                    <span className="absolute right-2 top-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/92 text-[#466f9d]">
                         <Lock className="h-3.5 w-3.5" />
                     </span>
                 ) : null}
             </span>
             <span className="min-w-0 flex-1">
-                <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">
+                <span className="mb-1 inline-flex items-center gap-1.5 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#466f9d]">
                     <Video className="h-3 w-3" />
                     CEO 访谈
                 </span>
@@ -448,7 +409,7 @@ function CorporateVideoShortcut({
                     </span>
                 ) : null}
             </span>
-            <ChevronRight className="h-5 w-5 shrink-0 text-slate-300 transition group-hover:text-[#6f63f6]" />
+            <ChevronRight className="h-5 w-5 shrink-0 text-slate-300 transition group-hover:text-[#466f9d]" />
         </button>
     )
 }
@@ -566,6 +527,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }, [shouldForceHideCustomReferralModule, referralContacts, usesCustomReferralContacts, companyUsesCustomReferralContacts, resolvedHiringEmail, resolvedEmailType, job.id, job.company, companyInfo?.name])
 
     const showReferralModule = displayReferralContacts.length > 0
+    const isMemberRestrictedJob = COMPLIANCE_FEATURES.memberOnlyJobGating && Boolean(job?.memberOnly || companyInfo?.memberOnly)
     const translationPreferenceKey = `job_translation_preference_${job?.id || ''}`
     // Free usage quotas for non-members (lifetime cumulative, stored in DB)
     const DEFAULT_FREE_FEATURE_LIMIT = 3
@@ -581,6 +543,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const [sharedFreeUsageReady, setSharedFreeUsageReady] = useState(false)
     const [websiteApplyUsageReady, setWebsiteApplyUsageReady] = useState(false)
     const exposureKeysRef = React.useRef<Set<string>>(new Set())
+    const refCompanyName = String(job.company || companyInfo?.name || '').trim()
+    const hasLegacyEmailUnlock = !isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName)
+    // Keep previously opened email information available. New free accounts no
+    // longer receive an unlock entry; members retain their existing email tools.
+    const canDisplayReferralModule = showReferralModule && (isMember || hasLegacyEmailUnlock)
 
     const openUpgradeModal = (featureKey: string, sourceKey = trackingSourceKey) => {
         trackingService.track('upgrade_modal_view', {
@@ -826,8 +793,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const hasUploadedResume = hasResume === true
     const hasApplicationGuide = String(job?.featuredReason || '').trim().length > 0
     const applicationGuide = String(job?.featuredReason || '').trim()
-    const showMatchDetails = hasUploadedResume && showHighMatchDetails
-    const showResumeUploadPrompt = hasResume === false && isSaved
+    const showMatchDetails = COMPLIANCE_FEATURES.personalizedJobDiscovery && hasUploadedResume && showHighMatchDetails
+    const showResumeUploadPrompt = COMPLIANCE_FEATURES.personalizedJobDiscovery && hasResume === false && isSaved
     const syncSharedFreeAccessState = (usage: number, unlockedCompaniesList: string[] = [], limit?: number) => {
         const normalizedUsage = Math.max(0, Number(usage) || 0)
         const normalizedUnlocked = Array.isArray(unlockedCompaniesList) ? unlockedCompaniesList : []
@@ -855,7 +822,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
         try {
             popup.opener = null
-            popup.document.title = text('正在跳转申请页面...', 'Opening application page...')
+            popup.document.title = text('正在跳转申请页面…', 'Opening application page…')
             popup.document.body.style.margin = '0'
             popup.document.body.style.fontFamily = 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif'
             popup.document.body.style.display = 'flex'
@@ -863,15 +830,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             popup.document.body.style.justifyContent = 'center'
             popup.document.body.style.minHeight = '100vh'
             popup.document.body.style.color = '#475569'
-            popup.document.body.innerHTML = `<div style="font-size:14px;">${text('正在打开岗位申请页面...', 'Opening the job application page...')}</div>`
+            popup.document.body.innerHTML = `<div style="font-size:14px;">${text('正在打开岗位申请页面…', 'Opening the job application page…')}</div>`
         } catch (_error) {
             // Ignore cross-window DOM errors and continue with navigation handoff.
         }
 
         return popup
     }
-
-    const isMemberRestrictedJob = Boolean(job?.memberOnly || companyInfo?.memberOnly);
 
     const jobDetailSections = useMemo(() => {
         const originalDesc = typeof job?.description === 'string' ? job.description : (job?.description ? String(job.description) : '')
@@ -932,44 +897,36 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             is_member: isMember
         })
 
-        // 0. Enforce Login first
+        const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
+        const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
+        const isPublicEmailOnlyApply = !hasWebsiteApply && hasEmailApply && !isMemberRestrictedJob
+
         if (!isAuthenticated) {
-            goToLogin()
+            goToLogin(isPublicEmailOnlyApply ? '登录后可以使用邮箱申请，申请次数与官网直申共用。' : '登录后可以继续使用岗位功能。')
             return
         }
 
         if (promptEmailVerificationIfNeeded()) return
 
-        if (isMemberRestrictedJob && !isMember) {
-            openUpgradeModal('member_only_job_apply', 'job_detail_apply_member_only')
-            return
-        }
-
-        const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
-        const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
         const websiteApplyUnlocked = isMember || unlockedWebsiteApplyJobIds.includes(String(job.id || ''))
         const canWebsiteApplyFree = !isMember && !websiteApplyUnlocked && websiteApplyUsageCount < websiteApplyFreeLimit
         const canUseWebsiteApply = isMember || websiteApplyUnlocked || canWebsiteApplyFree
 
         if (hasWebsiteApply) {
             if (!canUseWebsiteApply) {
-                openUpgradeModal('website_apply', 'job_detail_apply_direct')
+                showInfo('官网直申次数已用完', '当前免费官网直申次数已用完。')
                 return
             }
             await executeApply('website', openPendingWebsiteApplyWindow())
             return
         }
 
-        if (!showReferralModule && hasEmailApply) {
-            const accessCompanyName = String(job.company || companyInfo?.name || '').trim()
-            const isCompanyAccessUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(accessCompanyName))
-            const canEmailFree = !isMember && !isMemberRestrictedJob && isAuthenticated && !isCompanyAccessUnlocked && emailApplyUsageCount < DEFAULT_FREE_FEATURE_LIMIT
-            const canUseEmailApply = isMember || isCompanyAccessUnlocked || canEmailFree
+        if (isPublicEmailOnlyApply) {
+            await executeApply('email')
+            return
+        }
 
-            if (!canUseEmailApply) {
-                openUpgradeModal(isMemberRestrictedJob ? 'member_only_job_apply' : 'email_apply', 'job_detail_apply_email')
-                return
-            }
+        if (!showReferralModule && hasEmailApply && isMember) {
             await executeApply('email')
             return
         }
@@ -993,6 +950,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
     const executeApply = async (method: 'website' | 'email', pendingWindow: PendingApplyWindow = null) => {
         if (method === 'email' && resolvedHiringEmail) {
+            const canProceed = await consumeWebsiteApplyIfNeeded()
+            if (!canProceed) return
+
             trackingService.track('click_apply', {
                 ...trackingBase,
                 module: 'job_detail_footer',
@@ -1203,8 +1163,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             if (data.success) {
                 clearFreeUsageCache()
                 syncSharedFreeAccessState(data.usage, data.unlocked_companies || [], data.limit);
-                showSuccess('已解锁该企业人脉', `当前还可免费查看 ${Math.max(0, (Number(data.limit) || referralFreeLimit) - (Number(data.usage) || 0))} 次`)
-                if (data.remaining === 0) showInfo('免费次数已用完', '了解会员服务后可解锁全部人脉');
+                showSuccess('已开放邮箱申请信息', `当前还可查看 ${Math.max(0, (Number(data.limit) || referralFreeLimit) - (Number(data.usage) || 0))} 次`)
+                if (data.remaining === 0) showInfo('查看次数已用完', '需要帮助时可以联系顾问。');
             } else {
                 showError('解锁失败', data.error || '服务器错误');
             }
@@ -1263,6 +1223,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     }
 
     const handleReferralEmailOpen = async (contact: ReferralContact, resumeId: string, resumeName: string) => {
+        if (!isAuthenticated) {
+            goToLogin('登录后可以使用邮箱申请，申请次数与官网直申共用。')
+            return false
+        }
+        if (promptEmailVerificationIfNeeded()) return false
+
+        const canProceed = await consumeWebsiteApplyIfNeeded()
+        if (!canProceed) return false
+
         trackingService.track('click_apply', {
             ...trackingBase,
             module: 'job_detail_referral',
@@ -1275,8 +1244,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             apply_method: 'referral_contact_email',
             source: 'referral'
         })
-
-        if (!isAuthenticated || promptEmailVerificationIfNeeded()) return
 
         try {
             const token = localStorage.getItem('haigoo_auth_token')
@@ -1295,8 +1262,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             })
             window.dispatchEvent(new CustomEvent('haigoo:applications-updated', { detail: { jobId: job.id } }))
             showSuccess('已为你记录申请，可在「我的投递」查看')
+            return true
         } catch (error) {
             console.error('Failed to record interaction:', error)
+            return true
         }
     }
 
@@ -1356,12 +1325,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             }
 
             if (status === 403) {
-                openUpgradeModal('website_apply')
-                showInfo('前往申请次数已用完', '了解会员服务后可继续查看并申请更多岗位')
+                showInfo('本月申请次数已用完', '官网直申与邮箱申请共用每月申请次数。')
                 return false
             }
 
-            showError('前往申请失败', '请稍后重试')
+            showError('申请未能继续', '请稍后重试')
             return false
         }
     }
@@ -1543,7 +1511,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const websiteApplyFreeRemaining = Math.max(0, websiteApplyFreeLimit - websiteApplyUsageCount)
     const canWebsiteApplyFree = !isMember && isAuthenticated && !websiteApplyUnlocked && websiteApplyUsageCount < websiteApplyFreeLimit
     const shouldShowWebsiteApplyTrialStatus = Boolean(job.url || job.sourceUrl) && isAuthenticated && !isMember && !isMemberRestrictedJob && websiteApplyUsageReady
-    const refCompanyName = String(job.company || companyInfo?.name || '').trim()
     const isReferralCompanyUnlocked = isMember || (!isMemberRestrictedJob && unlockedCompanies.includes(refCompanyName))
     const applicationGuideFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
     const applicationGuideAccessMode: GuideAccessMode = isEmailVerificationRequired
@@ -1562,7 +1529,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const referralFreeRemaining = Math.max(0, referralFreeLimit - referralUsageCount)
     const hasWebsiteApply = Boolean(job.url || job.sourceUrl)
     const hasEmailApply = !usesCustomReferralContacts && !companyUsesCustomReferralContacts && Boolean(resolvedHiringEmail)
-    const hasAnyEmailPath = hasEmailApply || showReferralModule
+    const isPublicEmailOnlyApply = !hasWebsiteApply && hasEmailApply && !isMemberRestrictedJob
+    const hasAnyEmailPath = isPublicEmailOnlyApply || ((isMember || hasLegacyEmailUnlock) && (hasEmailApply || canDisplayReferralModule))
     const canUseWebsiteApply = hasWebsiteApply && (isMember || websiteApplyUnlocked || canWebsiteApplyFree)
     const resolveWebsiteApplyState = (): WebsiteApplyState => {
         if (hasWebsiteApply) {
@@ -1606,13 +1574,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         job.canRefer ||
         (typeof effectiveReferralContactCount === 'number' && effectiveReferralContactCount > 0)
     )
-    const showReferralLoadingPlaceholder = isAuthenticated && !showReferralModule && companyInfoLoading && mayHaveReferralPath
+    const showReferralLoadingPlaceholder = isMember && !showReferralModule && companyInfoLoading && mayHaveReferralPath
     const getUnifiedReferralUnlockLabel = () => {
-        if (referralAccessMode === 'guest') return '帮我内推（需登录）'
-        if (referralAccessMode === 'verification_required') return '一键解锁（待验证）'
+        if (referralAccessMode === 'guest') return '邮箱申请（需登录）'
+        if (referralAccessMode === 'verification_required') return '查看邮箱（待验证）'
         if (referralAccessMode === 'member_only') return '了解解锁方式'
-        if (referralAccessMode === 'free_available') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
-        if (referralAccessMode === 'free_exhausted') return `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
+        if (referralAccessMode === 'free_available') return `查看邮箱 ${referralFreeRemaining}/${referralFreeLimit}`
+        if (referralAccessMode === 'free_exhausted') return `查看邮箱 ${referralFreeRemaining}/${referralFreeLimit}`
         return ''
     }
     const handleUnifiedReferralUnlock = (event?: React.MouseEvent) => {
@@ -1720,47 +1688,44 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         window.open(`/careerlearning?${query.toString()}`, '_blank', 'noopener,noreferrer')
     }
     const getApplyButtonLabel = () => {
-        if (!isAuthenticated) return text('前往申请（需登录）', 'Apply (login required)')
-        if (isEmailVerificationRequired) return text('前往申请（待验证）', 'Apply (email verification required)')
+        if (!isAuthenticated) {
+            return isPublicEmailOnlyApply
+                ? text('邮箱申请（需登录）', 'Email application (login required)')
+                : text('官网直申（需登录）', 'Official application (login required)')
+        }
+        if (isEmailVerificationRequired) return text('官网直申（待验证）', 'Official application (email verification required)')
 
         switch (websiteApplyState) {
             case 'login_required':
-                return text('前往申请（需登录）', 'Apply (login required)')
+                return text('官网直申（需登录）', 'Official application (login required)')
             case 'website_available':
-                if (isMemberRestrictedJob && !isMember) return text('解锁申请入口', 'Unlock application')
-                if (isMemberRestrictedJob) return text('前往申请', 'Apply now')
-                if (websiteApplyUnlocked && !isMember) return text('前往申请（已解锁）', 'Apply now (unlocked)')
-                return shouldShowWebsiteApplyTrialStatus && !websiteApplyUnlocked
-                    ? `${text('前往申请', 'Apply now')} ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
-                    : text('前往申请', 'Apply now')
+                return shouldShowWebsiteApplyTrialStatus
+                    ? `${text('官网直申', 'Official application')} ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
+                    : text('官网直申', 'Official application')
             case 'website_locked_member':
-                if (isMemberRestrictedJob && !isMember) return text('解锁申请入口', 'Unlock application')
-                if (isMemberRestrictedJob) return text('前往申请', 'Apply now')
-                return `${text('前往申请', 'Apply now')} ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
+                return `${text('官网直申', 'Official application')} ${websiteApplyFreeRemaining}/${websiteApplyFreeLimit}`
             case 'email_only':
-                if (isMemberRestrictedJob && !isMember) return text('解锁申请入口', 'Unlock application')
-                if (isReferralCompanyUnlocked && !isMember) return text('仅支持邮箱申请（已解锁）', 'Apply by email (unlocked)')
-                return text('仅支持邮箱申请', 'Apply by email')
+                return text('邮箱申请', 'Apply by email')
             default:
                 return text('暂无申请入口', 'Application unavailable')
         }
     }
     const getApplyButtonClassName = () => {
         if (isMemberRestrictedJob && !isMember && websiteApplyState !== 'unavailable') {
-            return 'border border-[#d8d2ff] bg-[linear-gradient(135deg,#8b7cff_0%,#6f63f6_100%)] text-white shadow-[0_20px_40px_-24px_rgba(111,99,246,0.56)] hover:shadow-[0_24px_46px_-24px_rgba(111,99,246,0.64)] hover:brightness-[1.03]'
+            return 'border border-[#1b2440] bg-[#1b2440] text-white hover:bg-[#253047]'
         }
 
         if (!isAuthenticated && websiteApplyState !== 'unavailable') {
-            return 'border border-[#d7dcff] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white shadow-[0_20px_38px_-24px_rgba(95,131,247,0.58)] hover:shadow-[0_24px_44px_-24px_rgba(111,99,246,0.54)] hover:brightness-[1.03]'
+            return 'border border-[#1b2440] bg-[#1b2440] text-white hover:bg-[#253047]'
         }
 
         switch (websiteApplyState) {
             case 'login_required':
             case 'website_available':
             case 'website_locked_member':
-                return 'border border-[#d7dcff] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white shadow-[0_20px_38px_-24px_rgba(95,131,247,0.58)] hover:shadow-[0_24px_44px_-24px_rgba(111,99,246,0.54)] hover:brightness-[1.03]'
+                return 'border border-[#1b2440] bg-[#1b2440] text-white hover:bg-[#253047]'
             case 'email_only':
-                return 'border border-[#e1e8f4] bg-white/86 text-slate-500 hover:border-[#d8d2ff] hover:text-[#6f63f6]'
+                return 'border border-[#9aa9b5] bg-transparent text-[#33465b] hover:border-[#e96832] hover:text-[#c94f22]'
             default:
                 return 'border border-slate-200 bg-slate-50 text-slate-400'
         }
@@ -1782,20 +1747,16 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         }
 
         if (websiteApplyState === 'website_locked_member') {
-            openUpgradeModal(isMemberRestrictedJob ? 'member_only_job_apply' : 'website_apply')
+            showInfo('官网直申次数已用完', '当前免费官网直申次数已用完。')
             return
         }
 
         if (websiteApplyState === 'email_only') {
-            if (!isAuthenticated) {
-                goToLogin()
-                return
-            }
-            if (!showReferralModule && hasEmailApply) {
+            if (isPublicEmailOnlyApply || (!showReferralModule && hasEmailApply && isMember)) {
                 handleApply()
                 return
             }
-            showInfo('仅支持邮箱申请', '该岗位不支持官网网申，请使用下方联系人入口继续申请。')
+            showInfo('邮箱申请', '企业官网公开投递邮箱。')
             return
         }
 
@@ -1883,7 +1844,6 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
         return isConcreteLocationValue(headquartersAddress) ? findLocation(headquartersAddress) : null
     }, [headquartersAddress])
     const canShowHeadquartersLocationTooltip = Boolean(headquartersLocationData)
-    const detailBackgroundSrc = resolveDetailBackground(job)
     const iconStats = [
         { label: text('薪资范围', 'Salary'), value: formatSalaryForDisplay(job.salary, text('具体面议', 'Negotiable')), icon: DollarSign, maskForGuest: true, maskWidth: 'w-24' },
         { label: text('发布时间', 'Published'), value: job.publishedAt ? new Date(job.publishedAt).toLocaleDateString(isEnglish ? 'en' : 'zh-CN') : text('未知', 'Unknown'), icon: Calendar, maskForGuest: true, maskWidth: 'w-20' },
@@ -1918,51 +1878,41 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
     const nestedJob = nestedJobIndex == null ? null : companyJobsForTab[nestedJobIndex] || null
 
     return (
-        <div className="flex flex-col overflow-hidden bg-[#fbfaf6] pb-[env(safe-area-inset-bottom)]">
-            <header className="relative z-20 flex-shrink-0 overflow-hidden border-b border-[#e8f0f4] bg-[#fffdf9] px-4 pb-0 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-6 sm:pt-6 xl:px-8">
-                <img
-                    src={detailBackgroundSrc}
-                    alt=""
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[58%] object-cover object-right-bottom opacity-[0.52] saturate-[0.98] lg:block"
-                    loading="lazy"
-                    decoding="async"
-                />
-                <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[60%] bg-[radial-gradient(circle_at_82%_14%,rgba(255,238,190,0.28),transparent_28%),linear-gradient(90deg,rgba(255,253,249,0.99)_0%,rgba(255,253,249,0.78)_42%,rgba(255,255,255,0.1)_100%)] lg:block" />
-                <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.36)_0%,rgba(255,250,239,0.4)_100%)]" />
+        <div className="hg-job-detail-panel flex flex-col overflow-hidden bg-[#fffdf8] pb-[env(safe-area-inset-bottom)]">
+            <header className="hg-job-detail-header relative z-20 flex-shrink-0 overflow-hidden border-b border-[#deddd7] bg-[#fffdf8] px-4 pb-0 pt-[calc(1.25rem+env(safe-area-inset-top))] sm:px-6 sm:pt-6 xl:px-8">
                 {showCloseButton && (
                     <div className="absolute right-4 top-[calc(1rem+env(safe-area-inset-top))] z-40 flex items-center gap-1 sm:top-4">
                         {showInlineNavigation && (
                             <>
-                                <button onClick={() => onNavigateJob?.('prev')} disabled={!canNavigatePrev} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/80 disabled:opacity-30">
-                                    <ChevronLeft className="w-5 h-5" />
+                                <button type="button" onClick={() => onNavigateJob?.('prev')} disabled={!canNavigatePrev} aria-label={text('上一个岗位', 'Previous job')} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white/80 disabled:opacity-30">
+                                    <ChevronLeft aria-hidden="true" className="w-5 h-5" />
                                 </button>
-                                <button onClick={() => onNavigateJob?.('next')} disabled={!canNavigateNext} className="rounded-lg p-1.5 text-slate-400 hover:bg-white/80 disabled:opacity-30">
-                                    <ChevronRight className="w-5 h-5" />
+                                <button type="button" onClick={() => onNavigateJob?.('next')} disabled={!canNavigateNext} aria-label={text('下一个岗位', 'Next job')} className="inline-flex h-11 w-11 items-center justify-center rounded-lg text-slate-500 hover:bg-white/80 disabled:opacity-30">
+                                    <ChevronRight aria-hidden="true" className="w-5 h-5" />
                                 </button>
                             </>
                         )}
                         {onClose && (
-                            <button onClick={onClose} className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#dce8ef] bg-white/92 text-slate-500 shadow-sm hover:bg-white hover:text-slate-900">
-                                <X className="w-5 h-5" />
+                            <button type="button" onClick={onClose} aria-label={text('关闭岗位详情', 'Close job details')} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[#dce8ef] bg-white/92 text-slate-500 shadow-sm hover:bg-white hover:text-slate-900">
+                                <X aria-hidden="true" className="w-5 h-5" />
                             </button>
                         )}
                     </div>
                 )}
 
                 {/* Top Row: Title & Actions */}
-                <div className="relative z-10 mb-3 flex min-w-0 items-start gap-3 pr-12 sm:pr-36 xl:pr-[320px]">
+                <div className="hg-job-detail-title-row relative z-10 mb-3 flex min-w-0 items-start gap-3 pr-12 sm:pr-36 xl:pr-[320px]">
                     <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1.5">
-                        <h1 className="line-clamp-2 min-w-0 max-w-full break-words text-[22px] font-black leading-[1.16] tracking-tight text-slate-950 [text-wrap:balance] sm:text-[25px] xl:text-[28px] 2xl:text-[30px]">
+                        <h1 className="line-clamp-2 min-w-0 max-w-full break-words text-[22px] font-bold leading-[1.12] tracking-[-0.035em] text-slate-950 [text-wrap:balance] sm:text-[27px] xl:text-[32px] 2xl:text-[36px]">
                             {displayText(job.title, job.translations?.title)}
                         </h1>
 
                         {hasTranslation && !isEnglish ? (
-                            <div className="inline-flex h-6 shrink-0 items-center rounded-full border border-[#d7e2ff] bg-[#f8faff] px-0.5 text-[11px] font-black text-slate-400 shadow-[0_8px_20px_-18px_rgba(47,81,140,0.5)]" aria-label="切换岗位详情语言">
+                            <div className="hg-job-detail-language-toggle inline-flex h-7 shrink-0 items-center border border-[#aebbc5] bg-transparent text-[11px] font-black text-slate-400" aria-label="切换岗位详情语言">
                                 <button
                                     type="button"
                                     onClick={() => setTranslationMode(true)}
-                                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 transition-colors ${showTranslation ? 'bg-[#6f63f6] text-white shadow-sm' : 'text-[#6f63f6] hover:bg-white'}`}
+                                    className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1 transition-colors ${showTranslation ? 'bg-[#466f9d] text-white shadow-sm' : 'text-[#466f9d] hover:bg-white'}`}
                                     aria-pressed={showTranslation}
                                 >
                                     译
@@ -1983,11 +1933,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         ) : null}
                     </div>
 
-                    <div className="absolute right-16 top-0 hidden shrink-0 items-center gap-2 sm:flex xl:fixed xl:right-auto xl:top-auto xl:hidden">
+                    <div className="hg-job-detail-actions-compact absolute right-16 top-0 hidden shrink-0 items-center gap-2 sm:flex xl:fixed xl:right-auto xl:top-auto xl:hidden">
                         <button
                             onClick={handleSave}
                             className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
-                                isSaved ? 'border-[#d8d2ff] bg-white text-[#6f63f6]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#d8d2ff] hover:text-[#6f63f6]'
+                                isSaved ? 'border-[#c9dce8] bg-white text-[#466f9d]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#c9dce8] hover:text-[#466f9d]'
                             }`}
                         >
                             <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
@@ -1995,7 +1945,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </button>
                         <button
                             onClick={handleShare}
-                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#d8d2ff] hover:text-[#6f63f6]"
+                            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#c9dce8] hover:text-[#466f9d]"
                         >
                             <Share2 className="h-3.5 w-3.5" />
                             <span>{text('分享', 'Share')}</span>
@@ -2003,11 +1953,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
                 </div>
 
-                <div className="absolute right-8 top-6 z-30 hidden shrink-0 items-center gap-2 xl:flex">
+                <div className="hg-job-detail-actions-wide absolute right-8 top-6 z-30 hidden shrink-0 items-center gap-2 xl:flex">
                         <button
                             onClick={handleSave}
                             className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border px-3.5 text-[13px] font-bold transition-colors ${
-                            isSaved ? 'border-[#d8d2ff] bg-white text-[#6f63f6]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#d8d2ff] hover:text-[#6f63f6]'
+                            isSaved ? 'border-[#c9dce8] bg-white text-[#466f9d]' : 'border-[#dce8ef] bg-white/90 text-slate-600 hover:border-[#c9dce8] hover:text-[#466f9d]'
                         }`}
                     >
                         <Bookmark className={`h-3.5 w-3.5 ${isSaved ? 'fill-current' : ''}`} />
@@ -2015,7 +1965,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </button>
                     <button
                         onClick={handleShare}
-                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#d8d2ff] hover:text-[#6f63f6]"
+                        className="inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-[#dce8ef] bg-white/90 px-3.5 text-[13px] font-bold text-slate-600 transition-colors hover:border-[#c9dce8] hover:text-[#466f9d]"
                     >
                         <Share2 className="h-3.5 w-3.5" />
                         <span>{text('分享', 'Share')}</span>
@@ -2023,7 +1973,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 {/* Company & Location Row */}
-                <div className="relative z-10 mb-4 flex items-center gap-3 xl:max-w-[calc(100%-380px)]">
+                <div className="hg-job-detail-company-row relative z-10 mb-4 flex items-center gap-3 xl:max-w-[calc(100%-380px)]">
                     <div className="flex flex-wrap items-center gap-2 text-[13px] text-slate-500 font-medium sm:text-[14px]">
                         <span className="font-bold text-slate-700">{displayText(job.company || '')}</span>
                         {companyRatingText && (
@@ -2044,14 +1994,14 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 </div>
 
                 {/* Tags & Apply Row */}
-                <div className="relative z-20 mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
+                <div className="hg-job-detail-apply-row relative z-20 mb-4 grid gap-3 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-end">
                     {/* Tags */}
                     <div className="flex min-h-[44px] min-w-0 flex-wrap items-center gap-2">
                         {headerTags.map((tag, idx) => (
                             <span
                                 key={idx}
-                                className={`rounded-full px-3 py-1 text-[13px] font-bold shadow-[0_10px_20px_-16px_rgba(52,76,92,0.42)] ${
-                                    'border border-[#e0e9ef] bg-white/92 text-slate-700'
+                                className={`hg-job-detail-tag px-3 py-1 text-[13px] font-bold ${
+                                    'border border-[#deddd7] bg-transparent text-slate-700'
                                 }`}
                             >
                                 {tag.label}
@@ -2060,11 +2010,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     </div>
 
                     {/* Apply Button Group */}
-                    <div className="flex min-h-[44px] w-full shrink-0 items-end xl:-translate-y-2 xl:justify-self-end">
+                    <div className="flex min-h-[44px] w-full shrink-0 flex-col items-stretch gap-1.5 xl:-translate-y-2 xl:justify-self-end">
                         {(hasWebsiteApply || hasAnyEmailPath || onApply) && (
                             <button
                                 onClick={handleApplyButtonClick}
-                            className={`inline-flex h-[44px] w-full items-center justify-center gap-2 rounded-[18px] px-4 text-[15px] font-bold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 ${getApplyButtonClassName()}`}
+                            className={`hg-job-detail-apply inline-flex h-[44px] w-full items-center justify-center gap-2 px-4 text-[15px] font-bold transition-colors duration-200 ${getApplyButtonClassName()}`}
                         >
                                 <span className="flex items-center gap-1.5">
                                     {getApplyButtonLabel()}
@@ -2072,18 +2022,23 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <ChevronRight className="h-4 w-4" />
                             </button>
                         )}
+                        {isPublicEmailOnlyApply && (
+                            <p className="text-right text-[11px] font-medium tracking-[0.02em] text-slate-500">
+                                {text('企业官网公开投递邮箱。', 'Public application email published by the company.')}
+                            </p>
+                        )}
                     </div>
                 </div>
 
                 {/* Icon Stats Row */}
-                <div className="relative z-10 grid max-w-full grid-cols-2 gap-2 border-t border-[#e8f0f4]/70 pb-4 pt-3 sm:gap-2.5 sm:pb-5 sm:pt-4 md:grid-cols-4">
+                <div className="hg-job-detail-stats relative z-10 grid max-w-full grid-cols-2 border-t border-[#deddd7] pb-4 pt-3 sm:pb-5 sm:pt-4 md:grid-cols-4">
                     {iconStats.map((stat, idx) => {
                         const canShowHeadquartersTooltip = stat.locationTooltip === 'headquarters' && !shouldMaskGuestMeta && canShowHeadquartersLocationTooltip
                         return (
                             <div
                                 key={idx}
                                 ref={stat.locationTooltip === 'headquarters' ? headquartersStatRef : undefined}
-                                className={`relative flex min-h-[58px] min-w-0 items-center gap-2 rounded-[16px] border border-white/90 bg-white/86 px-2.5 py-2 shadow-[0_14px_34px_-28px_rgba(52,76,92,0.25)] backdrop-blur-[3px] sm:min-h-[64px] sm:rounded-[18px] ${canShowHeadquartersTooltip ? 'cursor-help transition-colors hover:border-[#c9dcf6] hover:bg-white' : ''}`}
+                                className={`hg-job-detail-stat relative flex min-h-[58px] min-w-0 items-center gap-2 border-l border-[#deddd7] px-3 py-2 first:border-l-0 sm:min-h-[64px] ${canShowHeadquartersTooltip ? 'cursor-help transition-colors hover:bg-[#f4f6f4]' : ''}`}
                                 onMouseEnter={() => {
                                     if (canShowHeadquartersTooltip) {
                                         positionHeadquartersTooltip()
@@ -2097,7 +2052,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     setShowHeadquartersLocationTooltip((value) => !value)
                                 }}
                             >
-                                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-[#eef7ff] text-[#6a91c3] ${canShowHeadquartersTooltip ? 'ring-1 ring-[#c9dcf6]' : ''}`}>
+                                <div className={`flex h-7 w-7 shrink-0 items-center justify-center text-[#6a91c3]`}>
                                     <stat.icon className="h-3.5 w-3.5" />
                                 </div>
                                 <div className="min-w-0">
@@ -2115,31 +2070,31 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
             </header>
 
             {/* Content - Flat layout, no internal scroll */}
-            <main className="flex-1 bg-[#fbfaf6]">
-                <div className="sticky top-0 z-30 border-b border-[#e8f0f4] bg-white/92 px-4 py-2.5 sm:px-6">
+            <main className="flex-1 bg-[#fffdf8]">
+                <div className="hg-job-detail-tabs sticky top-0 z-30 border-b border-[#deddd7] bg-[#fffdf8] px-4 py-2.5 sm:px-6">
                     <div className="flex items-center justify-start gap-7 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         {detailTabs.map((tab) => (
                             <button
                                 key={tab.key}
                                 onClick={() => setActiveDetailTab(tab.key)}
                                 className={`relative whitespace-nowrap pb-2 text-sm font-semibold transition-colors ${
-                                    activeDetailTab === tab.key ? 'text-[#6f63f6]' : 'text-slate-500 hover:text-slate-900'
+                                    activeDetailTab === tab.key ? 'is-active text-[#101829]' : 'text-slate-500 hover:text-slate-900'
                                 }`}
                             >
                                 {tab.label}
-                                {activeDetailTab === tab.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#6f63f6]" />}
+                                {activeDetailTab === tab.key && <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--hg-accent-500)]" />}
                             </button>
                         ))}
                     </div>
                 </div>
-                <div className="space-y-4 bg-[#fbfaf6] px-4 py-4 sm:px-6 sm:py-5">
+                <div className="bg-[#fffdf8] px-4 sm:px-6">
                     {activeDetailTab === 'description' && (
                         <>
-                    {(showReferralModule || isMemberRestrictedJob) && isAuthenticated && !isMember && (
+                    {COMPLIANCE_FEATURES.membershipPromotionBanners && (showReferralModule || isMemberRestrictedJob) && isAuthenticated && !isMember && (
                             <button
                                 type="button"
                                 onClick={() => goToMembershipPayment('referral', 'job_detail_member_value_panel')}
-                                className="group flex w-full items-center justify-between gap-3 rounded-[18px] border border-[#f1d9a5] bg-[linear-gradient(135deg,rgba(255,252,242,0.98)_0%,rgba(246,251,255,0.96)_100%)] px-3.5 py-2.5 text-left shadow-[0_18px_46px_-40px_rgba(82,112,136,0.42)] transition-all hover:-translate-y-0.5 hover:border-[#e9c775] hover:shadow-[0_24px_54px_-42px_rgba(154,100,16,0.35)]"
+                                className="group flex w-full items-center justify-between gap-3 rounded-[18px] border border-[#f1d9a5] bg-[linear-gradient(135deg,rgba(255,252,242,0.98)_0%,rgba(246,251,255,0.96)_100%)] px-3.5 py-2.5 text-left shadow-[0_18px_46px_-40px_rgba(82,112,136,0.42)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-[#e9c775] hover:shadow-[0_24px_54px_-42px_rgba(154,100,16,0.35)]"
                             >
                                 <div className="flex min-w-0 items-center gap-2.5">
                                     <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#fff3d6] text-[#bd7a12]">
@@ -2150,7 +2105,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         <span className="block truncate text-[12px] font-semibold text-slate-500">{text('了解适合你的服务方案，加入后可开通网站对应权限。', 'Explore a plan that fits your needs and unlock the relevant tools.')}</span>
                                     </span>
                                 </div>
-                                <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-slate-950 px-3.5 text-[12px] font-black text-white transition-colors group-hover:bg-[#6f63f6]">
+                                <span className="inline-flex h-8 shrink-0 items-center rounded-full bg-slate-950 px-3.5 text-[12px] font-black text-white transition-colors group-hover:bg-[#466f9d]">
                                     {text('了解解锁方式', 'See unlock options')}
                                 </span>
                             </button>
@@ -2180,80 +2135,52 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             </div>
                         </section>
                     )}
-                    {/* 帮我内推 — placed ABOVE AI match analysis */}
-                    {showReferralModule && (
+                    {/* Historical email application information — kept above match analysis. */}
+                    {canDisplayReferralModule && (
                         <section>
                             <div className="rounded-[22px] border border-[#dce8ef] bg-white/92 p-4 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.34)] sm:rounded-[26px] sm:p-5 md:p-6">
                                 <div className="min-w-0">
                                     <div className="flex items-start justify-between gap-3">
                                         <h3 className="min-w-0 text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
-                                            帮我内推 <span className="font-black text-[#6f63f6]">@{job.company || companyInfo?.name || '该企业'}</span>
+                                            邮箱申请 <span className="font-black text-[#466f9d]">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
                                         {hasScrollableReferralContacts && (
                                             <div className="mt-0.5 flex shrink-0 items-center gap-1">
                                                 <button
                                                     type="button"
                                                     onClick={() => scrollReferralContacts('previous')}
-                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6] transition-colors hover:bg-[#ede9fe]"
+                                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hg-member-gold-300)] bg-[var(--hg-member-gold-50)] text-[var(--hg-member-gold-600)] transition-colors hover:bg-[var(--hg-member-gold-100)]"
                                                     aria-label="查看上一位联系人"
                                                     title="上一位"
                                                 >
-                                                    <ChevronLeft className="h-4 w-4" />
+                                                    <ChevronLeft aria-hidden="true" className="h-4 w-4" />
                                                 </button>
                                                 <button
                                                     type="button"
                                                     onClick={() => scrollReferralContacts('next')}
-                                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6] transition-colors hover:bg-[#ede9fe]"
+                                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-[var(--hg-member-gold-300)] bg-[var(--hg-member-gold-50)] text-[var(--hg-member-gold-600)] transition-colors hover:bg-[var(--hg-member-gold-100)]"
                                                     aria-label="查看下一位联系人"
                                                     title="下一位"
                                                 >
-                                                    <ChevronRight className="h-4 w-4" />
+                                                    <ChevronRight aria-hidden="true" className="h-4 w-4" />
                                                 </button>
                                             </div>
                                         )}
                                     </div>
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'sm:truncate' : ''}`}>
-                                        Haigoo 为你找到了本岗位的直接招聘 HR /业务负责人，简历邮件直达关键决策方，申请效率提升3倍。
+                                        选择下方公开邮箱或招聘联系人发送申请材料。已经开放的信息会继续保留在当前岗位中。
                                     </p>
                                 </div>
 
                                 {(() => {
-                                    const isReferralUnlocked = isReferralCompanyUnlocked
-
-                                    const contactThemes = [
-                                        {
-                                            art: '/pic_lists/Jobs_pics/card_bg1.webp',
-                                            shell: 'border-[#c9dcf6] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,251,255,0.96))]',
-                                            glow: 'from-[#8eb8f0] via-[#5bb6e8] to-[#6cd4bd]',
-                                            avatar: 'border-[#d8d2ff] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white',
-                                            icon: 'border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6]',
-                                            chip: 'border-[#d8d2ff] bg-[#f6f3ff] text-[#6f63f6]'
-                                        },
-                                        {
-                                            art: '/pic_lists/Jobs_pics/card_bg2.webp',
-                                            shell: 'border-sky-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(244,250,255,0.96))]',
-                                            glow: 'from-sky-500 via-cyan-400 to-teal-400',
-                                            avatar: 'border-sky-200 bg-[linear-gradient(135deg,#1d9bf0_0%,#4dd4ff_100%)] text-white',
-                                            icon: 'border-sky-100 bg-sky-50 text-sky-700',
-                                            chip: 'border-sky-100 bg-sky-50 text-sky-700'
-                                        },
-                                        {
-                                            art: '/pic_lists/Jobs_pics/card_bg1.webp',
-                                            shell: 'border-emerald-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(245,252,248,0.96))]',
-                                            glow: 'from-emerald-500 via-teal-400 to-cyan-400',
-                                            avatar: 'border-emerald-200 bg-[linear-gradient(135deg,#22c55e_0%,#14b8a6_100%)] text-white',
-                                            icon: 'border-emerald-100 bg-emerald-50 text-emerald-700',
-                                            chip: 'border-emerald-100 bg-emerald-50 text-emerald-700'
-                                        },
-                                        {
-                                            art: '/pic_lists/Jobs_pics/card_bg2.webp',
-                                            shell: 'border-violet-100/95 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(249,246,255,0.96))]',
-                                            glow: 'from-violet-500 via-fuchsia-400 to-pink-400',
-                                            avatar: 'border-violet-200 bg-[linear-gradient(135deg,#8b5cf6_0%,#ec4899_100%)] text-white',
-                                            icon: 'border-violet-100 bg-violet-50 text-violet-700',
-                                            chip: 'border-violet-100 bg-violet-50 text-violet-700'
-                                        }
-                                    ]
+                                    const contactTheme = {
+                                        art: '/pic_lists/Jobs_pics/card_bg2.webp',
+                                        shell: 'border-[#dfbd94] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,238,0.97))]',
+                                        glow: 'from-[#9b5c20] via-[#c97a36] to-[#e96832]',
+                                        avatar: 'border-[#dfbd94] bg-[linear-gradient(135deg,#9b5c20_0%,#c97a36_58%,#e96832_100%)] text-white',
+                                        icon: 'border-[#dfbd94] bg-[#fff7ee] text-[#784316]',
+                                        chip: 'border-[#dfbd94] bg-[#fff7ee] text-[#784316]'
+                                    }
 
                                     const handleLockedContactClick = (event: React.MouseEvent, mode: 'guest' | 'verification_required' | 'member_only' | 'free_available' | 'free_exhausted') => {
                                         event.preventDefault()
@@ -2277,7 +2204,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     return (
                                         <div ref={referralContactsScrollRef} className="mt-4 flex overflow-x-auto gap-3 pb-4 snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:gap-4">
                                             {displayReferralContacts.map((contact, index) => {
-                                                const theme = contactThemes[index % contactThemes.length]
+                                                const theme = contactTheme
                                                 const isUnlockedCard = referralAccessMode === 'unlocked'
                                                 const displayName = isUnlockedCard ? (contact.name || '-') : `${formatMaskedName(contact.name)}*`
                                                 const displayTitle = contact.title || 'Hiring Contact'
@@ -2290,13 +2217,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                     : shouldShowUnifiedReferralUnlock
                                                         ? getUnifiedReferralUnlockLabel()
                                                             : referralAccessMode === 'guest'
-                                                                ? '帮我内推（需登录）'
+                                                                ? '邮箱申请（需登录）'
                                                             : referralAccessMode === 'verification_required'
-                                                                ? '一键解锁（待验证）'
+                                                                ? '查看邮箱（待验证）'
                                                             : referralAccessMode === 'member_only'
                                                                 ? '了解解锁方式'
                                                                 : referralAccessMode === 'free_exhausted'
-                                                                    ? `一键解锁 ${referralFreeRemaining}/${referralFreeLimit}`
+                                                                    ? `查看邮箱 ${referralFreeRemaining}/${referralFreeLimit}`
                                                                     : shouldShowReferralTrialCount
                                                                         ? `${getReferralEmailActionLabel(contact)} ${referralFreeRemaining}/${referralFreeLimit}`
                                                                         : getReferralEmailActionLabel(contact)
@@ -2316,6 +2243,8 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                         <img
                                                             src={theme.art}
                                                             alt=""
+                                                            width="128"
+                                                            height="86"
                                                             aria-hidden="true"
                                                             className="pointer-events-none absolute bottom-0 right-0 h-[86px] w-[128px] object-cover object-right-bottom opacity-[0.13]"
                                                             loading="lazy"
@@ -2352,9 +2281,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                             event.stopPropagation()
                                                                             openReferralEmailAssistant(contact)
                                                                         }}
-                                                                        className={`flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[13px] font-bold shadow-sm transition-all duration-200 hover:scale-[1.02] active:scale-[1] ${
+                                                                        className={`flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[13px] font-bold shadow-sm transition-[border-color,background-color,color,box-shadow,transform] duration-200 hover:scale-[1.02] active:scale-[1] ${
                                                                             isUnlockedCard
-                                                                                ? 'border-[#6f63f6] bg-[linear-gradient(135deg,#7f78ff_0%,#5f83f7_100%)] text-white shadow-[0_18px_32px_-24px_rgba(111,99,246,0.5)]'
+                                                                                ? 'border-[#9b5c20] bg-[linear-gradient(135deg,#9b5c20_0%,#c97a36_100%)] text-white shadow-[0_18px_32px_-24px_rgba(120,67,22,0.45)]'
                                                                                 : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
                                                                         }`}
                                                                 >
@@ -2375,14 +2304,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                             if (promptEmailVerificationIfNeeded()) return
                                                                             window.open(toSafeExternalUrl(contact.linkedin), '_blank', 'noopener,noreferrer')
                                                                         }}
-                                                                        className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border transition-all hover:scale-[1.02] ${
+                                                                        className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-[border-color,background-color,color,transform] hover:scale-[1.02] ${
                                                                             isUnlockedCard
                                                                                 ? `${theme.icon} shadow-sm hover:brightness-95`
                                                                                 : 'border-slate-200 bg-slate-100 text-slate-500'
                                                                         }`}
                                                                         title="LinkedIn"
+                                                                        aria-label={text('打开 LinkedIn 资料', 'Open LinkedIn profile')}
                                                                     >
-                                                                        <Linkedin className="h-4 w-4 shrink-0" />
+                                                                        <Linkedin aria-hidden="true" className="h-4 w-4 shrink-0" />
                                                                     </button>
                                                                 ) : null}
                                                             </div>
@@ -2408,7 +2338,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                         </div>
                     )}
 
-                    {hasApplicationGuide && (
+                    {COMPLIANCE_FEATURES.personalizedJobDiscovery && hasApplicationGuide && (
                         <div className="mb-6 space-y-3">
                             <ApplicationGuidePanel
                                 guide={applicationGuide}
@@ -2433,9 +2363,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Job Description Sections */}
                     {jobDetailSections.map((section, index) => (
-                        <section key={index} className="last:mb-0 rounded-[26px] border border-[#dce8ef] bg-white/88 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(52,76,92,0.24)]">
+                        <section key={index} className="border-t border-[#deddd7] py-7 first:border-t-0">
                             <div className="mb-4 flex items-start gap-3">
-                                <div className="mt-0.5 h-7 w-1.5 rounded-full bg-[#7fbf91]"></div>
+                                <div className="mt-3 h-px w-5 bg-[#7fbf91]"></div>
                                 <div className="min-w-0">
                                     <h3 className="text-lg font-bold text-slate-900 leading-7">
                                         {section.displayTitle}
@@ -2455,7 +2385,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
 
                     {/* Skills/Tags */}
                     {((job.tags && job.tags.length > 0) || (job.skills && job.skills.length > 0)) && (
-                        <section className="rounded-[26px] border border-[#dce8ef] bg-white/88 px-5 py-5 shadow-[0_22px_48px_-42px_rgba(52,76,92,0.24)]">
+                        <section className="border-t border-[#deddd7] py-7">
                             <h3 className="text-base font-semibold text-slate-900 mb-3">
                                 {text('技能要求', 'Skills')}
                             </h3>
@@ -2467,7 +2397,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                             />
                         </section>
                     )}
-                    <div className="mx-auto flex max-w-[760px] items-center justify-center gap-2 rounded-full border border-[#dce8ef] bg-white/72 px-4 py-2 text-center text-[12px] font-medium text-slate-500 shadow-[0_16px_34px_-32px_rgba(52,76,92,0.3)]">
+                    <div className="mx-auto flex max-w-[760px] items-center justify-center gap-2 border-t border-[#deddd7] px-4 py-5 text-center text-[12px] font-medium text-slate-500">
                         <Leaf className={`h-3.5 w-3.5 shrink-0 ${isMember ? 'text-[#7fbf91]' : 'text-[#7fbf91]'}`} aria-hidden="true" />
                         <span>
                             {isMember
@@ -2479,7 +2409,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     )}
 
                     {activeDetailTab === 'company' && (
-                        <section className="rounded-[26px] border border-slate-100 bg-white/92 p-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
+                        <section className="hg-job-detail-company-tab border-y border-[#deddd7] bg-transparent py-6">
                             <div className="mb-5 flex items-start justify-between gap-4">
                                 <div className="min-w-0">
                                     <h3 className="truncate text-xl font-black text-slate-950">{displayText(job.company || '')}</h3>
@@ -2520,13 +2450,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 <>
                                     <div className={`${firstCorporateVideo ? 'mt-5' : ''} grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3`}>
                                         {companyFactCards.map((item) => (
-                                            <div key={item.label} className="flex min-w-0 flex-col justify-center rounded-[18px] border border-slate-100 bg-white p-4 shadow-[0_2px_8px_-4px_rgba(15,23,42,0.06)] transition-colors hover:border-slate-200">
+                                            <div key={item.label} className="hg-job-detail-fact flex min-w-0 flex-col justify-center border border-[#deddd7] bg-transparent p-4 transition-colors hover:bg-[#f4f6f4]">
                                                 <div className="mb-1 text-[12px] font-medium text-slate-400">{item.label}</div>
                                                 {item.href ? (
                                                     <button
                                                         type="button"
                                                         onClick={() => window.open(toSafeExternalUrl(item.href), '_blank', 'noopener,noreferrer')}
-                                                        className="block max-w-full truncate text-left text-[14px] font-bold text-[#6f63f6] hover:text-[#5f55e8] hover:underline"
+                                                        className="block max-w-full truncate text-left text-[14px] font-bold text-[var(--hg-accent-700)] hover:text-[var(--hg-ink)] hover:underline"
                                                         title={item.value}
                                                     >
                                                         {item.value}
@@ -2543,7 +2473,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                             <div className="text-[13px] font-semibold text-slate-400">{text('企业领域/专长', 'Company specialties')}</div>
                                             <div className="mt-3 flex flex-wrap gap-2.5">
                                                 {companySpecialties.map((item) => (
-                                                    <span key={item} className="rounded-full border border-slate-200/80 bg-white px-3.5 py-1.5 text-[13px] font-semibold text-slate-600 shadow-sm">
+                                                    <span key={item} className="border border-[#deddd7] bg-transparent px-3.5 py-1.5 text-[13px] font-semibold text-slate-600">
                                                         {item}
                                                     </span>
                                                 ))}
@@ -2567,13 +2497,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     )}
 
                     {activeDetailTab === 'jobs' && (
-                        <section className="rounded-[26px] border border-slate-100 bg-white/88 p-5 shadow-[0_22px_48px_-42px_rgba(15,23,42,0.22)]">
+                        <section className="hg-job-detail-open-roles border-y border-[#deddd7] bg-transparent py-6">
                             <div className="mb-4 flex items-center justify-between">
                                 <div>
                                     <h3 className="text-lg font-bold text-slate-900">{text('企业在招岗位', 'Open roles at this company')}</h3>
                                     <p className="mt-1 text-sm text-slate-500">{text('包含当前岗位；点击其他岗位可在弹窗中查看详情', 'Includes this role; select another role to view its details.')}</p>
                                 </div>
-                                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+                                <span className="border border-[#deddd7] px-3 py-1 text-xs font-semibold text-slate-600">
                                     {companyOpenJobCount != null ? `${companyOpenJobCount}` : text('统计中', 'Loading')}
                                 </span>
                             </div>
@@ -2592,17 +2522,17 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                 }
                                                 setNestedJobIndex(index)
                                             }}
-                                            className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left transition-colors ${
+                                            className={`hg-job-detail-open-role flex w-full items-center justify-between gap-3 border px-4 py-3 text-left transition-colors ${
                                                 isCurrentJob
-                                                    ? 'border-[#d8d2ff] bg-[#f6f3ff]/70'
-                                                    : 'border-slate-200 bg-white hover:border-[#d8d2ff] hover:bg-[#f6f3ff]/45'
+                                                    ? 'is-current border-[#e96832] bg-[#fff4ee]'
+                                                    : 'border-[#deddd7] bg-transparent hover:border-[#94a79e] hover:bg-[#f4f6f4]'
                                             }`}
                                         >
                                             <div className="min-w-0">
                                                 <div className="flex min-w-0 items-center gap-2">
                                                     <div className="truncate text-sm font-bold text-slate-900">{isEnglish ? item.title : (item.translations?.title || item.title)}</div>
                                                     {isCurrentJob ? (
-                                                        <span className="shrink-0 rounded-full bg-white px-2 py-0.5 text-[10px] font-black text-[#6f63f6]">{text('当前', 'Current')}</span>
+                                                        <span className="shrink-0 border border-[#f5b391] bg-transparent px-2 py-0.5 text-[10px] font-black text-[#c94f22]">{text('当前', 'Current')}</span>
                                                     ) : null}
                                                 </div>
                                                 <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -2631,15 +2561,15 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 isFeedbackOpen && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center z-30">
                         <div className="w-full max-w-[430px] overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)] mx-4">
-                            <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] px-5 py-5 text-white">
+                            <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)] px-5 py-5 text-white">
                                 <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                                 <div className="relative z-10 flex items-center justify-between">
                                     <div>
                                         <div className="inline-flex items-center rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[11px] font-semibold text-white/80">{text('岗位反馈', 'Job feedback')}</div>
                                         <h3 className="mt-3 text-lg font-bold">{text('告诉我们这条岗位信息是否准确', 'Tell us whether this job information is accurate')}</h3>
                                     </div>
-                                    <button onClick={() => setIsFeedbackOpen(false)} className="rounded-full border border-white/12 bg-slate-900/10 p-2 text-white/70 transition-colors hover:bg-white/15 hover:text-white">
-                                        <X className="w-4 h-4" />
+                                    <button type="button" onClick={() => setIsFeedbackOpen(false)} aria-label={text('关闭反馈窗口', 'Close feedback dialog')} className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/12 bg-slate-900/10 text-white/70 transition-colors hover:bg-white/15 hover:text-white">
+                                        <X aria-hidden="true" className="w-4 h-4" />
                                     </button>
                                 </div>
                             </div>
@@ -2663,13 +2593,13 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium mb-2">{text('反馈内容', 'Feedback')}</label>
-                                    <textarea value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm" placeholder={text('请描述你发现的问题或建议', 'Describe the issue or suggestion')}></textarea>
+                                    <label htmlFor="job-feedback-content" className="block text-sm font-medium mb-2">{text('反馈内容', 'Feedback')}</label>
+                                    <textarea id="job-feedback-content" name="jobFeedback" autoComplete="off" value={feedbackContent} onChange={(e) => setFeedbackContent(e.target.value)} rows={4} className="w-full rounded-2xl border border-slate-300 bg-white p-3 text-sm" placeholder={text('请描述你发现的问题或建议…', 'Describe the issue or suggestion…')}></textarea>
                                 </div>
-                                {feedbackMessage && <div className="text-sm text-[#6f63f6]">{feedbackMessage}</div>}
+                                {feedbackMessage && <div role="status" aria-live="polite" className="text-sm text-[var(--hg-accent-700)]">{feedbackMessage}</div>}
                                 <div className="flex justify-end gap-2">
                                     <button onClick={() => setIsFeedbackOpen(false)} className="rounded-2xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-100">{text('取消', 'Cancel')}</button>
-                                    <button onClick={submitFeedback} disabled={feedbackSubmitting} className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white hover:shadow-lg disabled:opacity-50">{text('提交', 'Submit')}</button>
+                                    <button onClick={submitFeedback} disabled={feedbackSubmitting} className="rounded-2xl bg-[var(--hg-accent-600)] px-4 py-2 text-sm font-semibold text-white transition-[background-color,box-shadow] hover:bg-[var(--hg-accent-700)] hover:shadow-lg disabled:opacity-50">{feedbackSubmitting ? text('提交中…', 'Submitting…') : text('提交', 'Submit')}</button>
                                 </div>
                             </div>
                         </div>
@@ -2690,9 +2620,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                 }}
                 contact={selectedReferralContact}
                 job={job}
-                onOpenEmail={({ contact, resumeId, resumeName }) => {
-                    handleReferralEmailOpen(contact, resumeId, resumeName)
-                }}
+                onOpenEmail={({ contact, resumeId, resumeName }) => handleReferralEmailOpen(contact, resumeId, resumeName)}
             />
             {/* Share Modal */}
             <ShareJobModal

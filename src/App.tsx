@@ -89,7 +89,7 @@ function DocumentMetadata() {
                 : path.startsWith('/verify-email')
                   ? text('验证邮箱', 'Verify Email')
                   : path.startsWith('/trusted-companies') || path.startsWith('/companies') || path.startsWith('/c/')
-                    ? text('精选企业', 'Featured Companies')
+                    ? text('远程企业', 'Remote Companies')
                     : path.startsWith('/careerlearning')
                       ? text('职业成长', 'Career Growth')
                       : 'Haigoo Remote'

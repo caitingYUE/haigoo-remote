@@ -34,10 +34,10 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
   };
 
   return (
-    <div className={`bg-gradient-to-r from-blue-50 to-indigo-50 border border-indigo-100 rounded-xl overflow-hidden shadow-sm transition-all duration-300 relative group text-left h-full ${className}`}>
+    <div className={`bg-gradient-to-r from-blue-50 to-[#eff5fb] border border-[#dce9f5] rounded-xl overflow-hidden shadow-sm transition-all duration-300 relative group text-left h-full ${className}`}>
       {/* Background Decoration */}
       <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity pointer-events-none">
-        <ShieldCheck className="w-24 h-24 text-indigo-600 rotate-12" />
+        <ShieldCheck className="w-24 h-24 text-[#466f9d] rotate-12" />
       </div>
 
       {/* Header / Collapsed View */}
@@ -45,7 +45,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
         className="p-4 flex items-start gap-4 cursor-pointer relative z-10"
         onClick={handleToggle}
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shrink-0 shadow-md shadow-indigo-200 mt-1">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-[#466f9d] flex items-center justify-center shrink-0 shadow-md shadow-[#c9dce8] mt-1">
           <ShieldCheck className="w-5 h-5 text-white" />
         </div>
 
@@ -55,9 +55,9 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
               <h4 className="font-bold text-slate-900 text-base">
                 {context === 'company' ? '海狗远程俱乐部企业筛选标准' : 'Haigoo 俱乐部已认证'}
               </h4>
-              <span className="px-2 py-0.5 bg-white/60 text-indigo-700 text-xs font-bold rounded-full border border-indigo-100 whitespace-nowrap">Verified</span>
+              <span className="px-2 py-0.5 bg-white/60 text-[#345d88] text-xs font-bold rounded-full border border-[#dce9f5] whitespace-nowrap">Verified</span>
             </div>
-            <button className={`p-1 rounded-full hover:bg-indigo-100/50 text-indigo-400 transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
+            <button className={`p-1 rounded-full hover:bg-[#dce9f5]/50 text-[#7f9fbc] transition-transform duration-300 shrink-0 ${isExpanded ? 'rotate-180' : ''}`}>
               <ChevronDown className="w-5 h-5" />
             </button>
           </div>
@@ -66,7 +66,7 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
             {getIntroText()}
           </p>
           {!isExpanded && (
-            <p className="text-xs text-indigo-500 mt-2 font-medium flex items-center gap-1 hover:text-indigo-600 transition-colors">
+            <p className="text-xs text-[#587faa] mt-2 font-medium flex items-center gap-1 hover:text-[#466f9d] transition-colors">
               点击查看 5 项认证标准 <ChevronDown className="w-3 h-3" />
             </p>
           )}
@@ -86,8 +86,8 @@ export const TrustedStandardsBanner: React.FC<TrustedStandardsBannerProps> = ({ 
               </div>
             ))}
           </div>
-          <div className="mt-4 pt-3 border-t border-indigo-100/50">
-            <p className="text-xs text-indigo-400/80 italic">
+          <div className="mt-4 pt-3 border-t border-[#dce9f5]/50">
+            <p className="text-xs text-[#7f9fbc]/80 italic">
               * Haigoo 持续监控企业状态，如发现异常将立即取消认证
             </p>
           </div>

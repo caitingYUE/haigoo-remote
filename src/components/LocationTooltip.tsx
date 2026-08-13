@@ -47,7 +47,7 @@ export function LocationTooltip({ location, onClose, floating = false }: Locatio
                 <div className="flex justify-between items-start gap-3">
                     <div>
                         <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2 mb-2">
-                            <MapPin className="w-4 h-4 text-indigo-500" />
+                            <MapPin className="w-4 h-4 text-[#587faa]" />
                             总部地址
                         </h3>
                         <p className="text-sm text-slate-600 break-words">{location}</p>
@@ -65,7 +65,7 @@ export function LocationTooltip({ location, onClose, floating = false }: Locatio
             {/* Header */}
             <div className="flex items-center justify-between p-3 border-b border-slate-100 bg-slate-50/50">
                 <h3 className="font-semibold text-slate-900 text-sm flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <MapPin className="w-4 h-4 text-[#587faa]" />
                     {data.name}, {data.country}
                 </h3>
                 <button
@@ -88,15 +88,15 @@ export function LocationTooltip({ location, onClose, floating = false }: Locatio
             <div className="p-4 space-y-3">
                 <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-indigo-500" />
+                        <Clock className="w-4 h-4 text-[#587faa]" />
                         <span className="text-slate-500">时区:</span>
                         <span className="font-medium text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded text-xs">{data.timezone}</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                         {time && (
-                            <div className="rounded-lg bg-indigo-50 px-2 py-1.5">
+                            <div className="rounded-lg bg-[#eff5fb] px-2 py-1.5">
                                 <div className="text-[10px] font-semibold text-slate-500">当地时间</div>
-                                <div className="font-mono text-xs font-semibold text-indigo-600">{time}</div>
+                                <div className="font-mono text-xs font-semibold text-[#466f9d]">{time}</div>
                             </div>
                         )}
                         {beijingTime && (

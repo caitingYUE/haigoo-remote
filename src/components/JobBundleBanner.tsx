@@ -29,15 +29,15 @@ function getDisplayName(user: ReturnType<typeof useAuth>['user']) {
 // Default full-width banner (kept for compatibility)
 export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
   const navigate = useNavigate();
-  const { isMember } = useAuth();
+  const { isAuthenticated } = useAuth();
   const { text } = useLanguage();
 
   const isMemberBundle = bundle.visibility === 'member';
-  const isLocked = isMemberBundle && !isMember;
+  const isLocked = isMemberBundle && !isAuthenticated;
   const accessBadge = bundle.visibility === 'specified'
     ? text('仅你可见', 'Only you')
     : bundle.visibility === 'member'
-      ? text('Club 权益', 'Club benefits')
+      ? text('信息合集', 'Information collection')
       : null;
 
   const handleClick = () => {
@@ -51,15 +51,15 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && handleClick()}
-      className="group relative overflow-hidden rounded-2xl cursor-pointer mb-0 border border-[#dfe8ef] shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 hover:border-[#cfe0ea] bg-[linear-gradient(135deg,#fffdf8_0%,#ffffff_58%,#f3fbf6_100%)]"
+      className="group relative mb-0 cursor-pointer overflow-hidden border border-[#ead9d0] border-t-2 border-t-[#e96832] bg-[#fffaf6] shadow-[0_16px_38px_-32px_rgba(24,32,51,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#f0c8b4] hover:shadow-[0_22px_44px_-32px_rgba(24,32,51,0.34)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e96832]"
     >
       <img src="/pic_lists/Home_pics/grass_icon2-transparent.webp" alt="" className="pointer-events-none absolute bottom-0 right-5 h-20 opacity-20" />
       <div className="relative pl-4 pr-8 py-4 flex items-center gap-4 min-h-[104px]">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/70 backdrop-blur-md border border-slate-200 text-xs font-bold text-slate-800 shadow-sm">
+            <span className="inline-flex items-center gap-1.5 border border-[#f0c8b4] bg-white px-2.5 py-1 text-[11px] font-bold tracking-[0.04em] text-[#c94f22]">
               {isMemberBundle
-                ? <><Crown className="w-3 h-3 fill-indigo-900/60" />{text('会员专属', 'Members only')}</>
+                ? <><Layers className="w-3 h-3" />{text('信息合集', 'Information collection')}</>
                 : <><Layers className="w-3 h-3" />{text('精选合集', 'Curated collection')}</>
               }
             </span>
@@ -69,11 +69,11 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
         </div>
         <div className="flex-shrink-0">
           {isLocked ? (
-            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/60 border border-indigo-100 text-indigo-400 backdrop-blur-md">
+            <div className="flex h-9 w-9 items-center justify-center border border-[#f0c8b4] bg-white text-[#c94f22]">
               <Lock className="w-4 h-4" />
             </div>
           ) : (
-            <div className="flex items-center justify-center w-9 h-9 rounded-full text-white shadow-md shadow-[#7b74ff]/20 transition-transform duration-200 group-hover:scale-105 bg-[#7b74ff]">
+            <div className="flex h-9 w-9 items-center justify-center bg-[#182033] text-white shadow-md transition-transform duration-200 group-hover:translate-x-0.5">
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" />
             </div>
           )}
@@ -85,24 +85,18 @@ export default function JobBundleBanner({ bundle }: JobBundleBannerProps) {
 
 const CAROUSEL_COLORS = [
   {
-    shell: 'border-[#b9ead4] bg-[linear-gradient(135deg,#f7fff9_0%,#ffffff_58%,#f0fbf5_100%)]',
-    badge: 'border-[#bde8d1] bg-white/86 text-[#26946b]',
-    count: 'border-[#d7eee3] bg-white/92 text-[#43886c]',
-    button: 'bg-[#38b985] hover:bg-[#2ca875] shadow-[#38b985]/20',
+    shell: 'border-[#ead9d0] border-t-[#e96832] bg-[#fffaf6]',
+    count: 'border-[#f0c8b4] bg-white text-[#c94f22]',
     image: '/pic_lists/Jobs_pics/bundle-nontech.webp'
   },
   {
-    shell: 'border-[#c9dcf6] bg-[linear-gradient(135deg,#f7fbff_0%,#ffffff_58%,#f2f7ff_100%)]',
-    badge: 'border-[#c9dcf6] bg-white/86 text-[#2f6ed8]',
-    count: 'border-[#dce8f7] bg-white/92 text-[#587aa9]',
-    button: 'bg-[#3f7ee8] hover:bg-[#2f6ed8] shadow-[#3f7ee8]/20',
+    shell: 'border-[#ead9d0] border-t-[#e96832] bg-[#fffaf6]',
+    count: 'border-[#f0c8b4] bg-white text-[#c94f22]',
     image: '/pic_lists/Jobs_pics/bundle-product.webp'
   },
   {
-    shell: 'border-[#f4dda6] bg-[linear-gradient(135deg,#fffaf0_0%,#ffffff_58%,#fff6df_100%)]',
-    badge: 'border-[#f0d89c] bg-white/86 text-[#c28222]',
-    count: 'border-[#f5e5bd] bg-white/92 text-[#a9792c]',
-    button: 'bg-[#e7a53b] hover:bg-[#d99322] shadow-[#e7a53b]/20',
+    shell: 'border-[#ead9d0] border-t-[#e96832] bg-[#fffaf6]',
+    count: 'border-[#f0c8b4] bg-white text-[#c94f22]',
     image: '/pic_lists/Jobs_pics/bundle-tech.webp'
   }
 ];
@@ -147,7 +141,7 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
   const accessBadge = bundle.visibility === 'specified'
     ? text('仅你可见', 'Only you')
     : bundle.visibility === 'member'
-      ? text('Club 权益', 'Club benefits')
+      ? text('信息合集', 'Information collection')
       : null;
 
   const handleClick = () => {
@@ -163,33 +157,26 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
         type="button"
         onClick={handleClick}
         aria-label={`${text('打开专属求职准备', 'Open personal preparation plan')}：${bundle.title}`}
-        className="group relative h-full min-h-[176px] w-full min-w-0 overflow-hidden rounded-[20px] border border-[#ded8ff] bg-[linear-gradient(115deg,#fcfbff_0%,#ffffff_58%,#f7f5ff_100%)] text-left shadow-[0_18px_44px_-36px_rgba(83,72,180,0.38)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#bcb0ff] hover:shadow-[0_22px_48px_-34px_rgba(83,72,180,0.48)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]"
+        className="group relative h-full min-h-[176px] w-full min-w-0 overflow-hidden border border-[#ead9d0] border-t-2 border-t-[#e96832] bg-[#fffaf6] text-left shadow-[0_18px_44px_-36px_rgba(24,32,51,0.28)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#f0c8b4] hover:shadow-[0_22px_48px_-34px_rgba(24,32,51,0.34)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e96832]"
       >
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%] bg-[linear-gradient(90deg,rgba(255,255,255,0)_0%,rgba(247,245,255,0.94)_100%)]" />
-        <img
-          src={theme.image}
-          alt=""
-          aria-hidden="true"
-          className="pointer-events-none absolute bottom-0 right-3 h-[94px] w-[168px] object-contain opacity-55 transition-transform duration-300 group-hover:scale-[1.04]"
-          loading="lazy"
-          decoding="async"
-        />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-[42%] bg-[linear-gradient(90deg,rgba(255,253,248,0)_0%,rgba(255,248,232,0.9)_100%)]" />
+        <span aria-hidden="true" className="pointer-events-none absolute -bottom-12 -right-10 h-36 w-36 rounded-full border-[26px] border-[#ffd9c7]/60" />
         <div className="relative flex h-full min-h-[176px] flex-col p-4 sm:p-[18px]">
           <div className="flex items-start justify-between gap-3">
             <h3 className="line-clamp-2 max-w-[70%] text-[17px] font-bold leading-[1.4] tracking-[-0.01em] text-slate-900 sm:text-[18px]">
               {bundle.title}
             </h3>
-            {accessBadge && <span className="shrink-0 rounded-full border border-[#ded6ff] bg-white/88 px-2.5 py-1 text-[11px] font-semibold text-[#6759e8] shadow-sm">{accessBadge}</span>}
+            {accessBadge && <span className="shrink-0 border border-[#f0c8b4] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#c94f22]">{accessBadge}</span>}
           </div>
           <div className="mt-2 flex max-w-[70%] min-w-0 items-center gap-1.5 text-xs leading-5">
-            <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#6759e8]">
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-[#c94f22]">
               <Crown className="h-3.5 w-3.5 fill-current" />
               {text('专属准备方案', 'Personal plan')}
             </span>
-            {displayName && <span title={displayName} className="min-w-0 truncate font-semibold text-[#776be9]">@{displayName}</span>}
+            {displayName && <span title={displayName} className="min-w-0 truncate font-semibold text-[#c94f22]">@{displayName}</span>}
           </div>
           {bundle.subtitle && <p className="mt-1 max-w-[70%] truncate text-xs font-medium leading-5 text-slate-500">{bundle.subtitle}</p>}
-          <span className="mt-auto inline-flex w-fit items-center gap-1.5 rounded-full bg-[#6f63f6] px-3.5 py-2 text-xs font-bold text-white shadow-[0_12px_24px_-16px_rgba(95,82,222,0.9)] transition group-hover:bg-[#5d50df]">
+          <span className="mt-auto inline-flex w-fit items-center gap-1.5 bg-[#182033] px-3.5 py-2 text-xs font-bold text-white shadow-[0_12px_24px_-16px_rgba(24,32,51,0.55)] transition group-hover:bg-[#c94f22]">
             {text('打开准备方案', 'Open plan')}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
           </span>
         </div>
@@ -201,27 +188,24 @@ export function JobBundleCard({ bundle, colorIndex }: JobBundleCardProps) {
     <button
       type="button"
       onClick={handleClick}
-      className={`group relative h-full min-w-0 cursor-pointer overflow-hidden rounded-[18px] border text-left ${theme.shell} shadow-[0_14px_34px_-32px_rgba(52,76,92,0.26)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_44px_-36px_rgba(52,76,92,0.34)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6f63f6]`}
-      style={{ minHeight: '122px' }}
+      className={`group relative h-full min-w-0 cursor-pointer overflow-hidden border border-t-2 text-left ${theme.shell} shadow-[0_14px_34px_-32px_rgba(24,32,51,0.26)] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#f0c8b4] hover:shadow-[0_20px_44px_-34px_rgba(24,32,51,0.32)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#e96832]`}
+      style={{ minHeight: '166px' }}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.84)_62%,rgba(255,255,255,0.34)_100%)]" />
-      <img
-        src={theme.image}
-        alt=""
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-0 left-1/2 h-[58px] w-[138px] -translate-x-1/2 object-contain opacity-82 transition-transform duration-300 group-hover:scale-105"
-        loading="lazy"
-        decoding="async"
-      />
-      <div className="relative flex h-full flex-col p-3.5">
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(145deg,rgba(255,250,246,0.98),rgba(255,255,255,0.96))]" />
+      <span aria-hidden="true" className="pointer-events-none absolute -bottom-10 -right-8 h-28 w-28 rounded-full border-[22px] border-[#ffd9c7]/50" />
+      <div className="relative flex h-full min-h-[166px] flex-col p-4">
         <div className="mb-1 flex items-start justify-between gap-2">
-          <h3 className="line-clamp-3 min-h-[60px] max-w-[190px] text-[16px] font-black leading-snug tracking-tight text-slate-900">
+          <h3 className="line-clamp-2 max-w-[78%] text-[17px] font-bold leading-snug tracking-tight text-slate-900">
             {bundle.title}
           </h3>
-          {accessBadge && <span className={`shrink-0 rounded-full border bg-white/86 px-2 py-0.5 text-[11px] font-bold shadow-sm ${theme.count}`}>
+          {accessBadge && <span className={`shrink-0 border px-2 py-1 text-[10px] font-bold ${bundle.visibility === 'member' ? 'border-[#e7c98e] bg-[#fff8e8] text-[#8f5e19]' : theme.count}`}>
             {accessBadge}
           </span>}
         </div>
+        {bundle.subtitle ? <p className="mt-2 line-clamp-2 max-w-[82%] text-xs leading-5 text-slate-500">{bundle.subtitle}</p> : null}
+        <span className="mt-auto inline-flex items-center gap-1 text-xs font-bold text-[#c94f22]">
+          {text('查看合集', 'View collection')}<ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
       </div>
     </button>
   );
@@ -231,7 +215,7 @@ export function JobBundleCarousel({ bundles }: JobBundleCarouselProps) {
   if (!bundles.length) return null;
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[22px] bg-[#fffdf9]">
+    <div className="relative w-full overflow-hidden bg-[#fffdf8]">
       <div
         className="flex touch-pan-x snap-x snap-mandatory gap-3 overflow-x-auto px-0.5 py-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >

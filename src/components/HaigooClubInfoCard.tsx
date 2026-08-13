@@ -13,78 +13,39 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
   const { text } = useLanguage();
 
   return (
-    <div className={`relative overflow-hidden rounded-[34px] border border-[#e3edf4] bg-white p-7 shadow-[0_26px_76px_-60px_rgba(62,91,120,0.42)] lg:p-8 ${className}`}>
-      <div className="pointer-events-none absolute inset-x-8 bottom-0 h-24 rounded-t-[100%] bg-[linear-gradient(180deg,rgba(255,255,255,0)_0%,rgba(231,244,222,0.34)_100%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_12%,rgba(255,232,170,0.16),transparent_17%),radial-gradient(circle_at_52%_72%,rgba(206,236,247,0.18),transparent_18%)]" />
-      <img src="/pic_lists/Home_pics/background04.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute inset-x-0 bottom-0 h-44 w-full object-cover object-bottom opacity-[0.13]" />
-      <div className="relative grid gap-8 lg:grid-cols-[1.08fr_0.92fr_0.9fr] lg:items-start lg:divide-x lg:divide-[#e5edf3]">
-        <div className="lg:pr-8">
-          <div className="flex items-center gap-4">
-            <img src={clubLogo} alt={text('海狗远程俱乐部', 'Haigoo Remote Club')} loading="lazy" decoding="async" className="h-[92px] w-[92px] object-contain" />
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-2xl font-black text-slate-950">{text('海狗远程俱乐部', 'Haigoo Remote Club')}</h3>
-                <span className="inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full">
-                  <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" loading="lazy" decoding="async" className="h-14 w-14 object-contain opacity-85" />
-                </span>
-              </div>
-              <div className="mt-2 h-2 w-20 rounded-full bg-[linear-gradient(90deg,#a9a3ff,#d8d4ff)]" />
-            </div>
-          </div>
-          <p className="mt-5 max-w-xl text-sm leading-7 text-slate-600">
-            {text('一个带你打开全球远程职业可能性的俱乐部。Haigoo 帮助中国专业人才探索远程工作机会，实现工作与生活的更好平衡。', 'A community for exploring global remote careers. Haigoo helps professionals discover opportunities and create a better balance between work and life.')}
-          </p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a href="/profile?tab=about" className="inline-flex items-center justify-center gap-2 rounded-full border border-[#d8e5f0] bg-white px-5 py-2.5 text-sm font-black text-slate-700 shadow-sm hover:text-[#2f6ed8]">
-              {text('关于我们', 'About us')}
-              <ArrowRight className="h-4 w-4 text-[#c99535]" />
-            </a>
-          </div>
+    <section className={`haigoo-brand-footer ${className}`} aria-labelledby="haigoo-brand-footer-title">
+      <div className="haigoo-brand-footer__main">
+        <div className="haigoo-brand-footer__intro">
+          <img src={clubLogo} alt="" loading="lazy" decoding="async" className="haigoo-brand-footer__mark" />
+          <p className="haigoo-editorial-label">Haigoo Remote</p>
+          <h3 id="haigoo-brand-footer-title">{text('海狗远程', 'Haigoo Remote')}</h3>
+          <p>{text('持续整理来自全球企业公开渠道的远程工作信息，也记录工作、生活与职业选择的不同可能。', 'A continuing record of remote work information from public company sources — and the many ways work, life, and career choices can take shape.')}</p>
+          <a href="/profile?tab=about" className="haigoo-brand-footer__about-link">
+            {text('了解 Haigoo', 'About Haigoo')}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
         </div>
-        <div className="lg:px-8">
-          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#eef7ff] text-[#65a15d]">
-            <MapPin className="h-5 w-5" />
-          </div>
-          <div className="text-lg font-black text-slate-950">{text('运营主体', 'Operated by')}</div>
-          <div className="mt-2 h-2 w-14 rounded-full bg-[linear-gradient(90deg,#a9a3ff,#d8d4ff)]" />
-          <p className="mt-6 text-sm leading-8 text-slate-600">
-            {text('行渡科技（杭州）有限责任公司', 'Xingdu Technology (Hangzhou) Co., Ltd.')}<br />
-            {text('杭州市余杭区', 'Yuhang District, Hangzhou')}
-          </p>
+        <div className="haigoo-brand-footer__column">
+          <MapPin className="haigoo-brand-footer__icon" aria-hidden="true" />
+          <p className="haigoo-editorial-label">{text('运营主体', 'Operated by')}</p>
+          <p>{text('行渡科技（杭州）有限责任公司', 'Xingdu Technology (Hangzhou) Co., Ltd.')}<br />{text('杭州市余杭区', 'Yuhang District, Hangzhou')}</p>
         </div>
-        <div className="lg:pl-8">
-          <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1ef] text-[#d89183]">
-            <ShieldCheck className="h-5 w-5" />
-          </div>
-          <div className="text-lg font-black text-slate-950">{text('联系方式', 'Contact')}</div>
-          <div className="mt-2 h-2 w-14 rounded-full bg-[linear-gradient(90deg,#a9a3ff,#d8d4ff)]" />
-          <a href="mailto:hi@haigooremote.com" className="mt-6 block text-lg font-black text-[#2f6ed8]">hi@haigooremote.com</a>
-          <p className="mt-2 text-sm text-slate-500">{text('周一至周日 9:00-22:00', 'Daily, 9:00–22:00 (China Standard Time)')}</p>
+        <div className="haigoo-brand-footer__column">
+          <ShieldCheck className="haigoo-brand-footer__icon" aria-hidden="true" />
+          <p className="haigoo-editorial-label">{text('联系方式', 'Contact')}</p>
+          <a href="mailto:hi@haigooremote.com">hi@haigooremote.com</a>
+          <p>{text('周一至周日 9:00–22:00', 'Daily, 9:00–22:00 (China Standard Time)')}</p>
         </div>
       </div>
-      <div className="relative mt-10 flex flex-col gap-4 border-t border-[#e5edf3] pt-5 text-sm font-semibold text-slate-500 md:grid md:grid-cols-[1fr_auto_1fr] md:items-end">
-        <div>
-          <div>{text('© 2026 行渡科技（杭州）有限责任公司 版权所有', '© 2026 Xingdu Technology (Hangzhou) Co., Ltd. All rights reserved.')}</div>
-        </div>
-        <div className="flex items-center gap-2 md:justify-center md:text-center">
-          <span className="sr-only">Be free. Work anywhere. Live fully.</span>
-          <img
-            src="/pic_lists/Handwriting/hand-be-free.webp"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="h-auto w-[260px] max-w-full opacity-85"
-          />
-          <span className="inline-flex h-6 w-6 items-center justify-center overflow-hidden rounded-full">
-            <img src="/pic_lists/Home_pics/love-transparent.webp" alt="" loading="lazy" decoding="async" className="h-10 w-10 object-contain opacity-80" />
-          </span>
-        </div>
-        <div className="flex items-center gap-3 md:justify-end">
+      <div className="haigoo-brand-footer__base">
+        <small>{text('© 2026 行渡科技（杭州）有限责任公司 版权所有', '© 2026 Xingdu Technology (Hangzhou) Co., Ltd. All rights reserved.')}</small>
+        <span className="haigoo-brand-footer__tagline">Be free. Work anywhere. Live fully.</span>
+        <div className="haigoo-brand-footer__socials">
           <a
             href="https://www.xiaohongshu.com/user/profile/67d43c60000000000e02c1c9"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-[#e4e9ff] bg-white/90 px-3 text-xs font-black text-[#8a86e8] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#f6f4ff]"
+            className="haigoo-brand-footer__social haigoo-brand-footer__social--labeled"
             aria-label={text('小红书', 'Xiaohongshu')}
           >
             <XiaohongshuLogo className="h-4 w-4" />
@@ -95,7 +56,7 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
               type="button"
               onClick={() => setShowWechatQr((value) => !value)}
               onMouseEnter={() => setShowWechatQr(true)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e4e9ff] bg-white/90 text-[#8a86e8] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#f6f4ff]"
+              className="haigoo-brand-footer__social"
               aria-label={text('微信公众号二维码', 'WeChat official account QR code')}
               aria-expanded={showWechatQr}
             >
@@ -103,16 +64,16 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
             </button>
             {showWechatQr ? (
               <div
-                className="absolute bottom-[calc(100%+12px)] left-1/2 z-30 w-[220px] -translate-x-1/2 rounded-[22px] border border-[#e4e9ff] bg-white p-3 text-center shadow-[0_20px_50px_-34px_rgba(61,89,120,0.7)]"
+                className="haigoo-brand-footer__qr-popover"
                 onMouseEnter={() => setShowWechatQr(true)}
                 onMouseLeave={() => setShowWechatQr(false)}
               >
                 <div className="text-xs font-black text-slate-700">{text('微信公众号', 'WeChat official account')}</div>
-                <div className="mx-auto mt-2 w-40 rounded-[16px] border border-[#eef2f7] bg-[#fbfdff] p-2">
+                <div className="haigoo-brand-footer__qr-image">
                   <img src="/qrcode.webp" alt={text('Haigoo Remote 微信公众号二维码', 'Haigoo Remote WeChat QR code')} className="h-full w-full object-contain" />
                 </div>
-                <div className="mt-2 text-[11px] font-bold leading-5 text-slate-500">{text('扫码或微信搜索“海狗远程”', 'Scan or search for “海狗远程” in WeChat')}</div>
-                <div className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 border-b border-r border-[#e4e9ff] bg-white" />
+                <div className="mt-2 text-[11px] font-bold leading-5 text-slate-500">{text('微信扫码加入', 'Scan to join on WeChat')}</div>
+                <div className="haigoo-brand-footer__qr-caret" />
               </div>
             ) : null}
           </div>
@@ -120,20 +81,20 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
             href="https://www.linkedin.com/company/haigoo/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e4e9ff] bg-white/90 text-[#8a86e8] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#f6f4ff]"
+            className="haigoo-brand-footer__social"
             aria-label="LinkedIn"
           >
             <LinkedInLogo className="h-4 w-4" />
           </a>
           <a
             href="mailto:hi@haigooremote.com"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e4e9ff] bg-white/90 text-[#8a86e8] shadow-sm transition-all hover:-translate-y-0.5 hover:bg-[#f6f4ff]"
+            className="haigoo-brand-footer__social"
             aria-label={text('邮箱', 'Email')}
           >
             <OutlookLogo className="h-4 w-4" />
           </a>
         </div>
       </div>
-    </div>
+    </section>
   );
 }

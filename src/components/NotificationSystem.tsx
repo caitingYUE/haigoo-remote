@@ -115,26 +115,13 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
   const getIcon = () => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
+        return <CheckCircle aria-hidden="true" className="hg-toast__icon w-5 h-5" />
       case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-600" />
+        return <AlertCircle aria-hidden="true" className="hg-toast__icon w-5 h-5" />
       case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-yellow-600" />
+        return <AlertTriangle aria-hidden="true" className="hg-toast__icon w-5 h-5" />
       case 'info':
-        return <Info className="w-5 h-5 text-indigo-600" />
-    }
-  }
-
-  const getBackgroundColor = () => {
-    switch (type) {
-      case 'success':
-        return 'bg-green-50 border-green-200'
-      case 'error':
-        return 'bg-red-50 border-red-200'
-      case 'warning':
-        return 'bg-yellow-50 border-yellow-200'
-      case 'info':
-        return 'bg-indigo-50 border-indigo-200'
+        return <Info aria-hidden="true" className="hg-toast__icon w-5 h-5" />
     }
   }
 
@@ -143,11 +130,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
       role={type === 'error' || type === 'warning' ? 'alert' : 'status'}
       aria-live={type === 'error' || type === 'warning' ? 'assertive' : 'polite'}
       aria-atomic="true"
-      className={`
-      ${getBackgroundColor()}
-      border rounded-lg p-4 shadow-lg animate-slide-in-right
-      transform transition-all duration-300 sm:hover:scale-105
-    `}
+      className={`hg-toast hg-toast--${type} animate-slide-in-right transform transition-[opacity,transform] duration-300`}
     >
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
@@ -166,7 +149,7 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
           {action && (
             <button
               onClick={action.onClick}
-              className="mt-2 text-sm font-medium text-indigo-600 hover:text-indigo-800"
+              className="hg-toast__action mt-2 text-sm font-semibold"
             >
               {action.label}
             </button>
@@ -175,10 +158,10 @@ function NotificationItem({ notification, onClose }: NotificationItemProps) {
 
         <button
           onClick={onClose}
-          aria-label="Close notification"
-          className="flex-shrink-0 text-slate-400 hover:text-slate-600 transition-colors"
+          aria-label="关闭通知"
+          className="hg-toast__close -mr-2 -mt-2 inline-flex h-11 w-11 flex-shrink-0 items-center justify-center text-slate-400 transition-colors hover:text-slate-700"
         >
-          <X className="w-4 h-4" />
+          <X aria-hidden="true" className="w-4 h-4" />
         </button>
       </div>
     </div>

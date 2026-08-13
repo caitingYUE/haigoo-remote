@@ -75,7 +75,7 @@ export default function JoinClubApplicationPage() {
           </p>
           <button
             onClick={() => navigate('/')}
-            className="w-full py-3 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 transition-colors"
+            className="w-full py-3 bg-[#466f9d] text-white font-medium rounded-xl hover:bg-[#345d88] transition-colors"
           >
             返回首页
           </button>
@@ -96,9 +96,9 @@ export default function JoinClubApplicationPage() {
         </button>
 
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-indigo-600 px-8 py-10 text-center">
+          <div className="bg-[#466f9d] px-8 py-10 text-center">
             <h1 className="text-3xl font-bold text-white mb-4">加入海狗远程俱乐部</h1>
-            <p className="text-indigo-100 max-w-xl mx-auto">
+            <p className="text-[#dce9f5] max-w-xl mx-auto">
               我们要寻找的不仅仅是求职者，而是愿意探索新生活方式、拥有共同价值观的伙伴。请认真填写以下内容，帮助我们更好地了解你。
             </p>
           </div>
@@ -106,7 +106,7 @@ export default function JoinClubApplicationPage() {
           <form onSubmit={handleSubmit} className="p-8 space-y-8">
             {/* Section 1: Professional Background */}
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 border-l-4 border-indigo-600 pl-3">职业背景</h3>
+              <h3 className="text-lg font-bold text-slate-900 border-l-4 border-[#466f9d] pl-3">职业背景</h3>
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -115,7 +115,7 @@ export default function JoinClubApplicationPage() {
                 <textarea
                   required
                   rows={4}
-                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-4 bg-slate-50/50"
+                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-4 bg-slate-50/50"
                   placeholder="请简要介绍您的核心技能、工作年限及主要成就..."
                   value={formData.experience}
                   onChange={e => setFormData({...formData, experience: e.target.value})}
@@ -129,7 +129,7 @@ export default function JoinClubApplicationPage() {
                 <textarea
                   required
                   rows={3}
-                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-4 bg-slate-50/50"
+                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-4 bg-slate-50/50"
                   placeholder="您期望在未来3-5年内达成什么样的职业目标？"
                   value={formData.careerIdeal}
                   onChange={e => setFormData({...formData, careerIdeal: e.target.value})}
@@ -142,7 +142,7 @@ export default function JoinClubApplicationPage() {
                 </label>
                 <input
                   type="text"
-                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 bg-slate-50/50"
+                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-3 bg-slate-50/50"
                   placeholder="https://..."
                   value={formData.portfolio}
                   onChange={e => setFormData({...formData, portfolio: e.target.value})}
@@ -154,7 +154,7 @@ export default function JoinClubApplicationPage() {
 
             {/* Section 2: Value & Contribution */}
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 border-l-4 border-indigo-600 pl-3">价值观与共建</h3>
+              <h3 className="text-lg font-bold text-slate-900 border-l-4 border-[#466f9d] pl-3">价值观与共建</h3>
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
@@ -163,7 +163,7 @@ export default function JoinClubApplicationPage() {
                 <textarea
                   required
                   rows={3}
-                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-4 bg-slate-50/50"
+                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-4 bg-slate-50/50"
                   placeholder="例如：寻找合伙人、获取内推机会、交流远程经验..."
                   value={formData.expectations}
                   onChange={e => setFormData({...formData, expectations: e.target.value})}
@@ -177,7 +177,7 @@ export default function JoinClubApplicationPage() {
                 <textarea
                   required
                   rows={3}
-                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-4 bg-slate-50/50"
+                  className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-4 bg-slate-50/50"
                   placeholder="例如：分享设计经验、提供法律咨询、组织线下活动..."
                   value={formData.contribution}
                   onChange={e => setFormData({...formData, contribution: e.target.value})}
@@ -189,7 +189,7 @@ export default function JoinClubApplicationPage() {
 
             {/* Section 3: Contact */}
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-900 border-l-4 border-indigo-600 pl-3">联系方式</h3>
+              <h3 className="text-lg font-bold text-slate-900 border-l-4 border-[#466f9d] pl-3">联系方式</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
@@ -197,7 +197,7 @@ export default function JoinClubApplicationPage() {
                     联系方式类型
                   </label>
                   <select
-                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 bg-slate-50/50"
+                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-3 bg-slate-50/50"
                     value={formData.contactType}
                     onChange={e => setFormData({...formData, contactType: e.target.value as any})}
                   >
@@ -213,7 +213,7 @@ export default function JoinClubApplicationPage() {
                   <input
                     required
                     type="text"
-                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 bg-slate-50/50"
+                    className="w-full rounded-xl border-slate-300 shadow-sm focus:border-[#587faa] focus:ring-[#587faa] p-3 bg-slate-50/50"
                     placeholder={formData.contactType === 'wechat' ? '请输入微信号' : formData.contactType === 'email' ? 'example@mail.com' : '13800000000'}
                     value={formData.contact}
                     onChange={e => setFormData({...formData, contact: e.target.value})}
@@ -226,7 +226,7 @@ export default function JoinClubApplicationPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#466f9d] text-white font-bold rounded-xl hover:bg-[#345d88] transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

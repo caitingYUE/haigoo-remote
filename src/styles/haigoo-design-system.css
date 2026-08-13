@@ -1,0 +1,384 @@
+/*
+ * Haigoo Remote design system v5
+ * BRIGHT GLOBAL PRODUCT × AIRY DEPTH × ORANGE ENERGY
+ *
+ * Three layers: primitive → semantic → component.
+ * Existing legacy variables remain available while pages migrate.
+ */
+
+:root {
+  /* Primitive: ink */
+  --hg-ink-950: #161a22;
+  --hg-ink-800: #252b36;
+  --hg-ink-700: #384150;
+  --hg-ink-600: #4f5b6b;
+  --hg-ink-500: #667386;
+  --hg-ink-400: #93a0af;
+
+  /* Primitive: clean daylight */
+  --hg-ivory-50: #ffffff;
+  --hg-ivory-100: #f7f9fc;
+  --hg-ivory-200: #eef2f6;
+  --hg-ivory-300: #dde4ec;
+
+  /* Primitive: supporting tones */
+  --hg-sand-100: #fff1e9;
+  --hg-sand-300: #ffd5c1;
+  --hg-sand-600: #d94f18;
+  --hg-mist-50: #f5f8fb;
+  --hg-mist-100: #edf2f7;
+  --hg-mist-300: #d7e0ea;
+  --hg-mist-600: #607488;
+  --hg-harbour-50: #fff3ed;
+  --hg-harbour-100: #ffe2d4;
+  --hg-harbour-500: #ff6b2c;
+  --hg-harbour-600: #e65a20;
+  --hg-apricot-50: #fff3ed;
+  --hg-apricot-400: #ff8b57;
+  --hg-apricot-600: #e65a20;
+  /* Legacy sage aliases now resolve to neutral graphite. Green is reserved
+     for small semantic feedback, never navigation or page decoration. */
+  --hg-sage-50: #f5f7f9;
+  --hg-sage-100: #e9edf1;
+  --hg-sage-400: #8d98a7;
+  --hg-sage-700: #566171;
+
+  /* Membership uses one quiet copper-gold derived from the orange brand hue. */
+  --hg-member-gold-50: #fff7ee;
+  --hg-member-gold-100: #f7e7d4;
+  --hg-member-gold-300: #dfbd94;
+  --hg-member-gold-500: #9b5c20;
+  --hg-member-gold-600: #784316;
+
+  /* Semantic feedback remains recognizable but low-chroma and local. */
+  --hg-success-50: #f3f8f6;
+  --hg-success-200: #cfe2da;
+  --hg-success-700: #28634f;
+  --hg-warning-50: #fff8ed;
+  --hg-warning-200: #efdbb7;
+  --hg-warning-700: #875c18;
+  --hg-danger-50: #fff5f4;
+  --hg-danger-200: #edceca;
+  --hg-danger-700: #a13f37;
+
+  /* Primitive: spacing */
+  --hg-space-1: 0.25rem;
+  --hg-space-2: 0.5rem;
+  --hg-space-3: 0.75rem;
+  --hg-space-4: 1rem;
+  --hg-space-5: 1.25rem;
+  --hg-space-6: 1.5rem;
+  --hg-space-8: 2rem;
+  --hg-space-10: 2.5rem;
+  --hg-space-12: 3rem;
+  --hg-space-16: 4rem;
+  --hg-space-20: 5rem;
+  --hg-space-28: 7rem;
+  --hg-space-36: 9rem;
+
+  /* Primitive: type */
+  --hg-font-sans: "Avenir Next", "SF Pro Display", "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --hg-font-editorial: var(--hg-font-sans);
+  --hg-text-caption: 0.75rem;
+  --hg-text-label: 0.8125rem;
+  --hg-text-sm: 0.875rem;
+  --hg-text-body: 1rem;
+  --hg-text-lg: 1.125rem;
+  --hg-text-title-sm: 1.375rem;
+  --hg-text-title: clamp(1.75rem, 2vw, 2.5rem);
+  --hg-text-display: clamp(2.8rem, 4.8vw, 5rem);
+
+  /* Primitive: shape and motion */
+  --hg-radius-sm: 0.625rem;
+  --hg-radius-control: 0.875rem;
+  --hg-radius-card: 1.125rem;
+  --hg-radius-media: 1.5rem;
+  --hg-radius-container: 1.75rem;
+  --hg-radius-pill: 9999px;
+  --hg-duration-fast: 150ms;
+  --hg-duration-standard: 200ms;
+  --hg-duration-enter: 320ms;
+  --hg-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --hg-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Semantic */
+  --hg-bg-page: var(--hg-ivory-100);
+  --hg-bg-surface: var(--hg-ivory-50);
+  --hg-bg-subtle: var(--hg-ivory-200);
+  --hg-bg-cool-subtle: var(--hg-mist-50);
+  --hg-text-primary: var(--hg-ink-950);
+  --hg-text-secondary: #526174;
+  --hg-text-muted: var(--hg-ink-500);
+  --hg-text-disabled: var(--hg-ink-400);
+  --hg-border-subtle: #e8edf3;
+  --hg-border-default: #dce4ec;
+  --hg-action-primary: var(--hg-ink-950);
+  --hg-action-primary-hover: #2f3642;
+  --hg-action-brand: var(--hg-harbour-600);
+  --hg-action-brand-hover: #c94716;
+  --hg-focus-ring: var(--hg-harbour-600);
+  --hg-shadow-subtle: 0 1px 3px rgba(26, 34, 45, 0.05);
+  --hg-shadow-floating: 0 22px 60px -34px rgba(34, 48, 66, 0.32), 0 8px 24px -18px rgba(255, 107, 44, 0.2);
+  --hg-shadow-modal: 0 34px 90px -36px rgba(25, 35, 48, 0.42);
+
+  /* Component */
+  --hg-header-bg: rgba(255, 255, 255, 0.84);
+  --hg-header-border: var(--hg-border-subtle);
+  --hg-search-bg: rgba(255, 255, 255, 0.92);
+  --hg-search-border: var(--hg-border-default);
+  --hg-search-radius: var(--hg-radius-pill);
+  --hg-row-border: var(--hg-border-subtle);
+  --hg-row-hover: var(--hg-mist-50);
+}
+
+/* Membership labels, status pills and plan controls share one accent. */
+.hg-member-center [class~="bg-[#eff5fb]"],
+.hg-member-center [class~="bg-[#dce9f5]"],
+.hg-member-center [class~="bg-[#f4f8fb]"] {
+  background-color: var(--hg-member-gold-50) !important;
+}
+
+.hg-member-center [class~="text-[#466f9d]"],
+.hg-member-center [class~="text-[#345d88]"] {
+  color: var(--hg-member-gold-600) !important;
+}
+
+.hg-member-center [class~="border-[#c9dce8]"],
+.hg-member-center [class~="border-[#dce9f5]"],
+.hg-member-center [class~="border-[#9fbbd2]"] {
+  border-color: var(--hg-member-gold-300) !important;
+}
+
+.hg-member-center [class~="bg-[#466f9d]"],
+.hg-member-center [class~="bg-[#345d88]"] {
+  background-color: var(--hg-member-gold-500) !important;
+}
+
+.hg-member-center [class~="hover:bg-[#345d88]"]:hover {
+  background-color: var(--hg-member-gold-600) !important;
+}
+
+/* Job alerts use the shared orange interaction accent and one copper membership marker. */
+.hg-member-subscription [class~="bg-[#eff5fb]"],
+.hg-member-subscription [class~="bg-[#dce9f5]"] {
+  background-color: var(--hg-harbour-50) !important;
+}
+
+.hg-member-subscription [class~="text-[#466f9d]"],
+.hg-member-subscription [class~="text-[#5b50e6]"],
+.hg-member-subscription [class~="text-[#7c70f4]"] {
+  color: var(--hg-harbour-600) !important;
+}
+
+.hg-member-subscription [class~="border-[#9fbbd2]"] {
+  border-color: var(--hg-mist-300) !important;
+}
+
+.hg-member-subscription [class~="bg-[#466f9d]"] {
+  background-color: var(--hg-harbour-600) !important;
+}
+
+.hg-member-subscription [class~="hover:bg-[#345d88]"]:hover {
+  background-color: var(--hg-action-brand-hover) !important;
+}
+
+body {
+  background: var(--hg-bg-page);
+  color: var(--hg-text-primary);
+  font-family: var(--hg-font-sans);
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--hg-focus-ring);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: var(--hg-harbour-100);
+  color: var(--hg-ink-950);
+}
+
+.haigoo-skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 0.75rem;
+  z-index: 10000;
+  translate: 0 -180%;
+  border-radius: var(--hg-radius-control);
+  background: var(--hg-ink-950);
+  color: var(--hg-ivory-50);
+  padding: 0.75rem 1rem;
+  font-size: var(--hg-text-sm);
+  font-weight: 700;
+  transition: translate var(--hg-duration-fast) var(--hg-ease-standard);
+}
+
+.haigoo-skip-link:focus {
+  translate: 0 0;
+}
+
+.haigoo-shell {
+  width: min(100% - 2.5rem, 90rem);
+  margin-inline: auto;
+}
+
+.haigoo-editorial-label {
+  color: var(--hg-mist-600);
+  font-size: var(--hg-text-caption);
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.haigoo-site-header {
+  color: var(--hg-text-primary);
+}
+
+.haigoo-site-header__bar {
+  border-bottom: 1px solid var(--hg-header-border);
+  background: var(--hg-header-bg);
+  box-shadow: 0 12px 30px -30px rgba(15, 23, 42, 0.45);
+  backdrop-filter: saturate(130%) blur(12px);
+}
+
+.haigoo-site-header__brand {
+  color: var(--hg-ink-950);
+}
+
+.haigoo-site-header__wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  font-family: var(--hg-font-sans);
+  font-size: 0.8rem;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1;
+}
+
+.haigoo-site-header__wordmark strong {
+  color: #19375d;
+  font-weight: 820;
+  letter-spacing: 0.035em;
+}
+
+.haigoo-site-header__wordmark span {
+  color: #33465b;
+  font-weight: 570;
+}
+
+.haigoo-site-header__brand-cn {
+  padding-left: 0.75rem;
+  border-left: 1px solid var(--hg-border-default);
+  color: var(--hg-ink-950);
+  font-family: var(--hg-font-sans);
+  font-size: 0.82rem;
+  font-weight: 660;
+  letter-spacing: 0.025em;
+}
+
+.haigoo-site-header__nav-link {
+  position: relative;
+  color: var(--hg-ink-500);
+  font-size: 0.875rem;
+  font-weight: 640;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  text-decoration: none;
+  transition: color var(--hg-duration-fast) var(--hg-ease-standard);
+}
+
+.haigoo-language-toggle {
+  border-radius: 2px;
+  box-shadow: none;
+}
+
+.haigoo-site-header__nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -0.8rem;
+  left: 0;
+  height: 1px;
+  scale: 0 1;
+  background: var(--hg-ink-950);
+  content: "";
+  transform-origin: center;
+  transition: scale var(--hg-duration-standard) var(--hg-ease-standard);
+}
+
+.haigoo-site-header__nav-link:hover,
+.haigoo-site-header__nav-link[aria-current="page"] {
+  color: var(--hg-ink-950);
+  text-decoration: none;
+}
+
+.haigoo-site-header__nav-link[aria-current="page"]::after {
+  scale: 1 1;
+}
+
+.haigoo-site-header__search {
+  border: 1px solid var(--hg-search-border);
+  border-radius: var(--hg-search-radius);
+  background: rgba(255, 255, 255, 0.76);
+  transition: border-color var(--hg-duration-fast), background var(--hg-duration-fast), box-shadow var(--hg-duration-fast);
+}
+
+.haigoo-site-header__search:focus-within {
+  border-color: var(--hg-harbour-500);
+  background: var(--hg-bg-surface);
+  box-shadow: 0 0 0 3px rgba(88, 127, 170, 0.16);
+}
+
+.haigoo-site-header__search input:focus-visible {
+  outline: 0;
+}
+
+.haigoo-language-toggle {
+  border-color: var(--hg-border-default);
+  background: transparent;
+  color: var(--hg-text-secondary);
+}
+
+.haigoo-language-toggle:hover,
+.haigoo-language-toggle:focus-visible {
+  border-color: var(--hg-harbour-500);
+  background: var(--hg-harbour-50);
+  color: var(--hg-harbour-600);
+}
+
+.haigoo-site-header__primary-action {
+  background: var(--hg-action-primary);
+  box-shadow: var(--hg-shadow-floating);
+  color: var(--hg-ivory-50);
+}
+
+.haigoo-site-header__primary-action:hover {
+  background: var(--hg-action-primary-hover);
+  color: var(--hg-ivory-50);
+  text-decoration: none;
+}
+
+@media (min-width: 48rem) {
+  .haigoo-shell {
+    width: min(100% - 4rem, 90rem);
+  }
+}
+
+@media (min-width: 90rem) {
+  .haigoo-shell {
+    width: min(100% - 8rem, 97.5rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
+  .haigoo-skip-link,
+  .haigoo-site-header__nav-link::after {
+    transition-duration: 0.01ms !important;
+  }
+}

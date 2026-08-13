@@ -7,6 +7,7 @@ import { useLanguage } from '../contexts/LanguageContext'
 import JobCardNew from '../components/JobCardNew'
 import { JobBundleCard } from '../components/JobBundleBanner'
 import JobFilterBar from '../components/JobFilterBar'
+import HaigooCompanyCard from '../components/HaigooCompanyCard'
 import EmailVerificationRequiredModal from '../components/EmailVerificationRequiredModal'
 import { Job } from '../types'
 
@@ -21,6 +22,7 @@ import {
   getJobLocationFilterOption,
   getJobLocationParentValue
 } from '../../lib/shared/job-location-taxonomy.js'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 const JobDetailModal = lazy(() => import('../components/JobDetailModal'))
 const JobDetailPanel = lazy(() => import('../components/JobDetailPanel').then((module) => ({ default: module.JobDetailPanel })))
@@ -55,15 +57,6 @@ const EXPERIENCE_LABELS = new Map(EXPERIENCE_OPTIONS.map(option => [option.value
 // ];
 
 import { JobCardSkeleton } from '../components/skeletons/JobCardSkeleton'
-
-const JOBS_PAGE_DECOR = {
-  sun: '/pic_lists/Jobs_pics/sun-transparent.webp',
-  grass: '/pic_lists/Home_pics/grass_icon-transparent.webp',
-  grass2: '/pic_lists/Home_pics/grass_icon2-transparent.webp',
-  love: '/pic_lists/Home_pics/love-transparent.webp',
-  tips: '/pic_lists/Home_pics/tips-transparent.webp',
-  beach: '/pic_lists/Jobs_pics/background01.webp'
-}
 
 const JOBS_REQUEST_CACHE_TTL_MS = 10 * 1000
 const GUEST_JOB_PREVIEW_LIMIT = 20
@@ -362,6 +355,7 @@ export default function JobsPage() {
   const hasRenderedJobsRef = useRef(false)
   const jobsRequestSeqRef = useRef(0)
   const hasManualJobSelectionRef = useRef(false)
+  const detailScrollRef = useRef<HTMLDivElement | null>(null)
   const guestMorePromptedAtRef = useRef(0)
   const restrictedSearchHandledRef = useRef('')
 
@@ -401,10 +395,13 @@ export default function JobsPage() {
   }, [filters])
 
   useEffect(() => {
-    if (!isAuthenticated && filters.memberOnly) {
+    if (!isMember && filters.memberOnly) {
       setFilters(prev => normalizeJobFilters({ ...prev, memberOnly: false }))
+      const params = new URLSearchParams(location.search)
+      params.delete('memberOnly')
+      navigate({ search: params.toString() }, { replace: true })
     }
-  }, [filters.memberOnly, isAuthenticated])
+  }, [filters.memberOnly, isMember, location.search, navigate])
 
   useEffect(() => {
     if (!isAuthenticated && filters.category.length > 0) {
@@ -650,9 +647,9 @@ export default function JobsPage() {
       const requestSearchTerm = searchTerm
       const requestFilters = filters
       const hasCurrentJobIntent = hasActiveJobIntent(requestSearchTerm, requestFilters)
-      const habitBoost = sortBy === 'relevance' ? readJobHabitBoostParams() : null
+      const habitBoost = COMPLIANCE_FEATURES.personalizedJobDiscovery && sortBy === 'relevance' ? readJobHabitBoostParams() : null
       const hasResumeRefreshIntent = Boolean(readMatchScoreRefreshMarker())
-      const shouldUseMatchScore = Boolean(hasVerifiedJobAccess && token && (hasCurrentJobIntent || habitBoost || hasResumeRefreshIntent));
+      const shouldUseMatchScore = Boolean(COMPLIANCE_FEATURES.personalizedJobDiscovery && hasVerifiedJobAccess && token && (hasCurrentJobIntent || habitBoost || hasResumeRefreshIntent));
       if (shouldUseMatchScore) {
         queryParams.append('action', 'jobs_with_match_score')
       }
@@ -737,7 +734,7 @@ export default function JobsPage() {
         hasRenderedJobsRef.current = newJobs.length > 0
         setInitialJobsSettled(true)
 
-        if (hasVerifiedJobAccess && token && newJobs.length > 0) {
+        if (COMPLIANCE_FEATURES.personalizedJobDiscovery && hasVerifiedJobAccess && token && newJobs.length > 0) {
           const matchParams = new URLSearchParams(queryParams)
           matchParams.set('action', 'jobs_with_match_score')
           matchParams.set('deferMatchRecompute', 'true')
@@ -1359,6 +1356,9 @@ export default function JobsPage() {
     if (window.innerWidth >= 1024) {
       setShowInlineDetail(true)
       setIsJobDetailOpen(false)
+      window.requestAnimationFrame(() => {
+        detailScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+      })
     } else {
       setIsJobDetailOpen(true)
     }
@@ -1386,18 +1386,10 @@ export default function JobsPage() {
 
   return (
     <div
-        className="relative flex min-h-screen flex-col overflow-x-hidden bg-[linear-gradient(180deg,#fffdf8_0%,#f8fbfd_52%,#fffefb_100%)] pt-20 lg:h-full lg:overflow-hidden"
+        className="hg-jobs-page relative min-h-screen overflow-x-hidden pt-20"
         role="main"
         aria-label={text('职位搜索页面', 'Remote job search')}
       >
-        <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-          <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_18%_12%,rgba(255,239,198,0.5),transparent_32%),radial-gradient(circle_at_78%_6%,rgba(217,235,252,0.72),transparent_30%),linear-gradient(180deg,rgba(255,253,248,0.96),rgba(255,253,248,0))]" />
-          <img src={JOBS_PAGE_DECOR.sun} alt="" loading="lazy" decoding="async" className="absolute right-12 top-20 hidden w-24 opacity-65 lg:block" />
-          <img src={JOBS_PAGE_DECOR.love} alt="" loading="lazy" decoding="async" className="absolute left-[45%] top-[102px] hidden w-9 opacity-55 xl:block" />
-          <img src={JOBS_PAGE_DECOR.grass} alt="" loading="lazy" decoding="async" className="absolute bottom-6 left-4 hidden w-40 opacity-50 lg:block" />
-          <img src={JOBS_PAGE_DECOR.grass2} alt="" loading="lazy" decoding="async" className="absolute bottom-10 right-10 hidden w-32 opacity-40 xl:block" />
-          <img src={JOBS_PAGE_DECOR.tips} alt="" loading="lazy" decoding="async" className="absolute bottom-0 left-0 hidden w-60 opacity-45 lg:block" />
-        </div>
         {/* Hero / Header Section - Compact Version for Split View */}
         {/* Only show on mobile or if needed. For split view, maybe we don't need a huge hero? 
           User said "visual aesthetic harmony". I'll keep a smaller header or just the layout.
@@ -1410,13 +1402,13 @@ export default function JobsPage() {
           Let's keep a minimal header.
       */}
 
-        <div className="relative z-10 flex-1 flex flex-col max-w-[1620px] mx-auto w-full px-2.5 sm:px-6 lg:px-8 gap-3 lg:overflow-hidden lg:h-full pt-0 mt-0">
+        <div className="hg-jobs-page-shell relative z-10 mx-auto flex w-full max-w-[1800px] flex-col px-0 pb-12 sm:px-4 lg:px-5">
 
           {/* Main Content Area: Split View */}
-          <div className="flex flex-col gap-3 min-h-0 mt-0 lg:flex-1 lg:flex-row lg:overflow-hidden">
+          <div className="hg-jobs-workspace grid min-w-0 grid-cols-1 gap-0 lg:grid-cols-[minmax(25rem,0.72fr)_minmax(0,1.28fr)] lg:items-stretch">
             {/* Middle Column: Job List */}
-            <div className="relative z-30 flex w-full flex-shrink-0 flex-col overflow-visible rounded-[20px] border border-[#cfdbe5] bg-white shadow-[0_28px_72px_-48px_rgba(49,65,88,0.34)] sm:rounded-[24px] lg:w-[40%] lg:rounded-[28px] xl:w-[40%]">
-              <div className="relative z-50 flex-shrink-0 bg-transparent p-0">
+            <div className="hg-jobs-list-shell relative z-30 min-w-0 overflow-visible">
+              <div className="hg-jobs-filter-sticky relative z-50 bg-transparent p-0">
                 <JobFilterBar
                   filters={filters}
                   onFilterChange={(newFilters: any) => {
@@ -1476,11 +1468,12 @@ export default function JobsPage() {
                 />
               </div>
 
+              <div className="hg-jobs-list-scroll min-h-0">
               {/* List Header Info - Only show if there's a specific filter info to display like isTrusted */}
               {filters.isTrusted && (
                 <div className="px-5 py-3 border-b border-slate-100 bg-slate-50/50 flex justify-end items-center text-xs text-slate-500 font-medium">
-                  <span className="flex items-center gap-1 text-[#6f63f6]">
-                    <Zap className="w-3 h-3 fill-[#6f63f6]" />
+                  <span className="flex items-center gap-1 text-[#466f9d]">
+                    <Zap className="w-3 h-3 fill-[#466f9d]" />
                     {text('已过滤精选企业', 'Featured companies only')}
                   </span>
                 </div>
@@ -1492,7 +1485,7 @@ export default function JobsPage() {
               )}
 
               {/* List Content */}
-              <div className="flex-1 overflow-visible bg-[linear-gradient(180deg,#ffffff_0%,#fbfcff_100%)] p-0 lg:overflow-y-auto lg:overscroll-y-contain custom-scrollbar">
+              <div className="overflow-visible bg-transparent p-0">
                 {shouldShowListSkeleton ? (
                   <div className="p-0">
                     {[...Array(5)].map((_, i) => (
@@ -1509,11 +1502,11 @@ export default function JobsPage() {
                     ))}
                   </div>
                 ) : visibleJobs.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="hg-jobs-empty flex flex-col items-center justify-center px-4 py-14 text-center">
                     {isRestrictedSearch && listMode === 'jobs' ? (
                       <>
-                        <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[#f3f0ff]">
-                          <Search className="h-6 w-6 text-[#6251f5]" />
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center border border-[#c9dce8] bg-[#edf4f8]">
+                          <Search className="h-6 w-6 text-[#52738c]" />
                         </div>
                         <p className="mb-1 font-medium text-slate-900">
                           {isEmailVerificationRequired ? text('验证邮箱后搜索岗位', 'Verify your email to search jobs') : text('登录后搜索岗位', 'Log in to search jobs')}
@@ -1524,49 +1517,41 @@ export default function JobsPage() {
                         <button
                           type="button"
                           onClick={() => handleRestrictedAction('搜索岗位', 'search jobs')}
-                          className="mb-8 inline-flex h-11 items-center justify-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm transition-colors hover:bg-[#5142df]"
+                          className="mb-8 inline-flex h-11 items-center justify-center bg-[#1b2440] px-5 text-sm font-black text-white transition-colors hover:bg-[#313d62]"
                         >
                           {isEmailVerificationRequired ? text('去验证邮箱', 'Verify email') : text('去登录', 'Log in')}
                         </button>
                       </>
                     ) : jobsLoadError && listMode === 'jobs' ? (
                       <>
-                        <div className="w-12 h-12 bg-rose-50 rounded-full flex items-center justify-center mb-3">
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center border border-rose-100 bg-rose-50">
                           <Search className="w-6 h-6 text-rose-300" />
                         </div>
                         <p className="text-slate-900 font-medium mb-1">{text('职位列表加载失败', 'Could not load jobs')}</p>
                         <p className="text-slate-500 text-xs mb-4 max-w-[240px]">{text('网络或数据服务暂时不可用，请稍后重试。', 'The service is temporarily unavailable. Please try again shortly.')}</p>
-                        <button onClick={() => loadJobsWithFilters(1, false)} className="text-[#6f63f6] text-sm hover:underline mb-8">{text('重新加载', 'Try again')}</button>
-                      </>
-                    ) : filters.aiRecommended ? (
-                      <>
-                        <div className="w-12 h-12 bg-[#f6f3ff] rounded-full flex items-center justify-center mb-3">
-                          <Sparkles className="w-6 h-6 text-[#8b7cff]" />
-                        </div>
-                        <p className="text-slate-900 font-medium mb-1">{text('当前条件下暂未发现 AI 强推荐的职位', 'No strong AI matches under these filters')}</p>
-                        <p className="text-slate-500 text-xs mb-4 max-w-[240px]">{text('为了保证内推质量，AI 只会推荐与你高度匹配的优质机会。建议稍微放宽筛选条件，或稍后再来。', 'AI only highlights high-confidence matches. Try broadening your filters or check again later.')}</p>
-                        <button onClick={() => setFilters((prev: any) => ({ ...prev, aiRecommended: false }))} className="text-[#6f63f6] text-sm font-medium hover:underline mb-8 bg-[#f6f3ff] px-4 py-2 rounded-lg">{text('返回普通列表', 'Back to all jobs')}</button>
+                        <button onClick={() => loadJobsWithFilters(1, false)} className="mb-8 border-b border-[var(--hg-accent-300)] pb-1 text-sm font-semibold text-[var(--hg-accent-700)] hover:text-[var(--hg-ink)]">{text('重新加载', 'Try again')}</button>
                       </>
                     ) : (
                       <>
-                        <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mb-3">
+                        <div className="mb-3 flex h-12 w-12 items-center justify-center border border-[#dfe6ec] bg-[#f4f7f8]">
                           <Search className="w-6 h-6 text-slate-300" />
                         </div>
                         <p className="text-slate-900 font-medium mb-1">{text('未找到相关职位', 'No matching jobs found')}</p>
-                        <button onClick={clearAllFilters} className="text-[#6f63f6] text-sm hover:underline mb-8">{text('清除筛选', 'Clear filters')}</button>
+                        <p className="mb-4 max-w-[280px] text-xs leading-5 text-slate-500">{text('调整筛选条件，或清除筛选后查看全部岗位。', 'Adjust your filters, or clear them to view all roles.')}</p>
+                        <button onClick={clearAllFilters} className="mb-8 border-b border-[var(--hg-accent-300)] pb-1 text-sm font-semibold text-[var(--hg-accent-700)] hover:text-[var(--hg-ink)]">{text('清除筛选', 'Clear filters')}</button>
                       </>
                     )}
 
                     {/* Community Promo for Empty State */}
-                    <div className="w-full max-w-sm rounded-xl border border-[#dceadf] bg-[linear-gradient(120deg,#f3fbf6_0%,#ffffff_58%,#fff9ef_100%)] p-4 flex flex-col items-center gap-3">
+                        <div className="w-full max-w-sm border-y border-[#deddd7] py-5 flex flex-col items-center gap-3">
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-5 h-5 text-[#6f63f6]" />
-                        <span className="font-bold text-slate-900 text-sm">{text('获取每日精选岗位推荐', 'Get daily curated job picks')}</span>
+                        <Sparkles aria-hidden="true" className="h-5 w-5 text-[var(--hg-accent-600)]" />
+                          <span className="font-bold text-slate-900 text-sm">{text('岗位分享', 'Job sharing')}</span>
                       </div>
-                      <p className="text-xs text-slate-500 text-center">{text('加入微信群，获取更及时的精选岗位推荐，并与同行交流经验。', 'Join our community for curated job updates and conversations with other remote professionals.')}</p>
+                        <p className="text-xs text-slate-500 text-center">{text('开放交流群，正在找机会的朋友可以互相探讨。', 'An open group for people exploring opportunities together.')}</p>
                       <button
                         onClick={openCommunityPage}
-                        className="px-6 py-2 bg-white text-[#3f7f67] text-xs font-bold rounded-lg border border-emerald-100 shadow-sm hover:bg-emerald-50 transition-colors w-full tracking-wide"
+                        className="w-full border border-[var(--hg-accent-300)] bg-transparent px-6 py-2 text-xs font-bold tracking-wide text-[var(--hg-accent-700)] transition-colors hover:bg-[var(--hg-accent-50)]"
                       >
                         {text('岗位订阅', 'Job updates')}
                       </button>
@@ -1609,7 +1594,7 @@ export default function JobsPage() {
                       </div>
                     )}
 
-                    <div className="space-y-3 px-3 pt-3 sm:px-4 sm:pt-4">
+                    <div>
                       {visibleJobs.map((job, index) => (
                         <JobCardNew
                           key={job.id}
@@ -1618,6 +1603,7 @@ export default function JobsPage() {
                           isActive={selectedJob?.id === job.id}
                           onClick={() => handleJobSelect(job, index)}
                           matchScore={getMeaningfulMatchScore(job) || undefined}
+                          showPersonalizedMatchScore={COMPLIANCE_FEATURES.personalizedJobDiscovery}
                           isSaved={savedJobs.has(job.id)}
                           showApplicationMethodIcons
                         />
@@ -1626,19 +1612,19 @@ export default function JobsPage() {
 
                     {/* Low Result Count Promo */}
                     {listMode === 'jobs' && visibleJobs.length < 5 && (
-                      <div className="mx-4 my-4 rounded-2xl border border-[#dceadf] bg-[linear-gradient(120deg,#f3fbf6_0%,#ffffff_58%,#fff9ef_100%)] p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-[0_20px_40px_-34px_rgba(64,102,78,0.22)]">
+                      <div className="mx-5 my-4 border-y border-[#deddd7] py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-white rounded-full shadow-sm flex items-center justify-center text-[#49a982] flex-shrink-0">
-                            <Sparkles className="w-5 h-5" />
+                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center border border-[var(--hg-accent-100)] bg-[var(--hg-accent-50)] text-[var(--hg-accent-600)]">
+                            <Sparkles aria-hidden="true" className="w-5 h-5" />
                           </div>
                           <div className="text-center sm:text-left">
-                            <h3 className="font-bold text-slate-900 text-sm">{text('没找到心仪的职位？', 'Still looking for the right role?')}</h3>
-                            <p className="text-xs text-slate-500 mt-0.5">{text('加入微信群，获取更及时的精选岗位推荐，并与同行交流经验', 'Join our community for curated job updates and peer support.')}</p>
+                            <h3 className="font-bold text-slate-900 text-sm">{text('岗位分享', 'Job sharing')}</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">{text('开放交流群，正在找机会的朋友可以互相探讨。', 'An open group for people exploring opportunities together.')}</p>
                           </div>
                         </div>
                         <button
                           onClick={openCommunityPage}
-                          className="px-4 py-2 bg-white text-[#3f7f67] text-xs font-bold rounded-lg border border-emerald-100 shadow-sm hover:bg-emerald-50 transition-colors whitespace-nowrap"
+                          className="whitespace-nowrap border border-[var(--hg-accent-300)] bg-transparent px-4 py-2 text-xs font-bold text-[var(--hg-accent-700)] transition-colors hover:bg-[var(--hg-accent-50)]"
                         >
                           {text('岗位订阅', 'Job updates')}
                         </button>
@@ -1649,29 +1635,31 @@ export default function JobsPage() {
                     {listMode === 'jobs' && <div className="p-4 text-center border-t border-slate-100">
                       {loadingMore ? (
                         <div className="flex items-center justify-center gap-2 text-xs text-slate-500">
-                          <div className="w-4 h-4 border-2 border-[#6f63f6] border-t-transparent rounded-full animate-spin"></div>
-                          {text('加载中...', 'Loading...')}
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--hg-accent-600)] border-t-transparent"></div>
+                          {text('加载中…', 'Loading…')}
                         </div>
                       ) : jobs.length < totalJobs ? (
-                        <button onClick={() => loadMoreJobs('button')} className="inline-flex min-h-11 items-center justify-center rounded-full px-4 text-xs font-bold text-[#6f63f6] hover:bg-[#f3f0ff]">
+                        <button onClick={() => loadMoreJobs('button')} className="inline-flex min-h-11 items-center justify-center border-b border-[var(--hg-accent-300)] px-1 text-xs font-bold text-[var(--hg-accent-700)] hover:text-[var(--hg-ink)]">
                           {text('加载更多', 'Load more')}
                         </button>
                       ) : (
                         <span className="text-xs text-slate-400">{text('已加载全部', 'All jobs loaded')}</span>
                       )}
                     </div>}
+                    {listMode === 'jobs' ? <HaigooCompanyCard compact /> : null}
                   </div>
                 )}
+              </div>
               </div>
             </div>
 
             {/* Right Column: Detail Panel (Desktop Only) */}
-            <div className="relative z-10 hidden h-full flex-1 flex-col overflow-hidden rounded-[28px] border border-[#dfe8ef] bg-white/94 shadow-[0_32px_90px_-60px_rgba(64,78,102,0.28)] backdrop-blur-sm lg:flex">
+            <div ref={detailScrollRef} className="hg-jobs-detail-shell relative z-10 hidden min-w-0 flex-col lg:flex">
               {selectedJob ? (
-                <div className="h-full overflow-y-auto custom-scrollbar overscroll-y-contain">
+                <div>
                   <Suspense fallback={
-                    <div className="flex h-full min-h-[520px] items-center justify-center text-sm font-semibold text-slate-400">
-                      {text('岗位详情加载中...', 'Loading job details...')}
+                    <div className="flex min-h-[32rem] items-center justify-center text-sm font-semibold text-slate-400">
+                      {text('岗位详情加载中…', 'Loading job details…')}
                     </div>
                   }>
                     <JobDetailPanel
@@ -1690,16 +1678,13 @@ export default function JobsPage() {
                   </Suspense>
                 </div>
               ) : (
-                <div className="relative flex h-full flex-col items-center justify-center overflow-hidden text-slate-400 bg-[linear-gradient(180deg,rgba(255,253,249,0.86),rgba(255,255,255,0.96))]">
-                  <img src={JOBS_PAGE_DECOR.beach} alt="" loading="lazy" decoding="async" className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center opacity-24" />
-                  <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,253,249,0.68)_0%,rgba(255,255,255,0.86)_72%,rgba(255,255,255,0.94)_100%)]" />
-                  <img src={JOBS_PAGE_DECOR.sun} alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-12 top-12 h-24 w-24 opacity-65" />
+                <div className="hg-jobs-detail-empty flex min-h-[32rem] flex-col items-center justify-center text-slate-400">
                   <div className="relative z-10 flex flex-col items-center">
-                  <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-full border border-slate-100 bg-white shadow-[0_18px_40px_-28px_rgba(15,23,42,0.28)]">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center border border-[#dfe6ec] bg-[#f4f7f8]">
                     <Briefcase className="w-10 h-10 text-slate-300" />
                   </div>
                   <p className="text-lg font-semibold text-slate-600">{text('选择一个职位查看详情', 'Select a job to view details')}</p>
-                  <p className="mt-2 max-w-[260px] text-center text-sm text-slate-400">{text('左侧列表适合快速筛选，右侧详情用于集中判断与申请。', 'Filter roles on the left, then review details and apply on the right.')}</p>
+                  <p className="mt-2 max-w-[260px] text-center text-sm text-slate-400">{text('查看职位信息与企业官方申请入口。', 'Review the role and its official application link.')}</p>
                   </div>
                 </div>
               )}
@@ -1711,7 +1696,7 @@ export default function JobsPage() {
         {isJobDetailOpen && selectedJob && (
           <Suspense fallback={
             <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-900/40 p-6 text-sm font-semibold text-white">
-              {text('岗位详情加载中...', 'Loading job details...')}
+              {text('岗位详情加载中…', 'Loading job details…')}
             </div>
           }>
             <JobDetailModal
@@ -1738,38 +1723,40 @@ export default function JobsPage() {
               <div className="absolute right-4 top-4 z-20">
                 <button
                   onClick={() => setShowWechatModal(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 bg-white/80 hover:bg-slate-100 backdrop-blur rounded-full transition-colors shadow-sm border border-slate-100"
-                  aria-label="Close modal"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-500 shadow-sm backdrop-blur transition-colors hover:bg-slate-100 hover:text-slate-800"
+                  aria-label={text('关闭岗位订阅窗口', 'Close job updates dialog')}
                 >
-                  <X className="w-5 h-5" />
+                  <X aria-hidden="true" className="w-5 h-5" />
                 </button>
               </div>
-              <div className="px-6 py-8 text-center bg-gradient-to-br from-emerald-50/50 via-white to-sky-50/50 relative">
+              <div className="relative bg-[linear-gradient(145deg,var(--hg-accent-50),#ffffff_54%,var(--hg-surface-soft))] px-6 py-8 text-center">
                 {/* Decorative blob */}
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-full mix-blend-multiply filter blur-2xl opacity-50 translate-x-8 -translate-y-8"></div>
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-sky-100 rounded-full mix-blend-multiply filter blur-2xl opacity-50 -translate-x-8 translate-y-8"></div>
+                <div className="absolute right-0 top-0 h-32 w-32 translate-x-8 -translate-y-8 rounded-full bg-[var(--hg-accent-100)] opacity-40 blur-2xl"></div>
+                <div className="absolute bottom-0 left-0 h-32 w-32 -translate-x-8 translate-y-8 rounded-full bg-[var(--hg-surface-soft)] opacity-70 blur-2xl"></div>
                 
                 <div className="relative z-10">
-                  <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-white shadow-sm border border-emerald-100 mb-5">
-                    <Sparkles className="w-7 h-7 text-emerald-500" />
+                  <div className="mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-[var(--hg-accent-100)] bg-white shadow-sm">
+                    <Sparkles aria-hidden="true" className="h-7 w-7 text-[var(--hg-accent-600)]" />
                   </div>
                   <h3 className="text-[22px] font-bold tracking-tight text-slate-900 mb-2">
                     {text('岗位订阅', 'Job updates')}
                   </h3>
                   <p className="text-[13px] leading-relaxed text-slate-500 mb-6 px-1">
-                    {text('加入企业微信群，获得更及时的精选岗位推荐，并与同行交流经验。', 'Join our community for timely curated job recommendations and conversations with remote professionals.')}
+                    {text('开放交流群，正在找机会的朋友可以互相探讨。', 'An open group for people exploring opportunities together.')}
                   </p>
                   
                   <div className="relative mx-auto max-w-[200px] bg-white p-3 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-100 mb-6 group">
                     <img
                       src="/Wechat_group.webp"
                       alt={text('微信群二维码', 'Community QR code')}
+                      width="200"
+                      height="200"
                       className="w-full h-auto rounded-xl object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                     />
                   </div>
                   
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-700 text-xs font-medium">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <div className="inline-flex items-center gap-1.5 rounded-lg border border-[var(--hg-accent-100)] bg-[var(--hg-accent-50)] px-3 py-1.5 text-xs font-medium text-[var(--hg-accent-700)]">
+                    <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[var(--hg-accent-500)]"></span>
                     {text('使用微信或企业微信扫码加入', 'Scan with WeChat or WeCom to join')}
                   </div>
                 </div>

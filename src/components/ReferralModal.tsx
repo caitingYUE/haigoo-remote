@@ -132,7 +132,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
                 ) : resumes.length === 0 ? (
                   <div className="p-4 border-2 border-dashed border-slate-200 rounded-lg text-center">
                     <p className="text-sm text-slate-500 mb-2">暂无简历</p>
-                    <a href="/profile?tab=resume" className="text-indigo-600 text-sm font-medium hover:underline">
+                    <a href="/profile?tab=resume" className="text-[#466f9d] text-sm font-medium hover:underline">
                       前往上传简历
                     </a>
                   </div>
@@ -144,13 +144,13 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
                         onClick={() => setSelectedResumeId(resume.id || resume.resume_id)}
                         className={`p-3 rounded-lg border cursor-pointer flex items-center gap-3 transition-colors ${
                           selectedResumeId === (resume.id || resume.resume_id)
-                            ? 'border-indigo-600 bg-indigo-50'
-                            : 'border-slate-200 hover:border-indigo-300'
+                            ? 'border-[#466f9d] bg-[#eff5fb]'
+                            : 'border-slate-200 hover:border-[#9fbbd2]'
                         }`}
                       >
-                        <FileText className={`w-5 h-5 ${selectedResumeId === (resume.id || resume.resume_id) ? 'text-indigo-600' : 'text-slate-400'}`} />
+                        <FileText className={`w-5 h-5 ${selectedResumeId === (resume.id || resume.resume_id) ? 'text-[#466f9d]' : 'text-slate-400'}`} />
                         <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium truncate ${selectedResumeId === (resume.id || resume.resume_id) ? 'text-indigo-900' : 'text-slate-700'}`}>
+                          <p className={`text-sm font-medium truncate ${selectedResumeId === (resume.id || resume.resume_id) ? 'text-[#243f5c]' : 'text-slate-700'}`}>
                             {resume.fileName || resume.file_name}
                           </p>
                           <p className="text-xs text-slate-500">
@@ -158,7 +158,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
                           </p>
                         </div>
                         {selectedResumeId === (resume.id || resume.resume_id) && (
-                          <CheckCircle className="w-5 h-5 text-indigo-600" />
+                          <CheckCircle className="w-5 h-5 text-[#466f9d]" />
                         )}
                       </div>
                     ))}
@@ -174,7 +174,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="简单介绍您的优势，或对该职位的特殊问题..."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm h-24 resize-none"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent text-sm h-24 resize-none"
                 />
               </div>
 
@@ -193,7 +193,7 @@ export const ReferralModal: React.FC<ReferralModalProps> = ({ isOpen, onClose, j
             <button
               onClick={handleSubmit}
               disabled={loading || resumes.length === 0}
-              className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-[#466f9d] hover:bg-[#345d88] text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? (
                 <>

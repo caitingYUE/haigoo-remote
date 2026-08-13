@@ -40,6 +40,10 @@ async function startServer() {
         console.log('Importing membership handler...');
         const membershipHandler = (await import('./lib/api-handlers/membership.js')).default;
         app.all('/api/membership', async (req, res) => { await membershipHandler(req, res); });
+        const paypalHandler = (await import('./lib/api-handlers/paypal.js')).default;
+        const paypalWebhookHandler = (await import('./lib/api-handlers/paypal-webhook.js')).default;
+        app.all('/api/paypal', async (req, res) => { await paypalHandler(req, res); });
+        app.all('/api/paypal-webhook', async (req, res) => { await paypalWebhookHandler(req, res); });
         console.log('Membership handler imported.');
 
         console.log('Importing data handler...');
@@ -205,8 +209,15 @@ async function startServer() {
             res.json({ status: 'ok', env: 'local' });
         });
 
-        app.listen(PORT, () => {
-            console.log(`Local API server running on http://localhost:${PORT}`);
+        // Keep the async startup task alive for the lifetime of the HTTP server.
+        // Some local runners may otherwise let this module finish immediately
+        // after registration and shut down the paired Vite process as well.
+        await new Promise((resolve, reject) => {
+            const server = app.listen(PORT, () => {
+                console.log(`Local API server running on http://localhost:${PORT}`);
+            });
+            server.once('error', reject);
+            server.once('close', resolve);
         });
     } catch (error) {
         console.error('Failed to start server:', error);

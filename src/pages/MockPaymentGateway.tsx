@@ -18,11 +18,11 @@ const MockPaymentGateway: React.FC = () => {
       <div className="bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden border border-slate-100">
         {/* Header */}
         <div className="bg-slate-900 text-white p-6 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-indigo-600/20"></div>
+          <div className="absolute inset-0 bg-[#466f9d]/20"></div>
           <div className="relative z-10">
-            <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-indigo-300" />
+            <ShieldCheck className="w-12 h-12 mx-auto mb-3 text-[#9fbbd2]" />
             <h1 className="text-xl font-bold">顾问协助开通</h1>
-            <p className="text-indigo-200 text-xs mt-1">Haigoo Remote Club</p>
+            <p className="text-[#c9dce8] text-xs mt-1">Haigoo Remote Club</p>
           </div>
         </div>
 
@@ -50,7 +50,7 @@ const MockPaymentGateway: React.FC = () => {
           <div className="space-y-3">
             <button
               onClick={() => navigate('/profile?tab=membership#club-service-plans')}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-200 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-[#466f9d] hover:bg-[#345d88] text-white font-bold rounded-xl shadow-lg shadow-[#c9dce8] transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               <CheckCircle2 className="w-5 h-5" />
               我已添加顾问

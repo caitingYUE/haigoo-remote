@@ -8,7 +8,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Eye, EyeOff } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import logoPng from '../assets/logo.webp'
-import { loadGoogleIdentity } from '../utils/googleIdentity'
+import { initializeGoogleIdentity, loadGoogleIdentity } from '../utils/googleIdentity'
 import { useLanguage } from '../contexts/LanguageContext'
 import LanguageToggle from '../components/LanguageToggle'
 
@@ -61,12 +61,7 @@ export default function RegisterPage() {
       if (!window.google?.accounts?.id) {
         return
       }
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleCallback,
-        auto_select: false,
-        cancel_on_tap_outside: true
-      })
+      initializeGoogleIdentity(GOOGLE_CLIENT_ID, handleGoogleCallback)
       const container = document.getElementById('googleSignupBtn')
       if (container) {
         window.google.accounts.id.renderButton(container, {
@@ -144,18 +139,18 @@ export default function RegisterPage() {
   
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 flex items-center justify-center p-4">
+    <div className="hg-auth-page">
       <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
-      <div className="w-full max-w-md">
+      <div className="hg-auth-shell">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="hg-auth-brand">
           <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">{text('创建账户', 'Create your account')}</h1>
           <p className="text-slate-600 mt-2">{text('开启您的远程工作之旅', 'Start your remote work journey')}</p>
         </div>
 
         {/* 注册表单 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="hg-auth-card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* 错误提示 */}
             {error && (
@@ -175,7 +170,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                 placeholder="your@email.com"
               />
             </div>
@@ -190,7 +185,7 @@ export default function RegisterPage() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                 placeholder={text('不填写将随机生成', 'Leave blank to generate one')}
               />
             </div>
@@ -206,7 +201,7 @@ export default function RegisterPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                 placeholder={text('至少8位，包含字母和数字', 'At least 8 characters with letters and numbers')}
               />
             </div>
@@ -222,7 +217,7 @@ export default function RegisterPage() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
-                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                 placeholder={text('再次输入密码', 'Enter your password again')}
               />
             </div>
@@ -231,7 +226,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+              className="w-full bg-[#466f9d] text-white py-3 rounded-lg font-medium hover:bg-[#345d88] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
               {isLoading ? text('注册中...', 'Creating account...') : text('注册', 'Sign up')}
             </button>
@@ -253,7 +248,7 @@ export default function RegisterPage() {
           {/* 登录链接 */}
           <p className="text-center mt-6 text-sm text-slate-600">
             {text('已有账户？', 'Already have an account?')}{' '}
-            <Link to="/login" className="text-indigo-600 font-medium hover:text-indigo-700">
+            <Link to="/login" className="text-[#466f9d] font-medium hover:text-[#345d88]">
               {text('立即登录', 'Log in')}
             </Link>
           </p>
@@ -282,7 +277,7 @@ export default function RegisterPage() {
                 {text('验证邮件已发送至', 'We sent a verification email to')}
                 <strong className="mx-1 break-all text-slate-900">{email}</strong>.
               </p>
-              <p className="mt-2 text-sm font-semibold leading-6 text-indigo-700">
+              <p className="mt-2 text-sm font-semibold leading-6 text-[#345d88]">
                 {text('请前往注册邮箱，点击邮件中的验证链接完成验证。', 'Open your inbox and click the verification link to finish setting up your account.')}
               </p>
               <p className="mb-6 mt-2 text-xs leading-5 text-slate-400">
@@ -290,7 +285,7 @@ export default function RegisterPage() {
               </p>
               <button
                 onClick={() => navigate('/', { replace: true })}
-                className="w-full bg-indigo-600 text-white py-3 rounded-xl font-medium hover:bg-indigo-700 transition-colors"
+                className="w-full bg-[#466f9d] text-white py-3 rounded-xl font-medium hover:bg-[#345d88] transition-colors"
               >
                 {text('我知道了，前往首页', 'Got it, go to home')}
               </button>

@@ -189,17 +189,49 @@ async function getHomeFeaturedCompanies(req, res) {
     return res.status(503).json({ error: 'Database not configured' })
   }
 
+  const heroCompanyNames = [
+    'Remote People',
+    'Superside',
+    'Ylabs',
+    'Sleek',
+    'Translated',
+    'Rainforest',
+    'Canonical',
+    'SafetyWing',
+    'Jampp',
+    'Intellect',
+    'Slasify',
+    'MindFi',
+    'Circle',
+    'Sumsub',
+    'Preferred by Nature',
+    'Deluxe Media Inc.',
+    'Keywords Studios',
+    'Endpoint Clinical',
+    'Adapty.io',
+    'Kit',
+    'Supabase'
+  ]
+  const heroNamePlaceholders = heroCompanyNames.map((_, index) => `$${index + 1}`).join(',')
+  const heroCompanyRows = await neonHelper.query(`
+    SELECT company_id
+    FROM trusted_companies
+    WHERE LOWER(TRIM(name)) IN (${heroNamePlaceholders})
+    ORDER BY updated_at DESC NULLS LAST, created_at DESC NULLS LAST
+    LIMIT 4
+  `, heroCompanyNames.map((name) => name.toLowerCase()))
+
   const selectedRows = await getFeaturedHomeSelectedJobs({
     neonHelper,
     jobsTable: JOBS_TABLE,
     limit: 6
   })
-  const uniqueCompanyIds = []
+  const uniqueCompanyIds = (heroCompanyRows || []).map((row) => row.company_id).filter(Boolean)
   for (const row of selectedRows || []) {
     const companyId = row?.company_id || row?.companyId
     if (!companyId || uniqueCompanyIds.includes(companyId)) continue
     uniqueCompanyIds.push(companyId)
-    if (uniqueCompanyIds.length >= 6) break
+    if (uniqueCompanyIds.length >= 10) break
   }
 
   if (uniqueCompanyIds.length === 0) return res.status(200).json({ companies: [], stats: {} })

@@ -47,7 +47,7 @@ export default function SingleSelectDropdown({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center gap-2 px-4 py-2.5 border rounded-lg hover:bg-slate-50 transition-colors h-11 ${
-          isOpen ? 'border-indigo-500 ring-2 ring-indigo-100' : 'border-slate-300'
+          isOpen ? 'border-[#587faa] ring-2 ring-[#dce9f5]' : 'border-slate-300'
         } text-slate-700 bg-white min-w-[140px] justify-between`}
       >
         <span className="truncate text-sm font-medium">
@@ -65,7 +65,7 @@ export default function SingleSelectDropdown({
                 key={option.value}
                 onClick={() => handleSelect(option.value)}
                 className={`flex items-center px-3 py-2.5 rounded-md cursor-pointer text-sm ${
-                  isSelected ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700 hover:bg-slate-50'
+                  isSelected ? 'bg-[#eff5fb] text-[#345d88] font-medium' : 'text-slate-700 hover:bg-slate-50'
                 }`}
               >
                 <span>{option.label}</span>

@@ -49,7 +49,7 @@ const LOCAL_USERS = new Map([
     ['test_member@haigoo.com', {
         user_id: 'test-member-uuid-001',
         email: 'test_member@haigoo.com',
-        username: 'Test Member (Old Quarter)',
+        username: 'Test Member',
         auth_provider: 'email',
         password_hash: LOCAL_TEST_PASSWORD_HASH,
         email_verified: true,

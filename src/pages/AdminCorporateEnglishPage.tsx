@@ -1182,10 +1182,10 @@ function VideoNotesEditor({
 
   return (
     <section className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/70 p-4 lg:col-span-2">
-      <div className="rounded-xl border border-indigo-100 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-[#dce9f5] bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h4 className="flex items-center gap-2 font-black text-slate-900"><Wand2 className="h-4 w-4 text-indigo-600" />智能导入整篇笔记</h4>
+            <h4 className="flex items-center gap-2 font-black text-slate-900"><Wand2 className="h-4 w-4 text-[#466f9d]" />智能导入整篇笔记</h4>
             <p className="mt-1 text-sm leading-6 text-slate-500">直接粘贴 Notion、Word 或 Markdown 文本，自动识别标题、段落、列表和引用。</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -1563,14 +1563,14 @@ function AdminModuleVideoManager({
                 <div className="flex flex-wrap items-center gap-4">
                   <button
                     type="button"
-                    className="relative aspect-video w-full max-w-[320px] overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50 text-left transition hover:border-indigo-300"
+                    className="relative aspect-video w-full max-w-[320px] overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50 text-left transition hover:border-[#9fbbd2]"
                     onClick={() => coverInputRef.current?.click()}
                   >
                     {coverPreviewUrl ? (
                       <img src={coverPreviewUrl} alt="视频封面预览" className="h-full w-full object-cover" />
                     ) : (
                       <span className="flex h-full flex-col items-center justify-center gap-2 text-sm font-bold text-slate-500">
-                        <Upload className="h-6 w-6 text-indigo-600" />
+                        <Upload className="h-6 w-6 text-[#466f9d]" />
                         上传 16:9 封面
                       </span>
                     )}
@@ -1631,7 +1631,7 @@ function AdminModuleVideoManager({
                 </select>
               </label>
               <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-                <input type="checkbox" className="h-4 w-4 accent-indigo-600" checked={form.isFeatured === true} onChange={(event) => setForm((prev) => ({ ...prev, isFeatured: event.target.checked }))} />
+                <input type="checkbox" className="h-4 w-4 accent-[#466f9d]" checked={form.isFeatured === true} onChange={(event) => setForm((prev) => ({ ...prev, isFeatured: event.target.checked }))} />
                 <span>
                   <span className="block text-sm font-bold text-slate-700">精选</span>
                   <span className="block text-xs text-slate-500">展示在首页职业成长模块</span>
@@ -1666,7 +1666,7 @@ function AdminModuleVideoManager({
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.target.value)}
                 onBlur={runSearch}
@@ -1725,7 +1725,7 @@ function AdminModuleVideoManager({
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{statusLabel(video.status)}</span>
+                      <span className="rounded-full bg-[#eff5fb] px-2.5 py-1 text-xs font-bold text-[#345d88]">{statusLabel(video.status)}</span>
                     </td>
                     <td className="px-4 py-3 text-sm text-slate-500">{video.publishedAt ? new Date(video.publishedAt).toLocaleString() : '-'}</td>
                     <td className="px-4 py-3">
@@ -1884,7 +1884,7 @@ export default function AdminCorporateEnglishPage() {
               if (module.key !== 'ceo') setUrlMode('list')
             }}
             className={`inline-flex h-10 items-center rounded-full px-4 text-sm font-black transition ${
-              active ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500 hover:bg-indigo-50 hover:text-indigo-700'
+              active ? 'bg-[#466f9d] text-white shadow-sm' : 'text-slate-500 hover:bg-[#eff5fb] hover:text-[#345d88]'
             }`}
           >
             {module.label}
@@ -2909,7 +2909,7 @@ export default function AdminCorporateEnglishPage() {
                     添加
                   </button>
                 </div>
-                <div className="mb-4 rounded-xl border border-indigo-100 bg-indigo-50/50 p-3">
+                <div className="mb-4 rounded-xl border border-[#dce9f5] bg-[#eff5fb]/50 p-3">
                   <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                     <div>
                       <div className="text-sm font-bold text-slate-900">批量配置</div>
@@ -2925,7 +2925,7 @@ export default function AdminCorporateEnglishPage() {
                     </div>
                   </div>
                   <textarea
-                    className="h-28 w-full rounded-lg border border-indigo-100 bg-white px-3 py-2 text-sm"
+                    className="h-28 w-full rounded-lg border border-[#dce9f5] bg-white px-3 py-2 text-sm"
                     value={profileBulkInputs[group.key]}
                     onChange={(event) => setProfileBulkInputs((prev) => ({ ...prev, [group.key]: event.target.value }))}
                     placeholder="开放是底层原则｜Automattic 和 WordPress 的核心文化不是“拥有一切”，而是尽可能开放..."
@@ -3028,13 +3028,13 @@ export default function AdminCorporateEnglishPage() {
               <div className="card-header"><h2>第一步：关联可信企业</h2></div>
               <div className="card-content space-y-4">
                 {editor.selectedCompany ? (
-                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[#dce9f5] bg-[#eff5fb] p-4">
                     <div>
                       <div className="font-bold text-slate-900">{editor.selectedCompany.name}</div>
                       <div className="text-sm text-slate-500">{editor.selectedCompany.website || '暂无官网'}</div>
                     </div>
                     {contextCompanyId ? (
-                      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-indigo-700">已从企业列表关联</span>
+                      <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#345d88]">已从企业列表关联</span>
                     ) : (
                       <button type="button" className="btn-secondary" onClick={() => updateEditor({ selectedCompany: null })}>重新选择</button>
                     )}
@@ -3044,7 +3044,7 @@ export default function AdminCorporateEnglishPage() {
                     <div className="relative">
                       <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                       <input
-                        className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                        className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
                         value={companySearch}
                         onChange={(event) => setCompanySearch(event.target.value)}
                         placeholder="搜索可信企业名称"
@@ -3056,14 +3056,14 @@ export default function AdminCorporateEnglishPage() {
                         <button
                           key={company.id}
                           type="button"
-                          className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-indigo-300 hover:bg-indigo-50"
+                          className="flex items-center justify-between rounded-lg border border-slate-200 px-4 py-3 text-left hover:border-[#9fbbd2] hover:bg-[#eff5fb]"
                           onClick={() => updateEditor({ selectedCompany: company })}
                         >
                           <span>
                             <span className="block font-semibold text-slate-900">{company.name}</span>
                             <span className="block text-sm text-slate-500">{company.website || company.careersPage}</span>
                           </span>
-                          <Plus className="h-4 w-4 text-indigo-600" />
+                          <Plus className="h-4 w-4 text-[#466f9d]" />
                         </button>
                       ))}
                     </div>
@@ -3083,17 +3083,17 @@ export default function AdminCorporateEnglishPage() {
               <div className="card-header"><h2>第二步：上传和配置素材</h2></div>
               <div className="card-content space-y-5">
                 <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-indigo-300" onClick={() => materialCoverInputRef.current?.click()}>
+                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-[#9fbbd2]" onClick={() => materialCoverInputRef.current?.click()}>
                     {materialCoverPreviewUrl ? (
                       <img src={materialCoverPreviewUrl} alt="视频封面预览" className="mb-3 aspect-video w-full rounded-lg object-cover" />
                     ) : (
-                      <Upload className="mb-3 h-6 w-6 text-indigo-600" />
+                      <Upload className="mb-3 h-6 w-6 text-[#466f9d]" />
                     )}
                     <div className="font-bold text-slate-900">{materialCoverFile?.name || (materialCoverPreviewUrl ? '已配置视频封面' : '上传视频封面')}</div>
                     <div className="text-sm text-slate-500">支持 jpg、png、webp；选择后可手动调整 16:9 裁剪范围，最大 8MB。</div>
                   </button>
-                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-indigo-300" onClick={() => audioInputRef.current?.click()}>
-                    <FileAudio className="mb-3 h-6 w-6 text-indigo-600" />
+                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-[#9fbbd2]" onClick={() => audioInputRef.current?.click()}>
+                    <FileAudio className="mb-3 h-6 w-6 text-[#466f9d]" />
                     <div className="font-bold text-slate-900">{audioFile?.name || '上传原始音频用于本地剪辑'}</div>
                     <div className="text-sm text-slate-500">
                       支持 mp3、wav、m4a、aac；原始音频仅用于本地生成剪辑，保存时只保留剪辑后的音频，重剪需重新上传原音频。
@@ -3104,7 +3104,7 @@ export default function AdminCorporateEnglishPage() {
                       <span
                         role="button"
                         tabIndex={0}
-                        className="mt-3 inline-flex rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-700"
+                        className="mt-3 inline-flex rounded-lg border border-[#c9dce8] bg-[#eff5fb] px-3 py-1.5 text-sm font-semibold text-[#345d88]"
                         onClick={(event) => {
                           event.stopPropagation()
                           loadSavedSourceAudio()
@@ -3119,10 +3119,10 @@ export default function AdminCorporateEnglishPage() {
                         加载已保存原音频继续剪辑
                       </span>
                     ) : null}
-                    {audioLoading && <div className="mt-2 text-sm text-indigo-600">音频解析中...</div>}
+                    {audioLoading && <div className="mt-2 text-sm text-[#466f9d]">音频解析中...</div>}
                   </button>
-                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-indigo-300" onClick={() => csvInputRef.current?.click()}>
-                    <FileText className="mb-3 h-6 w-6 text-indigo-600" />
+                  <button type="button" className="rounded-lg border border-dashed border-slate-300 p-5 text-left hover:border-[#9fbbd2]" onClick={() => csvInputRef.current?.click()}>
+                    <FileText className="mb-3 h-6 w-6 text-[#466f9d]" />
                     <div className="font-bold text-slate-900">{csvFile?.name || (editor.subtitleRows.length > 0 ? '已解析字幕 CSV' : '上传字幕 CSV')}</div>
                     <div className="text-sm text-slate-500">字段支持 File Title/Title、Time、Subtitle、Translation/Translation4，最大 2MB；标题优先从字幕文件提取，V1 不保存 CSV 原文件。</div>
                     <div className="mt-2 text-sm text-slate-500">已解析 {editor.subtitleRows.length} 行字幕</div>
@@ -3191,7 +3191,7 @@ export default function AdminCorporateEnglishPage() {
                     </select>
                   </label>
                   <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-                    <input type="checkbox" className="h-4 w-4 accent-indigo-600" checked={editor.isFeatured} onChange={(event) => updateEditor({ isFeatured: event.target.checked })} />
+                    <input type="checkbox" className="h-4 w-4 accent-[#466f9d]" checked={editor.isFeatured} onChange={(event) => updateEditor({ isFeatured: event.target.checked })} />
                     <span>
                       <span className="block text-sm font-semibold text-slate-700">精选</span>
                       <span className="block text-xs text-slate-500">展示在首页职业成长模块</span>
@@ -3227,7 +3227,7 @@ export default function AdminCorporateEnglishPage() {
                     已保存的剪辑音频会直接展示和下载；如需重新剪辑，请重新上传原始音频后点击“生成/更新剪辑”。
                   </div>
                 )}
-                <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+                <div className="rounded-xl border border-[#dce9f5] bg-[#eff5fb]/50 p-4">
                   <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
                     <div>
                       <h3 className="font-bold text-slate-900">批量配置剪辑段</h3>
@@ -3245,7 +3245,7 @@ export default function AdminCorporateEnglishPage() {
                     </div>
                   </div>
                   <textarea
-                    className="h-44 w-full rounded-lg border border-indigo-100 bg-white px-3 py-2 font-mono text-sm leading-6"
+                    className="h-44 w-full rounded-lg border border-[#dce9f5] bg-white px-3 py-2 font-mono text-sm leading-6"
                     value={bulkClipInput}
                     onChange={(event) => setBulkClipInput(event.target.value)}
                     placeholder={'02:16–02:46 | Travel Keeps You Humble | B1-B2; #旅行与适应力 / #远程工作方式; #生活方式表达 / #CEO 日常表达\n重读：love / travel / humbling\n弱读：that’s / of / what / I\n连读：part of / what I / love about\n关键词：humbling / in control / productive\n\n06:37–07:08 | Finding the Right CEO Partner | B2-C1; #创始人合作 / #领导力; #创业故事 / #组织搭建'}
@@ -3332,7 +3332,7 @@ export default function AdminCorporateEnglishPage() {
                             <span>跟读标注</span>
                             <button
                               type="button"
-                              className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+                              className="inline-flex items-center gap-1 rounded-full border border-[#dce9f5] bg-[#eff5fb] px-3 py-1 text-xs font-bold text-[#345d88] hover:bg-[#dce9f5]"
                               onClick={() => generatePronunciationDraft(clip.localId)}
                             >
                               <Wand2 className="h-3.5 w-3.5" />
@@ -3358,7 +3358,7 @@ export default function AdminCorporateEnglishPage() {
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <button
                               type="button"
-                              className="inline-flex items-center gap-2 text-left text-sm font-semibold text-slate-700 hover:text-indigo-700"
+                              className="inline-flex items-center gap-2 text-left text-sm font-semibold text-slate-700 hover:text-[#345d88]"
                               onClick={() => toggleClipSubtitleCues(clip.localId)}
                               aria-expanded={expandedSubtitleCueClipIds.has(clip.localId)}
                             >
@@ -3371,7 +3371,7 @@ export default function AdminCorporateEnglishPage() {
                             {expandedSubtitleCueClipIds.has(clip.localId) && (
                               <button
                                 type="button"
-                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:border-indigo-200 hover:text-indigo-700"
+                                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 hover:border-[#c9dce8] hover:text-[#345d88]"
                                 onClick={() => addClipSubtitleCue(clip.localId)}
                               >
                                 <Plus className="h-3.5 w-3.5" />
@@ -3442,7 +3442,7 @@ export default function AdminCorporateEnglishPage() {
                         </div>
                       </div>
                       {clip.clipAudioUrl && <audio className="mt-4 w-full" controls src={clip.clipAudioUrl} />}
-                      {clip.uploadProgress ? <div className="mt-2 text-sm text-indigo-600">片段上传 {clip.uploadProgress}%</div> : null}
+                      {clip.uploadProgress ? <div className="mt-2 text-sm text-[#466f9d]">片段上传 {clip.uploadProgress}%</div> : null}
                       {index === editor.clips.length - 1 ? (
                         <div className="mt-4 flex justify-end">
                           <button type="button" className="btn-secondary" onClick={() => addClip(clip.localId)}>
@@ -3500,7 +3500,7 @@ export default function AdminCorporateEnglishPage() {
             <div className="relative min-w-0">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
-                className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                className="h-12 w-full rounded-lg border border-slate-200 bg-white pl-11 pr-4 text-slate-900 outline-none transition focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
                 value={searchDraft}
                 onChange={(event) => setSearchDraft(event.target.value)}
                 onBlur={runSearch}
@@ -3556,7 +3556,7 @@ export default function AdminCorporateEnglishPage() {
                       <td className="px-4 py-3 text-sm text-slate-700">{company.clipCount}</td>
                       <td className="px-4 py-3 text-sm text-slate-600">
                         <div className="flex flex-wrap items-center gap-2">
-                          <Building2 className="h-4 w-4 text-indigo-500" />
+                          <Building2 className="h-4 w-4 text-[#587faa]" />
                           <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${company.profile?.accessTier === 'free' ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
                             {company.profile?.accessTier === 'free' ? 'FREE' : 'Club'}
                           </span>
@@ -3566,7 +3566,7 @@ export default function AdminCorporateEnglishPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{statusLabel(company.status)}</span>
+                        <span className="rounded-full bg-[#eff5fb] px-2.5 py-1 text-xs font-bold text-[#345d88]">{statusLabel(company.status)}</span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-500">{company.latestUpdatedAt ? new Date(company.latestUpdatedAt).toLocaleString() : '-'}</td>
                       <td className="px-4 py-3">

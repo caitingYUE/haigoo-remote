@@ -672,7 +672,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                     ...current,
                     [copyKey]: event.target.checked
                   }))}
-                  className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                  className="h-4 w-4 rounded border-slate-300 text-[#466f9d] focus:ring-[#587faa]"
                 />
                 带链接
               </label>
@@ -713,10 +713,10 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                             value={slotQuery}
                             onChange={(event) => setSlotQuery(event.target.value)}
                             placeholder="输入岗位标题或公司名称"
-                            className="w-full rounded-2xl border border-indigo-200 bg-white py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                            className="w-full rounded-2xl border border-[#c9dce8] bg-white py-2.5 pl-10 pr-10 text-sm font-semibold text-slate-900 outline-none transition focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
                           />
                           {slotLoading ? (
-                            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-indigo-500" />
+                            <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#587faa]" />
                           ) : null}
                         </div>
 
@@ -737,7 +737,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                                   onClick={() => setSlotSelectedJobId(candidate.id)}
                                   className={`rounded-2xl border p-3 text-left transition ${
                                     active
-                                      ? 'border-indigo-200 bg-indigo-50'
+                                      ? 'border-[#c9dce8] bg-[#eff5fb]'
                                       : 'border-slate-200 bg-white hover:border-slate-300'
                                   }`}
                                 >
@@ -759,7 +759,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                             type="button"
                             onClick={handleApplySlotReplacement}
                             disabled={!slotSelectedJob}
-                            className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-full bg-[#466f9d] px-3 py-2 text-xs font-semibold text-white transition hover:bg-[#345d88] disabled:cursor-not-allowed disabled:opacity-60"
                           >
                             <Check className="h-3.5 w-3.5" />
                             确认更换
@@ -813,7 +813,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                     <button
                       type="button"
                       onClick={() => handleCopy(singleCopyKey, buildSocialPushCopyText(audience, batchLabel, [job], true))}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-indigo-200 hover:text-indigo-600"
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-[#c9dce8] hover:text-[#466f9d]"
                     >
                       {copiedKey === singleCopyKey ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
                       {copiedKey === singleCopyKey ? '已复制' : '复制'}
@@ -904,7 +904,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                 onClick={() => setSelectedGroupId(group.id)}
                 className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                   active
-                    ? 'bg-indigo-600 text-white shadow-sm'
+                    ? 'bg-[#466f9d] text-white shadow-sm'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -930,9 +930,9 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
             icon: <Users className="h-3.5 w-3.5" />
           })}
           {renderAudienceCard(selectedGroup.id, selectedGroup.memberCard, {
-            badge: 'bg-indigo-50 text-indigo-700',
-            border: 'border-indigo-200',
-            button: 'bg-indigo-600 text-white hover:bg-indigo-700',
+            badge: 'bg-[#eff5fb] text-[#345d88]',
+            border: 'border-[#c9dce8]',
+            button: 'bg-[#466f9d] text-white hover:bg-[#345d88]',
             icon: <Crown className="h-3.5 w-3.5" />
           })}
         </div>
@@ -995,7 +995,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                           onClick={() => openEditGroup(group)}
                           className={`w-full rounded-2xl border p-4 text-left transition ${
                             active
-                              ? 'border-indigo-200 bg-indigo-50'
+                              ? 'border-[#c9dce8] bg-[#eff5fb]'
                               : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                           }`}
                         >
@@ -1026,7 +1026,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                       value={groupForm.internalName}
                       onChange={(event) => setGroupForm((current) => ({ ...current, internalName: event.target.value }))}
                       placeholder="例如：产品/运营组"
-                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-indigo-300"
+                      className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-[#9fbbd2]"
                     />
                   </label>
 
@@ -1035,7 +1035,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                       type="checkbox"
                       checked={groupForm.isActive}
                       onChange={(event) => setGroupForm((current) => ({ ...current, isActive: event.target.checked }))}
-                      className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                      className="h-4 w-4 rounded border-slate-300 text-[#466f9d] focus:ring-[#587faa]"
                     />
                     启用该分组
                   </label>
@@ -1059,7 +1059,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                             onClick={() => handleToggleRole(role)}
                             className={`rounded-full px-3 py-2 text-xs font-semibold transition ${
                               active
-                                ? 'bg-indigo-600 text-white'
+                                ? 'bg-[#466f9d] text-white'
                                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                             }`}
                           >
@@ -1097,7 +1097,7 @@ const SocialPushPreviewContent: React.FC<{ token?: string | null }> = ({ token }
                         type="button"
                         onClick={handleSaveGroup}
                         disabled={saving}
-                        className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-70"
+                        className="inline-flex items-center gap-2 rounded-full bg-[#466f9d] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#345d88] disabled:cursor-not-allowed disabled:opacity-70"
                       >
                         <Check className="h-4 w-4" />
                         {saving ? '保存中...' : '保存分组'}

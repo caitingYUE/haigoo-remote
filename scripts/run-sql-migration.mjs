@@ -5,13 +5,12 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { neon } from '@neondatabase/serverless'
 
-const migrationName = String(process.argv[2] || '').trim()
+const cliArgs = process.argv.slice(2)
+const dryRun = cliArgs.includes('--dry-run')
+const migrationName = String(cliArgs.find((argument) => argument !== '--dry-run') || '').trim()
 if (!/^\d{3}_[a-z0-9_]+\.sql$/.test(migrationName)) {
-  throw new Error('Usage: node scripts/run-sql-migration.mjs <NNN_migration_name.sql>')
+  throw new Error('Usage: node scripts/run-sql-migration.mjs [--dry-run] <NNN_migration_name.sql>')
 }
-
-const databaseUrl = process.env.NEON_DATABASE_DATABASE_URL || process.env.DATABASE_URL
-if (!databaseUrl) throw new Error('NEON_DATABASE_DATABASE_URL or DATABASE_URL is required')
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const migrationsRoot = path.join(projectRoot, 'server-utils', 'dal', 'migrations') + path.sep
@@ -130,6 +129,17 @@ function splitSqlStatements(sqlSource) {
 }
 
 const statements = splitSqlStatements(source)
+
+if (dryRun) {
+  if (statements.length === 0) {
+    throw new Error(`Migration contains no executable SQL: ${migrationName}`)
+  }
+  console.log(`${migrationName} parsed successfully (${statements.length} statements, no database connection)`)
+  process.exit(0)
+}
+
+const databaseUrl = process.env.NEON_DATABASE_DATABASE_URL || process.env.DATABASE_URL
+if (!databaseUrl) throw new Error('NEON_DATABASE_DATABASE_URL or DATABASE_URL is required')
 
 const sql = neon(databaseUrl)
 await sql.query(`

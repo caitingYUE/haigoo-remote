@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, ArrowRight, BookOpen, Bookmark, BookmarkCheck, Briefcase, Building2, ExternalLink, Eye, EyeOff, FolderOpen, Headphones, Linkedin, Loader2, Lock, Mail, Play, Sparkles, Volume2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import {
   CorporateEnglishCompanyDetail,
@@ -43,14 +44,14 @@ function getModuleVideoMetaLabel(video: CorporateEnglishPublicModuleVideo) {
   return video.category || SECTION_LABEL[video.moduleKey] || '外企英语'
 }
 
-const SOFT_PANEL_CLASS = 'rounded-[24px] border border-[#dbe8f4] bg-white shadow-[0_10px_28px_rgba(70,93,125,0.06)]'
+const SOFT_PANEL_CLASS = 'hg-career-soft-panel'
 
 const pronunciationTypeMeta: Record<CorporateEnglishPronunciationMarkType, { label: string; className: string; hint: string }> = {
-  stress: { label: '重读', className: 'rounded-md bg-[#eeeaff] px-1 font-black text-[#4f46e5] shadow-[inset_0_-2px_0_rgba(79,70,229,0.20)]', hint: '语义重心，读清楚' },
+  stress: { label: '重读', className: 'rounded-md bg-[#dce9f5] px-1 font-black text-[#345d88] shadow-[inset_0_-2px_0_rgba(79,70,229,0.20)]', hint: '语义重心，读清楚' },
   weak: { label: '弱读', className: 'rounded-md bg-slate-100 px-1 text-slate-500', hint: '快速带过，不要重读' },
   linking: { label: '连读', className: 'text-emerald-700', hint: '两个词要连在一起读' },
   keyword: { label: '关键词', className: 'rounded-md bg-amber-100 px-1 font-bold text-amber-700', hint: '表达重点词' },
-  pause: { label: '停顿', className: 'border-b-2 border-dashed border-[#6d5dfc]', hint: '这里可以短暂停顿' }
+  pause: { label: '停顿', className: 'border-b-2 border-dashed border-[#466f9d]', hint: '这里可以短暂停顿' }
 }
 
 const pronunciationTypeOrder: CorporateEnglishPronunciationMarkType[] = ['stress', 'weak', 'linking', 'keyword', 'pause']
@@ -110,8 +111,8 @@ function PosterFrame({
       className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[linear-gradient(135deg,#f8fbff_0%,#f2f7ff_56%,#ffffff_100%)] p-5 text-slate-950"
     >
       <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#7c6dff]/10" />
-      <div className="absolute bottom-0 left-0 h-1.5 w-24 bg-[#6251f5]" />
-      <div className="relative text-xs font-black tracking-[0.08em] text-[#6251f5]">{eyebrow || 'Video'}</div>
+      <div className="absolute bottom-0 left-0 h-1.5 w-24 bg-[#466f9d]" />
+      <div className="relative text-xs font-black tracking-[0.08em] text-[#466f9d]">{eyebrow || 'Video'}</div>
       <div className="relative max-w-[88%] text-2xl font-black leading-tight tracking-tight md:text-3xl">{title}</div>
     </div>
   )
@@ -124,7 +125,7 @@ function LockedPanel({ message, onAction }: { message: string; onAction: () => v
       onClick={onAction}
       className="flex aspect-video w-full flex-col items-center justify-center gap-4 bg-[#f7f6ff] text-center text-slate-950"
     >
-      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#6251f5] shadow-sm">
+      <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#466f9d] shadow-sm">
         <Lock className="h-7 w-7" />
       </span>
       <span className="max-w-md px-6 text-lg font-black">{message}</span>
@@ -152,18 +153,18 @@ function VideoFrame({
   className?: string
 }) {
   if (locked) {
-    return <LockedPanel message={lockReason || '该视频为会员内容'} onAction={onLockedAction} />
+    return <LockedPanel message={lockReason || '该视频当前未开放'} onAction={onLockedAction} />
   }
   if (src) {
     return (
-      <div className={`relative aspect-video w-full overflow-hidden rounded-[24px] bg-slate-950 shadow-[0_14px_36px_rgba(15,23,42,0.12)] ${className}`}>
+      <div className={`hg-watch-video-frame relative aspect-video w-full overflow-hidden bg-slate-950 ${className}`}>
         <iframe src={src} title={title} className="h-full w-full" frameBorder="0" allowFullScreen />
         {overlay}
       </div>
     )
   }
   return (
-    <div className={`relative aspect-video w-full overflow-hidden rounded-[24px] bg-[#f8fbff] shadow-[0_14px_36px_rgba(15,23,42,0.08)] ${className}`}>
+    <div className={`hg-watch-video-frame relative aspect-video w-full overflow-hidden bg-[#f8fbff] ${className}`}>
       {overlay}
       <PosterFrame src={poster} title={title} loading="eager" />
       <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-950/28 text-white">
@@ -179,7 +180,7 @@ function VideoBackButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="absolute left-4 top-4 z-20 inline-flex h-10 items-center gap-2 rounded-full border border-white/80 bg-white/95 px-4 text-sm font-black text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.18)] transition hover:border-[#6251f5] hover:text-[#6251f5]"
+      className="hg-watch-back hg-watch-back--overlay absolute left-4 top-4 z-20 inline-flex h-11 items-center gap-2 rounded-full px-4 text-sm font-semibold transition"
     >
       <ArrowLeft className="h-4 w-4" />
       返回
@@ -192,7 +193,7 @@ function InlineBackButton({ onClick }: { onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-[#dbe8f4] bg-white px-4 text-sm font-black text-slate-700 shadow-sm transition hover:border-[#6251f5] hover:text-[#6251f5]"
+      className="hg-watch-back inline-flex h-11 shrink-0 items-center gap-2 rounded-full px-4 text-sm font-semibold transition"
     >
       <ArrowLeft className="h-4 w-4" />
       返回
@@ -345,9 +346,9 @@ function ClipPracticeSection({
 
   if (!clips.length || !activeClip) {
     return (
-      <section className={`${SOFT_PANEL_CLASS} mt-6 p-6 md:p-8`}>
+      <section className="hg-watch-clips mt-10 py-7 md:py-9">
         <div className="flex items-center gap-2">
-          <Volume2 className="h-5 w-5 text-[#6251f5]" />
+          <Volume2 className="h-5 w-5 text-[#466f9d]" />
           <h2 className="text-2xl font-black text-slate-950">跟读素材</h2>
         </div>
         <p className="mt-4 text-sm text-slate-500">这个视频还没有已发布跟读片段。</p>
@@ -370,17 +371,17 @@ function ClipPracticeSection({
   }
 
   return (
-    <section className={`${SOFT_PANEL_CLASS} mt-5 overflow-hidden p-5 md:p-6`}>
+    <section className="hg-watch-clips mt-10 overflow-hidden py-7 md:py-9">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <Volume2 className="h-5 w-5 text-[#6251f5]" />
+            <Volume2 className="h-5 w-5 text-[#466f9d]" />
             <h2 className="text-2xl font-black text-slate-950">跟读素材</h2>
           </div>
-          <p className="mt-1.5 text-sm leading-6 text-slate-500">影子跟读是练习口语最高效的方法，以下素材均由人工精选剪辑</p>
+          <p className="mt-1.5 text-sm leading-6 text-slate-500">从公开访谈中整理可反复练习的表达片段。</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <span className="rounded-full border border-[#ded6ff] bg-white px-4 py-2 text-xs font-black text-[#6251f5]">{clips.length} 个片段</span>
+          <span className="rounded-full border border-[#c9dce8] bg-white px-4 py-2 text-xs font-black text-[#466f9d]">{clips.length} 个片段</span>
         </div>
       </div>
 
@@ -394,29 +395,29 @@ function ClipPracticeSection({
               onClick={() => setActiveClipId(clip.clipId)}
               className={`flex h-12 min-w-[220px] items-center gap-3 rounded-full border px-4 text-left transition ${
                 active
-                  ? 'border-[#6251f5] bg-[#6251f5] text-white shadow-[0_18px_28px_rgba(98,81,245,0.18)]'
-                  : 'border-[#eadff8] bg-white text-slate-600 hover:border-[#cfc5ff] hover:text-[#6251f5]'
+                  ? 'border-[#466f9d] bg-[#466f9d] text-white shadow-[0_18px_28px_rgba(70,111,157,0.18)]'
+                  : 'border-[#dce9f5] bg-white text-slate-600 hover:border-[#9fbbd2] hover:text-[#466f9d]'
               }`}
             >
-              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${active ? 'bg-white/18 text-white' : 'bg-[#f5f2ff] text-[#6251f5]'}`}>{index + 1}</span>
+              <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-black ${active ? 'bg-white/18 text-white' : 'bg-[#eff5fb] text-[#466f9d]'}`}>{index + 1}</span>
               <span className="min-w-0 truncate text-sm font-semibold">{clip.clipTitle || clip.subtitleText || '跟读片段'}</span>
             </button>
           )
         })}
       </div>
 
-      <article className="relative mt-4 rounded-[24px] border border-[#ded6ff] bg-white p-4 md:p-5">
+      <article className="hg-watch-clip-document relative mt-4 p-4 md:p-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[#6251f5]">
+            <div className="flex items-center gap-2 text-[#466f9d]">
               <Headphones className="h-4 w-4" />
               <span className="text-xs font-black">{formatClipTime(activeClip.startMs)} - {formatClipTime(activeClip.endMs)}</span>
             </div>
             <h3 className="mt-2 text-xl font-black text-slate-950">{activeClip.clipTitle || '跟读片段'}</h3>
           </div>
           {activeClip.isLocked ? (
-            <button type="button" onClick={onLocked} className="inline-flex h-11 items-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm">
-              解锁跟读
+            <button type="button" onClick={onLocked} className="inline-flex h-11 items-center rounded-full bg-[#466f9d] px-5 text-sm font-black text-white shadow-sm">
+              Private 内容
             </button>
           ) : (
             <button
@@ -424,8 +425,8 @@ function ClipPracticeSection({
               onClick={() => onToggleFavorite(activeClip)}
               className={`inline-flex h-11 items-center gap-2 rounded-full border px-5 text-sm font-black transition ${
                 activeClip.isFavorited
-                  ? 'border-[#ded6ff] bg-[#f5f2ff] text-[#6251f5] hover:bg-white'
-                  : 'border-[#ded6ff] bg-white text-slate-700 hover:border-[#6251f5] hover:text-[#6251f5]'
+                  ? 'border-[#c9dce8] bg-[#eff5fb] text-[#466f9d] hover:bg-white'
+                  : 'border-[#c9dce8] bg-white text-slate-700 hover:border-[#466f9d] hover:text-[#466f9d]'
               }`}
             >
               {activeClip.isFavorited ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
@@ -438,7 +439,7 @@ function ClipPracticeSection({
           {activeClip.isLocked ? (
             <div className="flex h-12 items-center gap-3 rounded-full bg-slate-100 px-4 text-sm font-bold text-slate-400">
               <Lock className="h-4 w-4" />
-              跟读音频和字幕需解锁后使用
+              跟读音频与字幕暂未开放
             </div>
           ) : activeClip.audioUrl ? (
             <AuthenticatedClipAudio clip={activeClip} onPlay={onPlay} />
@@ -452,8 +453,8 @@ function ClipPracticeSection({
         {tagGroups.length > 0 ? (
           <div className="mt-4 flex flex-wrap gap-2">
             {tagGroups.map((group) => (
-              <span key={group.title} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#ded6ff] bg-[#f5f2ff] px-3 py-1.5 text-xs font-bold text-[#6251f5]">
-                <span className="shrink-0 text-[#8a7bff]">{group.title}</span>
+              <span key={group.title} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-[#c9dce8] bg-[#eff5fb] px-3 py-1.5 text-xs font-bold text-[#466f9d]">
+                <span className="shrink-0 text-[#7f9fbc]">{group.title}</span>
                 <span className="min-w-0 truncate">{group.tags.map((tag) => `#${tag}`).join(' ')}</span>
               </span>
             ))}
@@ -463,7 +464,7 @@ function ClipPracticeSection({
         <div className="mt-5 rounded-2xl border border-[#eee7dd] bg-[#fffdf8] p-4">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wide text-slate-400">
-              <BookOpen className="h-4 w-4 text-[#8a7bff]" />
+              <BookOpen className="h-4 w-4 text-[#7f9fbc]" />
               Script
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -474,8 +475,8 @@ function ClipPracticeSection({
                   onClick={() => togglePronunciationType(type)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-bold transition ${
                     activePronunciationTypes.includes(type)
-                      ? 'border-[#cfc5ff] bg-[#6d5dfc] text-white'
-                      : 'border-[#eadff8] bg-white text-slate-700 hover:border-[#cbbfff] hover:text-[#6251f5]'
+                      ? 'border-[#9fbbd2] bg-[#466f9d] text-white'
+                      : 'border-[#dce9f5] bg-white text-slate-700 hover:border-[#9fbbd2] hover:text-[#466f9d]'
                   }`}
                   title={`${pronunciationTypeMeta[type].label}：${pronunciationTypeMeta[type].hint}`}
                 >
@@ -485,7 +486,7 @@ function ClipPracticeSection({
               <button
                 type="button"
                 onClick={() => setShowScript((value) => !value)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ded6ff] bg-white text-[#6251f5] transition hover:bg-[#f5f2ff]"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#c9dce8] bg-white text-[#466f9d] transition hover:bg-[#eff5fb]"
                 aria-label={showScript ? '隐藏原文' : '显示原文'}
               >
                 {showScript ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
@@ -523,26 +524,26 @@ function ModuleInfoPanel({ video }: { video: CorporateEnglishPublicModuleVideo }
   const sectionLabel = SECTION_LABEL[section] || '外企英语'
   const metaLabel = getModuleVideoMetaLabel(video)
   return (
-    <aside className={`${SOFT_PANEL_CLASS} flex h-full min-h-0 flex-col overflow-hidden`}>
-      <div className="border-b border-[#dbe8f4] px-6 py-5">
-        <div className="text-sm font-black tracking-[0.08em] text-[#6251f5]">{metaLabel}</div>
-        <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950">{sectionLabel}</h2>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
-        <h1 className="text-2xl font-black leading-tight tracking-tight text-slate-950">{video.title}</h1>
-        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
+    <aside className="hg-watch-reading-panel">
+      <header>
+        <div className="hg-career-kicker">{metaLabel}</div>
+        <h2>{sectionLabel}</h2>
+      </header>
+      <div className="hg-watch-reading-body">
+        <h1>{video.title}</h1>
+        <div className="hg-watch-meta-line mt-4">
           <span>{formatDateLabel(video.publishedAt) || '精选内容'}</span>
           {video.videoSource ? <span>视频来自 {video.videoSource}</span> : null}
         </div>
         {video.description ? (
-          <p className="mt-5 whitespace-pre-line break-words text-base leading-8 text-slate-700">{video.description}</p>
+          <p className="hg-watch-summary">{video.description}</p>
         ) : (
-          <p className="mt-5 rounded-2xl border border-dashed border-[#dbe8f4] p-5 text-sm font-semibold text-slate-500">暂无视频简介。</p>
+          <p className="hg-watch-empty">暂无视频简介。</p>
         )}
         {video.tags.length ? (
-          <div className="mt-6 flex flex-wrap gap-2">
+          <div className="hg-watch-tags">
             {video.tags.map((tag) => (
-              <span key={tag} className="rounded-full bg-[#f3f0ff] px-3 py-1.5 text-xs font-black text-[#6251f5]">{tag}</span>
+              <span key={tag}>{tag}</span>
             ))}
           </div>
         ) : null}
@@ -554,21 +555,21 @@ function ModuleInfoPanel({ video }: { video: CorporateEnglishPublicModuleVideo }
 function ModuleVideoDetails({ video }: { video: CorporateEnglishPublicModuleVideo }) {
   const metaLabel = getModuleVideoMetaLabel(video)
   return (
-    <section className={`${SOFT_PANEL_CLASS} mt-5 shrink-0 p-6`}>
-      <div className="text-sm font-black tracking-[0.08em] text-[#6251f5]">{metaLabel}</div>
-      <h1 className={`${getDetailTitleClass(video.title)} mt-2 font-black tracking-tight text-slate-950`}>{video.title}</h1>
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
+    <section className="hg-watch-module-details mt-6 shrink-0 py-6">
+      <div className="hg-career-kicker">{metaLabel}</div>
+      <h1 className={getDetailTitleClass(video.title)}>{video.title}</h1>
+      <div className="hg-watch-meta-line mt-4">
         <span>{formatDateLabel(video.publishedAt) || '精选内容'}</span>
         {video.videoSource ? <span>视频来自 {video.videoSource}</span> : null}
       </div>
       {video.description ? (
-        <p className="mt-5 whitespace-pre-line break-words text-base leading-8 text-slate-700">{video.description}</p>
+        <p className="hg-watch-summary">{video.description}</p>
       ) : (
-        <p className="mt-5 rounded-2xl border border-dashed border-[#dbe8f4] p-5 text-sm font-semibold text-slate-500">暂无视频简介。</p>
+        <p className="hg-watch-empty">暂无视频简介。</p>
       )}
       {video.tags.length ? (
-        <div className="mt-6 flex flex-wrap gap-2">
-          {video.tags.map((tag) => <span key={tag} className="rounded-full bg-[#f3f0ff] px-3 py-1.5 text-xs font-black text-[#6251f5]">{tag}</span>)}
+        <div className="hg-watch-tags">
+          {video.tags.map((tag) => <span key={tag}>{tag}</span>)}
         </div>
       ) : null}
     </section>
@@ -577,24 +578,24 @@ function ModuleVideoDetails({ video }: { video: CorporateEnglishPublicModuleVide
 
 function VideoNotesPanel({ notes, noteHref }: { notes: CorporateEnglishVideoNoteBlock[]; noteHref?: string }) {
   return (
-    <aside className={`${SOFT_PANEL_CLASS} flex h-full min-h-0 flex-col overflow-hidden`}>
-      <div className="shrink-0 border-b border-[#dbe8f4] px-6 py-5">
+    <aside className="hg-watch-reading-panel hg-watch-reading-panel--notes">
+      <header>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-sm font-black tracking-[0.08em] text-[#6251f5]">
+            <div className="hg-career-kicker flex items-center gap-2">
               <BookOpen className="h-4 w-4" />
               VIDEO NOTES
             </div>
-            <h2 className="mt-2 text-3xl font-black leading-tight text-slate-950">视频笔记</h2>
+            <h2>视频笔记</h2>
           </div>
           {noteHref ? (
-            <Link to={noteHref} target="_blank" rel="noreferrer" className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-[#dbe8f4] bg-white px-3 text-xs font-black text-[#5142df] transition hover:border-[#6251f5] hover:bg-[#f7f5ff] hover:no-underline">
-              进入笔记主页<ExternalLink className="h-3.5 w-3.5" />
+            <Link to={noteHref} target="_blank" rel="noreferrer" className="hg-watch-text-link shrink-0">
+              打开完整笔记<ExternalLink className="h-3.5 w-3.5" />
             </Link>
           ) : null}
         </div>
-      </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+      </header>
+      <div className="hg-watch-reading-body">
         <VideoNotesArticle notes={notes} />
       </div>
     </aside>
@@ -619,26 +620,26 @@ function LockedDetailGate({
   onBack: () => void
 }) {
   return (
-    <section className="grid h-full min-h-0 gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-      <div className={`${SOFT_PANEL_CLASS} overflow-hidden`}>
-        <div className="relative flex aspect-video flex-col items-center justify-center gap-4 bg-[#f5f2ff] text-center">
+    <section className="hg-career-lock-layout grid h-full min-h-0 gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
+      <div className="hg-career-lock-media overflow-hidden">
+        <div className="hg-career-lock-stage relative flex aspect-video flex-col items-center justify-center gap-4 text-center">
           <VideoBackButton onClick={onBack} />
-          <Lock className="h-12 w-12 text-[#6251f5]" />
+          <Lock className="h-12 w-12 text-[#466f9d]" />
           <div>
-            <div className="text-sm font-black text-[#6251f5]">{eyebrow}</div>
+            <div className="text-sm font-black text-[#466f9d]">{eyebrow}</div>
             <h1 className="mt-2 max-w-3xl px-8 text-3xl font-black leading-tight text-slate-950 md:text-5xl">{title}</h1>
           </div>
           <button
             type="button"
             onClick={onAction}
-            className="inline-flex h-12 items-center rounded-full bg-[#6251f5] px-6 text-sm font-black text-white shadow-[0_14px_30px_rgba(98,81,245,0.22)] transition hover:bg-[#4f46e5]"
+            className="inline-flex h-12 items-center rounded-full bg-[#466f9d] px-6 text-sm font-black text-white shadow-[0_14px_30px_rgba(70,111,157,0.22)] transition hover:bg-[#345d88]"
           >
             {actionLabel}
           </button>
         </div>
       </div>
-      <aside className={`${SOFT_PANEL_CLASS} flex min-h-[320px] flex-col justify-center p-7`}>
-        <div className="text-sm font-black tracking-[0.08em] text-[#6251f5]">访问权限</div>
+      <aside className="hg-career-lock-copy flex min-h-[280px] flex-col justify-center py-7">
+        <div className="text-sm font-black tracking-[0.08em] text-[#466f9d]">访问权限</div>
         <h2 className="mt-3 text-2xl font-black text-slate-950">内容暂不可见</h2>
         <p className="mt-4 text-base leading-8 text-slate-600">{message}</p>
       </aside>
@@ -671,55 +672,61 @@ function CompanyInfoTabs({
   ]
   const activeTabMeta = tabs.find((tab) => tab.key === activeTab) || tabs[0]
 
-  const renderTabIcon = (key: DetailTabKey, className = 'h-5 w-5') => {
-    if (key === 'culture') return <Building2 className={className} />
-    if (key === 'thinking') return <Sparkles className={className} />
-    if (key === 'jobs') return <Briefcase className={className} />
-    if (key === 'favorites') return <BookOpen className={className} />
-    return <FolderOpen className={className} />
-  }
-
   const renderSections = (sections: Array<{ title: string; body: string }>) => (
     sections.length ? (
-      <div className="space-y-3">
+      <div className="hg-watch-info-list">
         {sections.map((section, index) => (
-          <article key={`${section.title}-${index}`} className="rounded-[20px] border border-[#eadff8] bg-[#fbf8ff] p-4 shadow-[0_10px_22px_rgba(98,81,245,0.035)]">
-            <div className="flex gap-3">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#6251f5] text-sm font-black text-white">{index + 1}</span>
-              <div>
-                <h3 className="text-base font-black text-slate-950">{section.title}</h3>
-                <p className="mt-2 whitespace-pre-line break-words text-sm leading-6 text-slate-600">{section.body}</p>
-              </div>
+          <article key={`${section.title}-${index}`} className="hg-watch-info-row">
+            <span className="hg-watch-info-number">{String(index + 1).padStart(2, '0')}</span>
+            <div>
+              <h3>{section.title}</h3>
+              <p>{section.body}</p>
             </div>
           </article>
         ))}
       </div>
-    ) : <p className="rounded-2xl border border-dashed border-[#dbe8f4] p-6 text-sm font-semibold text-slate-500">暂无已发布内容。</p>
+    ) : <p className="hg-watch-empty">暂无已发布内容。</p>
   )
 
   return (
-    <aside className={`${SOFT_PANEL_CLASS} flex h-full min-h-0 overflow-hidden`}>
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="border-b border-[#dbe8f4] px-5 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-black leading-tight text-slate-950">{activeTabMeta.label}</h2>
-              <p className="mt-1.5 text-sm font-semibold text-slate-500">{activeTabMeta.subtitle}</p>
-            </div>
-            <span className="rounded-full border border-[#eadff8] bg-[#f9f4ff] px-3 py-1.5 text-sm font-black text-[#6251f5]">
-              {activeTabMeta.count} 条
-            </span>
-          </div>
+    <aside className="hg-watch-dossier">
+      <header className="hg-watch-dossier-header">
+        <div>
+          <div className="hg-career-kicker">COMPANY NOTES</div>
+          <h2>{activeTabMeta.label}</h2>
+          <p>{activeTabMeta.subtitle}</p>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto p-5">
+        <span>{activeTabMeta.count} 条</span>
+      </header>
+
+      <nav className="hg-watch-dossier-tabs" role="tablist" aria-label="企业资料分类">
+        {tabs.map((tab) => {
+          const active = activeTab === tab.key
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setActiveTab(tab.key)}
+              className={active ? 'is-active' : ''}
+            >
+              <span>{tab.label}</span>
+              <small>{tab.count}</small>
+            </button>
+          )
+        })}
+      </nav>
+
+      <div className="hg-watch-dossier-content">
         {activeTab === 'culture' ? renderSections(cultureSections) : null}
         {activeTab === 'thinking' ? renderSections(thinkingSections) : null}
         {activeTab === 'jobs' ? (
           jobs.length ? (
-            <div className="space-y-3">
+            <div className="hg-watch-info-list">
               {companyPath ? (
-                <Link to={companyPath} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-full border border-[#eadff8] bg-white px-4 py-3 text-base font-black text-[#6251f5] hover:border-[#6251f5] hover:no-underline">
-                  进入企业页
+                <Link to={companyPath} target="_blank" rel="noreferrer" className="hg-watch-text-link">
+                  查看企业资料
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : null}
@@ -729,75 +736,54 @@ function CompanyInfoTabs({
                   href={`/j/${encodeURIComponent(job.id)}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-[18px] border border-[#f1dfc2] bg-[#fffdf8] p-4 text-slate-950 transition hover:border-[#9ebff0] hover:no-underline hover:shadow-sm"
+                  className="hg-watch-resource-row"
                 >
-                  <h3 className="line-clamp-2 text-base font-black text-slate-950">{job.title}</h3>
-                  <p className="mt-2 line-clamp-1 text-sm font-semibold text-slate-500">{job.location || 'Remote'} · {job.category || job.jobType || 'Full-time'}</p>
+                  <span><strong>{job.title}</strong><small>{job.location || 'Remote'} · {job.category || job.jobType || 'Full-time'}</small></span>
+                  <ArrowRight className="h-4 w-4" />
                 </a>
               ))}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div>
               {companyPath ? (
-                <Link to={companyPath} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-full border border-[#eadff8] bg-white px-4 py-3 text-base font-black text-[#6251f5] hover:border-[#6251f5] hover:no-underline">
-                  进入企业页
+                <Link to={companyPath} target="_blank" rel="noreferrer" className="hg-watch-text-link">
+                  查看企业资料
                   <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : null}
-              <p className="rounded-2xl border border-dashed border-[#dbe8f4] p-6 text-sm font-semibold text-slate-500">暂无在招岗位。</p>
+              <p className="hg-watch-empty">暂无在招岗位。</p>
             </div>
           )
         ) : null}
         {activeTab === 'resources' ? (
           resourceLinks.length ? (
-            <div className="space-y-3">
+            <div className="hg-watch-info-list">
               {resourceLinks.map((link) => (
-                <a key={link.url} href={normalizeExternalUrl(link.url)} target="_blank" rel="noreferrer" className="flex items-center justify-between rounded-2xl border border-[#dbe8f4] p-4 text-sm font-black text-slate-700 hover:border-[#6251f5] hover:text-[#6251f5] hover:no-underline">
-                  {link.title}
+                <a key={link.url} href={normalizeExternalUrl(link.url)} target="_blank" rel="noreferrer" className="hg-watch-resource-row">
+                  <strong>{link.title}</strong>
                   <ExternalLink className="h-4 w-4" />
                 </a>
               ))}
             </div>
-          ) : <p className="rounded-2xl border border-dashed border-[#dbe8f4] p-6 text-sm font-semibold text-slate-500">暂无其他资料。</p>
+          ) : <p className="hg-watch-empty">暂无其他资料。</p>
         ) : null}
         {activeTab === 'favorites' ? (
           favorites.length ? (
-            <div className="space-y-3">
+            <div className="hg-watch-info-list">
               {favorites.map((clip) => (
-                <article key={clip.clipId} className="rounded-[18px] border border-[#eadff8] bg-white p-4">
-                  <div className="text-xs font-black text-[#6251f5]">{clip.companyName || detail.company.name}</div>
-                  <h3 className="mt-2 line-clamp-2 text-base font-black text-slate-950">{clip.clipTitle || clip.materialTitle || '跟读片段'}</h3>
-                  <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-500">{clip.subtitleText}</p>
+                <article key={clip.clipId} className="hg-watch-info-row hg-watch-info-row--favorite">
+                  <Bookmark className="mt-1 h-4 w-4 text-[#466f9d]" />
+                  <div>
+                    <small>{clip.companyName || detail.company.name}</small>
+                    <h3>{clip.clipTitle || clip.materialTitle || '跟读片段'}</h3>
+                    <p>{clip.subtitleText}</p>
+                  </div>
                 </article>
               ))}
             </div>
-          ) : <p className="rounded-2xl border border-dashed border-[#dbe8f4] p-6 text-sm font-semibold text-slate-500">暂无个人收藏。</p>
+          ) : <p className="hg-watch-empty">暂无个人收藏。</p>
         ) : null}
       </div>
-      </div>
-      <nav className="flex w-20 shrink-0 flex-col items-center gap-3 border-l border-[#dbe8f4] bg-[#f8fbff] py-5">
-        {tabs.map((tab) => {
-          const active = activeTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={`relative flex min-h-[70px] w-14 flex-col items-center justify-center gap-1.5 rounded-2xl border text-center transition ${
-                active
-                  ? 'border-[#ded6ff] bg-white text-[#6251f5] shadow-[0_10px_24px_rgba(98,81,245,0.12)]'
-                  : 'border-transparent bg-transparent text-slate-500 hover:bg-white hover:text-[#6251f5]'
-              }`}
-            >
-              <span className="relative">
-                {renderTabIcon(tab.key, 'h-5 w-5')}
-                <span className={`absolute -right-3 -top-3 rounded-full px-1.5 py-0.5 text-[10px] font-black ${active ? 'bg-[#f5f2ff] text-[#6251f5]' : 'bg-white text-slate-400'}`}>{tab.count}</span>
-              </span>
-              <span className="text-xs font-black leading-4">{tab.label}</span>
-            </button>
-          )
-        })}
-      </nav>
     </aside>
   )
 }
@@ -888,8 +874,12 @@ function CeoWatchContent({
         <LockedDetailGate
           title={activeVideo.materialTitle}
           eyebrow={detail.company.name || 'CEO 访谈'}
-          message={detail.permissions?.isAuthenticated ? '该访谈为 Club 内容，开通后可查看视频、企业文化、商业思维、跟读片段和岗位信息。' : '登录后可播放外企英语内容。未登录状态下，视频、企业文化、商业思维和跟读素材均不可见。'}
-          actionLabel={detail.permissions?.isAuthenticated ? '开通 Club' : '登录后播放'}
+          message={detail.permissions?.isAuthenticated
+            ? (COMPLIANCE_FEATURES.membershipPromotionBanners ? '该访谈属于 Private 内容，开放后可查看完整视频和学习材料。' : '该访谈内容当前暂未开放，你仍可播放职业成长页面中的开放内容。')
+            : '登录后可继续查看这项职业成长内容，以及与它相关的学习材料。'}
+          actionLabel={detail.permissions?.isAuthenticated
+            ? (COMPLIANCE_FEATURES.membershipPromotionBanners ? '了解 Private 内容' : '暂未开放')
+            : '登录后播放'}
           onAction={onLockedAction}
           onBack={onBack}
         />
@@ -903,29 +893,51 @@ function CeoWatchContent({
       {!activeVideo.isVideoLocked && activeVideo.tencentVideoUrl ? (
         <TrackVideoView section="ceo" entityId={activeVideo.materialId} />
       ) : null}
-      <div className="grid h-full min-h-0 gap-6 overflow-hidden xl:grid-cols-[minmax(0,2fr)_520px] 2xl:grid-cols-[minmax(0,2fr)_540px]">
-        <main className="min-h-0 min-w-0 overflow-y-auto pr-1">
-          <section className={`${SOFT_PANEL_CLASS} overflow-hidden p-5`}>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="hg-watch-layout hg-watch-layout--ceo">
+        <div className="hg-watch-primary">
+          <section className="hg-watch-player">
+            <header className="hg-watch-player-meta">
               <div className="flex min-w-0 items-center gap-3">
                 <InlineBackButton onClick={onBack} />
                 {detail.company.logo ? (
-                  <img src={detail.company.logo} alt={detail.company.name} className="h-10 w-10 shrink-0 rounded-2xl border border-[#dbe8f4] bg-white object-contain p-2" />
+                  <img src={detail.company.logo} alt={detail.company.name} className="h-11 w-11 shrink-0 rounded-xl border border-[#dbe8f4] bg-white object-contain p-2" />
                 ) : null}
                 <div className="min-w-0">
-                  <div className="truncate text-lg font-black text-slate-950">{detail.company.name}</div>
-                  <div className="mt-0.5 truncate text-xs font-bold tracking-[0.08em] text-[#6251f5]">
+                  <div className="truncate text-base font-semibold text-slate-950">{detail.company.name}</div>
+                  <div className="mt-0.5 truncate text-xs font-semibold text-slate-500">
                     {detail.company.industry || '远程企业 CEO 访谈'} · {clipCount} 个跟读片段
                   </div>
                 </div>
               </div>
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="rounded-full border border-[#dbe8f4] bg-white px-3 py-1.5 text-xs font-black text-slate-500">{formatDateLabel(activeVideo.publishedAt) || '精选内容'}</span>
-                <span className="rounded-full border border-[#ded6ff] bg-[#f5f2ff] px-3 py-1.5 text-xs font-black text-[#6251f5]">CEO 访谈</span>
+              <div className="hg-watch-meta-line">
+                <span>{formatDateLabel(activeVideo.publishedAt) || '持续整理'}</span>
+                <span>CEO 访谈</span>
               </div>
-            </div>
-            <div className="mb-4 inline-flex max-w-full rounded-full bg-[#6251f5] px-4 py-2 text-sm font-black text-white shadow-[0_12px_24px_rgba(98,81,245,0.18)]">
-              <span className="block truncate">{activeVideo.materialTitle}</span>
+            </header>
+            <div className="hg-watch-article-head hg-watch-article-head--lead">
+              <div className="hg-career-kicker">正在观看 · {detail.company.name}</div>
+              <h1>{activeVideo.materialTitle}</h1>
+              <div className="hg-watch-byline">
+                <span>{activeVideo.speakerName} · {activeVideo.speakerRole}</span>
+                {activeVideo.speakerEmail ? (
+                  <a href={`mailto:${activeVideo.speakerEmail}`} className="inline-flex items-center gap-1 hover:no-underline">
+                    <Mail className="h-4 w-4" />
+                    Email
+                  </a>
+                ) : null}
+                {activeVideo.speakerLinkedin ? (
+                  <a href={normalizeExternalUrl(activeVideo.speakerLinkedin)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:no-underline">
+                    <Linkedin className="h-4 w-4" />
+                    LinkedIn
+                  </a>
+                ) : null}
+                {activeVideo.sourceVideoUrl ? (
+                  <a href={normalizeExternalUrl(activeVideo.sourceVideoUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1">
+                    视频来源
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
+                ) : null}
+              </div>
             </div>
             <VideoFrame
               title={activeVideo.materialTitle}
@@ -935,35 +947,11 @@ function CeoWatchContent({
               lockReason={activeVideo.videoLockReason}
               onLockedAction={onLockedAction}
             />
-            <div className="px-1 pb-1 pt-4">
-              <h1 className="line-clamp-2 text-2xl font-black leading-tight tracking-tight text-slate-950">{activeVideo.materialTitle}</h1>
-              <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm font-semibold text-slate-500">
-                <span>{activeVideo.speakerName} · {activeVideo.speakerRole}</span>
-                {activeVideo.speakerEmail ? (
-                  <a href={`mailto:${activeVideo.speakerEmail}`} className="inline-flex items-center gap-1 text-[#6251f5] hover:no-underline">
-                    <Mail className="h-4 w-4" />
-                    Email
-                  </a>
-                ) : null}
-                {activeVideo.speakerLinkedin ? (
-                  <a href={normalizeExternalUrl(activeVideo.speakerLinkedin)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#6251f5] hover:no-underline">
-                    <Linkedin className="h-4 w-4" />
-                    LinkedIn
-                  </a>
-                ) : null}
-                {activeVideo.sourceVideoUrl ? (
-                  <a href={normalizeExternalUrl(activeVideo.sourceVideoUrl)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[#6251f5] hover:text-[#4f46e5]">
-                    视频来源
-                    <ExternalLink className="h-4 w-4" />
-                  </a>
-                ) : null}
-              </div>
-              {activeVideo.videoSummary ? <p className="mt-3 whitespace-pre-line text-sm leading-6 text-slate-600">{activeVideo.videoSummary}</p> : null}
-            </div>
+            {activeVideo.videoSummary ? <p className="hg-watch-summary hg-watch-summary--after-video">{activeVideo.videoSummary}</p> : null}
           </section>
 
           <ClipPracticeSection clips={clipsWithFavoriteState} onPlay={trackClipPlay} onLocked={onLockedAction} onToggleFavorite={handleToggleFavorite} />
-        </main>
+        </div>
         <CompanyInfoTabs detail={detail} companyPath={companyPath} favoriteCount={favoritesCount} />
       </div>
     </>
@@ -999,8 +987,12 @@ function ModuleWatchContent({
         <LockedDetailGate
           title={video.title}
           eyebrow={metaLabel}
-          message={video.loginRequired ? '登录后可播放外企英语内容。未登录状态下，视频简介、推荐和学习素材均不可见。' : '该视频为 Club 内容，开通后可查看完整视频和学习材料。'}
-          actionLabel={video.loginRequired ? '登录后播放' : '开通 Club'}
+          message={video.loginRequired
+            ? '登录后可继续查看这项职业成长内容，以及与它相关的学习材料。'
+            : (COMPLIANCE_FEATURES.membershipPromotionBanners ? '该视频属于 Private 内容，开放后可查看完整视频和学习材料。' : '该视频当前暂未开放，你仍可播放页面中的开放内容。')}
+          actionLabel={video.loginRequired
+            ? '登录后播放'
+            : (COMPLIANCE_FEATURES.membershipPromotionBanners ? '了解 Private 内容' : '暂未开放')}
           onAction={onLockedAction}
           onBack={onBack}
         />
@@ -1013,8 +1005,8 @@ function ModuleWatchContent({
       {!video.isLocked && video.tencentIframeUrl ? (
         <TrackVideoView section={section} entityId={video.videoId} category={section === 'remote_preparation' ? video.difficultyLevel || '' : video.category} />
       ) : null}
-      <div className={`grid h-full min-h-0 gap-6 overflow-hidden ${section === 'remote_preparation' ? 'xl:grid-cols-[minmax(0,2fr)_minmax(340px,1fr)]' : 'xl:grid-cols-[minmax(0,1fr)_420px] 2xl:grid-cols-[minmax(0,1fr)_460px]'}`}>
-        <main className="flex h-full min-h-0 min-w-0 flex-col overflow-y-auto pr-1">
+      <div className={`hg-watch-layout hg-watch-layout--module ${section === 'remote_preparation' ? 'is-remote-preparation' : ''}`}>
+        <div className="hg-watch-primary">
           <VideoFrame
             title={video.title}
             src={video.tencentIframeUrl}
@@ -1023,14 +1015,14 @@ function ModuleWatchContent({
             lockReason={video.lockReason}
             onLockedAction={onLockedAction}
             overlay={<VideoBackButton onClick={onBack} />}
-            className="max-h-[calc(100vh-15rem)] shrink-0"
           />
           {section === 'remote_preparation' ? <ModuleVideoDetails video={video} /> : (
-            <section className={`${SOFT_PANEL_CLASS} mt-5 shrink-0 p-5`}>
-              <h1 className={`${getDetailTitleClass(video.title)} line-clamp-3 font-black tracking-tight text-slate-950`}>{video.title}</h1>
+            <section className="hg-watch-module-details mt-6 shrink-0 py-6">
+              <div className="hg-career-kicker">{metaLabel}</div>
+              <h1 className={getDetailTitleClass(video.title)}>{video.title}</h1>
             </section>
           )}
-        </main>
+        </div>
         {section === 'remote_preparation' ? <VideoNotesPanel notes={video.videoNotes || []} noteHref={video.hasVideoNotes ? withReturnTo(`/careerlearning/notes/${encodeURIComponent(video.videoId)}`, currentPath) : undefined} /> : <ModuleInfoPanel video={video} />}
       </div>
     </>
@@ -1050,11 +1042,15 @@ export default function CorporateEnglishWatchPage() {
 
   const handleLockedAction = useCallback(() => {
     if (!isAuthenticated) {
-      showWarning('请先登录', '登录后可播放免费内容。')
+      showWarning('请先登录', '登录后可播放开放内容。')
       navigate('/login')
       return
     }
-    navigate('/profile?tab=membership#club-service-plans')
+    if (COMPLIANCE_FEATURES.membershipPromotionBanners) {
+      navigate('/profile?tab=membership#club-service-plans')
+      return
+    }
+    showWarning('当前内容暂未开放', '你仍可播放职业成长页面中的开放内容。')
   }, [isAuthenticated, navigate, showWarning])
 
   useEffect(() => {
@@ -1090,18 +1086,18 @@ export default function CorporateEnglishWatchPage() {
   }, [id, source])
 
   return (
-    <div className="h-screen overflow-hidden bg-[#fbfaf6] font-haigoo-rounded text-slate-950">
-      <div className="mx-auto flex h-full max-w-[1780px] flex-col px-4 pb-5 pt-24 sm:px-8">
+    <div className="hg-career-watch-page min-h-screen text-slate-950">
+      <div className="mx-auto flex min-h-screen max-w-[1540px] flex-col px-4 pb-20 pt-24 sm:px-8">
         {loading ? (
-          <div className={`${SOFT_PANEL_CLASS} flex flex-1 items-center justify-center`}>
-            <Loader2 className="h-7 w-7 animate-spin text-[#6251f5]" />
+          <div className="hg-watch-loading flex min-h-[62vh] flex-1 items-center justify-center">
+            <Loader2 className="h-7 w-7 animate-spin text-[#466f9d]" />
           </div>
         ) : source === 'ceo' && ceoDetail ? (
           <CeoWatchContent detail={ceoDetail} materialId={id} onLockedAction={handleLockedAction} onBack={handleBack} />
         ) : source === 'module' && moduleVideo ? (
           <ModuleWatchContent video={moduleVideo} onLockedAction={handleLockedAction} onBack={handleBack} />
         ) : (
-          <div className={`${SOFT_PANEL_CLASS} p-12 text-center text-slate-500`}>视频不存在或已下线。</div>
+          <div className="hg-watch-empty py-16 text-center">视频不存在或已下线。</div>
         )}
       </div>
     </div>

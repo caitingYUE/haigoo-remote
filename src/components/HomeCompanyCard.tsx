@@ -36,8 +36,8 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
     // Generate a consistent gradient based on company name length
     const getGradient = (name: string) => {
         const gradients = [
-            'from-blue-50 to-indigo-50',
-            'from-purple-50 to-pink-50',
+            'from-blue-50 to-[#eff5fb]',
+            'from-[#fff8e8] to-pink-50',
             'from-orange-50 to-amber-50',
             'from-emerald-50 to-teal-50',
             'from-cyan-50 to-blue-50'
@@ -85,10 +85,9 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
             .sort(([, a], [, b]) => b - a)
             .slice(0, 3)
         : []
-    const totalJobs = Number(jobStats?.total ?? company.jobCount ?? 0)
     const hiringLine = topCategories.length > 0
-        ? text(`${totalJobs} 个在招 ${topCategories.map(([cat]) => cat).join('/')}`, `${totalJobs} open · ${topCategories.map(([cat]) => cat).join(' / ')}`)
-        : text(`${totalJobs} 个在招岗位`, `${totalJobs} open role${totalJobs === 1 ? '' : 's'}`)
+        ? topCategories.map(([cat]) => cat).join(' / ')
+        : text('岗位方向整理中', 'Role categories being updated')
 
     return (
         <div
@@ -137,11 +136,11 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
             <div className="flex flex-1 flex-col p-4 sm:p-5">
                 {/* Header: Name & Industry */}
                 <div className="mb-2 flex items-start justify-between gap-2">
-                    <h3 className="line-clamp-1 text-base sm:text-lg font-bold text-slate-900 transition-colors group-hover:text-indigo-600">
+                    <h3 className="line-clamp-1 text-base sm:text-lg font-bold text-slate-900 transition-colors group-hover:text-[#466f9d]">
                         {company.name}
                     </h3>
                     {company.industry && (
-                        <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-[#eef5ff] px-2 py-0.5 text-[11px] sm:text-xs text-[#4f63f6]">
+                        <span className="flex-shrink-0 whitespace-nowrap rounded-full bg-[#eef5ff] px-2 py-0.5 text-[11px] sm:text-xs text-[#466f9d]">
                             {company.industry}
                         </span>
                     )}
@@ -161,12 +160,12 @@ export default function HomeCompanyCard({ company, jobStats, onClick }: HomeComp
                 {/* Footer: Hiring Info */}
                 <div className="flex items-center justify-between border-t border-slate-50 pt-3.5 text-sm sm:pt-4">
                     <div className="flex min-w-0 flex-1 items-center gap-2 text-slate-600">
-                        <Briefcase className="w-4 h-4 text-[#4f63f6] flex-shrink-0" />
+                        <Briefcase className="w-4 h-4 text-[#466f9d] flex-shrink-0" />
                         <span className="truncate text-[11px] sm:text-xs font-medium">
                             {hiringLine}
                         </span>
                     </div>
-                    <span className="ml-2 flex-shrink-0 whitespace-nowrap text-[11px] sm:text-xs font-medium text-[#4f63f6] transition-transform group-hover:translate-x-1">
+                    <span className="ml-2 flex-shrink-0 whitespace-nowrap text-[11px] sm:text-xs font-medium text-[#466f9d] transition-transform group-hover:translate-x-1">
                         {text('查看岗位', 'View jobs')} &rarr;
                     </span>
                 </div>

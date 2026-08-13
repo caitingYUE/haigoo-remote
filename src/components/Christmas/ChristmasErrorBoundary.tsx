@@ -38,7 +38,7 @@ export class ChristmasErrorBoundary extends Component<Props, State> {
                     </p>
                     <button
                         onClick={() => window.location.reload()}
-                        className="px-6 py-2 bg-indigo-600 text-white rounded-full font-bold hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                        className="px-6 py-2 bg-[#466f9d] text-white rounded-full font-bold hover:bg-[#345d88] transition-colors flex items-center gap-2"
                     >
                         <RefreshCcw className="w-4 h-4" />
                         刷新页面

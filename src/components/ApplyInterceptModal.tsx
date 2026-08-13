@@ -110,7 +110,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
     const canWebsiteApplyFree = isAuthenticated && (websiteApplyUnlocked || websiteApplyUsageCount < websiteApplyLimit);
     const websiteApplyRemaining = Math.max(0, websiteApplyLimit - websiteApplyUsageCount);
-    const websiteApplyActionLabel = !isAuthenticated ? '前往申请（需登录）' : canWebsiteApplyFree ? '继续前往申请' : '前往申请次数已用完';
+    const websiteApplyActionLabel = !isAuthenticated ? '官网直申（需登录）' : canWebsiteApplyFree ? '官网直申' : '官网直申次数已用完';
 
     if (isMemberRestrictedJob && !isMember) {
         return createPortal(
@@ -128,7 +128,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <X className="w-5 h-5" />
                     </button>
 
-                    <div className="relative flex h-32 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)]">
+                    <div className="relative flex h-32 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)]">
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                         <div className="absolute -right-8 top-4 h-24 w-24 rounded-full bg-cyan-400/15 blur-3xl"></div>
                         <div className="relative z-10 bg-white/10 p-3 rounded-full backdrop-blur-md shadow-2xl border border-white/20">
@@ -137,7 +137,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                     </div>
 
                     <div className="p-6 text-center">
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#eff5fb] text-[#345d88] text-xs font-bold rounded-full mb-3">
                             <Crown className="w-3.5 h-3.5" />
                             Club 权益
                         </div>
@@ -146,7 +146,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             这家公司当前需加入 Club 后申请
                         </h3>
                         <p className="text-sm text-slate-500 leading-relaxed mb-6">
-                            免费用户仍可浏览岗位详情。加入 Club 后可开通对应网站权限。
+                            Club 专属岗位不向免费用户展示；有效会员可继续查看并使用申请入口。
                         </p>
 
                         <div className="grid grid-cols-3 gap-3 rounded-2xl border border-slate-100 bg-slate-50/70 p-3 mb-6 text-left">
@@ -174,7 +174,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 onClose();
                                 onShowUpgrade?.('member_only_job_apply', 'job_detail');
                             }}
-                            className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-indigo-600"
+                            className="w-full rounded-2xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-[#466f9d]"
                         >
                             查看会员权益
                         </button>
@@ -202,7 +202,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <X className="w-4 h-4" />
                     </button>
 
-                    <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] p-6">
+                    <div className="relative overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)] p-6">
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                         <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl"></div>
                         
@@ -233,7 +233,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 <h3 className="mt-3 text-lg font-bold text-white mb-1 flex items-center gap-2">
                                     {companyInfo?.name || job.company}
                                 </h3>
-                                <p className="text-xs text-indigo-100/80">
+                                <p className="text-xs text-[#dce9f5]/80">
                                     这家企业的关键信息已经过 Haigoo 核验
                                 </p>
                             </div>
@@ -261,7 +261,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             {companyInfo?.employeeCount && (
                                 <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <Users className="w-3.5 h-3.5 text-indigo-500" />
+                                        <Users className="w-3.5 h-3.5 text-[#587faa]" />
                                         <span className="text-xs font-semibold text-slate-900">员工规模</span>
                                     </div>
                                     <div className="text-xs text-slate-900 font-medium">
@@ -273,7 +273,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                             {companyInfo?.address && (
                                 <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100 col-span-2">
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <MapPin className="w-3.5 h-3.5 text-indigo-500" />
+                                        <MapPin className="w-3.5 h-3.5 text-[#587faa]" />
                                         <span className="text-xs font-semibold text-slate-900">总部地址</span>
                                     </div>
                                     <div className="text-xs text-slate-900 font-medium">
@@ -285,7 +285,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                              {companyInfo?.foundedYear && (
                                 <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                                     <div className="flex items-center gap-1.5 mb-1">
-                                        <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+                                        <Calendar className="w-3.5 h-3.5 text-[#587faa]" />
                                         <span className="text-xs font-semibold text-slate-900">成立年份</span>
                                     </div>
                                     <div className="text-xs text-slate-900 font-medium">
@@ -310,7 +310,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 onClose();
                                 onProceedToApply();
                             }}
-                            className="w-full py-3 px-6 bg-slate-900 hover:bg-indigo-600 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                            className="w-full py-3 px-6 bg-slate-900 hover:bg-[#466f9d] text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
                         >
                             前往官网申请 <ArrowRight className="w-4 h-4" />
                         </button>
@@ -343,7 +343,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <X className="w-5 h-5" />
                     </button>
 
-                        <div className="relative flex h-32 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)]">
+                        <div className="relative flex h-32 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)]">
                             <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
                             <div className="absolute -right-8 top-4 h-24 w-24 rounded-full bg-cyan-400/15 blur-3xl"></div>
                             <div className="relative z-10 bg-white/10 p-3 rounded-full backdrop-blur-md shadow-2xl border border-white/20">
@@ -353,7 +353,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
                         {/* Body */}
                         <div className="p-6 pt-6 text-center">
-                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-full mb-3">
+                            <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#eff5fb] text-[#345d88] text-xs font-bold rounded-full mb-3">
                                 <Target className="w-3.5 h-3.5" />
                                 邮箱直申
                                 <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-bold rounded">
@@ -383,7 +383,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                         onClose();
                                         onProceedToApply();
                                     }}
-                                    className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                                    className="w-full py-3 px-6 bg-gradient-to-r from-[#466f9d] to-teal-600 hover:from-[#587faa] hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
                                 >
                                     立即内推 <ArrowRight className="w-4 h-4" />
                                 </button>
@@ -418,9 +418,9 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         <X className="w-5 h-5" />
                     </button>
 
-                    <div className="relative flex h-36 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)]">
+                    <div className="relative flex h-36 flex-col items-center justify-center overflow-hidden bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)]">
                         <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
-                        <div className="absolute top-0 left-1/4 w-28 h-28 bg-indigo-400/20 rounded-full blur-[40px]"></div>
+                        <div className="absolute top-0 left-1/4 w-28 h-28 bg-[#7f9fbc]/20 rounded-full blur-[40px]"></div>
                         <div className="absolute bottom-0 right-1/4 w-28 h-28 bg-teal-400/20 rounded-full blur-[40px]"></div>
                         
                         <div className="relative z-10 bg-white/10 p-4 rounded-full backdrop-blur-md shadow-2xl border border-white/20 ring-1 ring-white/10">
@@ -475,7 +475,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     onClose();
                                     onShowUpgrade?.('referral', 'referral_upgrade_modal');
                                 }}
-                                className="w-full py-3 px-6 bg-gradient-to-r from-indigo-600 to-teal-600 hover:from-indigo-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-200/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 text-sm"
+                                className="w-full py-3 px-6 bg-gradient-to-r from-[#466f9d] to-teal-600 hover:from-[#587faa] hover:to-teal-500 text-white font-bold rounded-xl shadow-lg shadow-[#c9dce8]/50 transform transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2 text-sm"
                             >
                                 查看会员权益 <ArrowRight className="w-4 h-4" />
                             </button>
@@ -517,7 +517,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
 
                         <div className="bg-[linear-gradient(180deg,rgba(241,245,249,0.9),rgba(255,255,255,1))] p-6 border-b border-slate-100 text-center">
                             <div className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center mx-auto mb-4">
-                                <ExternalLink className="w-6 h-6 text-indigo-600" />
+                                <ExternalLink className="w-6 h-6 text-[#466f9d]" />
                             </div>
                             <h3 className="text-xl font-bold text-slate-900 mb-1">
                                 即将跳转到外部申请页
@@ -571,9 +571,9 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     onProceedToApply(pendingWindow);
                                 }}
                                 className={`w-full py-3 px-6 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
-                                    ? 'bg-slate-900 hover:bg-indigo-600 text-white'
+                                    ? 'bg-slate-900 hover:bg-[#466f9d] text-white'
                                     : !isAuthenticated
-                                        ? 'bg-slate-900 hover:bg-indigo-600 text-white'
+                                        ? 'bg-slate-900 hover:bg-[#466f9d] text-white'
                                     : 'bg-slate-100 text-slate-500 border border-slate-200'
                                     }`}
                             >
@@ -658,15 +658,15 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                         </div>
 
                         {/* Member Upgrade CTA */}
-                        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6 border border-indigo-100">
+                        <div className="bg-gradient-to-r from-[#eff5fb] to-[#fff8e8] rounded-xl p-4 mb-6 border border-[#dce9f5]">
                             <div className="flex items-start gap-3">
-                                <TrendingUp className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" />
+                                <TrendingUp className="w-5 h-5 text-[#466f9d] mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-indigo-900 mb-1 flex items-center gap-1.5">
-                                        <Sparkles className="w-4 h-4 text-indigo-600" />
+                                    <p className="text-sm font-semibold text-[#243f5c] mb-1 flex items-center gap-1.5">
+                                        <Sparkles className="w-4 h-4 text-[#466f9d]" />
                                         会员可查看更完整的企业画像
                                     </p>
-                                    <p className="text-xs text-indigo-700">
+                                    <p className="text-xs text-[#345d88]">
                                         企业官网、业务背景、总部地点、员工规模、评分等信息
                                     </p>
                                 </div>
@@ -685,7 +685,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                     onClose();
                                     onShowUpgrade?.('company_info', 'website_apply_company_info_gate');
                                 }}
-                                className="py-3 px-4 bg-white border-2 border-indigo-600 text-indigo-600 font-bold rounded-xl hover:bg-indigo-50 transition-colors text-sm"
+                                className="py-3 px-4 bg-white border-2 border-[#466f9d] text-[#466f9d] font-bold rounded-xl hover:bg-[#eff5fb] transition-colors text-sm"
                             >
                                 查看企业详情
                             </button>
@@ -722,7 +722,7 @@ export const ApplyInterceptModal: React.FC<ApplyInterceptModalProps> = ({
                                 className={`py-3 px-4 font-bold rounded-xl shadow-md transition-all text-sm flex items-center justify-center gap-2 ${canWebsiteApplyFree
                                     ? 'bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white'
                                     : !isAuthenticated
-                                        ? 'bg-slate-900 hover:bg-indigo-600 text-white'
+                                        ? 'bg-slate-900 hover:bg-[#466f9d] text-white'
                                     : 'bg-slate-100 text-slate-500 border border-slate-200'
                                     }`}
                             >

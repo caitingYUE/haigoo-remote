@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpDown, Briefcase, Check, ChevronDown, Crown, MapPin, SlidersHorizontal, X } from 'lucide-react';
+import { ArrowUpDown, Briefcase, Check, ChevronDown, MapPin, SlidersHorizontal, X } from 'lucide-react';
 import { buildRoleOptionGroups } from '../constants/job-role-groups';
 import { useLanguage } from '../contexts/LanguageContext';
 import { JOB_LOCATION_TAXONOMY } from '../../lib/shared/job-location-taxonomy.js';
+import { COMPLIANCE_FEATURES } from '../config/compliance';
 
 interface FilterDropdownProps {
   label: string;
@@ -82,16 +83,16 @@ const ALL_LOCATION_FILTER_VALUES = JOB_LOCATION_TAXONOMY.map(option => option.va
 
 const THEME_STYLES = {
   indigo: {
-    active: 'bg-indigo-50 text-indigo-700 border-indigo-200 shadow-sm',
-    icon: 'text-indigo-500',
-    checkbox: 'bg-indigo-600 border-indigo-600',
-    textChecked: 'text-indigo-700'
+    active: 'bg-[var(--hg-accent-50)] text-[var(--hg-accent-700)] border-[var(--hg-accent-300)]',
+    icon: 'text-[var(--hg-accent-600)]',
+    checkbox: 'bg-[var(--hg-accent-600)] border-[var(--hg-accent-600)]',
+    textChecked: 'text-[var(--hg-accent-700)]'
   },
   emerald: {
-    active: 'bg-emerald-50 text-emerald-700 border-emerald-200 shadow-sm',
-    icon: 'text-emerald-500',
-    checkbox: 'bg-emerald-600 border-emerald-600',
-    textChecked: 'text-emerald-700'
+    active: 'bg-[var(--hg-accent-50)] text-[var(--hg-accent-700)] border-[var(--hg-accent-300)]',
+    icon: 'text-[var(--hg-accent-600)]',
+    checkbox: 'bg-[var(--hg-accent-600)] border-[var(--hg-accent-600)]',
+    textChecked: 'text-[var(--hg-accent-700)]'
   },
   slate: {
     active: 'bg-slate-100 text-slate-900 border-slate-200 shadow-sm',
@@ -131,10 +132,10 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
   }, [isOpen, onClose, onApply]);
 
   const theme = THEME_STYLES[colorTheme];
-  const buttonClass = `inline-flex h-10 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-all whitespace-nowrap md:h-9 md:px-2.5 ${
+  const buttonClass = `inline-flex h-11 items-center gap-1 border px-3 text-xs font-semibold transition-[border-color,background-color,color] whitespace-nowrap md:h-9 md:px-2.5 ${
     isActive || isOpen
       ? theme.active
-      : 'border-slate-200/90 bg-white text-slate-600 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.35)] hover:border-slate-300 hover:text-slate-900'
+      : 'border-slate-200/90 bg-white text-slate-600 shadow-none hover:border-slate-400 hover:text-slate-900'
   }`;
 
   return (
@@ -167,7 +168,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
           <div
             role="dialog"
             aria-label={`${label}筛选`}
-            className={`fixed bottom-0 left-0 right-0 z-[9999] w-full overflow-hidden rounded-t-2xl border-t border-slate-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom duration-200 md:absolute md:bottom-auto md:left-0 md:right-auto md:top-full md:mt-2 ${panelWidthClassName} md:rounded-2xl md:border md:border-slate-100 md:shadow-xl md:animate-in md:fade-in md:zoom-in-95`}
+            className={`fixed bottom-0 left-0 right-0 z-[9999] w-full overflow-hidden border-t border-slate-200 bg-white shadow-[0_-4px_24px_rgba(0,0,0,0.1)] animate-in slide-in-from-bottom duration-200 md:absolute md:bottom-auto md:left-0 md:right-auto md:top-full md:mt-2 ${panelWidthClassName} md:border md:border-slate-200 md:shadow-[0_18px_42px_-28px_rgba(15,23,42,0.24)] md:animate-in md:fade-in md:zoom-in-95`}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="max-h-[60vh] overflow-y-auto p-2 pb-8 custom-scrollbar md:max-h-[460px] md:pb-2">
@@ -178,13 +179,13 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
             </div>
 
             {(onApply || onClear) && (
-              <div className="flex items-center justify-between gap-3 border-t border-slate-100 bg-slate-50/80 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+              <div className="flex items-center justify-between gap-3 border-t border-[#deddd7] bg-[#f7f6f1] p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                 <button
                   onClick={(event) => {
                     event.stopPropagation();
                     onClear?.();
                   }}
-                  className="inline-flex h-10 items-center rounded-lg px-3 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-200/50 hover:text-slate-800"
+                  className="inline-flex h-10 items-center px-3 text-xs font-semibold text-[#64748b] transition-colors hover:bg-[var(--hg-accent-50)] hover:text-[var(--hg-accent-700)]"
                 >
                   {text('清空', 'Clear')}
                 </button>
@@ -193,7 +194,7 @@ const FilterDropdown: React.FC<FilterDropdownProps> = ({
                     event.stopPropagation();
                     onApply?.();
                   }}
-                  className="h-10 flex-1 rounded-xl bg-slate-900 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-slate-800"
+                  className="h-10 flex-1 bg-[#101829] px-3 text-xs font-semibold text-white transition-colors hover:bg-[var(--hg-accent-600)]"
                 >
                   {text('应用筛选', 'Apply filters')}
                 </button>
@@ -213,11 +214,8 @@ const FilterSectionHeader: React.FC<{ title: string; description?: string }> = (
 );
 
 const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, tone = 'slate' }) => {
-  const activeClass = tone === 'emerald'
-    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-    : tone === 'indigo'
-      ? 'border-indigo-200 bg-indigo-50 text-indigo-700'
-      : 'border-slate-300 bg-slate-100 text-slate-900';
+  void tone;
+  const activeClass = 'border-[var(--hg-accent-300)] bg-[var(--hg-accent-50)] text-[var(--hg-accent-700)]';
 
   return (
     <button
@@ -228,7 +226,7 @@ const FilterChip: React.FC<FilterChipProps> = ({ label, active, onClick, count, 
         event.stopPropagation();
         onClick();
       }}
-      className={`inline-flex h-10 max-w-full items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-colors md:h-8 md:px-2.5 ${
+      className={`inline-flex h-11 max-w-full items-center gap-1 border px-3 text-xs font-semibold transition-colors md:h-8 md:px-2.5 ${
         active ? activeClass : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900'
       }`}
       title={label}
@@ -276,7 +274,7 @@ export default function JobFilterBar({
   };
 
   const groupedCategories = useMemo(() => buildRoleOptionGroups(categoryOptions), [categoryOptions]);
-  const showRoleCounts = Boolean(isMember);
+  const showRoleCounts = Boolean(isAuthenticated);
 
   const availableLocationValueSet = useMemo(
     () => new Set(availableLocationFilterValues),
@@ -462,43 +460,23 @@ export default function JobFilterBar({
     onSearchChange('');
   };
 
-  const navClass = (active: boolean) => `relative inline-flex h-10 items-center gap-1.5 px-1 text-[13px] font-bold transition-colors md:h-8 ${
-    active ? 'text-[#40396f]' : 'text-slate-500 hover:text-[#40396f]'
+  const navClass = (active: boolean) => `relative inline-flex h-11 items-center gap-1.5 px-1 text-[13px] font-bold transition-colors md:h-8 ${
+    active ? 'text-[#101829]' : 'text-slate-500 hover:text-[var(--hg-accent-700)]'
   }`;
 
   return (
     <div
-      className="relative z-30 overflow-visible rounded-t-[20px] border-b border-[#d8def3] bg-[#f7f6ff] bg-cover bg-center p-4 shadow-[0_22px_54px_-38px_rgba(76,74,143,0.42),inset_0_1px_0_rgba(255,255,255,0.92)] sm:rounded-t-[24px] lg:rounded-t-[28px]"
-      style={{
-        backgroundImage: "linear-gradient(90deg, rgba(255,255,255,0.68) 0%, rgba(255,255,255,0.52) 58%, rgba(255,255,255,0.38) 100%), url('/pic_lists/Jobs_pics/jobs-filter-hero.webp')"
-      }}
+      className="hg-job-filter-bar relative z-30 overflow-visible border-y border-[#deddd7] bg-[#fffdf8] px-4 pb-4 pt-5 sm:px-5 sm:pt-6"
     >
       <div className="relative flex flex-col gap-3">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:gap-5">
-          <div className="min-w-0 xl:shrink-0">
-            <div className="flex min-w-0 items-center gap-2">
-              <h2 className="leading-none" aria-label={text('远程工作', 'Remote jobs')}>
-                <span className="sr-only">{text('远程工作', 'Remote jobs')}</span>
-                {!isEnglish ? <img
-                  src="/pic_lists/Handwriting/hand-remote-work.webp"
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  className="h-auto w-[126px] max-w-full"
-                /> : <span aria-hidden="true" className="text-xl font-black tracking-tight text-slate-950">Remote Jobs</span>}
-              </h2>
-              {isMember ? (
-                <span className="pointer-events-none inline-flex h-5 shrink-0 items-center gap-0.5 rounded-full border border-white bg-[#6f63ff] px-1.5 text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)]">
-                  <Crown className="h-2.5 w-2.5 fill-current" />
-                  <span className="text-[8px] font-black leading-none tracking-wide">Club</span>
-                </span>
-              ) : (
-                <img src="/pic_lists/Jobs_pics/sun-transparent.webp" alt="" className="h-7 w-7 opacity-70" />
-              )}
-              <ChevronDown className="-rotate-90 h-4 w-4 text-slate-400" />
-            </div>
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between xl:gap-5">
+          <div className="min-w-0">
+            <div className="hg-product-kicker">{text('GLOBAL REMOTE WORK', 'GLOBAL REMOTE WORK')}</div>
+            <h2 className="mt-2 font-[var(--font-display)] text-[30px] font-semibold leading-none tracking-[-0.035em] text-[#101829]" aria-label={text('远程工作', 'Remote jobs')}>
+              {text('远程工作', 'Remote jobs')}
+            </h2>
           </div>
-          <div className="flex shrink-0 items-center gap-5 xl:pt-0.5">
+          <div className="flex shrink-0 items-center gap-5 border-b border-[#deddd7] xl:border-b-0 xl:pb-1">
             <button
               type="button"
               className={navClass(listMode === 'jobs')}
@@ -509,21 +487,21 @@ export default function JobFilterBar({
                 }
                 onListModeChange('jobs');
               }}
-              title={sortBy === 'recent' ? text('当前：最新排序，点击切换推荐', 'Sorted by newest; click for recommended') : text('当前：推荐排序，点击切换最新', 'Sorted by recommended; click for newest')}
+              title={sortBy === 'recent' ? text('当前：最新排序，点击切换默认', 'Sorted by newest; click for default') : text('当前：默认排序，点击切换最新', 'Sorted by default; click for newest')}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
-              {sortBy === 'recent' ? text('最新', 'Newest') : text('推荐', 'Recommended')}
-              {listMode === 'jobs' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
+              {sortBy === 'recent' ? text('最新', 'Newest') : text('默认', 'Default')}
+              {listMode === 'jobs' ? <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-[var(--hg-accent-500)]" /> : null}
             </button>
             <button type="button" className={navClass(listMode === 'favorites')} onClick={() => onListModeChange('favorites')}>
               {text('收藏', 'Saved')}
-              <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600 shadow-sm">{favoriteCount}</span>
-              {listMode === 'favorites' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
+              <span className="border border-slate-200 bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600">{favoriteCount}</span>
+              {listMode === 'favorites' ? <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-[var(--hg-accent-500)]" /> : null}
             </button>
             <button type="button" className={navClass(listMode === 'applications')} onClick={() => onListModeChange('applications')}>
               {text('申请中', 'Applications')}
-              <span className="rounded-full bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600 shadow-sm">{applicationCount}</span>
-              {listMode === 'applications' ? <span className="absolute -bottom-1 left-0 right-0 h-0.5 rounded-full bg-[#6251f5]" /> : null}
+              <span className="border border-slate-200 bg-white/75 px-1.5 py-0.5 text-[10px] text-slate-600">{applicationCount}</span>
+              {listMode === 'applications' ? <span className="absolute -bottom-px left-0 right-0 h-0.5 bg-[var(--hg-accent-500)]" /> : null}
             </button>
           </div>
 
@@ -554,8 +532,8 @@ export default function JobFilterBar({
                         event.stopPropagation();
                         setRoleGroup(index);
                       }}
-                      className={`rounded-xl px-2.5 py-2 text-left text-xs font-bold transition-colors ${
-                        activeRoleGroup === index ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
+                      className={`px-2.5 py-2 text-left text-xs font-bold transition-colors ${
+                        activeRoleGroup === index ? 'bg-white text-[var(--hg-accent-700)]' : 'text-slate-500 hover:bg-white/70 hover:text-slate-900'
                       }`}
                     >
                       {group.title.replace('类', '')}
@@ -599,7 +577,7 @@ export default function JobFilterBar({
                     setOpenDropdown(null);
                     onRestrictedAction?.('筛选岗位角色');
                   }}
-                  className="mt-4 inline-flex h-11 min-w-[132px] items-center justify-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white shadow-sm transition-colors hover:bg-[#5142df]"
+                  className="mt-4 inline-flex h-11 min-w-[132px] items-center justify-center bg-[#101829] px-5 text-sm font-black text-white transition-colors hover:bg-[var(--hg-accent-600)]"
                 >
                   {verificationRequired ? text('去验证邮箱', 'Verify email') : text('去登录', 'Log in')}
                 </button>
@@ -634,15 +612,15 @@ export default function JobFilterBar({
                       event.stopPropagation();
                       handleLocationGroupChange(option.key, !isSelected);
                     }}
-                    className={`flex items-center justify-between rounded-xl border px-3 py-2.5 text-left text-xs font-bold transition-colors ${
+                    className={`flex items-center justify-between border px-3 py-2.5 text-left text-xs font-bold transition-colors ${
                       isSelected
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-700 shadow-sm'
-                        : 'border-slate-100 bg-white text-slate-600 hover:border-emerald-100 hover:bg-emerald-50/40 hover:text-slate-900'
+                        ? 'border-[var(--hg-accent-300)] bg-[var(--hg-accent-50)] text-[var(--hg-accent-700)]'
+                        : 'border-slate-200 bg-white text-slate-600 hover:border-[var(--hg-accent-300)] hover:bg-[var(--hg-accent-50)] hover:text-slate-900'
                     }`}
                   >
                     <span>{isEnglish ? option.labelEn : option.label}</span>
-                    <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${
-                      isSelected ? 'border-emerald-500 bg-emerald-500' : 'border-slate-300 bg-white'
+                    <span className={`flex h-4 w-4 items-center justify-center border ${
+                      isSelected ? 'border-[var(--hg-accent-600)] bg-[var(--hg-accent-600)]' : 'border-slate-300 bg-white'
                     }`}>
                       {isSelected ? <Check className="h-3 w-3 text-white" /> : null}
                     </span>
@@ -687,20 +665,20 @@ export default function JobFilterBar({
             </div>
           </FilterDropdown>
 
-          {isAuthenticated ? (
+          {COMPLIANCE_FEATURES.memberOnlyJobFilter && isMember ? (
             <button
               type="button"
               onClick={() => onFilterChange({ memberOnly: !filters.memberOnly })}
-              className={`inline-flex h-10 items-center gap-1 rounded-full border px-3 text-xs font-semibold transition-all whitespace-nowrap md:h-9 md:px-2.5 ${
+              className={`inline-flex h-10 items-center gap-1 border px-3 text-xs font-semibold transition-[border-color,background-color,color] whitespace-nowrap md:h-9 md:px-2.5 ${
                 filters.memberOnly
-                  ? 'border-[#d8d2ff] bg-[#f1efff] text-[#6f63ff] shadow-sm'
-                  : 'border-slate-200/90 bg-white text-slate-600 shadow-[0_12px_26px_-20px_rgba(15,23,42,0.35)] hover:border-slate-300 hover:text-slate-900'
+                  ? 'border-[var(--hg-accent-300)] bg-[var(--hg-accent-50)] text-[var(--hg-accent-700)]'
+                  : 'border-slate-200/90 bg-white text-slate-600 hover:border-[var(--hg-accent-300)] hover:text-[var(--hg-accent-700)]'
               }`}
             >
-              <span className={`flex h-4 w-4 items-center justify-center rounded-full border ${filters.memberOnly ? 'border-[#6f63ff] bg-[#6f63ff]' : 'border-slate-300 bg-white'}`}>
+              <span className={`flex h-4 w-4 items-center justify-center border ${filters.memberOnly ? 'border-[var(--hg-accent-600)] bg-[var(--hg-accent-600)]' : 'border-slate-300 bg-white'}`}>
                 {filters.memberOnly ? <Check className="h-3 w-3 text-white" /> : null}
               </span>
-              {text('Club 权益', 'Club access')}
+              {text('Club 专属岗位', 'Club-only jobs')}
             </button>
           ) : null}
 

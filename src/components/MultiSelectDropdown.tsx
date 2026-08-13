@@ -54,15 +54,15 @@ export default function MultiSelectDropdown({
   };
 
   return (
-    <div className="relative z-50 group" ref={containerRef}>
+    <div className="hg-multi-select relative z-50 group" ref={containerRef}>
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-disabled={disabled}
-        className={`flex h-12 items-center gap-2 rounded-[18px] border px-5 text-sm font-bold shadow-[0_14px_32px_-30px_rgba(61,89,120,0.5)] transition-colors hover:bg-white ${
+        className={`hg-multi-select__trigger flex h-12 items-center gap-2 border px-5 text-sm font-bold transition-colors ${
           disabled
-            ? 'border-[#dce8ef] bg-white/70 text-slate-400'
-            : selected.length > 0 ? 'border-indigo-300 bg-indigo-50 text-indigo-700' : 'border-[#dce8ef] bg-white/90 text-slate-700'
+            ? 'border-[#deddd7] bg-transparent text-slate-400'
+            : selected.length > 0 ? 'border-[#718d80] bg-[#edf3ef] text-[#31594e]' : 'border-[#bfc8c4] bg-transparent text-slate-700 hover:border-[#718d80]'
         }`}
       >
         <span className="truncate max-w-[100px]">
@@ -76,7 +76,7 @@ export default function MultiSelectDropdown({
         {selected.length > 0 && (
           <span 
             onClick={clearSelection}
-            className="p-0.5 rounded-full hover:bg-indigo-200 text-indigo-600 mr-1"
+            className="p-0.5 text-[#31594e] mr-1 hover:bg-[#dfe9e3]"
           >
             <X className="w-3 h-3" />
           </span>
@@ -85,7 +85,7 @@ export default function MultiSelectDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full z-[90] mt-2 w-72 max-h-80 overflow-y-auto rounded-[20px] border border-[#dce8ef] bg-white p-2 shadow-[0_28px_70px_-40px_rgba(15,23,42,0.28)]">
+        <div className="hg-multi-select__panel absolute right-0 top-full z-[90] mt-2 w-72 max-h-80 overflow-y-auto border border-[#bfc8c4] bg-[#fffdf8] p-2 shadow-[0_24px_56px_-42px_rgba(15,23,42,0.35)]">
           {disabled ? (
             <div className="rounded-2xl bg-slate-50 px-4 py-6 text-center text-sm font-bold text-slate-500">
               {disabledMessage}
@@ -96,12 +96,12 @@ export default function MultiSelectDropdown({
               <div
                 key={option.value}
                 onClick={() => toggleOption(option.value)}
-                className={`flex items-center rounded-2xl px-3 py-2.5 cursor-pointer text-sm ${
-                  isSelected ? 'bg-indigo-50 text-indigo-700' : 'text-slate-700 hover:bg-slate-50'
+                className={`flex items-center px-3 py-2.5 cursor-pointer text-sm ${
+                  isSelected ? 'bg-[#edf3ef] text-[#31594e]' : 'text-slate-700 hover:bg-[#f4f6f4]'
                 }`}
               >
                 <div className={`w-4 h-4 border rounded mr-3 flex items-center justify-center flex-shrink-0 ${
-                  isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-slate-300'
+                  isSelected ? 'bg-[#31594e] border-[#31594e]' : 'border-slate-300'
                 }`}>
                   {isSelected && <Check className="w-3 h-3 text-white" />}
                 </div>

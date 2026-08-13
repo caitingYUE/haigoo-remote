@@ -5,6 +5,7 @@ import { VideoNotesArticle } from '../components/VideoNotesArticle'
 import { useNotificationHelpers } from '../components/NotificationSystem'
 import { corporateEnglishPublicService, type CorporateEnglishPublicModuleVideo } from '../services/corporate-english-public-service'
 import { useReturnNavigation, withReturnTo } from '../hooks/useReturnNavigation'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 function formatDateLabel(value?: string) {
   if (!value) return ''
@@ -79,7 +80,7 @@ export default function CorporateEnglishVideoNotesPage() {
   }
 
   if (loading) {
-    return <div className="flex min-h-[70vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#6251f5]" /></div>
+    return <div className="flex min-h-[70vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#466f9d]" /></div>
   }
 
   if (!video) {
@@ -88,8 +89,8 @@ export default function CorporateEnglishVideoNotesPage() {
         <BookOpen className="h-10 w-10 text-slate-400" />
         <h1 className="mt-4 text-3xl font-black text-slate-950">{loadError ? '视频笔记加载失败' : '视频笔记不存在'}</h1>
         {loadError ? <p className="mt-3 text-sm leading-6 text-slate-600">{loadError}</p> : null}
-        {loadError ? <button type="button" onClick={() => window.location.reload()} className="mt-6 inline-flex h-10 items-center rounded-full bg-[#6251f5] px-5 text-sm font-black text-white">重新加载</button> : null}
-        <button type="button" onClick={handleBack} className="mt-6 inline-flex items-center gap-2 font-black text-[#6251f5]"><ArrowLeft className="h-4 w-4" />返回</button>
+        {loadError ? <button type="button" onClick={() => window.location.reload()} className="mt-6 inline-flex h-10 items-center rounded-full bg-[#466f9d] px-5 text-sm font-black text-white">重新加载</button> : null}
+        <button type="button" onClick={handleBack} className="mt-6 inline-flex items-center gap-2 font-black text-[#466f9d]"><ArrowLeft className="h-4 w-4" />返回</button>
       </div>
     )
   }
@@ -97,11 +98,11 @@ export default function CorporateEnglishVideoNotesPage() {
   const currentPath = `${location.pathname}${location.search}`
   const videoPath = withReturnTo(`/careerlearning/watch/module/${encodeURIComponent(video.videoId)}`, currentPath)
   return (
-    <main className="min-h-screen bg-[#fbfaf6] px-4 pb-20 pt-24 sm:px-8 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:pb-6">
+    <div className="hg-career-notes-page min-h-screen px-4 pb-20 pt-24 sm:px-8 lg:h-[100dvh] lg:min-h-0 lg:overflow-hidden lg:pb-6">
       <div className="mx-auto grid max-w-[1480px] gap-8 lg:h-full lg:min-h-0 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="min-w-0 lg:min-h-0 lg:overflow-hidden">
-          <div className="rounded-[20px] border border-[#dbe8f4] bg-white p-4 shadow-[0_10px_28px_rgba(70,93,125,0.06)] lg:flex lg:h-full lg:min-h-0 lg:flex-col">
-            <div className="flex shrink-0 items-center gap-2 border-b border-[#e7eef6] pb-3 text-sm font-black text-slate-950"><BookOpen className="h-4 w-4 text-[#6251f5]" />全部视频笔记</div>
+          <div className="hg-career-notes-index p-4 lg:flex lg:h-full lg:min-h-0 lg:flex-col">
+            <div className="flex shrink-0 items-center gap-2 border-b border-[#e7eef6] pb-3 text-sm font-black text-slate-950"><BookOpen className="h-4 w-4 text-[#466f9d]" />全部视频笔记</div>
             {noteVideos.length ? (
               <nav className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto lg:pb-0">
                 {noteVideos.map((item) => {
@@ -110,7 +111,7 @@ export default function CorporateEnglishVideoNotesPage() {
                     <Link
                       key={item.videoId}
                       to={`/careerlearning/notes/${encodeURIComponent(item.videoId)}`}
-                      className={`w-[240px] shrink-0 rounded-xl border px-3 py-3 text-sm leading-5 transition hover:no-underline lg:w-full ${active ? 'border-[#cfc5ff] bg-[#f5f2ff] text-[#5142df]' : 'border-transparent text-slate-700 hover:border-[#dbe8f4] hover:bg-slate-50'}`}
+                      className={`hg-career-notes-index-link w-[240px] shrink-0 border px-3 py-3 text-sm leading-5 transition hover:no-underline lg:w-full ${active ? 'is-active' : ''}`}
                     >
                       <span className="line-clamp-2 font-black">{item.title}</span>
                       <span className="mt-1 block text-xs font-semibold text-slate-400">{item.difficultyLevelLabel || '远程准备'}</span>
@@ -122,17 +123,17 @@ export default function CorporateEnglishVideoNotesPage() {
           </div>
         </aside>
 
-        <article className="min-w-0 max-w-5xl lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pb-20 lg:pr-3">
+        <article className="hg-career-notes-document min-w-0 max-w-5xl lg:h-full lg:overflow-y-auto lg:overscroll-contain lg:pb-20 lg:pr-3">
         <header className="border-b border-[#dbe8f4] pb-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-[#6251f5]"><ArrowLeft className="h-4 w-4" />返回</button>
+            <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-[#466f9d]"><ArrowLeft className="h-4 w-4" />返回</button>
             <div className="flex flex-wrap items-center gap-2">
-              <a href="/jobs" target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full border border-[#dbe8f4] bg-white px-4 text-sm font-black text-slate-700 hover:border-[#6251f5] hover:text-[#6251f5] hover:no-underline"><Briefcase className="h-4 w-4" />找远程工作</a>
-              <a href={videoPath} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full bg-[#6251f5] px-4 text-sm font-black text-white shadow-sm hover:bg-[#5142df] hover:text-white hover:no-underline"><Play className="h-4 w-4 fill-current" />查看完整视频<ArrowRight className="h-4 w-4" /></a>
-              <button type="button" onClick={copyShareLink} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#dbe8f4] bg-white px-4 text-sm font-black text-slate-700 transition hover:border-[#6251f5] hover:text-[#6251f5]"><Share2 className="h-4 w-4" />分享笔记</button>
+              <a href="/jobs" target="_blank" rel="noreferrer" className="hg-career-secondary-action inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-black hover:no-underline"><Briefcase className="h-4 w-4" />浏览远程岗位</a>
+              <a href={videoPath} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full bg-[#466f9d] px-4 text-sm font-black text-white shadow-sm hover:bg-[#345d88] hover:text-white hover:no-underline"><Play className="h-4 w-4 fill-current" />查看完整视频<ArrowRight className="h-4 w-4" /></a>
+              <button type="button" onClick={copyShareLink} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#dbe8f4] bg-white px-4 text-sm font-black text-slate-700 transition hover:border-[#466f9d] hover:text-[#466f9d]"><Share2 className="h-4 w-4" />分享笔记</button>
             </div>
           </div>
-          <div className="mt-10 flex items-center gap-2 text-sm font-black tracking-[0.08em] text-[#6251f5]"><BookOpen className="h-4 w-4" />远程准备 · 视频笔记</div>
+          <div className="mt-10 flex items-center gap-2 text-sm font-black tracking-[0.08em] text-[#466f9d]"><BookOpen className="h-4 w-4" />远程准备 · 视频笔记</div>
           <h1 className="mt-4 text-4xl font-black leading-tight text-slate-950 md:text-5xl">{video.title}</h1>
           <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
             <span>{video.difficultyLevelLabel || '远程准备'}</span>
@@ -143,17 +144,17 @@ export default function CorporateEnglishVideoNotesPage() {
 
         <section className="py-10">
           {video.isLocked ? (
-            <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[24px] border border-[#e2dcff] bg-white px-6 text-center shadow-[0_12px_32px_rgba(70,93,125,0.06)]">
-              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#f3f0ff] text-[#6251f5]"><Lock className="h-7 w-7" /></span>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">{video.loginRequired ? '登录后查看视频笔记' : '开通 Club 查看完整笔记'}</h2>
-              <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">{video.loginRequired ? '登录后即可继续查看该视频笔记。' : '该视频笔记为 Club 权益内容，升级后可查看。'}</p>
-              <Link
+            <div className="hg-career-notes-lock flex min-h-[320px] flex-col items-center justify-center px-6 text-center">
+              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eff5fb] text-[#466f9d]"><Lock className="h-7 w-7" /></span>
+              <h2 className="mt-5 text-2xl font-black text-slate-950">{video.loginRequired ? '登录后查看视频笔记' : '当前内容暂未开放'}</h2>
+              <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">{video.loginRequired ? '登录后即可继续查看该视频笔记。' : '你仍可查看页面中的免费职业成长内容。'}</p>
+              {video.loginRequired || COMPLIANCE_FEATURES.membershipPromotionBanners ? <Link
                 to={video.loginRequired ? `/login?redirect=${encodeURIComponent(currentPath)}` : '/profile?tab=membership#club-service-plans'}
-                className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#6251f5] px-6 text-sm font-black text-white shadow-sm transition hover:bg-[#5142df] hover:text-white hover:no-underline"
+                className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#466f9d] px-6 text-sm font-black text-white shadow-sm transition hover:bg-[#345d88] hover:text-white hover:no-underline"
               >
-                {video.loginRequired ? '前往登录' : '前往开通 Club'}
+                {video.loginRequired ? '前往登录' : '查看 Private 内容'}
                 <ArrowRight className="h-4 w-4" />
-              </Link>
+              </Link> : null}
             </div>
           ) : video.hasVideoNotes ? (
             <VideoNotesArticle notes={video.videoNotes || []} />
@@ -163,6 +164,6 @@ export default function CorporateEnglishVideoNotesPage() {
         </section>
         </article>
       </div>
-    </main>
+    </div>
   )
 }

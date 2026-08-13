@@ -21,7 +21,7 @@ function MarkdownLine({ line }: { line: string }) {
   const renderText = (value: string) => renderInlineLinks(value).map((part, idx) => {
     if (typeof part === 'string') return <span key={`${part}-${idx}`}>{part}</span>
     return (
-      <a key={`${part.href}-${idx}`} href={part.href} target="_blank" rel="noreferrer" className="text-indigo-600 underline underline-offset-2 hover:text-indigo-700">
+      <a key={`${part.href}-${idx}`} href={part.href} target="_blank" rel="noreferrer" className="text-[#466f9d] underline underline-offset-2 hover:text-[#345d88]">
         {part.label}
       </a>
     )

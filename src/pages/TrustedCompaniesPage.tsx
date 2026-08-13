@@ -1,29 +1,15 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Briefcase, Building, CheckCircle2, ChevronDown, Crown, Search, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, Briefcase, Building, Search } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
-import HomeCompanyCard from '../components/HomeCompanyCard'
+import CompanyDirectoryEntry from '../components/CompanyDirectoryEntry'
 import { CompanyNominationModal } from '../components/CompanyNominationModal'
 import { useAuth } from '../contexts/AuthContext'
 import { getCompanyDetailPath } from '../utils/share-link-helper'
 import { useLanguage } from '../contexts/LanguageContext'
-
-const HAIGOO_VERIFICATION_STANDARDS = [
-    '官网、LinkedIn等主页信息正常，近期有持续更新',
-    '主营业务/产品运营状态正常，且非灰黑产',
-    '企业远程文化悠久或远程友好，支持员工成长',
-    '有中国业务/分公司或对中国员工友好',
-    '岗位来自官方招聘平台发布/内推合作，有可联系的对接人或联系方式',
-]
-
-const HAIGOO_VERIFICATION_STANDARDS_EN = [
-    'Active official website and LinkedIn presence with recent updates',
-    'Legitimate, active products or services',
-    'Established remote-friendly culture that supports employee growth',
-    'Open to candidates in China or experienced with distributed teams',
-    'Roles sourced from official hiring channels or verified referral partners',
-]
+import { COMPLIANCE_FEATURES } from '../config/compliance'
+import HaigooCompanyCard from '../components/HaigooCompanyCard'
 
 const FALLBACK_JOB_CATEGORIES = [
     'CTO/技术管理',
@@ -40,6 +26,8 @@ export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
     const { membershipCapabilities } = useAuth()
     const { isEnglish, text } = useLanguage()
+    // The directory is a Club Partner benefit. A verified free account should
+    // retain the same 12-company preview as a guest instead of bypassing it.
     const canAccessTrustedCompaniesPage = membershipCapabilities.canAccessTrustedCompaniesPage
 
 
@@ -50,12 +38,6 @@ export default function TrustedCompaniesPage() {
     const [selectedJobCategories, setSelectedJobCategories] = useState<string[]>([])
 
     // Add missing state variables
-    const [companies, setCompanies] = useState<TrustedCompany[]>(() => {
-        try {
-            const cached = localStorage.getItem('haigoo_trusted_companies_cache')
-            return cached ? JSON.parse(cached) : []
-        } catch { return [] }
-    })
     const [filteredCompanies, setFilteredCompanies] = useState<TrustedCompany[]>(() => {
         try {
             const cached = localStorage.getItem('haigoo_trusted_companies_cache')
@@ -69,17 +51,15 @@ export default function TrustedCompaniesPage() {
     })
     const [searchTerm, setSearchTerm] = useState('')
     const [jobCounts, setJobCounts] = useState<Record<string, { total: number, categories: Record<string, number> }>>({})
-    const [totalActiveJobs, setTotalActiveJobs] = useState(0)
     const [availableJobCategories, setAvailableJobCategories] = useState<string[]>([]) // New State
     const [isNominationModalOpen, setIsNominationModalOpen] = useState(false)
-    const [showVerificationStandards, setShowVerificationStandards] = useState(false)
 
     // Pagination State
     const [page, setPage] = useState(1)
     const [hasMore, setHasMore] = useState(false)
     const PAGE_SIZE = 12 // Reduced initial batch size for faster paint
     const visibleCompanies = useMemo(
-        () => canAccessTrustedCompaniesPage ? filteredCompanies : filteredCompanies.slice(0, 8),
+        () => canAccessTrustedCompaniesPage ? filteredCompanies : filteredCompanies.slice(0, 12),
         [canAccessTrustedCompaniesPage, filteredCompanies]
     )
 
@@ -133,7 +113,6 @@ export default function TrustedCompaniesPage() {
             const newList = result.companies || []
 
             if (isReset) {
-                setCompanies(newList) // Keep track of base list if needed, but filteredCompanies is what we show
                 setFilteredCompanies(newList)
                 setPage(1)
 
@@ -155,8 +134,6 @@ export default function TrustedCompaniesPage() {
             const currentCount = isReset ? newList.length : filteredCompanies.length + newList.length
             // Or simpler:
             setHasMore(pageNum < (result.totalPages || 0))
-
-            setTotalActiveJobs(result.totalActiveJobs || 0)
 
             if (result.availableCategories) {
                 setAvailableJobCategories(result.availableCategories);
@@ -198,250 +175,214 @@ export default function TrustedCompaniesPage() {
         return Array.from(industries).sort().map(i => ({ label: i, value: i }))
     }, [filteredCompanies])
 
-
+    const featuredCompanies = visibleCompanies.slice(0, 2)
+    const directoryCompanies = visibleCompanies.slice(2)
+    // Always leave an explicit continuation point for the preview. The first
+    // response can contain fewer than 12 entries when public data changes,
+    // but that must not make the restricted directory look like it has ended.
+    const isRestrictedPreview = !canAccessTrustedCompaniesPage && filteredCompanies.length > 0
     return (
-        <div className="min-h-screen overflow-hidden bg-[#fbfaf6] font-haigoo-rounded">
-            <section className="relative overflow-visible pt-20 sm:pt-24 md:pt-28">
-                <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(circle_at_18%_22%,rgba(180,220,255,0.28),transparent_28%),radial-gradient(circle_at_82%_30%,rgba(255,222,158,0.22),transparent_30%),linear-gradient(180deg,#fff_0%,#fbfaf6_88%)]" />
-                    <div className="absolute inset-x-0 bottom-[-90px] h-64 bg-[linear-gradient(180deg,transparent_0%,rgba(232,244,225,0.48)_62%,rgba(251,250,246,0)_100%)]" />
-                    <img src="/pic_lists/Home_pics/grass_icon-transparent.webp" alt="" className="absolute left-[5%] top-[260px] h-28 w-auto opacity-45" />
-                    <img src="/pic_lists/Home_pics/rainbow_icon-transparent.webp" alt="" className="absolute right-[17%] top-[170px] h-16 w-auto rotate-12 opacity-50" />
+        <div className="hg-companies-page min-h-screen">
+            <section className="hg-companies-hero">
+                <div className="haigoo-shell hg-companies-hero__grid">
+                    <div>
+                        <p className="haigoo-editorial-label">{text('REMOTE COMPANY INDEX · 远程企业', 'REMOTE COMPANY INDEX')}</p>
+                        <h1>
+                            {isEnglish
+                                ? <><span>Remote companies</span><span>worth following</span></>
+                                : <><span>值得长期关注的</span><span>远程企业</span></>}
+                        </h1>
+                    </div>
+                    <div className="hg-companies-hero__deck">
+                        <p>{text('了解它们做什么、如何工作，以及在哪里查看最新机会。', 'Learn what they do, how they work, and where to find their latest openings.')}</p>
+                        <p>{text('企业资料与岗位线索整理自官网、官方 Careers 页面及公开渠道。公开信息可能随时变化，请以企业官方页面为准。', 'Profiles and role signals come from official websites, Careers pages, and public sources. Always confirm the latest information on the company site.')}</p>
+                    </div>
                 </div>
 
-                <div className="relative z-10 mx-auto max-w-[1360px] px-4 pb-10 text-center sm:px-6 lg:px-8">
-                    <h1 className="sr-only">{text('发现更适合中国用户申请的远程友好企业', 'Discover trusted remote-friendly companies')}</h1>
-                    {!isEnglish ? <img
-                        src="/pic_lists/Handwriting/hand-trusted-companies-title.webp"
-                        alt="精选企业"
-                        className="mx-auto h-auto w-full max-w-[580px] object-contain sm:max-w-[720px] lg:max-w-[820px]"
-                        loading="eager"
-                        decoding="async"
-                    /> : (
-                        <div className="mx-auto max-w-4xl text-[42px] font-black leading-[1.05] tracking-[-0.04em] text-slate-950 sm:text-[62px]">
-                            Trusted companies.<br /><span className="text-[#2f6ed8]">Better remote opportunities.</span>
-                        </div>
-                    )}
-                    <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
-                        {text('Haigoo 持续筛选全球远程友好公司，优先展示信息清晰、岗位真实、对中国候选人更友好的企业，帮助你更高效地了解远程工作与企业文化。', 'Haigoo reviews remote-friendly companies worldwide, prioritizing clear information, genuine openings, and inclusive distributed teams so you can evaluate opportunities with confidence.')}
-                    </p>
-
-                    <div className="relative z-40 mx-auto mt-8 flex max-w-5xl flex-col items-center justify-center gap-3 lg:flex-row lg:items-start">
-                        <div className="relative w-full max-w-2xl">
-                            <Search className="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                            <input
-                                value={searchTerm}
-                                onChange={(event) => {
-                                    if (!canAccessTrustedCompaniesPage) return
-                                    setSearchTerm(event.target.value)
-                                }}
-                                onKeyDown={(event) => {
-                                    if (event.key === 'Enter') {
-                                        if (!canAccessTrustedCompaniesPage) return
-                                        loadFilteredData(1, true)
-                                    }
-                                }}
-                                disabled={!canAccessTrustedCompaniesPage}
-                                placeholder={canAccessTrustedCompaniesPage ? text('搜索精选企业、行业或岗位方向', 'Search companies, industries, or roles') : text('加入 Club 后可搜索精选企业', 'Join Club to search companies')}
-                                className="h-14 w-full rounded-full border border-[#dce8ef] bg-white/92 pl-14 pr-14 text-base font-semibold text-slate-800 shadow-[0_18px_48px_-40px_rgba(61,89,120,0.5)] outline-none transition placeholder:text-slate-300 focus:border-[#86b9e8] focus:bg-white focus:ring-4 focus:ring-[#dfeeff]/70 disabled:cursor-not-allowed disabled:bg-white/62 disabled:text-slate-400"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    if (!canAccessTrustedCompaniesPage) return
-                                    loadFilteredData(1, true)
-                                }}
-                                disabled={!canAccessTrustedCompaniesPage}
-                                className="absolute right-3 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[#2f7edb] transition hover:bg-[#eef7ff] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-transparent"
-                                aria-label={text('搜索企业', 'Search companies')}
-                            >
-                                <Search className="h-5 w-5" />
-                            </button>
-                        </div>
-                        <div className="relative z-50 flex shrink-0 flex-wrap justify-center gap-2 lg:justify-end">
-                            <MultiSelectDropdown
-                                label={text('行业', 'Industry')}
-                                options={industryOptions}
-                                selected={selectedIndustries}
-                                onChange={setSelectedIndustries}
-                                disabled={!canAccessTrustedCompaniesPage}
-                                disabledMessage={text('加入 Club 后可筛选行业', 'Join Club to filter by industry')}
-                            />
-                            <MultiSelectDropdown
-                                label={text('在招岗位', 'Open roles')}
-                                options={jobCategoryOptions}
-                                selected={selectedJobCategories}
-                                onChange={setSelectedJobCategories}
-                                disabled={!canAccessTrustedCompaniesPage}
-                                disabledMessage={text('加入 Club 后可筛选岗位', 'Join Club to filter by role')}
-                            />
-                            {(selectedIndustries.length > 0 || selectedJobCategories.length > 0) && (
-                                <button
-                                    onClick={() => { setSelectedIndustries([]); setSelectedJobCategories([]); }}
-                                    className="h-11 rounded-full px-4 text-sm font-bold text-slate-400 transition-colors hover:bg-white/80 hover:text-[#5f6df6]"
-                                >
-                                    {text('清空', 'Clear')}
-                                </button>
-                            )}
-                        </div>
+                <div className="haigoo-shell hg-companies-promise" aria-label={text('企业信息说明', 'Company information notes')}>
+                    <div>
+                        <span>{text('了解业务', 'WHAT THEY DO')}</span>
+                        <strong>{text('先看它们在解决什么问题', 'Understand the work first')}</strong>
                     </div>
-
-                    <div className="relative z-10 mx-auto mt-8 grid max-w-5xl grid-cols-1 gap-4 md:grid-cols-[1.35fr_0.85fr]">
-                        <div className="rounded-[26px] border border-[#dfe7ff] bg-[#f4f7ff]/88 p-5 text-left shadow-[0_20px_52px_-44px_rgba(93,105,246,0.54)] backdrop-blur">
-                            <div className="flex items-start gap-4">
-                                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#eef0ff] text-[#5f63f6]">
-                                    <ShieldCheck className="h-6 w-6" />
-                                </span>
-                                <div className="min-w-0">
-                                    <div className="flex items-center gap-2 text-lg font-black text-slate-950">
-                                        {text('海狗远程俱乐部企业筛选标准', 'Haigoo company verification standards')}
-                                        <span className="rounded-full bg-[#eef0ff] px-2 py-0.5 text-xs font-bold text-[#6f72ff]">Verified</span>
-                                    </div>
-                                    <p className="mt-2 text-sm leading-7 text-slate-500">{text('Haigoo 优先展示经过基础信息核验、远程文化友好、岗位信息清晰的企业。', 'Haigoo prioritizes companies with verified information, remote-friendly cultures, and clear job listings.')}</p>
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowVerificationStandards((value) => !value)}
-                                        className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1.5 text-sm font-bold text-[#5f63f6] transition-colors hover:bg-white"
-                                    >
-                                        {showVerificationStandards ? text('收起筛选标准', 'Hide standards') : text('查看筛选标准', 'View standards')}
-                                        <ChevronDown className={`h-4 w-4 transition-transform ${showVerificationStandards ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    {showVerificationStandards ? (
-                                        <div className="mt-3 grid gap-2">
-                                            {(isEnglish ? HAIGOO_VERIFICATION_STANDARDS_EN : HAIGOO_VERIFICATION_STANDARDS).map((item) => (
-                                                <div key={item} className="flex gap-2 text-sm leading-6 text-slate-600">
-                                                    <CheckCircle2 className="mt-1 h-4 w-4 shrink-0 text-emerald-500" />
-                                                    <span>{item}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : null}
-                                </div>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsNominationModalOpen(true)}
-                            className="rounded-[26px] border border-[#eadfff] bg-white/82 p-5 text-left shadow-[0_20px_52px_-44px_rgba(138,86,246,0.48)] backdrop-blur transition-all hover:-translate-y-0.5"
-                        >
-                            <div className="flex items-start gap-4">
-                                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f3ebff] text-[#8a63f6]">
-                                    <Briefcase className="h-6 w-6" />
-                                </span>
-                                <div>
-                                    <div className="flex items-center gap-2 text-lg font-black text-slate-950">
-                                        {text('企业合作 / 发布远程岗位', 'Hire remote talent / Post a job')}
-                                        <span className="rounded-full bg-[#f3ebff] px-2 py-0.5 text-xs font-bold text-[#8a63f6]">Hire Remote</span>
-                                    </div>
-                                    <p className="mt-2 text-sm leading-7 text-slate-500">{text('有远程招聘需求？提交企业信息和岗位需求，我们将协助你触达中国远程人才。', 'Hiring remotely? Share your company and role requirements, and we will help you reach qualified remote talent.')}</p>
-                                    <span className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[#8a63f6]">
-                                        {text('了解企业合作', 'Learn about hiring')} <ArrowRight className="h-4 w-4" />
-                                    </span>
-                                </div>
-                            </div>
-                        </button>
+                    <div>
+                        <span>{text('理解方式', 'HOW THEY WORK')}</span>
+                        <strong>{text('关注公开的远程协作方式', 'Review published work practices')}</strong>
+                    </div>
+                    <div>
+                        <span>{text('回到官网', 'WHERE TO APPLY')}</span>
+                        <strong>{text('最新机会以企业页面为准', 'Confirm openings at the source')}</strong>
                     </div>
                 </div>
             </section>
 
-            <div className="relative z-10 mx-auto max-w-[1360px] px-4 py-8 sm:px-6 lg:px-8">
-                <>
-                    <div className="mb-7 flex items-center justify-between gap-4">
-                        <div className="inline-flex items-center gap-2 text-sm font-bold text-slate-500">
-                            <Sparkles className="h-4 w-4 text-[#f4b343]" />
-                            {text('只展示当前正在招聘中的企业', 'Only companies with active openings are shown')}
-                        </div>
+            <div className="haigoo-shell hg-companies-main">
+                <section className="hg-companies-tools" aria-label={text('搜索与筛选企业', 'Search and filter companies')}>
+                    <div className="hg-companies-search">
+                        <Search aria-hidden="true" />
+                        <label className="sr-only" htmlFor="company-directory-search">{text('搜索企业、行业或岗位方向', 'Search companies, industries, or roles')}</label>
+                        <input
+                            id="company-directory-search"
+                            value={searchTerm}
+                            onChange={(event) => {
+                                if (!canAccessTrustedCompaniesPage) return
+                                setSearchTerm(event.target.value)
+                            }}
+                            onKeyDown={(event) => {
+                                if (event.key === 'Enter' && canAccessTrustedCompaniesPage) {
+                                    loadFilteredData(1, true)
+                                }
+                            }}
+                            disabled={!canAccessTrustedCompaniesPage}
+                            placeholder={canAccessTrustedCompaniesPage
+                                ? text('搜索企业、行业或岗位方向', 'Search companies, industries, or roles')
+                                : text('完整企业搜索暂未开放', 'Full company search is not available yet')}
+                        />
                         <button
                             type="button"
-                            onClick={() => navigate('/jobs')}
-                            className="hidden items-center gap-2 rounded-full bg-white/82 px-4 py-2 text-sm font-bold text-[#5f6df6] shadow-sm transition-all hover:-translate-y-0.5 sm:inline-flex"
+                            onClick={() => loadFilteredData(1, true)}
+                            disabled={!canAccessTrustedCompaniesPage}
+                            aria-label={text('搜索企业', 'Search companies')}
                         >
-                            {text('浏览全部岗位', 'Browse all jobs')}
-                            <ArrowRight className="h-4 w-4" />
+                            <ArrowRight aria-hidden="true" />
                         </button>
                     </div>
 
+                    <div className="hg-companies-filters">
+                        <MultiSelectDropdown
+                            label={text('行业', 'Industry')}
+                            options={industryOptions}
+                            selected={selectedIndustries}
+                            onChange={setSelectedIndustries}
+                            disabled={!canAccessTrustedCompaniesPage}
+                            disabledMessage={text('行业筛选暂未开放', 'Industry filters are not available yet')}
+                        />
+                        <MultiSelectDropdown
+                            label={text('岗位方向', 'Role')}
+                            options={jobCategoryOptions}
+                            selected={selectedJobCategories}
+                            onChange={setSelectedJobCategories}
+                            disabled={!canAccessTrustedCompaniesPage}
+                            disabledMessage={text('岗位筛选暂未开放', 'Role filters are not available yet')}
+                        />
+                        {(selectedIndustries.length > 0 || selectedJobCategories.length > 0) ? (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedIndustries([])
+                                    setSelectedJobCategories([])
+                                }}
+                                className="hg-companies-clear"
+                            >
+                                {text('清除筛选', 'Clear filters')}
+                            </button>
+                        ) : null}
+                    </div>
+                </section>
+
+                {!canAccessTrustedCompaniesPage ? (
+                    <p className="hg-companies-access-note">
+                        {text('当前可浏览部分远程企业资料，完整名单暂不对外开放。', 'Some remote-company profiles are available to browse. The full directory is not publicly available.')}
+                    </p>
+                ) : null}
+
+                {COMPLIANCE_FEATURES.employerRecruitmentIntake ? (
+                    <button
+                        type="button"
+                        onClick={() => setIsNominationModalOpen(true)}
+                        className="hg-companies-intake"
+                    >
+                        <Briefcase aria-hidden="true" />
+                        <span>
+                            <strong>{text('企业合作 / 发布远程岗位', 'Hire remote talent / Post a job')}</strong>
+                            <small>{text('提交企业与岗位信息', 'Share company and role information')}</small>
+                        </span>
+                        <ArrowRight aria-hidden="true" />
+                    </button>
+                ) : null}
+
+                <section className="hg-companies-directory">
+                    <header className="hg-companies-directory__header">
+                        <div>
+                            <p className="haigoo-editorial-label">{text('RECENTLY UPDATED · 最近更新', 'RECENTLY UPDATED')}</p>
+                            <h2>{text('正在公开招聘的远程企业', 'Remote companies with public openings')}</h2>
+                        </div>
+                        <div className="hg-companies-directory__summary">
+                            <button type="button" onClick={() => navigate('/jobs')}>
+                                {text('浏览全部岗位', 'Browse all jobs')}
+                                <ArrowRight aria-hidden="true" />
+                            </button>
+                        </div>
+                    </header>
+
                     {loading && filteredCompanies.length === 0 ? (
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {Array.from({ length: 8 }).map((_, i) => (
-                                <div key={i} className="h-[300px] animate-pulse overflow-hidden rounded-[26px] border border-[#edf2f6] bg-white">
-                                    <div className="h-[46%] bg-[#eef5ff]" />
-                                    <div className="p-5 space-y-3">
-                                        <div className="flex justify-between items-start">
-                                            <div className="h-6 bg-slate-200 rounded w-1/2" />
-                                            <div className="h-5 bg-slate-200 rounded w-16" />
-                                        </div>
-                                        <div className="h-4 bg-slate-200 rounded w-1/3" />
-                                        <div className="h-4 bg-slate-200 rounded w-full" />
-                                        <div className="h-4 bg-slate-200 rounded w-2/3" />
-                                        <div className="pt-4 mt-2 border-t border-slate-50 flex justify-between">
-                                            <div className="h-4 bg-slate-200 rounded w-1/3" />
-                                            <div className="h-4 bg-slate-200 rounded w-1/4" />
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
+                        <div className="hg-companies-loading" aria-label={text('正在加载企业', 'Loading companies')}>
+                            {Array.from({ length: 6 }).map((_, index) => <span key={index} />)}
                         </div>
                     ) : filteredCompanies.length === 0 ? (
-                        <div className="rounded-[30px] border border-dashed border-[#dfeaf1] bg-white/72 py-20 text-center text-slate-500">
-                            <Search className="mx-auto mb-3 h-10 w-10 text-slate-300" />
-                            {text('没有找到匹配的企业', 'No matching companies found')}
+                        <div className="hg-companies-empty">
+                            <Search aria-hidden="true" />
+                            <h3>{text('没有找到匹配的企业', 'No matching companies')}</h3>
+                            <p>{text('试试缩短关键词，或清除一个筛选条件。', 'Try a shorter keyword or remove a filter.')}</p>
                         </div>
                     ) : (
                         <>
-                            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                                {visibleCompanies.map(company => (
-                                    <HomeCompanyCard
-                                        key={company.id}
-                                        company={company}
-                                        jobStats={jobCounts[company.id]}
-                                        onClick={() => navigate(getCompanyDetailPath(company.name))}
-                                    />
-                                ))}
-                            </div>
+                            {featuredCompanies.length > 0 ? (
+                                <div className="hg-companies-featured">
+                                    {featuredCompanies.map((company) => (
+                                        <CompanyDirectoryEntry
+                                            key={company.id}
+                                            company={company}
+                                            featured
+                                            jobStats={jobCounts[company.id]}
+                                            onClick={() => navigate(getCompanyDetailPath(company.name))}
+                                        />
+                                    ))}
+                                </div>
+                            ) : null}
 
-                            {!canAccessTrustedCompaniesPage && (
-                                <div className="mt-10 flex justify-center">
-                                    <button
-                                        onClick={() => navigate('/profile?tab=membership#club-service-plans')}
-                                        className="inline-flex items-center justify-center gap-2 rounded-full bg-[#5f63f6] px-8 py-3.5 text-base font-bold text-white shadow-[0_20px_40px_-24px_rgba(95,99,246,0.5)] transition-all hover:-translate-y-0.5"
-                                    >
-                                        <Crown className="h-4.5 w-4.5" />
-                                        {text('加入 Club 解锁完整名单', 'Join Club to unlock the full list')}
+                            {directoryCompanies.length > 0 ? (
+                                <div className="hg-companies-records">
+                                    {directoryCompanies.map((company) => (
+                                        <CompanyDirectoryEntry
+                                            key={company.id}
+                                            company={company}
+                                            jobStats={jobCounts[company.id]}
+                                            onClick={() => navigate(getCompanyDetailPath(company.name))}
+                                        />
+                                    ))}
+                                </div>
+                            ) : null}
+
+                            {isRestrictedPreview ? (
+                                <div className="hg-companies-login-gate">
+                                    <div>
+                                        <strong>{text('完整企业名单暂未开放', 'The full company directory is not yet open')}</strong>
+                                        <p>{text('当前可浏览部分远程企业资料，完整名单暂不对外开放。', 'Some remote-company profiles are available to browse. The full directory is not publicly available.')}</p>
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            {canAccessTrustedCompaniesPage && hasMore ? (
+                                <div className="hg-companies-load-more">
+                                    <button type="button" onClick={handleLoadMore} disabled={loading}>
+                                        {loading ? text('正在加载…', 'Loading…') : text('加载更多企业', 'Load more companies')}
+                                        <Building aria-hidden="true" />
                                     </button>
                                 </div>
-                            )}
-
-                            {canAccessTrustedCompaniesPage && hasMore && (
-                                <div className="mt-12 flex justify-center">
-                                    <button
-                                        onClick={handleLoadMore}
-                                        disabled={loading}
-                                        className="flex items-center gap-2 rounded-full border border-[#dfeaf1] bg-white/82 px-8 py-3 font-bold text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#bcd6eb] disabled:cursor-not-allowed disabled:opacity-50"
-                                    >
-                                        {loading ? (
-                                            <>
-                                                <div className="w-4 h-4 border-2 border-slate-400 border-t-indigo-600 rounded-full animate-spin"></div>
-                                                {text('加载中...', 'Loading...')}
-                                            </>
-                                        ) : (
-                                            <>
-                                                {text('加载更多', 'Load more')}
-                                                <Building className="w-4 h-4" />
-                                            </>
-                                        )}
-                                    </button>
-                                </div>
-                            )}
+                            ) : null}
                         </>
                     )}
-                </>
+                </section>
+
+                <HaigooCompanyCard />
             </div>
-            {/* Modals */}
-            <CompanyNominationModal
-                isOpen={isNominationModalOpen}
-                onClose={() => setIsNominationModalOpen(false)}
-            />
-        </div >
+
+            {COMPLIANCE_FEATURES.employerRecruitmentIntake ? (
+                <CompanyNominationModal
+                    isOpen={isNominationModalOpen}
+                    onClose={() => setIsNominationModalOpen(false)}
+                />
+            ) : null}
+        </div>
     )
 }

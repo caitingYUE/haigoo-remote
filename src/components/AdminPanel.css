@@ -4,7 +4,7 @@
 
 :root {
   /* 品牌主色 */
-  --primary: #4F46E5;
+  --primary: #466f9d;
   --primary-light: #A5B4FC;
   --primary-dark: #4338CA;
   --primary-hover: #4338CA;
@@ -29,7 +29,7 @@
   --success: #10B981;
   --error: #EF4444;
   --warning: #F59E0B;
-  --info: #4F46E5;
+  --info: #466f9d;
 
   /* 中性色 */
   --gray-50: #F9FAFB;

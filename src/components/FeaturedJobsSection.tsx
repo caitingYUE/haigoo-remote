@@ -136,14 +136,14 @@ export default function FeaturedJobsSection({
                   className={`
                   relative px-2 py-3 text-base font-bold transition-all
                   ${isActive
-                      ? 'text-indigo-600'
+                      ? 'text-[#466f9d]'
                       : 'text-slate-500 hover:text-slate-800'
                     }
                 `}
                 >
                   {tab.label}
                   {isActive && (
-                    <span className="absolute bottom-[-5px] left-0 right-0 h-1 bg-indigo-600 rounded-t-full shadow-sm shadow-indigo-200"></span>
+                    <span className="absolute bottom-[-5px] left-0 right-0 h-1 bg-[#466f9d] rounded-t-full shadow-sm shadow-[#c9dce8]"></span>
                   )}
                 </button>
               )
@@ -164,7 +164,7 @@ export default function FeaturedJobsSection({
             <p className="text-slate-500">该分类下暂无精选岗位，去看看其他分类吧</p>
             <button
               onClick={() => setActiveTab('all')}
-              className="mt-4 text-indigo-600 font-bold hover:underline"
+              className="mt-4 text-[#466f9d] font-bold hover:underline"
             >
               查看全部精选
             </button>

@@ -67,9 +67,9 @@ export default function ResetPasswordPage() {
 
   if (!token || !email) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="hg-auth-page">
         <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-md w-full text-center">
+        <div className="hg-auth-card max-w-md w-full p-8 text-center">
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
@@ -79,7 +79,7 @@ export default function ResetPasswordPage() {
           </p>
           <Link 
             to="/forgot-password"
-            className="inline-block px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-block px-6 py-2 bg-[#466f9d] text-white rounded-lg hover:bg-[#345d88] transition-colors"
           >
             {text('重新请求', 'Request a new link')}
           </Link>
@@ -89,18 +89,18 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 flex items-center justify-center p-4">
+    <div className="hg-auth-page">
       <LanguageToggle showIcon className="fixed right-4 top-4 z-20" />
-      <div className="w-full max-w-md">
+      <div className="hg-auth-shell">
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="hg-auth-brand">
           <img src={logoPng} alt="Haigoo" className="h-12 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-slate-900">{text('设置新密码', 'Set a new password')}</h1>
           <p className="text-slate-600 mt-2">{text('请为您的账户设置一个新的安全密码', 'Choose a secure new password for your account')}</p>
         </div>
 
         {/* 表单 */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
+        <div className="hg-auth-card p-8">
           {isSuccess ? (
             <div className="text-center py-6">
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -112,7 +112,7 @@ export default function ResetPasswordPage() {
               </p>
               <Link 
                 to="/login"
-                className="inline-block w-full bg-indigo-600 text-white py-3 rounded-lg font-medium hover:bg-indigo-700 transition-all"
+                className="inline-block w-full bg-[#466f9d] text-white py-3 rounded-lg font-medium hover:bg-[#345d88] transition-all"
               >
                 {text('立即登录', 'Log in now')}
               </Link>
@@ -141,7 +141,7 @@ export default function ResetPasswordPage() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    className="w-full pl-10 pr-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                     placeholder={text('至少8位', 'At least 8 characters')}
                   />
                   <button
@@ -173,7 +173,7 @@ export default function ResetPasswordPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full pl-10 pr-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+                    className="w-full pl-10 pr-10 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#587faa] focus:border-transparent transition-all"
                     placeholder={text('再次输入密码', 'Enter your password again')}
                   />
                   <button
@@ -194,7 +194,7 @@ export default function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-lg font-medium transition-all shadow-lg shadow-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#466f9d] hover:bg-[#345d88] text-white py-3 rounded-lg font-medium transition-all shadow-lg shadow-[#c9dce8] disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting ? text('重置中...', 'Resetting...') : text('重置密码', 'Reset password')}
               </button>

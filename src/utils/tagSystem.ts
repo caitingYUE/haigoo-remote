@@ -89,13 +89,13 @@ export const STANDARD_TAG_LIBRARY: Record<string, JobTag> = {
     category: 'job_type',
     priority: 'high',
     color: {
-      background: 'rgba(139, 92, 246, 0.1)',
-      text: '#8B5CF6',
-      border: 'rgba(139, 92, 246, 0.2)',
+      background: 'rgba(183, 121, 31, 0.1)',
+      text: '#b7791f',
+      border: 'rgba(183, 121, 31, 0.2)',
       hover: {
-        background: 'rgba(139, 92, 246, 0.2)',
-        text: '#7C3AED',
-        border: 'rgba(139, 92, 246, 0.3)'
+        background: 'rgba(183, 121, 31, 0.18)',
+        text: '#8f5e19',
+        border: 'rgba(183, 121, 31, 0.3)'
       }
     },
     aliases: ['全栈工程师', 'Fullstack Engineer', '全栈', 'Full Stack Developer']
@@ -180,13 +180,13 @@ export const STANDARD_TAG_LIBRARY: Record<string, JobTag> = {
     category: 'work_mode',
     priority: 'medium',
     color: {
-      background: 'rgba(139, 92, 246, 0.1)',
-      text: '#8B5CF6',
-      border: 'rgba(139, 92, 246, 0.2)',
+      background: 'rgba(183, 121, 31, 0.1)',
+      text: '#b7791f',
+      border: 'rgba(183, 121, 31, 0.2)',
       hover: {
-        background: 'rgba(139, 92, 246, 0.2)',
-        text: '#7C3AED',
-        border: 'rgba(139, 92, 246, 0.3)'
+        background: 'rgba(183, 121, 31, 0.18)',
+        text: '#8f5e19',
+        border: 'rgba(183, 121, 31, 0.3)'
       }
     },
     aliases: ['混合', 'Hybrid', '弹性办公', 'Flexible Work']

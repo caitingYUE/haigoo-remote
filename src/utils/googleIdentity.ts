@@ -1,6 +1,9 @@
 const GOOGLE_IDENTITY_SCRIPT_ID = 'google-identity-services'
 const GOOGLE_IDENTITY_SRC = 'https://accounts.google.com/gsi/client'
 
+let activeCredentialCallback: ((response: any) => void) | null = null
+let initializedClientId = ''
+
 export function loadGoogleIdentity(): Promise<void> {
   if (typeof window === 'undefined') return Promise.resolve()
   if (window.google?.accounts?.id) return Promise.resolve()
@@ -23,4 +26,23 @@ export function loadGoogleIdentity(): Promise<void> {
     script.onerror = () => reject(new Error('Google Identity Services failed to load'))
     document.head.appendChild(script)
   })
+}
+
+export function initializeGoogleIdentity(
+  clientId: string,
+  callback: (response: any) => void,
+): void {
+  activeCredentialCallback = callback
+
+  if (!window.google?.accounts?.id || !clientId || initializedClientId === clientId) {
+    return
+  }
+
+  window.google.accounts.id.initialize({
+    client_id: clientId,
+    callback: (response: any) => activeCredentialCallback?.(response),
+    auto_select: false,
+    cancel_on_tap_outside: true,
+  })
+  initializedClientId = clientId
 }

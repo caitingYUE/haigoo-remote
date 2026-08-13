@@ -27,7 +27,8 @@ import {
   FileText,
   Mail,
   BookOpen,
-  Ticket
+  Ticket,
+  CreditCard
 } from 'lucide-react';
 import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { rssService } from '../services/rss-service';
@@ -49,6 +50,7 @@ const AdminTagManagementPage = lazy(() => import('./AdminTagManagementPage'));
 const AdminApplicationsPage = lazy(() => import('./AdminApplicationsPage'));
 const AdminSubscriptionsPage = lazy(() => import('./AdminSubscriptionsPage'));
 const AdminMembershipCodesPage = lazy(() => import('./AdminMembershipCodesPage'));
+const AdminPaymentOrdersPage = lazy(() => import('./AdminPaymentOrdersPage'));
 const AdminFeedbackList = lazy(() => import('../components/AdminFeedbackList'));
 const AdminTrackingManagement = lazy(() => import('../components/admin/AdminTrackingManagement'));
 const AdminTrackingDashboard = lazy(() => import('../components/admin/AdminTrackingDashboard'));
@@ -78,6 +80,7 @@ const ADMIN_TAB_IDS = new Set([
   'member-crm',
   'users',
   'subscriptions',
+  'payment-orders',
   'membership-codes',
   'job-applications',
   'feedback',
@@ -515,7 +518,7 @@ const AdminTeamPage: React.FC = () => {
         <div className="card-content">
           {messagesLoading && adminMessages.length === 0 ? (
             <div className="flex justify-center py-8">
-              <Loader className="w-6 h-6 animate-spin text-indigo-500" />
+              <Loader className="w-6 h-6 animate-spin text-[#587faa]" />
             </div>
           ) : adminMessages.length === 0 ? (
             <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-100">
@@ -1014,6 +1017,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'member-crm', label: '会员 CRM', icon: Users },
     { id: 'users', label: '用户管理', icon: Users },
     { id: 'subscriptions', label: '邮件订阅', icon: Mail },
+    { id: 'payment-orders', label: '支付订单', icon: CreditCard },
     { id: 'membership-codes', label: '会员兑换码', icon: Ticket },
     { id: 'job-applications', label: '岗位申请', icon: Briefcase },
     { id: 'feedback', label: '用户反馈', icon: MessageSquare },
@@ -1090,7 +1094,7 @@ const AdminTeamPage: React.FC = () => {
               <select
                 value={activeTab}
                 onChange={(event) => setActiveTab(event.target.value)}
-                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100"
+                className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900 outline-none focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]"
                 aria-label="切换后台模块"
               >
                 {tabs.map((tab) => (
@@ -1124,7 +1128,7 @@ const AdminTeamPage: React.FC = () => {
                   {user.avatar ? (
                     <img src={user.avatar} alt={user.username || ''} className="w-8 h-8 rounded-full" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-500 to-purple-500 flex items-center justify-center text-white">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#b7791f] to-[#b7791f] flex items-center justify-center text-white">
                       {(user.username || 'U')[0].toUpperCase()}
                     </div>
                   )}
@@ -1180,6 +1184,11 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'subscriptions' && (
                 <Suspense fallback={renderLazyFallback('正在加载邮件订阅...')}>
                   <AdminSubscriptionsPage />
+                </Suspense>
+              )}
+              {activeTab === 'payment-orders' && (
+                <Suspense fallback={renderLazyFallback('正在加载支付订单...')}>
+                  <AdminPaymentOrdersPage />
                 </Suspense>
               )}
               {activeTab === 'membership-codes' && (

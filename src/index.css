@@ -78,7 +78,7 @@ body > div[id^="google_translate_element"] {
   --haigoo-accent: #3B82F6;
   /* Bright Blue for Call-to-Actions */
   --haigoo-accent-hover: #2563EB;
-  --haigoo-secondary: #6366F1;
+  --haigoo-secondary: #466f9d;
   /* Indigo for Membership/Premium */
   --haigoo-success: #10B981;
   /* Emerald */
@@ -139,7 +139,7 @@ body > div[id^="google_translate_element"] {
   --tag-development-bg: #EFF6FF;
   --tag-development-text: #3B82F6;
   --tag-design-bg: #F5F3FF;
-  --tag-design-text: #8B5CF6;
+  --tag-design-text: #b7791f;
   --tag-marketing-bg: #FDF2F8;
   --tag-marketing-text: #EC4899;
   --tag-sales-bg: #ECFDF5;

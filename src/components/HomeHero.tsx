@@ -26,11 +26,17 @@ import { markMatchScoreRefresh } from '../utils/match-score-refresh'
 import { trackingService } from '../services/tracking-service'
 import MemberEmailSubscriptionCard from './MemberEmailSubscriptionCard'
 import HomeCareerGuides from './HomeCareerGuides'
+import HomeEditorialExperience from './home/HomeEditorialExperience'
 import { useLanguage } from '../contexts/LanguageContext'
+import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 const HERO_CACHE_KEY = 'copilot_hero_state_v4'
 const HERO_CACHE_TTL = 7 * 24 * 60 * 60 * 1000
 const HERO_RESUME_STATE_KEY = 'copilot_hero_resume_state_v1'
+const HERO_LEGACY_ELIGIBILITY_KEY_PREFIX = 'copilot_hero_legacy_eligible_v1'
+const HERO_RECOMMENDATION_LEGACY_CUTOFF_AT = new Date(
+    import.meta.env.VITE_HERO_RECOMMENDATION_LEGACY_CUTOFF || '2026-08-12T00:00:00+08:00'
+).getTime()
 const HERO_PLAN_STATUS_KEY = 'copilot_plan_status_v1'
 const LOGIN_EVENT_KEY = 'haigoo_login_event_at'
 const HOME_HERO_BG_SRC = '/pic_lists/Home_pics/background05.webp'
@@ -62,7 +68,7 @@ async function parseResumeFileOnDemand(file: File) {
 }
 
 const HomeVipBadge = ({ className = '' }: { className?: string }) => (
-    <span className={`inline-flex min-w-[46px] shrink-0 items-center justify-center gap-1 rounded-full border border-white bg-[#6f63ff] px-2 py-0.5 text-[10px] font-black text-white shadow-[0_10px_18px_-12px_rgba(79,70,229,0.8)] ${className}`}>
+    <span className={`inline-flex min-w-[46px] shrink-0 items-center justify-center gap-1 rounded-full border border-[#e7c98e] bg-[#fff8e8] px-2 py-0.5 text-[10px] font-black text-[#8f5e19] shadow-[0_10px_20px_-15px_rgba(143,94,25,0.48)] ${className}`}>
         <Crown className="h-3 w-3 fill-current" />
         <span className="text-[9px] font-black leading-none tracking-wide">Club</span>
     </span>
@@ -162,29 +168,13 @@ interface HomeHeroProps {
 }
 
 const HOME_FEATURED_TABS = [
-    { id: 'all', label: '综合推荐', englishLabel: 'Recommended' },
+    { id: 'all', label: '全部', englishLabel: 'All' },
     { id: 'freelance', label: '自由职业', englishLabel: 'Freelance' },
     { id: '人力资源,招聘,财务,会计,法务,行政,管理,客户服务,HR,Recruiter,Talent Acquisition,Finance,Legal,Admin', label: '人事行政', englishLabel: 'People & operations' },
     { id: '产品经理,产品设计,营销设计,网站和营销设计,视觉设计,平面设计,创意设计,UI/UX设计,用户研究,增长黑客,Product Manager,Product Designer,Marketing Designer,Visual Designer,Graphic Designer,Creative Designer,UI,UX,Growth', label: '产品设计', englishLabel: 'Product & design' },
     { id: '前端开发,后端开发,全栈开发,软件开发,移动开发,算法工程师,测试/QA,数据开发,数据库工程师,平台工程师,服务器开发,运维/SRE,网络安全,架构师,技术支持,工程,开发,Engineer,Developer,Frontend,Backend,Full Stack,Software,QA,DevOps,Data Engineer', label: '技术研发', englishLabel: 'Engineering' },
     { id: 'Marketing,Digital Marketing,Content,Social Media,Growth,Operations,Project Manager,市场,营销,运营,增长', label: '运营营销', englishLabel: 'Marketing' },
     { id: 'Sales,Account Manager,Business Development,Customer Success,销售,客户经理,BD,商务', label: '销售商务', englishLabel: 'Sales' },
-]
-
-const HAIGOO_VERIFICATION_STANDARDS = [
-    '官网、LinkedIn等主页信息正常，近期有持续更新',
-    '主营业务/产品运营状态正常，且非灰黑产',
-    '企业远程文化悠久或远程友好，支持员工成长',
-    '有中国业务/分公司或对中国员工友好',
-    '岗位来自官方招聘平台发布/内推合作，有可联系的对接人或联系方式',
-]
-
-const HAIGOO_VERIFICATION_STANDARDS_EN = [
-    'Active official website, LinkedIn page, or other verified company presence',
-    'Legitimate, operating business and product',
-    'Established remote culture or clear remote-friendly practices',
-    'China presence or demonstrated support for professionals based in China',
-    'Roles sourced from official channels or verified referral partnerships',
 ]
 
 function getJobCompanyKey(job: any) {
@@ -250,6 +240,28 @@ function getHeroCacheKey(userId?: string | null) {
     return userId ? `${HERO_CACHE_KEY}_${userId}` : HERO_CACHE_KEY
 }
 
+function getHeroLegacyEligibilityKey(userId: string) {
+    return `${HERO_LEGACY_ELIGIBILITY_KEY_PREFIX}_${userId}`
+}
+
+function hasStoredHeroLegacyEligibility(userId?: string | null) {
+    if (!userId) return false
+    try {
+        return localStorage.getItem(getHeroLegacyEligibilityKey(userId)) === 'true'
+    } catch {
+        return false
+    }
+}
+
+function storeHeroLegacyEligibility(userId?: string | null) {
+    if (!userId) return
+    try {
+        localStorage.setItem(getHeroLegacyEligibilityKey(userId), 'true')
+    } catch {
+        // ignore storage failures
+    }
+}
+
 function getLocalDateKey(input: number | string | Date = Date.now()) {
     const date = input instanceof Date ? input : new Date(input)
     const year = date.getFullYear()
@@ -289,15 +301,14 @@ function getHeroDisplaySalary(rawSalary: any) {
 }
 
 function formatHiringLine(total?: number, categories?: Record<string, number>, isEnglish = false) {
-    const safeTotal = Number(total || 0)
     const categoryText = Object.entries(categories || {})
         .sort(([, a], [, b]) => Number(b) - Number(a))
         .slice(0, 3)
         .map(([name]) => name)
         .filter(Boolean)
         .join('/')
-    if (isEnglish) return categoryText ? `${safeTotal} open roles · ${categoryText}` : `${safeTotal} open roles`
-    return categoryText ? `${safeTotal} 个在招 ${categoryText}` : `${safeTotal} 个在招岗位`
+    if (isEnglish) return categoryText ? `Hiring ${categoryText}` : 'Hiring roles'
+    return categoryText ? `在招 ${categoryText}` : '在招岗位'
 }
 
 function cleanHeroRichText(text?: string) {
@@ -489,11 +500,11 @@ function InputCard({
     icon: any
 }) {
     return (
-        <div className="relative group h-[58px] rounded-[18px] border border-white/80 bg-white/92 shadow-[0_12px_30px_-26px_rgba(62,91,120,0.45)] transition-all focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-500/10 hover:border-slate-200">
+        <div className="relative group h-[58px] rounded-[18px] border border-white/80 bg-white/92 shadow-[0_12px_30px_-26px_rgba(62,91,120,0.45)] transition-all focus-within:border-[#9fbbd2] focus-within:ring-4 focus-within:ring-[#587faa]/10 hover:border-slate-200">
             <div className="absolute left-3.5 top-2 text-[9px] font-bold text-slate-400 uppercase tracking-wide pointer-events-none select-none">
                 {label} <span className="text-rose-500">*</span>
             </div>
-            <Icon className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300 transition-colors pointer-events-none group-focus-within:text-indigo-500" />
+            <Icon className="absolute right-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-300 transition-colors pointer-events-none group-focus-within:text-[#587faa]" />
             
             {options ? (
                 <select
@@ -531,7 +542,7 @@ function CompanyLogo({ companyName, logoCandidates, className }: { companyName: 
             onError={() => setIndex((prev) => (prev < logoCandidates.length - 1 ? prev + 1 : prev))}
         />
     ) : (
-        <span className="text-sm font-bold text-indigo-500">{(companyName || '').slice(0, 2).toUpperCase()}</span>
+        <span className="text-sm font-bold text-[#587faa]">{(companyName || '').slice(0, 2).toUpperCase()}</span>
     )
 }
 
@@ -682,7 +693,7 @@ export default function HomeHero({
     const { user, isAuthenticated, token, isMember, memberType, updateProfile, sendVerificationEmail, isLoading: authLoading } = useAuth()
     const { showWarning, showError, showSuccess } = useNotificationHelpers()
     const { isEnglish, text } = useLanguage()
-    const userId = user?.user_id || null
+    const userId = user?.user_id || (user as any)?.userId || (user as any)?.id || null
     const storedTargetRole = String(user?.profile?.targetRole || '').trim()
     const [showUpgradeBanner, setShowUpgradeBanner] = useState(() => {
         try {
@@ -779,9 +790,13 @@ export default function HomeHero({
         : isEmailVerificationRequired
             ? { id: 'email-verification', message: text('您的注册邮箱尚未验证，请尽快验证哦。', 'Your email address has not been verified yet.'), kind: 'email_verification' as const }
             : null
-    const upgradeBannerMessage = homeSystemNotice?.message || text('嗨，我是海狗，你的远程工作探索伙伴。', 'Hi, I’m Haigoo — your remote work companion.')
+    const upgradeBannerMessage = homeSystemNotice?.message || text('嗨，我是海狗，你的远程工作探索伙伴。', 'Hi, I’m Haigoo, your remote work companion.')
     const shouldShowSystemNotice = Boolean(homeSystemNotice && dismissedSystemNoticeId !== homeSystemNotice.id)
-    const shouldShowUpgradeBanner = shouldShowSystemNotice || (!homeSystemNotice && showUpgradeBanner)
+    const shouldShowUpgradeBanner = shouldShowSystemNotice || (
+        !homeSystemNotice
+        && COMPLIANCE_FEATURES.homeHeroGreetingBanner
+        && showUpgradeBanner
+    )
 
     const handleResendVerificationEmail = async () => {
         if (!user?.email || verificationEmailSending) return
@@ -824,12 +839,13 @@ export default function HomeHero({
     const [hasResults, setHasResults] = useState(false)
     const [isEditingPreferences, setIsEditingPreferences] = useState(false)
     const [hasHydrated, setHasHydrated] = useState(false)
+    const [legacyHeroEligibleUserId, setLegacyHeroEligibleUserId] = useState<string | null>(null)
     const [showPlanModal, setShowPlanModal] = useState(false)
     const [keepPlanWorkerAlive, setKeepPlanWorkerAlive] = useState(false)
     const [planStatus, setPlanStatus] = useState<'idle' | 'pending' | 'ready'>('idle')
     const [activeCard, setActiveCard] = useState(0)
     const touchStartXRef = useRef<number | null>(null)
-    const resumeHydratedFromAccount = useRef(false)
+    const resumeHydratedFromAccount = useRef<string | null>(null)
     const [selectedJobDetail, setSelectedJobDetail] = useState<any | null>(null)
     const [lastUpdatedAt, setLastUpdatedAt] = useState<number>(Date.now())
     const [recommendationHistory, setRecommendationHistory] = useState<HeroRecommendationHistoryEntry[]>([])
@@ -846,9 +862,14 @@ export default function HomeHero({
     const displayRecommendations = hasResults && recommendations.length > 0
         ? (isAuthenticated ? recommendations : recommendations.slice(0, 1))
         : []
+    const hasResumeRecommendationSignal = Boolean(resumeId || resumeName || guestResumeHints.length > 0)
+    // 推荐逻辑保留给已主动上传过简历的用户；其他用户统一使用 Editorial 版本。
+    // 旧的全量推荐体验仍可由合规开关恢复，但不会因会员身份单独出现。
+    const shouldShowHeroRecommendations = COMPLIANCE_FEATURES.heroRecommendationsForAllUsers || (
+        COMPLIANCE_FEATURES.returningUserHeroRecommendations && hasResumeRecommendationSignal
+    )
     const dailyLimit = isAuthenticated ? 5 : 1
     const effectiveJobDirection = String(jobDirection || storedTargetRole || '').trim()
-    const hasResumeRecommendationSignal = Boolean(resumeId || resumeName || guestResumeHints.length > 0)
     const effectiveRecommendationDirection = effectiveJobDirection || (hasResumeRecommendationSignal ? '远程工作' : '')
     const recommendationResumeContext = resumeId || (resumeName ? `file:${resumeName}` : null)
     const recommendationContextKey = useMemo(
@@ -876,60 +897,60 @@ export default function HomeHero({
         : ''
     const homeMemberEntitlement = memberType === 'trial_week'
         ? {
-            title: text('欢迎回来，体验权益已为你开启', 'Welcome back — your trial benefits are active'),
+            title: text('欢迎回来，体验权益已为你开启', 'Welcome back, your trial benefits are active'),
             description: text(`短期冲刺求职权益已解锁，当前有效期至 ${memberExpireLabel}。`, `Your short-term job-search benefits are unlocked through ${memberExpireLabel}.`),
             tags: [text('岗位申请开放', 'Job applications'), text('联系人限时开放', 'Limited contact access'), text('AI 简历工具', 'AI resume tools'), text('7 天短期体验', '7-day trial'), text('职业成长样例', 'Career learning samples')],
-            iconText: 'text-[#6f63f6]',
-            iconBg: 'bg-[#f0edff]',
+            iconText: 'text-[#466f9d]',
+            iconBg: 'bg-[#eff5fb]',
             button: text('进入远程工作', 'Explore remote jobs'),
             ctaHref: '/jobs'
         }
         : memberType === 'starter'
             ? {
-                title: text('欢迎回来，Club Starter 权益已为你开启', 'Welcome back — your Club Starter benefits are active'),
-                description: text(`岗位申请路径、职业成长内容和网站工具权益已解锁，当前有效期至 ${memberExpireLabel}。`, `Job application paths, career learning, and site tools are unlocked through ${memberExpireLabel}.`),
-                tags: [text('全部岗位申请', 'All job applications'), text('联系人信息开放', 'Company contacts'), text('职业成长权益', 'Career learning'), text('AI 简历工具', 'AI resume tools'), text('岗位订阅', 'Job updates')],
-                iconText: 'text-[#6f63f6]',
-                iconBg: 'bg-[#f0edff]',
-                button: text('查看 Starter 权益', 'View Starter benefits'),
+                title: text('欢迎回来，你的月度服务正在生效', 'Welcome back, your monthly service is active'),
+                description: text(`岗位申请支持、职业成长内容和网站工具可使用至 ${memberExpireLabel}。`, `Job application support, career learning, and site tools are available through ${memberExpireLabel}.`),
+                tags: [text('岗位申请支持', 'Job application support'), text('联系人信息', 'Company contacts'), text('职业成长内容', 'Career learning'), text('AI 简历工具', 'AI resume tools'), text('岗位订阅', 'Job updates')],
+                iconText: 'text-[#466f9d]',
+                iconBg: 'bg-[#eff5fb]',
+                button: text('查看本期服务', 'View current services'),
                 ctaHref: '/profile?tab=membership#member-benefits'
             }
         : memberType === 'annual'
             ? {
-                title: text('欢迎回来，Club Partner 权益已为你开启', 'Welcome back — your Club Partner benefits are active'),
+                title: text('欢迎回来，Club Partner 权益已为你开启', 'Welcome back, your Club Partner benefits are active'),
                 description: text(`岗位申请路径、完整远程职业成长权益、语音咨询、年度规划和共建申请权益已解锁，当前有效期至 ${memberExpireLabel}。`, `Application paths, full career learning, consultations, annual planning, and co-created applications are unlocked through ${memberExpireLabel}.`),
                 tags: [text('全部岗位申请', 'All job applications'), text('联系人信息开放', 'Company contacts'), text('职业成长权益', 'Career learning'), text('年度规划', 'Annual planning'), text('共建申请', 'Co-created applications')],
-                iconText: 'text-[#6f63f6]',
-                iconBg: 'bg-[#f0edff]',
+                iconText: 'text-[#466f9d]',
+                iconBg: 'bg-[#eff5fb]',
                 button: text('查看 Partner 权益', 'View Partner benefits'),
                 ctaHref: '/profile?tab=membership#member-benefits'
             }
         : memberType === 'half_year'
             ? {
-                title: text('欢迎回来，Club Member 权益已为你开启', 'Welcome back — your Club Member benefits are active'),
+                title: text('欢迎回来，Club Member 权益已为你开启', 'Welcome back, your Club Member benefits are active'),
                 description: text(`岗位申请路径、完整远程职业成长权益和语音咨询权益已解锁，当前有效期至 ${memberExpireLabel}。`, `Application paths, full career learning, and consultations are unlocked through ${memberExpireLabel}.`),
                 tags: [text('全部岗位申请', 'All job applications'), text('联系人信息开放', 'Company contacts'), text('职业成长权益', 'Career learning'), text('AI 简历建议', 'AI resume guidance'), text('语音咨询', 'Consultations')],
-                iconText: 'text-[#6f63f6]',
-                iconBg: 'bg-[#f0edff]',
+                iconText: 'text-[#466f9d]',
+                iconBg: 'bg-[#eff5fb]',
                 button: text('查看 Member 权益', 'View Member benefits'),
                 ctaHref: '/profile?tab=membership#member-benefits'
             }
         : memberType === 'quarter_pro' || memberType === 'year'
             ? {
-                title: text('欢迎回来，Pro权益已为你开启', 'Welcome back — your Pro benefits are active'),
-                description: text(`全部求职权益、职业成长跟读素材和延伸资料已解锁，当前有效期至 ${memberExpireLabel}。`, `All job-search benefits, shadowing practice, and additional learning materials are unlocked through ${memberExpireLabel}.`),
-                tags: [text('全部岗位申请', 'All job applications'), text('联系人信息开放', 'Company contacts'), text('职业成长跟读', 'Shadowing practice'), text('更多资料开放', 'Additional resources'), text('CEO 联系权限', 'CEO contact access')],
-                iconText: 'text-[#6f63f6]',
-                iconBg: 'bg-[#f0edff]',
+                title: text('欢迎回来，你的 Club 服务正在生效', 'Welcome back, your Club service is active'),
+                description: text(`申请支持、职业成长跟读和延伸资料可使用至 ${memberExpireLabel}。`, `Application support, shadowing practice, and additional learning resources are available through ${memberExpireLabel}.`),
+                tags: [text('岗位申请支持', 'Job application support'), text('联系人信息', 'Company contacts'), text('职业成长跟读', 'Shadowing practice'), text('延伸资料', 'Additional resources'), text('企业联系信息', 'Company contacts')],
+                iconText: 'text-[#466f9d]',
+                iconBg: 'bg-[#eff5fb]',
                 button: text('继续学习与求职', 'Continue learning and applying'),
                 ctaHref: '/profile?tab=membership#member-benefits'
             }
             : {
-                title: text('欢迎回来，季度权益已为你开启', 'Welcome back — your Club benefits are active'),
-                description: text(`远程求职权益、职业成长视频和企业文化内容已解锁，当前有效期至 ${memberExpireLabel}。`, `Remote job-search benefits, career videos, and company culture content are unlocked through ${memberExpireLabel}.`),
-                tags: [text('全部岗位申请', 'All job applications'), text('联系人信息开放', 'Company contacts'), text('精选企业名单', 'Featured companies'), text('职业成长视频', 'Career videos'), text('CEO 商业思维', 'CEO perspectives')],
-                iconText: 'text-[#6f63f6]',
-                iconBg: 'bg-[#f0edff]',
+                title: text('欢迎回来，你的 Club 服务正在生效', 'Welcome back, your Club service is active'),
+                description: text(`申请支持、职业成长视频和企业文化内容可使用至 ${memberExpireLabel}。`, `Application support, career videos, and company-culture content are available through ${memberExpireLabel}.`),
+                tags: [text('岗位申请支持', 'Job application support'), text('联系人信息', 'Company contacts'), text('精选企业', 'Featured companies'), text('职业成长视频', 'Career videos'), text('CEO 商业思维', 'CEO perspectives')],
+                iconText: 'text-[#466f9d]',
+                iconBg: 'bg-[#eff5fb]',
                 button: text('进入远程工作', 'Explore remote jobs'),
                 ctaHref: '/jobs'
             }
@@ -944,10 +965,16 @@ export default function HomeHero({
         let cancelled = false
         setFeaturedTabLoading(true)
         const request = activeFeaturedTab === 'freelance'
-            ? processedJobsService.getFeaturedHomeFreelanceJobs()
-            : processedJobsService.getProcessedJobs(1, 24, {
-                isFeatured: true,
+            ? processedJobsService.getProcessedJobs(1, 24, {
                 isApproved: true,
+                status: 'active',
+                type: 'freelance',
+                sortBy: 'recent',
+                skipAggregations: true
+            }).then((res) => spreadJobsByCompany(res.jobs || [], 6, 2))
+            : processedJobsService.getProcessedJobs(1, 24, {
+                isApproved: true,
+                status: 'active',
                 category: activeFeaturedTab,
                 sortBy: 'recent',
                 skipAggregations: true
@@ -972,7 +999,7 @@ export default function HomeHero({
         return spreadJobsByCompany(source, 6, 2)
     }, [activeFeaturedTab, featuredJobs, featuredTabJobs])
 
-    const displayCompanies = useMemo(() => trustedCompanies.slice(0, 6), [trustedCompanies])
+    const displayCompanies = useMemo(() => trustedCompanies.slice(0, 10), [trustedCompanies])
 
     useEffect(() => {
         let cancelled = false
@@ -1266,12 +1293,18 @@ export default function HomeHero({
             try {
                 const data = JSON.parse(raw)
                 const cacheTimestamp = data.lastUpdatedAt || data.timestamp
+                const normalizedHistory = normalizeHeroRecommendationHistory(data.recommendationHistory)
+                const hasHistoricalUse = Boolean(data.hasResults || data.recommendations?.length || normalizedHistory.length)
+                if (isAuthenticated && userId && hasHistoricalUse && cacheTimestamp && cacheTimestamp < HERO_RECOMMENDATION_LEGACY_CUTOFF_AT) {
+                    storeHeroLegacyEligibility(userId)
+                    setLegacyHeroEligibleUserId(userId)
+                }
                 if (!cacheTimestamp || Date.now() - cacheTimestamp >= HERO_CACHE_TTL) {
                     return false
                 }
 
                 setLastUpdatedAt(cacheTimestamp)
-                setRecommendationHistory(normalizeHeroRecommendationHistory(data.recommendationHistory))
+                setRecommendationHistory(normalizedHistory)
                 if (data.jobDirection && !isGenericRecommendationDirection(data.jobDirection)) setJobDirection(data.jobDirection)
                 if (data.positionType) setPositionType(data.positionType)
                 if (Array.isArray(data.recommendations)) {
@@ -1330,6 +1363,10 @@ export default function HomeHero({
             if (storedResumeState && !storedResumeState.dismissed && storedResumeState.resumeName) {
                 setResumeId(storedResumeState.resumeId || null)
                 setResumeName(storedResumeState.resumeName)
+                if (isAuthenticated && userId && Number(storedResumeState.updatedAt) < HERO_RECOMMENDATION_LEGACY_CUTOFF_AT) {
+                    storeHeroLegacyEligibility(userId)
+                    setLegacyHeroEligibleUserId(userId)
+                }
             }
         }
         setHasHydrated(true)
@@ -1337,6 +1374,9 @@ export default function HomeHero({
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated || !userId) return
+        if (hasStoredHeroLegacyEligibility(userId)) {
+            setLegacyHeroEligibleUserId(userId)
+        }
         if (accountHeroHydratedForUser.current === userId) return
 
         const cached = localStorage.getItem(getHeroCacheKey(userId))
@@ -1345,9 +1385,15 @@ export default function HomeHero({
             try {
                 const data = JSON.parse(cached)
                 const cacheTimestamp = data.lastUpdatedAt || data.timestamp
+                const normalizedHistory = normalizeHeroRecommendationHistory(data.recommendationHistory)
+                const hasHistoricalUse = Boolean(data.hasResults || data.recommendations?.length || normalizedHistory.length)
+                if (hasHistoricalUse && cacheTimestamp && cacheTimestamp < HERO_RECOMMENDATION_LEGACY_CUTOFF_AT) {
+                    storeHeroLegacyEligibility(userId)
+                    setLegacyHeroEligibleUserId(userId)
+                }
                 if (cacheTimestamp && Date.now() - cacheTimestamp < HERO_CACHE_TTL) {
                     setLastUpdatedAt(cacheTimestamp)
-                    setRecommendationHistory(normalizeHeroRecommendationHistory(data.recommendationHistory))
+                    setRecommendationHistory(normalizedHistory)
                     if (data.jobDirection && !isGenericRecommendationDirection(data.jobDirection)) setJobDirection(data.jobDirection)
                     if (data.positionType) setPositionType(data.positionType)
                     if (Array.isArray(data.recommendations)) {
@@ -1378,15 +1424,8 @@ export default function HomeHero({
     }, [hasHydrated, isAuthenticated, userId, storedTargetRole, jobDirection])
 
     useEffect(() => {
-        if (!hasHydrated || !isAuthenticated || !token) return
-        if (resumeHydratedFromAccount.current) return
-        if (resumeName && resumeId) return
-
-        const storedResumeState = readStoredHeroResumeState()
-        if (storedResumeState?.dismissed) {
-            resumeHydratedFromAccount.current = true
-            return
-        }
+        if (!hasHydrated || !isAuthenticated || !token || !userId) return
+        if (resumeHydratedFromAccount.current === userId) return
 
         let mounted = true
         const hydrateLatestResume = async () => {
@@ -1397,9 +1436,27 @@ export default function HomeHero({
                 const data = await resp.json().catch(() => ({}))
                 const resumes = Array.isArray(data?.data) ? data.data : Array.isArray(data?.resumes) ? data.resumes : []
                 const latest = resumes[0]
-                if (!mounted || !latest) return
+                if (!mounted) return
+                if (!latest) {
+                    // The account response is authoritative. Old browser state must
+                    // not keep a deleted or previously dismissed resume visible.
+                    if (!readPendingGuestResume()) {
+                        setResumeId(null)
+                        setResumeName(null)
+                        setRecommendations([])
+                        setRecommendationHistory([])
+                        setHasResults(false)
+                        clearStoredHeroResumeState()
+                    }
+                    return
+                }
                 const linkedResumeId = latest.id || latest.resume_id || null
                 const linkedResumeName = latest.fileName || latest.file_name || latest.name || 'Resume'
+                const resumeCreatedAt = new Date(latest.createdAt || latest.created_at || latest.uploadedAt || latest.uploaded_at || 0).getTime()
+                if (Number.isFinite(resumeCreatedAt) && resumeCreatedAt > 0 && resumeCreatedAt < HERO_RECOMMENDATION_LEGACY_CUTOFF_AT) {
+                    storeHeroLegacyEligibility(userId)
+                    setLegacyHeroEligibleUserId(userId)
+                }
                 setResumeId(linkedResumeId)
                 setResumeName(linkedResumeName)
                 setGuestResumeFile(null)
@@ -1414,13 +1471,42 @@ export default function HomeHero({
             } catch {
                 // ignore hydrate errors
             } finally {
-                resumeHydratedFromAccount.current = true
+                resumeHydratedFromAccount.current = userId
             }
         }
 
         hydrateLatestResume()
         return () => { mounted = false }
-    }, [hasHydrated, isAuthenticated, token, resumeName, resumeId])
+    }, [hasHydrated, isAuthenticated, token, resumeName, resumeId, userId])
+
+    // Keep the editorial home card in sync when a resume is uploaded or removed
+    // from the profile center without requiring a page refresh.
+    useEffect(() => {
+        const handleResumeStateChange = (event: Event) => {
+            const detail = (event as CustomEvent<{ resumeId?: string | null; resumeName?: string }>).detail || {}
+            const nextResumeId = detail.resumeId || null
+            setResumeId(nextResumeId)
+            setResumeName(nextResumeId ? (detail.resumeName || 'Resume') : '')
+            setGuestResumeFile(null)
+            setGuestResumeHints([])
+            if (!nextResumeId) {
+                setRecommendations([])
+                setRecommendationHistory([])
+                setHasResults(false)
+                clearStoredHeroResumeState()
+            } else {
+                writeStoredHeroResumeState({
+                    resumeId: nextResumeId,
+                    resumeName: detail.resumeName || 'Resume',
+                    source: 'account',
+                    dismissed: false,
+                    updatedAt: Date.now(),
+                })
+            }
+        }
+        window.addEventListener('haigoo:resume-state-changed', handleResumeStateChange)
+        return () => window.removeEventListener('haigoo:resume-state-changed', handleResumeStateChange)
+    }, [])
 
     useEffect(() => {
         if (!hasHydrated || authLoading) return
@@ -1471,8 +1557,23 @@ export default function HomeHero({
 
     useEffect(() => {
         if (!isAuthenticated) {
+            const pendingGuestResume = readPendingGuestResume()
+            const storedResumeState = readStoredHeroResumeState()
+            // Account resumes must not leak into the signed-out homepage after
+            // logout. A resume explicitly uploaded as a guest remains available
+            // for the short login-and-claim flow.
+            if (!pendingGuestResume && storedResumeState?.source !== 'guest') {
+                setResumeId(null)
+                setResumeName(null)
+                setGuestResumeFile(null)
+                setGuestResumeHints([])
+                setRecommendations([])
+                setHasResults(false)
+                clearStoredHeroResumeState()
+            }
+            setLegacyHeroEligibleUserId(null)
             pendingResumeSyncAttempted.current = false
-            resumeHydratedFromAccount.current = false
+            resumeHydratedFromAccount.current = null
             accountHeroHydratedForUser.current = null
             autoRefreshAttemptKeyRef.current = ''
         }
@@ -1852,6 +1953,7 @@ export default function HomeHero({
 
     useEffect(() => {
         if (!hasHydrated || !isAuthenticated) return
+        if (!hasHydrated || !hasResumeRecommendationSignal) return
         if (loading) return
         if (isEditingPreferences) return
 
@@ -1888,7 +1990,7 @@ export default function HomeHero({
             silent: true,
             skipProfileSync: true
         })
-    }, [hasHydrated, isAuthenticated, loading, isEditingPreferences, effectiveJobDirection, effectiveRecommendationDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit, recommendationContextKey, todayDateKey, hasRecommendationForToday, userId, resumeId, resumeName])
+    }, [hasHydrated, hasResumeRecommendationSignal, isAuthenticated, loading, isEditingPreferences, effectiveJobDirection, effectiveRecommendationDirection, storedTargetRole, hasResults, recommendations.length, lastUpdatedAt, positionType, dailyLimit, recommendationContextKey, todayDateKey, hasRecommendationForToday, userId, resumeId, resumeName])
 
     useEffect(() => {
         if (!highlightPrivacyConsent) return
@@ -1953,11 +2055,6 @@ export default function HomeHero({
                 ? previewJobs
                 : PREVIEW_PM_RECOMMENDATIONS
     ).slice(0, 3)
-    const heroCompanyCards = [
-        { name: 'Loom', desc: '视频协作工具', image: '/pic_lists/Jobs_pics/card_bg1.webp' },
-        { name: 'Automattic', desc: '开源与出版平台', image: '/pic_lists/Jobs_pics/card_bg2.webp' },
-        { name: 'Zapier', desc: '自动化工具', image: '/pic_lists/Home_pics/background03.webp' },
-    ]
     const runHeroSearch = (value?: string) => {
         const keyword = String(value || heroSearchTerm || '').trim()
         const params = new URLSearchParams()
@@ -2031,17 +2128,123 @@ export default function HomeHero({
         { title: text('成长机会', 'Room to grow'), desc: text('持续发展空间', 'Long-term growth'), icon: '/pic_lists/Home_pics/strength-improvement.webp' },
         { title: text('热爱驱动', 'Purpose-driven'), desc: text('做你喜欢的事', 'Do work you love'), icon: '/pic_lists/Home_pics/strength-passion.webp' },
     ]
-    const companyFallbackImages = ['/pic_lists/Jobs_pics/card_bg1.webp', '/pic_lists/Jobs_pics/card_bg2.webp', '/pic_lists/Home_pics/background03.webp']
     const guestHeroCaseJobs = (curatedJobs.length > 0
         ? curatedJobs
         : previewJobs.length > 0
             ? previewJobs
             : SAMPLE_RECOMMENDATIONS
     ).slice(0, 3)
-    const heroCaseJobs = isAuthenticated
+    const heroCaseJobs = isAuthenticated && displayRecommendations.length > 0
         ? displayRecommendations.slice(0, dailyLimit)
         : guestHeroCaseJobs
     const canRequestRecommendations = Boolean(String(jobDirection).trim() || resumeId || resumeName || guestResumeFile)
+
+    const jobDetailDialog = selectedJobDetail ? (
+        <Suspense fallback={null}>
+            <LazyJobDetailModal
+                job={selectedJobDetail}
+                isOpen={Boolean(selectedJobDetail)}
+                onClose={() => setSelectedJobDetail(null)}
+                variant="center"
+                jobs={heroDetailJobs}
+                currentJobIndex={currentHeroJobIndex}
+                onNavigateJob={(direction) => {
+                    if (!heroDetailJobs.length) return
+                    const safeCurrentIndex = currentHeroJobIndex >= 0 ? currentHeroJobIndex : 0
+                    const nextIndex = direction === 'prev'
+                        ? (safeCurrentIndex - 1 + heroDetailJobs.length) % heroDetailJobs.length
+                        : (safeCurrentIndex + 1) % heroDetailJobs.length
+                    const nextJob = heroDetailJobs[nextIndex]
+                    if (nextJob) openHeroJobDetail(nextJob)
+                }}
+            />
+        </Suspense>
+    ) : null
+
+    const publicSystemNotice = shouldShowSystemNotice ? (
+        <div className="haigoo-shell haigoo-home__notice" role="status">
+            <div>
+                <strong>{homeSystemNotice?.kind === 'email_verification' ? text('完成邮箱验证', 'Verify your email') : text('服务提示', 'Service notice')}</strong>
+                <span>{upgradeBannerMessage}</span>
+            </div>
+            <div className="haigoo-home__notice-actions">
+                {homeSystemNotice?.kind === 'email_verification' ? (
+                    <button type="button" onClick={handleResendVerificationEmail} disabled={verificationEmailSending}>
+                        {verificationEmailSending ? text('正在发送…', 'Sending…') : text('重新发送验证邮件', 'Resend verification email')}
+                    </button>
+                ) : null}
+                <button type="button" aria-label={text('关闭提示', 'Dismiss notice')} onClick={() => setDismissedSystemNoticeId(homeSystemNotice?.id || null)}>
+                    <X size={16} aria-hidden="true" />
+                </button>
+            </div>
+        </div>
+    ) : null
+
+    // 前台首页统一使用新版编辑化工作台；旧推荐 Hero 只保留内部代码。
+    if (hasHydrated) {
+        return (
+            <>
+                <HomeEditorialExperience
+                    searchTerm={heroSearchTerm}
+                    onSearchTermChange={setHeroSearchTerm}
+                    onSearch={() => runHeroSearch()}
+                    onCategory={openHeroCategory}
+                    jobs={curatedJobs}
+                    jobsLoading={featuredTabLoading}
+                    tabs={HOME_FEATURED_TABS}
+                    activeTab={activeFeaturedTab}
+                    onTabChange={setActiveFeaturedTab}
+                    onOpenJob={(job) => openHeroJobDetail({ ...job, source: job?.source || 'home_editorial_latest' })}
+                    companies={displayCompanies}
+                    companiesLoading={companiesLoading}
+                    companyJobStats={companyJobStats}
+                    companyCoverImages={companyCoverImages}
+                    onOpenCompany={(company) => navigate(getCompanyDetailPath(company.name))}
+                    onViewAllJobs={() => navigate('/jobs')}
+                    onViewAllCompanies={() => navigate('/trusted-companies')}
+                    careerGuides={<HomeCareerGuides />}
+                    clubInfo={COMPLIANCE_FEATURES.homeClubInfoCard ? (
+                        <Suspense fallback={<div className="mt-6 h-40 border border-[#e3edf4] bg-white/70" />}>
+                            <LazyHaigooClubInfoCard className="mt-6" />
+                        </Suspense>
+                    ) : null}
+                    resumeDailyCard={hasResumeRecommendationSignal ? (
+                        <div className="haigoo-home__daily-card">
+                            {heroCaseJobs.length ? (
+                                <div className="haigoo-home__daily-list" aria-label={text('今日岗位参考', 'Today’s role references')}>
+                                    {heroCaseJobs.slice(0, 5).map((job, index) => (
+                                        <button
+                                            key={String(job.id || `${job.company_name || job.company}-${job.title}-${index}`)}
+                                            type="button"
+                                            onClick={() => openHeroJobDetail({ ...job, source: 'home_resume_daily_card' })}
+                                            className="haigoo-home__daily-role"
+                                        >
+                                            <span>{isEnglish ? (job.company_name || job.company) : (job.translations?.company || job.company_name || job.company)}</span>
+                                            <strong>{isEnglish ? job.title : (job.translations?.title || job.title)}</strong>
+                                            <ArrowRight className="haigoo-home__daily-role-arrow" aria-hidden="true" />
+                                        </button>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p>{text('正在整理今天的岗位参考。', 'Today’s role references are being prepared.')}</p>
+                            )}
+                            <div className="haigoo-home__daily-footer">
+                                <button type="button" onClick={() => navigate('/profile?tab=resume')} className="haigoo-home__daily-link">
+                                    {text('管理我的简历', 'Manage my resume')}
+                                </button>
+                                <time className="haigoo-home__daily-updated" dateTime={new Date(lastUpdatedAt).toISOString()}>
+                                    {text(`更新于 ${formattedUpdatedDate}`, `Updated ${formattedUpdatedDate}`)}
+                                </time>
+                            </div>
+                        </div>
+                    ) : undefined}
+                    systemNotice={publicSystemNotice}
+                />
+                {jobDetailDialog}
+            </>
+        )
+    }
+
     return (
         <div className="relative overflow-hidden bg-[#fbfaf6] pt-20 text-slate-950 md:pt-24">
             <div className="pointer-events-none absolute inset-0">
@@ -2050,13 +2253,13 @@ export default function HomeHero({
                     alt=""
                     loading="eager"
                     decoding="async"
-                    className="absolute inset-x-0 top-[-18px] h-[1040px] w-full origin-center scale-[1.08] object-cover object-[58%_center] opacity-95 saturate-[1.05] contrast-[1.04]"
+                    className="absolute inset-x-0 top-[-18px] h-[900px] w-full origin-center scale-[1.035] object-cover object-[61%_center] opacity-95 saturate-[1.03] contrast-[1.02]"
                 />
-                <div className="absolute inset-x-0 top-0 h-[900px] bg-[linear-gradient(90deg,rgba(255,253,249,0.92)_0%,rgba(255,253,249,0.68)_31%,rgba(255,253,249,0.14)_64%,rgba(255,253,249,0.05)_100%),radial-gradient(circle_at_71%_48%,rgba(116,163,196,0.16),transparent_31%),linear-gradient(180deg,rgba(255,255,255,0.18)_0%,rgba(251,250,246,0.10)_64%,rgba(251,250,246,0.64)_86%,#fbfaf6_100%)]" />
-                <div className="absolute inset-x-0 top-[640px] h-[280px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,rgba(251,250,246,0.72)_58%,#fbfaf6_100%)]" />
+                <div className="absolute inset-x-0 top-0 h-[820px] bg-[linear-gradient(90deg,rgba(255,253,249,0.97)_0%,rgba(255,253,249,0.88)_25%,rgba(255,253,249,0.42)_48%,rgba(255,253,249,0.06)_77%,rgba(255,253,249,0.02)_100%),radial-gradient(circle_at_73%_44%,rgba(116,163,196,0.12),transparent_30%),linear-gradient(180deg,rgba(255,255,255,0.14)_0%,rgba(251,250,246,0.08)_66%,rgba(251,250,246,0.72)_90%,#fbfaf6_100%)]" />
+                <div className="absolute inset-x-0 top-[590px] h-[260px] bg-[linear-gradient(180deg,rgba(251,250,246,0)_0%,rgba(251,250,246,0.78)_62%,#fbfaf6_100%)]" />
             </div>
 
-            <section className="relative mx-auto grid max-w-[1560px] items-center gap-7 px-5 pb-8 pt-7 lg:min-h-[720px] lg:grid-cols-[0.95fr_1.05fr] lg:px-10 lg:pb-10 lg:pt-0">
+            <section className="relative mx-auto grid max-w-[1640px] items-center gap-4 px-5 pb-8 pt-7 lg:min-h-[680px] lg:grid-cols-[minmax(560px,0.9fr)_minmax(620px,1.1fr)] lg:px-10 lg:pb-9 lg:pt-0">
                 {shouldShowUpgradeBanner && (
                     <div className="absolute left-5 right-5 top-3 z-30 lg:left-10 lg:right-auto lg:top-10 xl:max-w-[640px]">
                         <div className={`flex min-h-10 w-full items-center gap-1.5 border border-[#eadfc8]/80 bg-[#fffdf8]/94 py-1 pl-1 pr-1 text-[11px] font-semibold text-slate-700 shadow-[0_14px_34px_-30px_rgba(116,90,44,0.42)] ring-1 ring-white/60 backdrop-blur-sm sm:w-fit sm:gap-2 sm:rounded-full sm:text-[12px] lg:max-w-full ${homeSystemNotice ? 'rounded-[16px]' : 'rounded-full'}`}>
@@ -2119,8 +2322,8 @@ export default function HomeHero({
                         </div>
                     </div>
                 )}
-                <div className={`relative z-10 w-full min-w-0 max-w-[700px] ${shouldShowUpgradeBanner ? 'pt-14 sm:pt-12 lg:pt-16' : ''}`}>
-                    <h1 className={`relative overflow-visible ${isEnglish ? 'max-w-xl' : 'max-w-[630px]'}`} aria-label={text('用你喜欢的方式 工作和生活', 'Work and live the way you love')}>
+                <div className={`relative z-10 w-full min-w-0 max-w-[700px] lg:py-10 ${shouldShowUpgradeBanner ? 'pt-14 sm:pt-12 lg:pt-16' : ''}`}>
+                    <h1 className={`relative overflow-visible ${isEnglish ? 'max-w-xl' : 'max-w-[650px]'}`} aria-label={text('用你喜欢的方式 工作和生活', 'Work and live the way you love')}>
                         <span className="sr-only">{text('用你喜欢的方式 工作和生活', 'Work and live the way you love')}</span>
                         <picture aria-hidden="true">
                             <source
@@ -2135,7 +2338,7 @@ export default function HomeHero({
                                 height={isEnglish ? 227 : 208}
                                 loading="eager"
                                 decoding="async"
-                                className={`block h-auto max-w-none select-none ${isEnglish ? 'ml-0 w-full sm:ml-[-1%] sm:w-[102%]' : 'ml-[-5.48%] w-[122%] sm:ml-[-4.35%] sm:w-[102%]'}`}
+                                className={`block h-auto max-w-none select-none ${isEnglish ? 'ml-0 w-full sm:ml-[-1%] sm:w-[102%]' : 'ml-[-3%] w-[112%] sm:ml-[-2.4%] sm:w-[104%]'}`}
                                 draggable={false}
                             />
                         </picture>
@@ -2151,11 +2354,11 @@ export default function HomeHero({
                             />
                         )}
                     </h1>
-                    <p className="mt-4 max-w-[540px] text-[15px] leading-7 text-[#5f7087] sm:mt-5 sm:text-[18px] sm:leading-8">
-                        {text('可以全球旅居，也可以居家办公。Haigoo 帮你获得理想的远程工作，在喜欢的地方，做有价值的事。', 'From anywhere in the world, from the comfort of home. Haigoo helps you find meaningful remote work in places you love.')}
+                    <p className="mt-4 max-w-[610px] text-[15px] leading-7 text-[#5f7087] sm:mt-5 sm:text-[17px] sm:leading-8">
+                        {text('可以全球旅居，也可以居家办公。在这里了解来自全球企业公开渠道的远程工作信息，探索更多工作与生活的可能。', 'Work while travelling the world or from home. Explore remote-work information from public company channels and discover more possibilities for work and life.')}
                     </p>
 
-                    <div className="mt-5 flex w-full max-w-xl items-center rounded-full border border-[#dce8f1] bg-white/88 p-1.5 shadow-[0_22px_54px_-38px_rgba(62,91,120,0.36)] sm:mt-7 sm:p-2">
+                    <div className="mt-5 flex w-full max-w-[620px] items-center rounded-full border border-[#dce8f1] bg-white/92 p-1.5 shadow-[0_22px_54px_-38px_rgba(62,91,120,0.36)] backdrop-blur-sm sm:mt-6 sm:p-2">
                         <input
                             value={heroSearchTerm}
                             onChange={(event) => setHeroSearchTerm(event.target.value)}
@@ -2175,26 +2378,26 @@ export default function HomeHero({
                         </button>
                     </div>
 
-                    <div className="mt-4 grid w-full max-w-xl grid-cols-3 gap-2 sm:mt-6 sm:grid-cols-6 sm:gap-3">
+                    <div className="mt-4 grid w-full max-w-[620px] grid-cols-3 gap-1.5 rounded-[24px] border border-[#eadfcf]/80 bg-white/58 p-2 shadow-[0_18px_46px_-38px_rgba(139,101,54,0.34)] backdrop-blur-sm sm:mt-5 sm:grid-cols-6">
                         {heroCategoryItems.map((item) => (
                             <button
                                 key={item.label}
                                 type="button"
                                 onClick={() => openHeroCategory(item.categories)}
-                                className="group flex h-[68px] flex-col items-center justify-center rounded-[16px] border border-[#eadfcf] bg-[#fffdf8] text-[12px] font-black text-[#40516a] shadow-[0_14px_32px_-30px_rgba(139,101,54,0.36)] transition-all hover:-translate-y-1 hover:border-[#dbcaa8] hover:bg-white sm:h-[92px] sm:rounded-[20px] sm:text-sm"
+                                className="group flex h-[64px] flex-col items-center justify-center rounded-[18px] border border-white/80 bg-white/74 text-[12px] font-black text-[#40516a] transition-all hover:-translate-y-0.5 hover:border-[#dbcaa8] hover:bg-white sm:h-[76px] sm:text-sm"
                             >
-                                <img src={item.icon} alt="" loading="eager" decoding="async" className="mb-1 h-7 w-7 object-contain mix-blend-multiply drop-shadow-[0_5px_8px_rgba(139,101,54,0.14)] transition-transform group-hover:scale-105 sm:mb-2 sm:h-10 sm:w-10" />
+                                <img src={item.icon} alt="" loading="eager" decoding="async" className="mb-1 h-7 w-7 object-contain mix-blend-multiply drop-shadow-[0_5px_8px_rgba(139,101,54,0.14)] transition-transform group-hover:scale-105 sm:h-8 sm:w-8" />
                                 {item.label}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="relative hidden min-h-0 lg:block lg:min-h-[620px]">
-                    <div className="relative z-20 flex w-full min-w-0 flex-col rounded-[26px] border border-[#eadfcf] bg-[#fffdf8] p-4 shadow-[0_24px_70px_-56px_rgba(139,101,54,0.36)] lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:rounded-[34px] lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
+                {shouldShowHeroRecommendations && <div className="relative hidden min-h-0 lg:block lg:min-h-[620px]">
+                    <div className="hg-home-member-recommendations relative z-20 flex w-full min-w-0 flex-col border border-[#ded9ce] bg-[#fffdf8] p-4 lg:absolute lg:bottom-2 lg:right-0 lg:top-3 lg:p-5 xl:right-8 xl:w-[min(600px,calc(100%-120px))] xl:min-w-[520px]">
                         <div className="mb-3 flex items-center justify-between gap-3">
                             <h2 className="whitespace-nowrap text-[20px] font-black leading-tight tracking-normal text-slate-950 sm:text-[24px]">
-                                {isAuthenticated ? text('今日为你推荐的5个匹配岗位', 'Daily 5 recommended matches') : text('登录后获取每日5个匹配岗位', 'Log in for 5 daily matches')}
+                                {isAuthenticated ? text('今日岗位参考', 'Today’s role references') : text('登录后查看今日岗位参考', 'Log in for today’s role references')}
                             </h2>
                             {isAuthenticated && hasCurrentDailyRecommendation && !loading ? (
                                 <span className="shrink-0 whitespace-nowrap text-[11px] font-semibold text-slate-400">
@@ -2267,9 +2470,9 @@ export default function HomeHero({
                                             key={job.id}
                                             type="button"
                                             onClick={() => openHeroJobDetail({ ...job, source: 'home_hero_case' })}
-                                            className="flex items-center gap-3 rounded-[18px] border border-[#edf1e8] bg-white px-3.5 py-2.5 text-left shadow-[0_10px_28px_-26px_rgba(139,101,54,0.28)] transition-all hover:-translate-y-0.5 hover:border-[#bfc8ff]"
+                                            className="hg-home-member-recommendation-row flex items-center gap-3 border-b border-[#e7e2d8] bg-transparent px-2 py-2.5 text-left transition-colors hover:bg-[#f7f5ff]"
                                         >
-                                            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#6f63f6] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
+                                            <span className="relative flex h-10 w-10 shrink-0 items-center justify-center overflow-visible rounded-2xl border border-[#e6edf3] bg-white text-xs font-black text-[#466f9d] shadow-[0_10px_24px_-22px_rgba(62,91,120,0.42)]">
                                                 <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-2xl">
                                                     <CompanyLogo companyName={displayCompany} logoCandidates={logoCandidates} className="h-full w-full object-contain p-1.5" />
                                                 </span>
@@ -2289,7 +2492,7 @@ export default function HomeHero({
                                             </span>
                                             <span className="hidden shrink-0 flex-col items-end gap-0.5 sm:flex">
                                                 {isAuthenticated && matchScore > 0 ? (
-                                                    <span className="rounded-full bg-[#f0edff] px-2.5 py-1 text-xs font-black text-[#6251f5]">
+                                                    <span className="rounded-full bg-[#eff5fb] px-2.5 py-1 text-xs font-black text-[#466f9d]">
                                                         {matchScore}% {text('匹配', 'match')}
                                                     </span>
                                                 ) : null}
@@ -2300,7 +2503,7 @@ export default function HomeHero({
                                 })
                             ) : (
                                 <div className="flex min-h-[190px] flex-col items-center justify-center rounded-[20px] border border-dashed border-[#dfe7f0] bg-white/70 px-6 text-center">
-                                    <ShieldCheck className="h-7 w-7 text-[#6f63f6]" />
+                                    <ShieldCheck className="h-7 w-7 text-[#466f9d]" />
                                     <div className="mt-2 text-sm font-black text-slate-800">
                                         {canRequestRecommendations ? text('正在等待今日匹配结果', 'Waiting for today’s matches') : text('填写职业方向或上传简历', 'Enter a target role or upload your resume')}
                                     </div>
@@ -2342,7 +2545,7 @@ export default function HomeHero({
                                 }}
                             >
                                 {uploading ? (
-                                    <div className="flex items-center justify-center gap-2 text-sm font-bold text-[#6f63f6]">
+                                    <div className="flex items-center justify-center gap-2 text-sm font-bold text-[#466f9d]">
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                         {text('上传中...', 'Uploading...')}
                                     </div>
@@ -2353,7 +2556,7 @@ export default function HomeHero({
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-center gap-2 text-sm font-black text-slate-600">
-                                        <UploadCloud className="h-4 w-4 text-[#6f63f6]" />
+                                        <UploadCloud className="h-4 w-4 text-[#466f9d]" />
                                         {text('上传简历，获得更贴近你的岗位', 'Upload your resume for better matches')}
                                     </div>
                                 )}
@@ -2362,7 +2565,7 @@ export default function HomeHero({
                                 type="button"
                                 onClick={() => { void handleGetRecommendations() }}
                                 disabled={loading || !canRequestRecommendations || (isAuthenticated && hasCurrentDailyRecommendation && !isEditingPreferences)}
-                                className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-[20px] bg-[#7b74ff] px-5 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(111,99,246,0.62)] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55"
+                                className="inline-flex min-h-[54px] items-center justify-center gap-2 rounded-[20px] bg-[#587faa] px-5 text-sm font-black text-white shadow-[0_18px_42px_-26px_rgba(111,99,246,0.62)] transition-all hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-55"
                             >
                                 {loading ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -2388,12 +2591,57 @@ export default function HomeHero({
                                 ref={privacyConsentRef}
                                 className={`flex cursor-pointer items-center gap-2 px-1 text-[10px] leading-4 text-slate-500 transition-all ${highlightPrivacyConsent ? 'rounded-lg bg-[#fff7dc] px-2 py-1 ring-2 ring-[#f0d37a]' : ''}`}
                             >
-                                <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="h-3 w-3 shrink-0 accent-[#6f63f6]" />
-                                <span>{text('我已阅读并同意', 'I have read and accept the')} <a href="/privacy" target="_blank" className="font-black text-[#4f46e5] underline">{text('简历隐私使用说明', 'resume privacy notice')}</a>{text('，仅用于岗位匹配分析。', ', for job-matching analysis only.')}</span>
+                                <input type="checkbox" checked={privacyAccepted} onChange={e => setPrivacyAccepted(e.target.checked)} className="h-3 w-3 shrink-0 accent-[#466f9d]" />
+                                <span>{text('我已阅读并同意', 'I have read and accept the')} <a href="/privacy" target="_blank" className="font-black text-[#345d88] underline">{text('简历隐私使用说明', 'resume privacy notice')}</a>{text('，仅用于岗位匹配分析。', ', for job-matching analysis only.')}</span>
                             </label>
                         </div>
                     </div>
-                </div>
+                </div>}
+
+                {!shouldShowHeroRecommendations && (
+                    <div className="relative hidden min-h-[590px] lg:block" aria-label={text('远程工作生活场景', 'Remote work and life scene')}>
+                        <div className="absolute right-[9%] top-[13%] z-10 w-[250px] rounded-[24px] border border-white/85 bg-[#fffdf8]/84 p-5 shadow-[0_26px_64px_-42px_rgba(139,101,54,0.34)] backdrop-blur-md">
+                            <div className="text-sm font-black text-slate-900">{text('今日小确幸', 'A small joy today')}</div>
+                            <p className="mt-3 text-sm font-semibold leading-7 text-[#596b80]">
+                                {text('一杯咖啡，一个想法，一种更自由的工作与生活。', 'A cup of coffee, one new idea, and a freer way to work and live.')}
+                            </p>
+                        </div>
+
+                        <div className="absolute bottom-7 right-[4%] z-20 w-[min(650px,91%)] overflow-hidden rounded-[30px] border border-white/90 bg-[#fffdf8]/88 shadow-[0_30px_78px_-44px_rgba(62,91,120,0.4)] backdrop-blur-md xl:right-[7%]">
+                            <div className="p-4 sm:p-5">
+                            <div className="flex items-center gap-4">
+                                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-[18px] border border-[#f3e7c8] bg-[#fff8e8]">
+                                    <img src={HOME_UPGRADE_AVATAR_SRC} alt="Haigoo" className="h-full w-full object-cover" loading="eager" decoding="async" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-base font-black text-slate-950">{text('嗨，我是海狗', 'Hi, I’m Haigoo')}</div>
+                                    <p className="mt-1 text-sm font-semibold text-[#66788e]">{text('你的远程工作探索伙伴', 'Your remote-work exploration companion')}</p>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => runHeroSearch()}
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#466f9d] text-white shadow-[0_14px_28px_-18px_rgba(111,99,246,0.72)] transition-transform hover:translate-x-0.5"
+                                    aria-label={text('探索远程工作', 'Explore remote work')}
+                                >
+                                    <ArrowRight className="h-4 w-4" />
+                                </button>
+                            </div>
+                            </div>
+                            <div className="grid grid-cols-3 border-t border-[#e8e1d5]/80 bg-white/42 px-4 py-3.5 sm:px-5">
+                            {[
+                                [text('公开渠道', 'Public sources'), text('企业官网与 Careers 页面', 'Company sites and Careers pages')],
+                                [text('持续整理', 'Continuously updated'), text('关注岗位状态变化', 'Role status monitored')],
+                                [text('免费申请', 'Free applications'), text('每月 20 次官网直申', '20 official applications each month')],
+                            ].map(([title, description], index) => (
+                                <div key={title} className={`min-w-0 ${index > 0 ? 'border-l border-[#e8e1d5] pl-4' : ''}`}>
+                                    <div className="text-sm font-black text-slate-900">{title}</div>
+                                    <div className="mt-1 truncate text-[11px] font-semibold text-[#718096]">{description}</div>
+                                </div>
+                            ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
             </section>
 
             <section className="relative isolate mx-auto max-w-[1560px] px-5 pb-14 [content-visibility:auto] [contain-intrinsic-size:auto_2200px] lg:px-10">
@@ -2402,30 +2650,22 @@ export default function HomeHero({
                     <div className="grid gap-4 md:grid-cols-[300px_1fr] md:items-center">
                         <div>
                             <div className="flex items-center gap-2 text-lg font-black tracking-normal text-slate-950">
-                                {text('我们为你精挑细选 ✨', 'Carefully selected for you ✨')}
+                                {text('我们如何整理信息', 'How we organize information')}
                                 <span className="group relative inline-flex">
                                     <button
                                         type="button"
-                                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#dfe7ff] bg-white text-[#6f63f6] shadow-sm transition-all hover:-translate-y-0.5"
-                                        aria-label={text('查看筛选规则', 'View company selection standards')}
+                                        className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#dfe7ff] bg-white text-[#466f9d] shadow-sm transition-all hover:-translate-y-0.5"
+                                        aria-label={text('查看信息整理说明', 'View information sourcing notes')}
                                     >
                                         <ShieldCheck className="h-4 w-4" />
                                     </button>
                                     <span className="pointer-events-none absolute left-1/2 top-full z-[90] mt-3 w-[420px] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-[18px] border border-[#eadfcf] bg-[#fffdf8] p-4 text-left opacity-0 shadow-[0_18px_44px_-34px_rgba(139,101,54,0.34)] transition-all group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
-                                        <span className="block text-sm font-black text-slate-950">{text('海狗远程俱乐部企业筛选标准', 'Haigoo company selection standards')}</span>
-                                        <span className="mt-1.5 block text-xs font-semibold leading-5 text-slate-600">{text('优先展示经过基础信息核验、远程文化友好、岗位信息清晰的企业，符合以下 5 项筛选标准：', 'We prioritize verified, remote-friendly companies with clear role information using these five standards:')}</span>
-                                        <span className="mt-2 grid gap-1.5">
-                                            {(isEnglish ? HAIGOO_VERIFICATION_STANDARDS_EN : HAIGOO_VERIFICATION_STANDARDS).map((item) => (
-                                                <span key={item} className="flex gap-2 text-xs font-semibold leading-5 text-slate-700">
-                                                    <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-500" />
-                                                    <span>{item}</span>
-                                                </span>
-                                            ))}
-                                        </span>
+                                        <span className="block text-sm font-black text-slate-950">{text('信息整理说明', 'How Haigoo sources information')}</span>
+                                        <span className="mt-1.5 block text-xs font-semibold leading-5 text-slate-600">{text('Haigoo 主要整理来自企业官网、官方 Careers 页面及公开招聘渠道的信息，并持续关注企业基本信息、远程工作方式和岗位状态。公开信息可能随时变化，请以企业官方页面为准。', 'Haigoo mainly organizes information from company websites, official Careers pages, and public recruitment channels. We monitor company basics, remote-work arrangements, and role status, but public information can change at any time; please rely on the company’s official page.')}</span>
                                     </span>
                                 </span>
                             </div>
-                            <p className="mt-2 text-sm leading-6 text-slate-500">{text('所有岗位都经过人工严格筛选，请放心申请。', 'Every role is reviewed by our team so you can apply with confidence.')}</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-500">{text('岗位信息来自公开渠道，请以企业官方页面的最新信息为准。', 'Role information comes from public channels. Please refer to the company’s official page for the latest details.')}</p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                             {heroHighlightItems.map((item) => (
@@ -2444,8 +2684,8 @@ export default function HomeHero({
                 <div className="relative z-10 mt-6 rounded-[30px] border border-[#e3edf4] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.34)]">
                     <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
-                            <h2 className="text-[24px] font-black leading-tight tracking-normal text-slate-950 sm:text-[28px]">{text('人工精选', 'Featured Jobs')}</h2>
-                            <p className="mt-1 text-sm text-slate-500">{text('不只帮你筛出国内可申的岗位，更帮你筛出靠谱的好机会', 'Trusted remote opportunities, reviewed for quality and accessibility.')}</p>
+                            <h2 className="text-[24px] font-black leading-tight tracking-normal text-slate-950 sm:text-[28px]">{text('最新发布', 'Latest roles')}</h2>
+                            <p className="mt-1 text-sm text-slate-500">{text('整理自企业官网及公开招聘渠道的远程工作信息', 'Remote-work information organized from company websites and public recruitment channels.')}</p>
                         </div>
                         <div className="flex max-w-full flex-nowrap gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                             {HOME_FEATURED_TABS.map((tab) => (
@@ -2455,7 +2695,7 @@ export default function HomeHero({
                                     onClick={() => setActiveFeaturedTab(tab.id)}
                                     className={`shrink-0 rounded-full border px-3 py-2 text-xs font-black transition-all ${
                                         activeFeaturedTab === tab.id
-                                            ? 'border-[#8f8afe] bg-[#f0edff] text-[#6f63f6]'
+                                            ? 'border-[#8f8afe] bg-[#eff5fb] text-[#466f9d]'
                                             : 'border-[#e1e9f1] bg-white/80 text-slate-500 hover:border-[#cfdff0] hover:text-slate-800'
                                     }`}
                                 >
@@ -2473,7 +2713,7 @@ export default function HomeHero({
                         </div>
                     ) : curatedJobs.length === 0 ? (
                         <div className="rounded-[24px] border border-dashed border-[#dfeaf1] bg-[#f8fbff] px-6 py-10 text-center text-sm font-semibold text-slate-500">
-                            {text('这个分类暂时没有精选岗位，先看看其他方向。', 'No curated roles are available in this category yet. Try another category.')}
+                            {text('这个分类暂时没有最新岗位，先看看其他方向。', 'No recent roles are available in this category yet. Try another category.')}
                         </div>
                     ) : (
                         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -2536,7 +2776,7 @@ export default function HomeHero({
                                                 ))}
                                             </div>
                                         </div>
-                                        <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-[#6f63f6]" />
+                                        <ArrowRight className="h-4 w-4 shrink-0 text-slate-300 transition-colors group-hover:text-[#466f9d]" />
                                     </button>
                                 )
                             })}
@@ -2546,10 +2786,10 @@ export default function HomeHero({
 
                 <HomeCareerGuides />
 
-                <div className={`relative z-10 mt-6 overflow-hidden rounded-[30px] border p-5 ${
+                {COMPLIANCE_FEATURES.membershipPromotionBanners && <div className={`relative z-10 mt-6 overflow-hidden rounded-[30px] border p-5 ${
                     isMember
-                        ? 'border-[#ddd7ff] bg-[linear-gradient(105deg,#fbfaff_0%,#ffffff_54%,#f5f7ff_100%)] shadow-[0_24px_70px_-58px_rgba(95,99,246,0.34)]'
-                        : 'border-[#f2dfb7] bg-[linear-gradient(105deg,#fffaf0_0%,#ffffff_54%,#f5f2ff_100%)]'
+                        ? 'border-[#c9dce8] bg-[linear-gradient(105deg,#fbfaff_0%,#ffffff_54%,#f5f7ff_100%)] shadow-[0_24px_70px_-58px_rgba(95,99,246,0.34)]'
+                        : 'border-[#f2dfb7] bg-[linear-gradient(105deg,#fffaf0_0%,#ffffff_54%,#eff5fb_100%)]'
                 }`}>
                     {isMember ? (
                         <>
@@ -2577,7 +2817,7 @@ export default function HomeHero({
                                         : [text('岗位申请支持', 'Application support'), text('联系人资源', 'Company contacts'), text('职业成长权益', 'Career learning'), text('精选企业资料', 'Featured company insights'), text('求职工具权限', 'Job-search tools')]
                                     ).map((item) => (
                                         <span key={item} className="inline-flex items-center gap-1.5 rounded-full border border-white/90 bg-white/72 px-3 py-1.5 text-xs font-black text-slate-600">
-                                            <CheckCircle2 className={`h-3.5 w-3.5 ${isMember ? homeMemberEntitlement.iconText : 'text-[#6f63f6]'}`} />
+                                            <CheckCircle2 className={`h-3.5 w-3.5 ${isMember ? homeMemberEntitlement.iconText : 'text-[#466f9d]'}`} />
                                             {item}
                                         </span>
                                     ))}
@@ -2587,13 +2827,13 @@ export default function HomeHero({
                         <button
                             type="button"
                             onClick={() => navigate(isMember ? homeMemberEntitlement.ctaHref : '/profile?tab=membership#club-service-plans')}
-                            className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${isMember ? 'bg-slate-950 shadow-[0_18px_42px_-26px_rgba(15,23,42,0.48)] hover:bg-[#6f63f6]' : 'bg-[#f0a11f] shadow-[0_18px_42px_-26px_rgba(217,149,31,0.64)]'}`}
+                            className={`relative inline-flex h-12 items-center justify-center gap-2 rounded-full px-6 text-sm font-black text-white transition-all hover:-translate-y-0.5 ${isMember ? 'bg-slate-950 shadow-[0_18px_42px_-26px_rgba(15,23,42,0.48)] hover:bg-[#466f9d]' : 'bg-[#f0a11f] shadow-[0_18px_42px_-26px_rgba(217,149,31,0.64)]'}`}
                         >
                             {isMember ? homeMemberEntitlement.button : text('了解 Club 权益', 'Explore Club benefits')}
                             <ArrowRight className="h-4 w-4" />
                         </button>
                     </div>
-                </div>
+                </div>}
 
                 <div className="relative z-10 mt-6 rounded-[30px] border border-[#e3edf4] bg-[#fffefd] p-5 shadow-[0_24px_70px_-58px_rgba(62,91,120,0.34)]">
                     <div className="mb-5 flex items-end justify-between gap-4">
@@ -2606,7 +2846,7 @@ export default function HomeHero({
                             </h2>
                             <p className="mt-1 text-sm text-slate-500">{text('精选尊重员工、开放多元、持续成长的远程企业', 'Remote-friendly companies that value people, inclusion, and growth.')}</p>
                         </div>
-                        <button type="button" onClick={() => navigate('/trusted-companies')} className="hidden text-sm font-black text-[#6f63f6] md:inline-flex">
+                        <button type="button" onClick={() => navigate('/trusted-companies')} className="hidden text-sm font-black text-[#466f9d] md:inline-flex">
                             {text('探索更多优秀公司 →', 'Explore more companies →')}
                         </button>
                     </div>
@@ -2621,10 +2861,9 @@ export default function HomeHero({
                             <div className="rounded-[22px] border border-dashed border-[#dfeaf1] bg-[#f8fbff] p-8 text-sm font-semibold text-slate-500 sm:col-span-2 lg:col-span-3">
                                 {text('暂无企业数据。', 'No company data is available yet.')}
                             </div>
-                        ) : displayCompanies.map((company, index) => {
+                        ) : displayCompanies.map((company) => {
                             const stats = companyJobStats[company.name]
-                            const fallbackImage = companyFallbackImages[index % companyFallbackImages.length]
-                            const coverImage = company.coverImage || companyCoverImages[company.id] || fallbackImage
+                            const coverImage = company.coverImage || companyCoverImages[company.id] || ''
                             return (
                                 <button
                                     key={company.id}
@@ -2633,7 +2872,14 @@ export default function HomeHero({
                                     className="group overflow-hidden rounded-[20px] border border-[#e3edf4] bg-white text-left shadow-[0_18px_46px_-40px_rgba(62,91,120,0.44)] transition-all hover:-translate-y-0.5 hover:border-[#c8dff0]"
                                 >
                                     <div className="relative aspect-[16/9] overflow-hidden bg-[#f7fbff]">
-                                        <img src={coverImage} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        {coverImage ? (
+                                            <img src={coverImage} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        ) : (
+                                            <div className="absolute inset-0 grid place-content-center gap-2 border border-[#d9d3c9] bg-[linear-gradient(135deg,#edf4f8,#fffdf8)] text-center" aria-hidden="true">
+                                                <span className="font-[var(--hg-font-editorial)] text-4xl font-semibold text-[#52738c]">{company.name.charAt(0)}</span>
+                                                <span className="text-[10px] font-black tracking-[0.16em] text-slate-400">REMOTE COMPANY</span>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="p-3.5">
                                         <div className="flex items-center justify-between gap-2">
@@ -2643,7 +2889,7 @@ export default function HomeHero({
                                         <p className="mt-2 line-clamp-2 min-h-[40px] text-sm leading-5 text-slate-500">{company.description || company.translations?.description || text('远程友好企业，持续开放全球机会。', 'A remote-friendly company with global opportunities.')}</p>
                                         <div className="mt-3 flex items-center justify-between border-t border-[#edf2f6] pt-3 text-xs font-bold text-slate-500">
                                             <span className="truncate">{formatHiringLine(stats?.total ?? company.jobCount ?? 0, stats?.categories, isEnglish)}</span>
-                                            <span className="text-[#6f63f6]">{text('查看岗位 →', 'View roles →')}</span>
+                                            <span className="text-[#466f9d]">{text('查看岗位 →', 'View roles →')}</span>
                                         </div>
                                     </div>
                                 </button>
@@ -2656,7 +2902,7 @@ export default function HomeHero({
                         <img src="/pic_lists/About_pics/sun-transparent.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-5 top-5 h-14 w-14 object-contain opacity-20" />
                         <img src="/pic_lists/About_pics/love-transparent.webp" alt="" loading="lazy" decoding="async" className="pointer-events-none absolute right-16 top-16 h-7 w-7 object-contain opacity-30" />
                         <div className="relative flex h-full flex-col">
-                            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-[#dbe9f2] bg-white/82 px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
+                            <div className="mb-4 inline-flex w-fit items-center gap-2 rounded-full border border-[#dbe9f2] bg-white/82 px-3 py-1 text-xs font-black text-[#466f9d] shadow-sm">
                                 <Users className="h-3.5 w-3.5" />
                                 {text('远程求职交流群', 'Remote job community')}
                             </div>
@@ -2664,17 +2910,17 @@ export default function HomeHero({
                                 {text('加入 Haigoo 远程交流群', 'Wechat Group')}
                             </h3>
                             <p className="mt-2 text-sm leading-6 text-slate-500">
-                                {text('群里会同步更有参考价值的精选岗位、求职讨论和优先答疑，适合正在认真找机会的用户。', 'Get curated opportunities, focused job-search discussions, and priority support from the community.')}
+                                {text('开放交流群，正在找机会的朋友可以互相探讨。', 'An open community where people looking for opportunities can exchange ideas.')}
                             </p>
 
                             <div className="mt-4 grid gap-2">
                                 {[
-                                    { title: text('每日精选岗位', 'Daily curated roles'), desc: text('固定同步重点机会', 'Selected opportunities, shared regularly'), icon: Briefcase },
+                                    { title: text('岗位分享', 'Role sharing'), desc: text('自由分享好机会', 'Share worthwhile opportunities freely'), icon: Briefcase },
                                     { title: text('同行交流', 'Peer conversations'), desc: text('讨论投递和面试节奏', 'Discuss applications and interviews'), icon: Users },
                                     { title: text('重点信息提醒', 'Important updates'), desc: text('不错过重要更新', 'Stay on top of key updates'), icon: Sparkles },
                                 ].map((item) => (
                                     <div key={item.title} className="flex items-center gap-3 rounded-[18px] border border-[#edf2f6] bg-white/76 px-3 py-2.5">
-                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#f4f1ff] text-[#6f63f6]">
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-[#eff5fb] text-[#466f9d]">
                                             <item.icon className="h-[18px] w-[18px]" />
                                         </span>
                                         <span>
@@ -2687,7 +2933,7 @@ export default function HomeHero({
 
                             <div className="mt-4 rounded-[22px] border border-[#e3edf4] bg-white/86 p-3 text-center shadow-sm">
                                 <img src="/Wechat_group.webp" alt={text('Haigoo 远程求职交流群二维码', 'Haigoo remote community QR code')} loading="lazy" decoding="async" className="mx-auto h-32 w-32 rounded-2xl object-contain" />
-                                <div className="mt-2 text-sm font-black text-slate-700">{text('微信扫一扫加群', 'Scan with WeChat to join')}</div>
+                                <div className="mt-2 text-sm font-black text-slate-700">{text('微信扫码加入', 'Scan to join on WeChat')}</div>
                             </div>
                             <button
                                 type="button"
@@ -2702,11 +2948,11 @@ export default function HomeHero({
                     </div>
                 </div>
 
-                <MemberEmailSubscriptionCard />
+                {COMPLIANCE_FEATURES.membershipPromotionBanners && isMember ? <MemberEmailSubscriptionCard /> : null}
 
-                <Suspense fallback={<div className="mt-6 h-40 rounded-[34px] border border-[#e3edf4] bg-white/70" />}>
+                {COMPLIANCE_FEATURES.homeClubInfoCard && <Suspense fallback={<div className="mt-6 h-40 rounded-[34px] border border-[#e3edf4] bg-white/70" />}>
                     <LazyHaigooClubInfoCard className="mt-6" />
-                </Suspense>
+                </Suspense>}
             </section>
 
             <input ref={fileInputRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleResumeUpload(f) }} />
@@ -2724,27 +2970,7 @@ export default function HomeHero({
                     resumeId={resumeId}
                 />
             )}
-            {selectedJobDetail && (
-                <Suspense fallback={null}>
-                    <LazyJobDetailModal
-                        job={selectedJobDetail}
-                        isOpen={Boolean(selectedJobDetail)}
-                        onClose={() => setSelectedJobDetail(null)}
-                        variant="center"
-                        jobs={heroDetailJobs}
-                        currentJobIndex={currentHeroJobIndex}
-                        onNavigateJob={(direction) => {
-                            if (!heroDetailJobs.length) return
-                            const safeCurrentIndex = currentHeroJobIndex >= 0 ? currentHeroJobIndex : 0
-                            const nextIndex = direction === 'prev'
-                                ? (safeCurrentIndex - 1 + heroDetailJobs.length) % heroDetailJobs.length
-                                : (safeCurrentIndex + 1) % heroDetailJobs.length
-                            const nextJob = heroDetailJobs[nextIndex]
-                            if (nextJob) openHeroJobDetail(nextJob)
-                        }}
-                    />
-                </Suspense>
-            )}
+            {jobDetailDialog}
             {showUpgradeFeedbackModal && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
                     <button
@@ -3073,7 +3299,7 @@ function CopilotPlanModal({
             summary: '当前预览版主要基于你的岗位偏好生成，用来帮助你先判断是否值得投入远程求职准备。登录并上传简历后，适配判断会更具体。',
             strengths: ['方向已经明确，便于快速建立岗位画像。'],
             risks: ['尚未结合真实工作背景，适配度判断偏保守。', '英语表达和英文面试能力需要进一步验证。'],
-            action_focus: ['先登录并保存简历，再生成更贴合背景的完整方案。', '优先准备英文自我介绍与项目案例。'],
+            action_focus: ['登录并保存简历后，可生成更贴合个人背景的完整方案。', '优先准备英文自我介绍与项目案例。'],
         },
         english_interview: {
             summary: '以下为预览版提纲。登录并上传简历后可生成 5 道更贴合你的问题。',
@@ -3081,7 +3307,7 @@ function CopilotPlanModal({
             member_maximum: 30,
             resume_personalized: false,
             questions: [
-                { id: 'q1', question: 'Can you introduce yourself in one minute and explain why you want a remote role?', focus: '英文自我介绍', hint: '先讲当前角色，再讲转向远程岗位的原因。' },
+                { id: 'q1', question: 'Can you introduce yourself in one minute and explain why you want a remote role?', focus: '英文自我介绍', hint: '用当前角色开场，并说明转向远程岗位的原因。' },
                 { id: 'q2', question: 'What project best shows your ability to work across teams?', focus: '项目经历', hint: '突出职责、协作对象和结果。' },
                 { id: 'q3', question: 'How do you stay aligned with teammates when working remotely?', focus: '远程协作', hint: '强调异步沟通、文档和反馈节奏。' },
             ],
@@ -3094,14 +3320,14 @@ function CopilotPlanModal({
         <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && handleModalClose()}>
             <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={handleModalClose} />
             <div className="relative w-full max-w-4xl max-h-[88vh] bg-white rounded-3xl shadow-2xl flex flex-col overflow-hidden">
-                <div className="bg-indigo-600 text-white px-6 py-5 flex items-center justify-between flex-shrink-0">
+                <div className="bg-[#466f9d] text-white px-6 py-5 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center">
                             <Sparkles className="w-4 h-4 text-white" />
                         </div>
                         <div>
                             <h2 className="text-lg font-bold text-white">远程求职助手</h2>
-                            <p className="text-indigo-100 text-xs">{isAuthenticated ? '你的求职方案' : '先看预览，登录解锁完整方案'}</p>
+                            <p className="text-[#dce9f5] text-xs">{isAuthenticated ? '你的求职方案' : '先看预览，登录解锁完整方案'}</p>
                         </div>
                     </div>
                     <button onClick={handleModalClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors">
@@ -3111,16 +3337,16 @@ function CopilotPlanModal({
 
                 <div className="overflow-y-auto overscroll-contain flex-1 p-6 space-y-6">
                     {!isAuthenticated ? (
-                        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div className="bg-[#eff5fb] border border-[#dce9f5] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
-                                <div className="text-sm font-bold text-indigo-900">登录获取完整方案</div>
-                                <div className="text-xs text-indigo-700 mt-0.5">完整方案 + 更多推荐 + 更具体的建议</div>
+                                <div className="text-sm font-bold text-[#243f5c]">登录获取完整方案</div>
+                                <div className="text-xs text-[#345d88] mt-0.5">完整方案 + 更多推荐 + 更具体的建议</div>
                             </div>
-                            <Link to="/login" onClick={onClose} className="px-4 py-2 bg-white text-indigo-700 border border-indigo-200 rounded-xl text-sm font-semibold hover:bg-indigo-50 transition-colors text-center">登录解锁</Link>
+                            <Link to="/login" onClick={onClose} className="px-4 py-2 bg-white text-[#345d88] border border-[#c9dce8] rounded-xl text-sm font-semibold hover:bg-[#eff5fb] transition-colors text-center">登录解锁</Link>
                         </div>
                     ) : null}
 
-                    <div className="bg-white border border-indigo-100 rounded-2xl p-4">
+                    <div className="bg-white border border-[#dce9f5] rounded-2xl p-4">
                         <div className="flex items-center justify-between mb-3 gap-3">
                             <div>
                                 <div className="text-sm font-bold text-slate-900">默认参考项</div>
@@ -3131,7 +3357,7 @@ function CopilotPlanModal({
                                     type="button"
                                     onClick={() => setPlanReloadTick(v => v + 1)}
                                     disabled={planLoading}
-                                    className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:opacity-60 transition-colors"
+                                    className="px-4 py-2 rounded-xl bg-[#466f9d] text-white text-sm font-semibold hover:bg-[#345d88] disabled:opacity-60 transition-colors"
                                 >
                                     {planLoading ? '重新生成中...' : '按当前设置重新生成'}
                                 </button>
@@ -3152,7 +3378,7 @@ function CopilotPlanModal({
                                         disabled={!canCustomizeDefaults}
                                         className={`w-full rounded-xl border px-3 py-2.5 text-sm transition-colors ${
                                             canCustomizeDefaults
-                                                ? 'border-slate-200 bg-white text-slate-800 focus:border-indigo-400 focus:outline-none'
+                                                ? 'border-slate-200 bg-white text-slate-800 focus:border-[#7f9fbc] focus:outline-none'
                                                 : 'border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed'
                                         }`}
                                     >
@@ -3168,13 +3394,13 @@ function CopilotPlanModal({
                                 ? '登录后生成完整方案'
                                 : canCustomizeDefaults
                                     ? '可改默认项'
-                                    : '会员可改默认项'}
+                                    : '当前不可修改默认项'}
                         </div>
                     </div>
 
                     {isAuthenticated ? (
                         isMember ? (
-                            <div className="bg-gradient-to-r from-emerald-50 to-indigo-50 border border-emerald-100 rounded-2xl p-4">
+                            <div className="bg-gradient-to-r from-emerald-50 to-[#eff5fb] border border-emerald-100 rounded-2xl p-4">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                                     <div>
                                         <div className="text-sm font-bold text-slate-900">会员能力已解锁</div>
@@ -3183,7 +3409,7 @@ function CopilotPlanModal({
                                     <Link to="/profile?tab=custom-plan" onClick={handleModalClose} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 transition-colors no-underline hover:no-underline">去个人中心继续打磨</Link>
                                 </div>
                             </div>
-                        ) : (
+                        ) : COMPLIANCE_FEATURES.membershipPromotionBanners ? (
                             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
                                     <div className="text-sm font-bold text-slate-900">添加顾问了解后可继续完善方案</div>
@@ -3191,13 +3417,13 @@ function CopilotPlanModal({
                                 </div>
                                 <Link to="/profile?tab=membership#club-service-plans" onClick={handleModalClose} className="px-4 py-2 bg-white text-amber-700 border border-amber-200 rounded-xl text-sm font-semibold hover:bg-amber-100 transition-colors text-center no-underline hover:no-underline">查看权益方案</Link>
                             </div>
-                        )
+                        ) : null
                     ) : null}
 
                     {planLoading && isAuthenticated ? (
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-6">
                             <div className="flex items-center gap-3 text-sm text-slate-600">
-                                <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
+                                <Loader2 className="w-4 h-4 animate-spin text-[#466f9d]" />
                                 <span className="font-medium text-slate-700">方案生成中</span>
                             </div>
                             <div className="text-xs text-slate-500 mt-2 leading-relaxed">

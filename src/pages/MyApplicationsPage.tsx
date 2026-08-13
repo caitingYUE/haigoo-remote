@@ -100,7 +100,7 @@ export default function MyApplicationsPage() {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'applied': return 'bg-blue-100 text-blue-800';
-      case 'interviewing': return 'bg-purple-100 text-purple-800';
+      case 'interviewing': return 'bg-[#fff8e8] text-[#6f4711]';
       case 'offer': return 'bg-green-100 text-green-800';
       case 'rejected': return 'bg-red-100 text-red-800';
       default: return 'bg-slate-100 text-slate-800';
@@ -128,13 +128,13 @@ export default function MyApplicationsPage() {
           </div>
           <div className="bg-white px-4 py-2 rounded-lg shadow-sm border border-slate-200">
             <span className="text-sm text-slate-500">共投递</span>
-            <span className="ml-2 text-xl font-bold text-indigo-600">{applications.length}</span>
+            <span className="ml-2 text-xl font-bold text-[#466f9d]">{applications.length}</span>
           </div>
         </div>
 
         {loading ? (
           <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-2 border-indigo-600 border-t-transparent mx-auto"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-2 border-[#466f9d] border-t-transparent mx-auto"></div>
             <p className="mt-4 text-slate-500">加载记录中...</p>
           </div>
         ) : applications.length === 0 ? (
@@ -146,7 +146,7 @@ export default function MyApplicationsPage() {
             <p className="text-slate-500 mb-6">您还没有申请过任何职位，快去浏览机会吧！</p>
             <button 
               onClick={() => navigate('/jobs')}
-              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+              className="px-6 py-2 bg-[#466f9d] text-white rounded-lg hover:bg-[#345d88] transition-colors font-medium"
             >
               浏览职位
             </button>
@@ -160,13 +160,13 @@ export default function MyApplicationsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-1">
                         <h3 
-                          className="text-lg font-bold text-slate-900 hover:text-indigo-600 cursor-pointer"
+                          className="text-lg font-bold text-slate-900 hover:text-[#466f9d] cursor-pointer"
                           onClick={() => navigate(`/jobs/${app.jobId}`)}
                         >
                           {app.jobTitle || '未知职位'}
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          (app.applicationSource === 'referral' || app.interactionType === 'referral') ? 'bg-purple-100 text-purple-700' :
+                          (app.applicationSource === 'referral' || app.interactionType === 'referral') ? 'bg-[#fff8e8] text-[#8f5e19]' :
                           app.applicationSource === 'official' ? 'bg-orange-100 text-orange-700' :
                           'bg-slate-100 text-slate-600'
                         }`}>
@@ -203,7 +203,7 @@ export default function MyApplicationsPage() {
                             <button
                               key={status}
                               onClick={() => handleStatusUpdate(app.id, status)}
-                              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 ${app.status === status ? 'text-indigo-600 font-medium' : 'text-slate-600'}`}
+                              className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 ${app.status === status ? 'text-[#466f9d] font-medium' : 'text-slate-600'}`}
                             >
                               {getStatusLabel(status)}
                             </button>

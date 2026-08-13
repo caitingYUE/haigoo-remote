@@ -24,7 +24,7 @@ export function getMatchLevelLabel(level: MatchLevel): string {
 }
 
 export function getMatchLevelClassName(level: MatchLevel): string {
-  if (level === 'high') return 'bg-indigo-50 text-indigo-700 border-indigo-100'
+  if (level === 'high') return 'bg-[#eff5fb] text-[#345d88] border-[#dce9f5]'
   if (level === 'medium') return 'bg-sky-50 text-sky-700 border-sky-100'
   if (level === 'low') return 'bg-slate-100 text-slate-600 border-slate-200'
   return ''

@@ -75,7 +75,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
       />
 
       <div className="relative flex max-h-[88vh] w-full max-w-[520px] flex-col overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_40px_120px_-48px_rgba(15,23,42,0.55)]">
-        <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[linear-gradient(135deg,#0f172a_0%,#312e81_55%,#155e75_100%)] px-6 py-6">
+        <div className="relative flex items-center justify-between overflow-hidden border-b border-white/10 bg-[linear-gradient(135deg,#0f172a_0%,#243f5c_55%,#155e75_100%)] px-6 py-6">
           <div className="absolute inset-0 opacity-20 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
           <div className="absolute -right-10 top-0 h-32 w-32 rounded-full bg-cyan-400/15 blur-3xl"></div>
           
@@ -135,7 +135,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                     type="text"
                     value={formData.contact}
                     onChange={e => setFormData({...formData, contact: e.target.value})}
-                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/20"
                     placeholder="方便我们联系你"
                   />
                 </div>
@@ -148,7 +148,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                     value={formData.experience}
                     onChange={e => setFormData({...formData, experience: e.target.value})}
                     rows={3}
-                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/20"
                     placeholder="例如：5年全栈开发经验，熟悉 React/Node.js，曾在大厂任职..."
                   />
                 </div>
@@ -161,7 +161,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                     value={formData.career_ideal}
                     onChange={e => setFormData({...formData, career_ideal: e.target.value})}
                     rows={2}
-                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                    className="w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm transition-all focus:border-[#587faa] focus:ring-2 focus:ring-[#587faa]/20"
                     placeholder="例如：寻找海外 Web3 初创公司的前端岗位，期望薪资..."
                   />
                 </div>
@@ -170,7 +170,7 @@ export const MembershipApplicationModal: React.FC<MembershipApplicationModalProp
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-200 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#466f9d] to-[#8f5e19] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#c9dce8] transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {submitting ? (
                       <>

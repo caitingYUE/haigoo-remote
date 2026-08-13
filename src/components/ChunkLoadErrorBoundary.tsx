@@ -58,14 +58,14 @@ class ChunkLoadErrorBoundary extends Component<Props, State> {
         return (
           <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
             <div className="text-center max-w-md">
-              <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                <RefreshCw className="w-8 h-8 text-indigo-600 animate-spin" />
+              <div className="w-16 h-16 bg-[#eff5fb] rounded-full flex items-center justify-center mx-auto mb-4">
+                <RefreshCw className="w-8 h-8 text-[#466f9d] animate-spin" />
               </div>
               <h2 className="text-xl font-bold text-slate-900 mb-2">正在更新版本...</h2>
               <p className="text-slate-500 mb-6">我们发布了新版本，正在为您刷新页面以加载最新功能。</p>
               <button
                 onClick={this.handleReload}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+                className="px-6 py-2 bg-[#466f9d] text-white rounded-lg hover:bg-[#345d88] transition-colors font-medium"
               >
                 立即刷新
               </button>
@@ -92,7 +92,7 @@ class ChunkLoadErrorBoundary extends Component<Props, State> {
             <div className="flex gap-3 justify-center">
               <button
                 onClick={this.handleReload}
-                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center gap-2"
+                className="px-6 py-2 bg-[#466f9d] text-white rounded-lg hover:bg-[#345d88] transition-colors font-medium flex items-center gap-2"
               >
                 <RefreshCw className="w-4 h-4" />
                 刷新页面

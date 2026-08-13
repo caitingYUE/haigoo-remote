@@ -510,8 +510,7 @@ export default function MemberEmailSubscriptionCard() {
   }
 
   return (
-    <div className="relative z-10 mt-6 isolate overflow-visible rounded-[26px] border border-[#dbe9f2] bg-[linear-gradient(135deg,#f7fcff_0%,#ffffff_48%,#fffaf1_100%)] px-5 py-5 shadow-[0_18px_48px_-40px_rgba(62,91,120,0.28)] sm:px-6">
-      <div className="pointer-events-none absolute inset-x-5 top-0 h-px bg-[linear-gradient(90deg,rgba(111,99,246,0),rgba(111,99,246,0.35),rgba(240,161,31,0))]" />
+    <div className="hg-member-subscription relative z-10 isolate overflow-visible border border-[#d9d3c9] border-t-2 border-t-[#b7791f] bg-[#fffdf8] px-5 py-5 shadow-[0_18px_48px_-40px_rgba(62,91,120,0.28)] sm:px-6">
       <div className="relative">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
@@ -519,19 +518,19 @@ export default function MemberEmailSubscriptionCard() {
               <h2 className="text-[22px] font-black leading-tight tracking-normal text-slate-950 sm:text-[26px]">
                 {text('订阅你感兴趣的方向，及时接收最新岗位通知', 'Subscribe to the roles you care about')}
               </h2>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e4dfff] bg-[#f4f1ff] px-3 py-1 text-xs font-black text-[#6f63f6] shadow-sm">
+              <span className="inline-flex items-center gap-1.5 border border-[#e7c98e] bg-[#fff8e8] px-3 py-1 text-xs font-black text-[#8f5e19]">
                 <Crown className="h-3.5 w-3.5" />
                 {text('Club 权益', 'Club benefit')}
               </span>
             </div>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">
-              {text(`选择 1-${RECOMMENDED_SUBSCRIPTION_TOPICS} 个岗位方向，当有岗位上新时，我们会发到你的注册邮箱。`, `Choose 1–${RECOMMENDED_SUBSCRIPTION_TOPICS} role categories and receive new matching opportunities at your registered email.`)}
+              {text(`选择 1-${RECOMMENDED_SUBSCRIPTION_TOPICS} 个岗位方向，当有岗位上新时，我们会发到你的注册邮箱。`, `Choose 1-${RECOMMENDED_SUBSCRIPTION_TOPICS} role categories and receive new matching opportunities at your registered email.`)}
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-xs font-bold text-slate-600 xl:justify-end">
             <span className="inline-flex h-9 items-center gap-1.5 rounded-full border border-white bg-white/80 px-3 shadow-sm">
-              <Mail className="h-3.5 w-3.5 text-[#6f63f6]" />
+              <Mail className="h-3.5 w-3.5 text-[#466f9d]" />
               {user?.email || text('登录后使用注册邮箱', 'Log in to use your registered email')}
             </span>
           </div>
@@ -545,7 +544,7 @@ export default function MemberEmailSubscriptionCard() {
             </div>
             <Link
               to="/login"
-              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white no-underline hover:bg-[#6f63f6] hover:no-underline"
+              className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white no-underline hover:bg-[#466f9d] hover:no-underline"
             >
               {text('去登录', 'Log in')}
               <ArrowRight className="h-4 w-4" />
@@ -579,7 +578,7 @@ export default function MemberEmailSubscriptionCard() {
                 <div ref={comboRef} className="relative">
                   <div
                     className={`flex min-h-[48px] items-center gap-2 rounded-2xl border bg-white/96 px-3 py-2 shadow-[0_12px_28px_-26px_rgba(51,65,85,0.45)] transition-colors ${
-                      dropdownOpen ? 'border-[#bdb5ff] ring-2 ring-[#eeeaff]' : 'border-[#e3edf4]'
+                      dropdownOpen ? 'border-[#9fbbd2] ring-2 ring-[#eff5fb]' : 'border-[#d9d3c9]'
                     }`}
                     onClick={() => setDropdownOpen(true)}
                   >
@@ -588,7 +587,7 @@ export default function MemberEmailSubscriptionCard() {
                       {selectedDisplayItems.map(item => (
                         <span
                           key={item.value}
-                          className="inline-flex h-7 max-w-full items-center gap-1.5 rounded-full border border-[#cfc8ff] bg-[#f4f1ff] px-2.5 text-xs font-black text-[#5b50e6]"
+                          className="inline-flex h-7 max-w-full items-center gap-1.5 border border-[#9fbbd2] bg-[#eff5fb] px-2.5 text-xs font-black text-[#466f9d]"
                         >
                           <span className="truncate">{item.label}</span>
                           <button
@@ -597,7 +596,7 @@ export default function MemberEmailSubscriptionCard() {
                               event.stopPropagation()
                               removeSelectedItem(item.value)
                             }}
-                            className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[#7c70f4] hover:bg-white"
+                            className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[#587faa] hover:bg-white"
                             aria-label={text(`移除${item.label}`, `Remove ${item.label}`)}
                           >
                             <X className="h-3 w-3" />
@@ -654,7 +653,7 @@ export default function MemberEmailSubscriptionCard() {
                               }}
                               className={`mb-1 w-full rounded-xl px-3 py-2.5 text-left text-xs font-black transition-colors ${
                                 !normalizedSearchTerm && activeTopicGroup === index
-                                  ? 'bg-white text-[#5b50e6] shadow-sm'
+                                  ? 'bg-white text-[#466f9d] shadow-sm'
                                   : 'text-slate-500 hover:bg-white/80 hover:text-slate-900'
                               }`}
                             >
@@ -671,7 +670,7 @@ export default function MemberEmailSubscriptionCard() {
                               onClick={() => addCustomTopic(searchTerm)}
                               className="mb-2 flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-slate-700 hover:bg-[#f7f9fc]"
                             >
-                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f4f1ff] text-[#6f63f6]">
+                              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eff5fb] text-[#466f9d]">
                                 <Plus className="h-3.5 w-3.5" />
                               </span>
                               <span className="min-w-0 flex-1 truncate">{text(`保留“${searchTerm.trim()}”`, `Keep “${searchTerm.trim()}”`)}</span>
@@ -689,17 +688,17 @@ export default function MemberEmailSubscriptionCard() {
                                   onClick={() => toggleTopic(topic.value)}
                                   className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition-colors ${
                                     checked
-                                      ? 'bg-[#f4f1ff] font-black text-[#5b50e6]'
+                                      ? 'bg-[#eff5fb] font-black text-[#466f9d]'
                                       : 'font-bold text-slate-700 hover:bg-[#f7f9fc]'
                                   }`}
                                 >
                                   <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
-                                    checked ? 'border-[#6f63f6] bg-[#6f63f6] text-white' : 'border-[#cfdbe6] bg-white'
+                                    checked ? 'border-[#466f9d] bg-[#466f9d] text-white' : 'border-[#cfdbe6] bg-white'
                                   }`}>
                                     {checked ? <CheckCircle2 className="h-3.5 w-3.5" /> : null}
                                   </span>
                                   <span className="min-w-0 flex-1 truncate">{topic.label}</span>
-                                  {checked ? <span className="text-xs font-black text-[#7c70f4]">{text('已选', 'Selected')}</span> : null}
+                                  {checked ? <span className="text-xs font-black text-[#587faa]">{text('已选', 'Selected')}</span> : null}
                                 </button>
                               )
                             }) : (
@@ -720,7 +719,7 @@ export default function MemberEmailSubscriptionCard() {
                   type="button"
                   onClick={saveSubscription}
                   disabled={saving || loading}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-black text-white transition-colors hover:bg-[#6f63f6] disabled:opacity-60"
+                  className="inline-flex h-12 items-center justify-center gap-2 bg-[#466f9d] px-5 text-sm font-black text-white transition-colors hover:bg-[#345d88] disabled:opacity-60"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
                   {text('保存订阅', 'Save subscription')}
