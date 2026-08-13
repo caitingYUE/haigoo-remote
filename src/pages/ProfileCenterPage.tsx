@@ -3481,10 +3481,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       <section className="hg-workspace-usage-note" aria-labelledby="application-limit-note-title">
         <div>
           <span className="hg-product-kicker">OPEN INFORMATION · 使用说明</span>
-          <h2 id="application-limit-note-title">{text('为什么设置每月申请次数？', 'Why is there a monthly application allowance?')}</h2>
+          <h2 id="application-limit-note-title">{text('为什么免费了却限定申请次数？', 'Why is there an application limit even though the service is free?')}</h2>
           <p>{text(
-            '我们持续免费公开岗位信息，希望提供更多选择。每月申请次数用于减少批量抓取、滥用和无关投递，让真实申请可以正常进行。',
-            'We keep role information freely available to offer more choice. The monthly allowance reduces bulk scraping, abuse, and irrelevant submissions so genuine applications can continue normally.'
+            '我们花了很多精力持续整理信息，免费开放是希望为更多国人打开职业可能性。限定次数是为了避免数据盗取、恶意滥用和大量无关投递阻塞申请通道等情况发生，让真正有需要的人申请。',
+            'We put substantial effort into continuously curating this information. Keeping it free helps open up more career possibilities for Chinese professionals. The application limit helps prevent data theft, abuse, and large volumes of irrelevant submissions from blocking the application channel, so people with genuine needs can apply.'
           )}</p>
         </div>
         <button
