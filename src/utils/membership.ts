@@ -89,7 +89,7 @@ function deriveMemberTier(user?: any): MemberTier {
 
 export function deriveMembershipCapabilities(user?: any): MembershipCapabilities {
   const isActive = isMembershipActive(user)
-  const memberType = resolveMemberTypeFromUser(user)
+  const memberType = isActive ? resolveMemberTypeFromUser(user) : 'none'
   const memberTier = deriveMemberTier(user)
   const isTrialMember = isActive && memberType === 'trial_week'
   const isFullMember = isActive && memberTier === 'full'

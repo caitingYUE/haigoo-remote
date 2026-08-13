@@ -1487,7 +1487,7 @@
   display: grid;
   margin: 0 0 2.5rem;
   border-bottom: 1px solid var(--hg-border-default);
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
 .hg-profile-home-stat {

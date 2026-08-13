@@ -1240,7 +1240,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }
 
   useEffect(() => {
-    if (publicAboutOnly || tab !== 'membership') return
+    if (publicAboutOnly) return
     let mounted = true
 
     const fetchMembershipPlans = async () => {
@@ -1287,13 +1287,15 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
       }
     }
 
-    fetchMembershipPlans()
+    if (tab === 'membership') fetchMembershipPlans()
     fetchMembershipStatus()
-    trackingService.featureExposure('membership_center', {
-      page_key: 'profile',
-      module: 'profile_membership',
-      source_key: 'profile_membership_tab'
-    })
+    if (tab === 'membership') {
+      trackingService.featureExposure('membership_center', {
+        page_key: 'profile',
+        module: 'profile_membership',
+        source_key: 'profile_membership_tab'
+      })
+    }
 
     return () => {
       mounted = false
@@ -1326,9 +1328,9 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     }
   }, [authUser?.user_id, isAuthenticated, isMember, latestResume?.id, tab, token])
 
-  const activeMemberType = membershipStatus?.memberType || authUser?.memberType
-  const activeMembershipExpireAt = membershipStatus?.expireAt || authUser?.memberExpireAt
-  const upcomingMembershipEntitlements: UpcomingMembershipEntitlement[] = Array.isArray(membershipStatus?.upcomingEntitlements)
+  const activeMemberType = isMember ? (membershipStatus?.memberType || authUser?.memberType) : 'none'
+  const activeMembershipExpireAt = isMember ? (membershipStatus?.expireAt || authUser?.memberExpireAt) : null
+  const upcomingMembershipEntitlements: UpcomingMembershipEntitlement[] = isMember && Array.isArray(membershipStatus?.upcomingEntitlements)
     ? membershipStatus.upcomingEntitlements
     : []
   const membershipQueueEndAt = [activeMembershipExpireAt, ...upcomingMembershipEntitlements.map(item => item.expiresAt)]
@@ -2135,7 +2137,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
 
   useEffect(() => {
-    const shouldLoadUnifiedHomeFavorites = usesUnifiedNonMemberHome && tab === 'resume'
+    const shouldLoadUnifiedHomeFavorites = tab === 'resume'
     if ((tab !== 'favorites' && !shouldLoadUnifiedHomeFavorites) || favoriteSubTab !== 'jobs') return
     ; (async () => {
       try {
@@ -2174,7 +2176,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }, [authUser?.user_id, favoriteSubTab, tab, token, usesUnifiedNonMemberHome])
 
   useEffect(() => {
-    const shouldLoadUnifiedHomeFavorites = usesUnifiedNonMemberHome && tab === 'resume'
+    const shouldLoadUnifiedHomeFavorites = tab === 'resume'
     if ((tab !== 'favorites' && !shouldLoadUnifiedHomeFavorites) || favoriteSubTab !== 'audio') return
     ; (async () => {
       try {
@@ -2195,7 +2197,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
   }, [authUser?.user_id, favoriteSubTab, tab, token, usesUnifiedNonMemberHome])
 
   useEffect(() => {
-    if (tab !== 'applications' && !(usesUnifiedNonMemberHome && tab === 'resume')) return
+    if (tab !== 'applications' && tab !== 'resume') return
     ; (async () => {
       if (!authUser || !token) {
         setApplicationCount(null)
@@ -3758,36 +3760,73 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     )
   }
 
+  const membershipExpireDate = activeMembershipExpireAt ? new Date(activeMembershipExpireAt) : null
+  const membershipExpireLabel = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
+    ? membershipExpireDate.toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')
+    : text('长期有效', 'No expiration')
+  const membershipStatusExpireLabel = isMember ? membershipExpireLabel : text('在线付款或顾问协助', 'Pay online or ask an advisor')
+  const membershipRemainingMs = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
+    ? Math.max(0, membershipExpireDate.getTime() - Date.now())
+    : null
+  const membershipDaysRemaining = membershipRemainingMs !== null
+    ? Math.ceil(membershipRemainingMs / (24 * 60 * 60 * 1000))
+    : null
+  const membershipRemainingLabel = !isMember
+    ? text('未开通', 'Not active')
+    : membershipRemainingMs === null
+      ? text('无限期', 'No expiry')
+      : membershipRemainingMs < 24 * 60 * 60 * 1000
+        ? text(`${Math.max(1, Math.ceil(membershipRemainingMs / (60 * 60 * 1000)))} 小时`, `${Math.max(1, Math.ceil(membershipRemainingMs / (60 * 60 * 1000)))} hours`)
+        : text(`${Math.max(0, Math.ceil(membershipRemainingMs / (24 * 60 * 60 * 1000)))} 天`, `${Math.max(0, Math.ceil(membershipRemainingMs / (24 * 60 * 60 * 1000)))} days`)
+
   const rawDisplayName = authUser?.profile?.fullName || authUser?.username || authUser?.email?.split('@')[0] || '朋友'
   const displayName = formatDisplayName(rawDisplayName, activeMemberType)
   const currentHour = new Date().getHours()
   const greeting = currentHour < 12 ? '上午好' : currentHour < 18 ? '下午好' : '晚上好'
   const homeStats = [
     {
-      label: '收藏岗位',
+      label: '收藏的机会',
       value: favoritesWithStatus.length,
       icon: Heart,
-      tint: 'bg-[#fff0f4] text-[#ef668f]'
+      tint: 'bg-[#fff0f4] text-[#ef668f]',
+      action: () => switchTab('favorites')
     },
-    {
-      label: '简历状态',
-      value: latestResume ? '已上传' : '待上传',
-      icon: FileText,
-      tint: 'bg-[#edf7ff] text-[#4b95e8]'
-    },
-      {
-        label: '咨询服务',
-        value: isMember ? (isTrialMember ? '体验可用' : '服务可用') : '了解服务',
-        icon: MessageSquare,
-        tint: 'bg-[#eff5fb] text-[#466f9d]'
-      },
     {
       label: '申请记录',
       value: loadingApplicationCount ? '读取中' : applicationCount == null ? '暂不可用' : applicationCount,
       icon: Clock,
-      tint: 'bg-[#fff7dc] text-[#c78b1d]'
+      tint: 'bg-[#fff7dc] text-[#c78b1d]',
+      action: () => switchTab('applications')
+    },
+    {
+      label: '职业成长',
+      value: '全开放',
+      icon: Sparkles,
+      tint: 'bg-[#edf7ff] text-[#4b95e8]',
+      action: () => navigate('/careerlearning')
+    },
+    {
+      label: '岗位申请次数',
+      value: '无限次',
+      icon: Briefcase,
+      tint: 'bg-[#eff5fb] text-[#466f9d]',
+      action: () => navigate('/jobs')
+    },
+    {
+      label: '咨询服务',
+      value: '服务可用',
+      icon: MessageSquare,
+      tint: 'bg-[#f1f6f2] text-[#31594e]',
+      action: () => switchTab('membership')
+    },
+    {
+      label: '会员剩余时间',
+      value: membershipRemainingLabel,
+      icon: Crown,
+      tint: 'bg-[#fff7dc] text-[#b7791f]',
+      action: () => switchTab('membership')
     }
-    ]
+  ]
     const activeMemberLabel = activeMemberType === 'trial_week'
       ? text('体验会员', 'Trail member')
       : activeMemberType === 'starter'
@@ -3928,14 +3967,6 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             ['CEO 商业思维', '视频、企业文化、CEO 思维和跟读素材已开放']
         ]
       }
-  const membershipExpireDate = activeMembershipExpireAt ? new Date(activeMembershipExpireAt) : null
-  const membershipExpireLabel = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
-    ? membershipExpireDate.toLocaleDateString(isEnglish ? 'en-US' : 'zh-CN')
-    : text('长期有效', 'No expiration')
-  const membershipStatusExpireLabel = isMember ? membershipExpireLabel : text('在线付款或顾问协助', 'Pay online or ask an advisor')
-  const membershipDaysRemaining = membershipExpireDate && !Number.isNaN(membershipExpireDate.getTime())
-    ? Math.ceil((membershipExpireDate.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
-    : null
   const shouldShowRenewalPlans = !isMember || (membershipDaysRemaining !== null && membershipDaysRemaining <= 14)
   const isQuarterMember = activeMemberType === 'quarter' || activeMemberType === 'quarter_pro'
   const isAnnualClubMember = activeMemberType === 'annual' || activeMemberType === 'year'
@@ -5794,11 +5825,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                       <button
                         key={item.label}
                         type="button"
-                        onClick={() => {
-                          if (item.label === '收藏岗位') switchTab('favorites')
-                          if (item.label === '咨询服务') switchTab('membership')
-                          if (item.label === '申请记录') switchTab('applications')
-                        }}
+                        onClick={item.action}
                         className="hg-profile-home-stat"
                       >
                         <span>

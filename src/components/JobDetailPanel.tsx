@@ -2168,7 +2168,7 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                         )}
                                     </div>
                                     <p className={`mt-2 text-xs leading-6 text-slate-600 md:text-[13px] ${showCloseButton && !showInlineNavigation ? 'sm:truncate' : ''}`}>
-                                        选择下方公开邮箱或招聘联系人发送申请材料。已经开放的信息会继续保留在当前岗位中。
+                                        选择下方公开邮箱或招聘联系人发送申请材料。
                                     </p>
                                 </div>
 

@@ -109,6 +109,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [refreshUserSilently])
 
+  // Admin entitlement changes must become visible without requiring a full reload.
+  useEffect(() => {
+    if (!token) return
+
+    const refreshOnReturn = () => {
+      if (document.visibilityState === 'visible') refreshUserSilently(token)
+    }
+
+    window.addEventListener('focus', refreshOnReturn)
+    document.addEventListener('visibilitychange', refreshOnReturn)
+    return () => {
+      window.removeEventListener('focus', refreshOnReturn)
+      document.removeEventListener('visibilitychange', refreshOnReturn)
+    }
+  }, [refreshUserSilently, token])
+
   
 
   // 刷新用户信息（显式调用）
