@@ -1300,6 +1300,45 @@
   background: transparent;
 }
 
+/* Bundles use two scroll regions on desktop, but stay a normal document on touch screens. */
+@media (max-width: 1023px) {
+  .hg-layout-bundle.h-screen {
+    height: auto !important;
+    min-height: 100dvh;
+  }
+
+  .hg-layout-bundle.overflow-hidden,
+  .hg-layout-bundle main.overflow-hidden {
+    overflow: visible !important;
+  }
+
+  .hg-layout-bundle main > .h-full {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .hg-bundle-page,
+  .hg-bundle-shell,
+  .hg-bundle-columns,
+  .hg-bundle-column,
+  .hg-bundle-plan {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
+  .hg-bundle-shell {
+    padding-bottom: 2.5rem !important;
+  }
+
+  .hg-bundle-plan {
+    border-left: 0 !important;
+    border-top: 1px solid var(--hg-border-default);
+    padding: 1.5rem 0 0 !important;
+  }
+}
+
 .hg-bundle-hero h1,
 .hg-bundle-jobs h2,
 .hg-bundle-plan h2 {
@@ -1954,6 +1993,63 @@
 
   .hg-consulting-outcome {
     grid-template-columns: 2.5rem minmax(0, 1fr);
+  }
+
+  .hg-auth-page {
+    align-items: flex-start;
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .hg-auth-brand {
+    margin-bottom: 1.1rem;
+  }
+
+  .hg-auth-brand img {
+    height: 2.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .hg-auth-brand h1 {
+    font-size: 1.7rem;
+  }
+
+  .hg-auth-card {
+    padding: 1.25rem !important;
+  }
+
+  .hg-club-application-page {
+    width: 100%;
+  }
+
+  .hg-club-application-page-shell {
+    padding-top: 1.25rem !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .hg-club-application-form {
+    padding: 1.25rem !important;
+  }
+
+  .hg-club-application-form > * + * {
+    margin-top: 1.5rem !important;
+  }
+
+  .hg-club-application-page > div > div:first-child {
+    padding: 1.5rem 1.25rem !important;
+  }
+
+  .hg-club-application-page > div > div:first-child h1 {
+    font-size: 1.65rem;
+    line-height: 1.2;
+  }
+
+  .hg-club-application-page textarea {
+    min-height: 7rem;
+  }
+
+  .hg-club-application-page button[type="submit"] {
+    min-height: 3rem;
+    width: 100%;
   }
 }
 

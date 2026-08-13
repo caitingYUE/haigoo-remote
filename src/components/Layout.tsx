@@ -85,7 +85,7 @@ export default function Layout({ children }: LayoutProps) {
   }, [showUpgradeNotice])
 
   return (
-    <div className={`${lockViewport ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[var(--hg-bg-page)]`}>
+    <div className={`${isBundle ? 'hg-layout-bundle' : ''} ${lockViewport ? 'h-screen overflow-hidden' : 'min-h-screen'} flex flex-col bg-[var(--hg-bg-page)]`}>
       {showUpgradeNotice && (
         <div className="fixed inset-x-0 top-0 z-[70] bg-slate-900/92 text-white backdrop-blur-md">
           <div className="mx-auto flex h-10 max-w-7xl items-center justify-center px-4 text-center text-sm font-medium">

@@ -85,8 +85,8 @@ export default function JoinClubApplicationPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="hg-club-application-page-shell min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="hg-club-application-page max-w-3xl mx-auto">
         <button
           onClick={() => navigate('/')}
           className="flex items-center text-slate-500 hover:text-slate-900 transition-colors mb-8"
@@ -103,7 +103,7 @@ export default function JoinClubApplicationPage() {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-8">
+          <form onSubmit={handleSubmit} className="hg-club-application-form p-8 space-y-8">
             {/* Section 1: Professional Background */}
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-900 border-l-4 border-[#466f9d] pl-3">职业背景</h3>

@@ -1483,6 +1483,19 @@
     -webkit-line-clamp: 2;
   }
 
+  /* Keep the mobile hero focused on search and role discovery. */
+  .haigoo-home__hero-grid {
+    display: block;
+  }
+
+  .haigoo-home__hero-copy {
+    width: 100%;
+  }
+
+  .haigoo-home__story {
+    display: none;
+  }
+
   .haigoo-home__company-meta {
     display: none;
   }
