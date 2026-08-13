@@ -350,7 +350,7 @@ export default function JobBundleDetailPage() {
   return (
     <div className="hg-bundle-page min-h-screen">
       <main className="hg-bundle-shell mx-auto max-w-[1560px] px-4 pb-16 pt-24 sm:px-8">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:items-start">
+        <div className="hg-bundle-columns grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:items-start">
         <section className="hg-bundle-column min-w-0">
         <div>
         <button onClick={handleBack}
@@ -438,7 +438,7 @@ export default function JobBundleDetailPage() {
         </div>
         </section>
 
-        <aside className="hg-bundle-plan relative border-l border-[#deddd7] pl-7 lg:sticky lg:top-24">
+        <aside className="hg-bundle-plan relative border-l border-[#deddd7] pl-7">
           <div className="border-y border-[#deddd7] py-6">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">

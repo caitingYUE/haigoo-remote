@@ -43,7 +43,7 @@ export default function Layout({ children }: LayoutProps) {
   const showFooterMembershipCta = !(isCompanies || isBundle || (!isAuthenticated && isJobDetailPage))
   // Desktop comparison/reading workspaces need two independently scrollable
   // columns. Mobile and tablet keep the simpler document scroll model.
-  const lockViewport = isDesktopViewport && (isJobsPage || isCareerWatchPage)
+  const lockViewport = isDesktopViewport && (isJobsPage || isCareerWatchPage || isBundle)
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)')

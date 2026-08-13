@@ -4818,7 +4818,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
             ) : null}
 
             <section ref={memberBenefitsRef} id="member-benefits" className={`hg-member-benefits relative scroll-mt-24 overflow-hidden border ${memberWorkspaceShellClass} p-5 sm:p-6`}>
-              <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+              <div className="hg-member-benefits-heading mb-5 flex flex-wrap items-end justify-between gap-3">
                 <div>
                   <div className="hg-product-kicker">AVAILABLE NOW</div>
                   <h2 className="text-2xl font-black text-slate-950">{text('本期可用服务', 'Services available now')}</h2>

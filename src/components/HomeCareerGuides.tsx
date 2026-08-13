@@ -14,7 +14,10 @@ function formatPublishedDate(value?: string, isEnglish = false) {
   return isEnglish ? date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
-function AccessPill({ accessTier, unlocked, isEnglish }: { accessTier?: string; unlocked: boolean; isEnglish: boolean }) {
+function AccessPill({ accessTier, unlocked, isEnglish, isAuthenticated }: { accessTier?: string; unlocked: boolean; isEnglish: boolean; isAuthenticated: boolean }) {
+  if (!isAuthenticated) {
+    return <span className="hg-career-access hg-career-access--closed">{isEnglish ? 'Log in' : '需登录'}</span>
+  }
   const isOpen = accessTier === 'free' || unlocked
   return (
     <span className={`hg-career-access ${isOpen ? 'hg-career-access--open' : 'hg-career-access--closed'}`}>
@@ -24,7 +27,7 @@ function AccessPill({ accessTier, unlocked, isEnglish }: { accessTier?: string; 
 }
 
 export default function HomeCareerGuides() {
-  const { membershipCapabilities } = useAuth()
+  const { isAuthenticated, membershipCapabilities } = useAuth()
   const { isEnglish, text } = useLanguage()
   const [videos, setVideos] = useState<CorporateEnglishFeaturedVideo[]>([])
   const [loading, setLoading] = useState(true)
@@ -85,7 +88,7 @@ export default function HomeCareerGuides() {
             <div className="haigoo-career__media relative aspect-video overflow-hidden bg-slate-100">
               {video.coverImageUrl ? <img src={video.coverImageUrl} alt="" width={640} height={360} loading="lazy" decoding="async" className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" /> : <span className="flex h-full items-center justify-center text-slate-300"><BookOpen className="h-9 w-9" /></span>}
               <span className="haigoo-career__media-label">{video.moduleLabel}</span>
-              <span className="absolute right-3 top-3"><AccessPill accessTier={video.accessTier} unlocked={membershipCapabilities.canAccessCorporateEnglishVideos} isEnglish={isEnglish} /></span>
+              <span className="absolute right-3 top-3"><AccessPill accessTier={video.accessTier} unlocked={membershipCapabilities.canAccessCorporateEnglishVideos} isEnglish={isEnglish} isAuthenticated={isAuthenticated} /></span>
               {video.hasVideoNotes && video.noteHref ? (
                 <button
                   type="button"

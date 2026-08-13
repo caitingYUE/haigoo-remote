@@ -2137,12 +2137,12 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                     )}
                     {/* Historical email application information — kept above match analysis. */}
                     {canDisplayReferralModule && (
-                        <section>
-                            <div className="rounded-[22px] border border-[#dce8ef] bg-white/92 p-4 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.34)] sm:rounded-[26px] sm:p-5 md:p-6">
+                        <section className="hg-job-email-section">
+                            <div className="hg-job-email-shell rounded-[22px] border border-[#dce8ef] bg-white/92 p-4 shadow-[0_22px_52px_-42px_rgba(52,76,92,0.34)] sm:rounded-[26px] sm:p-5 md:p-6">
                                 <div className="min-w-0">
                                     <div className="flex items-start justify-between gap-3">
-                                        <h3 className="min-w-0 text-[18px] md:text-[20px] font-black tracking-tight text-slate-900">
-                                            邮箱申请 <span className="font-black text-[#466f9d]">@{job.company || companyInfo?.name || '该企业'}</span>
+                                        <h3 className="min-w-0 text-[18px] font-semibold leading-tight tracking-[-0.01em] text-slate-900 md:text-[20px]">
+                                            邮箱申请 <span className="font-semibold text-[#c45b2d]">@{job.company || companyInfo?.name || '该企业'}</span>
                                         </h3>
                                         {hasScrollableReferralContacts && (
                                             <div className="mt-0.5 flex shrink-0 items-center gap-1">
@@ -2175,11 +2175,11 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                 {(() => {
                                     const contactTheme = {
                                         art: '/pic_lists/Jobs_pics/card_bg2.webp',
-                                        shell: 'border-[#dfbd94] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,247,238,0.97))]',
-                                        glow: 'from-[#9b5c20] via-[#c97a36] to-[#e96832]',
-                                        avatar: 'border-[#dfbd94] bg-[linear-gradient(135deg,#9b5c20_0%,#c97a36_58%,#e96832_100%)] text-white',
-                                        icon: 'border-[#dfbd94] bg-[#fff7ee] text-[#784316]',
-                                        chip: 'border-[#dfbd94] bg-[#fff7ee] text-[#784316]'
+                                        shell: 'hg-job-email-card border-[#e7c9ad] bg-[linear-gradient(180deg,rgba(255,255,255,0.99),rgba(255,250,245,0.97))]',
+                                        glow: 'from-[#d49a68] via-[#dca06b] to-[#e96832]',
+                                        avatar: 'border-[#e7c9ad] bg-[linear-gradient(135deg,#b9783c_0%,#d58a4c_58%,#e96832_100%)] text-white',
+                                        icon: 'border-[#e7c9ad] bg-[#fff8f1] text-[#9a5a22]',
+                                        chip: 'border-[#e7c9ad] bg-[#fff8f1] text-[#9a5a22]'
                                     }
 
                                     const handleLockedContactClick = (event: React.MouseEvent, mode: 'guest' | 'verification_required' | 'member_only' | 'free_available' | 'free_exhausted') => {
@@ -2257,10 +2257,10 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                     <span className="block text-[14px] leading-none">{avatarLabel}</span>
                                                                 </div>
                                                                 <div className="min-w-0">
-                                                                    <div className="truncate text-[17px] font-black tracking-tight text-slate-900 leading-tight">
+                                                                    <div className="truncate text-[17px] font-semibold tracking-tight text-slate-900 leading-tight">
                                                                         {displayName}
                                                                     </div>
-                                                                    <div className="truncate text-[13px] font-bold text-slate-500 mt-1">
+                                                                    <div className="truncate text-[13px] font-medium text-slate-500 mt-1">
                                                                         {displayTitle}
                                                                     </div>
                                                                 </div>
@@ -2281,9 +2281,9 @@ export const JobDetailPanel: React.FC<JobDetailPanelProps> = ({
                                                                             event.stopPropagation()
                                                                             openReferralEmailAssistant(contact)
                                                                         }}
-                                                                        className={`flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[13px] font-bold shadow-sm transition-[border-color,background-color,color,box-shadow,transform] duration-200 hover:scale-[1.02] active:scale-[1] ${
+                                                                        className={`flex-1 inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-4 text-[13px] font-semibold shadow-sm transition-[border-color,background-color,color,box-shadow,transform] duration-200 hover:scale-[1.02] active:scale-[1] ${
                                                                             isUnlockedCard
-                                                                                ? 'border-[#9b5c20] bg-[linear-gradient(135deg,#9b5c20_0%,#c97a36_100%)] text-white shadow-[0_18px_32px_-24px_rgba(120,67,22,0.45)]'
+                                                                                ? 'border-[#cf8c58] bg-[#fff1e5] text-[#9a5a22] shadow-[0_12px_28px_-24px_rgba(120,67,22,0.35)] hover:bg-[#ffe8d5]'
                                                                                 : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-900'
                                                                         }`}
                                                                 >

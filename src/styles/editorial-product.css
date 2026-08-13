@@ -1254,6 +1254,40 @@
   color: var(--hg-text-primary);
 }
 
+@media (min-width: 1024px) {
+  .hg-bundle-page,
+  .hg-bundle-shell {
+    min-height: 0 !important;
+    height: 100%;
+  }
+
+  .hg-bundle-shell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hg-bundle-columns {
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .hg-bundle-column,
+  .hg-bundle-plan {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+    scrollbar-color: var(--hg-border-strong) transparent;
+    scrollbar-width: thin;
+  }
+
+  .hg-bundle-plan {
+    position: static !important;
+    padding-bottom: 3rem;
+  }
+}
+
 .hg-bundle-state {
   max-width: 34rem;
   border-top: 2px solid var(--hg-ink-950);
@@ -1279,6 +1313,34 @@
 
 .hg-bundle-back:hover {
   border-bottom-color: currentColor;
+}
+
+.hg-job-email-section {
+  margin-block: 1.5rem 2rem;
+}
+
+.hg-job-email-shell > div:first-child h3 {
+  font-weight: 650 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.hg-job-email-shell > div:first-child h3 span {
+  color: #c45b2d !important;
+  font-weight: 650 !important;
+}
+
+.hg-job-email-card {
+  box-shadow: 0 12px 28px -24px rgba(120, 67, 22, 0.28) !important;
+}
+
+.hg-member-benefits-heading {
+  padding-inline: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .hg-member-benefits-heading {
+    padding-inline: 1.5rem;
+  }
 }
 
 @media (max-width: 1023px) {
