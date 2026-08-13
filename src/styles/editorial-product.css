@@ -1268,7 +1268,9 @@
 
   .hg-bundle-columns {
     min-height: 0;
-    flex: 1;
+    flex: 1 1 auto;
+    grid-template-rows: minmax(0, 1fr);
+    align-items: stretch !important;
     overflow: hidden;
   }
 

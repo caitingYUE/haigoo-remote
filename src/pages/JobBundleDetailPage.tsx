@@ -350,7 +350,7 @@ export default function JobBundleDetailPage() {
   return (
     <div className="hg-bundle-page min-h-screen">
       <main className="hg-bundle-shell mx-auto max-w-[1560px] px-4 pb-16 pt-24 sm:px-8">
-        <div className="hg-bundle-columns grid gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:items-start">
+        <div className="hg-bundle-columns grid min-h-0 gap-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(22rem,0.75fr)] lg:grid-rows-[minmax(0,1fr)] lg:items-stretch">
         <section className="hg-bundle-column min-w-0">
         <div>
         <button onClick={handleBack}
