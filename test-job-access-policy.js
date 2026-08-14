@@ -12,6 +12,7 @@ const miniGateway = read('lib/api-handlers/mini-gateway.js')
 const detail = read('src/components/JobDetailPanel.tsx')
 const detailPage = read('src/pages/JobDetailPage.tsx')
 const filters = read('src/components/JobFilterBar.tsx')
+const linkVerifier = read('lib/cron-handlers/stream-verify-links.js')
 
 assert.ok(
   processedJobs.includes('COALESCE(${JOBS_TABLE}.member_only, false) = false'),
@@ -65,6 +66,10 @@ assert.ok(
 assert.ok(
   filters.includes('COMPLIANCE_FEATURES.memberOnlyJobFilter && isMember'),
   'Club filter must not be visible to guests or free accounts'
+)
+assert.ok(
+  linkVerifier.includes("NULLIF(BTRIM(url), '') IS NOT NULL"),
+  'link verification must not deactivate email-only roles that intentionally have no website URL'
 )
 
 console.log('Job access policy tests passed.')
