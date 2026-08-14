@@ -15,6 +15,12 @@ const EXPERIENCE_LEVEL_MAP: Record<string, string> = {
   'executive': '高管'
 };
 
+const CAREER_MODULE_LABELS: Record<string, string> = {
+  ceo: 'CEO 访谈',
+  remote_preparation: '远程准备',
+  corporate_english: '企业英语',
+};
+
 interface JobBundle {
   id: number;
   title: string;
@@ -515,7 +521,7 @@ const AdminJobBundles: React.FC = () => {
                   {loadingCareerVideos ? <div className="p-3 text-sm text-slate-400">加载中...</div> : careerVideos.map(video => (
                     <button type="button" key={video.video_id} onClick={() => addCareerVideo(video)} disabled={careerItems.some(item => item.video_id === video.video_id)} className="career-video-option">
                       <Video className="h-4 w-4 shrink-0" />
-                      <span className="min-w-0 flex-1 text-left"><b>{video.video_title}</b><small>{video.module_key} {video.category ? `· ${video.category}` : ''}</small></span>
+                      <span className="min-w-0 flex-1 text-left"><b>{video.video_title}</b><small>{CAREER_MODULE_LABELS[video.module_key] || video.module_key} {video.category ? `· ${video.category}` : ''}</small></span>
                       <Plus className="h-4 w-4" />
                     </button>
                   ))}

@@ -173,6 +173,25 @@ function editableHtmlToPlainText(html: string) {
   return (temp.textContent || '').replace(/\u00a0/g, ' ').replace(/\n{3,}/g, '\n\n').trim()
 }
 
+async function copyText(value: string) {
+  if (!value) return false
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value)
+    return true
+  }
+
+  const textarea = document.createElement('textarea')
+  textarea.value = value
+  textarea.setAttribute('readonly', '')
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  const copied = document.execCommand('copy')
+  textarea.remove()
+  return copied
+}
+
 export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
   isOpen,
   onClose,
@@ -303,7 +322,7 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
 
   const handleCopy = async (field: 'email' | 'subject' | 'body', value: string) => {
     try {
-      await navigator.clipboard.writeText(value)
+      if (!await copyText(value)) throw new Error('Copy is unavailable')
       setCopiedField(field)
       window.setTimeout(() => setCopiedField((current) => (current === field ? null : current)), 1500)
     } catch (_error) {
@@ -346,27 +365,28 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
   if (!isOpen || !contact) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[2100] flex items-center justify-center bg-[#182033]/55 p-4">
       <div className="absolute inset-0" onClick={onClose} />
-        <div className="relative z-10 flex max-h-[92vh] w-full max-w-[820px] flex-col overflow-hidden rounded-[28px] border border-white/60 bg-white shadow-[0_50px_120px_-42px_rgba(15,23,42,0.45)]">
-          <div className="flex items-start justify-between border-b border-slate-100 px-6 py-5">
+        <div className="relative z-10 flex max-h-[92vh] w-full max-w-[900px] flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-[0_32px_88px_-28px_rgba(15,23,42,0.5)]">
+          <div className="flex items-start justify-between border-b border-slate-200 px-6 py-5 sm:px-8">
             <div className="min-w-0">
-              <h3 className="text-[26px] font-black tracking-tight text-slate-950">一键邮箱直申</h3>
+              <p className="text-xs font-bold tracking-[0.12em] text-[#d45525]">EMAIL APPLICATION</p>
+              <h3 className="mt-1 text-[26px] font-black text-slate-950">邮箱申请</h3>
               <p className="mt-2 text-sm leading-6 text-slate-500">
-                下面是可直接使用的英文邮件内容。打开邮箱后，请手动添加简历附件再发送。
+                可直接打开邮箱，也可复制收件邮箱后使用任意邮件服务发送。发送前请手动添加简历附件。
               </p>
             </div>
           <button
             type="button"
             onClick={onClose}
-            className="ml-4 inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition-colors hover:border-slate-300 hover:text-slate-700"
+            className="ml-4 inline-flex h-10 w-10 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-slate-400 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832] focus-visible:ring-offset-2"
             aria-label="Close"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5 sm:px-8">
           {resumeLanguageStatus === 'non_english' && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
               当前参考简历看起来主要是非英文内容，建议优先替换为英文或中英双语简历，再发送这封邮件。
@@ -374,14 +394,14 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
           )}
 
           <div className="grid gap-3">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-              <div className="mb-2 text-xs font-semibold tracking-[0.16em] text-slate-400">收件邮箱</div>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
-                <div className="min-w-0 flex-1 text-base font-semibold text-slate-900">{recipientEmail || '-'}</div>
+            <div className="border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-2 text-xs font-bold tracking-[0.12em] text-slate-500">收件邮箱</div>
+              <div className="flex items-center gap-3 border border-slate-200 bg-white px-4 py-3">
+                <div className="min-w-0 flex-1 break-all font-mono text-sm font-semibold text-slate-900">{recipientEmail || '-'}</div>
                 <button
                   type="button"
                   onClick={() => handleCopy('email', recipientEmail)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-[#e96832] hover:text-[#d45525] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832]"
                   aria-label="复制收件邮箱"
                 >
                   {copiedField === 'email' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -389,9 +409,9 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-              <div className="mb-2 text-xs font-semibold tracking-[0.16em] text-slate-400">邮件标题</div>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+            <div className="border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-2 text-xs font-bold tracking-[0.12em] text-slate-500">邮件标题</div>
+              <div className="flex items-center gap-3 border border-slate-200 bg-white px-4 py-3">
                 <input
                   value={draftSubject}
                   onChange={(event) => setDraftSubject(event.target.value)}
@@ -400,7 +420,7 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
                 <button
                   type="button"
                   onClick={() => handleCopy('subject', draftSubject)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition-colors hover:border-slate-300 hover:text-slate-900"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-200 text-slate-500 transition-colors hover:border-[#e96832] hover:text-[#d45525] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832]"
                   aria-label="复制邮件标题"
                 >
                   {copiedField === 'subject' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -408,9 +428,9 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
               </div>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-3">
-              <div className="mb-2 text-xs font-semibold tracking-[0.16em] text-slate-400">邮件正文</div>
-              <div className="mb-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm leading-6 text-rose-700">
+            <div className="border border-slate-200 bg-slate-50 p-4">
+              <div className="mb-2 text-xs font-bold tracking-[0.12em] text-slate-500">邮件正文</div>
+              <div className="mb-3 border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                 <strong>请注意：</strong> 打开邮箱客户端后，记得手动添加简历附件。一键复制只会复制文字内容，不会带上文件。
               </div>
               <div
@@ -420,16 +440,16 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
                 onInput={syncBodyEditorValue}
                 onBlur={syncBodyEditorValue}
                 onKeyDown={handleBodyKeyDown}
-                className="min-h-[360px] w-full overflow-y-auto rounded-2xl border border-slate-200 bg-white p-4 text-[15px] leading-7 text-slate-900 outline-none transition-colors focus:border-[#c9dce8] focus:ring-2 focus:ring-[#dce9f5]"
+                className="min-h-[320px] w-full overflow-y-auto border border-slate-200 bg-white p-4 text-[15px] leading-7 text-slate-900 outline-none transition-colors focus:border-[#e96832] focus:ring-2 focus:ring-[#f9d7c8]"
               />
-              <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
+              <div className="mt-3 border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-900">
                 如需更个性化的邮件内容，可以先在个人中心上传英文或中英双语简历，系统会自动参考简历优化文案。
               </div>
               <div className="mt-3 flex justify-end">
                 <button
                   type="button"
                   onClick={() => handleCopy('body', draftBody)}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:text-slate-950"
+                  className="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-[#e96832] hover:text-[#d45525] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832]"
                 >
                   {copiedField === 'body' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                   复制正文
@@ -439,29 +459,38 @@ export const EmailConnectModal: React.FC<EmailConnectModalProps> = ({
           </div>
 
           {isLoadingResumes ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-500">
+            <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-500">
               正在读取你已上传的简历...
             </div>
           ) : resumes.length > 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm leading-6 text-slate-600">
+            <div className="border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">
               当前已参考简历：<span className="font-semibold text-slate-900">{selectedResume?.fileName || '最近上传的简历'}</span>
             </div>
           ) : null}
         </div>
 
-        <div className="flex items-center gap-3 border-t border-slate-100 px-6 py-5">
+        <div className="grid gap-3 border-t border-slate-200 px-6 py-5 sm:grid-cols-3 sm:px-8">
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50"
+            className="h-11 rounded-md border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832] focus-visible:ring-offset-2"
           >
             取消
           </button>
           <button
             type="button"
+            onClick={() => handleCopy('email', recipientEmail)}
+            disabled={!recipientEmail}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-700 transition-colors hover:border-[#e96832] hover:text-[#d45525] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832] focus-visible:ring-offset-2"
+          >
+            {copiedField === 'email' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copiedField === 'email' ? '已复制邮箱' : '复制邮箱'}
+          </button>
+          <button
+            type="button"
             onClick={handleOpenEmail}
             disabled={!recipientEmail}
-            className="flex-1 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60"
+            className="h-11 rounded-md bg-[#e96832] px-4 text-sm font-semibold text-white transition-colors hover:bg-[#c94f22] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e96832] focus-visible:ring-offset-2"
           >
             打开邮箱
           </button>

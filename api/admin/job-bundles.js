@@ -226,15 +226,37 @@ export default async function handler(req, res) {
       const { id, is_active, resource } = req.query;
 
       if (resource === 'career-videos') {
-        const result = await neonHelper.query(
+        const [moduleVideos, ceoVideos] = await Promise.all([
+          neonHelper.query(
           `SELECT video_id, module_key, video_title, description, category, difficulty_level,
                   cover_image_hash, access_tier, sort_order, published_at
              FROM corporate_english_module_videos
             WHERE deleted_at IS NULL AND status = 'published'
             ORDER BY module_key ASC, sort_order ASC, published_at DESC
             LIMIT 300`
-        );
-        return res.status(200).json({ success: true, data: result || [] });
+          ),
+          neonHelper.query(
+            `SELECT material_id, material_title, video_summary, company_name_snapshot,
+                    cover_image_hash, published_at
+               FROM corporate_english_materials
+              WHERE deleted_at IS NULL AND status = 'published'
+              ORDER BY published_at DESC
+              LIMIT 300`
+          )
+        ]);
+        const ceoItems = (ceoVideos || []).map((video) => ({
+          video_id: `ceo:${video.material_id}`,
+          module_key: 'ceo',
+          video_title: video.material_title,
+          description: video.video_summary || '',
+          category: video.company_name_snapshot || '',
+          difficulty_level: '',
+          cover_image_hash: video.cover_image_hash || '',
+          access_tier: 'vip',
+          sort_order: 0,
+          published_at: video.published_at
+        }));
+        return res.status(200).json({ success: true, data: [...(moduleVideos || []), ...ceoItems] });
       }
 
       if (resource === 'registered-users') {

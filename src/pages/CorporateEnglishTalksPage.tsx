@@ -709,7 +709,7 @@ function CeoVideoGrid({ videos, isGuest }: { videos: CorporateEnglishPublicCeoVi
         <div className="flex flex-col gap-2 md:flex-row md:items-end md:gap-5">
           <h2 className="text-[28px] font-black tracking-tight text-slate-950 sm:text-3xl md:text-4xl">{text('更多 CEO 访谈', 'More CEO interviews')}</h2>
           <p className="max-w-xl text-sm font-semibold leading-6 text-slate-500">
-            {text('听企业经营者谈判断、沟通与协作，也理解不同团队如何工作。', 'Hear how company leaders think, communicate, and build their teams.')}
+            {text('从 CEO 访谈里了解远程企业文化和商业模式，提升远程认知。', 'Learn how remote companies work and build their businesses through CEO interviews.')}
           </p>
         </div>
         {!isGuest ? <div className="hidden items-center gap-3 md:flex">
@@ -1129,7 +1129,7 @@ function RemotePreparationSection({
   if (loading) {
     return (
       <section className="space-y-5">
-        <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('从沟通、简历表达和协作习惯开始准备。', 'Build practical communication and collaboration habits for remote work.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
+        <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('从远程小白到远程高手，需要的技能这里都有。', 'From remote-work basics to advanced practice, build the skills you need here.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
         <div className="flex gap-5 overflow-hidden">
           {[0, 1, 2, 3].map((item) => (
             <div key={item} className="h-[300px] min-w-[280px] flex-1 border border-[#f1dfbe] bg-white" />
@@ -1142,7 +1142,7 @@ function RemotePreparationSection({
   if (!videos.length) {
     return (
       <section className="space-y-5">
-        <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('从沟通、简历表达和协作习惯开始准备。', 'Build practical communication and collaboration habits for remote work.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
+        <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('从远程小白到远程高手，需要的技能这里都有。', 'From remote-work basics to advanced practice, build the skills you need here.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
         <div className="hg-career-empty-state">
           {text('远程准备内容正在整理中，欢迎稍后回来查看。', 'Remote-work preparation content is being organised. Please check back soon.')}
         </div>
@@ -1152,7 +1152,7 @@ function RemotePreparationSection({
 
   return (
     <section className="hg-career-chapter space-y-4">
-      <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('从沟通、简历表达和协作习惯开始准备。', 'Build practical communication and collaboration habits for remote work.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
+      <CategoryRail title={text('远程准备', 'Remote work preparation')} subtitle={text('从远程小白到远程高手，需要的技能这里都有。', 'From remote-work basics to advanced practice, build the skills you need here.')} categories={categories} activeCategory={activeCategory} onChange={onCategoryChange} />
       <div className="flex items-stretch gap-6 overflow-x-auto overscroll-x-contain pb-3">
         {(isGuest ? videos.slice(0, 6) : videos).map((video, index) => (
           <div key={video.videoId} className="w-[78vw] min-w-[280px] shrink-0 md:w-[31%] md:min-w-[300px] lg:w-[30%] xl:w-[28.5%] 2xl:w-[28%]">

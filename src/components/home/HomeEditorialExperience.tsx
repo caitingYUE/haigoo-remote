@@ -251,8 +251,8 @@ export default function HomeEditorialExperience({
             </h1>
             <p className="haigoo-home__intro">
               {text(
-                '从全球企业的公开申请渠道出发，探索远程工作和生活方式。岗位信息全部开放，陪你探索另一种人生可能。',
-                'Explore remote work and ways of living through public application channels. Every role is open to browse, helping you discover another possible path.',
+                '从全球企业的公开申请渠道出发，探索远程工作和生活方式。岗位信息全部开放，愿你找到另一种人生可能。',
+                'Explore remote work and ways of living through public application channels. Every role is open to browse, and we hope you find another possible path.',
               )}
             </p>
 

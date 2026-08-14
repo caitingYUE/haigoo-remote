@@ -40,6 +40,7 @@ const SORT_OPTIONS = [
 ] as const;
 
 const TEMPLATE_VERSION = 'xhs-v7';
+const SHOW_AI_SUMMARY_ACTION = false;
 const EXPORT_WIDTH = 1080;
 const EXPORT_HEIGHT = 1440;
 const PREVIEW_SCALE = 0.34;
@@ -1881,8 +1882,9 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h4 className="text-sm font-semibold text-slate-900">海报文案</h4>
-                      <p className="mt-1 text-sm leading-6 text-slate-500">AI 一次生成岗位与企业摘要；共享企业简介时只生成岗位摘要。</p>
+                      <p className="mt-1 text-sm leading-6 text-slate-500">在这里编辑岗位与企业摘要；共享企业简介时只保存岗位摘要。</p>
                     </div>
+                    {SHOW_AI_SUMMARY_ACTION ? (
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -1893,16 +1895,8 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                         <RefreshCw className={`h-3.5 w-3.5 ${generatingSummary ? 'animate-spin' : ''}`} />
                         {generatingSummary ? 'AI 生成中...' : (jobSummarySource === 'ai' ? 'AI 重新生成' : 'AI 优化摘要')}
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleSaveDraft(false)}
-                        disabled={savingDraft || !posterTitleText.trim() || !companySummaryText.trim() || !jobSummaryText.trim()}
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {savingDraft && !applyingCompanySummary ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                        {savingDraft && !applyingCompanySummary ? '保存中...' : '保存文案'}
-                      </button>
                     </div>
+                    ) : null}
                   </div>
 
                   <div className="mt-4 grid gap-4">
@@ -1980,6 +1974,15 @@ const AdminXiaohongshuPush: React.FC<Props> = ({ token }) => {
                       <div className="mt-3 flex flex-wrap gap-2">
                         <button type="button" onClick={handleRestoreJobSummary} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50">
                           恢复默认
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSaveDraft(false)}
+                          disabled={savingDraft || !posterTitleText.trim() || !companySummaryText.trim() || !jobSummaryText.trim()}
+                          className="inline-flex items-center justify-center gap-2 rounded-full bg-rose-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {savingDraft && !applyingCompanySummary ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+                          {savingDraft && !applyingCompanySummary ? '保存中...' : '保存文案'}
                         </button>
                       </div>
                       <div className="mt-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">

@@ -19,7 +19,7 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
           <img src={clubLogo} alt="" loading="lazy" decoding="async" className="haigoo-brand-footer__mark" />
           <p className="haigoo-editorial-label">Haigoo Remote</p>
           <h3 id="haigoo-brand-footer-title">{text('海狗远程', 'Haigoo Remote')}</h3>
-          <p>{text('持续整理来自全球企业公开渠道的远程工作信息，也记录工作、生活与职业选择的不同可能。', 'A continuing record of remote work information from public company sources — and the many ways work, life, and career choices can take shape.')}</p>
+          <p>{text('持续整理来自全球企业公开渠道的远程工作信息，陪你探索适合自己的生活和工作方式。', 'We continuously organise remote-work information from public company sources, helping you explore ways of working and living that suit you.')}</p>
           <a href="/profile?tab=about" className="haigoo-brand-footer__about-link">
             {text('了解 Haigoo', 'About Haigoo')}
             <ArrowRight className="h-4 w-4" aria-hidden="true" />
