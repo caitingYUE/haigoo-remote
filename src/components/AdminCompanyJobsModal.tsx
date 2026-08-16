@@ -285,7 +285,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             }
         } catch (error) {
             console.error('Failed to save job:', error);
-            alert('保存失败');
+            alert(`保存失败: ${error instanceof Error ? error.message : '未知错误'}`);
             fetchJobs(); // Revert on error
         }
     };

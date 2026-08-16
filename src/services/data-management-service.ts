@@ -313,8 +313,8 @@ export class DataManagementService {
         queryParams.append('dateTo', filters.dateRange.end.toISOString().split('T')[0]);
       }
 
-      // 标记为管理员面板请求，绕过 is_approved 过滤，显示全量数据
-      queryParams.append('isAdminPanel', 'true');
+      // 后端仅在令牌确认为管理员时接受此显式开关。
+      queryParams.append('isAdmin', 'true');
 
       // 添加时间戳避免缓存
       queryParams.append('_t', Date.now().toString());
@@ -380,7 +380,7 @@ export class DataManagementService {
       const result = await this.getProcessedJobs(1, 1, { id: jobId });
 
       if (result.data.length === 0) {
-        return false;
+        throw new Error('未找到该岗位，或当前账号没有管理员权限');
       }
 
       const currentJob = result.data[0];
@@ -416,7 +416,7 @@ export class DataManagementService {
       return true;
     } catch (error) {
       console.error('更新职位数据失败:', error);
-      return false;
+      throw error;
     }
   }
 
@@ -425,8 +425,10 @@ export class DataManagementService {
    */
   async deleteProcessedJob(jobId: string): Promise<boolean> {
     try {
+      const token = localStorage.getItem('haigoo_auth_token');
       const resp = await fetch(`/api/data/processed-jobs?id=${encodeURIComponent(jobId)}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
 
       if (!resp.ok) {
@@ -445,10 +447,14 @@ export class DataManagementService {
    */
   async clearAllProcessedJobs(): Promise<boolean> {
     try {
+      const token = localStorage.getItem('haigoo_auth_token');
       // Send explicit clear request to backend
       const resp = await fetch('/api/data/processed-jobs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
         body: JSON.stringify({ jobs: [], mode: 'replace' })
       });
 
@@ -542,6 +548,7 @@ export class DataManagementService {
   // 私有辅助方法
   private async saveProcessedJobs(jobs: ProcessedJobData[], mode: 'append' | 'replace' | 'upsert' = 'append'): Promise<void> {
     try {
+      const token = localStorage.getItem('haigoo_auth_token');
       // 分片上传，避免 413（请求体过大）
       const CHUNK_SIZE = 200;
       for (let i = 0; i < jobs.length; i += CHUNK_SIZE) {
@@ -551,7 +558,10 @@ export class DataManagementService {
 
         const resp = await fetch('/api/data/processed-jobs', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
           body: JSON.stringify({ jobs: chunk, mode: chunkMode })
         })
         const result = await resp.json().catch(() => null) as {

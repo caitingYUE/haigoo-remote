@@ -468,7 +468,7 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
       setTimeout(() => loadProcessedData(), 500);
     } catch (error) {
       console.error('保存职位失败:', error);
-      showError('保存失败', '请重试');
+      showError('保存失败', error instanceof Error ? error.message : '请重试');
       // 如果失败，回滚状态
       loadProcessedData();
     }

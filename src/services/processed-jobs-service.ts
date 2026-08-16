@@ -420,10 +420,12 @@ class ProcessedJobsService {
   // 清除所有处理后的职位数据
   async clearAllJobs(): Promise<boolean> {
     try {
+      const token = localStorage.getItem('haigoo_auth_token')
       const response = await fetch(`${this.baseUrl}/data/processed-jobs`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
           jobs: [],

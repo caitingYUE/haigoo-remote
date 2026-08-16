@@ -13,6 +13,8 @@ const detail = read('src/components/JobDetailPanel.tsx')
 const detailPage = read('src/pages/JobDetailPage.tsx')
 const filters = read('src/components/JobFilterBar.tsx')
 const linkVerifier = read('lib/cron-handlers/stream-verify-links.js')
+const dataManagement = read('src/services/data-management-service.ts')
+const jobSync = read('lib/services/job-sync-service.js')
 
 assert.ok(
   processedJobs.includes('COALESCE(${JOBS_TABLE}.member_only, false) = false'),
@@ -68,8 +70,29 @@ assert.ok(
   'Club filter must not be visible to guests or free accounts'
 )
 assert.ok(
-  linkVerifier.includes("NULLIF(BTRIM(url), '') IS NOT NULL"),
+  /NULLIF\(BTRIM\((?:jobs\.)?url\), ''\) IS NOT NULL/.test(linkVerifier),
   'link verification must not deactivate email-only roles that intentionally have no website URL'
+)
+assert.ok(
+  dataManagement.includes("queryParams.append('isAdmin', 'true')"),
+  'admin job reads must use the authenticated admin-list switch so pending jobs can be edited'
+)
+assert.ok(
+  linkVerifier.includes("return { status: 'error_retry', reason: `Blocked or Authwall (HTTP ${statusCode})` }")
+    && !linkVerifier.includes("last_verified_at < NOW() - INTERVAL '30 days'"),
+  'auth walls and elapsed time must not automatically unapprove or deactivate jobs'
+)
+assert.ok(
+  !jobSync.includes('PROCESSED_JOBS_RETAIN_DAYS') &&
+    !jobSync.includes('validCrawledJobs') &&
+    !trustedCompanies.includes('filteredByTime'),
+  'trusted-company imports and synchronization must not filter jobs by publication age'
+)
+assert.ok(
+  processedJobs.includes("(req.method === 'POST' || req.method === 'DELETE')") &&
+    processedJobs.includes('await isAdminRequest(req)') &&
+    dataManagement.includes("'Authorization': `Bearer ${token}`"),
+  'job mutations must require server-verified admin access and send the admin token'
 )
 
 console.log('Job access policy tests passed.')
