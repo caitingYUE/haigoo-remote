@@ -11,6 +11,7 @@ const bundles = read('lib/api-handlers/job-bundles.js')
 const miniGateway = read('lib/api-handlers/mini-gateway.js')
 const detail = read('src/components/JobDetailPanel.tsx')
 const detailPage = read('src/pages/JobDetailPage.tsx')
+const bundleDetailPage = read('src/pages/JobBundleDetailPage.tsx')
 const filters = read('src/components/JobFilterBar.tsx')
 const linkVerifier = read('lib/cron-handlers/stream-verify-links.js')
 const dataManagement = read('src/services/data-management-service.ts')
@@ -36,6 +37,11 @@ assert.ok(
 assert.ok(
   bundles.includes("${canAccessMemberOnly ? '' : 'AND COALESCE(member_only, false) = false'}"),
   'job bundles must apply the same Club visibility rule'
+)
+assert.ok(
+  bundleDetailPage.includes("fetch(`/api/data/processed-jobs?${params.toString()}`, {") &&
+    bundleDetailPage.includes("headers: token ? { Authorization: `Bearer ${token}` } : undefined"),
+  'bundle job hydration must preserve member authentication so Club jobs remain visible'
 )
 assert.ok(
   miniGateway.includes("code: 'JOB_UNAVAILABLE'") && !miniGateway.includes('memberOnlyJobGatingEnabled'),

@@ -181,7 +181,9 @@ export default function JobBundleDetailPage() {
         limit: String(Math.max(ids.length, 50)),
         skipAggregations: 'true'
       });
-      const res = await fetch(`/api/data/processed-jobs?${params.toString()}`);
+      const res = await fetch(`/api/data/processed-jobs?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined
+      });
       const data = await res.json();
       if (data.jobs) {
         const jobMap = new Map(data.jobs.map((j: any) => [j.id, j]));
