@@ -1,5 +1,22 @@
-import { Image } from '@tarojs/components'
-import type { CSSProperties } from 'react'
+import {
+  ArrowRight,
+  Articles,
+  Edit,
+  Heart,
+  Link,
+  Location,
+  Mail,
+  Order,
+  Search,
+  Setting,
+  Share,
+  ShieldCheck,
+  Star,
+  Store,
+  User,
+  Weixin
+} from '@nutui/icons-react-taro'
+import type { FunctionComponent } from 'react'
 import './index.scss'
 
 export type MiniIconName =
@@ -7,6 +24,8 @@ export type MiniIconName =
   | 'building'
   | 'chevronRight'
   | 'club'
+  | 'community'
+  | 'edit'
   | 'favorite'
   | 'link'
   | 'mail'
@@ -22,20 +41,30 @@ interface MiniIconProps {
   name: MiniIconName
   size?: number
   className?: string
+  color?: string
+  label?: string
 }
 
-export default function MiniIcon({ name, size = 24, className = '' }: MiniIconProps) {
-  const style: CSSProperties = {
-    width: `${size}px`,
-    height: `${size}px`
-  }
+const icons: Record<MiniIconName, FunctionComponent<any>> = {
+  application: Order,
+  building: Store,
+  chevronRight: ArrowRight,
+  club: Star,
+  community: Weixin,
+  edit: Edit,
+  favorite: Heart,
+  link: Link,
+  mail: Mail,
+  search: Search,
+  settings: Setting,
+  share: Share,
+  shield: ShieldCheck,
+  subscription: Articles,
+  target: Location,
+  user: User
+}
 
-  return (
-    <Image
-      className={`mini-icon ${className}`.trim()}
-      mode='aspectFit'
-      src={`/assets/icons/${name}.png`}
-      style={style}
-    />
-  )
+export default function MiniIcon({ name, size = 24, className = '', color = 'currentColor', label }: MiniIconProps) {
+  const Icon = icons[name]
+  return <Icon className={`mini-icon ${className}`.trim()} size={size} color={color} ariaHidden={!label} ariaLabel={label} />
 }

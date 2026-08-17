@@ -6,8 +6,10 @@ import { execFileSync } from 'node:child_process'
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const originOverride = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length)
 const scope = process.argv.find((argument) => argument.startsWith('--scope='))?.split('=')[1] || 'account'
+const requestedAction = process.argv.find((argument) => argument.startsWith('--action='))?.split('=')[1] || 'sync'
 const featured = process.argv.find((argument) => argument.startsWith('--featured='))?.split('=')[1]
 const includeLogo = process.argv.includes('--include-logo')
+const openid = process.argv.find((argument) => argument.startsWith('--openid='))?.slice('--openid='.length) || ''
 const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
@@ -23,6 +25,7 @@ if (!environments[target]) {
   throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true]')
 }
 if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
+if (!['sync', 'content_home'].includes(requestedAction)) throw new Error('Action must be sync or content_home')
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -61,8 +64,10 @@ const bypassSecret = String(environment.VERCEL_AUTOMATION_BYPASS_SECRET || '')
 
 if (!origin || !gatewaySecret) throw new Error('CloudRun gateway configuration is incomplete')
 
-const action = 'sync'
-const query = { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}) }
+const action = requestedAction
+const query = action === 'content_home'
+  ? { openid }
+  : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}) }
 const timestamp = String(Date.now())
 const bodyHash = crypto.createHash('sha256').update(stableJson(query)).digest('hex')
 const signature = crypto.createHmac('sha256', gatewaySecret)
@@ -91,6 +96,8 @@ console.log(JSON.stringify({
   scope,
   origin,
   status: response.status,
+  returnedCompanies: Array.isArray(payload.companies) ? payload.companies.length : null,
+  returnedNotes: Array.isArray(payload.notes) ? payload.notes.length : null,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
   sampleJobs: Array.isArray(payload.jobs)
     ? payload.jobs.slice(0, 3).map((job) => ({

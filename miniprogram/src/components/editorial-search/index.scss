@@ -1,0 +1,3 @@
+.editorial-search { display: flex; height: 88px; padding: 0 20px; align-items: center; gap: 14px; border-radius: 16px; background: var(--color-surface-soft); color: var(--color-muted); }
+.editorial-search__input { min-width: 0; height: 88px; flex: 1; color: var(--color-ink); font-size: 28px; }
+.editorial-search__gate { flex-shrink: 0; color: var(--color-brand-text); font-size: 23px; font-weight: 500; }

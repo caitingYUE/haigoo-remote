@@ -4,6 +4,7 @@ import neonHelper from '../server-utils/dal/neon-helper.js'
 import { extractToken, verifyToken } from '../server-utils/auth-helpers.js'
 import userHelper from '../server-utils/user-helper.js'
 import { SUPER_ADMIN_EMAILS } from '../server-utils/admin-config.js'
+import { saveVideoWithCareerGrowthNote } from '../lib/services/career-growth-notes-service.js'
 
 const MATERIALS_TABLE = 'corporate_english_materials'
 const ASSETS_TABLE = 'corporate_english_assets'
@@ -20,7 +21,7 @@ const MAX_CLIPS_PER_MATERIAL = 50
 const VALID_ASSET_KINDS = new Set(['source_audio', 'subtitle_csv', 'clip_audio'])
 const VALID_STATUSES = new Set(['draft', 'published', 'archived'])
 const VALID_MODULE_KEYS = new Set(['english_interview', 'remote_preparation', 'foreign_meeting'])
-const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
+const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video', 'growth_note'])
 const VALID_REMOTE_PREPARATION_LEVELS = new Set(['entry', 'junior', 'intermediate', 'advanced'])
 
 function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
@@ -273,7 +274,22 @@ function mapModuleVideoRow(row) {
     sortOrder: Number(row.sort_order || 0),
     publishedAt: row.published_at,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
+    noteId: row.note_id || null,
+    noteTitle: row.note_title || row.title_zh || '',
+    noteOriginalTitle: row.note_original_title || row.video_title || '',
+    noteSummary: row.note_summary || row.description || '',
+    noteAuthor: row.note_author || '',
+    noteSourceName: row.note_source_name || row.video_source || '',
+    noteSourceUrl: row.note_source_url || '',
+    noteCategory: row.note_category || '远程职业准备',
+    noteAccessTier: row.note_access_tier === 'free' ? 'free' : 'vip',
+    noteStatus: row.note_status || row.status || 'draft',
+    noteIsFeatured: row.note_is_featured === true,
+    noteSortOrder: Number(row.note_sort_order ?? row.sort_order ?? 0),
+    notePublishedAt: row.note_published_at || row.published_at,
+    noteVersion: Number(row.note_version || 0),
+    noteUpdatedAt: row.note_updated_at || null
   }
 }
 
@@ -1073,41 +1089,54 @@ async function listModuleVideos(req, res) {
   const limit = Math.min(Math.max(toInt(req.query.limit, 20), 1), 100)
   const offset = (page - 1) * limit
   const params = [moduleKey]
-  const conditions = ['module_key = $1', 'deleted_at IS NULL']
+  const conditions = ['v.module_key = $1', 'v.deleted_at IS NULL']
 
   const status = normalizeString(req.query.status)
   if (status && status !== 'all') {
     params.push(normalizeStatus(status))
-    conditions.push(`status = $${params.length}`)
+    conditions.push(`v.status = $${params.length}`)
   }
 
   const search = normalizeString(req.query.search).toLowerCase()
   if (search) {
     params.push(`%${search}%`)
     conditions.push(`(
-      LOWER(video_title) LIKE $${params.length}
-      OR LOWER(description) LIKE $${params.length}
-      OR LOWER(video_source) LIKE $${params.length}
-      OR LOWER(category) LIKE $${params.length}
-      OR LOWER(difficulty_level) LIKE $${params.length}
-      OR LOWER(video_notes::text) LIKE $${params.length}
-      OR LOWER(tags::text) LIKE $${params.length}
+      LOWER(v.video_title) LIKE $${params.length}
+      OR LOWER(v.description) LIKE $${params.length}
+      OR LOWER(v.video_source) LIKE $${params.length}
+      OR LOWER(v.category) LIKE $${params.length}
+      OR LOWER(v.difficulty_level) LIKE $${params.length}
+      OR LOWER(COALESCE(n.content_blocks, v.video_notes)::text) LIKE $${params.length}
+      OR LOWER(v.tags::text) LIKE $${params.length}
     )`)
   }
 
   const where = `WHERE ${conditions.join(' AND ')}`
   const countRows = await neonHelper.query(
-    `SELECT COUNT(*)::int AS total FROM ${MODULE_VIDEOS_TABLE} ${where}`,
+    `SELECT COUNT(*)::int AS total
+       FROM ${MODULE_VIDEOS_TABLE} v
+       LEFT JOIN career_growth_notes n ON n.source_video_id = v.video_id
+       ${where}`,
     params
   )
   const total = Number(countRows?.[0]?.total || 0)
 
   params.push(limit, offset)
   const rows = await neonHelper.query(
-    `SELECT *
-     FROM ${MODULE_VIDEOS_TABLE}
+    `SELECT v.*,
+            n.note_id, n.title AS note_title, n.original_title AS note_original_title,
+            n.summary AS note_summary,
+            n.author_name AS note_author, n.source_name AS note_source_name,
+            n.source_url AS note_source_url, n.category AS note_category,
+            n.access_tier AS note_access_tier,
+            n.status AS note_status, n.is_featured AS note_is_featured,
+            n.sort_order AS note_sort_order, n.published_at AS note_published_at,
+            n.version AS note_version, n.updated_at AS note_updated_at,
+            COALESCE(n.content_blocks, v.video_notes) AS video_notes
+     FROM ${MODULE_VIDEOS_TABLE} v
+     LEFT JOIN career_growth_notes n ON n.source_video_id = v.video_id
      ${where}
-     ORDER BY published_at DESC NULLS LAST, sort_order ASC, updated_at DESC
+     ORDER BY v.published_at DESC NULLS LAST, v.sort_order ASC, v.updated_at DESC
      LIMIT $${params.length - 1} OFFSET $${params.length}`,
     params
   )
@@ -1165,6 +1194,11 @@ async function saveModuleVideo(req, res, admin, existingId = '') {
   if (validation.error) return res.status(400).json({ success: false, error: validation.error })
   const payload = validation.payload
   const actor = admin.id || admin.email || 'admin'
+
+  if (payload.moduleKey === 'remote_preparation') {
+    const row = await saveVideoWithCareerGrowthNote({ id: existingId, video: payload, noteBody: req.body || {}, actor })
+    return res.status(existingId ? 200 : 201).json({ success: true, video: mapModuleVideoRow(row) })
+  }
 
   if (existingId) {
     const rows = await neonHelper.query(
@@ -1277,10 +1311,10 @@ function normalizeCoverOwnerType(value) {
 }
 
 async function assertCoverOwnerExists(ownerType, ownerId) {
-  const table = ownerType === 'material' ? MATERIALS_TABLE : MODULE_VIDEOS_TABLE
-  const idColumn = ownerType === 'material' ? 'material_id' : 'video_id'
+  const table = ownerType === 'material' ? MATERIALS_TABLE : ownerType === 'growth_note' ? 'career_growth_notes' : MODULE_VIDEOS_TABLE
+  const idColumn = ownerType === 'material' ? 'material_id' : ownerType === 'growth_note' ? 'note_id' : 'video_id'
   const rows = await neonHelper.query(
-    `SELECT ${idColumn} AS id FROM ${table} WHERE ${idColumn} = $1 AND deleted_at IS NULL LIMIT 1`,
+    `SELECT ${idColumn} AS id FROM ${table} WHERE ${idColumn} = $1${ownerType === 'growth_note' ? '' : ' AND deleted_at IS NULL'} LIMIT 1`,
     [ownerId]
   )
   return Boolean(rows?.[0]?.id)
@@ -1366,8 +1400,8 @@ async function uploadCoverImage(req, res, admin) {
     )
   }
 
-  const table = ownerType === 'material' ? MATERIALS_TABLE : MODULE_VIDEOS_TABLE
-  const idColumn = ownerType === 'material' ? 'material_id' : 'video_id'
+  const table = ownerType === 'material' ? MATERIALS_TABLE : ownerType === 'growth_note' ? 'career_growth_notes' : MODULE_VIDEOS_TABLE
+  const idColumn = ownerType === 'material' ? 'material_id' : ownerType === 'growth_note' ? 'note_id' : 'video_id'
   await neonHelper.query(
     `UPDATE ${table}
      SET cover_image_hash = $2,
@@ -1376,9 +1410,20 @@ async function uploadCoverImage(req, res, admin) {
          cover_image_updated_at = NOW(),
          updated_by = $5,
          updated_at = NOW()
-     WHERE ${idColumn} = $1 AND deleted_at IS NULL`,
+         ${ownerType === 'growth_note' ? ', version = version + 1' : ''}
+     WHERE ${idColumn} = $1${ownerType === 'growth_note' ? '' : ' AND deleted_at IS NULL'}`,
     [ownerId, primary.sha256, primary.width, primary.height, actor]
   )
+
+  if (ownerType === 'module_video') {
+    await neonHelper.query(
+      `UPDATE career_growth_notes
+          SET cover_image_hash=$2, cover_image_width=$3, cover_image_height=$4,
+              cover_image_updated_at=NOW(), version=version+1, updated_by=$5, updated_at=NOW()
+        WHERE source_video_id=$1::uuid`,
+      [ownerId, primary.sha256, primary.width, primary.height, actor]
+    )
+  }
 
   return res.status(200).json({
     success: true,
@@ -1425,7 +1470,8 @@ export default async function handler(req, res) {
 
     return res.status(404).json({ success: false, error: 'Resource not found' })
   } catch (error) {
-    console.error('[corporate-english] Handler error:', error)
-    return res.status(500).json({ success: false, error: error?.message || 'Internal server error' })
+    const status = Number(error?.statusCode || 500)
+    if (status >= 500) console.error('[corporate-english] Handler error:', error)
+    return res.status(status).json({ success: false, error: error?.message || 'Internal server error' })
   }
 }

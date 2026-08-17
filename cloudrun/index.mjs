@@ -28,11 +28,22 @@ const syncCollection = 'mini_sync_state'
 const SYNC_PAGE_SIZE = 100
 const LIST_INDEX_FETCH_LIMIT = 1000
 const LIST_INDEX_MAX_RECORDS = 20000
-const MAX_REQUEST_BODY_BYTES = 1024 * 1024
+const MAX_REQUEST_BODY_BYTES = 3 * 1024 * 1024
+const legacyJobCacheEnabled = String(process.env.MINI_ENABLE_LEGACY_JOB_CACHE || '').trim().toLowerCase() === 'true'
+const GATEWAY_REQUEST_TIMEOUT_MS = Math.max(12000, Math.min(30000, Number(process.env.MINI_GATEWAY_REQUEST_TIMEOUT_MS || 25000)))
 const SYNC_MAX_PAGES_PER_RUN = Math.max(1, Math.min(10, Number(process.env.MINI_SYNC_PAGES_PER_RUN || 3)))
 const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_WRITE_CONCURRENCY || 4)))
 const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 1)))
 const MAX_LOGO_BYTES = Math.max(64 * 1024, Math.min(8 * 1024 * 1024, Number(process.env.MINI_LOGO_MAX_BYTES || 2 * 1024 * 1024)))
+const contentAssetCollection = 'mini_asset_index'
+const contentAssetDocument = 'content-images'
+const contentAssetMemory = new Map()
+const contentAssetFailureUntil = new Map()
+const contentAssetPending = new Map()
+let contentAssetIndexLoaded = false
+let contentAssetIndexPromise = null
+let contentAssetPersistPromise = Promise.resolve()
+let contentAssetInfrastructureBackoffUntil = 0
 const CACHE_REFRESH_MS = Math.max(5 * 60 * 1000, Number(process.env.MINI_CACHE_REFRESH_MS || 60 * 60 * 1000))
 const FULL_SYNC_INTERVAL_MS = Math.max(6 * 60 * 60 * 1000, Number(process.env.MINI_FULL_SYNC_INTERVAL_MS || 24 * 60 * 60 * 1000))
 const SYNC_TIMER_MS = Math.max(15 * 60 * 1000, Number(process.env.MINI_SYNC_INTERVAL_MS || 60 * 60 * 1000))
@@ -58,7 +69,7 @@ function signGatewayRequest(method, action, timestamp, body, secret = gatewaySec
     .digest('hex')
 }
 
-async function gatewayRequest(action, { method = 'GET', body = {}, query = {} } = {}) {
+async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, timeoutMs = GATEWAY_REQUEST_TIMEOUT_MS } = {}) {
   const useFormalJobsSource = action === 'sync' && jobsApiOrigin !== apiOrigin
   const requestOrigin = useFormalJobsSource ? jobsApiOrigin : apiOrigin
   const requestSecret = useFormalJobsSource ? jobsGatewaySecret : gatewaySecret
@@ -68,7 +79,7 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {} } 
   const signaturePayload = method === 'GET' ? signedQuery : body
   const response = await fetch(`${requestOrigin}/api/mini?${params}`, {
     method,
-    signal: AbortSignal.timeout(12000),
+    signal: AbortSignal.timeout(timeoutMs),
     headers: {
       Accept: 'application/json',
       ...(!useFormalJobsSource && vercelAutomationBypassSecret
@@ -130,6 +141,13 @@ function appOriginUrl(value) {
   return `${jobsApiOrigin}${source.startsWith('/') ? '' : '/'}${source}`
 }
 
+function contentOriginUrl(value) {
+  const source = String(value || '').trim()
+  if (!source) return ''
+  if (/^https?:\/\//i.test(source)) return source
+  return `${apiOrigin}${source.startsWith('/') ? '' : '/'}${source}`
+}
+
 function byteLimitTransform(maxBytes) {
   let received = 0
   return new Transform({
@@ -181,6 +199,121 @@ async function cacheLogo(jobId, source, existing = null) {
     console.warn('[mini-cloudrun] logo cache failed', jobId, error?.message || error)
     return existing?.logoFileId || ''
   }
+}
+
+async function loadContentAssetIndex() {
+  if (contentAssetIndexLoaded) return
+  if (Date.now() < contentAssetInfrastructureBackoffUntil) return
+  if (contentAssetIndexPromise) return contentAssetIndexPromise
+  contentAssetIndexPromise = (async () => {
+    let loaded = false
+    try {
+      const result = await db.collection(contentAssetCollection).doc(contentAssetDocument).get()
+      const document = documentFromResult(result) || {}
+      for (const [key, value] of Object.entries(document.assets || {})) {
+        const fileId = typeof value === 'string' ? value : value?.fileId
+        if (String(fileId || '').startsWith('cloud://')) contentAssetMemory.set(key, String(fileId))
+      }
+      loaded = true
+    } catch (error) {
+      console.warn('[mini-cloudrun] content asset index unavailable', error?.message || error)
+      contentAssetInfrastructureBackoffUntil = Date.now() + 5 * 60 * 1000
+    } finally {
+      contentAssetIndexLoaded = loaded
+      contentAssetIndexPromise = null
+    }
+  })()
+  return contentAssetIndexPromise
+}
+
+function persistContentAssetIndex() {
+  contentAssetPersistPromise = contentAssetPersistPromise.catch(() => {}).then(async () => {
+    await db.runTransaction(async (transaction) => {
+      const reference = transaction.collection(contentAssetCollection).doc(contentAssetDocument)
+      const result = await reference.get()
+      const current = documentFromResult(result) || {}
+      const assets = { ...(current.assets || {}) }
+      for (const [key, fileId] of contentAssetMemory.entries()) assets[key] = fileId
+      await reference.set({ assets, updatedAt: new Date().toISOString() })
+    })
+  }).catch((error) => {
+    console.warn('[mini-cloudrun] content asset index persist failed', error?.message || error)
+  })
+  return contentAssetPersistPromise
+}
+
+async function cacheContentImage({ ownerType, ownerId, sourcePath, folder }) {
+  if (!sourcePath || !ownerId) return { fileId: '', created: false }
+  const sourceHash = crypto.createHash('sha1').update(sourcePath).digest('hex').slice(0, 16)
+  const cacheKey = `${ownerType}-${crypto.createHash('sha256').update(String(ownerId)).digest('hex').slice(0, 24)}-${sourceHash}`
+  if (contentAssetMemory.has(cacheKey)) return { fileId: contentAssetMemory.get(cacheKey), created: false }
+  if (contentAssetPending.has(cacheKey)) return contentAssetPending.get(cacheKey)
+  if (Date.now() < contentAssetInfrastructureBackoffUntil || Date.now() < Number(contentAssetFailureUntil.get(cacheKey) || 0)) {
+    return { fileId: '', created: false }
+  }
+  const pending = (async () => {
+    const source = contentOriginUrl(sourcePath)
+    const tempDir = await mkdtemp(path.join(os.tmpdir(), `haigoo-${ownerType}-`))
+    const tempPath = path.join(tempDir, 'asset')
+    try {
+      const response = await fetch(source, {
+        signal: AbortSignal.timeout(10000),
+        headers: vercelAutomationBypassSecret ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret } : {}
+      })
+      const contentType = response.headers.get('content-type') || ''
+      if (!response.ok || !contentType.startsWith('image/') || !response.body) {
+        contentAssetFailureUntil.set(cacheKey, Date.now() + 30 * 60 * 1000)
+        return { fileId: '', created: false }
+      }
+      await pipeline(Readable.fromWeb(response.body), byteLimitTransform(MAX_LOGO_BYTES), fs.createWriteStream(tempPath))
+      const extension = contentType.includes('png') ? 'png' : contentType.includes('webp') ? 'webp' : contentType.includes('svg') ? 'svg' : 'jpg'
+      const uploaded = await cloudApp.uploadFile({
+        cloudPath: `${folder}/${cacheKey}.${extension}`,
+        fileContent: fs.createReadStream(tempPath)
+      })
+      if (uploaded.fileID) contentAssetMemory.set(cacheKey, uploaded.fileID)
+      return { fileId: uploaded.fileID || '', created: Boolean(uploaded.fileID) }
+    } catch (error) {
+      console.warn('[mini-cloudrun] content image cache failed', ownerType, ownerId, error?.message || error)
+      contentAssetFailureUntil.set(cacheKey, Date.now() + 30 * 60 * 1000)
+      return { fileId: '', created: false }
+    } finally {
+      await rm(tempDir, { recursive: true, force: true }).catch(() => {})
+    }
+  })()
+  contentAssetPending.set(cacheKey, pending)
+  try {
+    return await pending
+  } finally {
+    contentAssetPending.delete(cacheKey)
+  }
+}
+
+async function attachNoteCovers(notes) {
+  await loadContentAssetIndex()
+  let created = false
+  const hydrated = await mapWithConcurrency(Array.isArray(notes) ? notes : [], 4, async (note) => {
+    const { _coverSourcePath, ...publicNote } = note || {}
+    const cached = await cacheContentImage({ ownerType: 'note', ownerId: note?.id, sourcePath: _coverSourcePath, folder: 'mini-note-covers' })
+    created ||= cached.created
+    return { ...publicNote, coverFileId: cached.fileId }
+  })
+  if (created) await persistContentAssetIndex()
+  return hydrated
+}
+
+async function attachCompanyLogos(companies) {
+  await loadContentAssetIndex()
+  let created = false
+  const hydrated = await mapWithConcurrency(Array.isArray(companies) ? companies : [], 3, async (company) => {
+    const { _logoSourcePath, ...publicCompany } = company || {}
+    if (publicCompany.logoFileId) return publicCompany
+    const cached = await cacheContentImage({ ownerType: 'company', ownerId: company?.id, sourcePath: _logoSourcePath, folder: 'mini-company-logos' })
+    created ||= cached.created
+    return { ...publicCompany, logoFileId: cached.fileId }
+  })
+  if (created) await persistContentAssetIndex()
+  return hydrated
 }
 
 function publicJob(job, logoFileId = '') {
@@ -424,6 +557,21 @@ async function runWithConcurrency(items, concurrency, worker) {
     error.failures = failures
     throw error
   }
+}
+
+async function mapWithConcurrency(items, concurrency, worker) {
+  const values = Array.isArray(items) ? items : []
+  const results = new Array(values.length)
+  let nextIndex = 0
+  const workers = Array.from({ length: Math.min(Math.max(1, concurrency), values.length) }, async () => {
+    while (nextIndex < values.length) {
+      const index = nextIndex
+      nextIndex += 1
+      results[index] = await worker(values[index], index)
+    }
+  })
+  await Promise.all(workers)
+  return results
 }
 
 function jobSourceHash(job) {
@@ -804,6 +952,7 @@ async function syncJobsToCompletion({ force = false } = {}) {
 
 let syncPromise = null
 function scheduleSync({ force = false } = {}) {
+  if (!legacyJobCacheEnabled) return Promise.resolve({ skipped: true, reason: 'legacy_job_cache_disabled' })
   if (syncPromise) return syncPromise
   syncPromise = runSyncWithLease({ force })
     .then((result) => {
@@ -826,6 +975,7 @@ function scheduleSync({ force = false } = {}) {
 }
 
 async function runSyncWithLease({ force = false } = {}) {
+  if (!legacyJobCacheEnabled) return { skipped: true, reason: 'legacy_job_cache_disabled' }
   const lease = await acquireSyncLease({ force })
   if (!lease.acquired) {
     return { skipped: true, reason: lease.reason, mode: lease.full ? 'full' : 'incremental' }
@@ -1157,6 +1307,207 @@ async function route(req, res) {
       if (!syncSecret || req.headers['x-mini-sync-secret'] !== syncSecret) return send(res, 401, { error: 'Unauthorized' })
       const result = await runSyncWithLease({ force: url.searchParams.get('full') === 'true' })
       return send(res, 200, { success: true, ...result })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/home') {
+      const session = getSession(req)
+      const result = await gatewayRequest('content_home', {
+        query: { openid: session?.openid || '' }
+      })
+      const [companies, notes] = await Promise.all([
+        attachCompanyLogos(result.companies),
+        attachNoteCovers(result.notes)
+      ])
+      return send(res, 200, { ...result, companies, notes })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/companies') {
+      const session = getSession(req)
+      const result = await gatewayRequest('companies', {
+        query: {
+          openid: session?.openid || '',
+          search: url.searchParams.get('search') || '',
+          industry: url.searchParams.get('industry') || '',
+          page: url.searchParams.get('page') || '1',
+          pageSize: url.searchParams.get('pageSize') || '20'
+        }
+      })
+      return send(res, 200, { ...result, companies: await attachCompanyLogos(result.companies) })
+    }
+    if (req.method === 'GET' && /^\/mini\/companies\/[^/]+$/.test(url.pathname)) {
+      const session = getSession(req)
+      const id = decodeURIComponent(url.pathname.split('/').pop())
+      const result = await gatewayRequest('company', {
+        query: { openid: session?.openid || '', id }
+      })
+      const [company] = await attachCompanyLogos(result.company ? [result.company] : [])
+      return send(res, 200, { ...result, company: company || result.company })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/growth/notes') {
+      const session = getSession(req)
+      const result = await gatewayRequest('growth_notes', {
+        query: {
+          openid: session?.openid || '',
+          pageSize: url.searchParams.get('pageSize') || '50'
+        }
+      })
+      return send(res, 200, { ...result, notes: await attachNoteCovers(result.notes) })
+    }
+    if (req.method === 'GET' && /^\/mini\/growth\/notes\/[^/]+$/.test(url.pathname)) {
+      const session = getSession(req)
+      const id = decodeURIComponent(url.pathname.split('/').pop())
+      const result = await gatewayRequest('growth_note', {
+        query: { openid: session?.openid || '', id }
+      })
+      const [note] = await attachNoteCovers(result.note ? [result.note] : [])
+      return send(res, 200, { ...result, note: note || result.note })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/membership/plans') {
+      const session = getSession(req)
+      const result = await gatewayRequest('membership_plans', {
+        query: { openid: session?.openid || '' }
+      })
+      return send(res, 200, {
+        ...result,
+        paymentAvailable: Boolean(virtualPaymentOfferId && virtualPaymentAppKey)
+      })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/consultations/me') {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      }
+      const result = await gatewayRequest('consultations', {
+        query: { openid: session.openid }
+      })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/consultations') {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      }
+      const body = await readBody(req)
+      const result = await gatewayRequest('consultations', {
+        method: 'POST',
+        body: {
+          openid: session.openid,
+          topic: body.topic,
+          wechatId: body.wechatId,
+          question: body.question,
+          sourcePage: body.sourcePage,
+          sourceContentId: body.sourceContentId,
+          sourceCompanyId: body.sourceCompanyId,
+          idempotencyKey: body.idempotencyKey,
+          privacyVersion: body.privacyVersion,
+          acceptedAt: body.acceptedAt,
+          clientKey: requestClientKey(req)
+        }
+      })
+      return send(res, 201, result)
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/match') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const result = await gatewayRequest('career_state', { query: { openid: session.openid } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/match/feed') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const result = await gatewayRequest('match_feed', { query: { openid: session.openid } })
+      const recommendations = await attachCompanyLogos((result.recommendations || []).map((item) => ({ ...item, id: item.companyId })))
+      return send(res, 200, { ...result, recommendations })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/match/follows') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const result = await gatewayRequest('match_follows', { query: { openid: session.openid } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/match/follows') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('match_follows', { method: 'POST', body: { openid: session.openid, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'DELETE' && /^\/mini\/match\/follows\/[^/]+$/.test(url.pathname)) {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const companyId = decodeURIComponent(url.pathname.split('/').pop())
+      const result = await gatewayRequest('match_follows', { method: 'DELETE', query: { openid: session.openid, companyId } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && /^\/mini\/match\/follows\/[^/]+\/notifications$/.test(url.pathname)) {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const companyId = decodeURIComponent(url.pathname.split('/')[4])
+      const body = await readBody(req)
+      const result = await gatewayRequest('match_notifications', { method: 'POST', body: { openid: session.openid, companyId, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/match/feedback') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('match_feedback', { method: 'POST', body: { openid: session.openid, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/match/updates') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const result = await gatewayRequest('match_updates', { query: { openid: session.openid } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/match/updates/read') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('match_updates', { method: 'POST', body: { openid: session.openid, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/match/apply-ticket') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('match_apply_ticket', { method: 'POST', body: { openid: session.openid, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/match/resume/parse') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_resume_parse', {
+        method: 'POST',
+        body: { openid: session.openid, filename: body.filename, fileBase64: body.fileBase64 }
+      })
+      return send(res, 200, result)
+    }
+    if (req.method === 'PUT' && url.pathname === '/mini/match/profile') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_profile', {
+        method: 'PUT',
+        body: { openid: session.openid, ...body }
+      })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/match/analyze') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_analyze', {
+        method: 'POST',
+        timeoutMs: 120000,
+        body: { openid: session.openid, ...body }
+      })
+      return send(res, 200, result)
+    }
+    if (req.method === 'DELETE' && url.pathname === '/mini/match/data') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const result = await gatewayRequest('career_delete', { method: 'DELETE', body: { openid: session.openid } })
+      return send(res, 200, result)
     }
     if (req.method === 'GET' && url.pathname === '/mini/jobs') {
       const session = getSession(req)
@@ -1587,11 +1938,11 @@ async function route(req, res) {
 const server = http.createServer(route)
 server.listen(port, () => {
   console.log(`[mini-cloudrun] listening on ${port}`)
-  void scheduleSync()
+  if (legacyJobCacheEnabled) void scheduleSync()
+  else console.log('[mini-cloudrun] legacy job cache disabled for Mini Program 1.0')
 })
 
-// The production service keeps one minimum instance during launch week. This
-// timer requests an incremental refresh. The shared database lease and freshness
-// policy make it safe when CloudRun starts more than one container.
-const syncTimer = setInterval(() => { void scheduleSync() }, SYNC_TIMER_MS)
-syncTimer.unref()
+if (legacyJobCacheEnabled) {
+  const syncTimer = setInterval(() => { void scheduleSync() }, SYNC_TIMER_MS)
+  syncTimer.unref()
+}

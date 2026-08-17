@@ -58,7 +58,7 @@ function compareVersion(first: string, second: string) {
   return 0
 }
 
-function supportsVirtualPayment() {
+export function isVirtualPaymentSupported() {
   if (process.env.TARO_ENV !== 'weapp' || typeof wx === 'undefined') return false
   const sdkVersion = String(wx.getSystemInfoSync()?.SDKVersion || '')
   return compareVersion(sdkVersion, '2.19.2') >= 0 || wx.canIUse('requestVirtualPayment')
@@ -103,11 +103,11 @@ async function waitForPaymentConfirmation(paymentId: string) {
 }
 
 export async function purchaseClubPlan(planId: string) {
-  if (!supportsVirtualPayment()) {
+  if (!isVirtualPaymentSupported()) {
     throw new Error('当前微信版本不支持小程序虚拟支付，请升级微信后重试')
   }
   const login = await Taro.login()
-  if (!login.code) throw new Error('未能获取微信支付身份，请重试')
+  if (!login.code) throw new Error('微信支付没有打开，请重试')
   const created = await requestJson<CreateVirtualPaymentResponse>('/mini/payments/orders', {
     method: 'POST',
     authenticated: true,
@@ -140,7 +140,7 @@ export async function purchaseClubPlan(planId: string) {
       status: cancelled ? 'cancelled' : 'failed'
     })
     if (cancelled) throw new Error('已取消支付')
-    throw error
+    throw new Error('微信支付没有完成，请重试')
   }
 
   const order = await waitForPaymentConfirmation(created.order.paymentId)

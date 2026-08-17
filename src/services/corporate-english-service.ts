@@ -5,6 +5,7 @@ export type CorporateEnglishStatus = 'draft' | 'published' | 'archived'
 export type CorporateEnglishAssetKind = 'source_audio' | 'subtitle_csv' | 'clip_audio'
 export type CorporateEnglishAccessTier = 'free' | 'vip'
 export type CorporateEnglishModuleKey = 'english_interview' | 'remote_preparation' | 'foreign_meeting'
+export type CareerGrowthNoteOrigin = 'video' | 'original' | 'external'
 
 export interface CorporateEnglishSubtitleRow {
   source_title?: string
@@ -154,6 +155,76 @@ export interface CorporateEnglishModuleVideo {
   isFeatured?: boolean
   createdAt?: string
   updatedAt?: string
+  noteId?: string
+  noteVersion?: number
+  noteTitle?: string
+  noteOriginalTitle?: string
+  noteSummary?: string
+  noteAuthor?: string
+  noteSourceName?: string
+  noteSourceUrl?: string
+  noteCategory?: string
+  noteAccessTier?: CorporateEnglishAccessTier
+  noteStatus?: CorporateEnglishStatus
+  noteIsFeatured?: boolean
+  noteSortOrder?: number
+  notePublishedAt?: string
+}
+
+export interface CareerGrowthNote {
+  id: string
+  noteId: string
+  originType: CareerGrowthNoteOrigin
+  sourceVideoId: string | null
+  title: string
+  originalTitle: string
+  summary: string
+  authorName: string
+  sourceName: string
+  sourceUrl: string
+  rightsBasis: string
+  rightsConfirmed: boolean
+  contentBlocks: CorporateEnglishVideoNoteBlock[]
+  category: string
+  difficultyLevel: string
+  tags: string[]
+  accessTier: CorporateEnglishAccessTier
+  status: CorporateEnglishStatus
+  isFeatured: boolean
+  sortOrder: number
+  publishedAt: string | null
+  coverImageHash: string
+  coverImageWidth: number | null
+  coverImageHeight: number | null
+  coverImageUrl: string
+  coverThumbnailUrl: string
+  version: number
+  createdBy: string
+  updatedBy: string
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export interface SaveCareerGrowthNotePayload {
+  originType: CareerGrowthNoteOrigin
+  version?: number
+  title: string
+  originalTitle?: string
+  summary: string
+  authorName: string
+  sourceName: string
+  sourceUrl?: string
+  rightsBasis?: string
+  rightsConfirmed?: boolean
+  contentBlocks: CorporateEnglishVideoNoteBlock[]
+  category?: string
+  difficultyLevel?: string
+  tags?: string[]
+  accessTier: CorporateEnglishAccessTier
+  status: CorporateEnglishStatus
+  isFeatured?: boolean
+  sortOrder?: number
+  publishedAt?: string
 }
 
 export type CorporateEnglishVideoNoteBlockType = 'heading_1' | 'heading_2' | 'paragraph' | 'bullet_list' | 'numbered_list' | 'quote'
@@ -182,6 +253,19 @@ export interface SaveCorporateEnglishModuleVideoPayload {
   sortOrder?: number
   publishedAt?: string
   isFeatured?: boolean
+  noteVersion?: number
+  noteTitle?: string
+  noteOriginalTitle?: string
+  noteSummary?: string
+  noteAuthor?: string
+  noteSourceName?: string
+  noteSourceUrl?: string
+  noteCategory?: string
+  noteAccessTier?: CorporateEnglishAccessTier
+  noteStatus?: CorporateEnglishStatus
+  noteIsFeatured?: boolean
+  noteSortOrder?: number
+  notePublishedAt?: string
 }
 
 export interface SaveCorporateEnglishMaterialPayload {
@@ -218,7 +302,7 @@ function getAuthHeaders(extra: Record<string, string> = {}) {
 async function readJson<T>(response: Response): Promise<T> {
   const data = await response.json().catch(() => ({}))
   if (!response.ok || data?.success === false) {
-    throw new Error(data?.error || `Request failed: ${response.status}`)
+    throw Object.assign(new Error(data?.error || `Request failed: ${response.status}`), { status: response.status })
   }
   return data as T
 }
@@ -364,6 +448,52 @@ export const corporateEnglishService = {
     return data.video
   },
 
+  async listMiniNotes(params: {
+    page?: number
+    pageSize?: number
+    search?: string
+    status?: CorporateEnglishStatus | 'all'
+    originType?: CareerGrowthNoteOrigin | 'all'
+    accessTier?: CorporateEnglishAccessTier | 'all'
+    category?: string
+  } = {}) {
+    const query = new URLSearchParams()
+    if (params.page) query.set('page', String(params.page))
+    if (params.pageSize) query.set('pageSize', String(params.pageSize))
+    if (params.search) query.set('search', params.search)
+    if (params.status && params.status !== 'all') query.set('status', params.status)
+    if (params.originType && params.originType !== 'all') query.set('originType', params.originType)
+    if (params.accessTier && params.accessTier !== 'all') query.set('accessTier', params.accessTier)
+    if (params.category) query.set('category', params.category)
+    return readJson<{
+      success: boolean
+      notes: CareerGrowthNote[]
+      total: number
+      page: number
+      pageSize: number
+      totalPages: number
+    }>(await fetch(`/api/admin/mini-notes?${query.toString()}`, { headers: getAuthHeaders() }))
+  },
+
+  async getMiniNote(id: string) {
+    const data = await readJson<{ success: boolean; note: CareerGrowthNote }>(
+      await fetch(`/api/admin/mini-notes?id=${encodeURIComponent(id)}`, { headers: getAuthHeaders() })
+    )
+    return data.note
+  },
+
+  async saveMiniNote(payload: SaveCareerGrowthNotePayload, id?: string) {
+    const query = id ? `?id=${encodeURIComponent(id)}` : ''
+    const data = await readJson<{ success: boolean; note: CareerGrowthNote }>(
+      await fetch(`/api/admin/mini-notes${query}`, {
+        method: id ? 'PUT' : 'POST',
+        headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(payload)
+      })
+    )
+    return data.note
+  },
+
   async deleteModuleVideo(id: string) {
     const query = new URLSearchParams({ resource: 'module-video', id })
     await readJson<{ success: boolean }>(
@@ -375,7 +505,7 @@ export const corporateEnglishService = {
   },
 
   async uploadCoverImage(params: {
-    ownerType: 'material' | 'module_video'
+    ownerType: 'material' | 'module_video' | 'growth_note'
     ownerId: string
     file: File
   }) {
@@ -383,7 +513,7 @@ export const corporateEnglishService = {
     const data = await readJson<{
       success: boolean
       cover: {
-        ownerType: 'material' | 'module_video'
+        ownerType: 'material' | 'module_video' | 'growth_note'
         ownerId: string
         coverImageHash: string
         coverImageWidth: number

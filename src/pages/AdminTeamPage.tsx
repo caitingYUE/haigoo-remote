@@ -28,7 +28,8 @@ import {
   Mail,
   BookOpen,
   Ticket,
-  CreditCard
+  CreditCard,
+  Smartphone
 } from 'lucide-react';
 import { JobFilter, JobStats, SyncStatus, RSSSource } from '../types/rss-types';
 import { rssService } from '../services/rss-service';
@@ -57,6 +58,7 @@ const AdminTrackingDashboard = lazy(() => import('../components/admin/AdminTrack
 const AdminJobBundles = lazy(() => import('../components/admin/AdminJobBundles'));
 const AdminSocialPush = lazy(() => import('../components/admin/AdminSocialPush'));
 const AdminCorporateEnglishPage = lazy(() => import('./AdminCorporateEnglishPage'));
+const AdminMiniProgramPage = lazy(() => import('./AdminMiniProgramPage'));
 
 // 扩展RSSSource接口以包含管理所需的字段
 interface ExtendedRSSSource extends RSSSource {
@@ -72,6 +74,7 @@ const ADMIN_TAB_IDS = new Set([
   'jobs',
   'social-push',
   'corporate-english',
+  'mini-program',
   'job-bundles',
   'companies',
   'trusted-companies',
@@ -1009,6 +1012,7 @@ const AdminTeamPage: React.FC = () => {
     { id: 'jobs', label: '职位数据', icon: Briefcase },
     { id: 'social-push', label: '内容推送', icon: Mail },
     { id: 'corporate-english', label: '职业成长', icon: BookOpen },
+    { id: 'mini-program', label: '小程序', icon: Smartphone },
     { id: 'job-bundles', label: '职位组合', icon: Tag },
     { id: 'companies', label: '全部企业', icon: Building },
     { id: 'trusted-companies', label: '可信企业', icon: CheckCircle },
@@ -1164,6 +1168,11 @@ const AdminTeamPage: React.FC = () => {
               {activeTab === 'corporate-english' && (
                 <Suspense fallback={renderLazyFallback('正在加载职业成长...')}>
                   <AdminCorporateEnglishPage />
+                </Suspense>
+              )}
+              {activeTab === 'mini-program' && (
+                <Suspense fallback={renderLazyFallback('正在加载小程序笔记...')}>
+                  <AdminMiniProgramPage />
                 </Suspense>
               )}
               {activeTab === 'job-bundles' && (

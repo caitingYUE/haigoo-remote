@@ -1,0 +1,16 @@
+.web-view-error {
+  min-height: 70vh;
+  padding: 120px 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  color: #667085;
+  background: #f6f7fa;
+}
+
+.web-view-error text:first-child {
+  color: #182033;
+  font-size: 34px;
+  font-weight: 600;
+}

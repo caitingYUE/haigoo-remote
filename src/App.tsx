@@ -45,6 +45,7 @@ const UnsubscribePage = lazy(() => import('./pages/UnsubscribePage'))
 const CommunityPage = lazy(() => import('./pages/CommunityPage'))
 const MyApplicationsPage = lazy(() => import('./pages/MyApplicationsPage'))
 const ResumePrivacyPage = lazy(() => import('./pages/ResumePrivacyPage'))
+const MiniWebEntryPage = lazy(() => import('./pages/MiniWebEntryPage'))
 
 
 const ChristmasPage = lazyRetry(() => import('./pages/ChristmasPage'), 'ChristmasPage')
@@ -136,6 +137,7 @@ function App() {
                     <Route path="/no-permission" element={<NoPermissionPage />} />
                     <Route path="/unsubscribe" element={<UnsubscribePage />} />
                     <Route path="/community" element={<CommunityPage />} />
+                    <Route path="/mini-entry" element={<MiniWebEntryPage />} />
 
                     {/* AdminPanel 独立布局，用于数据管理（需要登录） */}
                     <Route path="/admin/data" element={

@@ -40,7 +40,7 @@ export default function AccountBindPage() {
 
   const handleBind = async () => {
     if (!email.trim() || !password) {
-      showToast({ title: '请输入网站账号邮箱和密码', icon: 'none' })
+      showToast({ title: '请输入 Haigoo 账号和密码', icon: 'none' })
       return
     }
     setSubmitting(true)
@@ -118,12 +118,12 @@ export default function AccountBindPage() {
           <Text className='account-auth-hero__brand'>HAIGOO REMOTE</Text>
           <View className='account-auth-complete__mark'>✓</View>
           <Text className='account-auth-hero__title'>账号已连接</Text>
-          <Text className='account-auth-hero__copy'>微信身份、网站账号与求职权益已同步。若刚注册，请前往邮箱完成验证，以使用完整申请服务。</Text>
+          <Text className='account-auth-hero__copy'>当前微信已连接 Haigoo 账号。若刚注册，请前往邮箱完成验证。</Text>
         </View>
         <View className='account-auth-complete-card'>
           <Text className='account-auth-complete-card__title'>接下来你可以</Text>
           <Text className='account-auth-complete-card__item'>1. 在邮箱中完成账号验证</Text>
-          <Text className='account-auth-complete-card__item'>2. 浏览岗位，开始你的远程求职旅程</Text>
+          <Text className='account-auth-complete-card__item'>2. 浏览远程企业与职业笔记</Text>
           <Button className='account-auth-primary-button' onClick={() => navigateBack()}>
             返回上一页
           </Button>
@@ -136,14 +136,14 @@ export default function AccountBindPage() {
     <View className='account-bind-page'>
       <View className='account-auth-hero'>
         <Text className='account-auth-hero__brand'>HAIGOO REMOTE</Text>
-        <Text className='account-auth-hero__title'>让微信连接你的{'\n'}远程职业旅程</Text>
-        <Text className='account-auth-hero__copy'>先确认微信身份，再连接或创建 Haigoo 账号。Club 权益、投递记录和职业资料会在同一个账号中延续。</Text>
+        <Text className='account-auth-hero__title'>连接 Haigoo 账号</Text>
+        <Text className='account-auth-hero__copy'>登录后，可以在网站和小程序中查看同一份会员与服务记录。</Text>
         <View className='account-auth-steps'>
-          <Text className='account-auth-steps__item account-auth-steps__item--active'>01 微信身份</Text>
+          <Text className='account-auth-steps__item account-auth-steps__item--active'>01 微信登录</Text>
           <Text className='account-auth-steps__line' />
           <Text className='account-auth-steps__item'>02 Haigoo 账号</Text>
           <Text className='account-auth-steps__line' />
-          <Text className='account-auth-steps__item'>03 同步权益</Text>
+          <Text className='account-auth-steps__item'>03 完成连接</Text>
         </View>
       </View>
 
@@ -156,12 +156,16 @@ export default function AccountBindPage() {
           <View className='account-auth-tabs'>
             <View
               className={'account-auth-tabs__item ' + (mode === 'bind' ? 'account-auth-tabs__item--active' : '')}
+              aria-role='tab'
+              aria-selected={mode === 'bind'}
               onClick={() => setMode('bind')}
             >
               <Text>已有账号</Text>
             </View>
             <View
               className={'account-auth-tabs__item ' + (mode === 'register' ? 'account-auth-tabs__item--active' : '')}
+              aria-role='tab'
+              aria-selected={mode === 'register'}
               onClick={() => setMode('register')}
             >
               <Text>创建账号</Text>
@@ -170,11 +174,11 @@ export default function AccountBindPage() {
         )}
 
         <Text className='account-bind-title'>
-          {mode === 'bind' ? '登录并绑定网站账号' : mode === 'register' ? '创建 Haigoo 网站账号' : '找回网站账号密码'}
+          {mode === 'bind' ? '登录并连接 Haigoo 账号' : mode === 'register' ? '创建 Haigoo 账号' : '找回 Haigoo 账号密码'}
         </Text>
         <Text className='account-bind-copy'>
           {mode === 'bind'
-            ? '使用已有 Haigoo 账号完成一次安全验证。密码只用于本次验证，不会保存在小程序中。'
+            ? '输入已有 Haigoo 账号和密码。密码不会保存在小程序中。'
             : mode === 'register'
               ? '创建后会自动绑定当前微信，并发送一封验证邮件到你的邮箱。'
               : '输入注册邮箱，我们会发送一封密码重置邮件。为保护账号安全，无论邮箱是否存在都会显示相同结果。'}
@@ -210,7 +214,7 @@ export default function AccountBindPage() {
                 className='account-bind-input account-bind-input--password'
                 value={password}
                 password={!showPassword}
-                placeholder={mode === 'register' ? '至少 8 位，包含字母和数字' : '输入网站账号密码'}
+                placeholder={mode === 'register' ? '至少 8 位，包含字母和数字' : '输入 Haigoo 账号密码'}
                 onInput={(event) => setPassword(event.detail.value)}
               />
               <Text className='account-bind-password-toggle' onClick={() => setShowPassword((value) => !value)}>
@@ -241,6 +245,8 @@ export default function AccountBindPage() {
           <View className='account-auth-consent'>
             <View
               className={`account-auth-consent__checkbox ${consentAccepted ? 'account-auth-consent__checkbox--checked' : ''}`}
+              aria-role='checkbox'
+              aria-checked={consentAccepted}
               onClick={() => setConsentAccepted((value) => !value)}
             >
               <Text>{consentAccepted ? '✓' : ''}</Text>
@@ -258,12 +264,12 @@ export default function AccountBindPage() {
           disabled={submitting}
           onClick={mode === 'bind' ? handleBind : mode === 'register' ? handleRegister : handlePasswordReset}
         >
-          {mode === 'bind' ? '安全绑定并继续' : mode === 'register' ? '创建账号并绑定微信' : '发送密码重置邮件'}
+          {mode === 'bind' ? '登录并连接' : mode === 'register' ? '创建账号并连接微信' : '发送重置邮件'}
         </Button>
 
         <View className='account-auth-security'>
           <Text className='account-auth-security__icon'>✓</Text>
-          <Text>{mode === 'bind' ? '账号密码仅用于一次性校验' : mode === 'register' ? '注册信息会通过加密连接安全提交' : '重置链接 1 小时内有效'}</Text>
+          <Text>{mode === 'bind' ? '密码只用于本次验证' : mode === 'register' ? '注册信息会安全提交' : '重置链接 1 小时内有效'}</Text>
         </View>
       </View>
     </View>

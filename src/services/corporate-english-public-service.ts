@@ -102,6 +102,17 @@ export interface CorporateEnglishPublicModuleVideo {
   difficultyLevelLabel?: string
   hasVideoNotes: boolean
   videoNotes: CorporateEnglishVideoNoteBlock[]
+  noteTitle?: string
+  noteOriginalTitle?: string
+  noteSummary?: string
+  noteAuthor?: string
+  noteSourceName?: string
+  noteSourceUrl?: string
+  noteCategory?: string
+  noteAccessTier?: CorporateEnglishAccessTier
+  notePublishedAt?: string
+  noteUpdatedAt?: string
+  noteIsLocked?: boolean
   tags: string[]
   accessTier: CorporateEnglishAccessTier
   durationMs?: number

@@ -23,12 +23,12 @@ interface SessionResponse {
 
 export async function loginWithWechat() {
   const login = await Taro.login()
-  if (!login.code) throw new Error('未能获取微信登录凭证，请重试')
+  if (!login.code) throw new Error('微信登录没有完成，请重试')
   const session = await requestJson<SessionResponse>('/mini/auth/session', {
     method: 'POST',
     data: { code: login.code }
   })
-  if (!session.token) throw new Error('微信登录未返回有效会话')
+  if (!session.token) throw new Error('微信登录没有完成，请重试')
   saveMiniSession({
     token: session.token,
     userId: session.user?.userId || null,
@@ -48,7 +48,7 @@ export async function bindWebsiteAccount(email: string, password: string) {
     authenticated: true,
     data: { email, password }
   })
-  if (!response.token || !response.user?.userId) throw new Error('账号绑定未完成')
+  if (!response.token || !response.user?.userId) throw new Error('账号连接没有完成，请重试')
   saveMiniSession({
     token: response.token,
     userId: response.user.userId,

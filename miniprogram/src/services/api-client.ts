@@ -6,6 +6,7 @@ interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   data?: Record<string, unknown>
   authenticated?: boolean
+  timeout?: number
 }
 
 interface TaroRequestFailure {
@@ -38,22 +39,37 @@ function getRequestFailureMessage(error: unknown): string {
   const normalized = detail.toLowerCase()
 
   if (normalized.includes('url not in domain list') || normalized.includes('合法域名')) {
-    return '请求域名尚未生效，请在开发者工具刷新域名配置后重试'
+    return '当前服务暂时不可用，请稍后再试'
   }
   if (normalized.includes('timeout')) {
-    return '服务响应超时，请检查网络后重试'
+    return '加载时间有点久，请检查网络后重试'
   }
   if (
     normalized.includes('ssl') ||
     normalized.includes('certificate') ||
     normalized.includes('tls')
   ) {
-    return '服务 HTTPS 校验失败，请检查服务器证书'
+    return '当前无法安全连接服务，请稍后再试'
   }
   if (normalized.includes('network') || normalized.includes('request:fail')) {
-    return detail ? `网络请求失败：${detail}` : '网络请求失败，请检查当前网络'
+    return '网络连接失败，请检查网络后重试'
   }
-  return detail || '网络请求失败，请稍后重试'
+  return '网络请求失败，请稍后重试'
+}
+
+function getResponseFailureMessage(statusCode: number, upstreamMessage: string) {
+  const safeChineseMessage = /[\u3400-\u9fff]/.test(upstreamMessage) &&
+    !/(?:sql|database|gateway|cloud|token|stack|internal|not found|接口|服务端|上游)/i.test(upstreamMessage)
+      ? upstreamMessage
+      : ''
+  if (statusCode === 400 && safeChineseMessage) return safeChineseMessage
+  if (statusCode === 401) return safeChineseMessage || '登录状态已过期，请重新登录'
+  if (statusCode === 403) return safeChineseMessage || '当前账号暂时无法使用这项服务'
+  if (statusCode === 404) return '内容暂时无法打开，请稍后重试'
+  if (statusCode === 409) return safeChineseMessage || '内容已经更新，请重新加载'
+  if (statusCode === 429) return '操作有些频繁，请稍后再试'
+  if (statusCode >= 500) return '服务繁忙，请稍后重试'
+  return safeChineseMessage || '请求没有完成，请稍后重试'
 }
 
 function parseJsonResponse<T>(data: T | string): T {
@@ -61,7 +77,7 @@ function parseJsonResponse<T>(data: T | string): T {
   try {
     return JSON.parse(data) as T
   } catch {
-    throw new ApiRequestError('接口返回了无法解析的数据')
+    throw new ApiRequestError('返回内容有误，请稍后重试')
   }
 }
 
@@ -70,7 +86,7 @@ export async function requestJson<T>(
   options: ApiRequestOptions = {}
 ): Promise<T> {
   if (!CLOUD_ENV_ID) {
-    throw new ApiRequestError('云开发环境未配置，请联系管理员完成小程序发布配置')
+    throw new ApiRequestError('当前服务尚未开放')
   }
   let response
   try {
@@ -79,7 +95,7 @@ export async function requestJson<T>(
       path,
       method: options.method || 'GET',
       data: options.data,
-      timeout: 15000,
+      timeout: options.timeout || 30000,
       header: {
         Accept: 'application/json',
         // Cloud Hosting can contain multiple services. This is required by
@@ -112,7 +128,8 @@ export async function requestJson<T>(
     const payload = response.data && typeof response.data === 'object'
       ? response.data as Record<string, unknown>
       : {}
-    const message = String(payload.error || payload.message || `请求失败（${response.statusCode}）`)
+    const upstreamMessage = String(payload.error || payload.message || '')
+    const message = getResponseFailureMessage(response.statusCode, upstreamMessage)
     throw new ApiRequestError(message, response.statusCode, payload)
   }
 

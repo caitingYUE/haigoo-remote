@@ -1016,7 +1016,19 @@ function emptyModuleVideoForm(moduleKey: CorporateEnglishModuleKey): SaveCorpora
     status: 'draft',
     sortOrder: 0,
     publishedAt: formatDateTimeInput(new Date().toISOString()),
-    isFeatured: false
+    isFeatured: false,
+    noteTitle: '',
+    noteOriginalTitle: '',
+    noteSummary: '',
+    noteAuthor: 'Haigoo 职业研究',
+    noteSourceName: '',
+    noteSourceUrl: '',
+    noteCategory: '远程职业准备',
+    noteAccessTier: 'vip',
+    noteStatus: 'draft',
+    noteIsFeatured: false,
+    noteSortOrder: 0,
+    notePublishedAt: formatDateTimeInput(new Date().toISOString())
   }
 }
 
@@ -1137,12 +1149,14 @@ function parseVideoNotesText(input: string): CorporateEnglishVideoNoteBlock[] {
   return blocks.filter((block) => block.text || block.items?.length)
 }
 
-function VideoNotesEditor({
+export function VideoNotesEditor({
   value,
-  onChange
+  onChange,
+  contentLabel = '视频笔记'
 }: {
   value: CorporateEnglishVideoNoteBlock[]
   onChange: (blocks: CorporateEnglishVideoNoteBlock[]) => void
+  contentLabel?: string
 }) {
   const blocks = useMemo(() => Array.isArray(value) ? value : [], [value])
   const [importText, setImportText] = useState('')
@@ -1204,13 +1218,13 @@ function VideoNotesEditor({
             setImportText(pasted)
             applyImportedText(blocks.length ? 'append' : 'replace', pasted)
           }}
-          placeholder={'粘贴整篇视频笔记，例如：\n\n# 国际远程技术求职完整方法\n\n## 真正的问题不是去哪里投\n\n正文内容……\n\n- 第一项\n- 第二项\n\n> 需要重点记住的结论'}
+          placeholder={`粘贴整篇${contentLabel}，例如：\n\n# 国际远程技术求职完整方法\n\n## 真正的问题不是去哪里投\n\n正文内容……\n\n- 第一项\n- 第二项\n\n> 需要重点记住的结论`}
         />
         <p className="mt-2 text-xs font-semibold text-slate-400">粘贴后会立即识别；已有内容时默认追加，可使用“重新识别并替换”覆盖。</p>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h4 className="font-black text-slate-900">视频笔记</h4>
+          <h4 className="font-black text-slate-900">{contentLabel}</h4>
           <p className="mt-1 text-sm leading-6 text-slate-500">已识别 {blocks.length} 个内容块、{noteCharacterCount.toLocaleString('zh-CN')} 字。建议笔记正文 3,000-30,000 字，最多 60,000 字。</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -1281,7 +1295,7 @@ function VideoNotesEditor({
           })}
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">暂无视频笔记，使用上方按钮添加内容块。</div>
+        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-4 py-8 text-center text-sm text-slate-500">暂无{contentLabel}，使用上方按钮添加内容块。</div>
       )}
     </section>
   )
@@ -1433,7 +1447,20 @@ function AdminModuleVideoManager({
       status: video.status,
       sortOrder: video.sortOrder,
       publishedAt: formatDateTimeInput(video.publishedAt),
-      isFeatured: video.isFeatured === true
+      isFeatured: video.isFeatured === true,
+      noteVersion: video.noteVersion || undefined,
+      noteTitle: video.noteTitle || '',
+      noteOriginalTitle: video.noteOriginalTitle || video.title,
+      noteSummary: video.noteSummary || video.description,
+      noteAuthor: video.noteAuthor || 'Haigoo 职业研究',
+      noteSourceName: video.noteSourceName || video.videoSource || '',
+      noteSourceUrl: video.noteSourceUrl || '',
+      noteCategory: video.noteCategory || '远程职业准备',
+      noteAccessTier: video.noteAccessTier || video.accessTier,
+      noteStatus: video.noteStatus || video.status,
+      noteIsFeatured: video.noteIsFeatured === true,
+      noteSortOrder: video.noteSortOrder ?? video.sortOrder,
+      notePublishedAt: formatDateTimeInput(video.notePublishedAt || video.publishedAt)
     })
     setTagInput(formatSimpleTags(video.tags))
     setCoverFile(null)
@@ -1475,20 +1502,55 @@ function AdminModuleVideoManager({
     }
     try {
       setSaving(true)
+      const desiredNoteStatus = form.noteStatus || 'draft'
+      const hasNote = isRemotePreparation && Boolean(form.videoNotes?.length)
+      const needsCoverBeforeNotePublish = hasNote && desiredNoteStatus === 'published' && !editingVideo?.coverImageHash
+      if (needsCoverBeforeNotePublish && !coverFile) {
+        alert('发布笔记前请上传封面')
+        return
+      }
       const payload: SaveCorporateEnglishModuleVideoPayload = {
         ...form,
         moduleKey,
         tags: splitTagValues(tagInput),
         sortOrder: Number(form.sortOrder || 0),
-        publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : new Date().toISOString()
+        publishedAt: form.publishedAt ? new Date(form.publishedAt).toISOString() : new Date().toISOString(),
+        noteStatus: needsCoverBeforeNotePublish ? 'draft' : desiredNoteStatus,
+        noteSortOrder: Number(form.noteSortOrder || 0),
+        notePublishedAt: form.notePublishedAt ? new Date(form.notePublishedAt).toISOString() : new Date().toISOString()
       }
-      const savedVideo = await corporateEnglishService.saveModuleVideo(payload, editingVideo?.videoId)
+      let savedVideo = await corporateEnglishService.saveModuleVideo(payload, editingVideo?.videoId)
       if (coverFile) {
         await corporateEnglishService.uploadCoverImage({
           ownerType: 'module_video',
           ownerId: savedVideo.videoId,
           file: coverFile
         })
+      }
+      if (needsCoverBeforeNotePublish && savedVideo.noteId) {
+        const freshNote = await corporateEnglishService.getMiniNote(savedVideo.noteId)
+        await corporateEnglishService.saveMiniNote({
+          originType: 'video',
+          version: freshNote.version,
+          title: form.noteTitle || form.title,
+          originalTitle: form.noteOriginalTitle || form.title,
+          summary: form.noteSummary || form.description || '',
+          authorName: form.noteAuthor || 'Haigoo 职业研究',
+          sourceName: form.noteSourceName || form.videoSource || '',
+          sourceUrl: form.noteSourceUrl || '',
+          rightsBasis: 'linked_video',
+          rightsConfirmed: true,
+          contentBlocks: form.videoNotes || [],
+          category: form.noteCategory || '远程职业准备',
+          difficultyLevel: form.difficultyLevel,
+          tags: splitTagValues(tagInput),
+          accessTier: form.noteAccessTier || 'vip',
+          status: 'published',
+          isFeatured: form.noteIsFeatured === true,
+          sortOrder: Number(form.noteSortOrder || 0),
+          publishedAt: form.notePublishedAt ? new Date(form.notePublishedAt).toISOString() : new Date().toISOString()
+        }, savedVideo.noteId)
+        savedVideo = { ...savedVideo, noteStatus: 'published' }
       }
       setShowForm(false)
       setEditingVideo(null)
@@ -1651,10 +1713,40 @@ function AdminModuleVideoManager({
               <textarea className="input min-h-[110px]" value={form.description || ''} onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))} />
             </label>
             {isRemotePreparation ? (
-              <VideoNotesEditor
-                value={form.videoNotes || []}
-                onChange={(videoNotes) => setForm((prev) => ({ ...prev, videoNotes }))}
-              />
+              <div className="space-y-6 border-t border-slate-200 pt-6">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-orange-700">统一笔记内容</p>
+                  <h4 className="mt-1 text-lg font-black text-slate-900">网站与小程序共用</h4>
+                  <p className="mt-1 text-sm text-slate-500">这里保存的是同一条视频笔记；从“小程序 → 笔记合集”修改后也会显示最新版本。</p>
+                </div>
+                <div className="grid gap-4 lg:grid-cols-2">
+                  <label className="space-y-1 lg:col-span-2">
+                    <span className="text-sm font-bold text-slate-700">笔记中文标题</span>
+                    <input className="input" value={form.noteTitle || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteTitle: event.target.value }))} placeholder="用于网站笔记页和小程序" />
+                  </label>
+                  <label className="space-y-1 lg:col-span-2">
+                    <span className="text-sm font-bold text-slate-700">原题（可选）</span>
+                    <input className="input" value={form.noteOriginalTitle || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteOriginalTitle: event.target.value }))} placeholder="默认使用视频标题" />
+                  </label>
+                  <label className="space-y-1 lg:col-span-2">
+                    <span className="text-sm font-bold text-slate-700">笔记简介</span>
+                    <textarea className="input min-h-[100px]" value={form.noteSummary || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteSummary: event.target.value }))} />
+                  </label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">作者</span><input className="input" value={form.noteAuthor || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteAuthor: event.target.value }))} /></label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">内容来源</span><input className="input" value={form.noteSourceName || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteSourceName: event.target.value }))} /></label>
+                  <label className="space-y-1 lg:col-span-2"><span className="text-sm font-bold text-slate-700">来源链接（可选，HTTPS）</span><input className="input" type="url" value={form.noteSourceUrl || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteSourceUrl: event.target.value }))} placeholder="https://" /></label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">笔记主题</span><input className="input" value={form.noteCategory || ''} onChange={(event) => setForm((prev) => ({ ...prev, noteCategory: event.target.value }))} /></label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">阅读权益</span><select className="input" value={form.noteAccessTier || 'vip'} onChange={(event) => setForm((prev) => ({ ...prev, noteAccessTier: event.target.value as 'free' | 'vip' }))}><option value="free">免费</option><option value="vip">会员</option></select></label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">笔记状态</span><select className="input" value={form.noteStatus || 'draft'} onChange={(event) => setForm((prev) => ({ ...prev, noteStatus: event.target.value as CorporateEnglishStatus }))}><option value="draft">草稿</option><option value="published">已发布</option><option value="archived">已归档</option></select></label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">笔记发布时间</span><input type="datetime-local" className="input" value={form.notePublishedAt || ''} onChange={(event) => setForm((prev) => ({ ...prev, notePublishedAt: event.target.value }))} /></label>
+                  <label className="space-y-1"><span className="text-sm font-bold text-slate-700">笔记排序</span><input type="number" className="input" value={form.noteSortOrder || 0} onChange={(event) => setForm((prev) => ({ ...prev, noteSortOrder: Number(event.target.value || 0) }))} /></label>
+                  <label className="flex min-h-12 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3"><input type="checkbox" checked={form.noteIsFeatured === true} onChange={(event) => setForm((prev) => ({ ...prev, noteIsFeatured: event.target.checked }))} /><span className="text-sm font-bold text-slate-700">小程序精选笔记</span></label>
+                </div>
+                <VideoNotesEditor
+                  value={form.videoNotes || []}
+                  onChange={(videoNotes) => setForm((prev) => ({ ...prev, videoNotes }))}
+                />
+              </div>
             ) : null}
           </div>
         </div>

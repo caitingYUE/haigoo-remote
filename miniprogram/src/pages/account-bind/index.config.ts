@@ -1,3 +1,3 @@
 export default definePageConfig({
-  navigationBarTitleText: '绑定 Haigoo 账号'
+  navigationBarTitleText: '连接 Haigoo 账号'
 })
