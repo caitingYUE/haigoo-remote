@@ -67,6 +67,10 @@ export default async function handler(req, res) {
         const { default: cleanupAnalyticsHandler } = await import('../../lib/cron-handlers/cleanup-analytics.js');
         return await cleanupAnalyticsHandler(req, res);
       }
+      case 'mini-career-retention': {
+        const { default: miniCareerRetentionHandler } = await import('../../lib/cron-handlers/mini-career-retention.js');
+        return await miniCareerRetentionHandler(req, res);
+      }
 
       case 'test-smtp': {
         const { sendTestEmail } = await import('../../server-utils/email-service.js');
@@ -109,6 +113,7 @@ export default async function handler(req, res) {
             'daily-digest',
             'membership-lifecycle',
             'cleanup-analytics',
+            'mini-career-retention',
             'daily-ingest',
             'daily-enrich'
           ],

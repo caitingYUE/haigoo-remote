@@ -67,6 +67,10 @@
       "schedule": "20 2 * * *"
     },
     {
+      "path": "/api/cron/mini-career-retention",
+      "schedule": "35 2 * * *"
+    },
+    {
       "path": "/api/cron/daily-digest",
       "schedule": "30 2 * * *"
     }
