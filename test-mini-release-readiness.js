@@ -87,6 +87,7 @@ assert.ok(gateway.includes('trustedCompaniesOnly: true'), 'Mini synchronization 
 assert.ok(processedJobs.includes('queryParams.trustedCompaniesOnly') && processedJobs.includes("mini_trusted_company.status = 'active'"), 'sync queries must enforce the active trusted-company boundary')
 assert.ok(cloudrun.includes('2026-08-18-trusted-companies-only-v1'), 'trusted-company filter must invalidate the old Mini cache model')
 assert.ok(cloudrun.includes('MINI_ENABLE_LEGACY_JOB_CACHE') && cloudrun.includes('legacy_job_cache_disabled'), 'legacy background job cache must be opt-in in Mini Program 1.0')
+assert.ok(cloudrun.includes('if (!legacyJobCacheEnabled) return fetchUpstreamJobs(query)'), 'disabled legacy cache must not serve stale RSS documents')
 assert.ok(cloudrun.includes("contentAssetDocument = 'content-images'") && cloudrun.includes('attachCompanyLogos'), 'content image uploads must use a persistent shared asset index')
 
 assert.ok(careerMigration.includes('mini_career_profiles') && careerMigration.includes('retention_policy'), 'career profile retention must be persisted separately')
