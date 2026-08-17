@@ -52,7 +52,11 @@ const LOGO_RETRY_MS = Math.max(60 * 60 * 1000, Number(process.env.MINI_LOGO_RETR
 const LIST_MEMORY_CACHE_MS = Math.max(30 * 1000, Number(process.env.MINI_LIST_MEMORY_CACHE_MS || 5 * 60 * 1000))
 const SYNC_STATE_MEMORY_CACHE_MS = Math.max(10 * 1000, Number(process.env.MINI_SYNC_STATE_MEMORY_CACHE_MS || 60 * 1000))
 const STALE_CLEANUP_MAX_RATIO = Math.max(0, Math.min(1, Number(process.env.MINI_STALE_CLEANUP_MAX_RATIO || 0.2)))
-const CACHE_MODEL_VERSION = '2026-07-28-real-application-modes-v3'
+const CACHE_MODEL_VERSION = '2026-08-18-trusted-companies-only-v1'
+// The trusted-company filter intentionally invalidates the old RSS-inclusive
+// snapshot. Keep the normal 20% guard for routine syncs, but allow this named
+// migration to remove a larger, still bounded stale set in one pass.
+const CACHE_MODEL_MIGRATION_MAX_RATIO = 0.75
 const syncInstanceId = `${os.hostname()}:${process.pid}:${crypto.randomUUID()}`
 
 if (!apiOrigin || !jobsApiOrigin || !appId || !appSecret || !gatewaySecret || !jobsGatewaySecret || !sessionSecret) {
@@ -732,14 +736,14 @@ async function writeBatch(jobs, { syncRunId = '', defaultRankStart = null } = {}
   }
 }
 
-async function removeStaleCacheDocuments(syncRunId) {
+async function removeStaleCacheDocuments(syncRunId, { maxRemovalRatio = STALE_CLEANUP_MAX_RATIO } = {}) {
   if (!syncRunId) return { removed: 0 }
   const records = await readAllListDocuments({ bypassCache: true })
   const stale = records.filter((record) => String(record?.lastSeenSyncId || '') !== syncRunId)
   const cleanup = staleCleanupDecision({
     total: records.length,
     stale: stale.length,
-    maxRemovalRatio: STALE_CLEANUP_MAX_RATIO
+    maxRemovalRatio
   })
   if (!cleanup.allowed) {
     console.error('[mini-cloudrun] stale cleanup blocked by safety threshold', cleanup)
@@ -802,6 +806,9 @@ async function readAllListDocuments({ bypassCache = false } = {}) {
 async function syncJobs({ force = false } = {}) {
   const state = await getSyncState({ bypassCache: true })
   const sourceChanged = sourceStateChanged(state)
+  const cacheModelMigration =
+    String(state.cacheModelVersion || '') !== CACHE_MODEL_VERSION ||
+    state.cacheModelMigrationInProgress === true
   const restartFullSync = force || sourceChanged
   const fullSyncDue = syncDecision({
     state,
@@ -854,6 +861,7 @@ async function syncJobs({ force = false } = {}) {
     ...state,
     jobsSourceOrigin: jobsApiOrigin,
     cacheModelVersion: CACHE_MODEL_VERSION,
+    cacheModelMigrationInProgress: run.mode === 'full' && !completed ? cacheModelMigration : false,
     cacheReady: completed && run.mode === 'full' ? true : Boolean(state.cacheReady),
     fullSyncInProgress: run.mode === 'full' && !completed,
     lastSyncAt: Date.now(),
@@ -880,7 +888,9 @@ async function syncJobs({ force = false } = {}) {
   }
   await setSyncState(nextState)
   const cleanup = completed && run.mode === 'full'
-    ? await removeStaleCacheDocuments(run.syncRunId)
+    ? await removeStaleCacheDocuments(run.syncRunId, {
+        maxRemovalRatio: cacheModelMigration ? CACHE_MODEL_MIGRATION_MAX_RATIO : STALE_CLEANUP_MAX_RATIO
+      })
     : { removed: 0, skipped: false, candidates: 0, removalRatio: 0 }
   if (cleanup.skipped) {
     await setSyncState({

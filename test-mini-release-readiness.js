@@ -6,6 +6,7 @@ function read(path) {
 }
 
 const gateway = read('./lib/api-handlers/mini-gateway.js')
+const processedJobs = read('./lib/api-handlers/processed-jobs.js')
 const cloudrun = read('./cloudrun/index.mjs')
 const migration = read('./server-utils/dal/migrations/073_mini_content_consultation.sql')
 const careerMigration = read('./server-utils/dal/migrations/075_mini_career_match.sql')
@@ -82,6 +83,9 @@ assert.ok(!profile.includes('收藏岗位') && !profile.includes('岗位订阅')
 // Old server routes remain during the 1.0 rollback window, while no client route references them.
 assert.ok(cloudrun.includes("url.pathname === '/mini/jobs'"), 'legacy server job list route must remain for one release')
 assert.ok(gateway.includes("action === 'sync'"), 'legacy job synchronization must remain available')
+assert.ok(gateway.includes('trustedCompaniesOnly: true'), 'Mini synchronization must request trusted-company jobs only')
+assert.ok(processedJobs.includes('queryParams.trustedCompaniesOnly') && processedJobs.includes("mini_trusted_company.status = 'active'"), 'sync queries must enforce the active trusted-company boundary')
+assert.ok(cloudrun.includes('2026-08-18-trusted-companies-only-v1'), 'trusted-company filter must invalidate the old Mini cache model')
 assert.ok(cloudrun.includes('MINI_ENABLE_LEGACY_JOB_CACHE') && cloudrun.includes('legacy_job_cache_disabled'), 'legacy background job cache must be opt-in in Mini Program 1.0')
 assert.ok(cloudrun.includes("contentAssetDocument = 'content-images'") && cloudrun.includes('attachCompanyLogos'), 'content image uploads must use a persistent shared asset index')
 
