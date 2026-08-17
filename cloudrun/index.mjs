@@ -1135,6 +1135,10 @@ async function getSubscriptionOptions(limit = 120) {
 }
 
 async function listJobs(query) {
+  // Mini Program 1.0 keeps the legacy cache disabled. Do not serve any
+  // documents left by an older RSS-inclusive deployment; the upstream sync
+  // endpoint now enforces the trusted-company boundary.
+  if (!legacyJobCacheEnabled) return fetchUpstreamJobs(query)
   if (query.search) {
     const state = await getSyncState().catch((error) => {
       console.warn('[mini-cloudrun] sync state unavailable during search', error?.message || error)
@@ -1548,7 +1552,9 @@ async function route(req, res) {
     }
     if (req.method === 'GET' && /^\/mini\/jobs\/[^/]+$/.test(url.pathname)) {
       const jobId = decodeURIComponent(url.pathname.split('/').pop())
-      const result = await db.collection(jobsCollection).doc(jobDocumentId(jobId)).get().catch(() => ({ data: [] }))
+      const result = legacyJobCacheEnabled
+        ? await db.collection(jobsCollection).doc(jobDocumentId(jobId)).get().catch(() => ({ data: [] }))
+        : { data: [] }
       const job = unwrapDocument(result.data?.[0])?.payload
       if (job) {
         const session = getSession(req)
