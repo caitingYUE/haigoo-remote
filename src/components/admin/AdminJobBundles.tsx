@@ -84,6 +84,7 @@ const AdminJobBundles: React.FC = () => {
   const [selectedAllowedUsers, setSelectedAllowedUsers] = useState<RegisteredUser[]>([]);
   const [searchingAllowedUsers, setSearchingAllowedUsers] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [openAllowedUsersBundleId, setOpenAllowedUsersBundleId] = useState<number | null>(null);
   const deepLinkedBundleRef = useRef<number | null>(null);
 
   const authHeaders: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
@@ -207,6 +208,7 @@ const AdminJobBundles: React.FC = () => {
   };
 
   const handleEdit = (bundle: JobBundle) => {
+    setOpenAllowedUsersBundleId(null);
     setSaveError('');
     setCurrentBundle({ ...bundle, allowed_user_ids: bundle.allowed_user_ids || [], allowed_emails: bundle.allowed_emails || [], career_items: bundle.career_items || [] });
     setSelectedAllowedUsers(bundle.allowed_users || []);
@@ -634,7 +636,7 @@ const AdminJobBundles: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="card">
+      <div className="card job-bundle-list-card">
         <div className="card-header">
           <h2>职位组合管理</h2>
           <button onClick={handleCreate} className="btn-primary">
@@ -670,7 +672,57 @@ const AdminJobBundles: React.FC = () => {
                     <td>{bundle.priority}</td>
                     <td>{bundle.job_ids?.length || 0}</td>
                     <td>{bundle.career_items?.length || 0}</td>
-                    <td>{bundle.visibility === 'specified' ? (bundle.allowed_user_ids?.length || bundle.allowed_users?.length || bundle.allowed_emails?.length || 0) : '—'}</td>
+                    <td className="authorized-users-cell">
+                      {bundle.visibility === 'specified' ? (() => {
+                        const users = bundle.allowed_users || [];
+                        const count = bundle.allowed_user_ids?.length || users.length || bundle.allowed_emails?.length || 0;
+                        const isOpen = openAllowedUsersBundleId === bundle.id;
+                        return (
+                          <div className="authorized-users-popover-wrap">
+                            <button
+                              type="button"
+                              className="authorized-users-count"
+                              aria-expanded={isOpen}
+                              aria-controls={`authorized-users-${bundle.id}`}
+                              onClick={() => setOpenAllowedUsersBundleId(isOpen ? null : bundle.id)}
+                            >
+                              {count}
+                            </button>
+                            {isOpen && (
+                              <div id={`authorized-users-${bundle.id}`} className="authorized-users-popover" role="dialog" aria-label="授权用户">
+                                <div className="authorized-users-popover-header">
+                                  <strong>授权用户</strong>
+                                  <button
+                                    type="button"
+                                    className="authorized-users-close"
+                                    aria-label="关闭授权用户"
+                                    onClick={() => setOpenAllowedUsersBundleId(null)}
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </div>
+                                {users.length > 0 ? (
+                                  <div className="authorized-users-list">
+                                    {users.map(user => (
+                                      <div key={user.user_id} className="authorized-user-item">
+                                        <span className="authorized-user-name">{user.username || '未设置昵称'}</span>
+                                        <span className="authorized-user-email">{user.email}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="authorized-users-empty">暂无用户明细</p>
+                                )}
+                                <button type="button" className="authorized-users-edit" onClick={() => handleEdit(bundle)}>
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  编辑授权
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })() : '—'}
+                    </td>
                     <td className="text-sm">
                       {bundle.start_time ? new Date(bundle.start_time).toLocaleDateString() : '即时'}
                       {' - '}

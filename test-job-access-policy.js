@@ -16,6 +16,7 @@ const filters = read('src/components/JobFilterBar.tsx')
 const linkVerifier = read('lib/cron-handlers/stream-verify-links.js')
 const dataManagement = read('src/services/data-management-service.ts')
 const jobSync = read('lib/services/job-sync-service.js')
+const adminBundles = read('src/components/admin/AdminJobBundles.tsx')
 
 assert.ok(
   processedJobs.includes('COALESCE(${JOBS_TABLE}.member_only, false) = false'),
@@ -99,6 +100,12 @@ assert.ok(
     processedJobs.includes('await isAdminRequest(req)') &&
     dataManagement.includes("'Authorization': `Bearer ${token}`"),
   'job mutations must require server-verified admin access and send the admin token'
+)
+assert.ok(
+  adminBundles.includes('authorized-users-popover') &&
+    adminBundles.includes('bundle.allowed_users') &&
+    adminBundles.includes('编辑授权'),
+  'admin bundle rows must expose authorized user details and an edit action'
 )
 
 console.log('Job access policy tests passed.')
