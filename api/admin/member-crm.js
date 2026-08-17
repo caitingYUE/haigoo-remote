@@ -632,7 +632,7 @@ export default async function handler(req, res) {
   const adminId = auth.user.user_id || auth.user.userId
 
   try {
-    if (isWrite && !fileReadResources.includes(resource)) {
+    if (isWrite && !fileReadResources.includes(resource) && resource !== 'consultations') {
       const queryUserResources = ['resumes', 'service-documents']
       const targetUserId = userIdSchema.parse(req.method === 'DELETE' || queryUserResources.includes(resource)
         ? req.query?.userId
@@ -643,6 +643,99 @@ export default async function handler(req, res) {
     }
     if (req.method === 'GET' && resource === 'members') {
       return res.status(200).json({ success: true, data: { ...(await listMembers(req)), canEdit: auth.canEdit } })
+    }
+    if (req.method === 'GET' && resource === 'consultations') {
+      const status = ['pending', 'contacted', 'scheduled', 'completed', 'closed'].includes(String(req.query.status))
+        ? String(req.query.status)
+        : 'all'
+      const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1)
+      const pageSize = Math.min(100, Math.max(10, Number.parseInt(req.query.pageSize, 10) || 25))
+      const offset = (page - 1) * pageSize
+      const search = String(req.query.search || '').trim()
+      const params = []
+      const where = []
+      if (status !== 'all') { params.push(status); where.push(`request.status = $${params.length}`) }
+      if (search) {
+        params.push(`%${search.replace(/[\%_]/g, '\$&')}%`)
+        where.push(`(LOWER(COALESCE(users.email, '')) LIKE LOWER($${params.length}) ESCAPE '\\' OR LOWER(COALESCE(users.username, '')) LIKE LOWER($${params.length}) ESCAPE '\\' OR LOWER(request.wechat_id) LIKE LOWER($${params.length}) ESCAPE '\\')`)
+      }
+      const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : ''
+      const [rows, countRows, summaryRows] = await Promise.all([
+        neonHelper.query(
+          `SELECT request.id, request.user_id, request.consultation_topic, request.wechat_id,
+                  request.question, request.source_page, request.source_content_id,
+                  request.source_company_id, request.status, request.assigned_to,
+                  request.created_at, request.updated_at, request.contacted_at, request.closed_at,
+                  users.email, users.username, users.member_type,
+                  COALESCE(owner.username, owner.email, '') AS assigned_to_name
+             FROM member_crm_consultation_requests request
+             JOIN users ON users.user_id = request.user_id
+             LEFT JOIN users owner ON owner.user_id = request.assigned_to
+             ${whereSql}
+            ORDER BY CASE request.status WHEN 'pending' THEN 0 WHEN 'contacted' THEN 1 ELSE 2 END,
+                     request.created_at ASC
+            LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
+          [...params, pageSize, offset]
+        ),
+        neonHelper.query(
+          `SELECT COUNT(*)::int AS total
+             FROM member_crm_consultation_requests request
+             JOIN users ON users.user_id = request.user_id ${whereSql}`,
+          params
+        ),
+        neonHelper.query(
+          `SELECT COUNT(*) FILTER (WHERE status='pending')::int AS pending,
+                  COUNT(*) FILTER (WHERE status='contacted')::int AS contacted,
+                  COUNT(*) FILTER (WHERE status IN ('scheduled','completed'))::int AS active
+             FROM member_crm_consultation_requests`
+        )
+      ])
+      const total = toNumber(countRows?.[0]?.total)
+      return res.status(200).json({ success: true, data: {
+        items: (rows || []).map((item) => ({
+          id: item.id, userId: item.user_id, topic: item.consultation_topic,
+          wechatId: item.wechat_id, question: item.question || '', sourcePage: item.source_page,
+          sourceContentId: item.source_content_id || null, sourceCompanyId: item.source_company_id || null,
+          status: item.status, assignedTo: item.assigned_to || null, assignedToName: item.assigned_to_name || '',
+          createdAt: item.created_at, updatedAt: item.updated_at, contactedAt: item.contacted_at || null,
+          closedAt: item.closed_at || null, email: item.email || '', username: item.username || '',
+          memberType: item.member_type || 'none'
+        })),
+        summary: {
+          pending: toNumber(summaryRows?.[0]?.pending),
+          contacted: toNumber(summaryRows?.[0]?.contacted),
+          active: toNumber(summaryRows?.[0]?.active)
+        },
+        pagination: { page, pageSize, total, totalPages: Math.max(1, Math.ceil(total / pageSize)) },
+        canEdit: auth.canEdit
+      } })
+    }
+    if (req.method === 'PATCH' && resource === 'consultations') {
+      const input = z.object({
+        id: z.string().uuid(),
+        status: z.enum(['pending', 'contacted', 'scheduled', 'completed', 'closed'])
+      }).parse(req.body || {})
+      const rows = await neonHelper.query(
+        `UPDATE member_crm_consultation_requests
+            SET status=$2, assigned_to=COALESCE(assigned_to,$3), updated_at=NOW(),
+                contacted_at=CASE WHEN $2 IN ('contacted','scheduled','completed') THEN COALESCE(contacted_at,NOW()) ELSE contacted_at END,
+                closed_at=CASE WHEN $2='closed' THEN COALESCE(closed_at,NOW()) ELSE NULL END
+          WHERE id=$1
+          RETURNING id,user_id,status,updated_at`,
+        [input.id, input.status, adminId]
+      )
+      const saved = rows?.[0]
+      if (!saved) return res.status(404).json({ success: false, error: '咨询记录不存在' })
+      await writeAudit({
+        targetUserId: saved.user_id,
+        adminUserId: adminId,
+        action: 'consultation_status_updated',
+        entityType: 'consultation_request',
+        entityId: input.id,
+        changedFields: ['status'],
+        metadata: { status: input.status }
+      })
+      return res.status(200).json({ success: true, data: { id: saved.id, status: saved.status, updatedAt: saved.updated_at } })
     }
     if (req.method === 'GET' && resource === 'detail') {
       const userId = userIdSchema.parse(req.query.userId)
