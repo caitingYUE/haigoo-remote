@@ -9,7 +9,7 @@ import {
   fetchMatchFeed,
   fetchCareerMatchState,
   followCompany,
-  parseCareerResume,
+  parseCareerResumeFile,
   saveCareerProfile,
   sendMatchFeedback,
   setMatchNotifications,
@@ -39,17 +39,6 @@ const retentionOptions: Array<{ value: CareerRetentionPolicy; label: string; det
 ]
 
 const pathLabels: Record<PathTier, string> = { now: '现在适合', bridge: '过渡方向', later: '长期探索' }
-
-function readFileBase64(filePath: string) {
-  return new Promise<string>((resolve, reject) => {
-    Taro.getFileSystemManager().readFile({
-      filePath,
-      encoding: 'base64',
-      success: (response) => resolve(String(response.data || '')),
-      fail: reject
-    })
-  })
-}
 
 export default function MatchPage() {
   const [step, setStep] = useState<MatchStep>('intro')
@@ -94,7 +83,17 @@ export default function MatchPage() {
         setFeed(nextFeed)
         setStep('feed')
       }
-      if (!state.profile && state.latestRun?.result) {
+      if (!state.profile && state.importedResume?.careerText) {
+        clearLocalMatchDraft()
+        setIntroMode('resume')
+        setSourceType('resume')
+        setCareerText(state.importedResume.careerText)
+        setCompleteness(state.importedResume.completeness)
+        setProfileStage(1)
+        setStateNotice('已找到网站上的简历资料，请补充远程工作条件和职业目标。')
+        setStep('profile')
+      }
+      if (!state.profile && !state.importedResume?.careerText && state.latestRun?.result) {
         setResult(state.latestRun.result)
         setStep(state.latestRun.status === 'ready' ? 'result' : 'questions')
         if (state.latestRun.status === 'needs_clarification') {
@@ -170,7 +169,7 @@ export default function MatchPage() {
       if (!file) return
       if (Number(file.size || 0) > 2 * 1024 * 1024) throw new Error('简历不能超过 2MB，请压缩后重试')
       setLoading(true)
-      const parsed = await parseCareerResume(file.name || 'resume.pdf', await readFileBase64(file.path))
+      const parsed = await parseCareerResumeFile(file.name || 'resume.pdf', file.path)
       setSourceType('resume')
       setCareerText(parsed.careerText)
       setCompleteness(parsed.completeness)

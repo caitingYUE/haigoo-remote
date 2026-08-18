@@ -30,7 +30,7 @@ const LIST_INDEX_FETCH_LIMIT = 1000
 const LIST_INDEX_MAX_RECORDS = 20000
 const MAX_REQUEST_BODY_BYTES = 3 * 1024 * 1024
 const legacyJobCacheEnabled = String(process.env.MINI_ENABLE_LEGACY_JOB_CACHE || '').trim().toLowerCase() === 'true'
-const GATEWAY_REQUEST_TIMEOUT_MS = Math.max(12000, Math.min(30000, Number(process.env.MINI_GATEWAY_REQUEST_TIMEOUT_MS || 25000)))
+const GATEWAY_REQUEST_TIMEOUT_MS = Math.max(12000, Math.min(60000, Number(process.env.MINI_GATEWAY_REQUEST_TIMEOUT_MS || 25000)))
 const SYNC_MAX_PAGES_PER_RUN = Math.max(1, Math.min(10, Number(process.env.MINI_SYNC_PAGES_PER_RUN || 3)))
 const WRITE_CONCURRENCY = Math.max(1, Math.min(20, Number(process.env.MINI_SYNC_WRITE_CONCURRENCY || 4)))
 const LOGO_CONCURRENCY = Math.max(1, Math.min(6, Number(process.env.MINI_LOGO_CONCURRENCY || 1)))
@@ -1308,6 +1308,27 @@ function readBody(req) {
   })
 }
 
+async function materializeCareerResumeFile(fileId, userId) {
+  const normalizedFileId = String(fileId || '').trim()
+  const owner = String(userId || '').replace(/[^A-Za-z0-9_-]/g, '_')
+  if (
+    !/^cloud:\/\/[A-Za-z0-9_.@/-]+$/.test(normalizedFileId) ||
+    !owner ||
+    !normalizedFileId.includes(`/mini-career-resumes/${owner}/`)
+  ) {
+    const error = new Error('简历文件无效，请重新选择')
+    error.statusCode = 400
+    error.payload = { success: false, code: 'INVALID_RESUME_FILE', error: error.message }
+    throw error
+  }
+  const downloaded = await cloudApp.downloadFile({ fileID: normalizedFileId })
+  const buffer = Buffer.isBuffer(downloaded?.fileContent)
+    ? downloaded.fileContent
+    : Buffer.from(downloaded?.fileContent || '')
+  if (!buffer.length) throw new Error('简历文件为空，请重新选择')
+  return { buffer, fileId: normalizedFileId }
+}
+
 function send(res, status, payload) {
   res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' })
   res.end(JSON.stringify(payload))
@@ -1490,11 +1511,22 @@ async function route(req, res) {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
       const body = await readBody(req)
-      const result = await gatewayRequest('career_resume_parse', {
-        method: 'POST',
-        body: { openid: session.openid, filename: body.filename, fileBase64: body.fileBase64 }
-      })
-      return send(res, 200, result)
+      let materialized = null
+      try {
+        if (body.fileId) materialized = await materializeCareerResumeFile(body.fileId, session.userId)
+        const result = await gatewayRequest('career_resume_parse', {
+          method: 'POST',
+          timeoutMs: 60000,
+          body: {
+            openid: session.openid,
+            filename: body.filename,
+            fileBase64: materialized?.buffer?.toString('base64') || body.fileBase64
+          }
+        })
+        return send(res, 200, result)
+      } finally {
+        if (materialized?.fileId) await cloudApp.deleteFile({ fileList: [materialized.fileId] }).catch(() => undefined)
+      }
     }
     if (req.method === 'PUT' && url.pathname === '/mini/match/profile') {
       const session = getSession(req)

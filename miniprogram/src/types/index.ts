@@ -121,6 +121,14 @@ export interface CareerMatchState {
   canAssess: boolean
   isMember: boolean
   retentionReviewDue: boolean
+  importedResume?: {
+    sourceType: 'resume'
+    filename: string
+    careerText: string
+    structured: Record<string, unknown>
+    completeness: CareerCompleteness
+    updatedAt?: string | null
+  } | null
   latestRun: null | {
     run_id: string
     status: 'needs_clarification' | 'ready'

@@ -260,6 +260,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
               <span className="material-symbols-outlined">dashboard</span>
               数据概览
             </Link>
+            <Link to="/admin_team?tab=mini-program" className="nav-item">
+              <span className="material-symbols-outlined">smartphone</span>
+              小程序
+            </Link>
             <Link to="/admin/data" className="nav-item active">
               <span className="material-symbols-outlined">rss_feed</span>
               职位数据

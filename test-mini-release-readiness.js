@@ -13,6 +13,7 @@ const careerMigration = read('./server-utils/dal/migrations/075_mini_career_matc
 const appConfig = read('./miniprogram/src/app.config.ts')
 const contentService = read('./miniprogram/src/services/content-service.ts')
 const cloudAssetService = read('./miniprogram/src/services/cloud-asset-service.ts')
+const careerMatchService = read('./miniprogram/src/services/career-match-service.ts')
 const home = read('./miniprogram/src/pages/index/index.tsx')
 const companies = read('./miniprogram/src/pages/companies/index.tsx')
 const companyDetail = read('./miniprogram/src/pages/company-detail/index.tsx')
@@ -25,6 +26,7 @@ const virtualPaymentClient = read('./miniprogram/src/services/virtual-payment-se
 const virtualPaymentCallback = read('./api/wechat-virtual-payment-notify.js')
 const crmApi = read('./api/admin/member-crm.js')
 const crmPage = read('./src/pages/AdminMemberCrmPage.tsx')
+const adminPanel = read('./src/components/AdminPanel.tsx')
 const miniSourcePaths = fs.readdirSync(new URL('./miniprogram/src/pages/', import.meta.url), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
@@ -75,6 +77,7 @@ assert.ok(gateway.includes("action: 'consultations'"), 'consultation write must 
 assert.ok(gateway.includes("action, entity_type, entity_id, metadata"), 'consultation source must be written to CRM audit')
 assert.ok(crmApi.includes("resource === 'consultations'"), 'CRM must expose a consultation queue API')
 assert.ok(crmPage.includes('ConsultationQueue') && crmPage.includes('咨询待联系'), 'CRM must render the pending consultation queue')
+assert.ok(adminPanel.includes('/admin_team?tab=mini-program') && adminPanel.includes('小程序'), 'admin data panel must link to the Mini Program workspace')
 
 assert.ok(profile.includes('会员与权益') && profile.includes('职业咨询') && profile.includes('订单记录') && profile.includes('账号与安全'), 'profile must contain only 1.0 account and service entries')
 assert.ok(profile.includes('职业资料'), 'profile must expose career data retention and deletion')
@@ -93,5 +96,8 @@ assert.ok(cloudrun.includes("contentAssetDocument = 'content-images'") && cloudr
 assert.ok(careerMigration.includes('mini_career_profiles') && careerMigration.includes('retention_policy'), 'career profile retention must be persisted separately')
 assert.ok(careerMigration.includes('mini_career_entitlements'), 'first free Match entitlement must survive career-data deletion')
 assert.ok(gateway.includes('rawFileStored: false') && gateway.includes('redactCareerText'), 'resume parsing must not retain raw files and must redact before analysis')
+assert.ok(gateway.includes('readWebsiteResumeImport') && gateway.includes('importedResume'), 'bound website resumes must be reusable by Match')
+assert.ok(cloudrun.includes('materializeCareerResumeFile') && cloudrun.includes('mini-career-resumes'), 'resume uploads must use temporary CloudBase files')
+assert.ok(careerMatchService.includes('parseCareerResumeFile') && careerMatchService.includes('Taro.cloud.uploadFile'), 'Mini resume flow must avoid sending the raw file as a large JSON body')
 
 console.log('mini 1.0 release-readiness contract checks passed')

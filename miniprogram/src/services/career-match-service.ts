@@ -5,7 +5,9 @@ import type {
   CareerMatchState,
   CareerRetentionPolicy
 } from '../types'
+import Taro from '@tarojs/taro'
 import { createRequestKey, requestJson } from './api-client'
+import { getMiniUser } from './session'
 
 export const CAREER_PRIVACY_VERSION = '2026-08-14-match-v1'
 
@@ -61,6 +63,34 @@ export function parseCareerResume(filename: string, fileBase64: string) {
     authenticated: true,
     data: { filename, fileBase64 }
   })
+}
+
+export async function parseCareerResumeFile(filename: string, filePath: string) {
+  const ownerId = String(getMiniUser()?.userId || 'bound').replace(/[^A-Za-z0-9_-]/g, '_')
+  const safeName = String(filename || 'resume.pdf').replace(/[^A-Za-z0-9._-]/g, '_')
+  const cloudPath = `mini-career-resumes/${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${safeName}`
+  let fileID = ''
+  try {
+    const uploaded = await Taro.cloud.uploadFile({ cloudPath, filePath })
+    fileID = String(uploaded.fileID || '')
+    if (!fileID) throw new Error('简历上传没有完成，请重试')
+    return await requestJson<{
+      success: true
+      sourceType: 'resume'
+      careerText: string
+      structured: Record<string, unknown>
+      completeness: CareerCompleteness
+      rawFileStored: false
+      message: string
+    }>('/mini/match/resume/parse', {
+      method: 'POST',
+      authenticated: true,
+      timeout: 90000,
+      data: { filename: safeName, fileId: fileID }
+    })
+  } finally {
+    if (fileID) await Taro.cloud.deleteFile({ fileList: [fileID] }).catch(() => undefined)
+  }
 }
 
 export function saveCareerProfile(data: {
