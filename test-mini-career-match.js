@@ -38,4 +38,8 @@ assert.match(matches[0].caution, /以企业官方信息为准/)
 const agentSource = fs.readFileSync(new URL('./lib/services/member-crm-career-agent.js', import.meta.url), 'utf8')
 assert.match(agentSource, /不提 AI、模型、算法、系统或内部流程/, 'user-facing Match output must avoid AI and internal-process language')
 
+const companyMatchSource = fs.readFileSync(new URL('./lib/services/mini-company-match-service.js', import.meta.url), 'utf8')
+assert.match(companyMatchSource, /loadRecommendations\(profileRow, userId\)/, 'recommendation runs must receive the authenticated user id explicitly')
+assert.doesNotMatch(companyMatchSource, /profileRow\.user_id/, 'recommendation runs must not depend on an unselected profile user_id field')
+
 console.log('mini career Match checks passed')
