@@ -150,6 +150,7 @@ export interface MatchRecommendation {
   reasons: string[]
   evidenceSummary: string
   hasPublicOpportunity: boolean
+  opportunity?: { jobId: string; title: string } | null
   isFollowed: boolean
   hasUpdate: boolean
 }

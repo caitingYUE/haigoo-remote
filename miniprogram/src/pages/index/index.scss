@@ -93,6 +93,16 @@
 .match-page-heading text:first-child { color: var(--color-ink); font-size: 42px; font-weight: 700; line-height: 52px; }
 .match-page-heading text:last-child { margin-top: 14px; color: var(--color-secondary); font-size: 27px; line-height: 43px; }
 .match-file-note { display: flex; padding: 20px 24px; align-items: center; gap: 12px; border: 1PX solid var(--color-brand-line); background: var(--color-brand-soft); color: var(--color-secondary); font-size: 25px; line-height: 38px; }
+.match-resume-summary { margin-top: 28px; padding: 26px 24px; border: 1PX solid var(--color-border); background: var(--color-surface-soft); }
+.match-resume-summary__title { display: block; color: var(--color-ink); font-size: 29px; font-weight: 700; }
+.match-resume-summary__section { margin-top: 20px; }
+.match-resume-summary__section > text { display: block; color: var(--color-muted); font-size: 23px; }
+.match-resume-summary__section > view { display: flex; margin-top: 8px; flex-wrap: wrap; gap: 8px; }
+.match-resume-summary__section > view text { padding: 7px 12px; border: 1PX solid var(--color-border); border-radius: 999px; background: #fff; color: var(--color-secondary); font-size: 23px; }
+.match-resume-summary__hint { display: block; margin-top: 22px; color: var(--color-muted); font-size: 22px; line-height: 34px; }
+.match-resume-confirm { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
+.match-resume-confirm text { display: flex; min-height: 72px; align-items: center; justify-content: center; border: 1PX solid var(--color-border); border-radius: 8px; background: #fff; color: var(--color-secondary); font-size: 24px; }
+.match-resume-confirm text.is-active { border-color: var(--color-brand); background: var(--color-brand-soft); color: var(--color-brand-dark); font-weight: 600; }
 
 .match-field { margin-top: 32px; }
 .match-field__label { display: block; margin-bottom: 12px; color: var(--color-ink); font-size: 27px; font-weight: 600; }
@@ -102,8 +112,11 @@
 .match-textarea--career { height: 460px; }
 .match-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .match-options { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.match-options--compact { gap: 8px; }
+.match-options--compact .match-option { min-height: 64px; font-size: 22px; }
 .match-option { display: flex; min-height: 88px; align-items: center; justify-content: center; border: 1PX solid var(--color-border); border-radius: 12px; background: #fff; color: var(--color-secondary); font-size: 26px; font-weight: 500; }
 .match-option--active { border-color: var(--color-brand); background: var(--color-brand-soft); color: var(--color-brand-dark); font-weight: 600; }
+.match-input--optional { margin-top: 12px; }
 
 .match-completeness { margin-top: 40px; padding: 24px; background: var(--color-surface-soft); }
 .match-completeness view { display: flex; margin-bottom: 14px; justify-content: space-between; color: var(--color-ink); font-size: 26px; font-weight: 600; }
@@ -139,6 +152,9 @@
 .match-question__number { color: var(--color-brand-text); font-size: 23px; font-weight: 600; }
 .match-question__title { margin-top: 10px; color: var(--color-ink); font-size: 32px; font-weight: 700; line-height: 46px; }
 .match-question__reason { margin: 10px 0 20px; color: var(--color-muted); font-size: 24px; line-height: 38px; }
+.match-question__options { display: flex; margin-bottom: 8px; flex-wrap: wrap; gap: 10px; }
+.match-question__options text { padding: 10px 14px; border: 1PX solid var(--color-border); border-radius: 999px; background: #fff; color: var(--color-secondary); font-size: 23px; }
+.match-question__options text.is-active { border-color: var(--color-brand); background: var(--color-brand-soft); color: var(--color-brand-dark); font-weight: 600; }
 
 .match-result__hero { padding: 56px 0 40px; border-top: 1PX solid var(--color-brand); border-bottom: 1PX solid var(--color-border); }
 .match-result__label, .match-result__title, .match-result__copy, .match-result__readiness { display: block; }
@@ -196,6 +212,8 @@
 .match-feed-company__band { display: flex; margin-top: 18px; align-items: center; gap: 12px; }
 .match-feed-company__band text { padding: 6px 12px; border-radius: 999px; background: var(--color-brand-soft); color: var(--color-brand-dark); font-size: 22px; font-weight: 600; }
 .match-feed-company__band text + text { border: 1PX solid var(--color-border); background: #fff; color: var(--color-secondary); }
+.match-feed-company__opportunity { display: block; margin-top: 18px; padding: 14px 16px; background: var(--color-brand-soft); color: var(--color-brand-dark); font-size: 24px; line-height: 36px; }
+.match-feed-company__opportunity--muted { background: var(--color-surface-soft); color: var(--color-muted); }
 .match-feed-company__reason { position: relative; display: block; margin-top: 14px; padding-left: 22px; color: var(--color-secondary); font-size: 26px; line-height: 40px; }
 .match-feed-company__reason::before { position: absolute; top: 16px; left: 2px; width: 6px; height: 6px; border-radius: 50%; background: var(--color-brand); content: ''; }
 .match-feed-company__evidence { display: block; margin-top: 16px; padding: 18px 20px; background: var(--color-surface-soft); color: var(--color-muted); font-size: 23px; line-height: 36px; }

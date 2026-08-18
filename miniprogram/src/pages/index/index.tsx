@@ -39,12 +39,34 @@ const retentionOptions: Array<{ value: CareerRetentionPolicy; label: string; det
 ]
 
 const pathLabels: Record<PathTier, string> = { now: '现在适合', bridge: '过渡方向', later: '长期探索' }
+const roleOptions = ['产品', '项目', '运营', '设计', '研发', '数据']
+const goalOptions = ['寻找更匹配的远程岗位', '从线下转向远程', '提高远程求职成功率']
+const timezoneOptions = ['UTC+8', 'UTC+0', 'UTC-5', 'UTC-8']
+
+function asTextList(value: unknown, limit = 6) {
+  if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean).slice(0, limit)
+  const text = String(value || '').trim()
+  return text ? text.split(/[,，、|/]+/).map((item) => item.trim()).filter(Boolean).slice(0, limit) : []
+}
+
+function questionOptions(question: string) {
+  const text = String(question || '').toLowerCase()
+  if (/时区|所在地|工作地点|重叠/.test(text)) return ['UTC+8 / 中国大陆', 'UTC+0 / 欧洲', 'UTC-5 / 北美', '暂不确定']
+  if (/语言|英语|中文/.test(text)) return ['中文为主', '可以工作英语', '中英文都可以', '暂不确定']
+  if (/全职|兼职|合同|工作方式/.test(text)) return ['全职', '兼职', '合同制', '暂不确定']
+  if (/到岗|开始|可用|入职/.test(text)) return ['现在可以', '两周内', '一个月内', '暂不确定']
+  if (/方向|岗位|职位|角色/.test(text)) return roleOptions
+  return ['符合', '不符合', '暂不确定', '补充说明']
+}
 
 export default function MatchPage() {
   const [step, setStep] = useState<MatchStep>('intro')
   const [introMode, setIntroMode] = useState<'resume' | 'manual'>('resume')
   const [sourceType, setSourceType] = useState<'manual' | 'resume'>('manual')
   const [careerText, setCareerText] = useState('')
+  const [structuredProfile, setStructuredProfile] = useState<Record<string, unknown>>({})
+  const [resumeConfirmed, setResumeConfirmed] = useState(false)
+  const [rawResumeExpanded, setRawResumeExpanded] = useState(false)
   const [intake, setIntake] = useState<CareerIntake>(emptyIntake)
   const [retention, setRetention] = useState<CareerRetentionPolicy>('30_days')
   const [consented, setConsented] = useState(false)
@@ -76,6 +98,8 @@ export default function MatchPage() {
         clearLocalMatchDraft()
         setSourceType(state.profile.source_type)
         setCareerText(state.profile.career_text)
+        setStructuredProfile(state.profile.structured_profile || {})
+        setResumeConfirmed(state.profile.source_type !== 'resume')
         setIntake({ ...emptyIntake, ...(state.profile.intake || {}) })
         setRetention(state.profile.retention_policy)
         setConsented(true)
@@ -88,6 +112,8 @@ export default function MatchPage() {
         setIntroMode('resume')
         setSourceType('resume')
         setCareerText(state.importedResume.careerText)
+        setStructuredProfile(state.importedResume.structured || {})
+        setResumeConfirmed(false)
         setCompleteness(state.importedResume.completeness)
         setProfileStage(1)
         setStateNotice('已找到网站上的简历资料，请补充远程工作条件和职业目标。')
@@ -172,6 +198,9 @@ export default function MatchPage() {
       const parsed = await parseCareerResumeFile(file.name || 'resume.pdf', file.path)
       setSourceType('resume')
       setCareerText(parsed.careerText)
+      setStructuredProfile(parsed.structured || {})
+      setResumeConfirmed(false)
+      setRawResumeExpanded(false)
       setCompleteness(parsed.completeness)
       setProfileStage(1)
       setStep('profile')
@@ -244,13 +273,17 @@ export default function MatchPage() {
   }
 
   const submitAnswers = () => {
-    const payload = questions.map((question, index) => ({ question: question.question, answer: answers[index] || '' })).filter((item) => item.answer.trim())
+    const payload = questions.map((question, index) => ({ question: question.question, answer: answers[index] || '' })).filter((item) => item.answer.trim() && item.answer.trim() !== '补充说明：')
     if (!payload.length) return setError('至少回答一个问题，或返回完善职业资料')
     void runAnalysis(payload)
   }
 
   const continueProfile = () => {
     setError('')
+    if (sourceType === 'resume' && !resumeConfirmed) {
+      setError('请先确认提取出的职业信息，或选择需要调整后检查原文。')
+      return
+    }
     if (careerText.trim().length < 80) {
       setError('请补充至少一段工作或项目经历，建议写清职责、行动和结果。')
       return
@@ -267,6 +300,18 @@ export default function MatchPage() {
   const activePaths = result?.careerPaths[pathTier] || []
   const readinessCount = result?.remoteReadiness.filter((item) => item.confirmed).length || 0
   const progressLabel = useMemo(() => `${completeness?.completeCount || 0}/${completeness?.total || 4}`, [completeness])
+  const resumeHighlights = useMemo(() => {
+    const experienceSnippets = careerText.split(/\n+/).map((item) => item.trim()).filter((item) => item.length > 12).slice(0, 2).map((item) => item.slice(0, 90))
+    const sections = [
+      { key: 'target', label: '目标方向', values: asTextList(structuredProfile.roles || structuredProfile.roleFamilies || intake.targetRoles) },
+      { key: 'skills', label: '核心技能', values: asTextList(structuredProfile.skills || structuredProfile.tools, 8) },
+      { key: 'experience', label: '经历基础', values: [structuredProfile.experienceYears ? `${structuredProfile.experienceYears} 年相关经历` : '', structuredProfile.seniority ? String(structuredProfile.seniority) : '', ...experienceSnippets].filter(Boolean) },
+      { key: 'location', label: '工作范围', values: asTextList(structuredProfile.eligibleLocations || intake.location || intake.timezone, 4) }
+    ].filter((item) => item.values.length)
+    if (sections.length) return sections
+    const excerpts = careerText.split(/\n+/).map((item) => item.trim()).filter((item) => item.length > 8).slice(0, 3)
+    return excerpts.length ? [{ key: 'summary', label: '经历摘要', values: excerpts }] : []
+  }, [careerText, intake.location, intake.targetRoles, intake.timezone, structuredProfile])
 
   const updateRecommendation = (companyId: string, updates: Partial<MatchRecommendation>) => {
     setFeed((current) => current ? {
@@ -402,10 +447,16 @@ export default function MatchPage() {
           {profileStage === 1 ? <>
             <View className='match-page-heading'><Text>先说说你的工作经历</Text><Text>写下做过的工作、项目和结果。信息不够时，我们会再问几个问题。</Text></View>
             {sourceType === 'resume' ? <View className='match-file-note'><MiniIcon name='shield' size={20} /><Text>已移除姓名和联系方式，请检查职业内容是否准确。</Text></View> : null}
-            <View className='match-field'>
-              <Text className='match-field__label'>工作、项目与成果</Text>
-              <Textarea className='match-textarea match-textarea--career' value={careerText} maxlength={20000} placeholder='例如：过去三年负责 SaaS 产品运营，独立推进用户研究和上线复盘……' onInput={(event) => setCareerText(event.detail.value)} />
-            </View>
+            {sourceType === 'resume' && resumeHighlights.length ? <View className='match-resume-summary'>
+              <Text className='match-resume-summary__title'>已从简历整理出这些重点</Text>
+              {resumeHighlights.map((section) => <View className='match-resume-summary__section' key={section.key}><Text>{section.label}</Text><View>{section.values.map((value) => <Text key={value}>{value}</Text>)}</View></View>)}
+              <Text className='match-resume-summary__hint'>只保留会影响 Match 的信息，原文不会展示给其他用户。</Text>
+              <View className='match-resume-confirm'><Text className={resumeConfirmed ? 'is-active' : ''} onClick={() => setResumeConfirmed(true)}>基本准确</Text><Text className={rawResumeExpanded ? 'is-active' : ''} onClick={() => { setRawResumeExpanded(true); setResumeConfirmed(true) }}>需要调整</Text></View>
+            </View> : null}
+            {(sourceType !== 'resume' || rawResumeExpanded) ? <View className='match-field'>
+              <Text className='match-field__label'>{sourceType === 'resume' ? '调整职业内容' : '工作、项目与成果'}</Text>
+              <Textarea className='match-textarea match-textarea--career' value={careerText} maxlength={12000} placeholder='例如：过去三年负责 SaaS 产品运营，独立推进用户研究和上线复盘……' onInput={(event) => setCareerText(event.detail.value)} />
+            </View> : null}
             {error ? <Text className='match-error'>{error}</Text> : null}
             <View className='match-primary match-submit' aria-role='button' onClick={continueProfile}>继续填写偏好</View>
             <Text className='match-form__back' aria-role='button' onClick={() => setStep('intro')}>返回开始页</Text>
@@ -413,11 +464,11 @@ export default function MatchPage() {
             <View className='match-page-heading'><Text>说说你想要的工作方式</Text><Text>这些信息只用于 Match，不会公开展示。</Text></View>
             <View className='match-form-grid'>
               <View className='match-field'><Text className='match-field__label'>当前所在地</Text><Input className='match-input' value={intake.location} placeholder='例如：上海' onInput={(event) => updateIntake('location', event.detail.value)} /></View>
-              <View className='match-field'><Text className='match-field__label'>所在时区</Text><Input className='match-input' value={intake.timezone} placeholder='例如：UTC+8' onInput={(event) => updateIntake('timezone', event.detail.value)} /></View>
+              <View className='match-field'><Text className='match-field__label'>所在时区</Text><View className='match-options match-options--compact'>{timezoneOptions.map((item) => <View className={`match-option ${intake.timezone === item ? 'match-option--active' : ''}`} key={item} onClick={() => updateIntake('timezone', item)}>{item}</View>)}</View></View>
             </View>
             <View className='match-field'><Text className='match-field__label'>希望的工作方式</Text><View className='match-options'>{['全职', '兼职', '合同制', '自由职业'].map((item) => <View className={`match-option ${intake.workMode === item ? 'match-option--active' : ''}`} key={item} aria-role='radio' aria-checked={intake.workMode === item} onClick={() => updateIntake('workMode', item)}>{item}</View>)}</View></View>
-            <View className='match-field'><Text className='match-field__label'>目标方向</Text><Input className='match-input' value={intake.targetRoles} placeholder='可以填写多个方向' onInput={(event) => updateIntake('targetRoles', event.detail.value)} /></View>
-            <View className='match-field'><Text className='match-field__label'>你现在最想解决的问题</Text><Textarea className='match-textarea' value={intake.careerGoal} maxlength={800} placeholder='例如：希望从线下市场转向可异步协作的远程岗位' onInput={(event) => updateIntake('careerGoal', event.detail.value)} /></View>
+            <View className='match-field'><Text className='match-field__label'>目标方向</Text><View className='match-options'>{roleOptions.map((item) => <View className={`match-option ${intake.targetRoles.includes(item) ? 'match-option--active' : ''}`} key={item} onClick={() => updateIntake('targetRoles', item)}>{item}</View>)}</View><Input className='match-input match-input--optional' value={intake.targetRoles} placeholder='也可以补充具体岗位名称' onInput={(event) => updateIntake('targetRoles', event.detail.value)} /></View>
+            <View className='match-field'><Text className='match-field__label'>当前最想解决的问题</Text><View className='match-options'>{goalOptions.map((item) => <View className={`match-option ${intake.careerGoal === item ? 'match-option--active' : ''}`} key={item} onClick={() => updateIntake('careerGoal', item)}>{item}</View>)}</View></View>
             <View className='match-field'><Text className='match-field__label'>现实限制（可选）</Text><Textarea className='match-textarea' value={intake.constraints} maxlength={800} placeholder='可工作时间、语言、家庭安排或不能接受的条件' onInput={(event) => updateIntake('constraints', event.detail.value)} /></View>
             {completeness ? <View className='match-completeness'><View><Text>信息完整度</Text><Text>{progressLabel}</Text></View>{completeness.checks.map((item) => <Text className={item.complete ? 'is-complete' : ''} key={item.key}>{item.complete ? '已填写' : '待补充'} · {item.label}</Text>)}</View> : null}
             <View className='match-retention'>
@@ -445,7 +496,7 @@ export default function MatchPage() {
         <View className='match-questions'>
           <View className='match-stepbar'><View><Text>3/3</Text><Text>补充与确认</Text></View><Text className='match-stepbar__exit' aria-role='button' onClick={saveDraftAndExit}>{retention === 'session' ? '退出' : '保存并退出'}</Text></View>
           <View className='match-page-heading'><Text>还想了解几件事</Text><Text>只需回答你确定的部分，其他内容可以稍后再补。</Text></View>
-          {questions.map((question, index) => <View className='match-question' key={question.question}><Text className='match-question__number'>0{index + 1}</Text><Text className='match-question__title'>{question.question}</Text><Text className='match-question__reason'>{question.reason}</Text><Textarea className='match-textarea' value={answers[index]} maxlength={1000} placeholder='写下你确定的事实' onInput={(event) => setAnswers((current) => current.map((value, itemIndex) => itemIndex === index ? event.detail.value : value))} /></View>)}
+          {questions.slice(0, 5).map((question, index) => <View className='match-question' key={question.question}><Text className='match-question__number'>0{index + 1}</Text><Text className='match-question__title'>{question.question}</Text><Text className='match-question__reason'>{question.reason}</Text><View className='match-question__options'>{questionOptions(question.question).map((option) => <Text className={answers[index] === option || (option === '补充说明' && answers[index]?.startsWith('补充说明：')) ? 'is-active' : ''} key={option} onClick={() => setAnswers((current) => current.map((value, itemIndex) => itemIndex === index ? option === '补充说明' ? '补充说明：' : option : value))}>{option}</Text>)}</View>{answers[index]?.startsWith('补充说明：') ? <Textarea className='match-textarea' value={answers[index].slice(5)} maxlength={1000} placeholder='补充一两句即可' onInput={(event) => setAnswers((current) => current.map((value, itemIndex) => itemIndex === index ? `补充说明：${event.detail.value}` : value))} /> : null}</View>)}
           {error ? <Text className='match-error'>{error}</Text> : null}
           <View className='match-primary match-submit' onClick={submitAnswers}>继续分析</View>
           <Text className='match-form__back' onClick={() => setStep('profile')}>返回完善资料</Text>
@@ -491,6 +542,7 @@ export default function MatchPage() {
                     <MiniIcon name='chevronRight' size={19} />
                   </View>
                   <View className='match-feed-company__band'><Text>{fitBandLabels[company.fitBand]}</Text>{company.hasUpdate ? <Text>有更新</Text> : null}</View>
+                  {company.opportunity?.title ? <Text className='match-feed-company__opportunity'>当前岗位 · {company.opportunity.title}</Text> : <Text className='match-feed-company__opportunity match-feed-company__opportunity--muted'>暂未发现匹配岗位，可先关注企业</Text>}
                   {company.reasons.map((reason) => <Text className='match-feed-company__reason' key={reason}>{reason}</Text>)}
                   {expanded ? <Text className='match-feed-company__evidence'>{company.evidenceSummary}</Text> : null}
                   <View className='match-feed-company__actions'>

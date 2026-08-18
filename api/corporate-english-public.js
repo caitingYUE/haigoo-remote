@@ -26,6 +26,7 @@ const CAREER_MODULE_LABELS = {
 }
 const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video', 'growth_note'])
 const columnSupportCache = new Map()
+const tableSupportCache = new Map()
 
 function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
   const id = normalizeString(ownerId)
@@ -108,6 +109,20 @@ async function hasTableColumn(tableName, columnName) {
   return hasColumn
 }
 
+async function hasTable(tableName) {
+  if (tableSupportCache.has(tableName)) return tableSupportCache.get(tableName)
+  const rows = await neonHelper.query(
+    `SELECT EXISTS (
+       SELECT 1 FROM information_schema.tables
+       WHERE table_schema = 'public' AND table_name = $1
+     ) AS has_table`,
+    [tableName]
+  )
+  const exists = rows?.[0]?.has_table === true
+  tableSupportCache.set(tableName, exists)
+  return exists
+}
+
 async function hasCoverColumns(tableName) {
   return hasTableColumn(tableName, 'cover_image_hash')
 }
@@ -188,6 +203,7 @@ async function listFeaturedVideos(req, res, user) {
   const requestedLimit = Number(req.query.limit || 4)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 12) : 4
   const shouldPrioritizeFreeVideos = !deriveMembershipCapabilities(user).canAccessCorporateEnglishVideos
+  const materialsTableExists = await hasTable(MATERIALS_TABLE)
   const materialHasCover = await hasTableColumn(MATERIALS_TABLE, 'cover_image_hash')
   const moduleHasCover = await hasTableColumn(MODULE_VIDEOS_TABLE, 'cover_image_hash')
   const materialHasFeatured = await hasTableColumn(MATERIALS_TABLE, 'is_featured')
@@ -195,7 +211,7 @@ async function listFeaturedVideos(req, res, user) {
   const moduleHasDifficultyLevel = await hasTableColumn(MODULE_VIDEOS_TABLE, 'difficulty_level')
 
   const [materials, moduleVideos] = await Promise.all([
-    neonHelper.query(
+    materialsTableExists ? neonHelper.query(
       `SELECT m.material_id AS id,
               m.material_title AS title,
               m.company_name_snapshot AS source,
@@ -215,7 +231,7 @@ async function listFeaturedVideos(req, res, user) {
        WHERE m.status = 'published' AND m.deleted_at IS NULL
        ORDER BY m.published_at DESC NULLS LAST, m.updated_at DESC
        LIMIT 48`
-    ),
+    ) : Promise.resolve([]),
     neonHelper.query(
       `SELECT v.video_id AS id,
               v.module_key,
@@ -786,6 +802,7 @@ async function listModuleVideos(req, res, user) {
 async function getCeoVideo(req, res, user) {
   const materialId = normalizeString(req.query.materialId || req.query.material_id || req.query.id)
   if (!materialId) return res.status(400).json({ success: false, error: 'Missing material id' })
+  if (!await hasTable(MATERIALS_TABLE)) return res.status(404).json({ success: false, error: 'Video not found' })
   const includeDrafts = isLocalPreviewRequest(req)
   const rows = await neonHelper.query(
     `SELECT company_id
