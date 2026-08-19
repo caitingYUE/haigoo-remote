@@ -25,7 +25,7 @@ if (!environments[target]) {
   throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true]')
 }
 if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
-if (!['sync', 'content_home'].includes(requestedAction)) throw new Error('Action must be sync or content_home')
+if (!['sync', 'content_home', 'match_feed'].includes(requestedAction)) throw new Error('Action must be sync, content_home, or match_feed')
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -65,7 +65,7 @@ const bypassSecret = String(environment.VERCEL_AUTOMATION_BYPASS_SECRET || '')
 if (!origin || !gatewaySecret) throw new Error('CloudRun gateway configuration is incomplete')
 
 const action = requestedAction
-const query = action === 'content_home'
+const query = action === 'content_home' || action === 'match_feed'
   ? { openid }
   : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}) }
 const timestamp = String(Date.now())
@@ -99,6 +99,13 @@ console.log(JSON.stringify({
   returnedCompanies: Array.isArray(payload.companies) ? payload.companies.length : null,
   returnedNotes: Array.isArray(payload.notes) ? payload.notes.length : null,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
+  returnedRecommendations: Array.isArray(payload.recommendations) ? payload.recommendations.length : null,
+  profile: payload.profile ? {
+    exists: Boolean(payload.profile.exists),
+    completeness: payload.profile.completeness ?? null,
+    profileId: payload.profile.profile_id || payload.profile.profileId || null
+  } : null,
+  matchMeta: payload.meta || null,
   sampleJobs: Array.isArray(payload.jobs)
     ? payload.jobs.slice(0, 3).map((job) => ({
         id: job.id,
