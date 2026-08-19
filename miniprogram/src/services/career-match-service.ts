@@ -172,6 +172,10 @@ export interface MatchFeedResponse {
     poolExhausted: boolean
     generatedAt: string
     algorithmVersion: string
+    fallbackUsed?: boolean
+    historyWindowDays?: number
+    dailyLimit?: number
+    emptyReason?: 'profile_incomplete' | 'no_supported_match' | null
   }
   capabilities: {
     isMember: boolean

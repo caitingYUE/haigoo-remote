@@ -5,7 +5,10 @@ import {
   buildStructuredCareerProfile,
   computeCompanyMatch,
   roleFamiliesForText,
-  selectBestPublicOpportunity
+  selectBestPublicOpportunity,
+  selectMatchRecommendations,
+  collectRecentMatchRecommendations,
+  MINI_MATCH_ALGORITHM_VERSION
 } from './lib/services/mini-company-match-service.js'
 
 const text = `产品经理，负责 B2B SaaS 产品规划与用户研究。过去四年带领跨职能团队完成从需求访谈、原型设计到上线复盘，推动注册转化提升 30%。熟悉 SQL、Figma、Notion，长期与海外团队异步协作。`
@@ -59,6 +62,42 @@ const selectedOpportunity = selectBestPublicOpportunity(profile.matchingProfile,
   job_id: 'job-product', title: 'Product Manager', description: 'Product strategy and user research.', category: '产品经理'
 }])
 assert.equal(selectedOpportunity?.job_id, 'job-product')
+
+const carriedForward = selectMatchRecommendations({
+  candidates: [{ companyId: 'company-direct', name: 'Direct' }],
+  recentRuns: [{ generated_at: '2026-08-18T00:00:00.000Z', recommendations: [{ companyId: 'company-direct', name: 'Direct' }] }],
+  activeCompanyIds: ['company-direct'],
+  limit: 3,
+  now: new Date('2026-08-19T00:00:00.000Z')
+})
+assert.equal(carriedForward.fallbackUsed, true)
+assert.equal(carriedForward.recommendations[0].companyId, 'company-direct')
+assert.equal(carriedForward.recommendations[0].firstMatchedAt, '2026-08-18T00:00:00.000Z')
+assert.equal(selectMatchRecommendations({
+  candidates: [{ companyId: 'company-new', name: 'New' }],
+  recentRuns: [{ generated_at: '2026-08-18T00:00:00.000Z', recommendations: [{ companyId: 'company-old', name: 'Old' }] }],
+  activeCompanyIds: ['company-new', 'company-old'],
+  limit: 3,
+  now: new Date('2026-08-19T00:00:00.000Z')
+}).recommendations[0].companyId, 'company-new')
+assert.deepEqual(collectRecentMatchRecommendations({
+  runs: [
+    { generated_at: '2026-08-19T00:00:00.000Z', recommendations: [{ companyId: 'company-new' }] },
+    { generated_at: '2026-08-18T00:00:00.000Z', recommendations: [{ companyId: 'company-old' }, { companyId: 'company-new' }] }
+  ],
+  activeCompanyIds: ['company-new', 'company-old'],
+  now: new Date('2026-08-19T00:00:00.000Z')
+}).map((item) => item.companyId), ['company-new', 'company-old'])
+const refreshedAfterSevenDays = selectMatchRecommendations({
+  candidates: [{ companyId: 'company-direct', name: 'Direct' }],
+  recentRuns: [{ generated_at: '2026-08-18T00:00:00.000Z', recommendations: [{ companyId: 'company-direct', name: 'Direct', firstMatchedAt: '2026-08-10T00:00:00.000Z' }] }],
+  activeCompanyIds: ['company-direct'],
+  limit: 3,
+  now: new Date('2026-08-19T00:00:00.000Z')
+})
+assert.equal(refreshedAfterSevenDays.fallbackUsed, false)
+assert.equal(refreshedAfterSevenDays.recommendations[0].firstMatchedAt, '2026-08-19T00:00:00.000Z')
+assert.equal(MINI_MATCH_ALGORITHM_VERSION, 'company-match-v3')
 
 const gateway = fs.readFileSync(new URL('./lib/api-handlers/mini-gateway.js', import.meta.url), 'utf8')
 const matchService = fs.readFileSync(new URL('./lib/services/mini-company-match-service.js', import.meta.url), 'utf8')

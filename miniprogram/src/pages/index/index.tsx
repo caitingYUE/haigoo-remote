@@ -507,9 +507,9 @@ export default function MatchPage() {
         <View className='match-feed'>
           <View className='match-feed__summary'>
             <View>
-              <Text className='match-feed__kicker'>今日 Match</Text>
-              <Text className='match-feed__title'>今天为你筛了 {feed.recommendations.length} 家</Text>
-              <Text className='match-feed__meta'>资料完整度 {Math.round((feed.profile.completeness || 0) * 100)}% · {feed.meta.hasNewData ? '有新的企业动态' : '根据你的最新资料整理'}</Text>
+              <Text className='match-feed__kicker'>近 {feed.meta.historyWindowDays || 7} 天 Match</Text>
+              <Text className='match-feed__title'>为你保留 {feed.recommendations.length} 家</Text>
+              <Text className='match-feed__meta'>资料完整度 {Math.round((feed.profile.completeness || 0) * 100)}% · {feed.meta.hasNewData ? '有新的企业动态' : feed.meta.fallbackUsed ? `近 ${feed.meta.historyWindowDays || 7} 天匹配结果` : '根据你的最新资料整理'}</Text>
             </View>
             <Text className='match-feed__edit' aria-role='button' onClick={() => { setProfileStage(1); setStep('profile') }}>补充资料</Text>
           </View>
@@ -527,7 +527,7 @@ export default function MatchPage() {
           ) : null}
 
           <View className='match-feed__list'>
-            <View className='match-feed__section-title'><Text>适合你的企业</Text><Text>{feed.capabilities.isMember ? '会员每轮最多 5 家' : '每轮 3 家'}</Text></View>
+            <View className='match-feed__section-title'><Text>适合你的企业</Text><Text>每日最多 {feed.meta.dailyLimit || feed.capabilities.maxRecommendations} 家 · 保留 7 天</Text></View>
             {feed.recommendations.map((company) => {
               const expanded = expandedCompanyId === company.companyId
               return (
@@ -556,7 +556,11 @@ export default function MatchPage() {
               )
             })}
             {!feed.recommendations.length ? (
-              <View className='match-feed__empty'><Text>这一轮已经看完了</Text><Text>有新的企业信息或你补充资料后，我们会再为你更新。</Text><View className='match-secondary' onClick={() => { setProfileStage(1); setStep('profile') }}>补充职业资料</View></View>
+              <View className='match-feed__empty'>
+                <Text>{feed.meta.emptyReason === 'profile_incomplete' ? '还需要确认你的目标方向' : '暂时没有足够匹配依据'}</Text>
+                <Text>{feed.meta.emptyReason === 'profile_incomplete' ? '补充目标岗位、工作范围或工作方式后，我们会重新整理匹配结果。' : '可信企业资料会持续更新，有新的岗位或你补充资料后，我们会再为你更新。'}</Text>
+                <View className='match-secondary' onClick={() => { setProfileStage(1); setStep('profile') }}>完善 Match 资料</View>
+              </View>
             ) : null}
           </View>
         </View>
