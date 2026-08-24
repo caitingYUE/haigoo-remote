@@ -12,40 +12,56 @@ service.configure({ aiEnabled: true })
 const failedResponse = () => new Response('{}', { status: 503 })
 
 async function run() {
-  global.fetch = async (url) => {
-    if (!String(url).includes('dashscope.aliyuncs.com')) return failedResponse()
+  const providerLogs = []
+  const originalLog = console.log
+  const originalWarn = console.warn
+  console.log = (...args) => providerLogs.push(args.join(' '))
+  console.warn = (...args) => providerLogs.push(args.join(' '))
 
-    return new Response(JSON.stringify({
-      choices: [{ message: { content: '财务运营专员，负责本地实体的财务管理与合规工作。' } }],
-      usage: { prompt_tokens: 10, completion_tokens: 8, total_tokens: 18 }
-    }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  try {
+    global.fetch = async (url) => {
+      if (!String(url).includes('dashscope.aliyuncs.com')) return failedResponse()
+
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: '财务运营专员，负责本地实体的财务管理与合规工作。' } }],
+        usage: { prompt_tokens: 10, completion_tokens: 8, total_tokens: 18 }
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const translated = await service.translateJob({
+      id: 'bailian-compatible-response',
+      title: 'Financial Operations Specialist',
+      description: 'Manage finance operations and compliance for a local entity.',
+      requirements: [],
+      benefits: []
+    }, true)
+
+    assert.equal(translated.isTranslated, true)
+    assert.match(translated.translations.description, /[\u4e00-\u9fa5]/)
+    assert.equal(translated.translationError, undefined)
+
+    global.fetch = async () => failedResponse()
+
+    const failed = await service.translateJob({
+      id: 'all-providers-failed',
+      title: 'Unique untranslated role',
+      description: 'Unique source description that no provider translated.',
+      requirements: [],
+      benefits: []
+    }, true)
+
+    assert.equal(failed.isTranslated, false)
+    assert.equal(failed.translations, null)
+    assert.equal(failed.translationError, 'Zero Chinese Characters')
+
+    assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Google Translate"') && line.includes('"status":"failed"')))
+    assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Bailian"') && line.includes('"status":"success"')))
+    assert(providerLogs.some(line => line.includes('"event":"exhausted"') && line.includes('"jobId":"all-providers-failed"')))
+    assert.equal(providerLogs.some(line => line.includes('Manage finance operations')), false)
+  } finally {
+    console.log = originalLog
+    console.warn = originalWarn
   }
-
-  const translated = await service.translateJob({
-    id: 'bailian-compatible-response',
-    title: 'Financial Operations Specialist',
-    description: 'Manage finance operations and compliance for a local entity.',
-    requirements: [],
-    benefits: []
-  }, true)
-
-  assert.equal(translated.isTranslated, true)
-  assert.match(translated.translations.description, /[\u4e00-\u9fa5]/)
-  assert.equal(translated.translationError, undefined)
-
-  global.fetch = async () => failedResponse()
-
-  const failed = await service.translateJob({
-    id: 'all-providers-failed',
-    title: 'Unique untranslated role',
-    description: 'Unique source description that no provider translated.',
-    requirements: [],
-    benefits: []
-  }, true)
-
-  assert.equal(failed.isTranslated, false)
-  assert.equal(failed.translations, null)
-  assert.equal(failed.translationError, 'Zero Chinese Characters')
 
   console.log('translation service regression checks passed')
 }
