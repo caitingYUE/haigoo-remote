@@ -45,6 +45,15 @@ const miniPackage = JSON.parse(read('./miniprogram/package.json'))
 const rootPackage = JSON.parse(read('./package.json'))
 
 for (const action of [
+  'content_home',
+  'companies',
+  'company',
+  'growth_notes',
+  'growth_note',
+  'membership_plans',
+  'consultations',
+  'career_state',
+  'match_feed',
   'request_password_reset',
   'unbind_wechat',
   'delete_account',
