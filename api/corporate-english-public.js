@@ -24,8 +24,9 @@ const CAREER_MODULE_LABELS = {
   remote_preparation: '远程准备',
   foreign_meeting: '外企会议'
 }
-const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video'])
+const VALID_COVER_OWNER_TYPES = new Set(['material', 'module_video', 'growth_note'])
 const columnSupportCache = new Map()
+const tableSupportCache = new Map()
 
 function buildCoverImageUrl(ownerType, ownerId, variant = 'large', hash = '') {
   const id = normalizeString(ownerId)
@@ -108,6 +109,20 @@ async function hasTableColumn(tableName, columnName) {
   return hasColumn
 }
 
+async function hasTable(tableName) {
+  if (tableSupportCache.has(tableName)) return tableSupportCache.get(tableName)
+  const rows = await neonHelper.query(
+    `SELECT EXISTS (
+       SELECT 1 FROM information_schema.tables
+       WHERE table_schema = 'public' AND table_name = $1
+     ) AS has_table`,
+    [tableName]
+  )
+  const exists = rows?.[0]?.has_table === true
+  tableSupportCache.set(tableName, exists)
+  return exists
+}
+
 async function hasCoverColumns(tableName) {
   return hasTableColumn(tableName, 'cover_image_hash')
 }
@@ -130,6 +145,12 @@ function mapModuleVideo(row, user, includeVideoNotes = false) {
   const unlocked = canAccessModuleVideo(row, user)
   const isAuthenticated = Boolean(user)
   const accessTier = normalizeAccessTier(row.access_tier)
+  const noteAccessTier = normalizeAccessTier(row.note_access_tier || row.access_tier)
+  const noteUnlocked = isAuthenticated && (noteAccessTier === 'free' || Boolean(deriveMembershipCapabilities(user).canAccessCorporateEnglishVideos))
+  const canonicalNotes = Array.isArray(row.canonical_video_notes) ? row.canonical_video_notes : row.video_notes
+  const hasPublishedNote = row.note_status
+    ? row.note_status === 'published' && Array.isArray(canonicalNotes) && canonicalNotes.length > 0
+    : Array.isArray(canonicalNotes) && canonicalNotes.length > 0
   const canExposePublicDetails = isAuthenticated || unlocked
   return {
     id: row.video_id,
@@ -148,8 +169,18 @@ function mapModuleVideo(row, user, includeVideoNotes = false) {
     difficultyLevel: row.difficulty_level || '',
     difficultyLevelLabel: REMOTE_PREPARATION_LEVEL_LABELS[row.difficulty_level] || '',
     isFeatured: row.is_featured === true,
-    hasVideoNotes: row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) && row.video_notes.length > 0,
-    videoNotes: includeVideoNotes && unlocked && row.module_key === 'remote_preparation' && Array.isArray(row.video_notes) ? row.video_notes : [],
+    noteTitle: row.note_title || row.title_zh || row.video_title,
+    noteOriginalTitle: row.note_original_title || row.video_title,
+    noteSummary: row.note_summary || row.description || '',
+    noteAuthor: row.note_author || 'Haigoo 职业研究',
+    noteSourceName: row.note_source_name || row.video_source || '',
+    noteSourceUrl: noteUnlocked ? (row.note_source_url || '') : '',
+    noteAccessTier,
+    noteCategory: row.note_category || '远程职业准备',
+    notePublishedAt: row.note_published_at || row.published_at,
+    noteUpdatedAt: row.note_updated_at || row.updated_at,
+    hasVideoNotes: row.module_key === 'remote_preparation' && hasPublishedNote,
+    videoNotes: includeVideoNotes && noteUnlocked && row.module_key === 'remote_preparation' && hasPublishedNote ? canonicalNotes : [],
     tags: canExposePublicDetails && Array.isArray(row.tags) ? row.tags : [],
     accessTier,
     durationMs: row.duration_ms,
@@ -157,6 +188,7 @@ function mapModuleVideo(row, user, includeVideoNotes = false) {
     sortOrder: Number(row.sort_order || 0),
     tencentIframeUrl: unlocked ? (row.tencent_iframe_url || '') : '',
     isLocked: !unlocked,
+    noteIsLocked: !noteUnlocked,
     loginRequired: !isAuthenticated,
     upgradeRequired: isAuthenticated && accessTier === 'vip' && !unlocked,
     lockReason: unlocked
@@ -171,15 +203,15 @@ async function listFeaturedVideos(req, res, user) {
   const requestedLimit = Number(req.query.limit || 4)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 12) : 4
   const shouldPrioritizeFreeVideos = !deriveMembershipCapabilities(user).canAccessCorporateEnglishVideos
+  const materialsTableExists = await hasTable(MATERIALS_TABLE)
   const materialHasCover = await hasTableColumn(MATERIALS_TABLE, 'cover_image_hash')
   const moduleHasCover = await hasTableColumn(MODULE_VIDEOS_TABLE, 'cover_image_hash')
   const materialHasFeatured = await hasTableColumn(MATERIALS_TABLE, 'is_featured')
   const moduleHasFeatured = await hasTableColumn(MODULE_VIDEOS_TABLE, 'is_featured')
   const moduleHasDifficultyLevel = await hasTableColumn(MODULE_VIDEOS_TABLE, 'difficulty_level')
-  const moduleHasVideoNotes = await hasTableColumn(MODULE_VIDEOS_TABLE, 'video_notes')
 
   const [materials, moduleVideos] = await Promise.all([
-    neonHelper.query(
+    materialsTableExists ? neonHelper.query(
       `SELECT m.material_id AS id,
               m.material_title AS title,
               m.company_name_snapshot AS source,
@@ -199,25 +231,26 @@ async function listFeaturedVideos(req, res, user) {
        WHERE m.status = 'published' AND m.deleted_at IS NULL
        ORDER BY m.published_at DESC NULLS LAST, m.updated_at DESC
        LIMIT 48`
-    ),
+    ) : Promise.resolve([]),
     neonHelper.query(
-      `SELECT video_id AS id,
-              module_key,
-              video_title AS title,
-              video_source AS source,
-              description,
-              category,
-              tags,
-              access_tier,
-              ${moduleHasDifficultyLevel ? 'difficulty_level' : "''::text AS difficulty_level"},
-              ${moduleHasVideoNotes ? 'video_notes' : "'[]'::jsonb AS video_notes"},
-              duration_ms,
-              published_at,
-              ${moduleHasCover ? 'cover_image_hash' : "''::text AS cover_image_hash"},
-              ${moduleHasFeatured ? 'is_featured' : 'FALSE AS is_featured'}
-       FROM ${MODULE_VIDEOS_TABLE}
-       WHERE status = 'published' AND deleted_at IS NULL
-       ORDER BY published_at DESC NULLS LAST, updated_at DESC
+      `SELECT v.video_id AS id,
+              v.module_key,
+              v.video_title AS title,
+              v.video_source AS source,
+              v.description,
+              v.category,
+              v.tags,
+              v.access_tier,
+              ${moduleHasDifficultyLevel ? 'v.difficulty_level' : "''::text AS difficulty_level"},
+              CASE WHEN n.status = 'published' THEN n.content_blocks ELSE '[]'::jsonb END AS video_notes,
+              v.duration_ms,
+              v.published_at,
+              ${moduleHasCover ? 'v.cover_image_hash' : "''::text AS cover_image_hash"},
+              ${moduleHasFeatured ? 'v.is_featured' : 'FALSE AS is_featured'}
+       FROM ${MODULE_VIDEOS_TABLE} v
+       LEFT JOIN career_growth_notes n ON n.source_video_id = v.video_id
+       WHERE v.status = 'published' AND v.deleted_at IS NULL
+       ORDER BY v.published_at DESC NULLS LAST, v.updated_at DESC
        LIMIT 96`
     )
   ])
@@ -654,51 +687,60 @@ async function listModuleVideos(req, res, user) {
   const capabilities = deriveMembershipCapabilities(user)
   const canViewMemberVideos = Boolean(capabilities.canAccessCorporateEnglishVideos)
   const params = [moduleKey]
-  const conditions = ['module_key = $1', "status = 'published'", 'deleted_at IS NULL']
+  const conditions = ['v.module_key = $1', "v.status = 'published'", 'v.deleted_at IS NULL']
   const includeDifficultyLevelField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'difficulty_level')
   const includeVideoNotesField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'video_notes')
   if (category && category !== '全部') {
     params.push(category)
-    conditions.push(`category = $${params.length}`)
+    conditions.push(`v.category = $${params.length}`)
   }
   if (includeDifficultyLevelField && moduleKey === 'remote_preparation' && difficultyLevel && difficultyLevel !== '全部') {
     params.push(difficultyLevel)
-    conditions.push(`difficulty_level = $${params.length}`)
+    conditions.push(`v.difficulty_level = $${params.length}`)
   }
   const requestedLimit = Number(req.query.limit || 48)
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.floor(requestedLimit), 1), 96) : 48
 
   const includeDurationField = await hasTableColumn(MODULE_VIDEOS_TABLE, 'duration_ms')
   const selectFields = `
-       video_id,
-       module_key,
-       video_title,
-       description,
-       video_source,
-       category${includeDifficultyLevelField ? `,
-       difficulty_level` : ''}${includeVideoNotesField ? `,
-       video_notes` : ''},
-       tags,
-       access_tier${includeDurationField ? `,
-       duration_ms` : ''},
-       published_at,
-       sort_order,
-       updated_at,
-       tencent_iframe_url`
+       v.video_id,
+       v.module_key,
+       v.video_title,
+       v.description,
+       v.video_source,
+       v.category${includeDifficultyLevelField ? `,
+       v.difficulty_level` : ''}${includeVideoNotesField ? `,
+       v.video_notes` : ''},
+       v.tags,
+       v.access_tier${includeDurationField ? `,
+       v.duration_ms` : ''},
+       v.published_at,
+       v.sort_order,
+       v.updated_at,
+       v.tencent_iframe_url,
+       n.title AS note_title, n.original_title AS note_original_title,
+       n.summary AS note_summary,
+       n.author_name AS note_author, n.source_name AS note_source_name,
+       n.source_url AS note_source_url, n.category AS note_category,
+       n.access_tier AS note_access_tier,
+       n.status AS note_status, n.published_at AS note_published_at,
+       n.updated_at AS note_updated_at,
+       n.content_blocks AS canonical_video_notes`
   const selectFieldsWithCover = `${selectFields},
-       cover_image_hash,
-       cover_image_width,
-       cover_image_height,
-       cover_image_updated_at`
+       v.cover_image_hash,
+       v.cover_image_width,
+       v.cover_image_height,
+       v.cover_image_updated_at`
   const buildQuery = (fields) => `SELECT
        ${fields}
-     FROM ${MODULE_VIDEOS_TABLE}
+     FROM ${MODULE_VIDEOS_TABLE} v
+     LEFT JOIN career_growth_notes n ON n.source_video_id = v.video_id
      WHERE ${conditions.join(' AND ')}
      ORDER BY
-       CASE WHEN $${params.length + 1}::boolean THEN 0 ELSE CASE WHEN access_tier = 'free' THEN 0 ELSE 1 END END ASC,
-       published_at DESC NULLS LAST,
-       sort_order ASC,
-       updated_at DESC
+       CASE WHEN $${params.length + 1}::boolean THEN 0 ELSE CASE WHEN v.access_tier = 'free' THEN 0 ELSE 1 END END ASC,
+       v.published_at DESC NULLS LAST,
+       v.sort_order ASC,
+       v.updated_at DESC
      LIMIT $${params.length + 2}`
 
   const includeCoverFields = await hasCoverColumns(MODULE_VIDEOS_TABLE)
@@ -760,6 +802,7 @@ async function listModuleVideos(req, res, user) {
 async function getCeoVideo(req, res, user) {
   const materialId = normalizeString(req.query.materialId || req.query.material_id || req.query.id)
   if (!materialId) return res.status(400).json({ success: false, error: 'Missing material id' })
+  if (!await hasTable(MATERIALS_TABLE)) return res.status(404).json({ success: false, error: 'Video not found' })
   const includeDrafts = isLocalPreviewRequest(req)
   const rows = await neonHelper.query(
     `SELECT company_id
@@ -779,11 +822,20 @@ async function getModuleVideo(req, res, user) {
   const videoId = normalizeString(req.query.videoId || req.query.video_id || req.query.id)
   if (!videoId) return res.status(400).json({ success: false, error: 'Missing video id' })
   const rows = await neonHelper.query(
-    `SELECT *
-     FROM ${MODULE_VIDEOS_TABLE}
-     WHERE video_id = $1
-       AND status = 'published'
-       AND deleted_at IS NULL
+    `SELECT video.*,
+            note.title AS note_title, note.original_title AS note_original_title,
+            note.summary AS note_summary,
+            note.author_name AS note_author, note.source_name AS note_source_name,
+            note.source_url AS note_source_url, note.category AS note_category,
+            note.access_tier AS note_access_tier,
+            note.status AS note_status, note.published_at AS note_published_at,
+            note.updated_at AS note_updated_at,
+            note.content_blocks AS canonical_video_notes
+     FROM ${MODULE_VIDEOS_TABLE} video
+     LEFT JOIN career_growth_notes note ON note.source_video_id = video.video_id
+     WHERE video.video_id = $1
+       AND video.status = 'published'
+       AND video.deleted_at IS NULL
      LIMIT 1`,
     [videoId]
   )

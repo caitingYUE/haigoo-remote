@@ -236,11 +236,15 @@ function getLocalAdminUsers() {
         ...enrichEntitlementFields(enrichUserFields(user)),
         favorites: [],
         favoritesCount: 0,
+        accountSource: 'website',
+        hasWebsiteAccount: true,
+        hasMiniAccount: false,
+        miniAccountCount: 0,
         isLocalTestUser: true
     }))
 }
 
-function matchesLocalAdminUserFilters(user, { search = '', status = 'all', provider = 'all', memberStatus = 'all' } = {}) {
+function matchesLocalAdminUserFilters(user, { search = '', status = 'all', provider = 'all', source = 'all', memberStatus = 'all' } = {}) {
     const keyword = String(search || '').trim().toLowerCase()
     if (keyword) {
         const haystack = `${user.email || ''} ${user.username || ''} ${user.user_id || user.userId || ''}`.toLowerCase()
@@ -249,6 +253,7 @@ function matchesLocalAdminUserFilters(user, { search = '', status = 'all', provi
 
     if (status && status !== 'all' && user.status !== status) return false
     if (provider && provider !== 'all' && user.authProvider !== provider && user.auth_provider !== provider) return false
+    if (source && source !== 'all' && user.accountSource !== source) return false
 
     if (memberStatus && memberStatus !== 'all') {
         const type = normalizeMemberType(user.memberType || user.member_type, user.membershipLevel || user.membership_level)
@@ -452,7 +457,13 @@ function mapAdminUserListRow(user) {
         memberSince: user.member_since,
         memberDisplayId: user.member_display_id,
         memberType: user.member_type,
-        memberCycleStartAt: user.member_cycle_start_at
+        memberCycleStartAt: user.member_cycle_start_at,
+        accountSource: user.account_source || 'website',
+        hasWebsiteAccount: user.has_website_account !== false,
+        hasMiniAccount: user.has_mini_account === true,
+        miniAccountCount: Number(user.mini_account_count || 0) || 0,
+        miniCreatedAt: user.mini_created_at || null,
+        miniLinkedAt: user.mini_linked_at || null
     })
 
     return {
@@ -815,16 +826,14 @@ const userHelper = {
         search = '',
         status = 'all',
         provider = 'all',
+        source = 'all',
         memberStatus = 'all',
         exportMode = false
     } = {}) {
         try {
             if (!neonHelper.isConfigured) {
-                const localUsers = Array.from(LOCAL_USERS.values()).map(user => ({
-                    ...enrichEntitlementFields(enrichUserFields(user)),
-                    favorites: [],
-                    favoritesCount: 0
-                }))
+                const localUsers = getLocalAdminUsers()
+                    .filter(user => matchesLocalAdminUserFilters(user, { search, status, provider, source, memberStatus }))
                 return {
                     users: localUsers,
                     total: localUsers.length,
@@ -835,7 +844,10 @@ const userHelper = {
                         active: localUsers.filter(user => user.status === 'active').length,
                         suspended: localUsers.filter(user => user.status === 'suspended').length,
                         newToday: localUsers.length,
-                        newThisWeek: localUsers.length
+                        newThisWeek: localUsers.length,
+                        websiteOnly: localUsers.length,
+                        both: 0,
+                        miniUsers: 0
                     }
                 }
             }
@@ -856,38 +868,44 @@ const userHelper = {
             if (keyword) {
                 const searchParam = addParam(`%${keyword.toLowerCase()}%`)
                 whereParts.push(`(
-                    LOWER(u.email) LIKE ${searchParam}
-                    OR LOWER(u.username) LIKE ${searchParam}
-                    OR LOWER(u.user_id) LIKE ${searchParam}
+                    LOWER(a.email) LIKE ${searchParam}
+                    OR LOWER(a.username) LIKE ${searchParam}
+                    OR LOWER(a.user_id) LIKE ${searchParam}
                 )`)
             }
 
             if (status && status !== 'all') {
-                whereParts.push(`u.status = ${addParam(status)}`)
+                whereParts.push(`a.status = ${addParam(status)}`)
             }
 
             if (provider && provider !== 'all') {
-                whereParts.push(`u.auth_provider = ${addParam(provider)}`)
+                whereParts.push(`a.auth_provider = ${addParam(provider)}`)
+            }
+
+            if (source === 'website') {
+                whereParts.push(`a.account_source = 'website'`)
+            } else if (source === 'both') {
+                whereParts.push(`a.account_source = 'both'`)
             }
 
             if (memberStatus && memberStatus !== 'all') {
                 if (memberStatus === 'active') {
-                    whereParts.push(`u.member_status = 'active'
-                        AND (u.member_cycle_start_at IS NULL OR u.member_cycle_start_at <= NOW())
-                        AND (u.member_expire_at IS NULL OR u.member_expire_at > NOW())`)
+                    whereParts.push(`a.member_status = 'active'
+                        AND (a.member_cycle_start_at IS NULL OR a.member_cycle_start_at <= NOW())
+                        AND (a.member_expire_at IS NULL OR a.member_expire_at > NOW())`)
                 } else if (memberStatus === 'pending') {
-                    whereParts.push(`u.member_status = 'active'
-                        AND u.member_cycle_start_at IS NOT NULL
-                        AND u.member_cycle_start_at > NOW()`)
+                    whereParts.push(`a.member_status = 'active'
+                        AND a.member_cycle_start_at IS NOT NULL
+                        AND a.member_cycle_start_at > NOW()`)
                 } else if (memberStatus === 'expired') {
                     whereParts.push(`(
-                        u.member_status = 'expired'
-                        OR (u.member_expire_at IS NOT NULL AND u.member_expire_at <= NOW())
+                        a.member_status = 'expired'
+                        OR (a.member_expire_at IS NOT NULL AND a.member_expire_at <= NOW())
                     )`)
                 } else if (memberStatus === 'free') {
                     whereParts.push(`(
-                        COALESCE(NULLIF(u.member_type, ''), 'none') = 'none'
-                        OR COALESCE(NULLIF(u.member_status, ''), 'free') IN ('free', 'inactive')
+                        COALESCE(NULLIF(a.member_type, ''), 'none') = 'none'
+                        OR COALESCE(NULLIF(a.member_status, ''), 'free') IN ('free', 'inactive')
                     )`)
                 }
             }
@@ -895,36 +913,61 @@ const userHelper = {
             const whereSql = whereParts.length > 0 ? `WHERE ${whereParts.join(' AND ')}` : ''
             const limitParam = addParam(normalizedPageSize)
             const offsetParam = addParam(offset)
+            const accountCte = `
+                WITH mini_identity_summary AS (
+                    SELECT user_id,
+                           COUNT(*)::int AS mini_account_count,
+                           MIN(created_at) AS mini_created_at,
+                           MAX(linked_at) AS mini_linked_at
+                      FROM mini_wechat_identities
+                     GROUP BY user_id
+                ),
+                admin_accounts AS (
+                    SELECT u.*,
+                           CASE WHEN mini.user_id IS NULL THEN 'website' ELSE 'both' END AS account_source,
+                           COALESCE(mini.mini_account_count, 0)::int AS mini_account_count,
+                           mini.mini_created_at,
+                           mini.mini_linked_at,
+                           TRUE AS has_website_account,
+                           (mini.user_id IS NOT NULL) AS has_mini_account
+                      FROM users u
+                      LEFT JOIN mini_identity_summary mini ON mini.user_id = u.user_id
+                )`
 
             const listQuery = `
+                ${accountCte}
                 SELECT
-                    u.user_id, u.email, u.username, u.auth_provider, u.email_verified, u.profile,
-                    u.status, u.roles, u.created_at, u.updated_at, u.last_login_at,
-                    u.member_status, u.member_expire_at, u.member_since, u.member_display_id,
-                    u.member_type, u.member_cycle_start_at,
-                    u.free_company_info_count, u.free_email_apply_count, u.free_referral_count,
-                    u.free_unlocked_companies, u.free_website_apply_count, u.free_website_apply_job_ids,
-                    u.free_website_apply_limit, u.free_referral_limit,
+                    a.user_id, a.email, a.username, a.auth_provider, a.email_verified, a.profile,
+                    a.status, a.roles, a.created_at, a.updated_at, a.last_login_at,
+                    a.member_status, a.member_expire_at, a.member_since, a.member_display_id,
+                    a.member_type, a.member_cycle_start_at,
+                    a.free_company_info_count, a.free_email_apply_count, a.free_referral_count,
+                    a.free_unlocked_companies, a.free_website_apply_count, a.free_website_apply_job_ids,
+                    a.free_website_apply_limit, a.free_referral_limit,
+                    a.account_source, a.mini_account_count, a.mini_created_at, a.mini_linked_at,
+                    a.has_website_account, a.has_mini_account,
                     COALESCE(fav.favorites_count, 0)::int AS favorites_count
-                FROM users u
+                FROM admin_accounts a
                 LEFT JOIN LATERAL (
                     SELECT COUNT(*)::int AS favorites_count
                     FROM favorites f
-                    WHERE f.user_id = u.user_id
+                    WHERE f.user_id = a.user_id
                 ) fav ON true
                 ${whereSql}
-                ORDER BY u.created_at DESC, u.user_id DESC
+                ORDER BY a.created_at DESC, a.user_id DESC
                 LIMIT ${limitParam} OFFSET ${offsetParam}
             `
 
             const countParams = params.slice(0, params.length - 2)
             const countQuery = `
+                ${accountCte}
                 SELECT COUNT(*)::int AS total
-                FROM users u
+                FROM admin_accounts a
                 ${whereSql}
             `
 
             const statsQuery = `
+                ${accountCte}
                 SELECT
                     COUNT(*)::int AS total,
                     COUNT(*) FILTER (WHERE status = 'active')::int AS active,
@@ -934,8 +977,11 @@ const userHelper = {
                     )::int AS new_today,
                     COUNT(*) FILTER (
                         WHERE created_at >= (date_trunc('week', NOW() AT TIME ZONE 'Asia/Shanghai') AT TIME ZONE 'Asia/Shanghai')
-                    )::int AS new_this_week
-                FROM users
+                    )::int AS new_this_week,
+                    COUNT(*) FILTER (WHERE account_source = 'website')::int AS website_only,
+                    COUNT(*) FILTER (WHERE account_source = 'both')::int AS both,
+                    COUNT(*) FILTER (WHERE has_mini_account)::int AS mini_users
+                FROM admin_accounts
             `
 
             const [rows, totalRows, statsRows] = await Promise.all([
@@ -945,7 +991,7 @@ const userHelper = {
             ])
 
             const localUsers = isLocalAdminTestUsersEnabled()
-                ? getLocalAdminUsers().filter(user => matchesLocalAdminUserFilters(user, { search, status, provider, memberStatus }))
+                ? getLocalAdminUsers().filter(user => matchesLocalAdminUserFilters(user, { search, status, provider, source, memberStatus }))
                 : []
             const localUserIds = new Set(localUsers.map(user => user.userId || user.user_id))
             const remoteUsers = (rows || [])
@@ -965,7 +1011,10 @@ const userHelper = {
                     active: (Number(statsRows?.[0]?.active || 0) || 0) + activeLocal,
                     suspended: (Number(statsRows?.[0]?.suspended || 0) || 0) + suspendedLocal,
                     newToday: (Number(statsRows?.[0]?.new_today || 0) || 0) + localUsers.length,
-                    newThisWeek: (Number(statsRows?.[0]?.new_this_week || 0) || 0) + localUsers.length
+                    newThisWeek: (Number(statsRows?.[0]?.new_this_week || 0) || 0) + localUsers.length,
+                    websiteOnly: (Number(statsRows?.[0]?.website_only || 0) || 0) + localUsers.length,
+                    both: Number(statsRows?.[0]?.both || 0) || 0,
+                    miniUsers: Number(statsRows?.[0]?.mini_users || 0) || 0
                 }
             }
         } catch (error) {

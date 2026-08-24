@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowLeft, ArrowRight, BookOpen, Briefcase, Loader2, Lock, Play, Share2 } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Loader2, Lock, Play, Share2 } from 'lucide-react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { VideoNotesArticle } from '../components/VideoNotesArticle'
 import { useNotificationHelpers } from '../components/NotificationSystem'
@@ -62,13 +62,13 @@ export default function CorporateEnglishVideoNotesPage() {
   }, [])
 
   useEffect(() => {
-    if (!video?.title) return
+    if (!video?.noteTitle) return
     const previousTitle = document.title
-    document.title = `${video.title} - 视频笔记 | Haigoo Remote`
+    document.title = `${video.noteTitle} - 视频笔记 | Haigoo Remote`
     return () => {
       document.title = previousTitle
     }
-  }, [video?.title])
+  }, [video?.noteTitle])
 
   const copyShareLink = async () => {
     try {
@@ -83,7 +83,7 @@ export default function CorporateEnglishVideoNotesPage() {
     return <div className="flex min-h-[70vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#466f9d]" /></div>
   }
 
-  if (!video) {
+  if (!video || !video.hasVideoNotes) {
     return (
       <div className="mx-auto flex min-h-[70vh] max-w-3xl flex-col items-center justify-center px-6 text-center">
         <BookOpen className="h-10 w-10 text-slate-400" />
@@ -113,7 +113,7 @@ export default function CorporateEnglishVideoNotesPage() {
                       to={`/careerlearning/notes/${encodeURIComponent(item.videoId)}`}
                       className={`hg-career-notes-index-link w-[240px] shrink-0 border px-3 py-3 text-sm leading-5 transition hover:no-underline lg:w-full ${active ? 'is-active' : ''}`}
                     >
-                      <span className="line-clamp-2 font-black">{item.title}</span>
+                      <span className="line-clamp-2 font-black">{item.noteTitle || item.title}</span>
                       <span className="mt-1 block text-xs font-semibold text-slate-400">{item.difficultyLevelLabel || '远程准备'}</span>
                     </Link>
                   )
@@ -128,26 +128,30 @@ export default function CorporateEnglishVideoNotesPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <button type="button" onClick={handleBack} className="inline-flex items-center gap-2 text-sm font-black text-slate-600 hover:text-[#466f9d]"><ArrowLeft className="h-4 w-4" />返回</button>
             <div className="flex flex-wrap items-center gap-2">
-              <a href="/jobs" target="_blank" rel="noreferrer" className="hg-career-secondary-action inline-flex h-10 items-center gap-2 rounded-full px-4 text-sm font-black hover:no-underline"><Briefcase className="h-4 w-4" />浏览远程岗位</a>
               <a href={videoPath} target="_blank" rel="noreferrer" className="inline-flex h-10 items-center gap-2 rounded-full bg-[#466f9d] px-4 text-sm font-black text-white shadow-sm hover:bg-[#345d88] hover:text-white hover:no-underline"><Play className="h-4 w-4 fill-current" />查看完整视频<ArrowRight className="h-4 w-4" /></a>
               <button type="button" onClick={copyShareLink} className="inline-flex h-10 items-center gap-2 rounded-full border border-[#dbe8f4] bg-white px-4 text-sm font-black text-slate-700 transition hover:border-[#466f9d] hover:text-[#466f9d]"><Share2 className="h-4 w-4" />分享笔记</button>
             </div>
           </div>
-          <div className="mt-10 flex items-center gap-2 text-sm font-black tracking-[0.08em] text-[#466f9d]"><BookOpen className="h-4 w-4" />远程准备 · 视频笔记</div>
-          <h1 className="mt-4 text-4xl font-black leading-tight text-slate-950 md:text-5xl">{video.title}</h1>
+          <div className="mt-10 flex items-center gap-2 text-sm font-black tracking-[0.08em] text-[#466f9d]"><BookOpen className="h-4 w-4" />{video.noteCategory || '远程准备'} · 视频笔记</div>
+          <h1 className="mt-4 text-4xl font-black leading-tight text-slate-950 md:text-5xl">{video.noteTitle || video.title}</h1>
+          {video.noteOriginalTitle && video.noteOriginalTitle !== video.noteTitle ? <p className="mt-3 text-lg font-semibold text-slate-500">{video.noteOriginalTitle}</p> : null}
+          {video.noteSummary ? <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{video.noteSummary}</p> : null}
           <div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-semibold text-slate-500">
             <span>{video.difficultyLevelLabel || '远程准备'}</span>
-            {formatDateLabel(video.publishedAt) ? <span>{formatDateLabel(video.publishedAt)}</span> : null}
-            {video.videoSource ? <span>视频来自 {video.videoSource}</span> : null}
+            {formatDateLabel(video.notePublishedAt) ? <span>{formatDateLabel(video.notePublishedAt)}</span> : null}
+            {video.noteAuthor ? <span>{video.noteAuthor}</span> : null}
+            {video.noteSourceUrl ? <a href={video.noteSourceUrl} target="_blank" rel="noreferrer" className="text-[#466f9d]">来源：{video.noteSourceName || '原内容'}</a> : video.noteSourceName ? <span>来源：{video.noteSourceName}</span> : null}
           </div>
         </header>
 
+        {video.coverImageUrl ? <img src={video.coverImageUrl} alt="" className="mt-8 aspect-video w-full max-w-5xl rounded-xl object-cover" /> : null}
+
         <section className="py-10">
-          {video.isLocked ? (
+          {video.noteIsLocked ? (
             <div className="hg-career-notes-lock flex min-h-[320px] flex-col items-center justify-center px-6 text-center">
               <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#eff5fb] text-[#466f9d]"><Lock className="h-7 w-7" /></span>
-              <h2 className="mt-5 text-2xl font-black text-slate-950">{video.loginRequired ? '登录后查看视频笔记' : '当前内容暂未开放'}</h2>
-              <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">{video.loginRequired ? '登录后即可继续查看该视频笔记。' : '你仍可查看页面中的免费职业成长内容。'}</p>
+              <h2 className="mt-5 text-2xl font-black text-slate-950">{video.loginRequired ? '登录后查看视频笔记' : '会员可阅读完整笔记'}</h2>
+              <p className="mt-3 max-w-md text-sm leading-7 text-slate-600">{video.loginRequired ? '登录后即可继续查看该视频笔记。' : '开通会员后可阅读正文，视频播放权限仍独立计算。'}</p>
               {video.loginRequired || COMPLIANCE_FEATURES.membershipPromotionBanners ? <Link
                 to={video.loginRequired ? `/login?redirect=${encodeURIComponent(currentPath)}` : '/profile?tab=membership#club-service-plans'}
                 className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-[#466f9d] px-6 text-sm font-black text-white shadow-sm transition hover:bg-[#345d88] hover:text-white hover:no-underline"

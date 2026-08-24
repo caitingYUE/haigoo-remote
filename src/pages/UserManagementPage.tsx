@@ -36,6 +36,9 @@ interface UserStats {
   suspended: number
   newToday: number
   newThisWeek: number
+  websiteOnly: number
+  both: number
+  miniUsers: number
 }
 
 type EditableMemberType = 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
@@ -69,6 +72,7 @@ type EntitlementKey = 'website_apply' | 'referral'
 
 type EntitlementBaseline = Record<EntitlementKey, number>
 type MemberFilter = 'all' | 'free' | 'active' | 'pending' | 'expired'
+type AccountSourceFilter = 'all' | 'website' | 'both'
 type ServiceEntitlementKey =
   | 'voice_consultation_30m'
   | 'annual_career_planning'
@@ -138,6 +142,10 @@ function formatShortUserId(userId: string) {
   if (!userId) return '-'
   if (userId.length <= 18) return userId
   return `${userId.slice(0, 8)}…${userId.slice(-6)}`
+}
+
+function accountSourceLabel(user: User) {
+  return user.accountSource === 'both' || user.hasMiniAccount ? '官网 + 小程序' : '仅官网'
 }
 
 function getQuickMemberStart(kind: 'now' | 'tomorrow') {
@@ -498,6 +506,7 @@ export default function UserManagementPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all')
   const [providerFilter, setProviderFilter] = useState<'all' | 'email' | 'google'>('all')
+  const [sourceFilter, setSourceFilter] = useState<AccountSourceFilter>('all')
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
@@ -507,7 +516,10 @@ export default function UserManagementPage() {
     active: 0,
     suspended: 0,
     newToday: 0,
-    newThisWeek: 0
+    newThisWeek: 0,
+    websiteOnly: 0,
+    both: 0,
+    miniUsers: 0
   })
   const { token, isSuperAdmin } = useAuth()
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -538,6 +550,7 @@ export default function UserManagementPage() {
         search: debouncedSearchTerm.trim(),
         status: statusFilter,
         provider: providerFilter,
+        source: sourceFilter,
         memberStatus: memberFilter
       })
       const response = await fetch(`/api/users?${params.toString()}`, {
@@ -553,7 +566,10 @@ export default function UserManagementPage() {
             active: Number(data.stats.active || 0),
             suspended: Number(data.stats.suspended || 0),
             newToday: Number(data.stats.newToday || 0),
-            newThisWeek: Number(data.stats.newThisWeek || 0)
+            newThisWeek: Number(data.stats.newThisWeek || 0),
+            websiteOnly: Number(data.stats.websiteOnly || 0),
+            both: Number(data.stats.both || 0),
+            miniUsers: Number(data.stats.miniUsers || 0)
           })
         }
       }
@@ -562,7 +578,7 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, page, pageSize, debouncedSearchTerm, statusFilter, providerFilter, memberFilter])
+  }, [token, page, pageSize, debouncedSearchTerm, statusFilter, providerFilter, sourceFilter, memberFilter])
 
   // 加载用户列表
   useEffect(() => {
@@ -881,6 +897,7 @@ export default function UserManagementPage() {
         search: debouncedSearchTerm.trim(),
         status: statusFilter,
         provider: providerFilter,
+        source: sourceFilter,
         memberStatus: memberFilter
       })
       const response = await fetch(`/api/users?${params.toString()}`, {
@@ -895,12 +912,14 @@ export default function UserManagementPage() {
     }
 
     const csv = [
-      ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '直申次数', '内推次数', '状态'].join(','),
+      ['UUID', '用户名', '邮箱', '账号渠道', '认证方式', '小程序身份数', '邮箱验证', '注册时间', '最后登录', '直申次数', '内推次数', '状态'].join(','),
       ...exportRows.map(user => [
         user.user_id,
         user.username,
         user.email,
+        accountSourceLabel(user),
         user.authProvider,
+        user.miniAccountCount || 0,
         user.emailVerified ? '是' : '否',
         user.createdAt,
         user.lastLoginAt || '-',
@@ -983,7 +1002,7 @@ export default function UserManagementPage() {
         {/* 页面标题 */}
         <div className="mb-5 sm:mb-8">
           <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">用户管理</h1>
-          <p className="mt-1 text-sm text-slate-600 sm:text-base">管理和监控平台所有注册用户</p>
+          <p className="mt-1 text-sm text-slate-600 sm:text-base">统一查看官网账号及其小程序绑定状态</p>
         </div>
 
         {/* 统计卡片 */}
@@ -1039,6 +1058,17 @@ export default function UserManagementPage() {
           </div>
         </div>
 
+        <div className="mb-6 grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+            <p className="text-xs font-medium text-slate-500">仅官网</p>
+            <p className="mt-1 text-xl font-bold text-slate-900">{stats.websiteOnly}</p>
+          </div>
+          <div className="rounded-lg border border-orange-200 bg-orange-50/60 px-4 py-3">
+            <p className="text-xs font-medium text-orange-700">官网 + 已绑定小程序</p>
+            <p className="mt-1 text-xl font-bold text-orange-900">{stats.both}</p>
+          </div>
+        </div>
+
         {/* 筛选和操作栏 */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6 border border-slate-200">
           <div className="flex flex-col md:flex-row gap-4">
@@ -1068,6 +1098,20 @@ export default function UserManagementPage() {
               <option value="all">全部状态</option>
               <option value="active">活跃</option>
               <option value="suspended">已停用</option>
+            </select>
+
+            <select
+              aria-label="按账号渠道筛选"
+              value={sourceFilter}
+              onChange={(e) => {
+                setPage(1)
+                setSourceFilter(e.target.value as AccountSourceFilter)
+              }}
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
+            >
+              <option value="all">全部渠道</option>
+              <option value="website">仅官网</option>
+              <option value="both">已绑定小程序</option>
             </select>
 
             {/* 认证方式过滤 */}
@@ -1181,6 +1225,13 @@ export default function UserManagementPage() {
                             <div className="min-w-0">
                               <div className="truncate text-sm font-semibold text-slate-900">{user.username}</div>
                               <div className="truncate text-xs text-slate-500">{user.email}</div>
+                              <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                user.hasMiniAccount
+                                  ? 'bg-orange-50 text-orange-700'
+                                  : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {accountSourceLabel(user)}
+                              </span>
                             </div>
                           </div>
                           <div className="mt-2 text-[11px] text-slate-400">{formatShortUserId(user.user_id)}</div>
@@ -1270,7 +1321,7 @@ export default function UserManagementPage() {
                   <tr>
                     <th className="w-[22%] px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
                     <th className="w-[11%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
-                    <th className="w-[7%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
+                    <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">账号渠道</th>
                     <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
                     <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
                     <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">会员信息</th>
@@ -1315,13 +1366,24 @@ export default function UserManagementPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                        <div className="space-y-1.5">
+                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                            user.hasMiniAccount
+                              ? 'bg-orange-50 text-orange-700'
+                              : 'bg-slate-100 text-slate-700'
                           }`}>
-                          {user.authProvider === 'google' ? 'Google' : '邮箱'}
-                        </span>
-                        {user.emailVerified && (
-                          <CheckCircle className="inline-block w-4 h-4 text-green-500 ml-2" />
-                        )}
+                            {accountSourceLabel(user)}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-slate-500">
+                            <span>{user.authProvider === 'google' ? 'Google 登录' : '邮箱登录'}</span>
+                            {user.emailVerified && <CheckCircle className="h-3.5 w-3.5 text-green-500" />}
+                          </div>
+                          {user.hasMiniAccount && (
+                            <div className="text-[11px] text-slate-400">
+                              已绑定 {user.miniAccountCount || 1} 个小程序身份
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-600">
                         <div className="flex items-start gap-1.5">
