@@ -15,6 +15,6 @@ export default function ApplyWebViewPage() {
     }
   }, [router.params.url])
 
-  if (!source) return <View className='web-view-error'><Text>申请入口无效</Text><Text>请返回 Match 页面重新打开。</Text></View>
+  if (!source) return <View className='web-view-error'><Text>申请入口无效</Text><Text>请返回匹配页面重新打开。</Text></View>
   return <WebView src={source} />
 }

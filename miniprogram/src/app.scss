@@ -51,6 +51,8 @@ button::after {
   border: 0;
 }
 
+.mini-action--pressed { opacity: .72; }
+
 .page-shell {
   width: 100%;
   max-width: 750px;
@@ -211,6 +213,12 @@ button::after {
   font-size: 28px;
   font-weight: 600;
 }
+
+.section-action,
+.chip,
+.primary-button,
+.secondary-button,
+.empty-state__action { min-height: 44PX; }
 
 .primary-button:active,
 .secondary-button:active,

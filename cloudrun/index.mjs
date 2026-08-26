@@ -8,6 +8,12 @@ import { Readable, Transform } from 'stream'
 import { pipeline } from 'stream/promises'
 import cloudbase from '@cloudbase/node-sdk'
 import { isLeaseActive, stableJson, staleCleanupDecision, syncDecision } from './sync-policy.mjs'
+import {
+  buildCompanyHiringSignals,
+  buildHiringCompanyPage,
+  mapCompanyJobDetail,
+  mapCompanyJobSummary
+} from './company-directory.mjs'
 
 const port = Number(process.env.PORT || 8080)
 const apiOrigin = String(process.env.HAIGOO_API_ORIGIN || '').replace(/\/+$/, '')
@@ -103,6 +109,63 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
     throw error
   }
   return payload
+}
+
+function canonicalCompanyJobs(result, companyId) {
+  return (Array.isArray(result?.jobs) ? result.jobs : [])
+    .map((job) => mapCompanyJobSummary(job, companyId))
+    .filter(Boolean)
+    .slice(0, 100)
+}
+
+async function readAccessibleCompanyCatalog(openid) {
+  const first = await gatewayRequest('companies', { query: { openid, page: '1', pageSize: '50' } })
+  if (first.access?.scope !== 'member_all' || !first.hasMore) return first
+  const pages = Math.ceil(Math.max(0, Number(first.total || 0)) / 50)
+  const rest = await Promise.all(Array.from({ length: Math.max(0, pages - 1) }, (_, index) => (
+    gatewayRequest('companies', { query: { openid, page: String(index + 2), pageSize: '50' } })
+  )))
+  return { ...first, companies: [first, ...rest].flatMap((item) => item.companies || []) }
+}
+
+async function readCurrentJobRecords() {
+  try {
+    const cached = (await readAllListDocuments()).map(unwrapDocument).filter(Boolean)
+    if (cached.length > 0) return cached
+  } catch (error) {
+    console.warn('[mini-cloudrun] current hiring cache unavailable, using upstream', error?.message || error)
+  }
+  const first = await gatewayRequest('sync', { query: { page: '1', limit: '100', sortBy: 'recent' } })
+  const totalPages = Math.max(1, Math.ceil(Math.max(0, Number(first.total || 0)) / 100))
+  if (totalPages > Math.ceil(LIST_INDEX_MAX_RECORDS / 100)) {
+    throw new Error(`Current hiring index exceeds safety cap: ${LIST_INDEX_MAX_RECORDS}`)
+  }
+  const rest = await Promise.all(Array.from({ length: totalPages - 1 }, (_, index) => (
+    gatewayRequest('sync', { query: { page: String(index + 2), limit: '100', sortBy: 'recent' } })
+  )))
+  return [first, ...rest].flatMap((result) => Array.isArray(result.jobs) ? result.jobs : [])
+}
+
+async function readCurrentHiringCompanies({ openid, search, industry, page, pageSize }) {
+  const catalog = await readAccessibleCompanyCatalog(openid)
+  if (catalog.access?.scope === 'match_required') return catalog
+  const records = await readCurrentJobRecords()
+  const current = buildHiringCompanyPage({
+    companies: catalog.companies,
+    signals: buildCompanyHiringSignals(records),
+    search,
+    industry,
+    page,
+    pageSize
+  })
+  return {
+    ...catalog,
+    ...current,
+    access: {
+      ...catalog.access,
+      previewLimit: catalog.access?.scope === 'free_fixed' ? current.total : null
+    }
+  }
 }
 
 function sessionToken(payload) {
@@ -252,7 +315,7 @@ async function cacheContentImage({ ownerType, ownerId, sourcePath, folder }) {
   const cacheKey = `${ownerType}-${crypto.createHash('sha256').update(String(ownerId)).digest('hex').slice(0, 24)}-${sourceHash}`
   if (contentAssetMemory.has(cacheKey)) return { fileId: contentAssetMemory.get(cacheKey), created: false }
   if (contentAssetPending.has(cacheKey)) return contentAssetPending.get(cacheKey)
-  if (Date.now() < contentAssetInfrastructureBackoffUntil || Date.now() < Number(contentAssetFailureUntil.get(cacheKey) || 0)) {
+  if (Date.now() < Number(contentAssetFailureUntil.get(cacheKey) || 0)) {
     return { fileId: '', created: false }
   }
   const pending = (async () => {
@@ -298,6 +361,7 @@ async function attachNoteCovers(notes) {
   let created = false
   const hydrated = await mapWithConcurrency(Array.isArray(notes) ? notes : [], 4, async (note) => {
     const { _coverSourcePath, ...publicNote } = note || {}
+    if (publicNote.coverFileId) return publicNote
     const cached = await cacheContentImage({ ownerType: 'note', ownerId: note?.id, sourcePath: _coverSourcePath, folder: 'mini-note-covers' })
     created ||= cached.created
     return { ...publicNote, coverFileId: cached.fileId }
@@ -326,11 +390,11 @@ function publicJob(job, logoFileId = '') {
     sourceUrl,
     hiringEmail,
     isFeatured,
-    canRefer: _canRefer,
-    effectiveReferralContactCount: _referralContactCount,
-    hasReferral: _hasReferral,
     ...safeJob
   } = job
+  delete safeJob.canRefer
+  delete safeJob.effectiveReferralContactCount
+  delete safeJob.hasReferral
   const isHotApplication = Boolean(job.isHotApplication || Number(job.applicationCount || 0) >= 10)
   return {
     ...safeJob,
@@ -1338,6 +1402,20 @@ async function route(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`)
   try {
     if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true })
+    if (req.method === 'GET' && url.pathname === '/health/upstream') {
+      const startedAt = Date.now()
+      const result = await gatewayRequest('career_watch_options', { timeoutMs: 5000 })
+      if (!Array.isArray(result?.filterOptions?.roles)) {
+        const error = new Error('小程序上游接口返回无效')
+        error.statusCode = 503
+        throw error
+      }
+      return send(res, 200, {
+        ok: true,
+        upstream: true,
+        latencyMs: Date.now() - startedAt
+      })
+    }
     if (req.method === 'POST' && url.pathname === '/internal/sync') {
       if (!syncSecret || req.headers['x-mini-sync-secret'] !== syncSecret) return send(res, 401, { error: 'Unauthorized' })
       const result = await runSyncWithLease({ force: url.searchParams.get('full') === 'true' })
@@ -1356,14 +1434,12 @@ async function route(req, res) {
     }
     if (req.method === 'GET' && url.pathname === '/mini/companies') {
       const session = getSession(req)
-      const result = await gatewayRequest('companies', {
-        query: {
-          openid: session?.openid || '',
-          search: url.searchParams.get('search') || '',
-          industry: url.searchParams.get('industry') || '',
-          page: url.searchParams.get('page') || '1',
-          pageSize: url.searchParams.get('pageSize') || '20'
-        }
+      const result = await readCurrentHiringCompanies({
+        openid: session?.openid || '',
+        search: url.searchParams.get('search') || '',
+        industry: url.searchParams.get('industry') || '',
+        page: url.searchParams.get('page') || '1',
+        pageSize: url.searchParams.get('pageSize') || '20'
       })
       return send(res, 200, { ...result, companies: await attachCompanyLogos(result.companies) })
     }
@@ -1373,8 +1449,43 @@ async function route(req, res) {
       const result = await gatewayRequest('company', {
         query: { openid: session?.openid || '', id }
       })
+      let jobs = []
+      try {
+        const formalJobs = await gatewayRequest('sync', {
+          query: { search: String(result.company?.name || '').trim(), page: '1', limit: '100', sortBy: 'recent' }
+        })
+        jobs = canonicalCompanyJobs(formalJobs, id)
+      } catch (error) {
+        console.warn('[mini-cloudrun] formal company jobs unavailable', { companyId: id, message: error?.message || String(error) })
+      }
+      result.company = {
+        ...result.company,
+        jobs,
+        openJobCount: jobs.length,
+        hasPublicOpportunity: jobs.length > 0,
+        publicOpportunityUpdatedAt: jobs[0]?.updatedAt || null
+      }
       const [company] = await attachCompanyLogos(result.company ? [result.company] : [])
       return send(res, 200, { ...result, company: company || result.company })
+    }
+    if (req.method === 'GET' && /^\/mini\/companies\/[^/]+\/jobs\/[^/]+$/.test(url.pathname)) {
+      const session = getSession(req)
+      const parts = url.pathname.split('/')
+      const companyId = decodeURIComponent(parts[3])
+      const jobId = decodeURIComponent(parts[5])
+      const companyResult = await gatewayRequest('company', {
+        query: { openid: session?.openid || '', id: companyId }
+      })
+      const formalJobs = await gatewayRequest('sync', {
+        query: { id: jobId, page: '1', limit: '1', sortBy: 'recent' }
+      })
+      const job = mapCompanyJobDetail(formalJobs.jobs?.[0], companyId)
+      if (!job) return send(res, 404, { error: '岗位不存在或已下线' })
+      return send(res, 200, {
+        success: true,
+        company: { id: companyId, name: String(companyResult.company?.name || job.company || '') },
+        job
+      })
     }
     if (req.method === 'GET' && url.pathname === '/mini/growth/notes') {
       const session = getSession(req)
@@ -1402,8 +1513,24 @@ async function route(req, res) {
       })
       return send(res, 200, {
         ...result,
-        paymentAvailable: Boolean(virtualPaymentOfferId && virtualPaymentAppKey)
+        paymentAvailable: Boolean(result.paymentAvailable && virtualPaymentOfferId && virtualPaymentAppKey)
       })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/member-services') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const result = await gatewayRequest('member_services', { query: { openid: session.openid } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && /^\/mini\/member-services\/[^/]+\/claim$/.test(url.pathname)) {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const entitlementKey = decodeURIComponent(url.pathname.split('/')[3])
+      const result = await gatewayRequest('member_services', {
+        method: 'POST',
+        body: { openid: session.openid, entitlementKey }
+      })
+      return send(res, 200, result)
     }
     if (req.method === 'GET' && url.pathname === '/mini/consultations/me') {
       const session = getSession(req)
@@ -1451,6 +1578,40 @@ async function route(req, res) {
       const result = await gatewayRequest('match_feed', { query: { openid: session.openid } })
       const recommendations = await attachCompanyLogos((result.recommendations || []).map((item) => ({ ...item, id: item.companyId })))
       return send(res, 200, { ...result, recommendations })
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/career-watch') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const result = await gatewayRequest('career_watch_state', { query: { openid: session.openid } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'GET' && url.pathname === '/mini/career-watch/options') {
+      const result = await gatewayRequest('career_watch_options')
+      return send(res, 200, result)
+    }
+    if (req.method === 'PUT' && url.pathname === '/mini/career-watch') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_watch_save', { method: 'PUT', body: { openid: session.openid, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/career-watch/import') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_watch_import', { method: 'POST', body: { openid: session.openid, ...body } })
+      return send(res, 200, result)
+    }
+    if (req.method === 'POST' && url.pathname === '/mini/career-watch/notifications') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_watch_notifications', {
+        method: 'POST',
+        body: { openid: session.openid, enabled: body.enabled, templateStatus: body.templateStatus }
+      })
+      return send(res, 200, result)
     }
     if (req.method === 'GET' && url.pathname === '/mini/match/follows') {
       const session = getSession(req)
@@ -1528,6 +1689,27 @@ async function route(req, res) {
         if (materialized?.fileId) await cloudApp.deleteFile({ fileList: [materialized.fileId] }).catch(() => undefined)
       }
     }
+    if (req.method === 'POST' && url.pathname === '/mini/match/resume/sync') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      const body = await readBody(req)
+      let materialized = null
+      try {
+        if (body.fileId) materialized = await materializeCareerResumeFile(body.fileId, session.userId)
+        const result = await gatewayRequest('career_resume_sync', {
+          method: 'POST',
+          timeoutMs: 60000,
+          body: {
+            openid: session.openid,
+            filename: body.filename,
+            fileBase64: materialized?.buffer?.toString('base64') || body.fileBase64
+          }
+        })
+        return send(res, 200, result)
+      } finally {
+        if (materialized?.fileId) await cloudApp.deleteFile({ fileList: [materialized.fileId] }).catch(() => undefined)
+      }
+    }
     if (req.method === 'PUT' && url.pathname === '/mini/match/profile') {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
@@ -1552,7 +1734,8 @@ async function route(req, res) {
     if (req.method === 'DELETE' && url.pathname === '/mini/match/data') {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
-      const result = await gatewayRequest('career_delete', { method: 'DELETE', body: { openid: session.openid } })
+      const body = await readBody(req)
+      const result = await gatewayRequest('career_delete', { method: 'DELETE', body: { openid: session.openid, ...body } })
       return send(res, 200, result)
     }
     if (req.method === 'GET' && url.pathname === '/mini/jobs') {
@@ -1847,6 +2030,19 @@ async function route(req, res) {
       const paymentId = decodeURIComponent(url.pathname.split('/').pop())
       const result = await gatewayRequest('virtual_payment_status', {
         query: { openid: session.openid, paymentId }
+      })
+      return send(res, 200, result)
+    }
+    if (req.method === 'PUT' && /^\/mini\/payments\/orders\/[^/]+$/.test(url.pathname)) {
+      const session = getSession(req)
+      if (!session?.userId) {
+        return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      }
+      const paymentId = decodeURIComponent(url.pathname.split('/').pop())
+      const body = await readBody(req)
+      const result = await gatewayRequest('virtual_payment_update', {
+        method: 'PUT',
+        body: { openid: session.openid, paymentId, status: body.status }
       })
       return send(res, 200, result)
     }

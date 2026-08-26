@@ -11,6 +11,7 @@ interface MiniUser {
   avatar?: string
   isMember?: boolean
   memberType?: string
+  memberExpireAt?: string | null
 }
 
 interface SessionResponse {
@@ -36,7 +37,8 @@ export async function loginWithWechat() {
     email: session.user?.email,
     avatar: session.user?.avatar,
     isMember: session.user?.isMember,
-    memberType: session.user?.memberType
+    memberType: session.user?.memberType,
+    memberExpireAt: session.user?.memberExpireAt
   })
   void trackMiniEvent('mini_login', { status: session.bound ? 'bound' : 'unbound' })
   return session
@@ -56,7 +58,8 @@ export async function bindWebsiteAccount(email: string, password: string) {
     email: response.user.email,
     avatar: response.user.avatar,
     isMember: response.user.isMember,
-    memberType: response.user.memberType
+    memberType: response.user.memberType,
+    memberExpireAt: response.user.memberExpireAt
   })
   void trackMiniEvent('mini_account_bind', { status: 'succeeded' })
   return response
@@ -90,7 +93,8 @@ export async function registerAndBindWebsiteAccount(
     email: response.user.email,
     avatar: response.user.avatar,
     isMember: response.user.isMember,
-    memberType: response.user.memberType
+    memberType: response.user.memberType,
+    memberExpireAt: response.user.memberExpireAt
   })
   void trackMiniEvent('mini_account_register', { status: 'succeeded' })
   return response

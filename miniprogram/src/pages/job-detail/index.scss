@@ -1,0 +1,38 @@
+.job-detail {
+  display: flex;
+  padding: 28px 32px calc(72px + env(safe-area-inset-bottom));
+  flex-direction: column;
+  gap: 20px;
+  background: var(--color-page);
+}
+
+.job-detail-loading { padding-top: 72px; color: var(--color-muted); font-size: 27px; }
+.job-detail__hero,
+.job-detail__section {
+  padding: 30px 28px;
+  border: 1PX solid rgba(207, 214, 223, .72);
+  border-radius: 18px;
+  background: var(--color-surface);
+  box-shadow: 0 10px 30px rgba(24, 32, 51, .055);
+}
+.job-detail__company { display: block; color: var(--color-brand-strong); font-size: 24px; font-weight: 620; }
+.job-detail__title { display: block; margin-top: 12px; color: var(--color-ink); font-size: 40px; font-weight: 720; line-height: 1.28; }
+.job-detail__facts { display: flex; margin-top: 22px; flex-wrap: wrap; gap: 10px; }
+.job-detail__facts text { padding: 9px 13px; border-radius: 9px; background: var(--color-surface-soft); color: var(--color-secondary); font-size: 22px; }
+.job-detail__section-title { display: block; color: var(--color-ink); font-size: 30px; font-weight: 680; }
+.job-detail__body { display: block; margin-top: 16px; color: var(--color-secondary); font-size: 27px; line-height: 1.72; white-space: pre-wrap; overflow-wrap: anywhere; }
+.job-detail__list { display: flex; margin-top: 18px; flex-direction: column; gap: 14px; }
+.job-detail__list > view { display: flex; align-items: flex-start; gap: 12px; color: var(--color-secondary); font-size: 26px; line-height: 1.62; }
+.job-detail__list .mini-icon { margin-top: 7px; flex-shrink: 0; color: var(--color-brand-strong); }
+.job-detail__application .primary-button { margin-top: 22px; }
+.job-detail__empty,
+.job-detail__source { display: block; color: var(--color-muted); font-size: 24px; line-height: 1.55; }
+.job-detail__empty { margin-top: 18px; }
+.job-detail__source { margin-top: 18px; }
+
+@media (max-width: 340px) {
+  .job-detail { padding-right: 24px; padding-left: 24px; }
+  .job-detail__hero,
+  .job-detail__section { padding: 24px; }
+  .job-detail__title { font-size: 36px; }
+}

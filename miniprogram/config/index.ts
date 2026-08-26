@@ -6,7 +6,15 @@ import prodConfig from './prod'
 
 // https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
 export default defineConfig<'webpack5'>(async (merge) => {
-  const outputRoot = process.env.NODE_ENV === 'production' ? 'dist-prod' : 'dist'
+  const releaseChannel = String(process.env.TARO_APP_RELEASE_CHANNEL || '').trim()
+  if (releaseChannel && !['experience', 'production'].includes(releaseChannel)) {
+    throw new Error(`Unsupported TARO_APP_RELEASE_CHANNEL: ${releaseChannel}`)
+  }
+  const outputRoot = releaseChannel === 'experience'
+    ? 'dist-experience'
+    : process.env.NODE_ENV === 'production'
+      ? 'dist-prod'
+      : 'dist'
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'miniprogram',
     date: '2026-7-16',

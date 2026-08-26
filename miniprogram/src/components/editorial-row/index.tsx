@@ -4,9 +4,9 @@ import type { PropsWithChildren } from 'react'
 interface EditorialRowProps extends PropsWithChildren {
   className?: string
   label: string
-  onClick: () => void
+  onClick?: () => void
 }
 
 export default function EditorialRow({ className = '', label, onClick, children }: EditorialRowProps) {
-  return <View className={className} aria-role='button' aria-label={label} onClick={onClick}>{children}</View>
+  return <View className={className} aria-role={onClick ? 'button' : undefined} aria-label={label} onClick={onClick}>{children}</View>
 }

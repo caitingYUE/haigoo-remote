@@ -8,6 +8,7 @@ import {
   selectBestPublicOpportunity,
   selectMatchRecommendations,
   collectRecentMatchRecommendations,
+  wechatMiniProgramState,
   MINI_MATCH_ALGORITHM_VERSION
 } from './lib/services/mini-company-match-service.js'
 
@@ -99,22 +100,51 @@ assert.equal(refreshedAfterSevenDays.fallbackUsed, false)
 assert.equal(refreshedAfterSevenDays.recommendations[0].firstMatchedAt, '2026-08-19T00:00:00.000Z')
 assert.equal(MINI_MATCH_ALGORITHM_VERSION, 'company-match-v3')
 
+const originalVercelEnv = process.env.VERCEL_ENV
+const originalWechatState = process.env.WECHAT_MINI_PROGRAM_STATE
+delete process.env.WECHAT_MINI_PROGRAM_STATE
+process.env.VERCEL_ENV = 'preview'
+assert.equal(wechatMiniProgramState(), 'trial')
+process.env.VERCEL_ENV = 'production'
+assert.equal(wechatMiniProgramState(), 'formal')
+process.env.WECHAT_MINI_PROGRAM_STATE = 'developer'
+assert.equal(wechatMiniProgramState(), 'developer')
+if (originalVercelEnv === undefined) delete process.env.VERCEL_ENV
+else process.env.VERCEL_ENV = originalVercelEnv
+if (originalWechatState === undefined) delete process.env.WECHAT_MINI_PROGRAM_STATE
+else process.env.WECHAT_MINI_PROGRAM_STATE = originalWechatState
+
 const gateway = fs.readFileSync(new URL('./lib/api-handlers/mini-gateway.js', import.meta.url), 'utf8')
 const matchService = fs.readFileSync(new URL('./lib/services/mini-company-match-service.js', import.meta.url), 'utf8')
 const appConfig = fs.readFileSync(new URL('./miniprogram/src/app.config.ts', import.meta.url), 'utf8')
 const matchPage = fs.readFileSync(new URL('./miniprogram/src/pages/index/index.tsx', import.meta.url), 'utf8')
+const watchPage = fs.readFileSync(new URL('./miniprogram/src/pages/index/career-watch-page.tsx', import.meta.url), 'utf8')
 const companyDetail = fs.readFileSync(new URL('./miniprogram/src/pages/company-detail/index.tsx', import.meta.url), 'utf8')
-assert.match(gateway, /websiteUrl: companyId \? `\$\{siteOrigin\}\/company\//)
-assert.match(gateway, /AS has_public_opportunity/)
+assert.match(gateway, /websiteUrl: safeExternalUrl\(row\.website\)/)
+assert.match(gateway, /COMPANY_NOT_IN_FREE_MATCH/)
+assert.match(gateway, /contacts \} : \{\}/)
+assert.match(gateway, /events\.has_public_opportunity/)
+assert.match(gateway, /hasPublicOpportunity: Boolean\(row\.has_public_opportunity\)/)
 assert.match(matchService, /message\/subscribe\/send/)
+assert.match(matchService, /miniprogram_state: wechatMiniProgramState\(\)/)
+assert.match(matchService, /member_status IN \('active', 'pro', 'lifetime'\)/)
+assert.match(matchService, /member_cycle_start_at IS NULL/)
+assert.match(matchService, /custom_role_terms/)
 assert.match(matchService, /page: `pages\/company-detail\/index\?id=/)
 assert.doesNotMatch(matchService, /page: `pages\/web-view/)
 assert.match(matchService, /const hasRecentMatch = \(recentRuns \|\| \[\]\)\.some/)
 assert.match(matchService, /cachedRecommendations\.length > 0 \|\| !hasRecentMatch/)
 assert.match(appConfig, /pages\/web-view\/index/)
-assert.match(matchPage, /createMatchApplyTicket/)
-assert.match(matchPage, /查看申请机会/)
+for (const label of ["text: '匹配'", "text: '企业'", "text: '笔记'", "text: '我的'"]) assert.match(appConfig, new RegExp(label))
+assert.doesNotMatch(matchPage, /createMatchApplyTicket/)
+assert.match(matchPage, /CareerWatchPage/)
+assert.doesNotMatch(matchPage, /LegacyMatch|parseCareerResume|analyzeCareerProfile/)
+assert.match(watchPage, /方向与企业/)
+assert.match(watchPage, /fixed_free/)
 assert.match(companyDetail, /setClipboardData/)
+assert.match(companyDetail, /公开岗位/)
+assert.match(companyDetail, /pages\/job-detail\/index/)
+assert.match(companyDetail, /暂未收录联系人/)
 
 const matchDraft = fs.readFileSync(new URL('./miniprogram/src/utils/match-draft.ts', import.meta.url), 'utf8')
 assert.match(matchDraft, /MATCH_DRAFT_TTL_MS = 24 \* 60 \* 60 \* 1000/)

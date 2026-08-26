@@ -13,7 +13,7 @@ const privacySections = [
   },
   {
     title: '三、存储与第三方处理',
-    body: '小程序服务使用腾讯云云开发/云托管，通过 Haigoo Remote 网站服务处理账号与业务数据，并使用微信官方小程序虚拟支付处理交易。部分网站基础设施可能部署在中国大陆以外地区；我们会遵循适用法律采取访问控制、传输加密和最小化处理措施。具体第三方清单及跨境安排以正式隐私保护指引为准。'
+    body: '小程序服务使用腾讯云云开发/云托管，通过 HaigooRemote 网站服务处理账号与业务数据，并使用微信官方小程序虚拟支付处理交易。部分网站基础设施可能部署在中国大陆以外地区；我们会遵循适用法律采取访问控制、传输加密和最小化处理措施。具体第三方清单及跨境安排以正式隐私保护指引为准。'
   },
   {
     title: '四、保存期限与安全',
@@ -32,11 +32,11 @@ const privacySections = [
 const termsSections = [
   {
     title: '一、服务性质',
-    body: 'Haigoo Remote 提供远程企业资料、职业成长内容、职业咨询和会员服务。相关资料用于职业研究与准备，不代表任何企业作出录用承诺，也不保证获得特定职业结果。'
+    body: 'HaigooRemote 提供远程企业资料、职业成长内容、职业咨询和会员服务。相关资料用于职业研究与准备，不代表任何企业作出录用承诺，也不保证获得特定职业结果。'
   },
   {
     title: '二、账号与安全',
-    body: '您应提供真实、有效的邮箱并妥善保管账号密码。一个微信身份只能连接一个 Haigoo Remote 账号。发现账号异常时请及时修改密码或联系我们。'
+    body: '您应提供真实、有效的邮箱并妥善保管账号密码。一个微信身份只能连接一个 HaigooRemote 账号。发现账号异常时请及时修改密码或联系我们。'
   },
   {
     title: '三、企业与成长内容',
@@ -72,7 +72,7 @@ export default function LegalPage() {
         <Text className='legal-page__version'>版本：2026-07-29 · 生效日期：正式发布之日</Text>
       </View>
       <View className='legal-page__content'>
-        <Text className='legal-page__intro'>欢迎使用 Haigoo Remote 微信小程序。请在注册或继续使用前仔细阅读以下内容。</Text>
+        <Text className='legal-page__intro'>欢迎使用 HaigooRemote 微信小程序。请在注册或继续使用前仔细阅读以下内容。</Text>
         {sections.map((section) => (
           <View className='legal-section' key={section.title}>
             <Text className='legal-section__title'>{section.title}</Text>

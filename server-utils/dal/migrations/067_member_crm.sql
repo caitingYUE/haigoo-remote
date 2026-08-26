@@ -174,24 +174,32 @@ CREATE TABLE IF NOT EXISTS member_crm_audit_log (
 CREATE INDEX IF NOT EXISTS idx_member_crm_audit_user
   ON member_crm_audit_log(target_user_id, created_at DESC);
 
-ALTER TABLE job_bundles
-  ADD COLUMN IF NOT EXISTS job_snapshots JSONB NOT NULL DEFAULT '{}'::jsonb;
+-- Some isolated Mini Program databases intentionally do not include the
+-- website-only job bundle module. Keep the CRM migration portable instead of
+-- failing after its required member-service tables have been created.
+DO $$
+BEGIN
+  IF to_regclass('public.job_bundles') IS NOT NULL THEN
+    ALTER TABLE job_bundles
+      ADD COLUMN IF NOT EXISTS job_snapshots JSONB NOT NULL DEFAULT '{}'::jsonb;
 
--- Preserve current job identity before a job is later unpublished or deleted.
-UPDATE job_bundles bundle
-SET job_snapshots = COALESCE((
-  SELECT jsonb_object_agg(
-    item.job_id,
-    jsonb_build_object(
-      'title', COALESCE(job.title, ''),
-      'company', COALESCE(job.company, ''),
-      'captured_at', NOW()
-    )
-  )
-  FROM jsonb_array_elements_text(COALESCE(bundle.job_ids, '[]'::jsonb)) item(job_id)
-  LEFT JOIN jobs job ON job.job_id = item.job_id
-), '{}'::jsonb)
-WHERE COALESCE(bundle.job_snapshots, '{}'::jsonb) = '{}'::jsonb;
+    -- Preserve current job identity before a job is later unpublished or deleted.
+    UPDATE job_bundles bundle
+    SET job_snapshots = COALESCE((
+      SELECT jsonb_object_agg(
+        item.job_id,
+        jsonb_build_object(
+          'title', COALESCE(job.title, ''),
+          'company', COALESCE(job.company, ''),
+          'captured_at', NOW()
+        )
+      )
+      FROM jsonb_array_elements_text(COALESCE(bundle.job_ids, '[]'::jsonb)) item(job_id)
+      LEFT JOIN jobs job ON job.job_id = item.job_id
+    ), '{}'::jsonb)
+    WHERE COALESCE(bundle.job_snapshots, '{}'::jsonb) = '{}'::jsonb;
+  END IF;
+END $$;
 
 -- Move legacy JSON entitlement values into the normalized entitlement ledger.
 DO $$

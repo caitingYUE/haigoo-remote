@@ -3,21 +3,25 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const sourceDir = path.join(projectDir, 'dist-prod')
-const targetDir = path.join(projectDir, '.wechat-production')
+const channel = process.argv.find((argument) => argument.startsWith('--channel='))?.split('=')[1] || 'production'
+if (!['experience', 'production'].includes(channel)) {
+  throw new Error('channel must be experience or production')
+}
+const sourceDir = path.join(projectDir, channel === 'experience' ? 'dist-experience' : 'dist-prod')
+const targetDir = path.join(projectDir, `.wechat-${channel}`)
 const targetBundleDir = path.join(targetDir, 'dist')
-const stagingDir = path.join(projectDir, '.wechat-production-next')
+const stagingDir = path.join(projectDir, `.wechat-${channel}-next`)
 const stagingBundleDir = path.join(stagingDir, 'dist')
 const backupBundleDir = path.join(targetDir, '.dist-previous')
 
 const sourceStat = await fs.stat(sourceDir).catch(() => null)
 if (!sourceStat?.isDirectory()) {
-  throw new Error('Production bundle is missing. Run npm run build:weapp:prod first.')
+  throw new Error(`${channel} bundle is missing. Run the matching build command first.`)
 }
-if (path.dirname(targetDir) !== projectDir || path.basename(targetDir) !== '.wechat-production') {
+if (path.dirname(targetDir) !== projectDir || path.basename(targetDir) !== `.wechat-${channel}`) {
   throw new Error(`Refusing to replace unexpected directory: ${targetDir}`)
 }
-if (path.dirname(stagingDir) !== projectDir || path.basename(stagingDir) !== '.wechat-production-next') {
+if (path.dirname(stagingDir) !== projectDir || path.basename(stagingDir) !== `.wechat-${channel}-next`) {
   throw new Error(`Refusing to use unexpected staging directory: ${stagingDir}`)
 }
 
@@ -62,4 +66,4 @@ try {
   await fs.rm(stagingDir, { recursive: true, force: true })
 }
 
-console.log(`Prepared production WeChat project: ${targetDir}`)
+console.log(`Prepared ${channel} WeChat project: ${targetDir}`)

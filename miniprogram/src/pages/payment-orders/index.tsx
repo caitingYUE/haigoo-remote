@@ -5,6 +5,7 @@ import {
   setClipboardData,
   showToast,
   stopPullDownRefresh,
+  switchTab,
   useDidShow,
   usePullDownRefresh
 } from '@tarojs/taro'
@@ -20,6 +21,8 @@ import './index.scss'
 const PAGE_SIZE = 20
 
 const PLAN_NAMES: Record<string, string> = {
+  mini_club_quarter_2026: '季度会员',
+  mini_club_half_year_2026: '半年会员',
   club_starter_monthly: 'Club Starter',
   club_half_year: 'Club Member',
   club_annual: 'Club Partner'
@@ -43,6 +46,7 @@ function formatAmount(amountCents: number, currency: string) {
 function getOrderStatus(order: VirtualPaymentOrder) {
   if (order.status === 'completed') return { key: 'completed', label: '支付成功' }
   if (order.status === 'refunded') return { key: 'refunded', label: '已退款' }
+  if (order.status === 'cancelled') return { key: 'cancelled', label: '已取消' }
   if (order.status === 'failed') return { key: 'failed', label: '支付失败' }
   const createdAt = new Date(order.createdAt || '').getTime()
   const stale = Number.isFinite(createdAt) && Date.now() - createdAt > 30 * 60 * 1000
@@ -109,7 +113,7 @@ export default function PaymentOrdersPage() {
           <View className='payment-orders-state__icon'><MiniIcon name='user' size={34} /></View>
           <Text className='payment-orders-state__title'>登录后查看订单</Text>
           <Text className='payment-orders-state__copy'>登录 Haigoo 账号后，可以查看支付状态和历史订单。</Text>
-          <View className='payment-orders-state__button' onClick={() => navigateTo({ url: '/pages/profile/index' })}>
+          <View className='payment-orders-state__button' onClick={() => switchTab({ url: '/pages/profile/index' })}>
             <Text>前往登录</Text>
           </View>
         </View>

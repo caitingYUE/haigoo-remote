@@ -1,14 +1,15 @@
 import { Button, Image, Text, View } from '@tarojs/components'
-import { navigateBack, navigateTo, useRouter, useShareAppMessage } from '@tarojs/taro'
+import { navigateBack, navigateTo, useRouter } from '@tarojs/taro'
 import { useCallback, useEffect, useState } from 'react'
 import MiniIcon from '../../components/mini-icon'
+import useMiniShare from '../../hooks/use-mini-share'
 import { trackMiniEvent } from '../../services/analytics-service'
 import { fetchGrowthNote, fetchGrowthNotes } from '../../services/content-service'
 import type { ContentBlock, GrowthNote } from '../../types'
 import './index.scss'
 
 function stripSimpleMarkdown(value: string) { return String(value || '').replace(/\*\*/g, '') }
-function formatPublishedAt(value: string | null) { return value ? value.slice(0, 10).replace(/-/g, '.') : '持续更新' }
+function formatPublishedAt(value: string | null) { return value ? value.slice(0, 10).replace(/-/g, '.') : '' }
 
 function NoteBlock({ block, index }: { block: ContentBlock; index: number }) {
   if (block.type === 'bullet_list' || block.type === 'numbered_list') {
@@ -38,7 +39,10 @@ export default function NoteDetailPage() {
     }
   }, [id])
   useEffect(() => { void load() }, [load])
-  useShareAppMessage(() => ({ title: note?.titleZh || note?.title || 'Haigoo 职业笔记', path: `/pages/note-detail/index?id=${encodeURIComponent(id)}` }))
+  useMiniShare(note?.titleZh || note?.title || 'Haigoo 职业笔记', `/pages/note-detail/index?id=${encodeURIComponent(id)}`)
+
+  const sourceTitle = note?.authorName || note?.sourceName || ''
+  const sourceMeta = note ? [formatPublishedAt(note.publishedAt), note.durationMinutes ? `${note.durationMinutes} 分钟阅读` : '', note.sourceName && note.sourceName !== sourceTitle ? note.sourceName : ''].filter(Boolean).join(' · ') : ''
 
   if (error) return <View className='page-shell note-detail'><View className='empty-state'><Text className='empty-state__title'>无法打开笔记</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' onClick={() => void load(true)}>重新加载</View><View className='note-detail__back' onClick={() => navigateBack()}>返回笔记列表</View></View></View>
   if (!note) return <View className='page-shell note-loading'>正在打开笔记…</View>
@@ -49,8 +53,8 @@ export default function NoteDetailPage() {
         <Text className='note-detail__title'>{note.titleZh || note.title}</Text>
         {note.titleZh && note.titleZh !== note.title ? <Text className='note-detail__original'>{note.title}</Text> : null}
         <Text className='note-detail__summary'>{note.summary}</Text>
-        <View className='note-detail__source'><View className='note-detail__source-mark'>H</View><View><Text>{note.authorName || 'Haigoo 职业研究'}</Text><Text>{formatPublishedAt(note.publishedAt)} · {note.durationMinutes ? `${note.durationMinutes} 分钟阅读` : '深度阅读'}{note.sourceName ? ` · ${note.sourceName}` : ''}</Text></View></View>
-        <View className='note-detail__meta'><Text>{note.difficulty === 'entry' ? '入门' : '进阶'}</Text><Text>{note.tags[0] || '职业成长'}</Text><Text>{note.accessTier === 'free' ? '公开内容' : '会员内容'}</Text></View>
+        {sourceTitle || sourceMeta ? <View className='note-detail__source'><View><Text>{sourceTitle}</Text>{sourceMeta ? <Text>{sourceMeta}</Text> : null}</View></View> : null}
+        <View className='note-detail__meta'><Text>{note.difficulty === 'entry' ? '入门' : note.difficulty === 'advanced' ? '深入' : '进阶'}</Text>{note.tags[0] || note.category ? <Text>{note.tags[0] || note.category}</Text> : null}<Text>{note.accessTier === 'free' ? '公开内容' : '会员内容'}</Text></View>
       </View>
       {note.coverUrl ? <Image className='note-detail__cover' src={note.coverUrl} mode='widthFix' /> : null}
       {note.unlocked ? (
@@ -66,7 +70,7 @@ export default function NoteDetailPage() {
       )}
       <View className='note-detail__finish'>
         <Button className='note-detail__share' openType='share'><MiniIcon name='share' size={21} /><Text>分享这篇笔记</Text></Button>
-        {related.length ? <View className='note-related'><Text className='note-related__heading'>继续阅读</Text>{related.map((item) => <View className='note-related__item' key={item.id} aria-role='button' onClick={() => navigateTo({ url: `/pages/note-detail/index?id=${encodeURIComponent(item.id)}` })}><View><Text>{item.titleZh || item.title}</Text>{item.titleZh ? <Text>{item.title}</Text> : null}</View><MiniIcon name='chevronRight' size={18} /></View>)}</View> : null}
+        {related.length ? <View className='note-related'><Text className='note-related__heading'>继续阅读</Text>{related.map((item) => <View className='note-related__item' key={item.id} aria-role='button' onClick={() => navigateTo({ url: `/pages/note-detail/index?id=${encodeURIComponent(item.id)}` })}><View><Text>{item.titleZh || item.title}</Text>{item.titleZh ? <Text>{item.title}</Text> : null}{!item.unlocked ? <Text>会员内容</Text> : null}</View><MiniIcon name='chevronRight' size={18} /></View>)}</View> : null}
       </View>
     </View>
   )

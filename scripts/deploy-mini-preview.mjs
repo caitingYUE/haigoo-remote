@@ -7,6 +7,7 @@ const stableOrigin = 'https://mini-preview.haigooremote.com'
 const suppliedDeployment = process.argv
   .find((argument) => argument.startsWith('--deployment='))
   ?.slice('--deployment='.length)
+const contractActions = ['sync', 'career_watch_options', 'companies']
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -23,6 +24,17 @@ function normalizeDeployment(value) {
   return match[0]
 }
 
+function verifyDeployment(origin) {
+  for (const action of contractActions) {
+    run('node', [
+      'scripts/verify-mini-gateway.mjs',
+      '--target=development',
+      `--origin=${origin}`,
+      `--action=${action}`
+    ], { stdio: 'inherit' })
+  }
+}
+
 let deploymentUrl
 if (suppliedDeployment) {
   deploymentUrl = normalizeDeployment(suppliedDeployment)
@@ -33,20 +45,14 @@ if (suppliedDeployment) {
 
 // Verify the immutable deployment before moving the stable alias. A failed
 // deployment therefore cannot replace the last known-good development gateway.
-run('node', [
-  'scripts/verify-mini-gateway.mjs',
-  '--target=development',
-  `--origin=${deploymentUrl}`
-], { stdio: 'inherit' })
+// These checks deliberately cover the two contracts required by the current
+// Mini Program instead of accepting a deployment merely because legacy sync works.
+verifyDeployment(deploymentUrl)
 
 run('npx', ['vercel', 'alias', 'set', deploymentUrl, new URL(stableOrigin).hostname], {
   stdio: 'inherit'
 })
 
-run('node', [
-  'scripts/verify-mini-gateway.mjs',
-  '--target=development',
-  `--origin=${stableOrigin}`
-], { stdio: 'inherit' })
+verifyDeployment(stableOrigin)
 
 console.log(`Preview gateway promoted: ${deploymentUrl} -> ${stableOrigin}`)

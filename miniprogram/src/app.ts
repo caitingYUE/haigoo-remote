@@ -1,13 +1,16 @@
 import Taro from '@tarojs/taro'
 import { PropsWithChildren, useEffect } from 'react'
-import { CLOUD_ENV_ID } from './config/api'
+import { configure as configureNutIcons } from '@nutui/icons-react-taro'
 import { reportMiniError, trackMiniEvent } from './services/analytics-service'
 import './app.scss'
+
+// NutUI defaults to the unsupported HTML `i` tag. Render icons with the
+// native Mini Program view node so Taro can resolve every dynamic template.
+configureNutIcons({ tag: 'view' })
 
 function App({ children }: PropsWithChildren<Record<string, never>>) {
   useEffect(() => {
     if (process.env.TARO_ENV === 'weapp') {
-      if (CLOUD_ENV_ID) Taro.cloud.init({ env: CLOUD_ENV_ID, traceUser: true })
       void trackMiniEvent('mini_app_launch', { page_key: 'app' })
 
       const updateManager = Taro.getUpdateManager()

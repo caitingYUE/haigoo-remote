@@ -8,6 +8,7 @@ import {
   registerAndBindWebsiteAccount
 } from '../../services/mini-auth-service'
 import { getMiniSessionToken } from '../../services/session'
+import MiniIcon from '../../components/mini-icon'
 import './index.scss'
 
 type AuthMode = 'bind' | 'register' | 'forgot'
@@ -115,8 +116,8 @@ export default function AccountBindPage() {
     return (
       <View className='account-bind-page'>
         <View className='account-auth-hero account-auth-hero--complete'>
-          <Text className='account-auth-hero__brand'>HAIGOO REMOTE</Text>
-          <View className='account-auth-complete__mark'>✓</View>
+          <Text className='account-auth-hero__brand'>HaigooRemote</Text>
+          <View className='account-auth-complete__mark'><MiniIcon name='check' size={30} /></View>
           <Text className='account-auth-hero__title'>账号已连接</Text>
           <Text className='account-auth-hero__copy'>当前微信已连接 Haigoo 账号。若刚注册，请前往邮箱完成验证。</Text>
         </View>
@@ -135,7 +136,7 @@ export default function AccountBindPage() {
   return (
     <View className='account-bind-page'>
       <View className='account-auth-hero'>
-        <Text className='account-auth-hero__brand'>HAIGOO REMOTE</Text>
+        <Text className='account-auth-hero__brand'>HaigooRemote</Text>
         <Text className='account-auth-hero__title'>连接 Haigoo 账号</Text>
         <Text className='account-auth-hero__copy'>登录后，可以在网站和小程序中查看同一份会员与服务记录。</Text>
         <View className='account-auth-steps'>
@@ -249,7 +250,7 @@ export default function AccountBindPage() {
               aria-checked={consentAccepted}
               onClick={() => setConsentAccepted((value) => !value)}
             >
-              <Text>{consentAccepted ? '✓' : ''}</Text>
+              {consentAccepted ? <MiniIcon name='check' size={14} /> : null}
             </View>
             <Text className='account-auth-consent__copy'>我已阅读并同意</Text>
             <Text className='account-auth-consent__link' onClick={() => navigateTo({ url: '/pages/legal/index?type=terms' })}>《用户服务协议》</Text>
@@ -267,10 +268,6 @@ export default function AccountBindPage() {
           {mode === 'bind' ? '登录并连接' : mode === 'register' ? '创建账号并连接微信' : '发送重置邮件'}
         </Button>
 
-        <View className='account-auth-security'>
-          <Text className='account-auth-security__icon'>✓</Text>
-          <Text>{mode === 'bind' ? '密码只用于本次验证' : mode === 'register' ? '注册信息会安全提交' : '重置链接 1 小时内有效'}</Text>
-        </View>
       </View>
     </View>
   )

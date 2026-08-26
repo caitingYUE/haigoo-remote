@@ -1,15 +1,20 @@
 import crypto from 'node:crypto'
+import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { execFileSync } from 'node:child_process'
+import dotenv from 'dotenv'
 
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const originOverride = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length)
 const scope = process.argv.find((argument) => argument.startsWith('--scope='))?.split('=')[1] || 'account'
 const requestedAction = process.argv.find((argument) => argument.startsWith('--action='))?.split('=')[1] || 'sync'
 const featured = process.argv.find((argument) => argument.startsWith('--featured='))?.split('=')[1]
+const search = process.argv.find((argument) => argument.startsWith('--search='))?.slice('--search='.length) || ''
 const includeLogo = process.argv.includes('--include-logo')
 const openid = process.argv.find((argument) => argument.startsWith('--openid='))?.slice('--openid='.length) || ''
+const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
+const useVercelCurl = process.argv.includes('--vercel-curl')
 const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
@@ -25,7 +30,7 @@ if (!environments[target]) {
   throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true]')
 }
 if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
-if (!['sync', 'content_home', 'match_feed'].includes(requestedAction)) throw new Error('Action must be sync, content_home, or match_feed')
+if (!['sync', 'content_home', 'companies', 'match_feed', 'career_watch_options'].includes(requestedAction)) throw new Error('Unsupported verification action')
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -44,15 +49,21 @@ function stableJson(value) {
   return JSON.stringify(value ?? null)
 }
 
-const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
-const require = createRequire(import.meta.url)
-require(path.join(globalModules, '@cloudbase/cli/node_modules/reflect-metadata'))
-const { getCloudrunService } = require(path.join(globalModules, '@cloudbase/cli/lib/commands/cloudrun/base.js'))
-
 const selected = environments[target]
-const service = await getCloudrunService(selected.envId)
-const detail = await service.detail({ serverName: selected.serviceName })
-const environment = parseEnvironment(detail.ServerConfig?.EnvParams)
+let environment
+if (envFile) {
+  const resolvedEnvFile = path.resolve(envFile)
+  if (!fs.existsSync(resolvedEnvFile)) throw new Error(`Environment file not found: ${resolvedEnvFile}`)
+  environment = dotenv.parse(fs.readFileSync(resolvedEnvFile))
+} else {
+  const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
+  const require = createRequire(import.meta.url)
+  require(path.join(globalModules, '@cloudbase/cli/node_modules/reflect-metadata'))
+  const { getCloudrunService } = require(path.join(globalModules, '@cloudbase/cli/lib/commands/cloudrun/base.js'))
+  const service = await getCloudrunService(selected.envId)
+  const detail = await service.detail({ serverName: selected.serviceName })
+  environment = parseEnvironment(detail.ServerConfig?.EnvParams)
+}
 const useJobsScope = scope === 'jobs'
 const origin = String(originOverride || (
   useJobsScope ? environment.HAIGOO_JOBS_API_ORIGIN : environment.HAIGOO_API_ORIGIN
@@ -67,26 +78,60 @@ if (!origin || !gatewaySecret) throw new Error('CloudRun gateway configuration i
 const action = requestedAction
 const query = action === 'content_home' || action === 'match_feed'
   ? { openid }
-  : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}) }
+  : action === 'companies'
+    ? { openid, page: '1', pageSize: '5' }
+  : action === 'career_watch_options'
+    ? {}
+  : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}), ...(search ? { search } : {}) }
 const timestamp = String(Date.now())
 const bodyHash = crypto.createHash('sha256').update(stableJson(query)).digest('hex')
 const signature = crypto.createHmac('sha256', gatewaySecret)
   .update(`GET:${action}:${timestamp}:${bodyHash}`)
   .digest('hex')
 const params = new URLSearchParams({ action, ...query })
-const response = await fetch(`${origin}/api/mini?${params}`, {
-  signal: AbortSignal.timeout(20000),
-  headers: {
-    Accept: 'application/json',
-    ...(!useJobsScope && bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {}),
-    'X-Haigoo-Mini-Timestamp': timestamp,
-    'X-Haigoo-Mini-Signature': signature
-  }
-})
-const payload = await response.json().catch(() => null)
+const requestHeaders = {
+  Accept: 'application/json',
+  ...(!useJobsScope && bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {}),
+  'X-Haigoo-Mini-Timestamp': timestamp,
+  'X-Haigoo-Mini-Signature': signature
+}
+let responseStatus
+let payload
+if (useVercelCurl) {
+  const output = execFileSync('npx', [
+    'vercel', 'curl', `/api/mini?${params}`,
+    '--deployment', origin,
+    '--yes', '--',
+    '--silent', '--show-error', '--write-out', '\n%{http_code}',
+    ...Object.entries(requestHeaders).flatMap(([key, value]) => ['--header', `${key}: ${value}`])
+  ], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 })
+  const lines = output.trimEnd().split('\n')
+  responseStatus = Number(lines.pop())
+  payload = JSON.parse(lines.join('\n') || 'null')
+} else {
+  const response = await fetch(`${origin}/api/mini?${params}`, {
+    signal: AbortSignal.timeout(20000),
+    headers: requestHeaders
+  })
+  responseStatus = response.status
+  payload = await response.json().catch(() => null)
+}
 
-if (!response.ok || !payload?.success) {
-  throw new Error(`Gateway check failed: HTTP ${response.status} ${payload?.error || 'invalid response'}`)
+if (responseStatus < 200 || responseStatus >= 300 || !payload?.success) {
+  const errorSummary = typeof payload?.error === 'string' ? payload.error : 'invalid response'
+  throw new Error(`Gateway check failed: HTTP ${responseStatus} ${errorSummary}`)
+}
+if (action === 'career_watch_options' && !Array.isArray(payload.filterOptions?.roles)) {
+  throw new Error('Gateway check failed: Career Watch option contract is missing')
+}
+if (action === 'career_watch_options' && payload.capabilities?.wechatSubscriptionAvailable !== true) {
+  throw new Error('Gateway check failed: WeChat subscription configuration is unavailable')
+}
+if (action === 'companies') {
+  const validScopes = new Set(['match_required', 'free_fixed', 'member_all'])
+  if (!Array.isArray(payload.companies) || !validScopes.has(payload.access?.scope)) {
+    throw new Error('Gateway check failed: company access contract is missing')
+  }
 }
 
 console.log(JSON.stringify({
@@ -95,11 +140,14 @@ console.log(JSON.stringify({
   serviceName: selected.serviceName,
   scope,
   origin,
-  status: response.status,
+  status: responseStatus,
   returnedCompanies: Array.isArray(payload.companies) ? payload.companies.length : null,
   returnedNotes: Array.isArray(payload.notes) ? payload.notes.length : null,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
   returnedRecommendations: Array.isArray(payload.recommendations) ? payload.recommendations.length : null,
+  returnedRoleGroups: Array.isArray(payload.filterOptions?.roleGroups) ? payload.filterOptions.roleGroups.length : null,
+  returnedRoles: Array.isArray(payload.filterOptions?.roles) ? payload.filterOptions.roles.length : null,
+  companyAccessScope: payload.access?.scope || null,
   profile: payload.profile ? {
     exists: Boolean(payload.profile.exists),
     completeness: payload.profile.completeness ?? null,
@@ -111,6 +159,7 @@ console.log(JSON.stringify({
         id: job.id,
         title: job.title,
         company: job.company,
+        companyId: job.companyId || null,
         ...(includeLogo ? {
           logo: job.logo || null,
           companyLogo: job.companyLogo || null,

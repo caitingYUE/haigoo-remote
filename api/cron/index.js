@@ -92,8 +92,7 @@ export default async function handler(req, res) {
 
       case 'daily-enrich': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
-        // Daily enrich is now limited to translating recent RSS drafts only.
-        // Trusted-company crawl remains a manual/admin-only tool.
+        // Trusted-company crawl runs on its own controlled six-hour schedule.
         return await runSequence(req, res, [
           { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler }
         ]);
@@ -118,7 +117,7 @@ export default async function handler(req, res) {
             'daily-enrich'
           ],
           taskNotes: {
-            'stream-crawl-trusted-jobs': 'manual/admin-only'
+            'stream-crawl-trusted-jobs': 'scheduled every six hours; AI fallback disabled'
           }
         });
     }

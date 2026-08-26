@@ -15,7 +15,7 @@ interface VirtualPaymentOrder {
   planId: string
   amountCents: number
   currency: string
-  status: 'pending' | 'completed' | 'failed' | 'refunded' | string
+  status: 'pending' | 'completed' | 'cancelled' | 'failed' | 'refunded' | string
   createdAt?: string | null
   paidAt?: string | null
 }
@@ -86,6 +86,13 @@ export async function getVirtualPaymentOrder(paymentId: string) {
   return response.order
 }
 
+async function updateVirtualPaymentOrder(paymentId: string, status: 'cancelled' | 'failed') {
+  return requestJson<{ order: VirtualPaymentOrder }>(
+    `/mini/payments/orders/${encodeURIComponent(paymentId)}`,
+    { method: 'PUT', authenticated: true, data: { status } }
+  )
+}
+
 export async function getVirtualPaymentOrders(page = 1, pageSize = 20) {
   return requestJson<VirtualPaymentOrderList>(
     `/mini/payments/orders?page=${Math.max(1, page)}&pageSize=${Math.min(50, Math.max(1, pageSize))}`,
@@ -134,6 +141,7 @@ export async function purchaseClubPlan(planId: string) {
   } catch (error) {
     const message = error instanceof Error ? error.message : '微信支付未完成'
     const cancelled = /cancel/i.test(message)
+    await updateVirtualPaymentOrder(created.order.paymentId, cancelled ? 'cancelled' : 'failed').catch(() => undefined)
     void trackMiniEvent('mini_virtual_payment_result', {
       entity_id: planId,
       flow_id: created.order.paymentId,

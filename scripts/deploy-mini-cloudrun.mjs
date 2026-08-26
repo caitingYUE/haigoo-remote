@@ -148,6 +148,7 @@ if (target === 'development') {
     HAIGOO_API_ORIGIN: deployment.apiOrigin,
     HAIGOO_JOBS_API_ORIGIN: deployment.jobsApiOrigin,
     MINI_JOBS_GATEWAY_SHARED_SECRET: jobsGatewaySecret,
+    MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true',
     NODE_ENV: 'production'
   }
 } else if (existingDetail) {
@@ -195,7 +196,8 @@ targetEnvironment = {
   MINI_LOGO_RETRY_MS: '86400000',
   MINI_LIST_MEMORY_CACHE_MS: '300000',
   MINI_SYNC_STATE_MEMORY_CACHE_MS: '60000',
-  MINI_STALE_CLEANUP_MAX_RATIO: '0.2'
+  MINI_STALE_CLEANUP_MAX_RATIO: '0.2',
+  MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true'
 }
 
 for (const key of [

@@ -2,3 +2,4 @@
 .topic-scroller__inner { display: inline-flex; min-width: 100%; gap: 12px; }
 .topic-scroller__item { display: inline-flex; min-height: 88px; padding: 0 28px; align-items: center; justify-content: center; border-radius: 999px; background: var(--color-surface-soft); color: var(--color-secondary); font-size: 26px; font-weight: 500; }
 .topic-scroller__item.is-active { background: var(--color-brand-soft); color: var(--color-brand-dark); font-weight: 600; }
+.topic-scroller__item { min-height: 44PX; }

@@ -29,8 +29,10 @@
 
 - 日常开发监听：`npm run dev:weapp`（显式使用 `NODE_ENV=development`，输出到 `dist/`）。
 - 微信开发者工具日常只导入本目录 `miniprogram/`，根目录的 `project.config.json` 会加载开发产物 `dist/`，该产物固定连接 `haigoo-dev/haigoo-mini`。
-- 上传体验版、提审或发布前：`npm run build:weapp:prod`（显式使用 `NODE_ENV=production`，输出到 `dist-prod/`，并准备独立项目 `.wechat-production/`）。
-- 预览或上传正式环境时，微信开发者工具/CLI 必须选择 `.wechat-production/`，不能选择日常开发项目。开发监听与正式构建不再互相覆盖。
+- 上传体验版前：先更新本目录 `package.json` 的版本号，再执行 `npm run build:weapp:experience`。产物写入 `dist-experience/`，并准备独立项目 `.wechat-experience/`；质量闸门会确认它只连接开发云环境。
+- 提审或发布正式版前：执行 `npm run build:weapp:prod`。产物写入 `dist-prod/`，并准备独立项目 `.wechat-production/`；质量闸门会确认它只连接正式云环境。
+- 微信开发者工具/CLI 必须按发布目标选择 `.wechat-experience/` 或 `.wechat-production/`，不能交叉使用。日常开发项目、体验项目和正式项目的产物互不覆盖。
+- 体验包构建并完成后使用 `npm run upload:weapp:experience` 上传；正式候选包使用 `npm run upload:weapp:prod`。上传封装会再次验证编译环境并自动选择对应项目目录。
 
 ## 本地联调
 
@@ -57,7 +59,8 @@
 - `ETIMEDOUT`：检查 `HAIGOO_API_ORIGIN` 是否仍为 `https://mini-preview.haigooremote.com`。
 - HTTP `401`：检查开发 CloudRun 与 Vercel Preview 的 Gateway Shared Secret 是否一致，以及保护绕过密钥是否仍有效。
 - 页面仍显示旧环境：停止旧的 `dev:weapp` 监听并重新启动，再确认 `dist/common.js` 中只包含开发环境 ID。
-- `base.wxml Template ... not found` 等 Taro 模板警告与本次网络失败无关，可单独作为编译器兼容问题处理。
+- `base.wxml Template 'tmpl_0_i' not found`：NutUI 图标必须在 `src/app.ts` 中配置为原生 `view` 节点；同时保持项目私有配置中的 `compileHotReLoad` 为 `false`，再重新编译。
+- 新版页面提示“内容暂时无法打开”且日志状态为 HTTP `404`：开发 CloudRun 仍是旧版本，登录 CloudBase CLI 后运行 `npm run deploy:mini-cloudrun:dev`；不要把本地测试版临时切到生产服务。
 
 ## 申请与账号
 

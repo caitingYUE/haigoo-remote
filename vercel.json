@@ -59,6 +59,10 @@
       "schedule": "10 4 * * *"
     },
     {
+      "path": "/api/cron/stream-crawl-trusted-jobs",
+      "schedule": "15 */6 * * *"
+    },
+    {
       "path": "/api/cron/membership-lifecycle",
       "schedule": "0 * * * *"
     },

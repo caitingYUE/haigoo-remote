@@ -1,6 +1,5 @@
 import { Button, Input, Text, Textarea, View } from '@tarojs/components'
-import { Close, Mail, ShieldCheck, Warning } from '@nutui/icons-react-taro'
-import { navigateTo, setClipboardData, showModal, showToast } from '@tarojs/taro'
+import { navigateTo, setClipboardData, showModal, showToast, switchTab } from '@tarojs/taro'
 import { useState } from 'react'
 import {
   deleteMiniAccount,
@@ -20,7 +19,7 @@ export default function AccountSettingsPage() {
   const finishSession = (message: string) => {
     logoutMiniAccount()
     showToast({ title: message, icon: 'success' })
-    navigateTo({ url: '/pages/profile/index' })
+    switchTab({ url: '/pages/profile/index' })
   }
 
   const handleLogout = () => {
@@ -72,7 +71,7 @@ export default function AccountSettingsPage() {
         if (!confirm) return
         showModal({
           title: '请再次确认',
-          content: '这是不可撤销操作。确认永久注销 Haigoo Remote 账号吗？',
+          content: '这是不可撤销操作。确认永久注销 HaigooRemote 账号吗？',
           confirmText: '永久注销',
           success: async ({ confirm: finalConfirm }) => {
             if (!finalConfirm) return
@@ -111,26 +110,25 @@ export default function AccountSettingsPage() {
   return (
     <View className='account-settings-page'>
       <View className='settings-hero'>
-        <View className='settings-hero__icon'><ShieldCheck size={32} color='#C94F22' /></View>
         <View>
           <Text className='settings-hero__title'>账号与安全</Text>
-          <Text className='settings-hero__copy'>{user?.email || '当前 Haigoo Remote 账号'}</Text>
+          <Text className='settings-hero__copy'>{user?.email || '当前 HaigooRemote 账号'}</Text>
         </View>
       </View>
 
       <View className='settings-card'>
         <Text className='settings-card__title'>常用操作</Text>
         <View className='settings-row' onClick={() => navigateTo({ url: '/pages/account-bind/index?mode=forgot' })}>
-          <Mail size={23} color='#C94F22' /><Text>通过邮箱重置密码</Text><Text className='settings-row__arrow'>›</Text>
+          <Text>通过邮箱重置密码</Text><Text className='settings-row__arrow'>›</Text>
         </View>
         <View className='settings-row' onClick={() => navigateTo({ url: '/pages/legal/index?type=privacy' })}>
-          <ShieldCheck size={23} color='#C94F22' /><Text>隐私政策</Text><Text className='settings-row__arrow'>›</Text>
+          <Text>隐私政策</Text><Text className='settings-row__arrow'>›</Text>
         </View>
         <View className='settings-row' onClick={() => navigateTo({ url: '/pages/legal/index?type=terms' })}>
-          <ShieldCheck size={23} color='#C94F22' /><Text>用户服务协议</Text><Text className='settings-row__arrow'>›</Text>
+          <Text>用户服务协议</Text><Text className='settings-row__arrow'>›</Text>
         </View>
         <View className='settings-row' onClick={handleLogout}>
-          <Close size={23} color='#C94F22' /><Text>退出登录</Text><Text className='settings-row__arrow'>›</Text>
+          <Text>退出登录</Text><Text className='settings-row__arrow'>›</Text>
         </View>
       </View>
 
@@ -161,7 +159,7 @@ export default function AccountSettingsPage() {
         />
         <Button className='settings-warning-button' loading={pending === 'unbind'} disabled={Boolean(pending)} onClick={handleUnbind}>解除微信绑定</Button>
         <Button className='settings-danger-button' loading={pending === 'delete'} disabled={Boolean(pending)} onClick={handleDelete}>永久注销账号</Button>
-        <View className='settings-danger-note'><Warning size={18} color='#a94b4b' /><Text>注销后无法恢复，请先确认账号中的数据已不再需要。</Text></View>
+        <View className='settings-danger-note'><Text>注销后无法恢复，请先确认账号中的数据已不再需要。</Text></View>
       </View>
     </View>
   )

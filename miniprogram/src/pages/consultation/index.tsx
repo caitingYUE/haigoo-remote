@@ -19,6 +19,14 @@ const TOPICS = [
   { value: 'other', label: '其他问题' }
 ]
 
+const CONSULTATION_STATUS_LABELS: Record<string, string> = {
+  pending: '待联系',
+  contacted: '已联系',
+  scheduled: '已预约',
+  completed: '已完成',
+  closed: '已关闭'
+}
+
 export default function ConsultationPage() {
   const router = useRouter()
   const [topicIndex, setTopicIndex] = useState(0)
@@ -29,11 +37,14 @@ export default function ConsultationPage() {
   const [formError, setFormError] = useState('')
   const [success, setSuccess] = useState(false)
   const [history, setHistory] = useState<ConsultationRequest[]>([])
+  const [historyError, setHistoryError] = useState(false)
 
   const refresh = useCallback(async () => {
     if (!hasAuthenticatedSession()) return
+    setHistoryError(false)
     const result = await fetchConsultations().catch(() => null)
     if (result) setHistory(result.consultations)
+    else setHistoryError(true)
   }, [])
   useDidShow(() => { void refresh() })
 
@@ -104,7 +115,8 @@ export default function ConsultationPage() {
         {formError ? <Text className='consultation-error'>{formError}</Text> : null}
         <View className={`primary-button consultation-submit ${submitting ? 'primary-button--disabled' : ''}`} onClick={submitting ? undefined : handleSubmit}>{submitting ? '正在提交…' : '提交咨询'}</View>
       </View>
-      {history.length > 0 ? <View className='consultation-history'><Text className='consultation-history__title'>最近咨询记录</Text>{history.slice(0, 3).map((item) => <View className='consultation-history__item' key={item.id}><Text>{TOPICS.find((topic) => topic.value === item.consultation_topic)?.label || '职业咨询'}</Text><Text>{item.status === 'pending' ? '待联系' : item.status === 'contacted' ? '已联系' : '处理中'}</Text></View>)}</View> : null}
+      {history.length > 0 ? <View className='consultation-history'><Text className='consultation-history__title'>最近咨询记录</Text>{history.slice(0, 3).map((item) => <View className='consultation-history__item' key={item.id}><Text>{TOPICS.find((topic) => topic.value === item.consultation_topic)?.label || '职业咨询'}</Text><Text>{CONSULTATION_STATUS_LABELS[item.status] || '处理中'}</Text></View>)}</View> : null}
+      {historyError ? <View className='consultation-history'><Text className='consultation-error'>咨询记录暂时无法加载</Text><Text aria-role='button' onClick={() => void refresh()}>重新加载</Text></View> : null}
     </View>
   )
 }

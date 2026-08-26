@@ -7,9 +7,16 @@ import { neon } from '@neondatabase/serverless'
 
 const cliArgs = process.argv.slice(2)
 const dryRun = cliArgs.includes('--dry-run')
-const migrationName = String(cliArgs.find((argument) => argument !== '--dry-run') || '').trim()
+const databaseUrlEnvArg = cliArgs.find((argument) => argument.startsWith('--database-url-env='))
+const databaseUrlEnvName = String(databaseUrlEnvArg?.slice('--database-url-env='.length) || '').trim()
+const migrationName = String(cliArgs.find((argument) => (
+  argument !== '--dry-run' && !argument.startsWith('--database-url-env=')
+)) || '').trim()
 if (!/^\d{3}_[a-z0-9_]+\.sql$/.test(migrationName)) {
-  throw new Error('Usage: node scripts/run-sql-migration.mjs [--dry-run] <NNN_migration_name.sql>')
+  throw new Error('Usage: node scripts/run-sql-migration.mjs [--dry-run] [--database-url-env=DATABASE_URL] <NNN_migration_name.sql>')
+}
+if (databaseUrlEnvName && !['DATABASE_URL', 'NEON_DATABASE_DATABASE_URL'].includes(databaseUrlEnvName)) {
+  throw new Error('database-url-env must be DATABASE_URL or NEON_DATABASE_DATABASE_URL')
 }
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -138,7 +145,16 @@ if (dryRun) {
   process.exit(0)
 }
 
-const databaseUrl = process.env.NEON_DATABASE_DATABASE_URL || process.env.DATABASE_URL
+const configuredDatabaseUrls = [
+  process.env.NEON_DATABASE_DATABASE_URL,
+  process.env.DATABASE_URL
+].filter(Boolean)
+if (!databaseUrlEnvName && new Set(configuredDatabaseUrls).size > 1) {
+  throw new Error('Multiple database URLs are configured; pass --database-url-env to select the migration target explicitly')
+}
+const databaseUrl = databaseUrlEnvName
+  ? process.env[databaseUrlEnvName]
+  : configuredDatabaseUrls[0]
 if (!databaseUrl) throw new Error('NEON_DATABASE_DATABASE_URL or DATABASE_URL is required')
 
 const sql = neon(databaseUrl)

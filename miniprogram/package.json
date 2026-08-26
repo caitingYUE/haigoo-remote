@@ -1,8 +1,8 @@
 {
   "name": "miniprogram",
-  "version": "1.0.0",
+  "version": "1.0.12",
   "private": true,
-  "description": "Haigoo Remote WeChat Mini Program",
+  "description": "HaigooRemote WeChat Mini Program",
   "templateInfo": {
     "name": "default",
     "typescript": true,
@@ -12,10 +12,15 @@
   "scripts": {
     "prepare": "husky",
     "build:weapp": "NODE_ENV=development taro build --type weapp --no-check",
-    "build:weapp:prod": "NODE_ENV=production taro build --type weapp --no-check && npm run prepare:weapp:prod && npm run check:weapp:prod",
-    "check:weapp:prod": "node scripts/check-production-assets.mjs",
+    "build:weapp:experience": "node scripts/build-weapp.mjs --channel=experience",
+    "build:weapp:prod": "node scripts/build-weapp.mjs --channel=production",
+    "check:weapp:experience": "node scripts/check-production-assets.mjs --channel=experience --release-version=$npm_package_version",
+    "check:weapp:prod": "node scripts/check-production-assets.mjs --channel=production --release-version=$npm_package_version",
     "dev:weapp": "NODE_ENV=development taro build --type weapp --watch --no-check",
-    "prepare:weapp:prod": "node scripts/prepare-production-project.mjs",
+    "prepare:weapp:experience": "node scripts/prepare-production-project.mjs --channel=experience",
+    "prepare:weapp:prod": "node scripts/prepare-production-project.mjs --channel=production",
+    "upload:weapp:experience": "node scripts/upload-weapp.mjs --channel=experience",
+    "upload:weapp:prod": "node scripts/upload-weapp.mjs --channel=production",
     "type-check": "tsc --noEmit"
   },
   "browserslist": [

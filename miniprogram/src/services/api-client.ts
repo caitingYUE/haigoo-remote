@@ -1,6 +1,12 @@
 import Taro from '@tarojs/taro'
 import { CLOUD_ENV_ID, CLOUD_SERVICE_NAME } from '../config/api'
-import { getMiniSessionToken } from './session'
+import { clearMiniSession, getMiniSessionToken } from './session'
+
+// Pages can issue requests before React effects run. Initialise CloudBase as
+// soon as the shared transport is loaded so the first callContainer is valid.
+if (process.env.TARO_ENV === 'weapp' && CLOUD_ENV_ID) {
+  Taro.cloud.init({ env: CLOUD_ENV_ID, traceUser: true })
+}
 
 interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -111,6 +117,8 @@ export async function requestJson<T>(
     const message = getRequestFailureMessage(error)
     console.error('[Haigoo API] request failed', {
       path,
+      env: CLOUD_ENV_ID,
+      service: CLOUD_SERVICE_NAME,
       message,
       detail: error
     })
@@ -130,6 +138,14 @@ export async function requestJson<T>(
       : {}
     const upstreamMessage = String(payload.error || payload.message || '')
     const message = getResponseFailureMessage(response.statusCode, upstreamMessage)
+    console.error('[Haigoo API] response failed', {
+      path,
+      env: CLOUD_ENV_ID,
+      service: CLOUD_SERVICE_NAME,
+      statusCode: response.statusCode,
+      code: String(payload.code || '')
+    })
+    if (response.statusCode === 401) clearMiniSession()
     throw new ApiRequestError(message, response.statusCode, payload)
   }
 

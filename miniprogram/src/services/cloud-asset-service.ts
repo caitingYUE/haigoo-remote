@@ -38,7 +38,12 @@ export async function resolveCloudFileUrls(fileIds: Array<string | undefined>) {
     if (!value.startsWith('cloud://')) continue
     const cached = urlCache.get(value)
     if (cached && cached.expiresAt > Date.now()) resolved.set(value, cached.url)
-    else pending.push(value)
+    else {
+      // Cloud file IDs are valid image sources in WeChat. Keep them as a
+      // fallback while resolving a faster temporary HTTPS URL.
+      resolved.set(value, value)
+      pending.push(value)
+    }
   }
 
   for (let index = 0; index < pending.length; index += 50) {

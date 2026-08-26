@@ -1,13 +1,12 @@
 .account-settings-page { min-height: 100vh; box-sizing: border-box; padding: 24px 40px calc(56px + env(safe-area-inset-bottom)); background: #fff; }
-.settings-hero { display: flex; min-height: 128px; padding: 20px 0 28px; align-items: center; gap: 18px; border-bottom: 1PX solid var(--color-border); }
-.settings-hero__icon { display: flex; width: 56px; height: 56px; align-items: center; justify-content: center; color: var(--color-secondary); }
+.settings-hero { display: flex; min-height: 128px; padding: 20px 0 28px; align-items: center; border-bottom: 1PX solid var(--color-border); }
 .settings-hero__title, .settings-hero__copy, .settings-card__title, .settings-card__copy { display: block; }
 .settings-hero__title { color: var(--color-ink); font-size: 34px; font-weight: 700; }
 .settings-hero__copy { margin-top: 6px; color: var(--color-muted); font-size: 25px; }
 .settings-card { margin-top: 40px; }
 .settings-card__title { color: var(--color-ink); font-size: 29px; font-weight: 600; }
 .settings-card__copy { margin-top: 9px; color: var(--color-muted); font-size: 25px; line-height: 40px; }
-.settings-row { display: flex; min-height: 96px; align-items: center; gap: 14px; border-bottom: 1PX solid var(--color-border); color: var(--color-secondary); font-size: 27px; font-weight: 500; }
+.settings-row { display: flex; min-height: 96px; align-items: center; border-bottom: 1PX solid var(--color-border); color: var(--color-secondary); font-size: 27px; font-weight: 500; }
 .settings-row:first-of-type { margin-top: 12px; border-top: 1PX solid var(--color-border); }
 .settings-row__arrow { margin-left: auto; color: var(--color-muted); font-size: 30px; }
 .settings-feedback { width: 100%; min-height: 220px; box-sizing: border-box; margin-top: 18px; padding: 20px; border: 1PX solid var(--color-border-strong); border-radius: 14px; color: var(--color-ink); font-size: 28px; line-height: 44px; }
@@ -19,4 +18,4 @@
 .settings-email text:last-child { color: var(--color-brand-text); font-weight: 500; }
 .settings-card--danger { margin-top: 64px; padding-top: 32px; border-top: 1PX solid #e7b6b6; }
 .settings-password { width: 100%; height: 88px; box-sizing: border-box; margin-top: 18px; padding: 0 20px; border: 1PX solid var(--color-border-strong); border-radius: 14px; font-size: 28px; }
-.settings-danger-note { display: flex; margin-top: 16px; align-items: flex-start; gap: 8px; color: #884848; font-size: 24px; line-height: 38px; }
+.settings-danger-note { margin-top: 16px; color: #884848; font-size: 24px; line-height: 38px; }

@@ -9,6 +9,7 @@
 .career-data-empty__title, .career-data-empty__copy { display: block; }
 .career-data-empty__title { margin-top: 24px; color: var(--color-ink); font-size: 32px; font-weight: 700; }
 .career-data-empty__copy { margin: 12px 0 28px; color: var(--color-muted); font-size: 26px; line-height: 42px; }
+.career-data-secondary { display: flex; min-height: 88px; align-items: center; justify-content: center; color: var(--color-brand-strong); font-size: 26px; font-weight: 600; }
 .career-data-summary { margin-top: 24px; border-top: 1PX solid var(--color-border); }
 .career-data-summary > view { display: flex; min-height: 104px; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1PX solid var(--color-border); }
 .career-data-summary text { font-size: 27px; }

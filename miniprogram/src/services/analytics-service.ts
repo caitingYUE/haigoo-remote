@@ -25,7 +25,7 @@ function currentPath() {
   return route ? `/${route}` : '/mini'
 }
 
-async function flushMiniEvents() {
+export async function flushPendingMiniEvents() {
   if (flushing || !eventQueue.length || !hasMiniSession()) return
   flushing = true
   if (flushTimer) clearTimeout(flushTimer)
@@ -38,15 +38,16 @@ async function flushMiniEvents() {
       data: { events, releaseVersion: MINI_RELEASE_VERSION }
     })
   } catch (error) {
+    eventQueue.unshift(...events)
+    if (eventQueue.length > 100) eventQueue.splice(0, eventQueue.length - 100)
     console.warn('[mini-analytics] batched delivery failed', events.map((event) => event.eventName), error)
   } finally {
     flushing = false
-    if (eventQueue.length) flushTimer = setTimeout(() => { void flushMiniEvents() }, 1500)
+    if (eventQueue.length && hasMiniSession()) flushTimer = setTimeout(() => { void flushPendingMiniEvents() }, 5000)
   }
 }
 
 export function trackMiniEvent(eventName: string, properties: MiniEventProperties = {}) {
-  if (!hasMiniSession()) return Promise.resolve()
   eventQueue.push({
     eventId: createRequestKey('mini-event'),
     eventName,
@@ -57,8 +58,10 @@ export function trackMiniEvent(eventName: string, properties: MiniEventPropertie
       source_key: 'wechat_mini_program'
     }
   })
-  if (eventQueue.length >= 10) void flushMiniEvents()
-  else if (!flushTimer) flushTimer = setTimeout(() => { void flushMiniEvents() }, 1500)
+  if (eventQueue.length > 100) eventQueue.splice(0, eventQueue.length - 100)
+  if (!hasMiniSession()) return Promise.resolve()
+  if (eventQueue.length >= 10) void flushPendingMiniEvents()
+  else if (!flushTimer) flushTimer = setTimeout(() => { void flushPendingMiniEvents() }, 1500)
   return Promise.resolve()
 }
 

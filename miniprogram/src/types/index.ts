@@ -9,16 +9,49 @@ export interface MiniCompany {
   employeeCount: string
   foundedYear: string
   rating: number | null
+  ratingSource?: string
   logoFileId: string
   logoUrl?: string
   updatedAt: string | null
   websiteUrl?: string
+  careersUrl?: string
   hasPublicOpportunity?: boolean
   publicOpportunityUpdatedAt?: string | null
+  openJobCount?: number
+  jobs?: MiniCompanyJob[]
+  contacts?: MemberOnlyContact[]
   remoteWork?: string[]
   culture?: ContentBlock[]
   ceoInsights?: ContentBlock[]
   insightsLocked?: boolean
+}
+
+export interface MiniCompanyJob {
+  id: string
+  title: string
+  location: string
+  salary: string
+  jobType: string
+  updatedAt: string | null
+}
+
+export interface MiniCompanyJobDetail extends MiniCompanyJob {
+  company: string
+  category: string
+  description: string
+  requirements: string[]
+  benefits: string[]
+  officialApplyUrl: string
+  publicApplicationEmail: string
+  sourceLabel: string
+}
+
+export interface MemberOnlyContact {
+  id: string
+  name: string
+  title: string
+  email: string
+  linkedin: string
 }
 
 export interface ContentBlock {
@@ -123,6 +156,7 @@ export interface CareerMatchState {
   retentionReviewDue: boolean
   importedResume?: {
     sourceType: 'resume'
+    resumeId: string
     filename: string
     careerText: string
     structured: Record<string, unknown>
@@ -150,6 +184,17 @@ export interface MiniMembershipPlan {
   description: string
   featured: boolean
   features: string[]
+}
+
+export interface MemberServiceEntitlement {
+  key: 'career_direction_diagnosis' | 'bilingual_resume_optimization' | 'custom_job_search_materials'
+  title: string
+  description: string
+  status: 'available' | 'requested' | 'in_progress' | 'completed'
+  totalQuota: number
+  remainingQuota: number
+  expiresAt: string | null
+  updatedAt: string | null
 }
 
 export interface ConsultationRequest {

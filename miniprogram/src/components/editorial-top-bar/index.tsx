@@ -1,8 +1,7 @@
 import { Image, Text, View } from '@tarojs/components'
-import Taro, { navigateTo } from '@tarojs/taro'
+import Taro, { switchTab } from '@tarojs/taro'
 import { useEffect, useMemo, useState } from 'react'
 import { resolveMiniAvatarUrl } from '../../config/api'
-import MiniIcon from '../mini-icon'
 import './index.scss'
 
 interface EditorialTopBarProps {
@@ -32,12 +31,12 @@ export default function EditorialTopBar({ authenticated, avatar = '' }: Editoria
       <View className='editorial-topbar__inner' style={{ height: `${metrics.barHeight}px`, paddingRight: `${metrics.rightInset}px` }}>
         <View className='editorial-topbar__brand'>
           <Text className='editorial-topbar__brand-cn'>海狗远程</Text>
-          <Text className='editorial-topbar__brand-en'>HAIGOO REMOTE</Text>
+          <Text className='editorial-topbar__brand-en'>HaigooRemote</Text>
         </View>
-        <View className='editorial-topbar__account' aria-role='button' aria-label={authenticated ? '打开我的' : '登录或连接账号'} onClick={() => navigateTo({ url: '/pages/profile/index' })}>
+        <View className='editorial-topbar__account' aria-role='button' aria-label={authenticated ? '打开我的' : '登录或连接账号'} onClick={() => switchTab({ url: '/pages/profile/index' })}>
           {authenticated && avatarUrl && !avatarFailed ? (
             <Image className='editorial-topbar__avatar' src={avatarUrl} mode='aspectFill' onError={() => setAvatarFailed(true)} />
-          ) : <MiniIcon name='user' size={21} label={authenticated ? '我的' : '登录'} />}
+          ) : <Image className='editorial-topbar__avatar editorial-topbar__avatar--default' src='/assets/icons/default-user.svg' mode='aspectFit' />}
         </View>
       </View>
     </View>

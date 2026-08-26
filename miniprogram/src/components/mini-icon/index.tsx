@@ -1,12 +1,14 @@
 import {
   ArrowRight,
   Articles,
+  Check,
   Edit,
   Heart,
   Link,
-  Location,
+  List2,
   Mail,
-  Order,
+  Notice,
+  Pin,
   Search,
   Setting,
   Share,
@@ -23,12 +25,14 @@ export type MiniIconName =
   | 'application'
   | 'building'
   | 'chevronRight'
+  | 'check'
   | 'club'
   | 'community'
   | 'edit'
   | 'favorite'
   | 'link'
   | 'mail'
+  | 'notes'
   | 'search'
   | 'settings'
   | 'share'
@@ -46,21 +50,23 @@ interface MiniIconProps {
 }
 
 const icons: Record<MiniIconName, FunctionComponent<any>> = {
-  application: Order,
+  application: List2,
   building: Store,
   chevronRight: ArrowRight,
+  check: Check,
   club: Star,
   community: Weixin,
   edit: Edit,
   favorite: Heart,
   link: Link,
   mail: Mail,
+  notes: Articles,
   search: Search,
   settings: Setting,
   share: Share,
   shield: ShieldCheck,
-  subscription: Articles,
-  target: Location,
+  subscription: Notice,
+  target: Pin,
   user: User
 }
 

@@ -47,8 +47,10 @@ const company = mapMiniCompany({
 })
 assert.equal(company.logoFileId, '', 'company images must not expose third-party URLs')
 assert.equal(company._logoSourcePath, '', 'third-party company images must not enter the trusted cache path')
-assert.equal('jobCount' in company, false, 'company contract must omit job counts')
-assert.equal('careersPage' in company, false, 'company contract must omit Careers CTA')
+assert.equal(company.openJobCount, 0, 'missing job counts must stay at the honest zero value')
+assert.equal(company.careersUrl, '', 'missing careers links must stay empty')
+assert.equal('careersPage' in company, false, 'legacy unvalidated Careers fields must stay out of the contract')
+assert.equal(mapMiniCompany({ company_id: 'company-2', name: 'No Industry' }).industry, '', 'missing industries must stay empty instead of receiving a fabricated category')
 
 const cachedCompany = mapMiniCompany({
   company_id: 'company-1', name: 'Remote Co',
@@ -58,10 +60,11 @@ assert.equal(cachedCompany.logoFileId, '')
 assert.equal(cachedCompany._logoSourcePath, '/api/company-assets?companyId=company-1&type=logo&v=abc123')
 
 const mappedPlan = mapMiniPlan({
-  id: 'club_starter_monthly', memberType: 'starter', name: 'Starter', shortLabel: 'Starter',
-  price: 99, currency: 'CNY', duration_days: 30, features: ['岗位内容 must not leak']
+  id: 'mini_club_quarter_2026', memberType: 'quarter', name: '季度会员', shortLabel: '季度会员',
+  amountCents: 19900, durationMonths: 3, features: ['方向匹配岗位更新']
 })
-assert.equal(mappedPlan.price, 99)
-assert.equal(mappedPlan.features.some((feature) => feature.includes('岗位')), false, 'Mini plan features must stay within the 1.0 product scope')
+assert.equal(mappedPlan.price, 199)
+assert.equal(mappedPlan.durationMonths, 3)
+assert.deepEqual(mappedPlan.features, ['方向匹配岗位更新'])
 
-console.log('mini 1.0 content contract checks passed')
+console.log('mini upgrade content contract checks passed')
