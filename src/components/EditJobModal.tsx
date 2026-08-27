@@ -337,15 +337,19 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
           {/* Approval Action Bar */}
           <div className="flex items-center justify-between gap-4 bg-[#eff5fb]/50 px-3 py-2.5 rounded-lg border border-[#dce9f5]">
             <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
-                {formData.isApproved ? <CheckCircle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${job.status !== 'active' ? 'bg-rose-100 text-rose-600' : formData.isApproved ? 'bg-green-100 text-green-600' : 'bg-amber-100 text-amber-600'}`}>
+                {job.status === 'active' && formData.isApproved ? <CheckCircle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
               </div>
               <div>
                 <h3 className="text-[13px] font-semibold text-slate-900">
-                  {formData.isApproved ? '已通过审核' : '待审核'}
+                  {job.status !== 'active'
+                    ? formData.isApproved ? '已审核但已下线' : '待审核且已下线'
+                    : formData.isApproved ? '已上线' : '待审核'}
                 </h3>
                 <p className="text-[12px] text-slate-500">
-                  {formData.isApproved ? '该岗位已对外展示' : '该岗位尚未通过人工审核，仅管理员可见'}
+                  {job.status !== 'active'
+                    ? '该岗位不会在前台展示；如岗位仍有效，请更新投递链接后保存。'
+                    : formData.isApproved ? '该岗位已对外展示' : '该岗位尚未通过人工审核，仅管理员可见'}
                 </p>
               </div>
             </div>

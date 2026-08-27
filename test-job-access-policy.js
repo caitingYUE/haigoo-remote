@@ -90,6 +90,24 @@ assert.ok(
   'auth walls and elapsed time must not automatically unapprove or deactivate jobs'
 )
 assert.ok(
+  linkVerifier.includes("String(rawUrl || '').trim()") &&
+    linkVerifier.includes("return { status: 'ambiguous', reason: 'Invalid URL format' }") &&
+    !linkVerifier.includes("return { status: 'dead', reason: 'Invalid URL format' }"),
+  'URL whitespace and malformed values must not permanently deactivate jobs'
+)
+assert.ok(
+  linkVerifier.includes("jobs.status = 'inactive'") &&
+    linkVerifier.includes("jobs.haigoo_comment LIKE '[自动巡查] 判定链接彻底死亡并下线，原因:%'") &&
+    linkVerifier.includes("SET status = 'active'") &&
+    linkVerifier.includes("CASE WHEN status = 'inactive' THEN NULL ELSE haigoo_comment END"),
+  'automatically deactivated jobs must be rechecked and restored when their links recover'
+)
+assert.ok(
+  processedJobs.includes("jobs.url IS DISTINCT FROM EXCLUDED.url") &&
+    processedJobs.includes("AND BTRIM(EXCLUDED.url) ~* '^https?://[^[:space:]]+$'"),
+  'correcting an approved inactive job URL must reactivate the job'
+)
+assert.ok(
   !jobSync.includes('PROCESSED_JOBS_RETAIN_DAYS') &&
     !jobSync.includes('validCrawledJobs') &&
     !trustedCompanies.includes('filteredByTime'),
