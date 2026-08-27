@@ -9,11 +9,19 @@ const {
   normalizeEventId,
   normalizeJobSnapshot,
   requestSignature,
+  safeCompanyLogoSource,
   stableJson
 } = await import('./lib/api-handlers/mini-gateway.js')
 
 const payloadA = { type: 'website', jobId: 'job-1', nested: { b: 2, a: 1 } }
 const payloadB = { nested: { a: 1, b: 2 }, jobId: 'job-1', type: 'website' }
+
+assert.equal(
+  safeCompanyLogoSource('', 'company-1'),
+  '/api/company-assets?companyId=company-1&type=logo',
+  'an existing binary logo asset must be resolved by company id even when the legacy URL field is empty'
+)
+assert.equal(safeCompanyLogoSource('', '../unsafe'), '', 'invalid company ids must not form asset URLs')
 
 assert.equal(stableJson(payloadA), stableJson(payloadB), 'object key order must not alter gateway signatures')
 assert.equal(

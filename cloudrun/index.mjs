@@ -1479,7 +1479,14 @@ async function route(req, res) {
       const formalJobs = await gatewayRequest('sync', {
         query: { id: jobId, page: '1', limit: '1', sortBy: 'recent' }
       })
-      const job = mapCompanyJobDetail(formalJobs.jobs?.[0], companyId)
+      const rawJob = formalJobs.jobs?.[0]
+      const companyName = String(companyResult.company?.name || '').trim().toLowerCase()
+      const jobCompanyName = String(rawJob?.company || '').trim().toLowerCase()
+      const sameCompany = String(rawJob?.companyId || '') === companyId
+        || (!rawJob?.companyId && companyName && jobCompanyName === companyName)
+      const job = sameCompany
+        ? mapCompanyJobDetail({ ...rawJob, companyId }, companyId)
+        : null
       if (!job) return send(res, 404, { error: '岗位不存在或已下线' })
       return send(res, 200, {
         success: true,

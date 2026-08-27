@@ -26,7 +26,7 @@ export default function MembershipPage() {
     setLoading(true)
     setError('')
     try {
-      const result = await fetchMembershipPlans(); setPlans(result.plans); setMembership(result.membership); setPaymentAvailable(result.paymentAvailable && isVirtualPaymentSupported())
+      const result = await fetchMembershipPlans(); setPlans(result.plans); setMembership(result.membership); setPaymentAvailable(result.paymentAvailable)
       setSelectedPlanId((current) => {
         if (current && result.plans.some((plan) => plan.id === current)) return current
         return result.plans.find((plan) => result.membership?.isMember && plan.memberType === result.membership.memberType)?.id
@@ -34,7 +34,7 @@ export default function MembershipPage() {
           || result.plans[0]?.id
           || ''
       })
-      void trackMiniEvent('mini_membership_plans_view', { payment_available: result.paymentAvailable && isVirtualPaymentSupported() })
+      void trackMiniEvent('mini_membership_plans_view', { payment_available: result.paymentAvailable, client_payment_supported: isVirtualPaymentSupported() })
     } catch (loadError) { setError(loadError instanceof Error ? loadError.message : '会员方案加载失败') } finally { setLoading(false) }
   }, [])
   useDidShow(() => { void load() })

@@ -18,6 +18,7 @@
 .profile-dashboard-error text:last-child { display: flex; min-height: 44PX; align-items: center; color: var(--color-brand-strong); font-weight: 600; }
 .profile-membership { display: flex; min-height: 120px; margin-top: 26px; padding: 20px 22px; align-items: center; justify-content: space-between; gap: 16px; border: 1PX solid var(--color-brand-line); border-radius: 16px; background: var(--color-brand-soft); }
 .profile-membership > view { display: flex; min-width: 0; align-items: center; gap: 16px; }
+.profile-membership > .mini-icon { margin-left: auto; flex: 0 0 auto; }
 .profile-membership text { display: block; }
 .profile-membership view view text:first-child { color: var(--color-ink); font-size: 27px; font-weight: 650; }
 .profile-membership view view text:last-child { margin-top: 5px; color: var(--color-secondary); font-size: 22px; line-height: 1.45; }
@@ -35,7 +36,8 @@
 .profile-service__status--in_progress, .profile-service__status--requested { background: var(--color-surface-soft); color: var(--color-secondary); }
 .profile-service__status--completed { border-color: #bdd7c8; color: var(--color-success); }
 .profile-menu__item { display: flex; min-height: 116px; padding: 18px 0; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1PX solid var(--color-border); }
-.profile-menu__item > view { min-width: 0; flex: 1; }
+.profile-menu__item > view:not(.mini-icon) { min-width: 0; flex: 1; }
+.profile-menu__item > .mini-icon { margin-left: auto; flex: 0 0 auto; }
 .profile-menu__item text { display: block; }
 .profile-menu__item view text:first-child { color: var(--color-ink); font-size: 28px; font-weight: 600; }
 .profile-menu__item view text:last-child { margin-top: 6px; color: var(--color-muted); font-size: 23px; line-height: 1.45; }

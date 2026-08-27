@@ -38,6 +38,22 @@ function emptyDraft(): WatchDraft {
   }
 }
 
+function updateTimeLabel(value?: string | number | null) {
+  const time = new Date(value || '').getTime()
+  if (!Number.isFinite(time)) return ''
+  return new Intl.DateTimeFormat('zh-CN', {
+    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
+  }).format(time)
+}
+
+function nextUpdateTime(value: string, hours: number) {
+  const base = new Date(value || '').getTime()
+  if (!Number.isFinite(base)) return ''
+  const interval = Math.max(1, hours) * 60 * 60 * 1000
+  const elapsed = Math.max(0, Date.now() - base)
+  return updateTimeLabel(base + (Math.floor(elapsed / interval) + 1) * interval)
+}
+
 export default function CareerWatchPage() {
   const authenticated = hasAuthenticatedSession()
   const [step, setStep] = useState<WatchStep>(authenticated ? 'loading' : 'start')
@@ -317,6 +333,9 @@ export default function CareerWatchPage() {
     return [...draft.customRoleTerms, ...unrepresentedRoleFamilies.map((role) => filterOptions?.roles.find((item) => item.value === role)?.label || role)].join('、')
   }, [draft.customRoleTerms, filterOptions?.roles, unrepresentedRoleFamilies])
   const selectedDirectionCount = draft.customRoleTerms.length + unrepresentedRoleFamilies.length
+  const updateHours = watch?.entitlements.refreshHours || 24
+  const lastUpdateLabel = updateTimeLabel(watch?.generatedAt)
+  const nextUpdateLabel = watch ? nextUpdateTime(watch.generatedAt, updateHours) : ''
 
   return <View className='page-shell watch-page' style={{ paddingTop: `${navigationInset}px` }}>
     {step === 'loading' ? <View className='watch-loading'><View><MiniIcon name='target' size={30} /></View><Text className='watch-loading__label'>正在加载方向结果</Text></View> : null}
@@ -359,7 +378,9 @@ export default function CareerWatchPage() {
       <Text className='watch-feed__brand'>HaigooRemote</Text>
       <View className='watch-feed__heading'><View><Text>方向与企业</Text><Text>{watch.matchState === 'fixed_free' ? '关注企业后查看最新动态' : roleSummary || '按已保存方向更新'}</Text></View>{watch.matchState === 'member_dynamic' ? <Text onClick={() => setStep('setup')}>编辑方向</Text> : null}</View>
       <View className='watch-notice-bar' onClick={watch.entitlements.isMember ? () => void enableDirectionNotice() : undefined}><View><MiniIcon name='subscription' size={21} /><View><Text>企业更新提醒</Text><Text>{watch.entitlements.isMember ? watch.entitlements.wechatSubscriptionAvailable ? '站内提醒已开启，可授权一次微信提醒' : '站内提醒已开启' : '关注企业后查看最新动态'}</Text></View></View>{watch.entitlements.isMember && watch.entitlements.wechatSubscriptionAvailable ? <MiniIcon name='chevronRight' size={18} /> : null}</View>
-      {watch.followedUpdates.length ? <View className='watch-updates'><View className='watch-section-title'><Text>未读更新</Text><Text>{watch.followedUpdates.length} 条</Text></View>{watch.followedUpdates.slice(0, showAllUpdates ? watch.followedUpdates.length : 4).map((update) => <View className='watch-update' key={update.inboxId} onClick={() => void openUpdate(update)}><View><Text>{update.companyName}</Text><Text>{update.hasPublicOpportunity ? '有新的公开岗位' : '企业资料有更新'}</Text></View><MiniIcon name='chevronRight' size={18} /></View>)}{watch.followedUpdates.length > 4 ? <Text className='watch-updates__toggle' onClick={() => setShowAllUpdates((value) => !value)}>{showAllUpdates ? '收起' : '查看全部'}</Text> : null}</View> : null}
+      <View className='watch-refresh'><View><Text>更新记录</Text><Text>{watch.followedUpdates.length ? `${watch.followedUpdates.length} 条未读动态` : '暂无新动态'}</Text></View><View><Text>{lastUpdateLabel ? `最近检查 ${lastUpdateLabel}` : '每日检查企业动态'}</Text><Text>{nextUpdateLabel ? `下次检查 ${nextUpdateLabel}` : `每 ${updateHours} 小时检查`}</Text></View></View>
+      {!watch.entitlements.isMember ? <View className='watch-plan'><View><Text>免费方案</Text><Text>当前保留 {watch.fixedCompanyCount || watch.recommendations.length} 家方向企业</Text></View><Text aria-role='button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>开通会员</Text><Text>会员可浏览全部在招企业、更新方向并查看已收录联系人。</Text></View> : null}
+      {watch.followedUpdates.length ? <View className='watch-updates'><View className='watch-section-title'><Text>最新动态</Text><Text>{watch.followedUpdates.length} 条</Text></View>{watch.followedUpdates.slice(0, showAllUpdates ? watch.followedUpdates.length : 4).map((update) => <View className='watch-update' key={update.inboxId} onClick={() => void openUpdate(update)}><View><Text>{update.companyName}</Text><Text>{update.hasPublicOpportunity ? '有新的公开岗位' : '企业资料有更新'}</Text></View><MiniIcon name='chevronRight' size={18} /></View>)}{watch.followedUpdates.length > 4 ? <Text className='watch-updates__toggle' onClick={() => setShowAllUpdates((value) => !value)}>{showAllUpdates ? '收起' : '查看全部'}</Text> : null}</View> : null}
       <View className='watch-results'>
         {watch.recommendations.map((company) => <View className='watch-company' key={company.companyId}>
           <View className='watch-company__head' onClick={() => navigateTo({ url: `/pages/company-detail/index?id=${encodeURIComponent(company.companyId)}` })}><View><Text>{company.companyName}</Text><Text>{company.industry || '行业信息暂缺'}</Text></View>{company.score > 0 ? <View className='watch-company__score'><Text>{company.score}</Text><Text>方向契合度</Text></View> : <MiniIcon name='chevronRight' size={20} />}</View>
@@ -369,7 +390,6 @@ export default function CareerWatchPage() {
         </View>)}
         {!watch.recommendations.length ? <View className='empty-state'><Text className='empty-state__title'>暂无符合当前方向的企业</Text>{watch.matchState === 'member_dynamic' ? <View className='empty-state__action' onClick={() => setStep('setup')}>调整方向</View> : null}</View> : null}
       </View>
-      {!watch.entitlements.isMember ? <View className='watch-upgrade'><Text>查看更多企业与内部联系人</Text><Text>会员可随时更新职业方向并接收企业动态提醒。</Text><View className='secondary-button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>查看会员方案</View></View> : null}
       {error ? <Text className='watch-error'>{error}</Text> : null}
     </View> : null}
   </View>

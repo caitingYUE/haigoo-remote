@@ -51,7 +51,7 @@ export default function JobDetailPage() {
       {facts.length ? <View className='job-detail__facts'>{facts.map((item) => <Text key={item}>{item}</Text>)}</View> : null}
     </View>
 
-    {job.description ? <View className='job-detail__section'><Text className='job-detail__section-title'>岗位介绍</Text><Text className='job-detail__body' selectable>{job.description}</Text></View> : null}
+    <View className='job-detail__section'><Text className='job-detail__section-title'>岗位介绍</Text>{job.description ? <Text className='job-detail__body' selectable>{job.description}</Text> : <Text className='job-detail__empty'>暂未收录更多岗位说明，请以企业公开页面为准。</Text>}</View>
     {job.requirements.length ? <View className='job-detail__section'><Text className='job-detail__section-title'>岗位要求</Text><View className='job-detail__list'>{job.requirements.map((item) => <View key={item}><MiniIcon name='check' size={16} /><Text>{item}</Text></View>)}</View></View> : null}
     {job.benefits.length ? <View className='job-detail__section'><Text className='job-detail__section-title'>公开信息</Text><View className='job-detail__list'>{job.benefits.map((item) => <View key={item}><MiniIcon name='check' size={16} /><Text>{item}</Text></View>)}</View></View> : null}
 

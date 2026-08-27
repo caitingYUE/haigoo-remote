@@ -46,7 +46,7 @@ const company = mapMiniCompany({
   industry: 'SaaS', tags: ['remote'], specialties: ['async'], cached_logo_url: 'https://unsafe.example/logo.png'
 })
 assert.equal(company.logoFileId, '', 'company images must not expose third-party URLs')
-assert.equal(company._logoSourcePath, '', 'third-party company images must not enter the trusted cache path')
+assert.equal(company._logoSourcePath, '/api/company-assets?companyId=company-1&type=logo', 'third-party URLs must be ignored in favor of the first-party binary asset endpoint')
 assert.equal(company.openJobCount, 0, 'missing job counts must stay at the honest zero value')
 assert.equal(company.careersUrl, '', 'missing careers links must stay empty')
 assert.equal('careersPage' in company, false, 'legacy unvalidated Careers fields must stay out of the contract')

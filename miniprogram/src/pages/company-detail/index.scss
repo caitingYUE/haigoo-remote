@@ -78,7 +78,7 @@
   border-radius: 12px;
   background: #f8f9fb;
 }
-.company-job > view,
+.company-job__copy,
 .company-contact > view { min-width: 0; flex: 1; }
 .company-job text,
 .company-contact text { display: block; }
@@ -86,7 +86,7 @@
 .company-contact view text:first-child { color: var(--color-ink); font-size: 26px; font-weight: 650; line-height: 1.4; }
 .company-job view text:last-child,
 .company-contact view text:last-child { margin-top: 6px; overflow: hidden; color: var(--color-muted); font-size: 21px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
-.company-job > .mini-icon { flex-shrink: 0; color: var(--color-secondary); }
+.company-job > .mini-icon { margin-left: auto; flex: 0 0 auto; color: var(--color-secondary); }
 .company-job > text,
 .company-contact > text {
   display: flex;
@@ -124,6 +124,7 @@
 }
 .company-detail > .company-detail__locked { margin-top: 0; border: 1PX solid var(--color-brand-line); }
 .company-detail__locked > view { display: flex; min-width: 0; align-items: center; gap: 14px; }
+.company-detail__locked > .mini-icon { margin-left: auto; flex: 0 0 auto; }
 .company-detail__locked text { display: block; }
 .company-detail__locked view view text:first-child { color: var(--color-ink); font-size: 25px; font-weight: 630; }
 .company-detail__locked view view text:last-child { margin-top: 5px; color: var(--color-secondary); font-size: 21px; line-height: 1.45; }

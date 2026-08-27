@@ -73,6 +73,19 @@
 .watch-notice-bar text { display: block; }
 .watch-notice-bar view view text:first-child { color: var(--color-ink); font-size: 26px; font-weight: 650; }
 .watch-notice-bar view view text:last-child { margin-top: 5px; color: var(--color-secondary); font-size: 22px; line-height: 1.45; }
+.watch-refresh { display: grid; margin-top: 18px; padding: 20px; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 18px; border: 1PX solid var(--color-border); border-radius: 12px; background: #fff; }
+.watch-refresh > view + view { padding-left: 18px; border-left: 1PX solid var(--color-border); }
+.watch-refresh text { display: block; }
+.watch-refresh view:first-child text:first-child { color: var(--color-ink); font-size: 25px; font-weight: 650; }
+.watch-refresh view:first-child text:last-child { margin-top: 6px; color: var(--color-brand-strong); font-size: 22px; }
+.watch-refresh view:last-child text { color: var(--color-muted); font-size: 21px; line-height: 1.5; }
+.watch-refresh view:last-child text + text { margin-top: 4px; color: var(--color-secondary); }
+.watch-plan { position: relative; margin-top: 18px; padding: 22px 150px 22px 20px; border: 1PX solid var(--color-brand-line); border-radius: 12px; background: var(--color-brand-soft); }
+.watch-plan > view text { display: block; }
+.watch-plan > view text:first-child { color: var(--color-ink); font-size: 25px; font-weight: 650; }
+.watch-plan > view text:last-child { margin-top: 5px; color: var(--color-secondary); font-size: 22px; }
+.watch-plan > text:nth-child(2) { position: absolute; top: 20px; right: 20px; display: flex; min-width: 112px; min-height: 64px; padding: 0 14px; align-items: center; justify-content: center; border-radius: 9px; background: var(--color-brand); color: #fff; font-size: 22px; font-weight: 650; }
+.watch-plan > text:last-child { display: block; margin-top: 14px; color: var(--color-secondary); font-size: 21px; line-height: 1.5; }
 .watch-section-title { display: flex; min-height: 78px; align-items: center; justify-content: space-between; color: var(--color-ink); font-size: 29px; font-weight: 650; }
 .watch-section-title text:last-child { color: var(--color-muted); font-size: 22px; font-weight: 500; }
 .watch-updates { margin-top: 28px; }
@@ -113,6 +126,10 @@
   .watch-choice-grid { grid-template-columns: 1fr; }
   .watch-field__selection { overflow: visible; text-overflow: clip; white-space: normal; }
   .watch-submit-bar > view:first-child { align-items: flex-start; flex-direction: column; }
+  .watch-refresh { grid-template-columns: 1fr; }
+  .watch-refresh > view + view { padding: 14px 0 0; border-top: 1PX solid var(--color-border); border-left: 0; }
+  .watch-plan { padding-right: 20px; }
+  .watch-plan > text:nth-child(2) { position: static; width: fit-content; margin-top: 16px; }
   .watch-company__head > view:first-child text:first-child { overflow: visible; text-overflow: clip; white-space: normal; }
 }
 
