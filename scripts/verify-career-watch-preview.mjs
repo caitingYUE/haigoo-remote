@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { execFileSync } from 'node:child_process'

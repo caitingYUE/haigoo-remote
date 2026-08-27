@@ -7,7 +7,7 @@ const stableOrigin = 'https://mini-preview.haigooremote.com'
 const suppliedDeployment = process.argv
   .find((argument) => argument.startsWith('--deployment='))
   ?.slice('--deployment='.length)
-const contractActions = ['sync', 'career_watch_options', 'companies']
+const contractActions = ['sync', 'career_watch_options', 'companies', 'membership_plans']
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {

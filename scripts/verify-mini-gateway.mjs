@@ -30,7 +30,7 @@ if (!environments[target]) {
   throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true]')
 }
 if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
-if (!['sync', 'content_home', 'companies', 'match_feed', 'career_watch_options'].includes(requestedAction)) throw new Error('Unsupported verification action')
+if (!['sync', 'content_home', 'companies', 'match_feed', 'career_watch_options', 'membership_plans'].includes(requestedAction)) throw new Error('Unsupported verification action')
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -80,7 +80,7 @@ const query = action === 'content_home' || action === 'match_feed'
   ? { openid }
   : action === 'companies'
     ? { openid, page: '1', pageSize: '5' }
-  : action === 'career_watch_options'
+  : action === 'career_watch_options' || action === 'membership_plans'
     ? {}
   : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}), ...(search ? { search } : {}) }
 const timestamp = String(Date.now())
@@ -127,6 +127,18 @@ if (action === 'career_watch_options' && !Array.isArray(payload.filterOptions?.r
 if (action === 'career_watch_options' && payload.capabilities?.wechatSubscriptionAvailable !== true) {
   throw new Error('Gateway check failed: WeChat subscription configuration is unavailable')
 }
+if (action === 'membership_plans') {
+  const plans = Array.isArray(payload.plans) ? payload.plans : []
+  const expectedPlans = new Map([
+    ['mini_club_quarter_2026', 199],
+    ['mini_club_half_year_2026', 699]
+  ])
+  const validCatalog = plans.length === expectedPlans.size
+    && plans.every((plan) => expectedPlans.get(plan.id) === Number(plan.price))
+  if (!validCatalog || payload.paymentAvailable !== true) {
+    throw new Error('Gateway check failed: Mini Program membership purchase catalog is unavailable or invalid')
+  }
+}
 if (action === 'companies') {
   const validScopes = new Set(['match_required', 'free_fixed', 'member_all'])
   if (!Array.isArray(payload.companies) || !validScopes.has(payload.access?.scope)) {
@@ -147,6 +159,8 @@ console.log(JSON.stringify({
   returnedRecommendations: Array.isArray(payload.recommendations) ? payload.recommendations.length : null,
   returnedRoleGroups: Array.isArray(payload.filterOptions?.roleGroups) ? payload.filterOptions.roleGroups.length : null,
   returnedRoles: Array.isArray(payload.filterOptions?.roles) ? payload.filterOptions.roles.length : null,
+  returnedPlans: Array.isArray(payload.plans) ? payload.plans.map((plan) => ({ id: plan.id, price: plan.price })) : null,
+  paymentAvailable: typeof payload.paymentAvailable === 'boolean' ? payload.paymentAvailable : null,
   companyAccessScope: payload.access?.scope || null,
   profile: payload.profile ? {
     exists: Boolean(payload.profile.exists),
