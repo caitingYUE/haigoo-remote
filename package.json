@@ -16,6 +16,7 @@
     "test:hero-recommendations": "node test-hero-recommendation-policy.js",
     "test:compliance-ui": "node test-compliance-ui-policy.js",
     "test:job-access-policy": "node test-job-access-policy.js",
+    "test:featured-home-jobs": "node test-featured-home-jobs.js",
     "test:free-usage-monthly-quota": "node test-free-usage-monthly-quota.js",
     "test:mini-gateway": "node test-mini-gateway-signature.js",
     "test:mini-content": "node test-mini-content-contract.js && node test-mini-notes-admin.js",

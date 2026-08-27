@@ -55,7 +55,7 @@ const getFreshTrustedCompaniesCache = (): {
 export default function LandingPage() {
   // Cache busting and version check
   useEffect(() => {
-    const CURRENT_VERSION = '2026.06.15.01' // Increment this to force cache clear
+    const CURRENT_VERSION = '2026.08.27.01' // Increment this to force cache clear
     const lastVersion = localStorage.getItem('haigoo_version')
     
     if (lastVersion !== CURRENT_VERSION) {
@@ -80,13 +80,8 @@ export default function LandingPage() {
   useEffect(() => {
     let cancelled = false
 
-    processedJobsService.getProcessedJobs(1, 6, {
-      isApproved: true,
-      status: 'active',
-      sortBy: 'recent',
-      skipAggregations: true
-    })
-      .then(({ jobs: featuredJobsData }) => {
+    processedJobsService.getFeaturedHomeJobs()
+      .then(featuredJobsData => {
         if (cancelled) return
         setFeaturedJobs(featuredJobsData)
         localStorage.setItem(FEATURED_JOBS_CACHE_KEY, JSON.stringify({

@@ -200,13 +200,22 @@ function spreadJobsByCompany<T extends Record<string, any>>(jobs: T[], limit = 6
         .sort((a, b) => getJobTimestamp(b) - getJobTimestamp(a))
 
     const selected: T[] = []
+    const deferred: T[] = []
     for (const job of sortedJobs) {
         const companyKey = getJobCompanyKey(job)
         const currentCount = companyCounts.get(companyKey) || 0
-        if (currentCount >= maxPerCompany) continue
+        if (currentCount >= maxPerCompany) {
+            deferred.push(job)
+            continue
+        }
         companyCounts.set(companyKey, currentCount + 1)
         selected.push(job)
         if (selected.length >= limit) break
+    }
+
+    for (const job of deferred) {
+        if (selected.length >= limit) break
+        selected.push(job)
     }
 
     return selected
