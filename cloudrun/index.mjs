@@ -372,10 +372,19 @@ async function attachNoteCovers(notes) {
 
 async function attachCompanyLogos(companies) {
   await loadContentAssetIndex()
+  const companyIds = (Array.isArray(companies) ? companies : [])
+    .map((company) => String(company?.id || '').trim())
+    .filter(Boolean)
+  const cachedJobLogos = await cachedCompanyLogoFileIds(companyIds).catch((error) => {
+    console.warn('[mini-cloudrun] company logo cache lookup failed', error?.message || error)
+    return new Map()
+  })
   let created = false
   const hydrated = await mapWithConcurrency(Array.isArray(companies) ? companies : [], 3, async (company) => {
     const { _logoSourcePath, ...publicCompany } = company || {}
     if (publicCompany.logoFileId) return publicCompany
+    const cachedJobLogo = cachedJobLogos.get(String(company?.id || '').trim()) || ''
+    if (cachedJobLogo) return { ...publicCompany, logoFileId: cachedJobLogo }
     const cached = await cacheContentImage({ ownerType: 'company', ownerId: company?.id, sourcePath: _logoSourcePath, folder: 'mini-company-logos' })
     created ||= cached.created
     return { ...publicCompany, logoFileId: cached.fileId }
@@ -838,6 +847,21 @@ let listDocumentCache = null
 
 function invalidateListDocumentCache() {
   listDocumentCache = null
+}
+
+async function cachedCompanyLogoFileIds(companyIds) {
+  const wanted = new Set((Array.isArray(companyIds) ? companyIds : []).map((value) => String(value || '').trim()).filter(Boolean))
+  const result = new Map()
+  if (!wanted.size) return result
+  const records = await readAllListDocuments()
+  for (const record of records) {
+    const payload = record?.payload || {}
+    const companyId = String(payload.companyId || '').trim()
+    if (!wanted.has(companyId) || result.has(companyId)) continue
+    const fileId = String(record?.logoFileId || payload.cachedCompanyLogoUrl || payload.cachedLogoUrl || '').trim()
+    if (fileId.startsWith('cloud://')) result.set(companyId, fileId)
+  }
+  return result
 }
 
 async function readAllListDocuments({ bypassCache = false } = {}) {
