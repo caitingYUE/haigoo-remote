@@ -28,6 +28,7 @@
 ## 构建
 
 - 日常开发监听：`npm run dev:weapp`（显式使用 `NODE_ENV=development`，输出到 `dist/`）。
+- 日常单次构建：`npm run build:weapp`。命令会先在 `dist-local/` 完成并校验产物，再原子替换开发者工具读取的 `dist/`，避免构建过程中进入 `wx://not-found` 空白页。
 - 微信开发者工具日常只导入本目录 `miniprogram/`，根目录的 `project.config.json` 会加载开发产物 `dist/`，该产物固定连接 `haigoo-dev/haigoo-mini`。
 - 上传体验版前：先更新本目录 `package.json` 的版本号，再执行 `npm run build:weapp:experience`。产物写入 `dist-experience/`，并准备独立项目 `.wechat-experience/`；质量闸门会确认它只连接开发云环境。
 - 提审或发布正式版前：执行 `npm run build:weapp:prod`。产物写入 `dist-prod/`，并准备独立项目 `.wechat-production/`；质量闸门会确认它只连接正式云环境。

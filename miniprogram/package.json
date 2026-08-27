@@ -1,6 +1,6 @@
 {
   "name": "miniprogram",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "private": true,
   "description": "HaigooRemote WeChat Mini Program",
   "templateInfo": {
@@ -11,7 +11,7 @@
   },
   "scripts": {
     "prepare": "husky",
-    "build:weapp": "NODE_ENV=development taro build --type weapp --no-check",
+    "build:weapp": "node scripts/build-weapp.mjs --channel=local",
     "build:weapp:experience": "node scripts/build-weapp.mjs --channel=experience",
     "build:weapp:prod": "node scripts/build-weapp.mjs --channel=production",
     "check:weapp:experience": "node scripts/check-production-assets.mjs --channel=experience --release-version=$npm_package_version",

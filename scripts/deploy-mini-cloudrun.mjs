@@ -70,7 +70,7 @@ function safeConfig(baseConfig, environment, minNum, maxNum) {
 
 async function copyDeploymentSource() {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `haigoo-mini-${target}-`))
-  for (const filename of ['Dockerfile', 'index.mjs', 'sync-policy.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
+  for (const filename of ['Dockerfile', 'index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
     await fs.copyFile(path.join(sourceDir, filename), path.join(tempDir, filename))
   }
   return tempDir

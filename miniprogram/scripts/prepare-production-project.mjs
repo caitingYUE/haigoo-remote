@@ -4,24 +4,25 @@ import { fileURLToPath } from 'node:url'
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const channel = process.argv.find((argument) => argument.startsWith('--channel='))?.split('=')[1] || 'production'
-if (!['experience', 'production'].includes(channel)) {
-  throw new Error('channel must be experience or production')
+if (!['local', 'experience', 'production'].includes(channel)) {
+  throw new Error('channel must be local, experience or production')
 }
-const sourceDir = path.join(projectDir, channel === 'experience' ? 'dist-experience' : 'dist-prod')
-const targetDir = path.join(projectDir, `.wechat-${channel}`)
+const isLocal = channel === 'local'
+const sourceDir = path.join(projectDir, isLocal ? 'dist-local' : channel === 'experience' ? 'dist-experience' : 'dist-prod')
+const targetDir = isLocal ? projectDir : path.join(projectDir, `.wechat-${channel}`)
 const targetBundleDir = path.join(targetDir, 'dist')
-const stagingDir = path.join(projectDir, `.wechat-${channel}-next`)
-const stagingBundleDir = path.join(stagingDir, 'dist')
-const backupBundleDir = path.join(targetDir, '.dist-previous')
+const stagingDir = path.join(projectDir, isLocal ? '.dist-local-next' : `.wechat-${channel}-next`)
+const stagingBundleDir = isLocal ? stagingDir : path.join(stagingDir, 'dist')
+const backupBundleDir = path.join(targetDir, isLocal ? '.dist-local-previous' : '.dist-previous')
 
 const sourceStat = await fs.stat(sourceDir).catch(() => null)
 if (!sourceStat?.isDirectory()) {
   throw new Error(`${channel} bundle is missing. Run the matching build command first.`)
 }
-if (path.dirname(targetDir) !== projectDir || path.basename(targetDir) !== `.wechat-${channel}`) {
+if (!isLocal && (path.dirname(targetDir) !== projectDir || path.basename(targetDir) !== `.wechat-${channel}`)) {
   throw new Error(`Refusing to replace unexpected directory: ${targetDir}`)
 }
-if (path.dirname(stagingDir) !== projectDir || path.basename(stagingDir) !== `.wechat-${channel}-next`) {
+if (path.dirname(stagingDir) !== projectDir || path.basename(stagingDir) !== (isLocal ? '.dist-local-next' : `.wechat-${channel}-next`)) {
   throw new Error(`Refusing to use unexpected staging directory: ${stagingDir}`)
 }
 
@@ -36,8 +37,12 @@ projectConfig.srcMiniprogramRoot = 'dist/'
 // wx://not-found even after the bundle has been recreated. It also deletes the
 // developer's project.private.config.json.
 await fs.rm(stagingDir, { recursive: true, force: true })
-await fs.mkdir(stagingDir, { recursive: true })
+if (!isLocal) await fs.mkdir(stagingDir, { recursive: true })
 await fs.cp(sourceDir, stagingBundleDir, { recursive: true })
+for (const filename of ['app.js', 'app.json', 'base.wxml', 'comp.js', 'comp.json', 'comp.wxml']) {
+  const stat = await fs.stat(path.join(stagingBundleDir, filename)).catch(() => null)
+  if (!stat?.isFile()) throw new Error(`${channel} bundle is incomplete: missing ${filename}`)
+}
 await fs.mkdir(targetDir, { recursive: true })
 await fs.rm(backupBundleDir, { recursive: true, force: true })
 
@@ -50,11 +55,13 @@ try {
     previousBundleMoved = true
   }
   await fs.rename(stagingBundleDir, targetBundleDir)
-  await fs.writeFile(
-    path.join(targetDir, 'project.config.json'),
-    `${JSON.stringify(projectConfig, null, 2)}\n`,
-    'utf8'
-  )
+  if (!isLocal) {
+    await fs.writeFile(
+      path.join(targetDir, 'project.config.json'),
+      `${JSON.stringify(projectConfig, null, 2)}\n`,
+      'utf8'
+    )
+  }
   await fs.rm(backupBundleDir, { recursive: true, force: true })
 } catch (error) {
   await fs.rm(targetBundleDir, { recursive: true, force: true })

@@ -7,6 +7,11 @@ import { fileURLToPath } from 'node:url'
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const channel = process.argv.find((argument) => argument.startsWith('--channel='))?.split('=')[1]
 const targets = {
+  local: {
+    cloudEnv: 'haigoo-dev-d2gctbzxma401b345',
+    cloudService: 'haigoo-mini',
+    nodeEnv: 'development'
+  },
   experience: {
     cloudEnv: 'haigoo-dev-d2gctbzxma401b345',
     cloudService: 'haigoo-mini'
@@ -18,7 +23,7 @@ const targets = {
 }
 
 if (!targets[channel]) {
-  throw new Error('Usage: node scripts/build-weapp.mjs --channel=experience|production')
+  throw new Error('Usage: node scripts/build-weapp.mjs --channel=local|experience|production')
 }
 
 const packageJson = JSON.parse(fs.readFileSync(path.join(projectDir, 'package.json'), 'utf8'))
@@ -43,7 +48,7 @@ if (!fs.existsSync(taroBinary)) throw new Error('Taro CLI is missing. Run npm in
 const target = targets[channel]
 const buildEnvironment = {
   ...process.env,
-  NODE_ENV: 'production',
+  NODE_ENV: target.nodeEnv || 'production',
   TARO_APP_RELEASE_CHANNEL: channel,
   TARO_APP_CLOUD_ENV: target.cloudEnv,
   TARO_APP_CLOUD_SERVICE: target.cloudService,
@@ -52,10 +57,12 @@ const buildEnvironment = {
 
 run(taroBinary, ['build', '--type', 'weapp', '--no-check'], buildEnvironment)
 run(process.execPath, ['scripts/prepare-production-project.mjs', `--channel=${channel}`])
-run(process.execPath, [
-  'scripts/check-production-assets.mjs',
-  `--channel=${channel}`,
-  `--release-version=${releaseVersion}`
-])
+if (channel !== 'local') {
+  run(process.execPath, [
+    'scripts/check-production-assets.mjs',
+    `--channel=${channel}`,
+    `--release-version=${releaseVersion}`
+  ])
+}
 
 console.log(`WeChat ${channel} bundle ready for ${releaseVersion}.`)
