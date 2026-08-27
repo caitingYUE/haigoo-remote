@@ -373,9 +373,16 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                {job.isApproved ? (
+                                                {job.status !== 'active' ? (
+                                                    <div>
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-rose-100 text-rose-800">
+                                                            已下线
+                                                        </span>
+                                                        <div className="mt-1 text-[11px] text-slate-400">{job.isApproved ? '已审核' : '待审核'}</div>
+                                                    </div>
+                                                ) : job.isApproved ? (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
-                                                        已审核
+                                                        已上线
                                                     </span>
                                                 ) : (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">
