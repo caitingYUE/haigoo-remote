@@ -123,7 +123,7 @@ assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*19900/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*69900/)
 assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*club_quarter/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*club_half_year/)
-assert.ok(!paymentSetup.includes('club_starter_monthly') && !paymentSetup.includes('club_annual'), 'payment setup must not instruct operators to create retired products')
+assert.ok(!/\|\s*`(?:club_starter_monthly|club_annual)`/.test(paymentSetup), 'payment setup must not instruct operators to create retired products')
 assert.match(envExample, /"mini_club_quarter_2026":"club_quarter"/)
 
 console.log('mini virtual-payment checks passed')

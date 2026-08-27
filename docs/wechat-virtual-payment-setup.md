@@ -33,6 +33,8 @@ AppKey 只能保存在 CloudRun 环境变量中，不能放入 Vercel 前端变�
 | `mini_club_quarter_2026` | `club_quarter` | 海狗远程季度会员（3 个月） | 199 | 19900 |
 | `mini_club_half_year_2026` | `club_half_year` | 海狗远程半年会员（6 个月） | 699 | 69900 |
 
+历史道具 `club_starter_monthly`、`club_annual` 可以继续保留；新版小程序购买目录不会返回或接受它们。
+
 服务端会同时校验方案 ID、`productId`、价格、权益类型和期限；任一项不一致都会停止下单。代码不会接受客户端传入的价格，也不会在商品未配置时降级到二维码或转账。
 
 ### 3. 消息推送
