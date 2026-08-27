@@ -4,8 +4,8 @@ import fs from 'node:fs'
 
 process.env.WECHAT_MESSAGE_TOKEN = 'test-message-token'
 process.env.WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON = JSON.stringify({
-  mini_club_quarter_2026: 'mini_club_quarter_2026',
-  mini_club_half_year_2026: 'mini_club_half_year_2026'
+  mini_club_quarter_2026: 'club_quarter',
+  mini_club_half_year_2026: 'club_half_year'
 })
 
 const {
@@ -22,8 +22,8 @@ const {
 } = await import('./api/wechat-virtual-payment-notify.js')
 
 assert.deepEqual(parseProductMap(), {
-  mini_club_quarter_2026: 'mini_club_quarter_2026',
-  mini_club_half_year_2026: 'mini_club_half_year_2026'
+  mini_club_quarter_2026: 'club_quarter',
+  mini_club_half_year_2026: 'club_half_year'
 })
 assert.deepEqual(EXPECTED_PLAN_AMOUNTS, {
   mini_club_quarter_2026: 19900,
@@ -31,8 +31,9 @@ assert.deepEqual(EXPECTED_PLAN_AMOUNTS, {
 })
 assert.deepEqual(
   Object.fromEntries(Object.entries(VIRTUAL_PAYMENT_PRODUCTS.mini_club_quarter_2026).filter(([key]) => ['productId', 'amountCents', 'memberType', 'durationMonths', 'durationDays'].includes(key))),
-  { productId: 'mini_club_quarter_2026', amountCents: 19900, memberType: 'quarter', durationMonths: 3, durationDays: 0 }
+  { productId: 'club_quarter', amountCents: 19900, memberType: 'quarter', durationMonths: 3, durationDays: 0 }
 )
+assert.equal(VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026.productId, 'club_half_year')
 assert.equal(VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026.amountCents, 69900)
 assert.equal(VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026.durationMonths, 6)
 assert.doesNotThrow(() => ensurePurchaseEligible({
@@ -74,7 +75,7 @@ process.env.WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET = 'test-relay-secret'
 const relayNotification = {
   Event: 'xpay_goods_deliver_notify',
   Env: 1,
-  GoodsInfo: { ProductId: 'mini_club_quarter_2026', Quantity: 1 }
+  GoodsInfo: { ProductId: 'club_quarter', Quantity: 1 }
 }
 const relayTimestamp = String(Date.now())
 const sandboxRelaySignature = relaySignature(
@@ -120,7 +121,9 @@ assert.ok(paymentService.includes('memberType !== catalogPlan.memberType') && pa
 assert.ok(paymentService.includes('Number(payment.paid_amount_cents || 0) !== paidAmountCents'), 'completed callbacks must reject conflicting amounts')
 assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*19900/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*69900/)
+assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*club_quarter/)
+assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*club_half_year/)
 assert.ok(!paymentSetup.includes('club_starter_monthly') && !paymentSetup.includes('club_annual'), 'payment setup must not instruct operators to create retired products')
-assert.match(envExample, /"mini_club_quarter_2026":"mini_club_quarter_2026"/)
+assert.match(envExample, /"mini_club_quarter_2026":"club_quarter"/)
 
 console.log('mini virtual-payment checks passed')

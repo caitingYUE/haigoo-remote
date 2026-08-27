@@ -26,12 +26,12 @@ AppKey 只能保存在 CloudRun 环境变量中，不能放入 Vercel 前端变�
 
 ### 2. 道具管理
 
-使用“道具直购”创建并发布两个商品。商品 ID 必须与服务端版本化商品 ID 一致，价格必须与服务端方案一致：
+使用“道具直购”创建并发布两个商品。微信 `productId` 与价格必须和下表一致；服务端方案 ID 保持稳定，不直接作为微信道具 ID：
 
 | 服务端方案 ID | 微信 `productId` | 商品名称 | 微信后台价格（元） | 接口 `goodsPrice`（分） |
 | --- | --- | --- | ---: | ---: |
-| `mini_club_quarter_2026` | `mini_club_quarter_2026` | 海狗远程季度会员（3 个月） | 199 | 19900 |
-| `mini_club_half_year_2026` | `mini_club_half_year_2026` | 海狗远程半年会员（6 个月） | 699 | 69900 |
+| `mini_club_quarter_2026` | `club_quarter` | 海狗远程季度会员（3 个月） | 199 | 19900 |
+| `mini_club_half_year_2026` | `club_half_year` | 海狗远程半年会员（6 个月） | 699 | 69900 |
 
 服务端会同时校验方案 ID、`productId`、价格、权益类型和期限；任一项不一致都会停止下单。代码不会接受客户端传入的价格，也不会在商品未配置时降级到二维码或转账。
 
@@ -71,7 +71,7 @@ Preview 与 Production 应分别配置对应环境的商品 ID 映射：
 
 ```dotenv
 WECHAT_MINI_APP_ID=当前小程序AppID
-WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON={"mini_club_quarter_2026":"mini_club_quarter_2026","mini_club_half_year_2026":"mini_club_half_year_2026"}
+WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON={"mini_club_quarter_2026":"club_quarter","mini_club_half_year_2026":"club_half_year"}
 WECHAT_MESSAGE_TOKEN=与微信消息推送后台相同的Token
 WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET=Preview与Production共享的独立高强度随机密钥
 ```
