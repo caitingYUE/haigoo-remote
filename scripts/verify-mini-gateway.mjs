@@ -65,7 +65,17 @@ if (envFile) {
   if (!fs.existsSync(resolvedEnvFile)) throw new Error(`Environment file not found: ${resolvedEnvFile}`)
   environment = dotenv.parse(fs.readFileSync(resolvedEnvFile))
 } else {
-  const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
+  // `npm --prefix miniprogram run ...` injects a local npm_config_prefix into
+  // child processes. Do not let the upload command redirect global CLI lookup
+  // into miniprogram/lib/node_modules.
+  const cleanNpmEnvironment = { ...process.env }
+  delete cleanNpmEnvironment.npm_config_prefix
+  delete cleanNpmEnvironment.NPM_CONFIG_PREFIX
+  const globalModules = execFileSync('npm', ['root', '-g'], {
+    cwd: rootDir,
+    encoding: 'utf8',
+    env: cleanNpmEnvironment
+  }).trim()
   const require = createRequire(import.meta.url)
   require(path.join(globalModules, '@cloudbase/cli/node_modules/reflect-metadata'))
   const { getCloudrunService } = require(path.join(globalModules, '@cloudbase/cli/lib/commands/cloudrun/base.js'))
