@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
+const rootDir = path.resolve(projectDir, '..')
 const channel = process.argv.find((argument) => argument.startsWith('--channel='))?.split('=')[1]
 if (!['experience', 'production'].includes(channel)) {
   throw new Error('Usage: node scripts/upload-weapp.mjs --channel=experience|production')
@@ -31,6 +32,12 @@ run(process.execPath, [
   'scripts/check-production-assets.mjs',
   `--channel=${channel}`,
   `--release-version=${releaseVersion}`
+])
+run(process.execPath, [
+  path.join(rootDir, 'scripts/verify-mini-gateway.mjs'),
+  `--target=${channel === 'experience' ? 'development' : 'production'}`,
+  '--via-cloudrun',
+  '--action=career_watch_options'
 ])
 run(cli, [
   'upload',

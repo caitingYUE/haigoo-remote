@@ -39,6 +39,7 @@
     "check:mini-payment-runtime": "node scripts/verify-mini-payment-runtime.mjs",
     "deploy:mini-cloudrun:dev": "node scripts/deploy-mini-cloudrun.mjs --target=development",
     "check:mini-gateway:dev": "node scripts/verify-mini-gateway.mjs --target=development",
+    "check:mini-cloudrun:dev": "node scripts/verify-mini-gateway.mjs --target=development --via-cloudrun --action=career_watch_options",
     "check:mini-jobs:dev": "node scripts/verify-mini-gateway.mjs --target=development --scope=jobs",
     "check:mini-cache:dev": "node scripts/verify-mini-cache.mjs --target=development",
     "check:mini-cache:prod": "node scripts/verify-mini-cache.mjs --target=production",

@@ -1,7 +1,8 @@
-import Taro from '@tarojs/taro'
+import Taro, { useLaunch } from '@tarojs/taro'
 import { PropsWithChildren, useEffect } from 'react'
 import { configure as configureNutIcons } from '@nutui/icons-react-taro'
 import { reportMiniError, trackMiniEvent } from './services/analytics-service'
+import { initializeCloudRuntime } from './services/cloud-runtime'
 import './app.scss'
 
 // NutUI defaults to the unsupported HTML `i` tag. Render icons with the
@@ -9,6 +10,10 @@ import './app.scss'
 configureNutIcons({ tag: 'view' })
 
 function App({ children }: PropsWithChildren<Record<string, never>>) {
+  useLaunch(() => {
+    initializeCloudRuntime()
+  })
+
   useEffect(() => {
     if (process.env.TARO_ENV === 'weapp') {
       void trackMiniEvent('mini_app_launch', { page_key: 'app' })

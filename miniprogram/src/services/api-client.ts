@@ -1,12 +1,7 @@
 import Taro from '@tarojs/taro'
 import { CLOUD_ENV_ID, CLOUD_SERVICE_NAME } from '../config/api'
+import { waitForCloudRuntime } from './cloud-runtime'
 import { clearMiniSession, getMiniSessionToken } from './session'
-
-// Pages can issue requests before React effects run. Initialise CloudBase as
-// soon as the shared transport is loaded so the first callContainer is valid.
-if (process.env.TARO_ENV === 'weapp' && CLOUD_ENV_ID) {
-  Taro.cloud.init({ env: CLOUD_ENV_ID, traceUser: true })
-}
 
 interface ApiRequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -93,6 +88,11 @@ export async function requestJson<T>(
 ): Promise<T> {
   if (!CLOUD_ENV_ID) {
     throw new ApiRequestError('当前服务尚未开放')
+  }
+  try {
+    await waitForCloudRuntime()
+  } catch {
+    throw new ApiRequestError('当前服务尚未就绪，请稍后重试')
   }
   let response
   try {

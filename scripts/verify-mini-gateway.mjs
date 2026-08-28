@@ -3,7 +3,10 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
+
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const originOverride = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length)
@@ -15,6 +18,7 @@ const includeLogo = process.argv.includes('--include-logo')
 const openid = process.argv.find((argument) => argument.startsWith('--openid='))?.slice('--openid='.length) || ''
 const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
 const useVercelCurl = process.argv.includes('--vercel-curl')
+const viaCloudrun = process.argv.includes('--via-cloudrun')
 const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
@@ -27,10 +31,14 @@ const environments = {
 }
 
 if (!environments[target]) {
-  throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true]')
+  throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true] [--via-cloudrun]')
 }
 if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
 if (!['sync', 'content_home', 'companies', 'match_feed', 'career_watch_options', 'membership_plans'].includes(requestedAction)) throw new Error('Unsupported verification action')
+if (viaCloudrun && !['career_watch_options', 'membership_plans', 'companies', 'content_home'].includes(requestedAction)) {
+  throw new Error('CloudRun verification only supports public Mini Program routes')
+}
+if (viaCloudrun && envFile) throw new Error('CloudRun verification requires CloudBase CLI credentials')
 
 function parseEnvironment(value) {
   if (!value) return {}
@@ -51,6 +59,7 @@ function stableJson(value) {
 
 const selected = environments[target]
 let environment
+let cloudbaseContext = null
 if (envFile) {
   const resolvedEnvFile = path.resolve(envFile)
   if (!fs.existsSync(resolvedEnvFile)) throw new Error(`Environment file not found: ${resolvedEnvFile}`)
@@ -63,6 +72,7 @@ if (envFile) {
   const service = await getCloudrunService(selected.envId)
   const detail = await service.detail({ serverName: selected.serviceName })
   environment = parseEnvironment(detail.ServerConfig?.EnvParams)
+  cloudbaseContext = { globalModules, require, detail }
 }
 const useJobsScope = scope === 'jobs'
 const origin = String(originOverride || (
@@ -97,7 +107,30 @@ const requestHeaders = {
 }
 let responseStatus
 let payload
-if (useVercelCurl) {
+if (viaCloudrun) {
+  const { globalModules, require, detail } = cloudbaseContext
+  if (Number(detail.ServerConfig?.MinNum || 0) < 1) {
+    throw new Error('CloudRun verification failed: service must keep at least one warm instance')
+  }
+  const { checkAndGetCredential } = require(path.join(globalModules, '@cloudbase/cli/lib/utils/net/credential.js'))
+  const cloudbase = require(path.join(rootDir, 'cloudrun/node_modules/@cloudbase/node-sdk'))
+  const credential = await checkAndGetCredential(true)
+  const app = cloudbase.init({
+    env: selected.envId,
+    secretId: credential.secretId,
+    secretKey: credential.secretKey,
+    sessionToken: credential.token
+  })
+  const route = {
+    career_watch_options: '/mini/career-watch/options',
+    membership_plans: '/mini/membership/plans',
+    companies: '/mini/companies?page=1&pageSize=5',
+    content_home: '/mini/home'
+  }[action]
+  const response = await app.callContainer({ name: selected.serviceName, method: 'GET', path: route, header: { Accept: 'application/json' } })
+  responseStatus = response.statusCode
+  payload = response.data
+} else if (useVercelCurl) {
   const output = execFileSync('npx', [
     'vercel', 'curl', `/api/mini?${params}`,
     '--deployment', origin,
@@ -150,6 +183,8 @@ console.log(JSON.stringify({
   target,
   envId: selected.envId,
   serviceName: selected.serviceName,
+  transport: viaCloudrun ? 'cloudrun' : 'gateway',
+  minInstances: viaCloudrun ? Number(cloudbaseContext.detail.ServerConfig?.MinNum || 0) : null,
   scope,
   origin,
   status: responseStatus,

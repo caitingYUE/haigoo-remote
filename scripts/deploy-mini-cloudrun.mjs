@@ -20,7 +20,7 @@ const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
     serviceName: 'haigoo-mini',
-    minNum: 0,
+    minNum: 1,
     maxNum: 1,
     apiOrigin: 'https://mini-preview.haigooremote.com',
     jobsApiOrigin: 'https://haigooremote.com'
