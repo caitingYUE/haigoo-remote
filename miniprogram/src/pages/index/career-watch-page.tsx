@@ -1,6 +1,6 @@
 import { Image, ScrollView, Text, View } from '@tarojs/components'
 import Taro, { navigateTo, showModal, showToast, useDidShow } from '@tarojs/taro'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import MiniIcon from '../../components/mini-icon'
 import {
   fetchCareerWatch,
@@ -64,6 +64,7 @@ export default function CareerWatchPage() {
   const [error, setError] = useState('')
   const [activeRoleGroup, setActiveRoleGroup] = useState(0)
   const [showAllUpdates, setShowAllUpdates] = useState(false)
+  const resumeFlowActive = useRef(false)
   const navigationInset = useMiniNavigationInset()
   useMiniShare('HaigooRemote｜找到更适合你的远程方向', '/pages/index/index')
 
@@ -94,6 +95,7 @@ export default function CareerWatchPage() {
     setError('')
     try {
       const result = await fetchCareerWatch()
+      if (resumeFlowActive.current) return
       applyResponse(result)
       void trackMiniEvent('mini_watch_feed_loaded', { result_count: result.recommendations.length, match_state: result.matchState })
     } catch (loadError) {
@@ -104,6 +106,7 @@ export default function CareerWatchPage() {
 
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/index/index')
+    if (resumeFlowActive.current) return
     const pendingIntent = String(Taro.getStorageSync('haigoo:match-intent') || '')
     if (hasAuthenticatedSession() && pendingIntent) {
       Taro.removeStorageSync('haigoo:match-intent')
@@ -156,10 +159,11 @@ export default function CareerWatchPage() {
 
   const uploadResume = async () => {
     if (!await ensureAccount('resume')) return
+    resumeFlowActive.current = true
     setBusy(true); setError('')
     try {
       const result = watch || await fetchCareerWatch()
-      if (!watch) applyResponse(result)
+      setStandaloneOptions(result.filterOptions)
       const selected = await Taro.chooseMessageFile({ count: 1, type: 'file', extension: ['pdf', 'docx', 'txt'] })
       const file = selected.tempFiles[0]
       if (!file) return
@@ -173,8 +177,12 @@ export default function CareerWatchPage() {
       setStep('setup')
       showToast({ title: roles.length ? '已识别方向，请确认' : '请手动选择方向', icon: 'none' })
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : '简历读取失败，请重试')
-    } finally { setBusy(false) }
+      const message = uploadError instanceof Error ? uploadError.message : String(uploadError || '')
+      if (!/cancel/i.test(message)) setError(message || '简历读取失败，请重试')
+    } finally {
+      resumeFlowActive.current = false
+      setBusy(false)
+    }
   }
 
   const filterOptions = watch?.filterOptions || standaloneOptions
