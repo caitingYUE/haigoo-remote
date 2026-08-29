@@ -127,6 +127,66 @@ export interface WatchFilterOptions {
   industries: Array<{ value: string; label: string; count: number }>
 }
 
+const RESUME_DIRECTION_ALIASES: Array<[string, string[]]> = [
+  ['产品经理', ['product manager', 'product owner', '产品经理', '产品负责人']],
+  ['运营', ['product operations', 'product ops', 'operations manager', 'operation manager', '运营经理', '产品运营']],
+  ['前端开发', ['frontend engineer', 'front-end engineer', 'frontend developer', '前端工程师', '前端开发']],
+  ['后端开发', ['backend engineer', 'back-end engineer', 'backend developer', '后端工程师', '后端开发']],
+  ['全栈开发', ['full stack engineer', 'full-stack engineer', 'fullstack developer', '全栈工程师', '全栈开发']],
+  ['移动开发', ['mobile engineer', 'ios engineer', 'android engineer', '移动端开发', '移动开发']],
+  ['软件开发', ['software engineer', 'software developer', '软件工程师', '软件开发']],
+  ['数据分析', ['data analyst', 'business intelligence analyst', 'bi analyst', '数据分析师']],
+  ['商业分析', ['business analyst', '商业分析师']],
+  ['数据科学', ['data scientist', '数据科学家']],
+  ['数据开发', ['data engineer', '数据工程师']],
+  ['算法工程师', ['machine learning engineer', 'ml engineer', '算法工程师', '机器学习工程师']],
+  ['产品设计', ['product designer', '产品设计师']],
+  ['UI/UX设计', ['ux designer', 'ui/ux designer', '交互设计师', '用户体验设计']],
+  ['视觉设计', ['visual designer', '视觉设计师']],
+  ['平面设计', ['graphic designer', '平面设计师']],
+  ['测试/QA', ['qa engineer', 'test engineer', 'quality assurance engineer', '测试工程师']],
+  ['运维/SRE', ['devops engineer', 'site reliability engineer', 'sre', '运维工程师']],
+  ['市场营销', ['marketing manager', 'growth marketer', '市场经理', '增长营销']],
+  ['销售', ['sales manager', 'account executive', '销售经理']],
+  ['商务拓展', ['business development manager', 'business development', '商务拓展']],
+  ['客户服务', ['customer success manager', 'customer support', 'customer service', '客户成功经理', '客户支持', '客服']],
+  ['招聘', ['technical recruiter', 'recruiter', 'talent acquisition', '招聘专员', '招聘经理']],
+  ['财务', ['financial analyst', 'finance analyst', '财务分析师']],
+  ['内容创作', ['content manager', 'content strategist', 'copywriter', '内容运营', '内容策略', '文案']]
+]
+
+function resumeDirectionSignals(structured: Record<string, unknown>) {
+  return ['roles', 'roleTerms']
+    .flatMap((key) => Array.isArray(structured[key]) ? structured[key] as unknown[] : [])
+    .map((value) => String(value || '').normalize('NFKC').toLowerCase().trim())
+    .filter(Boolean)
+}
+
+export function mapResumeCareerDirections(structured: Record<string, unknown>, filterOptions: WatchFilterOptions) {
+  const options = (filterOptions.roleGroups || []).flatMap((group) => group.options)
+  const byValue = new Map(options.map((option) => [option.value, option]))
+  const signals = resumeDirectionSignals(structured)
+  const matchedValues: string[] = []
+
+  for (const [value, aliases] of RESUME_DIRECTION_ALIASES) {
+    if (!byValue.has(value)) continue
+    const matched = signals.some((signal) => aliases.some((alias) => signal.includes(alias.toLowerCase())))
+    if (matched && !matchedValues.includes(value)) matchedValues.push(value)
+    if (matchedValues.length >= 5) break
+  }
+
+  for (const option of options) {
+    if (matchedValues.length >= 5 || matchedValues.includes(option.value)) continue
+    const normalized = option.label.normalize('NFKC').toLowerCase().trim()
+    if (normalized && signals.some((signal) => signal === normalized)) matchedValues.push(option.value)
+  }
+
+  return {
+    customRoleTerms: matchedValues,
+    roleFamilies: [...new Set(matchedValues.flatMap((value) => byValue.get(value)?.families || []))].slice(0, 5)
+  }
+}
+
 export interface WatchProfile {
   profileId: string
   sourceMode: 'resume' | 'manual' | 'mixed'

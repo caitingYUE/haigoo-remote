@@ -6,6 +6,7 @@ import {
   fetchCareerWatch,
   fetchCareerWatchOptions,
   followCompany,
+  mapResumeCareerDirections,
   markCareerWatchUpdatesRead,
   parseCareerResumeFile,
   saveCareerWatch,
@@ -169,13 +170,19 @@ export default function CareerWatchPage() {
       if (!file) return
       if (Number(file.size || 0) > 2 * 1024 * 1024) throw new Error('简历不能超过 2MB，请压缩后重试')
       const parsed = await parseCareerResumeFile(file.name || 'resume.pdf', file.path)
-      const available = new Set(result.filterOptions.roles.map((item) => item.value))
-      const roles = Array.isArray(parsed.structured?.roleFamilies)
-        ? parsed.structured.roleFamilies.filter((role): role is WatchRoleFamily => available.has(String(role) as WatchRoleFamily)).slice(0, 5)
-        : []
-      setDraft({ ...emptyDraft(), sourceMode: 'resume', roleFamilies: roles })
+      const mapped = mapResumeCareerDirections(parsed.structured, result.filterOptions)
+      setDraft({ ...emptyDraft(), sourceMode: 'resume', ...mapped })
       setStep('setup')
-      showToast({ title: roles.length ? '已识别方向，请确认' : '请手动选择方向', icon: 'none' })
+      if (mapped.customRoleTerms.length) {
+        showToast({ title: '已识别方向，请确认', icon: 'none' })
+      } else {
+        await showModal({
+          title: '暂无匹配类型',
+          content: '暂未识别到可用的职业方向，请手动选择你感兴趣的方向。',
+          showCancel: false,
+          confirmText: '手动选择'
+        })
+      }
     } catch (uploadError) {
       const message = uploadError instanceof Error ? uploadError.message : String(uploadError || '')
       if (!/cancel/i.test(message)) setError(message || '简历读取失败，请重试')
@@ -260,7 +267,21 @@ export default function CareerWatchPage() {
       showToast({ title: result.matchState === 'fixed_free' ? '方向结果已生成' : '职业方向已更新', icon: 'success' })
       void trackMiniEvent('mini_watch_saved', { role_count: draft.roleFamilies.length, match_state: result.matchState })
     } catch (saveError: any) {
-      if (saveError?.payload?.code === 'FREE_MATCH_USED') {
+      let reconciled: CareerWatchResponse | null = null
+      for (let attempt = 0; attempt < 3 && !reconciled; attempt += 1) {
+        if (attempt) await new Promise((resolve) => setTimeout(resolve, attempt * 500))
+        try {
+          const latest = await fetchCareerWatch()
+          const sameDirections = latest.profile &&
+            [...latest.profile.customRoleTerms].sort().join('|') === [...draft.customRoleTerms].sort().join('|') &&
+            [...latest.profile.roleFamilies].sort().join('|') === [...draft.roleFamilies].sort().join('|')
+          if (latest.matchState !== 'unused' && sameDirections) reconciled = latest
+        } catch { /* Retry the authoritative state read. */ }
+      }
+      if (reconciled) {
+        applyResponse(reconciled)
+        showToast({ title: reconciled.matchState === 'fixed_free' ? '方向结果已生成' : '职业方向已更新', icon: 'success' })
+      } else if (saveError?.payload?.code === 'FREE_MATCH_USED') {
         await load()
         setError('方向结果已生成，可继续查看和关注企业。')
       } else setError(saveError instanceof Error ? saveError.message : '方向结果没有生成，请重试')

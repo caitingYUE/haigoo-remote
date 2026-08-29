@@ -95,24 +95,31 @@ export async function requestJson<T>(
     throw new ApiRequestError('当前服务尚未就绪，请稍后重试')
   }
   let response
+  const timeout = options.timeout || 30000
+  let deadline: ReturnType<typeof setTimeout> | undefined
   try {
-    response = await Taro.cloud.callContainer<T | string>({
-      config: { env: CLOUD_ENV_ID },
-      path,
-      method: options.method || 'GET',
-      data: options.data,
-      timeout: options.timeout || 30000,
-      header: {
-        Accept: 'application/json',
-        // Cloud Hosting can contain multiple services. This is required by
-        // callContainer to route the Mini Program request to haigoo-mini.
-        'X-WX-SERVICE': CLOUD_SERVICE_NAME,
-        ...(options.method && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
-        ...(options.authenticated && getMiniSessionToken()
-          ? { Authorization: `Bearer ${getMiniSessionToken()}` }
-          : {})
-      }
-    })
+    response = await Promise.race([
+      Taro.cloud.callContainer<T | string>({
+        config: { env: CLOUD_ENV_ID },
+        path,
+        method: options.method || 'GET',
+        data: options.data,
+        timeout,
+        header: {
+          Accept: 'application/json',
+          // Cloud Hosting can contain multiple services. This is required by
+          // callContainer to route the Mini Program request to haigoo-mini.
+          'X-WX-SERVICE': CLOUD_SERVICE_NAME,
+          ...(options.method && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
+          ...(options.authenticated && getMiniSessionToken()
+            ? { Authorization: `Bearer ${getMiniSessionToken()}` }
+            : {})
+        }
+      }),
+      new Promise<never>((_, reject) => {
+        deadline = setTimeout(() => reject(new Error('request:fail timeout')), timeout + 1000)
+      })
+    ])
   } catch (error) {
     const message = getRequestFailureMessage(error)
     console.error('[Haigoo API] request failed', {
@@ -130,6 +137,8 @@ export async function requestJson<T>(
           : ''
       )
     })
+  } finally {
+    if (deadline) clearTimeout(deadline)
   }
 
   if (response.statusCode < 200 || response.statusCode >= 300) {
