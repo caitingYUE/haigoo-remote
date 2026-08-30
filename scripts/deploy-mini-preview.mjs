@@ -53,7 +53,7 @@ function verifySmoke(origin) {
 }
 
 function runPreflight() {
-  for (const script of ['test:mini-runtime', 'test:mini-release', 'test:career-watch', 'test:mini-company-match']) {
+  for (const script of ['test:mini-runtime', 'test:mini-release', 'test:mini-career-watch', 'test:mini-company-match']) {
     run('npm', ['run', script], { stdio: 'inherit' })
   }
   run('npm', ['--prefix', 'miniprogram', 'run', 'type-check'], { stdio: 'inherit' })
