@@ -32,7 +32,13 @@ export default defineConfig<'webpack5'>(async (merge) => {
     plugins: [
       "@tarojs/plugin-generator"
     ],
+    // Taro does not automatically inline arbitrary TARO_APP_* variables in
+    // application code. Keep the environment contract explicit so a prepared
+    // experience bundle never falls back to an empty CloudBase environment.
     defineConstants: {
+      'process.env.TARO_APP_CLOUD_ENV': JSON.stringify(process.env.TARO_APP_CLOUD_ENV || ''),
+      'process.env.TARO_APP_CLOUD_SERVICE': JSON.stringify(process.env.TARO_APP_CLOUD_SERVICE || ''),
+      'process.env.TARO_APP_RELEASE_VERSION': JSON.stringify(process.env.TARO_APP_RELEASE_VERSION || 'development')
     },
     copy: {
       patterns: [
