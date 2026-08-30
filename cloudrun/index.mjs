@@ -141,7 +141,9 @@ function verifySessionToken(value) {
 }
 
 function getSession(req) {
-  return verifySessionToken(String(req.headers.authorization || '').replace(/^Bearer\s+/i, ''))
+  const token = req.headers['x-haigoo-mini-session']
+    || String(req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+  return verifySessionToken(token)
 }
 
 function requestClientKey(req) {

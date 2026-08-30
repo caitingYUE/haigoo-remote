@@ -114,7 +114,7 @@ export async function requestJson<T>(
           'X-Haigoo-Request-Id': requestId,
           ...(options.method && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
           ...(options.authenticated && getMiniSessionToken()
-            ? { Authorization: `Bearer ${getMiniSessionToken()}` }
+            ? { 'X-Haigoo-Mini-Session': getMiniSessionToken() }
             : {})
         }
       }),

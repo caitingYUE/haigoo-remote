@@ -60,6 +60,11 @@ function stableJson(value) {
   return JSON.stringify(value ?? null)
 }
 
+function parseResponsePayload(value) {
+  if (typeof value !== 'string') return value
+  try { return JSON.parse(value) } catch { return value }
+}
+
 const selected = environments[target]
 let environment
 let cloudbaseContext = null
@@ -154,11 +159,11 @@ if (viaCloudrun) {
     header: {
       Accept: 'application/json',
       'X-Haigoo-Request-Id': `smoke-${crypto.randomUUID()}`,
-      ...(openid ? { Authorization: `Bearer ${sessionPayload}.${sessionSignature}` } : {})
+      ...(openid ? { 'X-Haigoo-Mini-Session': `${sessionPayload}.${sessionSignature}` } : {})
     }
   })
   responseStatus = response.statusCode
-  payload = response.data
+  payload = parseResponsePayload(response.data)
 } else if (useVercelCurl) {
   const output = execFileSync('npx', [
     'vercel', 'curl', `/api/mini?${params}`,
