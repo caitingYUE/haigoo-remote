@@ -27,12 +27,13 @@ if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.MINI_GATE
 const previewContractKeys = [
   'DATABASE_URL',
   'MINI_GATEWAY_SHARED_SECRET',
+  'WECHAT_MINI_APP_ID',
   'MINI_MATCH_FIXED_SNAPSHOT_ENABLED'
 ]
 const previewDeploymentEnvironment = Object.fromEntries(
   previewContractKeys.map((key) => [key, previewEnvironment[key]]).filter(([, value]) => value)
 )
-for (const key of previewContractKeys.slice(0, 2)) {
+for (const key of ['DATABASE_URL', 'MINI_GATEWAY_SHARED_SECRET', 'WECHAT_MINI_APP_ID']) {
   if (!previewDeploymentEnvironment[key]) throw new Error(`Preview deployment contract is missing ${key}`)
 }
 
