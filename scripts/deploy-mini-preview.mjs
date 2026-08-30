@@ -90,7 +90,7 @@ function createVerifiedSourceSnapshot() {
     'utf8'
   )
   for (const marker of [
-    "rawResponse.setHeader('X-Haigoo-Request-Id', requestId)",
+    'res = attachRequestTrace(res, requestId)',
     'publicOpportunityUpdatedAt: row.public_opportunity_updated_at || null'
   ]) {
     if (!gatewaySource.includes(marker)) {
@@ -102,7 +102,7 @@ function createVerifiedSourceSnapshot() {
 }
 
 function runPreflight() {
-  for (const script of ['test:mini-runtime', 'test:mini-release', 'test:mini-career-watch', 'test:mini-company-match']) {
+  for (const script of ['test:mini-runtime', 'test:mini-release', 'test:mini-gateway', 'test:mini-career-watch', 'test:mini-company-match']) {
     run('npm', ['run', script], { stdio: 'inherit' })
   }
   run('npm', ['--prefix', 'miniprogram', 'run', 'type-check'], { stdio: 'inherit' })
