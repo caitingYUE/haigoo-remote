@@ -52,6 +52,40 @@ function verifySmoke(origin) {
   ], { stdio: 'inherit' })
 }
 
+function buildVerifiedVercelOutput() {
+  const outputDir = path.join(rootDir, '.vercel', 'output')
+  const miniGatewayBundle = path.join(
+    outputDir,
+    'functions',
+    'api',
+    'mini.func',
+    'lib',
+    'api-handlers',
+    'mini-gateway.js'
+  )
+
+  // Never let a historical Vercel Build Output become the source of a new
+  // Preview deployment. Build locally, inspect the exact serverless bundle,
+  // and upload that immutable output instead of asking the remote builder to
+  // reconstruct it from a potentially stale file manifest.
+  fs.rmSync(outputDir, { recursive: true, force: true })
+  run('npx', ['vercel', 'build', '--yes'], { stdio: 'inherit' })
+
+  if (!fs.existsSync(miniGatewayBundle)) {
+    throw new Error('Vercel build did not produce the api/mini function bundle')
+  }
+
+  const bundleSource = fs.readFileSync(miniGatewayBundle, 'utf8')
+  for (const marker of [
+    "rawResponse.setHeader('X-Haigoo-Request-Id', requestId)",
+    'publicOpportunityUpdatedAt: row.public_opportunity_updated_at || null'
+  ]) {
+    if (!bundleSource.includes(marker)) {
+      throw new Error(`Vercel api/mini bundle is missing release marker: ${marker}`)
+    }
+  }
+}
+
 function runPreflight() {
   for (const script of ['test:mini-runtime', 'test:mini-release', 'test:mini-career-watch', 'test:mini-company-match']) {
     run('npm', ['run', script], { stdio: 'inherit' })
@@ -85,10 +119,8 @@ let deploymentUrl
 if (suppliedDeployment) {
   deploymentUrl = normalizeDeployment(suppliedDeployment)
 } else {
-  // Preview API dependencies have changed repeatedly while the Vercel build
-  // cache kept serving an older serverless function bundle. A release gate
-  // must verify the exact source tree being promoted, so force a fresh build.
-  const output = run('npx', ['vercel', 'deploy', '--yes', '--force'])
+  buildVerifiedVercelOutput()
+  const output = run('npx', ['vercel', 'deploy', '--prebuilt', '--yes'])
   deploymentUrl = normalizeDeployment(output)
 }
 
