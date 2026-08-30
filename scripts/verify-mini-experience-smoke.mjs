@@ -79,7 +79,7 @@ async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } 
     responseRequestId = response.headers.get('x-haigoo-request-id')
   }
   if (responseRequestId !== requestId && result?.requestId !== requestId) {
-    throw new Error(`${action} did not preserve its anonymous request ID`)
+    throw new Error(`${action} did not preserve its anonymous request ID (header=${responseRequestId || 'missing'}, body=${result?.requestId || 'missing'})`)
   }
   if (status < 200 || status >= 300 || !result?.success) {
     throw new Error(`${action} failed with HTTP ${status}: ${String(result?.code || result?.error || 'invalid response')}`)

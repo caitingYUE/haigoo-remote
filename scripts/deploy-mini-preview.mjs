@@ -85,7 +85,10 @@ let deploymentUrl
 if (suppliedDeployment) {
   deploymentUrl = normalizeDeployment(suppliedDeployment)
 } else {
-  const output = run('npx', ['vercel', 'deploy', '--yes'])
+  // Preview API dependencies have changed repeatedly while the Vercel build
+  // cache kept serving an older serverless function bundle. A release gate
+  // must verify the exact source tree being promoted, so force a fresh build.
+  const output = run('npx', ['vercel', 'deploy', '--yes', '--force'])
   deploymentUrl = normalizeDeployment(output)
 }
 
