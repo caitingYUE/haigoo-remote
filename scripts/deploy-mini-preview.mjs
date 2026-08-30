@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
@@ -52,38 +53,52 @@ function verifySmoke(origin) {
   ], { stdio: 'inherit' })
 }
 
-function buildVerifiedVercelOutput() {
-  const outputDir = path.join(rootDir, '.vercel', 'output')
-  const miniGatewayBundle = path.join(
-    outputDir,
-    'functions',
-    'api',
-    'mini.func',
-    'lib',
-    'api-handlers',
-    'mini-gateway.js'
-  )
-
-  // Never let a historical Vercel Build Output become the source of a new
-  // Preview deployment. Build locally, inspect the exact serverless bundle,
-  // and upload that immutable output instead of asking the remote builder to
-  // reconstruct it from a potentially stale file manifest.
-  fs.rmSync(outputDir, { recursive: true, force: true })
-  run('npx', ['vercel', 'build', '--yes'], { stdio: 'inherit' })
-
-  if (!fs.existsSync(miniGatewayBundle)) {
-    throw new Error('Vercel build did not produce the api/mini function bundle')
+function createVerifiedSourceSnapshot() {
+  const trackedStatus = run('git', ['status', '--porcelain', '--untracked-files=no']).trim()
+  if (trackedStatus) {
+    throw new Error('Preview deployment requires a clean tracked worktree')
   }
 
-  const bundleSource = fs.readFileSync(miniGatewayBundle, 'utf8')
+  const stagingDir = fs.mkdtempSync(path.join(os.tmpdir(), 'haigoo-mini-preview-source-'))
+  const trackedFiles = run('git', ['ls-files', '-z']).split('\0').filter(Boolean)
+  for (const relativePath of trackedFiles) {
+    const sourcePath = path.resolve(rootDir, relativePath)
+    const targetPath = path.resolve(stagingDir, relativePath)
+    if (!sourcePath.startsWith(`${rootDir}${path.sep}`) || !targetPath.startsWith(`${stagingDir}${path.sep}`)) {
+      throw new Error(`Unsafe tracked path in release snapshot: ${relativePath}`)
+    }
+    const sourceStat = fs.lstatSync(sourcePath)
+    fs.mkdirSync(path.dirname(targetPath), { recursive: true })
+    if (sourceStat.isSymbolicLink()) {
+      fs.symlinkSync(fs.readlinkSync(sourcePath), targetPath)
+    } else {
+      fs.copyFileSync(sourcePath, targetPath)
+      fs.chmodSync(targetPath, sourceStat.mode)
+    }
+  }
+
+  const projectLink = path.join(rootDir, '.vercel', 'project.json')
+  if (!fs.existsSync(projectLink)) {
+    throw new Error('Preview deployment requires a linked Vercel project')
+  }
+  const stagingProjectLink = path.join(stagingDir, '.vercel', 'project.json')
+  fs.mkdirSync(path.dirname(stagingProjectLink), { recursive: true })
+  fs.copyFileSync(projectLink, stagingProjectLink)
+
+  const gatewaySource = fs.readFileSync(
+    path.join(stagingDir, 'lib', 'api-handlers', 'mini-gateway.js'),
+    'utf8'
+  )
   for (const marker of [
     "rawResponse.setHeader('X-Haigoo-Request-Id', requestId)",
     'publicOpportunityUpdatedAt: row.public_opportunity_updated_at || null'
   ]) {
-    if (!bundleSource.includes(marker)) {
-      throw new Error(`Vercel api/mini bundle is missing release marker: ${marker}`)
+    if (!gatewaySource.includes(marker)) {
+      throw new Error(`Vercel source snapshot is missing release marker: ${marker}`)
     }
   }
+
+  return stagingDir
 }
 
 function runPreflight() {
@@ -119,9 +134,15 @@ let deploymentUrl
 if (suppliedDeployment) {
   deploymentUrl = normalizeDeployment(suppliedDeployment)
 } else {
-  buildVerifiedVercelOutput()
-  const output = run('npx', ['vercel', 'deploy', '--prebuilt', '--yes'])
-  deploymentUrl = normalizeDeployment(output)
+  const stagingDir = createVerifiedSourceSnapshot()
+  try {
+    const output = run('npx', ['vercel', 'deploy', '--yes', '--force', '--archive=tgz'], {
+      cwd: stagingDir
+    })
+    deploymentUrl = normalizeDeployment(output)
+  } finally {
+    fs.rmSync(stagingDir, { recursive: true, force: true })
+  }
 }
 
 // Verify the immutable deployment before moving the stable alias. A failed
