@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import dotenv from 'dotenv'
 import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -18,6 +19,10 @@ const contractActions = ['sync', 'career_watch_options', 'companies', 'membershi
 
 if (!envFile || !fs.existsSync(path.resolve(envFile))) {
   throw new Error('Preview deployment requires --env-file=/path/to/preview.env for authenticated release smoke tests')
+}
+const previewEnvironment = dotenv.parse(fs.readFileSync(path.resolve(envFile)))
+if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.MINI_GATEWAY_SHARED_SECRET) {
+  throw new Error('Preview deployment contract must contain VERCEL_ENV=preview and MINI_GATEWAY_SHARED_SECRET')
 }
 
 function run(command, args, options = {}) {
@@ -154,8 +159,15 @@ if (suppliedDeployment) {
 } else {
   const stagingDir = createVerifiedSourceSnapshot()
   try {
-    const output = run('npx', ['vercel', 'deploy', '--yes', '--force', '--archive=tgz'], {
-      cwd: stagingDir
+    const output = run('npx', [
+      'vercel', 'deploy', '--yes', '--force', '--archive=tgz',
+      '--env', 'MINI_GATEWAY_SHARED_SECRET'
+    ], {
+      cwd: stagingDir,
+      env: {
+        ...process.env,
+        MINI_GATEWAY_SHARED_SECRET: previewEnvironment.MINI_GATEWAY_SHARED_SECRET
+      }
     })
     deploymentUrl = normalizeDeployment(output)
   } finally {
