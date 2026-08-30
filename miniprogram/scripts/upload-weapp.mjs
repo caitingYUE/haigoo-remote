@@ -39,6 +39,12 @@ run(process.execPath, [
   '--via-cloudrun',
   '--action=career_watch_options'
 ])
+run(process.execPath, [
+  path.join(rootDir, 'scripts/verify-mini-gateway.mjs'),
+  `--target=${channel === 'experience' ? 'development' : 'production'}`,
+  '--via-cloudrun',
+  '--action=companies'
+])
 run(cli, [
   'upload',
   '--project', uploadProject,

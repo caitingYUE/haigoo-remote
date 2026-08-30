@@ -8,6 +8,7 @@ import {
   followCompany,
   mapResumeCareerDirections,
   markCareerWatchUpdatesRead,
+  normalizeCareerWatchResponse,
   parseCareerResumeFile,
   saveCareerWatch,
   setCareerWatchNotifications,
@@ -20,6 +21,7 @@ import { loginWithWechat } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import useMiniNavigationInset from '../../hooks/use-mini-navigation-inset'
 import useMiniShare from '../../hooks/use-mini-share'
+import { formatMonthDayTime } from '../../utils/runtime-compat'
 
 type WatchStep = 'loading' | 'start' | 'setup' | 'feed'
 type WatchDraft = Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform' | 'version' | 'inAppEnabled' | 'wechatEnabled' | 'wechatTemplateStatus'> & { version?: number }
@@ -40,11 +42,7 @@ function emptyDraft(): WatchDraft {
 }
 
 function updateTimeLabel(value?: string | number | null) {
-  const time = new Date(value || '').getTime()
-  if (!Number.isFinite(time)) return ''
-  return new Intl.DateTimeFormat('zh-CN', {
-    month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false
-  }).format(time)
+  return formatMonthDayTime(value)
 }
 
 function nextUpdateTime(value: string, hours: number) {
@@ -94,14 +92,23 @@ export default function CareerWatchPage() {
   const load = useCallback(async () => {
     if (!hasAuthenticatedSession()) { setStep('start'); return }
     setError('')
+    const activeUser = getMiniUser()
+    const cached = activeUser?.userId
+      ? normalizeCareerWatchResponse(Taro.getStorageSync(`haigoo-career-watch:${activeUser.userId}`))
+      : null
+    if (cached && cached.matchState !== 'unused' && !resumeFlowActive.current) applyResponse(cached)
     try {
       const result = await fetchCareerWatch()
       if (resumeFlowActive.current) return
       applyResponse(result)
       void trackMiniEvent('mini_watch_feed_loaded', { result_count: result.recommendations.length, match_state: result.matchState })
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : '方向结果暂时无法加载')
-      setStep('start')
+      if (cached && cached.matchState !== 'unused') {
+        setError('暂时无法刷新，当前显示上次结果。')
+      } else {
+        setError(loadError instanceof Error ? loadError.message : '方向结果暂时无法加载')
+        setStep('start')
+      }
     }
   }, [applyResponse])
 

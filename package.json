@@ -28,6 +28,7 @@
     "test:mini-career": "node test-mini-career-match.js",
     "test:mini-company-match": "node test-mini-company-match.js",
     "test:career-watch": "node test-career-watch.js",
+    "test:mini-runtime": "node test-mini-runtime-compat.js",
     "backfill:mini-match": "node scripts/backfill-mini-company-match.mjs",
     "backfill:career-watch-fixed": "node scripts/backfill-career-watch-fixed-free.mjs",
     "test:membership-redemption": "node test-membership-redemption.js",

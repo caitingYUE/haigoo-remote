@@ -9,6 +9,7 @@ import { loginWithWechat } from '../../services/mini-auth-service'
 import { hasAuthenticatedSession } from '../../services/session'
 import { isVirtualPaymentSupported, purchaseClubPlan } from '../../services/virtual-payment-service'
 import type { MiniMembershipPlan } from '../../types'
+import { formatCalendarDate } from '../../utils/runtime-compat'
 import './index.scss'
 
 function duration(plan: MiniMembershipPlan) { return plan.durationMonths ? `${plan.durationMonths} 个月` : `${plan.durationDays} 天` }
@@ -65,7 +66,7 @@ export default function MembershipPage() {
   return (
       <View className='page-shell membership-page'>
       <View className='membership-heading'><Text className='membership-brand'>HaigooRemote 会员</Text><Text className='page-heading'>选择会员方案</Text><Text className='page-subtitle'>解锁完整企业库、岗位更新和内部联系人</Text></View>
-      {membership?.isMember ? <View className='membership-current'><Text className='membership-current__label'>当前有效会员</Text><Text className='membership-current__type'>{memberTypeLabel(membership.memberType)}</Text><Text className='membership-current__expire'>{membership.memberExpireAt ? `有效期至 ${new Date(membership.memberExpireAt).toLocaleDateString('zh-CN')}` : '权益正在生效'}</Text></View> : null}
+      {membership?.isMember ? <View className='membership-current'><Text className='membership-current__label'>当前有效会员</Text><Text className='membership-current__type'>{memberTypeLabel(membership.memberType)}</Text><Text className='membership-current__expire'>{formatCalendarDate(membership.memberExpireAt) ? `有效期至 ${formatCalendarDate(membership.memberExpireAt)}` : '权益正在生效'}</Text></View> : null}
       {error ? <View className='empty-state'><Text className='empty-state__title'>会员方案暂时不可用</Text><Text className='empty-state__copy'>{error}</Text></View> : null}
       <View className='membership-plans'>
         {loading ? <ContentSkeleton rows={3} /> : null}

@@ -9,8 +9,6 @@ import { pipeline } from 'stream/promises'
 import cloudbase from '@cloudbase/node-sdk'
 import { isLeaseActive, stableJson, staleCleanupDecision, syncDecision } from './sync-policy.mjs'
 import {
-  buildCompanyHiringSignals,
-  buildHiringCompanyPage,
   mapCompanyJobDetail,
   mapCompanyJobSummary
 } from './company-directory.mjs'
@@ -79,7 +77,7 @@ function signGatewayRequest(method, action, timestamp, body, secret = gatewaySec
     .digest('hex')
 }
 
-async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, timeoutMs = GATEWAY_REQUEST_TIMEOUT_MS } = {}) {
+async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, timeoutMs = GATEWAY_REQUEST_TIMEOUT_MS, requestId = '' } = {}) {
   const useFormalJobsSource = action === 'sync' && jobsApiOrigin !== apiOrigin
   const requestOrigin = useFormalJobsSource ? jobsApiOrigin : apiOrigin
   const requestSecret = useFormalJobsSource ? jobsGatewaySecret : gatewaySecret
@@ -97,7 +95,8 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
         : {}),
       ...(method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
       'X-Haigoo-Mini-Timestamp': timestamp,
-      'X-Haigoo-Mini-Signature': signGatewayRequest(method, action, timestamp, signaturePayload, requestSecret)
+      'X-Haigoo-Mini-Signature': signGatewayRequest(method, action, timestamp, signaturePayload, requestSecret),
+      ...(requestId ? { 'X-Haigoo-Request-Id': requestId } : {})
     },
     ...(method !== 'GET' ? { body: JSON.stringify(body) } : {})
   })
@@ -116,56 +115,6 @@ function canonicalCompanyJobs(result, companyId) {
     .map((job) => mapCompanyJobSummary(job, companyId))
     .filter(Boolean)
     .slice(0, 100)
-}
-
-async function readAccessibleCompanyCatalog(openid) {
-  const first = await gatewayRequest('companies', { query: { openid, page: '1', pageSize: '50' } })
-  if (first.access?.scope !== 'member_all' || !first.hasMore) return first
-  const pages = Math.ceil(Math.max(0, Number(first.total || 0)) / 50)
-  const rest = await Promise.all(Array.from({ length: Math.max(0, pages - 1) }, (_, index) => (
-    gatewayRequest('companies', { query: { openid, page: String(index + 2), pageSize: '50' } })
-  )))
-  return { ...first, companies: [first, ...rest].flatMap((item) => item.companies || []) }
-}
-
-async function readCurrentJobRecords() {
-  try {
-    const cached = (await readAllListDocuments()).map(unwrapDocument).filter(Boolean)
-    if (cached.length > 0) return cached
-  } catch (error) {
-    console.warn('[mini-cloudrun] current hiring cache unavailable, using upstream', error?.message || error)
-  }
-  const first = await gatewayRequest('sync', { query: { page: '1', limit: '100', sortBy: 'recent' } })
-  const totalPages = Math.max(1, Math.ceil(Math.max(0, Number(first.total || 0)) / 100))
-  if (totalPages > Math.ceil(LIST_INDEX_MAX_RECORDS / 100)) {
-    throw new Error(`Current hiring index exceeds safety cap: ${LIST_INDEX_MAX_RECORDS}`)
-  }
-  const rest = await Promise.all(Array.from({ length: totalPages - 1 }, (_, index) => (
-    gatewayRequest('sync', { query: { page: String(index + 2), limit: '100', sortBy: 'recent' } })
-  )))
-  return [first, ...rest].flatMap((result) => Array.isArray(result.jobs) ? result.jobs : [])
-}
-
-async function readCurrentHiringCompanies({ openid, search, industry, page, pageSize }) {
-  const catalog = await readAccessibleCompanyCatalog(openid)
-  if (catalog.access?.scope === 'match_required') return catalog
-  const records = await readCurrentJobRecords()
-  const current = buildHiringCompanyPage({
-    companies: catalog.companies,
-    signals: buildCompanyHiringSignals(records),
-    search,
-    industry,
-    page,
-    pageSize
-  })
-  return {
-    ...catalog,
-    ...current,
-    access: {
-      ...catalog.access,
-      previewLimit: catalog.access?.scope === 'free_fixed' ? current.total : null
-    }
-  }
 }
 
 function sessionToken(payload) {
@@ -1424,6 +1373,9 @@ function send(res, status, payload) {
 
 async function route(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`)
+  const receivedRequestId = String(req.headers['x-haigoo-request-id'] || '').trim()
+  const requestId = /^[A-Za-z0-9._:-]{8,96}$/.test(receivedRequestId) ? receivedRequestId : `mini-${crypto.randomUUID()}`
+  res.setHeader('X-Haigoo-Request-Id', requestId)
   try {
     if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true })
     if (req.method === 'GET' && url.pathname === '/health/upstream') {
@@ -1458,12 +1410,15 @@ async function route(req, res) {
     }
     if (req.method === 'GET' && url.pathname === '/mini/companies') {
       const session = getSession(req)
-      const result = await readCurrentHiringCompanies({
-        openid: session?.openid || '',
-        search: url.searchParams.get('search') || '',
-        industry: url.searchParams.get('industry') || '',
-        page: url.searchParams.get('page') || '1',
-        pageSize: url.searchParams.get('pageSize') || '20'
+      const result = await gatewayRequest('companies', {
+        requestId,
+        query: {
+          openid: session?.openid || '',
+          search: url.searchParams.get('search') || '',
+          industry: url.searchParams.get('industry') || '',
+          page: url.searchParams.get('page') || '1',
+          pageSize: url.searchParams.get('pageSize') || '20'
+        }
       })
       return send(res, 200, { ...result, companies: await attachCompanyLogos(result.companies) })
     }
@@ -1471,6 +1426,7 @@ async function route(req, res) {
       const session = getSession(req)
       const id = decodeURIComponent(url.pathname.split('/').pop())
       const result = await gatewayRequest('company', {
+        requestId,
         query: { openid: session?.openid || '', id }
       })
       let jobs = []
@@ -1485,9 +1441,11 @@ async function route(req, res) {
       result.company = {
         ...result.company,
         jobs,
-        openJobCount: jobs.length,
-        hasPublicOpportunity: jobs.length > 0,
-        publicOpportunityUpdatedAt: jobs[0]?.updatedAt || null
+        // The gateway database is authoritative for directory availability and
+        // counts. Formal job records only add display details here.
+        openJobCount: Number(result.company?.openJobCount || 0),
+        hasPublicOpportunity: Boolean(result.company?.hasPublicOpportunity),
+        publicOpportunityUpdatedAt: result.company?.publicOpportunityUpdatedAt || null
       }
       const [company] = await attachCompanyLogos(result.company ? [result.company] : [])
       return send(res, 200, { ...result, company: company || result.company })
@@ -1613,18 +1571,18 @@ async function route(req, res) {
     if (req.method === 'GET' && url.pathname === '/mini/career-watch') {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
-      const result = await gatewayRequest('career_watch_state', { query: { openid: session.openid } })
+      const result = await gatewayRequest('career_watch_state', { requestId, query: { openid: session.openid } })
       return send(res, 200, result)
     }
     if (req.method === 'GET' && url.pathname === '/mini/career-watch/options') {
-      const result = await gatewayRequest('career_watch_options')
+      const result = await gatewayRequest('career_watch_options', { requestId })
       return send(res, 200, result)
     }
     if (req.method === 'PUT' && url.pathname === '/mini/career-watch') {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
       const body = await readBody(req)
-      const result = await gatewayRequest('career_watch_save', { method: 'PUT', body: { openid: session.openid, ...body } })
+      const result = await gatewayRequest('career_watch_save', { requestId, method: 'PUT', body: { openid: session.openid, ...body } })
       return send(res, 200, result)
     }
     if (req.method === 'POST' && url.pathname === '/mini/career-watch/import') {
@@ -2205,8 +2163,8 @@ async function route(req, res) {
     }
     return send(res, 404, { error: 'Not found' })
   } catch (error) {
-    console.error('[mini-cloudrun] request failed', error)
-    return send(res, Number(error.statusCode) || 500, error.payload || { error: error.message || '服务暂时不可用' })
+    console.error('[mini-cloudrun] request failed', { requestId, path: url.pathname, message: error?.message || String(error) })
+    return send(res, Number(error.statusCode) || 500, { ...(error.payload || { error: error.message || '服务暂时不可用' }), requestId })
   }
 }
 

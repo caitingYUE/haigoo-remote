@@ -9,6 +9,7 @@ import Taro from '@tarojs/taro'
 import { createRequestKey, requestJson } from './api-client'
 import { resolveCloudFileUrls } from './cloud-asset-service'
 import { getMiniUser } from './session'
+import { normalizeComparableText } from '../utils/runtime-compat'
 
 export const CAREER_PRIVACY_VERSION = '2026-08-14-match-v1'
 
@@ -158,7 +159,7 @@ const RESUME_DIRECTION_ALIASES: Array<[string, string[]]> = [
 function resumeDirectionSignals(structured: Record<string, unknown>) {
   return ['roles', 'roleTerms']
     .flatMap((key) => Array.isArray(structured[key]) ? structured[key] as unknown[] : [])
-    .map((value) => String(value || '').normalize('NFKC').toLowerCase().trim())
+    .map(normalizeComparableText)
     .filter(Boolean)
 }
 
@@ -177,7 +178,7 @@ export function mapResumeCareerDirections(structured: Record<string, unknown>, f
 
   for (const option of options) {
     if (matchedValues.length >= 5 || matchedValues.includes(option.value)) continue
-    const normalized = option.label.normalize('NFKC').toLowerCase().trim()
+    const normalized = normalizeComparableText(option.label)
     if (normalized && signals.some((signal) => signal === normalized)) matchedValues.push(option.value)
   }
 
@@ -255,18 +256,87 @@ export interface CareerWatchResponse {
   emptyReason: 'watch_not_configured' | 'strict_filters' | 'no_role_update' | null
 }
 
-export function fetchCareerWatch() {
-  return requestJson<CareerWatchResponse>('/mini/career-watch', { authenticated: true })
+const watchMatchStates: CareerWatchResponse['matchState'][] = ['unused', 'fixed_free', 'member_dynamic']
+const watchEmptyReasons: Array<NonNullable<CareerWatchResponse['emptyReason']>> = ['watch_not_configured', 'strict_filters', 'no_role_update']
+
+function arrayValue<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : []
+}
+
+function validIsoValue(value: unknown) {
+  const source = String(value || '')
+  return Number.isFinite(new Date(source).getTime()) ? source : new Date().toISOString()
+}
+
+export function normalizeCareerWatchResponse(value: unknown): CareerWatchResponse {
+  const source = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const rawProfile = source.profile && typeof source.profile === 'object'
+    ? source.profile as Record<string, unknown>
+    : null
+  const rawOptions = source.filterOptions && typeof source.filterOptions === 'object'
+    ? source.filterOptions as Record<string, unknown>
+    : {}
+  const rawEntitlements = source.entitlements && typeof source.entitlements === 'object'
+    ? source.entitlements as Record<string, unknown>
+    : {}
+  const matchState = watchMatchStates.includes(source.matchState as CareerWatchResponse['matchState'])
+    ? source.matchState as CareerWatchResponse['matchState']
+    : 'unused'
+  const emptyReason = watchEmptyReasons.includes(source.emptyReason as NonNullable<CareerWatchResponse['emptyReason']>)
+    ? source.emptyReason as NonNullable<CareerWatchResponse['emptyReason']>
+    : null
+  const profile = rawProfile ? {
+    ...rawProfile,
+    roleFamilies: arrayValue<WatchRoleFamily>(rawProfile.roleFamilies),
+    customRoleTerms: arrayValue<string>(rawProfile.customRoleTerms),
+    companyPreferences: rawProfile.companyPreferences && typeof rawProfile.companyPreferences === 'object' ? rawProfile.companyPreferences : {},
+    activePreferenceKeys: arrayValue<WatchPreferenceKey>(rawProfile.activePreferenceKeys)
+  } as WatchProfile : null
+  return {
+    ...(source as Partial<CareerWatchResponse>),
+    success: true,
+    matchState,
+    freeMatchAvailable: Boolean(source.freeMatchAvailable),
+    freeMatchUsedAt: source.freeMatchUsedAt ? String(source.freeMatchUsedAt) : null,
+    fixedCompanyCount: Math.max(0, Number(source.fixedCompanyCount || 0)),
+    profile,
+    filterOptions: {
+      roles: arrayValue<WatchFilterOptions['roles'][number]>(rawOptions.roles),
+      roleGroups: arrayValue<NonNullable<WatchFilterOptions['roleGroups']>[number]>(rawOptions.roleGroups),
+      teamSizes: arrayValue<WatchFilterOptions['teamSizes'][number]>(rawOptions.teamSizes),
+      ratings: arrayValue<WatchFilterOptions['ratings'][number]>(rawOptions.ratings),
+      companyAges: arrayValue<WatchFilterOptions['companyAges'][number]>(rawOptions.companyAges),
+      industries: arrayValue<WatchFilterOptions['industries'][number]>(rawOptions.industries)
+    },
+    entitlements: {
+      isMember: Boolean(rawEntitlements.isMember),
+      maxRoleFamilies: Math.max(1, Number(rawEntitlements.maxRoleFamilies || 5)),
+      maxPreferenceTypes: rawEntitlements.maxPreferenceTypes == null ? null : Number(rawEntitlements.maxPreferenceTypes),
+      maxFollows: rawEntitlements.maxFollows == null ? null : Number(rawEntitlements.maxFollows),
+      refreshHours: rawEntitlements.refreshHours == null ? null : Number(rawEntitlements.refreshHours),
+      proactiveDigest: Boolean(rawEntitlements.proactiveDigest),
+      wechatTemplateId: String(rawEntitlements.wechatTemplateId || ''),
+      wechatSubscriptionAvailable: Boolean(rawEntitlements.wechatSubscriptionAvailable)
+    },
+    recommendations: arrayValue<WatchFeedItem>(source.recommendations),
+    followedUpdates: arrayValue<CareerWatchResponse['followedUpdates'][number]>(source.followedUpdates),
+    generatedAt: validIsoValue(source.generatedAt),
+    emptyReason
+  }
+}
+
+export async function fetchCareerWatch() {
+  return normalizeCareerWatchResponse(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
 }
 
 export function fetchCareerWatchOptions() {
   return requestJson<{ success: true; filterOptions: WatchFilterOptions; capabilities: { wechatSubscriptionAvailable: boolean } }>('/mini/career-watch/options')
 }
 
-export function saveCareerWatch(data: Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform' | 'version' | 'inAppEnabled' | 'wechatEnabled' | 'wechatTemplateStatus'> & { version?: number }) {
-  return requestJson<CareerWatchResponse>('/mini/career-watch', {
+export async function saveCareerWatch(data: Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform' | 'version' | 'inAppEnabled' | 'wechatEnabled' | 'wechatTemplateStatus'> & { version?: number }) {
+  return normalizeCareerWatchResponse(await requestJson<unknown>('/mini/career-watch', {
     method: 'PUT', authenticated: true, data
-  })
+  }))
 }
 
 export function importCareerWatch(source: 'subscription' | 'resume' | 'match_profile') {

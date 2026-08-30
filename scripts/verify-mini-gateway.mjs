@@ -16,6 +16,9 @@ const featured = process.argv.find((argument) => argument.startsWith('--featured
 const search = process.argv.find((argument) => argument.startsWith('--search='))?.slice('--search='.length) || ''
 const includeLogo = process.argv.includes('--include-logo')
 const openid = process.argv.find((argument) => argument.startsWith('--openid='))?.slice('--openid='.length) || ''
+const expectedMatchState = process.argv.find((argument) => argument.startsWith('--expect-match-state='))?.split('=')[1] || ''
+const expectedCompanyScope = process.argv.find((argument) => argument.startsWith('--expect-company-scope='))?.split('=')[1] || ''
+const expectedCompanyTotal = process.argv.find((argument) => argument.startsWith('--expect-company-total='))?.split('=')[1] || ''
 const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
 const useVercelCurl = process.argv.includes('--vercel-curl')
 const viaCloudrun = process.argv.includes('--via-cloudrun')
@@ -34,9 +37,9 @@ if (!environments[target]) {
   throw new Error('Usage: node scripts/verify-mini-gateway.mjs --target=development|production [--scope=account|jobs] [--origin=https://...] [--featured=true] [--via-cloudrun]')
 }
 if (!['account', 'jobs'].includes(scope)) throw new Error('Scope must be account or jobs')
-if (!['sync', 'content_home', 'companies', 'match_feed', 'career_watch_options', 'membership_plans'].includes(requestedAction)) throw new Error('Unsupported verification action')
-if (viaCloudrun && !['career_watch_options', 'membership_plans', 'companies', 'content_home'].includes(requestedAction)) {
-  throw new Error('CloudRun verification only supports public Mini Program routes')
+if (!['sync', 'content_home', 'companies', 'match_feed', 'career_watch_state', 'career_watch_options', 'membership_plans'].includes(requestedAction)) throw new Error('Unsupported verification action')
+if (viaCloudrun && !['career_watch_state', 'career_watch_options', 'membership_plans', 'companies', 'content_home'].includes(requestedAction)) {
+  throw new Error('CloudRun verification does not support this Mini Program route')
 }
 if (viaCloudrun && envFile) throw new Error('CloudRun verification requires CloudBase CLI credentials')
 
@@ -96,7 +99,7 @@ const bypassSecret = String(environment.VERCEL_AUTOMATION_BYPASS_SECRET || '')
 if (!origin || !gatewaySecret) throw new Error('CloudRun gateway configuration is incomplete')
 
 const action = requestedAction
-const query = action === 'content_home' || action === 'match_feed'
+const query = action === 'content_home' || action === 'match_feed' || action === 'career_watch_state'
   ? { openid }
   : action === 'companies'
     ? { openid, page: '1', pageSize: '5' }
@@ -131,13 +134,29 @@ if (viaCloudrun) {
     secretKey: credential.secretKey,
     sessionToken: credential.token
   })
+  const sessionSecret = String(environment.MINI_SESSION_SECRET || '')
+  const sessionPayload = Buffer.from(JSON.stringify({ openid, userId: 'smoke-check', exp: Date.now() + 5 * 60 * 1000 })).toString('base64url')
+  const sessionSignature = sessionSecret
+    ? crypto.createHmac('sha256', sessionSecret).update(sessionPayload).digest('base64url')
+    : ''
   const route = {
+    career_watch_state: '/mini/career-watch',
     career_watch_options: '/mini/career-watch/options',
     membership_plans: '/mini/membership/plans',
     companies: '/mini/companies?page=1&pageSize=5',
     content_home: '/mini/home'
   }[action]
-  const response = await app.callContainer({ name: selected.serviceName, method: 'GET', path: route, header: { Accept: 'application/json' } })
+  if (openid && !sessionSignature) throw new Error('CloudRun verification cannot create an authenticated test session')
+  const response = await app.callContainer({
+    name: selected.serviceName,
+    method: 'GET',
+    path: route,
+    header: {
+      Accept: 'application/json',
+      'X-Haigoo-Request-Id': `smoke-${crypto.randomUUID()}`,
+      ...(openid ? { Authorization: `Bearer ${sessionPayload}.${sessionSignature}` } : {})
+    }
+  })
   responseStatus = response.statusCode
   payload = response.data
 } else if (useVercelCurl) {
@@ -167,6 +186,14 @@ if (responseStatus < 200 || responseStatus >= 300 || !payload?.success) {
 if (action === 'career_watch_options' && !Array.isArray(payload.filterOptions?.roles)) {
   throw new Error('Gateway check failed: Career Watch option contract is missing')
 }
+if (action === 'career_watch_state') {
+  if (!['unused', 'fixed_free', 'member_dynamic'].includes(payload.matchState) || !Array.isArray(payload.recommendations)) {
+    throw new Error('Gateway check failed: Career Watch state contract is missing')
+  }
+  if (expectedMatchState && payload.matchState !== expectedMatchState) {
+    throw new Error(`Gateway check failed: expected Match state ${expectedMatchState}, received ${payload.matchState}`)
+  }
+}
 if (action === 'career_watch_options' && payload.capabilities?.wechatSubscriptionAvailable !== true) {
   throw new Error('Gateway check failed: WeChat subscription configuration is unavailable')
 }
@@ -187,6 +214,12 @@ if (action === 'companies') {
   if (!Array.isArray(payload.companies) || !validScopes.has(payload.access?.scope)) {
     throw new Error('Gateway check failed: company access contract is missing')
   }
+  if (expectedCompanyScope && payload.access?.scope !== expectedCompanyScope) {
+    throw new Error(`Gateway check failed: expected company scope ${expectedCompanyScope}, received ${payload.access?.scope}`)
+  }
+  if (expectedCompanyTotal && Number(payload.total) !== Number(expectedCompanyTotal)) {
+    throw new Error(`Gateway check failed: expected company total ${expectedCompanyTotal}, received ${payload.total}`)
+  }
 }
 
 console.log(JSON.stringify({
@@ -202,6 +235,7 @@ console.log(JSON.stringify({
   returnedNotes: Array.isArray(payload.notes) ? payload.notes.length : null,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
   returnedRecommendations: Array.isArray(payload.recommendations) ? payload.recommendations.length : null,
+  matchState: payload.matchState || null,
   returnedRoleGroups: Array.isArray(payload.filterOptions?.roleGroups) ? payload.filterOptions.roleGroups.length : null,
   returnedRoles: Array.isArray(payload.filterOptions?.roles) ? payload.filterOptions.roles.length : null,
   returnedPlans: Array.isArray(payload.plans) ? payload.plans.map((plan) => ({ id: plan.id, price: plan.price })) : null,

@@ -5,13 +5,8 @@ import MiniIcon from '../../components/mini-icon'
 import useMiniShare from '../../hooks/use-mini-share'
 import { fetchCompanyJob } from '../../services/content-service'
 import type { MiniCompanyJobDetail } from '../../types'
+import { formatCalendarDate } from '../../utils/runtime-compat'
 import './index.scss'
-
-function formatDate(value?: string | null) {
-  const time = new Date(value || '').getTime()
-  if (!Number.isFinite(time)) return ''
-  return new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(time)
-}
 
 async function copyValue(value: string, message: string) {
   try { await setClipboardData({ data: value }); showToast({ title: message, icon: 'success' }) }
@@ -43,7 +38,8 @@ export default function JobDetailPage() {
   if (error) return <View className='page-shell'><View className='empty-state'><Text className='empty-state__title'>无法查看岗位信息</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' onClick={() => void load()}>重新加载</View></View></View>
   if (!job) return <View className='page-shell job-detail-loading'>正在加载岗位信息…</View>
 
-  const facts = [job.location, job.jobType, job.salary, formatDate(job.updatedAt) ? `更新于 ${formatDate(job.updatedAt)}` : ''].filter(Boolean)
+  const updatedAt = formatCalendarDate(job.updatedAt)
+  const facts = [job.location, job.jobType, job.salary, updatedAt ? `更新于 ${updatedAt}` : ''].filter(Boolean)
   return <View className='page-shell job-detail'>
     <View className='job-detail__hero'>
       <Text className='job-detail__company'>{companyName || job.company}</Text>

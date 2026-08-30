@@ -96,6 +96,7 @@ export async function requestJson<T>(
   }
   let response
   const timeout = options.timeout || 30000
+  const requestId = createRequestKey('mini-api')
   let deadline: ReturnType<typeof setTimeout> | undefined
   try {
     response = await Promise.race([
@@ -110,6 +111,7 @@ export async function requestJson<T>(
           // Cloud Hosting can contain multiple services. This is required by
           // callContainer to route the Mini Program request to haigoo-mini.
           'X-WX-SERVICE': CLOUD_SERVICE_NAME,
+          'X-Haigoo-Request-Id': requestId,
           ...(options.method && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
           ...(options.authenticated && getMiniSessionToken()
             ? { Authorization: `Bearer ${getMiniSessionToken()}` }
@@ -126,11 +128,13 @@ export async function requestJson<T>(
       path,
       env: CLOUD_ENV_ID,
       service: CLOUD_SERVICE_NAME,
+      requestId,
       message,
       detail: error
     })
     throw new ApiRequestError(message, 0, {
       path,
+      requestId,
       errMsg: String(
         error && typeof error === 'object' && 'errMsg' in error
           ? (error as TaroRequestFailure).errMsg || ''
@@ -151,6 +155,7 @@ export async function requestJson<T>(
       path,
       env: CLOUD_ENV_ID,
       service: CLOUD_SERVICE_NAME,
+      requestId,
       statusCode: response.statusCode,
       code: String(payload.code || '')
     })

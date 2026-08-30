@@ -9,6 +9,7 @@ import type { CareerWatchResponse } from '../../services/career-match-service'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import type { CareerMatchState, MemberServiceEntitlement } from '../../types'
+import { formatCalendarDate } from '../../utils/runtime-compat'
 import './index.scss'
 
 const profileMenus = [
@@ -20,7 +21,7 @@ const profileMenus = [
 
 const serviceStatus = { available: '可领取', requested: '已申请', in_progress: '处理中', completed: '已完成' }
 const membershipLabel = (value?: string) => value === 'quarter' ? '季度会员' : value === 'half_year' ? '半年会员' : 'Haigoo 会员'
-const serviceUpdatedLabel = (value?: string | null) => value ? `更新于 ${new Date(value).toLocaleDateString('zh-CN')}` : ''
+const serviceUpdatedLabel = (value?: string | null) => formatCalendarDate(value) ? `更新于 ${formatCalendarDate(value)}` : ''
 const roleLabels: Record<string, string> = { product: '产品', project: '项目', engineering: '研发', design: '设计', data: '数据', marketing: '市场', sales: '销售', operations: '运营', research: '研究', finance: '财务', hr: '人力' }
 
 export default function ProfilePage() {
@@ -95,7 +96,7 @@ export default function ProfilePage() {
   }
 
   const activeMembership = membership || (!dashboardLoaded && user ? { isMember: Boolean(user.isMember), memberType: user.memberType || '', memberExpireAt: user.memberExpireAt } : null)
-  const memberExpireAt = activeMembership?.memberExpireAt ? new Date(activeMembership.memberExpireAt).toLocaleDateString('zh-CN') : ''
+  const memberExpireAt = formatCalendarDate(activeMembership?.memberExpireAt)
   const directionSummary = watchState?.profile
     ? (watchState.profile.customRoleTerms.length ? watchState.profile.customRoleTerms : watchState.profile.roleFamilies.map((role) => roleLabels[role] || role)).join('、')
     : '尚未设置'
