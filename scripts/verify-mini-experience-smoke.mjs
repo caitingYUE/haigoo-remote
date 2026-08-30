@@ -1,4 +1,5 @@
 import crypto from 'node:crypto'
+import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 import dotenv from 'dotenv'
@@ -7,6 +8,7 @@ import { MINI_SMOKE_DIRECTION, MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures
 const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
 const originArgument = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length) || ''
 const useLocalHandler = process.argv.includes('--local-handler')
+const useVercelCurl = process.argv.includes('--vercel-curl')
 if (!envFile || (!originArgument && !useLocalHandler)) {
   throw new Error('Usage: node scripts/verify-mini-experience-smoke.mjs --env-file=/path/to/preview.env (--origin=https://preview.example|--local-handler)')
 }
@@ -45,7 +47,7 @@ async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } 
       'X-Haigoo-Mini-Timestamp': timestamp,
       'X-Haigoo-Mini-Signature': signature,
       'X-Haigoo-Request-Id': requestId,
-      ...(bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {})
+      ...(bypassSecret && !useVercelCurl ? { 'x-vercel-protection-bypass': bypassSecret } : {})
   }
   let status
   let result
@@ -69,15 +71,32 @@ async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } 
     result = response.payload
     responseRequestId = responseHeaders.get('x-haigoo-request-id')
   } else {
-    const response = await fetch(`${origin}/api/mini?${new URLSearchParams({ action, ...requestQuery })}`, {
-      method,
-      signal: AbortSignal.timeout(30000),
-      headers,
-      ...(method === 'GET' ? {} : { body: JSON.stringify(body) })
-    })
-    status = response.status
-    result = await response.json().catch(() => null)
-    responseRequestId = response.headers.get('x-haigoo-request-id')
+    const url = `/api/mini?${new URLSearchParams({ action, ...requestQuery })}`
+    if (useVercelCurl) {
+      const output = execFileSync('npx', [
+        'vercel', 'curl', url,
+        '--deployment', origin,
+        '--yes', '--',
+        '--silent', '--show-error', '--write-out', '\n%{http_code}',
+        '--request', method,
+        ...Object.entries(headers).flatMap(([key, value]) => ['--header', `${key}: ${value}`]),
+        ...(method === 'GET' ? [] : ['--data', JSON.stringify(body)])
+      ], { encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 })
+      const lines = output.trimEnd().split('\n')
+      status = Number(lines.pop())
+      result = JSON.parse(lines.join('\n') || 'null')
+      responseRequestId = null
+    } else {
+      const response = await fetch(`${origin}${url}`, {
+        method,
+        signal: AbortSignal.timeout(30000),
+        headers,
+        ...(method === 'GET' ? {} : { body: JSON.stringify(body) })
+      })
+      status = response.status
+      result = await response.json().catch(() => null)
+      responseRequestId = response.headers.get('x-haigoo-request-id')
+    }
   }
   if (responseRequestId !== requestId && result?.requestId !== requestId) {
     throw new Error(`${action} did not preserve its anonymous request ID (header=${responseRequestId || 'missing'}, body=${result?.requestId || 'missing'})`)

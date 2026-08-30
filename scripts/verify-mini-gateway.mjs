@@ -114,7 +114,7 @@ const signature = crypto.createHmac('sha256', gatewaySecret)
 const params = new URLSearchParams({ action, ...query })
 const requestHeaders = {
   Accept: 'application/json',
-  ...(!useJobsScope && bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {}),
+  ...(!useVercelCurl && !useJobsScope && bypassSecret ? { 'x-vercel-protection-bypass': bypassSecret } : {}),
   'X-Haigoo-Mini-Timestamp': timestamp,
   'X-Haigoo-Mini-Signature': signature
 }

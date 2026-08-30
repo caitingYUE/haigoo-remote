@@ -5,15 +5,21 @@ import path from 'node:path'
 import { createRequire } from 'node:module'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import dotenv from 'dotenv'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const sourceDir = path.join(rootDir, 'cloudrun')
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const configureVercel = process.argv.includes('--configure-vercel')
 const configureJobsSource = process.argv.includes('--configure-jobs-source')
+const syncPreviewContract = process.argv.includes('--sync-preview-contract')
+const previewEnvFile = process.argv.find((argument) => argument.startsWith('--preview-env-file='))?.slice('--preview-env-file='.length) || ''
 
 if (!['development', 'production'].includes(target)) {
-  throw new Error('Usage: node scripts/deploy-mini-cloudrun.mjs --target=development|production [--configure-vercel] [--configure-jobs-source]')
+  throw new Error('Usage: node scripts/deploy-mini-cloudrun.mjs --target=development|production [--configure-vercel] [--configure-jobs-source] [--sync-preview-contract --preview-env-file=/path/to/preview.env]')
+}
+if (syncPreviewContract && (target !== 'development' || !previewEnvFile)) {
+  throw new Error('--sync-preview-contract is development-only and requires --preview-env-file')
 }
 
 const environments = {
@@ -104,6 +110,38 @@ function deployVercelProduction() {
   if (result.status !== 0) throw new Error('Unable to redeploy Vercel Production')
 }
 
+function readExistingAutomationBypass() {
+  const payload = JSON.parse(execFileSync('npx', [
+    'vercel', 'project', 'protection', 'haigoo-remote', '--json'
+  ], {
+    cwd: rootDir,
+    encoding: 'utf8',
+    maxBuffer: 10 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe']
+  }))
+  const candidates = [payload?.protectionBypass, payload?.project?.protectionBypass, payload]
+    .filter((value) => value && typeof value === 'object')
+    .flatMap((value) => Object.entries(value))
+    .filter(([, value]) => value?.scope === 'automation-bypass')
+  const selected = candidates.find(([, value]) => value?.isEnvVar === true) || candidates[0]
+  if (!selected?.[0]) throw new Error('No existing Vercel automation bypass is available for development CloudRun')
+  return selected[0]
+}
+
+function readPreviewContract() {
+  const absolutePath = path.resolve(previewEnvFile)
+  return fs.readFile(absolutePath, 'utf8').then((source) => {
+    const environment = dotenv.parse(source)
+    if (environment.VERCEL_ENV !== 'preview' || !environment.MINI_GATEWAY_SHARED_SECRET) {
+      throw new Error('Preview contract file must contain VERCEL_ENV=preview and MINI_GATEWAY_SHARED_SECRET')
+    }
+    return {
+      gatewaySecret: environment.MINI_GATEWAY_SHARED_SECRET,
+      bypassSecret: readExistingAutomationBypass()
+    }
+  })
+}
+
 const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
 const require = createRequire(import.meta.url)
 require(path.join(globalModules, '@cloudbase/cli/node_modules/reflect-metadata'))
@@ -180,6 +218,15 @@ if (target === 'development') {
     throw new Error('The first production deployment requires --configure-vercel')
   }
   upsertVercelSecret('MINI_GATEWAY_PRODUCTION_SECRET', targetEnvironment.MINI_GATEWAY_SHARED_SECRET)
+}
+
+if (syncPreviewContract) {
+  const previewContract = await readPreviewContract()
+  targetEnvironment = {
+    ...targetEnvironment,
+    MINI_GATEWAY_SHARED_SECRET: previewContract.gatewaySecret,
+    VERCEL_AUTOMATION_BYPASS_SECRET: previewContract.bypassSecret
+  }
 }
 
 // Apply the current bounded synchronization policy to existing services too;

@@ -7,6 +7,7 @@ import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const stableOrigin = 'https://mini-preview.haigooremote.com'
+const previewBranch = 'codex/mini-1.0.7-release'
 const suppliedDeployment = process.argv
   .find((argument) => argument.startsWith('--deployment='))
   ?.slice('--deployment='.length)
@@ -40,7 +41,9 @@ function verifyDeployment(origin) {
       'scripts/verify-mini-gateway.mjs',
       '--target=development',
       `--origin=${origin}`,
-      `--action=${action}`
+      `--action=${action}`,
+      `--env-file=${path.resolve(envFile)}`,
+      '--vercel-curl'
     ], { stdio: 'inherit' })
   }
 }
@@ -49,7 +52,8 @@ function verifySmoke(origin) {
   run('node', [
     'scripts/verify-mini-experience-smoke.mjs',
     `--env-file=${path.resolve(envFile)}`,
-    `--origin=${origin}`
+    `--origin=${origin}`,
+    '--vercel-curl'
   ], { stdio: 'inherit' })
 }
 
@@ -84,6 +88,20 @@ function createVerifiedSourceSnapshot() {
   const stagingProjectLink = path.join(stagingDir, '.vercel', 'project.json')
   fs.mkdirSync(path.dirname(stagingProjectLink), { recursive: true })
   fs.copyFileSync(projectLink, stagingProjectLink)
+
+  // Vercel scopes Preview variables by Git branch. The release snapshot is
+  // intentionally clean, so restore only the branch identity needed for the
+  // correct Preview contract instead of deploying the dirty source checkout.
+  run('git', ['init', '--initial-branch', previewBranch], { cwd: stagingDir })
+  run('git', ['config', 'user.name', 'Haigoo Preview Release'], { cwd: stagingDir })
+  run('git', ['config', 'user.email', 'preview-release@localhost'], { cwd: stagingDir })
+  const remoteUrl = run('git', ['remote', 'get-url', 'origin']).trim()
+  if (remoteUrl) run('git', ['remote', 'add', 'origin', remoteUrl], { cwd: stagingDir })
+  run('git', ['add', '--all'], { cwd: stagingDir })
+  run('git', ['commit', '--quiet', '-m', 'Preview release snapshot'], { cwd: stagingDir })
+  if (run('git', ['branch', '--show-current'], { cwd: stagingDir }).trim() !== previewBranch) {
+    throw new Error(`Preview source snapshot must use ${previewBranch}`)
+  }
 
   const gatewaySource = fs.readFileSync(
     path.join(stagingDir, 'lib', 'api-handlers', 'mini-gateway.js'),
@@ -162,7 +180,12 @@ verifySmoke(stableOrigin)
 // CloudRun is switched only after both the immutable deployment and stable
 // Preview alias pass. If this step fails, the WeChat experience bundle is not
 // uploaded and the current formal Mini Program remains untouched.
-run('node', ['scripts/deploy-mini-cloudrun.mjs', '--target=development'], { stdio: 'inherit' })
+run('node', [
+  'scripts/deploy-mini-cloudrun.mjs',
+  '--target=development',
+  '--sync-preview-contract',
+  `--preview-env-file=${path.resolve(envFile)}`
+], { stdio: 'inherit' })
 verifyCloudrunFixture(MINI_SMOKE_FIXTURES.unused, 'career_watch_state', ['--expect-match-state=unused'])
 verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'career_watch_state', ['--expect-match-state=fixed_free'])
 verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-total=5'])
