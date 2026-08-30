@@ -82,7 +82,11 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
   const requestOrigin = useFormalJobsSource ? jobsApiOrigin : apiOrigin
   const requestSecret = useFormalJobsSource ? jobsGatewaySecret : gatewaySecret
   const timestamp = String(Date.now())
-  const params = new URLSearchParams({ action, ...Object.fromEntries(Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')) })
+  const params = new URLSearchParams({
+    action,
+    ...Object.fromEntries(Object.entries(query).filter(([, value]) => value !== undefined && value !== null && value !== '')),
+    ...(requestId ? { requestId } : {})
+  })
   const signedQuery = Object.fromEntries([...params.entries()].filter(([key]) => key !== 'action'))
   const signaturePayload = method === 'GET' ? signedQuery : body
   const response = await fetch(`${requestOrigin}/api/mini?${params}`, {

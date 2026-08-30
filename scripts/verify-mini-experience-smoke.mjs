@@ -32,12 +32,13 @@ function stableJson(value) {
 }
 
 async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } = {}) {
-  const payload = method === 'GET' ? query : body
+  const requestId = `release-smoke-${crypto.randomUUID()}`
+  const requestQuery = { ...query, requestId }
+  const payload = method === 'GET' ? requestQuery : body
   const timestamp = String(Date.now())
   const signature = crypto.createHmac('sha256', gatewaySecret)
     .update(`${method}:${action}:${timestamp}:${crypto.createHash('sha256').update(stableJson(payload)).digest('hex')}`)
     .digest('hex')
-  const requestId = `release-smoke-${crypto.randomUUID()}`
   const headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -60,7 +61,7 @@ async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } 
     }
     await localHandler({
       method,
-      query: { action, ...(method === 'GET' ? query : {}) },
+      query: { action, ...requestQuery },
       body: method === 'GET' ? {} : body,
       headers: Object.fromEntries(Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value]))
     }, response)
@@ -68,7 +69,7 @@ async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } 
     result = response.payload
     responseRequestId = responseHeaders.get('x-haigoo-request-id')
   } else {
-    const response = await fetch(`${origin}/api/mini?${new URLSearchParams({ action, ...(method === 'GET' ? query : {}) })}`, {
+    const response = await fetch(`${origin}/api/mini?${new URLSearchParams({ action, ...requestQuery })}`, {
       method,
       signal: AbortSignal.timeout(30000),
       headers,
