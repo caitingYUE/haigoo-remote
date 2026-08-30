@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import dotenv from 'dotenv'
 import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
@@ -21,29 +22,55 @@ if (!envFile || !fs.existsSync(path.resolve(envFile))) {
   throw new Error('Preview deployment requires --env-file=/path/to/preview.env for authenticated release smoke tests')
 }
 const previewEnvironment = dotenv.parse(fs.readFileSync(path.resolve(envFile)))
-if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.MINI_GATEWAY_SHARED_SECRET) {
-  throw new Error('Preview deployment contract must contain VERCEL_ENV=preview and MINI_GATEWAY_SHARED_SECRET')
+if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.DATABASE_URL) {
+  throw new Error('Preview deployment contract must contain VERCEL_ENV=preview and DATABASE_URL')
+}
+const parseEnvironment = (value) => typeof value === 'string'
+  ? JSON.parse(value)
+  : Array.isArray(value)
+    ? Object.fromEntries(value.map((item) => [item.Key || item.key, item.Value || item.value]))
+    : { ...(value || {}) }
+const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
+const require = createRequire(import.meta.url)
+require(path.join(globalModules, '@cloudbase/cli/node_modules/reflect-metadata'))
+const { getCloudrunService } = require(path.join(globalModules, '@cloudbase/cli/lib/commands/cloudrun/base.js'))
+const developmentService = await getCloudrunService('haigoo-dev-d2gctbzxma401b345')
+const developmentDetail = await developmentService.detail({ serverName: 'haigoo-mini' })
+const developmentEnvironment = parseEnvironment(developmentDetail.ServerConfig?.EnvParams)
+const developmentContract = {
+  MINI_GATEWAY_SHARED_SECRET: String(developmentEnvironment.MINI_GATEWAY_SHARED_SECRET || '').trim(),
+  WECHAT_MINI_APP_ID: String(developmentEnvironment.WECHAT_MINI_APP_ID || '').trim()
+}
+if (developmentContract.MINI_GATEWAY_SHARED_SECRET.length < 32) {
+  throw new Error('Development CloudRun gateway secret is unavailable')
+}
+if (!/^wx[0-9a-f]{16}$/i.test(developmentContract.WECHAT_MINI_APP_ID)) {
+  throw new Error('Development CloudRun Mini Program App ID is invalid')
 }
 const previewContractKeys = [
   'DATABASE_URL',
   'MINI_GATEWAY_SHARED_SECRET',
   'WECHAT_MINI_APP_ID',
-  'WECHAT_MINI_APP_SECRET',
-  'WECHAT_MINI_COMPANY_UPDATE_TEMPLATE_ID',
   'MINI_MATCH_FIXED_SNAPSHOT_ENABLED'
 ]
+const effectiveEnvironment = { ...previewEnvironment, ...developmentContract }
 const previewDeploymentEnvironment = Object.fromEntries(
-  previewContractKeys.map((key) => [key, previewEnvironment[key]]).filter(([, value]) => value)
+  previewContractKeys.map((key) => [key, effectiveEnvironment[key]]).filter(([, value]) => value)
 )
 for (const key of [
   'DATABASE_URL',
   'MINI_GATEWAY_SHARED_SECRET',
-  'WECHAT_MINI_APP_ID',
-  'WECHAT_MINI_APP_SECRET',
-  'WECHAT_MINI_COMPANY_UPDATE_TEMPLATE_ID'
+  'WECHAT_MINI_APP_ID'
 ]) {
   if (!previewDeploymentEnvironment[key]) throw new Error(`Preview deployment contract is missing ${key}`)
 }
+const effectiveEnvFile = path.join(os.tmpdir(), `haigoo-mini-preview-${process.pid}.env`)
+fs.writeFileSync(
+  effectiveEnvFile,
+  Object.entries(effectiveEnvironment).map(([key, value]) => `${key}=${JSON.stringify(String(value))}`).join('\n'),
+  { mode: 0o600 }
+)
+process.once('exit', () => fs.rmSync(effectiveEnvFile, { force: true }))
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -67,7 +94,7 @@ function verifyDeployment(origin) {
       '--target=development',
       `--origin=${origin}`,
       `--action=${action}`,
-      `--env-file=${path.resolve(envFile)}`,
+      `--env-file=${effectiveEnvFile}`,
       '--vercel-curl'
     ], { stdio: 'inherit' })
   }
@@ -76,7 +103,7 @@ function verifyDeployment(origin) {
 function verifySmoke(origin) {
   run('node', [
     'scripts/verify-mini-experience-smoke.mjs',
-    `--env-file=${path.resolve(envFile)}`,
+    `--env-file=${effectiveEnvFile}`,
     `--origin=${origin}`,
     '--vercel-curl'
   ], { stdio: 'inherit' })
@@ -154,7 +181,7 @@ function runPreflight() {
     stdio: 'inherit',
     env: {
       ...process.env,
-      DOTENV_CONFIG_PATH: path.resolve(envFile),
+      DOTENV_CONFIG_PATH: effectiveEnvFile,
       MINI_SMOKE_ALLOW_SETUP: 'true'
     }
   })
@@ -218,7 +245,7 @@ run('node', [
   'scripts/deploy-mini-cloudrun.mjs',
   '--target=development',
   '--sync-preview-contract',
-  `--preview-env-file=${path.resolve(envFile)}`
+  `--preview-env-file=${effectiveEnvFile}`
 ], { stdio: 'inherit' })
 verifyCloudrunFixture(MINI_SMOKE_FIXTURES.unused, 'career_watch_state', ['--expect-match-state=unused'])
 verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'career_watch_state', ['--expect-match-state=fixed_free'])

@@ -132,11 +132,10 @@ function readPreviewContract() {
   const absolutePath = path.resolve(previewEnvFile)
   return fs.readFile(absolutePath, 'utf8').then((source) => {
     const environment = dotenv.parse(source)
-    if (environment.VERCEL_ENV !== 'preview' || !environment.MINI_GATEWAY_SHARED_SECRET) {
-      throw new Error('Preview contract file must contain VERCEL_ENV=preview and MINI_GATEWAY_SHARED_SECRET')
+    if (environment.VERCEL_ENV !== 'preview') {
+      throw new Error('Preview contract file must contain VERCEL_ENV=preview')
     }
     return {
-      gatewaySecret: environment.MINI_GATEWAY_SHARED_SECRET,
       bypassSecret: readExistingAutomationBypass()
     }
   })
@@ -224,7 +223,6 @@ if (syncPreviewContract) {
   const previewContract = await readPreviewContract()
   targetEnvironment = {
     ...targetEnvironment,
-    MINI_GATEWAY_SHARED_SECRET: previewContract.gatewaySecret,
     VERCEL_AUTOMATION_BYPASS_SECRET: previewContract.bypassSecret
   }
 }
