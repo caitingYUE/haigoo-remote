@@ -187,15 +187,33 @@ function runPreflight() {
   })
 }
 
-function verifyCloudrunFixture(fixture, action, expectations = []) {
-  run('node', [
+async function verifyCloudrunFixture(fixture, action, expectations = []) {
+  const args = [
     'scripts/verify-mini-gateway.mjs',
     '--target=development',
     '--via-cloudrun',
     `--action=${action}`,
     `--openid=${fixture.openid}`,
     ...expectations
-  ], { stdio: 'inherit' })
+  ]
+  let lastError
+  for (let attempt = 1; attempt <= 18; attempt += 1) {
+    try {
+      const output = run('node', args)
+      process.stdout.write(output)
+      return
+    } catch (error) {
+      lastError = error
+      if (attempt === 18) {
+        if (error?.stdout) process.stdout.write(String(error.stdout))
+        if (error?.stderr) process.stderr.write(String(error.stderr))
+        throw error
+      }
+      console.log(`CloudRun revision is not ready yet (${attempt}/18); retrying in 10 seconds.`)
+      await new Promise((resolve) => setTimeout(resolve, 10_000))
+    }
+  }
+  throw lastError
 }
 
 runPreflight()
@@ -247,11 +265,11 @@ run('node', [
   '--sync-preview-contract',
   `--preview-env-file=${effectiveEnvFile}`
 ], { stdio: 'inherit' })
-verifyCloudrunFixture(MINI_SMOKE_FIXTURES.unused, 'career_watch_state', ['--expect-match-state=unused'])
-verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'career_watch_state', ['--expect-match-state=fixed_free'])
-verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-total=5'])
-verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'career_watch_state', ['--expect-match-state=member_dynamic'])
-verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'companies', ['--expect-company-scope=member_all'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.unused, 'career_watch_state', ['--expect-match-state=unused'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'career_watch_state', ['--expect-match-state=fixed_free'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-total=5'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'career_watch_state', ['--expect-match-state=member_dynamic'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'companies', ['--expect-company-scope=member_all'])
 
 run('npm', ['--prefix', 'miniprogram', 'run', 'upload:weapp:experience'], { stdio: 'inherit' })
 

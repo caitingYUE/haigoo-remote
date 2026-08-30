@@ -125,6 +125,8 @@ const requestHeaders = {
 }
 let responseStatus
 let payload
+let transportRequestId = ''
+let transportResponseRequestId = ''
 if (viaCloudrun) {
   const { globalModules, require, detail } = cloudbaseContext
   if (Number(detail.ServerConfig?.MinNum || 0) < 1) {
@@ -152,17 +154,23 @@ if (viaCloudrun) {
     content_home: '/mini/home'
   }[action]
   if (openid && !sessionSignature) throw new Error('CloudRun verification cannot create an authenticated test session')
+  transportRequestId = `smoke-${crypto.randomUUID()}`
   const response = await app.callContainer({
     name: selected.serviceName,
     method: 'GET',
     path: route,
     header: {
       Accept: 'application/json',
-      'X-Haigoo-Request-Id': `smoke-${crypto.randomUUID()}`,
+      'X-Haigoo-Request-Id': transportRequestId,
       ...(openid ? { 'X-Haigoo-Mini-Session': `${sessionPayload}.${sessionSignature}` } : {})
     }
   })
   responseStatus = response.statusCode
+  transportResponseRequestId = String(
+    response.header?.['x-haigoo-request-id']
+      || response.header?.['X-Haigoo-Request-Id']
+      || ''
+  )
   payload = parseResponsePayload(response.data)
 } else if (useVercelCurl) {
   const output = execFileSync('npx', [
@@ -186,7 +194,10 @@ if (viaCloudrun) {
 
 if (responseStatus < 200 || responseStatus >= 300 || !payload?.success) {
   const errorSummary = typeof payload?.error === 'string' ? payload.error : 'invalid response'
-  throw new Error(`Gateway check failed: HTTP ${responseStatus} ${errorSummary}`)
+  const transportSummary = viaCloudrun
+    ? ` request-trace=${transportResponseRequestId === transportRequestId ? 'forwarded' : 'missing'}`
+    : ''
+  throw new Error(`Gateway check failed: HTTP ${responseStatus} ${errorSummary}${transportSummary}`)
 }
 if (action === 'career_watch_options' && !Array.isArray(payload.filterOptions?.roles)) {
   throw new Error('Gateway check failed: Career Watch option contract is missing')
