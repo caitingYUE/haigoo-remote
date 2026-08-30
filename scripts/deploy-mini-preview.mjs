@@ -24,6 +24,9 @@ const previewEnvironment = dotenv.parse(fs.readFileSync(path.resolve(envFile)))
 if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.MINI_GATEWAY_SHARED_SECRET) {
   throw new Error('Preview deployment contract must contain VERCEL_ENV=preview and MINI_GATEWAY_SHARED_SECRET')
 }
+const previewDeploymentEnvironment = Object.fromEntries(
+  Object.entries(previewEnvironment).filter(([key]) => !/^(VERCEL(?:_|$)|NX_|TURBO_)/.test(key))
+)
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
@@ -159,14 +162,16 @@ if (suppliedDeployment) {
 } else {
   const stagingDir = createVerifiedSourceSnapshot()
   try {
+    const deploymentEnvironmentArgs = Object.keys(previewDeploymentEnvironment)
+      .flatMap((key) => ['--env', key])
     const output = run('npx', [
       'vercel', 'deploy', '--yes', '--force', '--archive=tgz',
-      '--env', 'MINI_GATEWAY_SHARED_SECRET'
+      ...deploymentEnvironmentArgs
     ], {
       cwd: stagingDir,
       env: {
         ...process.env,
-        MINI_GATEWAY_SHARED_SECRET: previewEnvironment.MINI_GATEWAY_SHARED_SECRET
+        ...previewDeploymentEnvironment
       }
     })
     deploymentUrl = normalizeDeployment(output)
