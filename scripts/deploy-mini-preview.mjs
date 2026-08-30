@@ -24,9 +24,17 @@ const previewEnvironment = dotenv.parse(fs.readFileSync(path.resolve(envFile)))
 if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.MINI_GATEWAY_SHARED_SECRET) {
   throw new Error('Preview deployment contract must contain VERCEL_ENV=preview and MINI_GATEWAY_SHARED_SECRET')
 }
+const previewContractKeys = [
+  'DATABASE_URL',
+  'MINI_GATEWAY_SHARED_SECRET',
+  'MINI_MATCH_FIXED_SNAPSHOT_ENABLED'
+]
 const previewDeploymentEnvironment = Object.fromEntries(
-  Object.entries(previewEnvironment).filter(([key]) => !/^(VERCEL(?:_|$)|NX_|TURBO_)/.test(key))
+  previewContractKeys.map((key) => [key, previewEnvironment[key]]).filter(([, value]) => value)
 )
+for (const key of previewContractKeys.slice(0, 2)) {
+  if (!previewDeploymentEnvironment[key]) throw new Error(`Preview deployment contract is missing ${key}`)
+}
 
 function run(command, args, options = {}) {
   return execFileSync(command, args, {
