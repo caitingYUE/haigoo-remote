@@ -78,7 +78,7 @@ async function gatewayRequest(action, { method = 'GET', query = {}, body = {} } 
     result = await response.json().catch(() => null)
     responseRequestId = response.headers.get('x-haigoo-request-id')
   }
-  if (responseRequestId !== requestId) {
+  if (responseRequestId !== requestId && result?.requestId !== requestId) {
     throw new Error(`${action} did not preserve its anonymous request ID`)
   }
   if (status < 200 || status >= 300 || !result?.success) {
