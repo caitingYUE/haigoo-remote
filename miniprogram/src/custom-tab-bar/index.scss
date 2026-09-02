@@ -4,21 +4,23 @@
   right: 0;
   bottom: 0;
   left: 0;
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  height: calc(112px + env(safe-area-inset-bottom));
-  padding: 0 24px env(safe-area-inset-bottom);
-  border-top: 1PX solid #e1e5eb;
+  display: block;
+  height: calc(128px + env(safe-area-inset-bottom));
+  padding: 20px 32px calc(36px + env(safe-area-inset-bottom));
+  border-top: 1PX solid #e7e8eb;
   background: #fff;
+  box-shadow: 0 -10px 30px rgba(24, 32, 51, .055);
 }
+
+.custom-tabbar__tabs { display: grid; min-width: 0; grid-template-columns: 1fr 192px 1fr; }
 
 .custom-tabbar__item {
   position: relative;
   display: flex;
   min-width: 0;
-  min-height: 96px;
+  min-height: 72px;
   margin: 0;
-  padding: 12px 0 8px;
+  padding: 0;
   align-items: center;
   justify-content: center;
   flex-direction: column;
@@ -32,11 +34,14 @@
   line-height: 1;
 }
 
-.custom-tabbar__item { min-height: 44PX; }
+.custom-tabbar__item { min-height: 36PX; }
 
 .custom-tabbar__item::after { border: 0; }
-.custom-tabbar__icon { display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; }
+.custom-tabbar__icon { display: flex; width: 48px; height: 48px; align-items: center; justify-content: center; }
+.custom-tabbar__icon--match { position: fixed; z-index: 101; bottom: calc(82px + env(safe-area-inset-bottom)); left: 50%; width: auto; height: auto; transform: translateX(-50%); }
+.custom-tabbar__match-icon { width: 88px; height: 88px; filter: drop-shadow(0 8px 20px rgba(240, 100, 52, .28)); }
+.custom-tabbar__item:nth-child(2) { gap: 1px; }
+.custom-tabbar__item:nth-child(2) .custom-tabbar__label { display: none; }
 .custom-tabbar__label { line-height: 28px; }
 .custom-tabbar__item--active { color: #c94f22; font-weight: 600; }
 .custom-tabbar__item--pressed { background: #f6f7fa; }
-.custom-tabbar__badge { position: absolute; top: 8px; left: calc(50% + 12px); min-width: 28px; height: 28px; padding: 0 7px; border: 2PX solid #fff; border-radius: 999px; background: #c94f22; color: #fff; font-size: 17px; line-height: 28px; text-align: center; }

@@ -1,15 +1,17 @@
-import { Image, Text, View } from '@tarojs/components'
-import Taro, { switchTab } from '@tarojs/taro'
+import { Button, Image, Text, View } from '@tarojs/components'
+import Taro, { navigateTo } from '@tarojs/taro'
 import { useEffect, useMemo, useState } from 'react'
 import { resolveMiniAvatarUrl } from '../../config/api'
+import defaultUserIcon from '../../../assets/icons/default-user.svg'
 import './index.scss'
 
 interface EditorialTopBarProps {
   authenticated: boolean
   avatar?: string
+  unread?: number
 }
 
-export default function EditorialTopBar({ authenticated, avatar = '' }: EditorialTopBarProps) {
+export default function EditorialTopBar({ authenticated, avatar = '', unread = 0 }: EditorialTopBarProps) {
   const [avatarFailed, setAvatarFailed] = useState(false)
   const avatarUrl = resolveMiniAvatarUrl(avatar)
   const metrics = useMemo(() => {
@@ -33,11 +35,12 @@ export default function EditorialTopBar({ authenticated, avatar = '' }: Editoria
           <Text className='editorial-topbar__brand-cn'>海狗远程</Text>
           <Text className='editorial-topbar__brand-en'>HaigooRemote</Text>
         </View>
-        <View className='editorial-topbar__account' aria-role='button' aria-label={authenticated ? '打开我的' : '登录或连接账号'} onClick={() => switchTab({ url: '/pages/profile/index' })}>
+        <Button className='editorial-topbar__account' aria-label={authenticated ? unread > 0 ? `打开个人中心，有 ${unread} 条未读岗位动态` : '打开个人中心' : '登录或连接账号'} onClick={() => navigateTo({ url: '/pages/profile/index' })}>
           {authenticated && avatarUrl && !avatarFailed ? (
             <Image className='editorial-topbar__avatar' src={avatarUrl} mode='aspectFill' onError={() => setAvatarFailed(true)} />
-          ) : <Image className='editorial-topbar__avatar editorial-topbar__avatar--default' src='/assets/icons/default-user.svg' mode='aspectFit' />}
-        </View>
+          ) : <Image className='editorial-topbar__avatar editorial-topbar__avatar--default' src={defaultUserIcon} mode='aspectFit' />}
+          {authenticated && unread > 0 ? <Text className='editorial-topbar__badge'>{unread > 9 ? '9+' : unread}</Text> : null}
+        </Button>
       </View>
     </View>
   )
