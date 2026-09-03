@@ -129,7 +129,7 @@ export default function MatchCompanyCard({ company, active, onFollowChanged, onO
           aria-label={`查看 ${company.companyName} 企业详情`}
           onTouchStart={(event) => event.stopPropagation()}
           onClick={(event) => { event.stopPropagation(); onOpenCompany(company) }}
-        ><Text>查看</Text><MiniIcon name='chevronRight' size={15} /></View>
+        ><Text>查看企业详情</Text><MiniIcon name='chevronRight' size={15} /></View>
       </View>
     </View>
 

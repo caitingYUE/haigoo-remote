@@ -1,22 +1,23 @@
 .match-deck {
   position: relative;
   width: 100%;
-  height: clamp(780px, calc(100vh - 500px), 920px);
+  height: clamp(680px, calc(100vh - 440px), 760px);
   touch-action: pan-y;
 }
 .match-deck__card {
   position: absolute;
-  top: 28px;
-  right: 58px;
-  bottom: 28px;
-  left: 58px;
+  top: 20px;
+  right: 40px;
+  bottom: 20px;
+  left: 40px;
+  overflow: hidden;
   transition: transform 220ms cubic-bezier(.22, .72, .24, 1), opacity 220ms ease;
   will-change: transform;
 }
 .match-deck__card--depth-3,
 .match-deck__card--depth-2,
 .match-deck__card--depth-1 { z-index: 1; pointer-events: none; }
-.match-deck__card--depth-1 { z-index: 2; }
+.match-deck__card--depth-1 { z-index: 2; opacity: .22 !important; }
 .match-deck__card--depth-2 { z-index: 1; }
 .match-deck__card--depth-3 { z-index: 0; }
 .match-deck__card--depth-0 { z-index: 4; transform: translate3d(0, 0, 0); }
@@ -45,7 +46,7 @@
 .match-deck-skeleton::after { transform: translate3d(-8px, 12px, 0) rotate(-.7deg) scale(.97); opacity: .56; }
 .match-deck-skeleton > view { z-index: 2; }
 @media (max-width: 340px) {
-  .match-deck { height: clamp(500px, calc(100vh - 330px), 620px); }
+  .match-deck { height: clamp(560px, calc(100vh - 330px), 680px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .match-deck__card,

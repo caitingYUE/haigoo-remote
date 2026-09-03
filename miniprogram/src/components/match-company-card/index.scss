@@ -4,43 +4,44 @@
   flex-direction: column;
   overflow: hidden;
   border: 1PX solid #f0f0f0;
-  border-radius: 44px;
+  border-radius: 28px;
   background: #fff;
-  box-shadow: 0 4px 20px rgba(17, 17, 17, .05), 0 16px 56px rgba(17, 17, 17, .09);
+  box-shadow: 0 8px 24px rgba(24, 32, 51, .08);
 }
-.match-company-card__identity { display: flex; padding: 40px 40px 24px; align-items: flex-start; justify-content: space-between; }
-.match-company-card__logo { display: flex; width: 100px; height: 100px; align-items: center; justify-content: center; overflow: hidden; border: 1PX solid #ebebeb; border-radius: 28px; background: #f7f7f7; color: #111; font-size: 26px; font-weight: 700; }
+.match-company-card__identity { display: flex; padding: 28px 28px 20px; align-items: flex-start; justify-content: space-between; }
+.match-company-card__logo { display: flex; width: 88px; height: 88px; align-items: center; justify-content: center; overflow: hidden; border: 0; border-radius: 20px; background: #111; color: #fff; font-size: 24px; font-weight: 600; }
 .match-company-card__logo image { width: 76%; height: 76%; }
 .match-company-card__identity-copy { min-width: 0; }
-.match-company-card__title-row { display: flex; padding: 0 40px; align-items: baseline; flex-wrap: wrap; gap: 12px 16px; }
-.match-company-card__name { display: block; max-width: 100%; overflow: hidden; color: #111; font-size: 40px; font-weight: 800; line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; }
-.match-company-card__meta { display: block; width: 100%; overflow: hidden; color: #999; font-size: 24px; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
-.match-company-card__score { position: relative; display: flex; width: 92px; height: 92px; align-items: center; justify-content: center; flex-direction: column; border: 3PX solid #f06434; border-radius: 50%; background: #fff; color: #d9512b; }
+.match-company-card__title-row { display: flex; padding: 0 28px; align-items: baseline; flex-wrap: wrap; gap: 8px 14px; }
+.match-company-card__name { display: block; max-width: 100%; overflow: hidden; color: #111; font-size: 34px; font-weight: 600; line-height: 1.08; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__meta { display: block; width: 100%; overflow: hidden; color: #667085; font-size: 20px; font-style: normal; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__score { position: relative; display: flex; width: 82px; height: 82px; align-items: center; justify-content: center; flex-direction: column; border: 2PX solid #f06434; border-radius: 50%; background: #fff; color: #d9512b; }
 .match-company-card__score text { position: relative; z-index: 1; display: block; line-height: 1; }
-.match-company-card__score text:first-child { font-size: 30px; font-weight: 800; }
-.match-company-card__score text:last-child { margin-top: 6px; font-size: 16px; }
-.match-company-card__facts { display: flex; min-height: 52px; padding: 16px 40px 24px; align-items: center; flex-wrap: wrap; gap: 24px; color: #999; }
+.match-company-card__score text:first-child { font-size: 27px; font-weight: 600; }
+.match-company-card__score text:last-child { margin-top: 4px; font-size: 14px; }
+.match-company-card__facts { display: flex; min-height: 44px; padding: 12px 28px 18px; align-items: center; flex-wrap: wrap; gap: 18px; color: #667085; }
 .match-company-card__facts > view { display: flex; min-width: 0; align-items: center; gap: 5px; }
-.match-company-card__facts text { overflow: hidden; font-size: 22px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__facts text { overflow: hidden; font-size: 18px; line-height: 1.3; text-overflow: ellipsis; white-space: nowrap; }
 .match-company-card__facts > view:first-child { max-width: 74%; }
 .match-company-card__facts > view:last-child { color: #b56b00; }
-.match-company-card__fit { display: flex; min-height: 0; padding: 32px 40px 0; flex: 1; flex-direction: column; border-top: 1PX solid #f0f0f0; }
-.match-company-card__label { display: block; color: #999; font-size: 18px; font-weight: 700; letter-spacing: 1.5px; }
+.match-company-card__fit { display: flex; min-height: 0; padding: 24px 28px 0; flex: 1; flex-direction: column; border-top: 1PX solid #f0f0f0; }
+.match-company-card__label { display: block; color: #667085; font-size: 16px; font-weight: 500; letter-spacing: .4px; }
 .match-company-card__description { display: none; }
-.match-company-card__evidence { display: flex; margin-top: 24px; flex-wrap: wrap; gap: 12px; }
-.match-company-card__evidence text { display: block; max-width: 100%; padding: 12px 20px; overflow: hidden; border-radius: 16px; background: #fff3ee; color: #f06434; font-size: 22px; font-weight: 600; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
-.match-company-card__opportunity { display: grid; min-height: 112px; margin: auto 32px 24px; padding: 22px 28px; align-items: center; grid-template-columns: 64px minmax(0, 1fr) 32px; gap: 20px; border: 1PX solid #ebebeb; border-radius: 24px; background: #f7f7f7; }
-.match-company-card__opportunity-icon { display: flex; width: 64px; height: 64px; align-items: center; justify-content: center; border-radius: 18px; background: #fff3ee; color: #f06434; }
+.match-company-card__evidence { display: flex; margin-top: 16px; flex-wrap: wrap; gap: 8px; }
+.match-company-card__evidence text { display: block; max-width: 100%; padding: 8px 12px; overflow: hidden; border-radius: 10px; background: #fff3ee; color: #d95530; font-size: 18px; font-weight: 500; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__opportunity { display: grid; min-height: 88px; margin: auto 24px 18px; padding: 14px 16px; align-items: center; grid-template-columns: 48px minmax(0, 1fr) 28px; gap: 12px; border: 1PX solid #ebebeb; border-radius: 16px; background: #f7f7f7; }
+.match-company-card__opportunity-icon { display: flex; width: 48px; height: 48px; align-items: center; justify-content: center; border-radius: 12px; background: #fff3ee; color: #f06434; }
 .match-company-card__opportunity-copy { min-width: 0; }
 .match-company-card__opportunity-copy text { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.match-company-card__opportunity-copy text:first-child { color: #111; font-size: 24px; font-weight: 700; }
-.match-company-card__opportunity-copy text:last-child { margin-top: 8px; color: #f06434; font-size: 20px; }
-.match-company-card__footer { display: flex; min-height: 0; padding: 24px 40px 32px; align-items: stretch; flex-direction: column; gap: 14px; border-top: 1PX solid #f0f0f0; }
+.match-company-card__opportunity-copy text:first-child { color: #111; font-size: 20px; font-weight: 600; }
+.match-company-card__opportunity-copy text:last-child { margin-top: 4px; color: #d95530; font-size: 18px; }
+.match-company-card__footer { display: flex; min-height: 0; padding: 16px 28px 22px; align-items: center; flex-direction: row; gap: 12px; border-top: 1PX solid #f0f0f0; }
 .match-company-card__verified { display: flex; min-width: 0; align-items: center; gap: 5px; color: #9097a3; }
-.match-company-card__verified text { overflow: hidden; font-size: 18px; text-overflow: ellipsis; white-space: nowrap; }
-.match-company-card__footer .company-follow-action.is-compact { width: 100%; min-width: 0; min-height: 84px; padding: 0; border: 0; border-radius: 26px; background: #f06434; color: #fff; font-size: 24px; }
+.match-company-card__verified text { overflow: hidden; font-size: 16px; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__footer .company-follow-action.is-compact { width: auto; min-width: 108px; min-height: 52px; padding: 0 12px; border: 0; border-radius: 12px; background: #f06434; color: #fff; font-size: 18px; }
 .match-company-card__footer .company-follow-action.is-compact.is-followed { border: 1PX solid #f06434; background: #fff3ee; color: #f06434; }
-.match-company-card__open { display: flex; min-width: 50px; min-height: 52px; align-items: center; justify-content: center; gap: 4px; color: #999; font-size: 20px; font-weight: 700; }
+.match-company-card__footer .company-follow-action.is-compact:not(.is-followed) .mini-icon { color: #fff; }
+.match-company-card__open { display: flex; min-width: 116px; min-height: 44px; align-items: center; justify-content: center; gap: 4px; color: #667085; font-size: 16px; font-weight: 500; }
 .match-score-overlay { position: fixed; z-index: 1200; inset: 0; display: flex; align-items: flex-end; background: rgba(18, 21, 28, .44); }
 .match-score-sheet { width: 100%; padding: 12px 28px calc(28px + env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0; background: #fff; box-shadow: 0 -18px 54px rgba(18, 21, 28, .16); }
 .match-score-sheet__handle { width: 56px; height: 6px; margin: 0 auto 20px; border-radius: 8px; background: #d7dae0; }

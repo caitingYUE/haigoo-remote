@@ -9,9 +9,10 @@ interface EditorialTopBarProps {
   authenticated: boolean
   avatar?: string
   unread?: number
+  showAccount?: boolean
 }
 
-export default function EditorialTopBar({ authenticated, avatar = '', unread = 0 }: EditorialTopBarProps) {
+export default function EditorialTopBar({ authenticated, avatar = '', unread = 0, showAccount = true }: EditorialTopBarProps) {
   const [avatarFailed, setAvatarFailed] = useState(false)
   const avatarUrl = resolveMiniAvatarUrl(avatar)
   const metrics = useMemo(() => {
@@ -35,12 +36,12 @@ export default function EditorialTopBar({ authenticated, avatar = '', unread = 0
           <Text className='editorial-topbar__brand-cn'>海狗远程</Text>
           <Text className='editorial-topbar__brand-en'>HaigooRemote</Text>
         </View>
-        <Button className='editorial-topbar__account' aria-label={authenticated ? unread > 0 ? `打开个人中心，有 ${unread} 条未读岗位动态` : '打开个人中心' : '登录或连接账号'} onClick={() => navigateTo({ url: '/pages/profile/index' })}>
+        {showAccount ? <Button className='editorial-topbar__account' aria-label={authenticated ? unread > 0 ? `打开个人中心，有 ${unread} 条未读岗位动态` : '打开个人中心' : '登录或连接账号'} onClick={() => navigateTo({ url: '/pages/profile/index' })}>
           {authenticated && avatarUrl && !avatarFailed ? (
             <Image className='editorial-topbar__avatar' src={avatarUrl} mode='aspectFill' onError={() => setAvatarFailed(true)} />
           ) : <Image className='editorial-topbar__avatar editorial-topbar__avatar--default' src={defaultUserIcon} mode='aspectFit' />}
           {authenticated && unread > 0 ? <Text className='editorial-topbar__badge'>{unread > 9 ? '9+' : unread}</Text> : null}
-        </Button>
+        </Button> : null}
       </View>
     </View>
   )

@@ -73,6 +73,7 @@ export default function MembershipPage() {
       {error ? <View className='empty-state'><Text className='empty-state__title'>会员方案暂时不可用</Text><Text className='empty-state__copy'>{error}</Text></View> : null}
       <View className='membership-plans'>
         {loading ? <ContentSkeleton rows={3} /> : null}
+        {/* 99/199/699 remain API-driven; the half-year price logic still needs product confirmation. */}
         {plans.map((plan) => (
           <View className={`membership-plan ${plan.memberType === 'quarter' ? 'membership-plan--featured' : ''} ${selectedPlan?.id === plan.id ? 'membership-plan--selected' : ''}`} key={plan.id} aria-role='radio' aria-label={`选择${plan.shortLabel}`} aria-checked={selectedPlan?.id === plan.id} hoverClass='mini-action--pressed' onClick={() => setSelectedPlanId(plan.id)}>
             <View className='membership-plan__header'><View className='membership-plan__title'><View className='membership-plan__selection'>{selectedPlan?.id === plan.id ? <MiniIcon name='check' size={13} /> : null}</View><View><Text className='membership-plan__name'>{plan.shortLabel}</Text><Text className='membership-plan__duration'>{duration(plan)}</Text></View></View>{plan.memberType === 'quarter' ? <Text className='membership-plan__badge'>推荐</Text> : null}</View>

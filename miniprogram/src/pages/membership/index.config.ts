@@ -1,1 +1,5 @@
-export default definePageConfig({ navigationBarTitleText: '会员方案' })
+export default definePageConfig({
+  navigationStyle: 'custom',
+  backgroundColor: '#f6f7fa',
+  backgroundTextStyle: 'dark'
+})

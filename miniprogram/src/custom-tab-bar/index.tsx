@@ -20,20 +20,31 @@ function currentPath() {
 
 export default function CustomTabBar() {
   const [activePath, setActivePath] = useState(currentPath)
+  const [flowHidden, setFlowHidden] = useState(() => currentPath() === '/pages/index/index')
   useEffect(() => {
-    const syncActivePath = (path: string) => setActivePath(path || currentPath())
+    const syncActivePath = (path: string) => {
+      const nextPath = path || currentPath()
+      setActivePath(nextPath)
+      if (nextPath !== '/pages/index/index') setFlowHidden(false)
+    }
     Taro.eventCenter.on('haigoo:tab-change', syncActivePath)
+    const syncMatchStep = (step: string) => setFlowHidden(step === 'start' || step === 'setup')
+    Taro.eventCenter.on('haigoo:match-step', syncMatchStep)
     syncActivePath(currentPath())
-    return () => { Taro.eventCenter.off('haigoo:tab-change', syncActivePath) }
+    return () => {
+      Taro.eventCenter.off('haigoo:tab-change', syncActivePath)
+      Taro.eventCenter.off('haigoo:match-step', syncMatchStep)
+    }
   }, [])
 
   const selectTab = (path: string) => {
     setActivePath(path)
+    setFlowHidden(false)
     Taro.eventCenter.trigger('haigoo:tab-change', path)
     void switchTab({ url: path })
   }
 
-  return <View className='custom-tabbar'>
+  return <View className={`custom-tabbar ${flowHidden ? 'custom-tabbar--hidden' : ''}`}>
     <View className='custom-tabbar__tabs'>
     {tabs.map((tab) => {
       const active = activePath === tab.path

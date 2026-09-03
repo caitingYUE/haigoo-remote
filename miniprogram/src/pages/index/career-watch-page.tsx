@@ -18,6 +18,7 @@ import type { CareerWatchResponse, WatchFeedItem, WatchFilterOptions, WatchPrefe
 import { trackMiniEvent } from '../../services/analytics-service'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
+import useMiniNavigationInset from '../../hooks/use-mini-navigation-inset'
 import useMiniShare from '../../hooks/use-mini-share'
 import { matchDeckStorageKey, wrapDeckIndex } from '../../utils/match-deck'
 import heroImage from '../../../assets/home-hero-bg.webp'
@@ -51,7 +52,13 @@ export default function CareerWatchPage() {
   const [activeCompanyIndex, setActiveCompanyIndex] = useState(0)
   const [activeRoleGroup, setActiveRoleGroup] = useState(0)
   const resumeFlowActive = useRef(false)
+  const navigationInset = useMiniNavigationInset(0)
   useMiniShare('HaigooRemote｜找到更适合你的远程方向', '/pages/index/index')
+
+  useEffect(() => {
+    Taro.eventCenter.trigger('haigoo:match-step', step)
+    return () => { Taro.eventCenter.trigger('haigoo:match-step', 'leaving') }
+  }, [step])
 
   const applyResponse = useCallback((result: CareerWatchResponse) => {
     setWatch(result)
@@ -343,8 +350,8 @@ export default function CareerWatchPage() {
   }
 
   return <View className='watch-root'>
-    <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={watch?.followedUpdates.length || 0} />
-    <View className={`page-shell watch-page ${step === 'feed' ? 'watch-page--feed' : ''}`}>
+    <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={watch?.followedUpdates.length || 0} showAccount={step !== 'start' && step !== 'setup'} />
+    <View className={`page-shell watch-page ${step === 'feed' ? 'watch-page--feed' : ''} ${step === 'start' || step === 'setup' ? 'watch-page--flow' : ''}`} style={{ '--watch-navigation-height': `${navigationInset}px` } as React.CSSProperties}>
     {step === 'loading' ? <View className='watch-loading'><Text className='watch-loading__label'>正在整理匹配企业</Text><View className='match-deck-skeleton'><View /></View></View> : null}
 
     {step === 'start' ? <View className='watch-start'>
@@ -382,7 +389,7 @@ export default function CareerWatchPage() {
       {filterOptions.ratings.length ? <View className='watch-field'><Text className='watch-field__label'>Glassdoor 最低评分</Text><View className='watch-chip-row'><Text className={draft.companyPreferences.minRating ? '' : 'is-active'} onClick={() => clearPreference('rating', 'minRating')}>不限</Text>{filterOptions.ratings.map((item) => <Text className={draft.companyPreferences.minRating === item.value ? 'is-active' : ''} key={item.value} onClick={() => setPreference('rating', 'minRating', item.value)}>{item.label}</Text>)}</View></View> : null}
       {filterOptions.companyAges.length ? <View className='watch-field'><Text className='watch-field__label'>成立年限</Text><View className='watch-chip-row'><Text className={draft.companyPreferences.minFoundedYears ? '' : 'is-active'} onClick={() => clearPreference('companyAge', 'minFoundedYears')}>不限</Text>{filterOptions.companyAges.map((item) => <Text className={draft.companyPreferences.minFoundedYears === item.value ? 'is-active' : ''} key={item.value} onClick={() => setPreference('companyAge', 'minFoundedYears', item.value)}>{item.label}</Text>)}</View></View> : null}
       {error ? <Text className='watch-error'>{error}</Text> : null}
-      <View className='watch-submit-bar'><View><Text>{roleSummary || '请选择方向'}</Text><Text>{draft.activePreferenceKeys.length ? `已设置 ${draft.activePreferenceKeys.length} 项企业条件` : '企业条件不限'}</Text></View><View className={`primary-button ${busy ? 'primary-button--disabled' : ''}`} onClick={busy ? undefined : () => void save()}>{busy ? '正在生成…' : watch?.entitlements.isMember ? '保存并更新方向' : '查看方向与企业'}</View></View>
+      <View className='watch-submit-bar'><View><Text>已选择 {selectedDirectionCount}/5</Text><Text>{draft.activePreferenceKeys.length ? `已设置 ${draft.activePreferenceKeys.length} 项企业条件` : '企业条件不限'}</Text></View><View className={`primary-button ${busy || selectedDirectionCount === 0 ? 'primary-button--disabled' : ''}`} aria-disabled={busy || selectedDirectionCount === 0} onClick={busy || selectedDirectionCount === 0 ? undefined : () => void save()}>{busy ? '正在生成…' : watch?.entitlements.isMember ? '保存并更新方向' : '查看方向与企业'}</View></View>
     </View> : null}
 
     {step === 'error' ? <View className='watch-fatal-error'><MiniIcon name='target' size={30} /><Text>匹配结果暂时无法加载</Text><Text>{error || '请检查网络后重新加载。'}</Text><View className='primary-button' onClick={() => { setStep('loading'); void load() }}>重新加载</View></View> : null}
