@@ -2,6 +2,7 @@ import { Checkbox, CheckboxGroup, Image, Input, Radio, RadioGroup, Text, Textare
 import { navigateTo, showModal, useDidShow, useRouter, vibrateShort } from '@tarojs/taro'
 import { useCallback, useState } from 'react'
 import { MINI_PRIVACY_VERSION } from '../../config/legal'
+import advisorImage from '../../../assets/haigoo-advisor.png'
 import { createRequestKey } from '../../services/api-client'
 import { trackMiniEvent } from '../../services/analytics-service'
 import { fetchConsultations, submitConsultation } from '../../services/content-service'
@@ -95,7 +96,7 @@ export default function ConsultationPage() {
     <View className='page-shell consultation-success'>
       <View className='consultation-success__mark' />
       <Text className='consultation-success__eyebrow'>提交成功</Text><Text className='consultation-success__title'>我们已经收到你的问题</Text><Text className='consultation-success__copy'>顾问会通过微信联系你。也可以长按二维码主动添加。</Text>
-      <View className='consultation-success__qr surface-card'><Image src='/assets/haigoo-advisor.png' mode='aspectFit' /></View>
+      <View className='consultation-success__qr surface-card'><Image src={advisorImage} mode='aspectFit' /></View>
       <Text className='consultation-success__note'>请在添加好友时备注“Haigoo 小程序咨询”</Text>
       <View className='primary-button consultation-success__action' aria-role='button' onClick={() => setSuccess(false)}>查看咨询记录</View>
     </View>

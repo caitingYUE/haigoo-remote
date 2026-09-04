@@ -1,5 +1,18 @@
 # Haigoo Remote 微信小程序
 
+## 产品定位
+
+Haigoo 微信小程序不是官网的移动端复制版，而是一套以 **Match** 为核心的个性化远程职业产品。用户通过职业方向或简历建立个人偏好，获得可解释的远程企业和岗位匹配，并继续完成企业关注、微信提醒、岗位查看和职业成长。
+
+官网承担开放、通用的岗位与企业发现、深度研究和桌面职业工作；小程序承担个性化、短时高质量的 Match 体验。两端可共享账号、会员、简历、职业方向、关注、收藏和申请等数据，但保留各自的信息架构与交互方式。
+
+产品与设计权威说明：
+
+- `../PRODUCT.md`
+- `../docs/haigoo-platform-positioning.md`
+- `../docs/haigoo-mini-design-system.md`
+- `../docs/superpowers/specs/2026-09-01-mini-match-immersive-v2-design.md`
+
 ## 运行架构
 
 小程序不直连 Haigoo 网站或任何外部招聘域名。所有请求通过关联微信云开发环境的 `Taro.cloud.callContainer` 发往 `cloudrun/` 中的云托管 BFF：

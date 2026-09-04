@@ -3,6 +3,7 @@ import Taro, { navigateTo, showModal, showToast, useDidShow } from '@tarojs/taro
 import { useCallback, useEffect, useState } from 'react'
 import MiniIcon from '../../components/mini-icon'
 import { resolveMiniAvatarUrl } from '../../config/api'
+import defaultUserIcon from '../../../assets/icons/default-user.svg'
 import { claimMemberService, fetchMemberServices } from '../../services/content-service'
 import { fetchCareerMatchState, fetchCareerWatch, fetchCompanyFollows } from '../../services/career-match-service'
 import type { CareerWatchResponse } from '../../services/career-match-service'
@@ -13,11 +14,11 @@ import { formatCalendarDate } from '../../utils/runtime-compat'
 import './index.scss'
 
 const profileMenus = [
-  { key: 'consultations', title: '职业咨询', description: '提交问题，查看咨询记录' },
-  { key: 'community', title: '开放交流群', description: '和大家聊聊远程工作' },
-  { key: 'orders', title: '订单记录', description: '查看支付和退款状态' },
-  { key: 'settings', title: '账号与安全', description: '管理密码、绑定和隐私' }
-]
+  { key: 'consultations', title: '职业咨询', description: '提交问题，查看咨询记录', icon: 'service' },
+  { key: 'community', title: '开放交流群', description: '和大家聊聊远程工作', icon: 'community' },
+  { key: 'orders', title: '订单记录', description: '查看支付和退款状态', icon: 'orders' },
+  { key: 'settings', title: '账号与安全', description: '管理密码、绑定和隐私', icon: 'settings' }
+] as const
 
 const serviceStatus = { available: '可领取', requested: '已申请', in_progress: '处理中', completed: '已完成' }
 const membershipLabel = (value?: string) => value === 'quarter' ? '季度会员' : value === 'half_year' ? '半年会员' : 'Haigoo 会员'
@@ -62,7 +63,6 @@ export default function ProfilePage() {
   }, [])
 
   useDidShow(() => {
-    Taro.eventCenter.trigger('haigoo:tab-change', '/pages/profile/index')
     setSessionVersion((value) => value + 1)
     void loadDashboard()
   })
@@ -104,25 +104,26 @@ export default function ProfilePage() {
 
   return <View className='page-shell profile-page'>
     <View className='profile-identity'>
-      <View className='profile-identity__avatar'>{isAuthenticated && avatarUrl && !avatarFailed ? <Image src={avatarUrl} mode='aspectFill' onError={() => setAvatarFailed(true)} /> : <Image className='profile-identity__default' src='/assets/icons/default-user.svg' mode='aspectFit' />}</View>
+      <View className='profile-identity__avatar'>{isAuthenticated && avatarUrl && !avatarFailed ? <Image src={avatarUrl} mode='aspectFill' onError={() => setAvatarFailed(true)} /> : <Image className='profile-identity__default' src={defaultUserIcon} mode='aspectFit' />}</View>
       <View className='profile-identity__copy'><Text>{isAuthenticated ? user?.username || 'Haigoo 用户' : '登录 Haigoo'}</Text><Text>{isAuthenticated ? user?.email || '查看你的匹配与服务' : '登录后保存匹配和通知'}</Text></View>
-      {!isAuthenticated ? <View className='profile-login' onClick={handleLogin}>微信登录</View> : null}
+      {!isAuthenticated ? <View className='profile-login' aria-role='button' aria-label='微信登录' hoverClass='mini-action--pressed' onClick={handleLogin}>微信登录</View> : null}
+      {isAuthenticated ? <View className='profile-edit' aria-role='button' aria-label='编辑账号与安全' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/account-settings/index' })}>编辑</View> : null}
     </View>
 
-    {isAuthenticated ? <View className='profile-facts'><View aria-role='button' onClick={() => Taro.switchTab({ url: '/pages/companies/index' })}><Text>{followCount ?? '—'}</Text><Text>关注企业</Text></View><View aria-role='button' onClick={() => Taro.switchTab({ url: '/pages/index/index' })}><Text>{unreadCount ?? '—'}</Text><Text>未读岗位更新</Text></View></View> : null}
-    {isAuthenticated && dashboardError ? <View className='profile-dashboard-error'><Text>{dashboardError}</Text><Text aria-role='button' onClick={() => void loadDashboard()}>重新加载</Text></View> : null}
+    {isAuthenticated ? <View className='profile-facts'><View aria-role='button' aria-label={`查看关注企业，共 ${followCount ?? '—'} 家`} hoverClass='mini-action--pressed' onClick={() => Taro.switchTab({ url: '/pages/companies/index' })}><Text>{followCount ?? '—'}</Text><Text>关注企业</Text></View><View aria-role='button' aria-label={`查看未读岗位更新，共 ${unreadCount ?? '—'} 条`} hoverClass='mini-action--pressed' onClick={() => Taro.switchTab({ url: '/pages/index/index' })}><Text>{unreadCount ?? '—'}</Text><Text>未读岗位更新</Text></View></View> : null}
+    {isAuthenticated && dashboardError ? <View className='profile-dashboard-error' aria-live='polite'><Text>{dashboardError}</Text><Text aria-role='button' aria-label='重新加载个人信息' onClick={() => void loadDashboard()}>重新加载</Text></View> : null}
 
-    <View className='profile-membership' onClick={() => navigateTo({ url: '/pages/membership/index' })}>
+    <View className='profile-membership' aria-role='button' aria-label='查看会员方案' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}>
       <View><MiniIcon name='club' size={25} /><View><Text>{activeMembership?.isMember ? '会员权益正在生效' : '开通会员，查看更多企业'}</Text><Text>{activeMembership?.isMember ? `${membershipLabel(activeMembership.memberType)}${memberExpireAt ? ` · 有效期至 ${memberExpireAt}` : ''}` : '岗位提醒 · 内部联系人 · 求职支持'}</Text></View></View><MiniIcon name='chevronRight' size={19} />
     </View>
 
-    {services.length ? <View className='profile-section'><Text className='profile-section__title'>半年会员服务</Text><View className='profile-services'>{services.map((service) => <View className='profile-service' key={service.key}><View><Text>{service.title}</Text><Text>{service.description}</Text>{service.status !== 'available' && service.updatedAt ? <Text className='profile-service__updated'>{serviceUpdatedLabel(service.updatedAt)}</Text> : null}</View><Text aria-role={service.status === 'available' ? 'button' : undefined} className={`profile-service__status profile-service__status--${service.status}`} onClick={service.status === 'available' ? () => void claim(service) : undefined}>{claiming === service.key ? '提交中…' : serviceStatus[service.status]}</Text></View>)}</View></View> : null}
+    {services.length ? <View className='profile-section'><Text className='profile-section__title'>会员服务</Text><View className='profile-services'>{services.map((service) => <View className='profile-service' key={service.key}><View><Text>{service.title}</Text><Text>{service.description}</Text>{service.status !== 'available' && service.updatedAt ? <Text className='profile-service__updated'>{serviceUpdatedLabel(service.updatedAt)}</Text> : null}</View><Text aria-role={service.status === 'available' ? 'button' : undefined} className={`profile-service__status profile-service__status--${service.status}`} aria-label={service.status === 'available' ? `申请${service.title}` : serviceStatus[service.status]} onClick={service.status === 'available' ? () => void claim(service) : undefined}>{claiming === service.key ? '提交中…' : serviceStatus[service.status]}</Text></View>)}</View></View> : null}
 
     <View className='profile-section'><Text className='profile-section__title'>求职设置</Text><View className='profile-menu'>
-      <View className='profile-menu__item' aria-role='button' onClick={() => isAuthenticated ? Taro.switchTab({ url: '/pages/index/index' }) : void handleLogin()}><View><Text>求职方向</Text><Text>{isAuthenticated ? directionSummary : '登录后设置'}</Text></View><MiniIcon name='chevronRight' size={19} /></View>
-      <View className='profile-menu__item' aria-role='button' onClick={() => isAuthenticated ? navigateTo({ url: '/pages/career-data/index' }) : void handleLogin()}><View><Text>我的简历</Text><Text>{isAuthenticated ? resumeSummary : '登录后上传'}</Text></View><MiniIcon name='chevronRight' size={19} /></View>
+      <View className='profile-menu__item' aria-role='button' aria-label='设置求职方向' hoverClass='mini-action--pressed' onClick={() => isAuthenticated ? Taro.switchTab({ url: '/pages/index/index' }) : void handleLogin()}><View className='profile-menu__icon'><MiniIcon name='target' size={21} /></View><View><Text>求职方向</Text><Text>{isAuthenticated ? directionSummary : '登录后设置'}</Text></View><MiniIcon name='chevronRight' size={19} /></View>
+      <View className='profile-menu__item' aria-role='button' aria-label='管理我的简历' hoverClass='mini-action--pressed' onClick={() => isAuthenticated ? navigateTo({ url: '/pages/career-data/index' }) : void handleLogin()}><View className='profile-menu__icon'><MiniIcon name='application' size={21} /></View><View><Text>我的简历</Text><Text>{isAuthenticated ? resumeSummary : '登录后上传'}</Text></View><MiniIcon name='chevronRight' size={19} /></View>
     </View></View>
 
-    <View className='profile-section'><Text className='profile-section__title'>服务与账号</Text><View className='profile-menu'>{profileMenus.map((item) => <View className='profile-menu__item' aria-role='button' key={item.key} onClick={() => handleMenu(item.key)}><View><Text>{item.title}</Text><Text>{item.description}</Text></View><MiniIcon name='chevronRight' size={19} /></View>)}</View></View>
+    <View className='profile-section'><Text className='profile-section__title'>服务与账号</Text><View className='profile-menu'>{profileMenus.map((item) => <View className='profile-menu__item' aria-role='button' aria-label={item.title} hoverClass='mini-action--pressed' key={item.key} onClick={() => handleMenu(item.key)}><View className='profile-menu__icon'><MiniIcon name={item.icon} size={21} /></View><View><Text>{item.title}</Text><Text>{item.description}</Text></View><MiniIcon name='chevronRight' size={19} /></View>)}</View></View>
   </View>
 }

@@ -1,4 +1,5 @@
 import { Image, Text, View } from '@tarojs/components'
+import communityImage from '../../../assets/static/haigoo-community.png'
 import './index.scss'
 
 const guidelines = [
@@ -19,7 +20,7 @@ export default function CommunityPage() {
         <View className='community-qr__frame'>
           <Image
             className='community-qr__image'
-            src='/assets/haigoo-community.png'
+            src={communityImage}
             mode='aspectFit'
             showMenuByLongpress
           />

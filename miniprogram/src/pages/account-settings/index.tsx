@@ -1,5 +1,5 @@
 import { Button, Input, Text, Textarea, View } from '@tarojs/components'
-import { navigateTo, setClipboardData, showModal, showToast, switchTab } from '@tarojs/taro'
+import { getCurrentPages, navigateBack, navigateTo, reLaunch, setClipboardData, showModal, showToast } from '@tarojs/taro'
 import { useState } from 'react'
 import {
   deleteMiniAccount,
@@ -19,7 +19,8 @@ export default function AccountSettingsPage() {
   const finishSession = (message: string) => {
     logoutMiniAccount()
     showToast({ title: message, icon: 'success' })
-    switchTab({ url: '/pages/profile/index' })
+    if (getCurrentPages().length > 1) navigateBack()
+    else reLaunch({ url: '/pages/index/index' })
   }
 
   const handleLogout = () => {
@@ -118,16 +119,16 @@ export default function AccountSettingsPage() {
 
       <View className='settings-card'>
         <Text className='settings-card__title'>常用操作</Text>
-        <View className='settings-row' onClick={() => navigateTo({ url: '/pages/account-bind/index?mode=forgot' })}>
+        <View className='settings-row' aria-role='button' aria-label='通过邮箱重置密码' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/account-bind/index?mode=forgot' })}>
           <Text>通过邮箱重置密码</Text><Text className='settings-row__arrow'>›</Text>
         </View>
-        <View className='settings-row' onClick={() => navigateTo({ url: '/pages/legal/index?type=privacy' })}>
+        <View className='settings-row' aria-role='button' aria-label='查看隐私政策' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/legal/index?type=privacy' })}>
           <Text>隐私政策</Text><Text className='settings-row__arrow'>›</Text>
         </View>
-        <View className='settings-row' onClick={() => navigateTo({ url: '/pages/legal/index?type=terms' })}>
+        <View className='settings-row' aria-role='button' aria-label='查看用户服务协议' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/legal/index?type=terms' })}>
           <Text>用户服务协议</Text><Text className='settings-row__arrow'>›</Text>
         </View>
-        <View className='settings-row' onClick={handleLogout}>
+        <View className='settings-row' aria-role='button' aria-label='退出登录' hoverClass='mini-action--pressed' onClick={handleLogout}>
           <Text>退出登录</Text><Text className='settings-row__arrow'>›</Text>
         </View>
       </View>
@@ -138,11 +139,12 @@ export default function AccountSettingsPage() {
           className='settings-feedback'
           value={feedback}
           maxlength={1000}
+          aria-label='问题或建议'
           placeholder='写下你的问题或建议'
           onInput={(event) => setFeedback(event.detail.value)}
         />
         <Button className='settings-secondary-button' loading={pending === 'feedback'} disabled={Boolean(pending)} onClick={handleFeedback}>提交反馈</Button>
-        <View className='settings-email' onClick={() => setClipboardData({ data: 'hi@haigooremote.com' }).then(() => showToast({ title: '联系邮箱已复制', icon: 'success' }))}>
+        <View className='settings-email' aria-role='button' aria-label='复制联系邮箱' hoverClass='mini-action--pressed' onClick={() => setClipboardData({ data: 'hi@haigooremote.com' }).then(() => showToast({ title: '联系邮箱已复制', icon: 'success' }))}>
           <Text>联系邮箱：hi@haigooremote.com</Text><Text>复制</Text>
         </View>
       </View>

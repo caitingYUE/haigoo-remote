@@ -44,7 +44,7 @@ export default function NoteDetailPage() {
   const sourceTitle = note?.authorName || note?.sourceName || ''
   const sourceMeta = note ? [formatPublishedAt(note.publishedAt), note.durationMinutes ? `${note.durationMinutes} 分钟阅读` : '', note.sourceName && note.sourceName !== sourceTitle ? note.sourceName : ''].filter(Boolean).join(' · ') : ''
 
-  if (error) return <View className='page-shell note-detail'><View className='empty-state'><Text className='empty-state__title'>无法打开笔记</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' onClick={() => void load(true)}>重新加载</View><View className='note-detail__back' onClick={() => navigateBack()}>返回笔记列表</View></View></View>
+  if (error) return <View className='page-shell note-detail'><View className='empty-state' aria-live='polite'><Text className='empty-state__title'>无法打开笔记</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' aria-role='button' aria-label='重新加载笔记' hoverClass='mini-action--pressed' onClick={() => void load(true)}>重新加载</View><View className='note-detail__back' aria-role='button' aria-label='返回笔记列表' hoverClass='mini-action--pressed' onClick={() => navigateBack()}>返回笔记列表</View></View></View>
   if (!note) return <View className='page-shell note-loading'>正在打开笔记…</View>
   return (
     <View className='page-shell note-detail'>
@@ -64,8 +64,8 @@ export default function NoteDetailPage() {
       ) : (
         <View className='note-lock'>
           <Text className='note-lock__eyebrow'>会员内容</Text><Text className='note-lock__title'>这篇笔记仅限会员阅读</Text><Text className='note-lock__copy'>{message || '开通会员后可阅读全文。'}</Text>
-          <View className='primary-button note-lock__button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>查看会员方案</View>
-          <Text className='note-lock__consult' onClick={() => navigateTo({ url: `/pages/consultation/index?sourcePage=note&sourceContentId=${encodeURIComponent(note.id)}` })}>有疑问？咨询职业顾问</Text>
+          <View className='primary-button note-lock__button' aria-role='button' aria-label='查看会员方案' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}>查看会员方案</View>
+          <Text className='note-lock__consult' aria-role='button' aria-label='咨询职业顾问' onClick={() => navigateTo({ url: `/pages/consultation/index?sourcePage=note&sourceContentId=${encodeURIComponent(note.id)}` })}>有疑问？咨询职业顾问</Text>
         </View>
       )}
       <View className='note-detail__finish'>

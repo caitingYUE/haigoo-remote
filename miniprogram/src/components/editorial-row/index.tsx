@@ -8,5 +8,5 @@ interface EditorialRowProps extends PropsWithChildren {
 }
 
 export default function EditorialRow({ className = '', label, onClick, children }: EditorialRowProps) {
-  return <View className={className} aria-role={onClick ? 'button' : undefined} aria-label={label} onClick={onClick}>{children}</View>
+  return <View className={className} aria-role={onClick ? 'button' : undefined} aria-label={label} hoverClass={onClick ? 'mini-action--pressed' : undefined} onClick={onClick}>{children}</View>
 }

@@ -5,6 +5,11 @@ const DEFAULT_TTL_MS = 60 * 60 * 1000
 const urlCache = new Map<string, { url: string; expiresAt: number }>()
 let cacheLoaded = false
 
+export function isRenderableImageSource(value: unknown): value is string {
+  const source = String(value || '').trim()
+  return /^https?:\/\//i.test(source) || /^cloud:\/\//i.test(source)
+}
+
 function loadCache() {
   if (cacheLoaded) return
   cacheLoaded = true
