@@ -33,28 +33,22 @@ export default defineAppConfig({
     borderStyle: 'black',
     list: [
       {
-        pagePath: 'pages/index/index',
-        text: '匹配',
-        iconPath: 'assets/icons/target.png',
-        selectedIconPath: 'assets/icons/target.png'
-      },
-      {
         pagePath: 'pages/companies/index',
         text: '企业',
         iconPath: 'assets/icons/tab-companies.png',
         selectedIconPath: 'assets/icons/tab-companies-active.png'
       },
       {
+        pagePath: 'pages/index/index',
+        text: 'Match',
+        iconPath: 'assets/icons/target.png',
+        selectedIconPath: 'assets/icons/target.png'
+      },
+      {
         pagePath: 'pages/growth/index',
         text: '笔记',
         iconPath: 'assets/icons/tab-growth.png',
         selectedIconPath: 'assets/icons/tab-growth-active.png'
-      },
-      {
-        pagePath: 'pages/profile/index',
-        text: '我的',
-        iconPath: 'assets/icons/default-user.png',
-        selectedIconPath: 'assets/icons/default-user-active.png'
       }
     ]
   }

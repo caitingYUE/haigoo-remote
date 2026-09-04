@@ -53,10 +53,17 @@ button::after {
 
 .mini-action--pressed { opacity: .72; }
 
+view[aria-role='button'],
+button,
+input,
+textarea,
+scroll-view { touch-action: manipulation; }
+
 .page-shell {
   width: 100%;
   max-width: 750px;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0 auto;
   padding: 32px 40px calc(64px + env(safe-area-inset-bottom));
   background: var(--color-page);

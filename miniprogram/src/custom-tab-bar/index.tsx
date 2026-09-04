@@ -20,7 +20,7 @@ function currentPath() {
 
 export default function CustomTabBar() {
   const [activePath, setActivePath] = useState(currentPath)
-  const [flowHidden, setFlowHidden] = useState(() => currentPath() === '/pages/index/index')
+  const [flowHidden, setFlowHidden] = useState(false)
   useEffect(() => {
     const syncActivePath = (path: string) => {
       const nextPath = path || currentPath()
@@ -28,7 +28,7 @@ export default function CustomTabBar() {
       if (nextPath !== '/pages/index/index') setFlowHidden(false)
     }
     Taro.eventCenter.on('haigoo:tab-change', syncActivePath)
-    const syncMatchStep = (step: string) => setFlowHidden(step === 'start' || step === 'setup')
+    const syncMatchStep = (step: string) => setFlowHidden(step === 'setup')
     Taro.eventCenter.on('haigoo:match-step', syncMatchStep)
     syncActivePath(currentPath())
     return () => {
