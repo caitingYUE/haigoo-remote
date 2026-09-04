@@ -121,6 +121,10 @@ function canonicalCompanyJobs(result, companyId, companyName = '') {
     .slice(0, 100)
 }
 
+function canonicalJobId(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 255)
+}
+
 function sessionToken(payload) {
   const encoded = Buffer.from(JSON.stringify({ ...payload, exp: Date.now() + 30 * 24 * 60 * 60 * 1000 })).toString('base64url')
   const signature = crypto.createHmac('sha256', sessionSecret).update(encoded).digest('base64url')
@@ -1159,7 +1163,9 @@ async function fetchUpstreamJobs(query) {
 async function fetchUpstreamJob(jobId) {
   const batch = await gatewayRequest('sync', { query: { id: jobId, page: 1, limit: 1 } })
   const job = Array.isArray(batch.jobs) ? batch.jobs[0] : null
-  return job ? publicJob(job) : null
+  return job && canonicalJobId(job.id || job.jobId) === canonicalJobId(jobId)
+    ? { ...publicJob(job), id: canonicalJobId(jobId) }
+    : null
 }
 
 async function fetchUpstreamJobSnapshot(jobId) {
@@ -1490,14 +1496,21 @@ async function route(req, res) {
       const formalJobs = await gatewayRequest('sync', {
         query: { id: jobId, page: '1', limit: '1', sortBy: 'recent' }
       })
-      const rawJob = formalJobs.jobs?.[0]
+      let rawJob = formalJobs.jobs?.find((item) => canonicalJobId(item?.id || item?.jobId) === canonicalJobId(jobId))
+      if (!rawJob) {
+        const companyJobs = await gatewayRequest('sync', {
+          query: { companyId, page: '1', limit: '100', sortBy: 'recent' }
+        })
+        rawJob = companyJobs.jobs?.find((item) => canonicalJobId(item?.id || item?.jobId) === canonicalJobId(jobId))
+      }
       const companyName = String(companyResult.company?.name || '').trim().toLowerCase()
       const jobCompanyName = String(rawJob?.company || '').trim().toLowerCase()
       const sameCompany = String(rawJob?.companyId || '') === companyId
         || (!rawJob?.companyId && companyName && jobCompanyName === companyName)
-      const job = sameCompany
+      const mappedJob = sameCompany
         ? mapCompanyJobDetail({ ...rawJob, companyId }, companyId, String(companyResult.company?.name || ''))
         : null
+      const job = mappedJob ? { ...mappedJob, id: canonicalJobId(jobId) } : null
       if (!job) return send(res, 404, { error: '岗位不存在或已下线' })
       return send(res, 200, {
         success: true,

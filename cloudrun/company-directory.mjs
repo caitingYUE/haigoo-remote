@@ -6,6 +6,10 @@ function cleanText(value, maxLength = 240) {
   return text.slice(0, maxLength)
 }
 
+function canonicalJobId(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim().slice(0, 255)
+}
+
 function cleanList(value, limit = 12) {
   const values = Array.isArray(value) ? value : typeof value === 'string' ? value.split(/\n+/) : []
   return values.map((item) => cleanText(item, 500)).filter(Boolean).slice(0, limit)
@@ -99,10 +103,7 @@ export function mapCompanyJobSummary(job, companyId, companyName = '') {
   const sameCompany = actualCompanyId === expectedCompanyId
     || (!actualCompanyId && expectedCompanyName && actualCompanyName === expectedCompanyName)
   if (!sameCompany) return null
-  // Job IDs are opaque upstream identifiers. Preserve internal whitespace so
-  // the ID shown in a company detail is exactly the one accepted by the
-  // upstream detail route (some legacy IDs contain repeated spaces).
-  const id = String(job.id || job.jobId || '').trim().slice(0, 255)
+  const id = canonicalJobId(job.id || job.jobId)
   const titleOriginal = cleanText(job.title, 255)
   const titleZh = cleanText(cleanObject(job.translations).title, 255)
   if (!id || !titleOriginal) return null
