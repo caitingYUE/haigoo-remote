@@ -29,6 +29,7 @@ assert.deepEqual(roleFamiliesForText('Product Manager and UX Research'), ['produ
 
 assert.equal(mapCompanyJobSummary({ id: 'official-job', companyId: 'company-1', title: 'Product Manager', sourceType: 'official' }, 'company-1')?.sourceLabel, '岗位来自企业官网')
 assert.equal(mapCompanyJobSummary({ id: 'public-job', companyId: 'company-1', title: 'Product Manager', sourceType: 'rss' }, 'company-1')?.sourceLabel, '岗位来自公开招聘渠道')
+assert.equal(mapCompanyJobSummary({ id: 'Field Application Engineer  – legacy', companyId: 'company-1', title: 'Field Application Engineer' }, 'company-1')?.id, 'Field Application Engineer  – legacy', 'opaque upstream job IDs must preserve internal whitespace')
 
 const result = buildDeterministicCareerResult(text, { targetRoles: '产品经理', location: '上海', timezone: 'UTC+8' })
 assert.match(result.summary.headline, /产品/)

@@ -99,7 +99,10 @@ export function mapCompanyJobSummary(job, companyId, companyName = '') {
   const sameCompany = actualCompanyId === expectedCompanyId
     || (!actualCompanyId && expectedCompanyName && actualCompanyName === expectedCompanyName)
   if (!sameCompany) return null
-  const id = cleanText(job.id || job.jobId, 255)
+  // Job IDs are opaque upstream identifiers. Preserve internal whitespace so
+  // the ID shown in a company detail is exactly the one accepted by the
+  // upstream detail route (some legacy IDs contain repeated spaces).
+  const id = String(job.id || job.jobId || '').trim().slice(0, 255)
   const titleOriginal = cleanText(job.title, 255)
   const titleZh = cleanText(cleanObject(job.translations).title, 255)
   if (!id || !titleOriginal) return null
