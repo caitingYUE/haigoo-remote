@@ -114,9 +114,9 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
   return payload
 }
 
-function canonicalCompanyJobs(result, companyId) {
+function canonicalCompanyJobs(result, companyId, companyName = '') {
   return (Array.isArray(result?.jobs) ? result.jobs : [])
-    .map((job) => mapCompanyJobSummary(job, companyId))
+    .map((job) => mapCompanyJobSummary(job, companyId, companyName))
     .filter(Boolean)
     .slice(0, 100)
 }
@@ -264,7 +264,7 @@ function persistContentAssetIndex() {
   return contentAssetPersistPromise
 }
 
-async function cacheContentImage({ ownerType, ownerId, sourcePath, folder }) {
+async function cacheContentImage({ ownerType, ownerId, sourcePath, folder, timeoutMs = 10000 }) {
   if (!sourcePath || !ownerId) return { fileId: '', created: false }
   const sourceHash = crypto.createHash('sha1').update(sourcePath).digest('hex').slice(0, 16)
   const cacheKey = `${ownerType}-${crypto.createHash('sha256').update(String(ownerId)).digest('hex').slice(0, 24)}-${sourceHash}`
@@ -279,7 +279,7 @@ async function cacheContentImage({ ownerType, ownerId, sourcePath, folder }) {
     const tempPath = path.join(tempDir, 'asset')
     try {
       const response = await fetch(source, {
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(timeoutMs),
         headers: vercelAutomationBypassSecret ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret } : {}
       })
       const contentType = response.headers.get('content-type') || ''
@@ -335,14 +335,30 @@ async function attachCompanyLogos(companies) {
     return new Map()
   })
   let created = false
-  const hydrated = await mapWithConcurrency(Array.isArray(companies) ? companies : [], 3, async (company) => {
+  const hydrated = await mapWithConcurrency(Array.isArray(companies) ? companies : [], 4, async (company) => {
     const { _logoSourcePath, ...publicCompany } = company || {}
-    if (publicCompany.logoFileId) return publicCompany
-    const cachedJobLogo = cachedJobLogos.get(String(company?.id || '').trim()) || ''
+    const companyId = String(company?.id || '').trim()
+    const existingLogoFileId = String(publicCompany.logoFileId || '').trim()
+    if (existingLogoFileId.startsWith('cloud://')) return publicCompany
+    if (/^https?:\/\//i.test(existingLogoFileId)) return { ...publicCompany, logoUrl: existingLogoFileId }
+    const cachedJobLogo = cachedJobLogos.get(companyId) || ''
     if (cachedJobLogo) return { ...publicCompany, logoFileId: cachedJobLogo }
-    const cached = await cacheContentImage({ ownerType: 'company', ownerId: company?.id, sourcePath: _logoSourcePath, folder: 'mini-company-logos' })
+    const sourcePath = String(_logoSourcePath || '').trim() || (existingLogoFileId.startsWith('/api/company-assets?') ? existingLogoFileId : '') || (companyId
+      ? `/api/company-assets?companyId=${encodeURIComponent(companyId)}&type=logo`
+      : '')
+    const cached = await cacheContentImage({
+      ownerType: 'company',
+      ownerId: companyId,
+      sourcePath,
+      folder: 'mini-company-logos',
+      timeoutMs: 4000
+    })
     created ||= cached.created
-    return { ...publicCompany, logoFileId: cached.fileId }
+    return {
+      ...publicCompany,
+      logoFileId: cached.fileId,
+      ...(!cached.fileId && /^https?:\/\//i.test(sourcePath) ? { logoUrl: sourcePath } : {})
+    }
   })
   if (created) await persistContentAssetIndex()
   return hydrated
@@ -1433,14 +1449,21 @@ async function route(req, res) {
       const id = decodeURIComponent(url.pathname.split('/').pop())
       const result = await gatewayRequest('company', {
         requestId,
-        query: { openid: session?.openid || '', id }
+        query: { openid: session?.openid || '', id, search: url.searchParams.get('search') || '' }
       })
       let jobs = []
       try {
+        const companyName = String(result.company?.name || '').trim()
         const formalJobs = await gatewayRequest('sync', {
-          query: { search: String(result.company?.name || '').trim(), page: '1', limit: '100', sortBy: 'recent' }
+          query: { companyId: id, page: '1', limit: '100', sortBy: 'recent' }
         })
-        jobs = canonicalCompanyJobs(formalJobs, id)
+        jobs = canonicalCompanyJobs(formalJobs, id, companyName)
+        if (!jobs.length && companyName) {
+          const legacyJobs = await gatewayRequest('sync', {
+            query: { search: String(result.company?.name || '').trim(), page: '1', limit: '100', sortBy: 'recent' }
+          })
+          jobs = canonicalCompanyJobs(legacyJobs, id, companyName)
+        }
       } catch (error) {
         console.warn('[mini-cloudrun] formal company jobs unavailable', { companyId: id, message: error?.message || String(error) })
       }
@@ -1462,7 +1485,7 @@ async function route(req, res) {
       const companyId = decodeURIComponent(parts[3])
       const jobId = decodeURIComponent(parts[5])
       const companyResult = await gatewayRequest('company', {
-        query: { openid: session?.openid || '', id: companyId }
+        query: { openid: session?.openid || '', id: companyId, search: url.searchParams.get('search') || '' }
       })
       const formalJobs = await gatewayRequest('sync', {
         query: { id: jobId, page: '1', limit: '1', sortBy: 'recent' }
@@ -1473,7 +1496,7 @@ async function route(req, res) {
       const sameCompany = String(rawJob?.companyId || '') === companyId
         || (!rawJob?.companyId && companyName && jobCompanyName === companyName)
       const job = sameCompany
-        ? mapCompanyJobDetail({ ...rawJob, companyId }, companyId)
+        ? mapCompanyJobDetail({ ...rawJob, companyId }, companyId, String(companyResult.company?.name || ''))
         : null
       if (!job) return send(res, 404, { error: '岗位不存在或已下线' })
       return send(res, 200, {
@@ -1578,7 +1601,8 @@ async function route(req, res) {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
       const result = await gatewayRequest('career_watch_state', { requestId, query: { openid: session.openid } })
-      return send(res, 200, result)
+      const recommendations = await attachCompanyLogos((result.recommendations || []).map((item) => ({ ...item, id: item.companyId })))
+      return send(res, 200, { ...result, recommendations })
     }
     if (req.method === 'GET' && url.pathname === '/mini/career-watch/options') {
       const result = await gatewayRequest('career_watch_options', { requestId })

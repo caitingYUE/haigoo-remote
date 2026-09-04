@@ -119,12 +119,32 @@ function sameValues(left, right) {
   return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
+function validRecommendationCard(company) {
+  return Boolean(
+    company?.companyId
+    && company?.jobId
+    && Number(company?.openJobCount || 0) >= 1
+    && company?.verifiedAt
+    && Array.isArray(company?.reasons)
+    && company.reasons.length > 0
+  )
+}
+
+function validSnapshot(result) {
+  return Boolean(
+    result?.snapshotId
+    && result?.validUntil
+    && Number.isFinite(new Date(result.validUntil).getTime())
+    && new Date(result.validUntil).getTime() > Date.now()
+  )
+}
+
 async function state(fixture) {
   return gatewayRequest('career_watch_state', { query: { openid: fixture.openid } })
 }
 
-async function companies(fixture, pageSize = 50, page = 1) {
-  return gatewayRequest('companies', { query: { openid: fixture.openid, page: String(page), pageSize: String(pageSize) } })
+async function companies(fixture, pageSize = 50, page = 1, filters = {}) {
+  return gatewayRequest('companies', { query: { openid: fixture.openid, page: String(page), pageSize: String(pageSize), ...filters } })
 }
 
 async function completeMemberDirectory(fixture) {
@@ -152,20 +172,50 @@ const unusedCompanies = await companies(MINI_SMOKE_FIXTURES.unused)
 if (unusedState.matchState !== 'unused' || unusedState.recommendations?.length !== 0) {
   throw new Error('Unused free fixture did not remain unused')
 }
-if (unusedCompanies.access?.scope !== 'match_required' || unusedCompanies.total !== 0) {
-  throw new Error('Unused free fixture received company access')
+if (unusedCompanies.access?.scope !== 'free_fixed'
+  || unusedCompanies.access?.searchEnabled !== true
+  || unusedCompanies.access?.searchMode !== 'exact'
+  || unusedCompanies.companies?.length !== unusedCompanies.access?.previewLimit
+  || unusedCompanies.companies?.length === 0
+  || unusedCompanies.companies?.length > 12) {
+  throw new Error('Unused free fixture did not receive the latest public company preview')
 }
 
 let fixedState = await state(MINI_SMOKE_FIXTURES.fixed)
 if (fixedState.matchState === 'unused') fixedState = await saveDirection(MINI_SMOKE_FIXTURES.fixed)
 const fixedCompanies = await companies(MINI_SMOKE_FIXTURES.fixed)
+const exactCompanyName = String(fixedCompanies.companies?.[0]?.name || '')
+const fixedSearchAttempt = await companies(MINI_SMOKE_FIXTURES.fixed, 50, 1, { search: exactCompanyName })
+const fuzzySearchAttempt = await companies(MINI_SMOKE_FIXTURES.fixed, 50, 1, { search: exactCompanyName.slice(0, Math.max(1, exactCompanyName.length - 1)) })
 const repeatedFixedState = await state(MINI_SMOKE_FIXTURES.fixed)
 const fixedIds = recommendationIds(fixedState).slice(0, 5)
-if (fixedState.matchState !== 'fixed_free' || fixedIds.length !== 5 || fixedCompanies.access?.scope !== 'free_fixed' || fixedCompanies.total !== 5) {
-  throw new Error('Free fixture did not receive exactly five fixed companies')
+const freeDirectoryIds = companyIds(fixedCompanies)
+const freeDirectorySorted = (fixedCompanies.companies || []).every((company, index, rows) => index === 0
+  || new Date(rows[index - 1].publicOpportunityUpdatedAt || 0).getTime() >= new Date(company.publicOpportunityUpdatedAt || 0).getTime())
+if (fixedState.matchState !== 'fixed_free'
+  || fixedIds.length !== 5
+  || fixedCompanies.access?.scope !== 'free_fixed'
+  || fixedCompanies.access?.searchEnabled !== true
+  || fixedCompanies.access?.searchMode !== 'exact'
+  || freeDirectoryIds.length !== fixedCompanies.access?.previewLimit
+  || freeDirectoryIds.length === 0
+  || freeDirectoryIds.length > 12
+  || !freeDirectorySorted) {
+  throw new Error('Free fixture did not receive the latest 12-company directory preview')
 }
-if (!sameValues(fixedIds, companyIds(fixedCompanies)) || !sameValues(fixedIds, recommendationIds(repeatedFixedState).slice(0, 5))) {
-  throw new Error('Free fixture company IDs changed between Match and company directory reads')
+if (!companyIds(fixedSearchAttempt).includes(freeDirectoryIds[0])) {
+  throw new Error('Free fixture could not find an exact company-name match')
+}
+if (exactCompanyName.length > 1 && companyIds(fuzzySearchAttempt).includes(freeDirectoryIds[0])) {
+  throw new Error('Free fixture received a fuzzy company-name match')
+}
+if (!sameValues(fixedIds, recommendationIds(repeatedFixedState).slice(0, 5))) {
+  throw new Error('Free fixture Match recommendations changed between reads')
+}
+if (!validSnapshot(fixedState)
+  || fixedState.snapshotId !== repeatedFixedState.snapshotId
+  || fixedState.recommendations.some((company) => !validRecommendationCard(company))) {
+  throw new Error('Free fixture Match snapshot is incomplete or unstable')
 }
 
 let memberState = await state(MINI_SMOKE_FIXTURES.member)
@@ -176,6 +226,9 @@ const memberSorted = memberRows.every((company, index) => index === 0
   || new Date(memberRows[index - 1].publicOpportunityUpdatedAt || 0).getTime() >= new Date(company.publicOpportunityUpdatedAt || 0).getTime())
 if (memberState.matchState !== 'member_dynamic' || memberState.recommendations?.length === 0) {
   throw new Error('Member fixture did not receive a dynamic Match result')
+}
+if (!validSnapshot(memberState) || memberState.recommendations.some((company) => !validRecommendationCard(company))) {
+  throw new Error('Member fixture Match snapshot is incomplete')
 }
 if (memberCompanies.access?.scope !== 'member_all' || memberCompanies.total !== memberRows.length || memberRows.length === 0) {
   throw new Error('Member fixture company directory is incomplete')

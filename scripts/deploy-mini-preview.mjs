@@ -13,6 +13,9 @@ const previewBranch = 'codex/mini-1.0.7-release'
 const suppliedDeployment = process.argv
   .find((argument) => argument.startsWith('--deployment='))
   ?.slice('--deployment='.length)
+const suppliedSourceDir = process.argv
+  .find((argument) => argument.startsWith('--source-dir='))
+  ?.slice('--source-dir='.length)
 const envFile = process.argv
   .find((argument) => argument.startsWith('--env-file='))
   ?.slice('--env-file='.length)
@@ -39,7 +42,14 @@ const developmentDetail = await developmentService.detail({ serverName: 'haigoo-
 const developmentEnvironment = parseEnvironment(developmentDetail.ServerConfig?.EnvParams)
 const developmentContract = {
   MINI_GATEWAY_SHARED_SECRET: String(developmentEnvironment.MINI_GATEWAY_SHARED_SECRET || '').trim(),
-  WECHAT_MINI_APP_ID: String(developmentEnvironment.WECHAT_MINI_APP_ID || '').trim()
+  WECHAT_MINI_APP_ID: String(developmentEnvironment.WECHAT_MINI_APP_ID || '').trim(),
+  WECHAT_VIRTUAL_PAYMENT_OFFER_ID: String(developmentEnvironment.WECHAT_VIRTUAL_PAYMENT_OFFER_ID || '').trim(),
+  WECHAT_VIRTUAL_PAYMENT_APP_KEY: String(developmentEnvironment.WECHAT_VIRTUAL_PAYMENT_APP_KEY || '').trim(),
+  WECHAT_VIRTUAL_PAYMENT_ENV: String(developmentEnvironment.WECHAT_VIRTUAL_PAYMENT_ENV || '').trim(),
+  WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON: String(
+    developmentEnvironment.WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON
+      || '{"club_starter_monthly":"club_starter_monthly","mini_club_quarter_2026":"club_quarter","mini_club_half_year_2026":"club_half_year"}'
+  ).trim()
 }
 if (developmentContract.MINI_GATEWAY_SHARED_SECRET.length < 32) {
   throw new Error('Development CloudRun gateway secret is unavailable')
@@ -51,7 +61,11 @@ const previewContractKeys = [
   'DATABASE_URL',
   'MINI_GATEWAY_SHARED_SECRET',
   'WECHAT_MINI_APP_ID',
-  'MINI_MATCH_FIXED_SNAPSHOT_ENABLED'
+  'MINI_MATCH_FIXED_SNAPSHOT_ENABLED',
+  'WECHAT_VIRTUAL_PAYMENT_OFFER_ID',
+  'WECHAT_VIRTUAL_PAYMENT_APP_KEY',
+  'WECHAT_VIRTUAL_PAYMENT_ENV',
+  'WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON'
 ]
 const effectiveEnvironment = { ...previewEnvironment, ...developmentContract }
 const previewDeploymentEnvironment = Object.fromEntries(
@@ -171,6 +185,19 @@ function createVerifiedSourceSnapshot() {
   return stagingDir
 }
 
+function verifySuppliedSourceSnapshot(value) {
+  const sourceDir = path.resolve(String(value || ''))
+  if (!sourceDir || sourceDir === rootDir || !fs.existsSync(sourceDir)) {
+    throw new Error('Preview source snapshot must be an existing directory outside the working tree')
+  }
+  const trackedStatus = run('git', ['status', '--porcelain', '--untracked-files=no'], { cwd: sourceDir }).trim()
+  if (trackedStatus) throw new Error('Supplied Preview source snapshot must have a clean tracked worktree')
+  if (!fs.existsSync(path.join(sourceDir, '.vercel', 'project.json'))) {
+    throw new Error('Supplied Preview source snapshot must contain .vercel/project.json')
+  }
+  return sourceDir
+}
+
 function runPreflight() {
   for (const script of ['test:mini-runtime', 'test:mini-release', 'test:mini-gateway', 'test:mini-career-watch', 'test:mini-company-match']) {
     run('npm', ['run', script], { stdio: 'inherit' })
@@ -222,7 +249,9 @@ let deploymentUrl
 if (suppliedDeployment) {
   deploymentUrl = normalizeDeployment(suppliedDeployment)
 } else {
-  const stagingDir = createVerifiedSourceSnapshot()
+  const stagingDir = suppliedSourceDir
+    ? verifySuppliedSourceSnapshot(suppliedSourceDir)
+    : createVerifiedSourceSnapshot()
   try {
     const deploymentEnvironmentArgs = Object.keys(previewDeploymentEnvironment)
       .flatMap((key) => ['--env', key])
@@ -238,7 +267,7 @@ if (suppliedDeployment) {
     })
     deploymentUrl = normalizeDeployment(output)
   } finally {
-    fs.rmSync(stagingDir, { recursive: true, force: true })
+    if (!suppliedSourceDir) fs.rmSync(stagingDir, { recursive: true, force: true })
   }
 }
 
@@ -267,7 +296,7 @@ run('node', [
 ], { stdio: 'inherit' })
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.unused, 'career_watch_state', ['--expect-match-state=unused'])
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'career_watch_state', ['--expect-match-state=fixed_free'])
-await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-total=5'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-preview=12'])
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'career_watch_state', ['--expect-match-state=member_dynamic'])
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'companies', ['--expect-company-scope=member_all'])
 

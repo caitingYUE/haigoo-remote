@@ -39,6 +39,13 @@ projectConfig.srcMiniprogramRoot = 'dist/'
 await fs.rm(stagingDir, { recursive: true, force: true })
 if (!isLocal) await fs.mkdir(stagingDir, { recursive: true })
 await fs.cp(sourceDir, stagingBundleDir, { recursive: true })
+if (!isLocal) {
+  const bundleProjectConfigPath = path.join(stagingBundleDir, 'project.config.json')
+  const bundleProjectConfig = JSON.parse(await fs.readFile(bundleProjectConfigPath, 'utf8'))
+  bundleProjectConfig.miniprogramRoot = './'
+  bundleProjectConfig.srcMiniprogramRoot = './'
+  await fs.writeFile(bundleProjectConfigPath, `${JSON.stringify(bundleProjectConfig, null, 2)}\n`, 'utf8')
+}
 for (const filename of ['app.js', 'app.json', 'base.wxml', 'comp.js', 'comp.json', 'comp.wxml']) {
   const stat = await fs.stat(path.join(stagingBundleDir, filename)).catch(() => null)
   if (!stat?.isFile()) throw new Error(`${channel} bundle is incomplete: missing ${filename}`)

@@ -1,8 +1,9 @@
 import { Image, Text, View } from '@tarojs/components'
 import Taro, { navigateTo, stopPullDownRefresh, useDidShow, usePullDownRefresh } from '@tarojs/taro'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { trackMiniEvent } from '../../services/analytics-service'
 import ContentSkeleton from '../../components/content-skeleton'
+import EditorialTopBar from '../../components/editorial-top-bar'
 import EditorialSearch from '../../components/editorial-search'
 import EditorialRow from '../../components/editorial-row'
 import EditorialState from '../../components/editorial-state'
@@ -10,7 +11,7 @@ import TopicScroller from '../../components/topic-scroller'
 import { fetchGrowthNotes } from '../../services/content-service'
 import type { GrowthNote } from '../../types'
 import useMiniShare from '../../hooks/use-mini-share'
-import useMiniNavigationInset from '../../hooks/use-mini-navigation-inset'
+import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import './index.scss'
 
 const difficultyLabels: Record<string, string> = { entry: '入门', intermediate: '进阶', advanced: '深入' }
@@ -26,7 +27,7 @@ export default function GrowthPage() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [topic, setTopic] = useState('')
-  const navigationInset = useMiniNavigationInset()
+  const [unread, setUnread] = useState(0)
   useMiniShare('Haigoo 职业笔记｜远程工作的实用方法', '/pages/growth/index')
   const load = useCallback(async (force = false) => {
     setLoading(true); setError('')
@@ -34,8 +35,15 @@ export default function GrowthPage() {
   }, [])
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/growth/index')
+    const userId = getMiniUser()?.userId
+    if (userId) setUnread(Number(Taro.getStorageSync(`haigoo-career-watch:${userId}`)?.followedUpdates?.length || 0))
     void load()
   })
+  useEffect(() => {
+    const syncUnread = (count?: number) => setUnread(Math.max(0, Number(count || 0)))
+    Taro.eventCenter.on('haigoo:unread-change', syncUnread)
+    return () => { Taro.eventCenter.off('haigoo:unread-change', syncUnread) }
+  }, [])
   usePullDownRefresh(async () => { await load(true); stopPullDownRefresh() })
 
   const topics = useMemo(() => [...new Set(notes.flatMap((note) => note.tags).filter(Boolean))].slice(0, 8), [notes])
@@ -64,8 +72,11 @@ export default function GrowthPage() {
     } catch { /* user cancelled */ }
   }
 
+  const user = getMiniUser()
   return (
-    <View className='page-shell growth-page' style={{ paddingTop: `${navigationInset}px` }}>
+    <View className='growth-root'>
+      <EditorialTopBar authenticated={hasAuthenticatedSession()} avatar={user?.avatar} unread={unread} />
+      <View className='page-shell growth-page'>
       <View className='growth-heading'>
         <Text className='page-heading'>职业笔记</Text>
         <Text className='page-subtitle'>关于远程协作、职业转型与长期成长。</Text>
@@ -74,7 +85,7 @@ export default function GrowthPage() {
       {topics.length ? <TopicScroller activeKey={topic && !topics.slice(0, 4).includes(topic) ? '__more' : topic} onSelect={(key) => key === '__more' ? void chooseMoreTopic() : setTopic(key)} items={[{ key: '', label: '全部' }, ...topics.slice(0, 4).map((item) => ({ key: item, label: item })), ...(topics.length > 4 ? [{ key: '__more', label: '更多' }] : [])]} /> : null}
       <View className='growth-meta'><Text>{loading ? '正在加载笔记' : `${visibleNotes.length} 篇笔记`}</Text><Text>Haigoo 职业研究</Text></View>
       {error ? <EditorialState title='笔记暂时无法加载' copy={error} actionLabel='重新加载' onAction={() => void load(true)} /> : null}
-      {!loading && !error && featured ? <View aria-role='button' aria-label={`阅读 ${featured.titleZh || featured.title}`} className='growth-featured' hoverClass='mini-action--pressed' onClick={() => open(featured)}><Image src={featured.coverUrl!} mode='widthFix' lazyLoad /><View className='growth-featured__meta'><Text>{noteMetadata(featured)}</Text>{!featured.unlocked ? <Text>会员</Text> : null}</View></View> : null}
+      {!loading && !error && featured ? <View aria-role='button' aria-label={`阅读 ${featured.titleZh || featured.title}`} className='growth-featured' hoverClass='mini-action--pressed' onClick={() => open(featured)}><View className='growth-featured__media'><Image src={featured.coverUrl!} mode='aspectFill' lazyLoad /><View className='growth-featured__shade' /><Text className='growth-featured__category'>{featured.category}</Text><Text className='growth-featured__title'>{featured.titleZh || featured.title}</Text></View><View className='growth-featured__body'><View className='growth-featured__meta'><Text>{noteMetadata(featured)}</Text>{!featured.unlocked ? <Text>会员</Text> : null}</View></View></View> : null}
       <View className='growth-list'>
         {loading ? <ContentSkeleton rows={4} /> : null}
         {!loading && !error && visibleNotes.length === 0 ? <View className='growth-empty'><Text>没有找到相关笔记</Text><Text onClick={() => { setSearch(''); setTopic('') }}>清除筛选</Text></View> : null}
@@ -89,6 +100,7 @@ export default function GrowthPage() {
             {note.coverUrl ? <Image className='growth-card__cover' src={note.coverUrl} mode='aspectFill' lazyLoad /> : null}
           </EditorialRow>
         ))}
+      </View>
       </View>
     </View>
   )

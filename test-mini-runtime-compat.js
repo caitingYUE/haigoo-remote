@@ -27,6 +27,6 @@ const miniSources = [
 ].map(read).join('\n')
 assert.doesNotMatch(miniSources, /Intl\.DateTimeFormat|toLocaleDateString|\.normalize\(/)
 assert.match(miniSources, /normalizeCareerWatchResponse/)
-assert.match(miniSources, /暂时无法刷新，当前显示上次结果/)
+assert.match(miniSources, /暂时无法更新，仍在展示有效期内的上次结果/)
 
 console.log('mini runtime compatibility checks passed')

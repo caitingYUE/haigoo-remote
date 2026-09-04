@@ -7,7 +7,7 @@ import type {
 } from '../types'
 import Taro from '@tarojs/taro'
 import { createRequestKey, requestJson } from './api-client'
-import { resolveCloudFileUrls } from './cloud-asset-service'
+import { isRenderableImageSource, resolveCloudFileUrls } from './cloud-asset-service'
 import { getMiniUser } from './session'
 import { normalizeComparableText } from '../utils/runtime-compat'
 
@@ -24,7 +24,7 @@ export async function fetchMatchFeed() {
     ...response,
     recommendations: response.recommendations.map((company) => ({
       ...company,
-      logoUrl: urls.get(company.logoFileId || '') || company.logoUrl || company.logoFileId || ''
+      logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
     }))
   }
 }
@@ -217,15 +217,33 @@ export interface WatchFeedItem {
   companyName: string
   industry: string
   description: string
+  employeeCount: string
+  headquarters: string
+  rating: number | null
+  ratingSource: string
   jobId: string
   jobTitle: string
+  jobLocation: string
   applyUrl: string
+  openJobCount: number
+  openRoleLabels: string[]
+  publishedAt: string
+  verifiedAt: string
   reasons: string[]
   preferenceStatuses: Array<{ key: WatchPreferenceKey; status: 'matched' | 'missing' | 'not_matched'; label: string }>
   isFollowed: boolean
+  isSubscribed?: boolean
+  logoFileId?: string
+  logoUrl?: string
   hasUpdate: boolean
   fitBand: 'high' | 'notable' | 'explore'
   score: number
+  scoreBreakdown: {
+    direction: { score: number; max: number; label: string }
+    preferences: { score: number; max: number; label: string }
+    opportunity: { score: number; max: number; label: string }
+  } | null
+  scoreConfidence: number
   updatedAt: string
 }
 
@@ -251,6 +269,8 @@ export interface CareerWatchResponse {
   recommendations: WatchFeedItem[]
   followedUpdates: Array<{ inboxId: string; companyId: string; companyName: string; eventType: string; hasPublicOpportunity: boolean; occurredAt: string; status: string }>
   generatedAt: string
+  snapshotId: string
+  validUntil: string
   source?: 'empty' | 'cached' | 'recomputed' | 'stale'
   stale?: boolean
   emptyReason: 'watch_not_configured' | 'strict_filters' | 'no_role_update' | null
@@ -292,6 +312,26 @@ export function normalizeCareerWatchResponse(value: unknown): CareerWatchRespons
     companyPreferences: rawProfile.companyPreferences && typeof rawProfile.companyPreferences === 'object' ? rawProfile.companyPreferences : {},
     activePreferenceKeys: arrayValue<WatchPreferenceKey>(rawProfile.activePreferenceKeys)
   } as WatchProfile : null
+  const generatedAt = validIsoValue(source.generatedAt)
+  const recommendations = arrayValue<WatchFeedItem>(source.recommendations).map((item) => ({
+    ...item,
+    employeeCount: String(item.employeeCount || ''),
+    headquarters: String(item.headquarters || ''),
+    rating: typeof item.rating === 'number' && Number.isFinite(item.rating) ? item.rating : null,
+    ratingSource: String(item.ratingSource || ''),
+    openJobCount: Math.max(0, Number(item.openJobCount || (item.jobId ? 1 : 0))),
+    openRoleLabels: arrayValue<string>(item.openRoleLabels).map(String).filter(Boolean).slice(0, 2),
+    jobLocation: String(item.jobLocation || ''),
+    publishedAt: String(item.publishedAt || ''),
+    verifiedAt: String(item.verifiedAt || item.updatedAt || ''),
+    reasons: arrayValue<string>(item.reasons),
+    preferenceStatuses: arrayValue<WatchFeedItem['preferenceStatuses'][number]>(item.preferenceStatuses),
+    isFollowed: Boolean(item.isFollowed),
+    isSubscribed: Boolean(item.isSubscribed),
+    score: Math.max(0, Math.min(100, Number(item.score || 0))),
+    scoreBreakdown: item.scoreBreakdown && typeof item.scoreBreakdown === 'object' ? item.scoreBreakdown : null,
+    scoreConfidence: Math.max(0, Math.min(1, Number(item.scoreConfidence || 0)))
+  }))
   return {
     ...(source as Partial<CareerWatchResponse>),
     success: true,
@@ -318,15 +358,48 @@ export function normalizeCareerWatchResponse(value: unknown): CareerWatchRespons
       wechatTemplateId: String(rawEntitlements.wechatTemplateId || ''),
       wechatSubscriptionAvailable: Boolean(rawEntitlements.wechatSubscriptionAvailable)
     },
-    recommendations: arrayValue<WatchFeedItem>(source.recommendations),
+    recommendations,
     followedUpdates: arrayValue<CareerWatchResponse['followedUpdates'][number]>(source.followedUpdates),
-    generatedAt: validIsoValue(source.generatedAt),
+    generatedAt,
+    snapshotId: String(source.snapshotId || `${profile?.version || 0}:${generatedAt}`),
+    validUntil: Number.isFinite(new Date(String(source.validUntil || '')).getTime()) ? String(source.validUntil) : '1970-01-01T00:00:00.000Z',
     emptyReason
   }
 }
 
+export function isCareerWatchCacheValid(response: CareerWatchResponse, now = Date.now()) {
+  const expiresAt = new Date(response.validUntil).getTime()
+  return response.matchState !== 'unused' && Number.isFinite(expiresAt) && expiresAt > now
+}
+
+async function hydrateCareerWatch(value: unknown) {
+  const response = normalizeCareerWatchResponse(value)
+  const needsCompanyFacts = response.recommendations.some((company) => !company.headquarters || company.rating === null)
+  const [urls, directory] = await Promise.all([
+    resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId)),
+    needsCompanyFacts
+      ? requestJson<{ companies?: Array<{ id?: string; companyId?: string; address?: string; rating?: number | null; ratingSource?: string }> }>('/mini/companies?page=1&pageSize=12', { authenticated: true }).catch(() => ({ companies: [] }))
+      : Promise.resolve({ companies: [] })
+  ])
+  const facts = new Map((directory.companies || []).map((company) => [String(company.id || company.companyId || ''), company]))
+  return {
+    ...response,
+    recommendations: response.recommendations.map((company) => {
+      const companyFacts = facts.get(company.companyId)
+      const rating = Number(companyFacts?.rating)
+      return {
+        ...company,
+        headquarters: company.headquarters || String(companyFacts?.address || '').trim(),
+        rating: company.rating !== null ? company.rating : Number.isFinite(rating) && rating > 0 && rating <= 5 ? rating : null,
+        ratingSource: company.ratingSource || String(companyFacts?.ratingSource || '').trim(),
+        logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+      }
+    })
+  }
+}
+
 export async function fetchCareerWatch() {
-  return normalizeCareerWatchResponse(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
+  return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
 }
 
 export function fetchCareerWatchOptions() {
@@ -334,7 +407,7 @@ export function fetchCareerWatchOptions() {
 }
 
 export async function saveCareerWatch(data: Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform' | 'version' | 'inAppEnabled' | 'wechatEnabled' | 'wechatTemplateStatus'> & { version?: number }) {
-  return normalizeCareerWatchResponse(await requestJson<unknown>('/mini/career-watch', {
+  return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', {
     method: 'PUT', authenticated: true, data
   }))
 }
@@ -352,7 +425,7 @@ export function setCareerWatchNotifications(enabled: boolean, templateStatus: Wa
 }
 
 export function fetchCompanyFollows() {
-  return requestJson<{ success: true; follows: Array<{ company_id: string; name: string; industry: string }> }>('/mini/match/follows', {
+  return requestJson<{ success: true; follows: Array<{ company_id: string; name: string; industry: string; wechat_enabled?: boolean; wechat_template_status?: string }> }>('/mini/match/follows', {
     authenticated: true
   })
 }

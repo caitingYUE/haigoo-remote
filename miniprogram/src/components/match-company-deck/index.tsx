@@ -1,7 +1,7 @@
 import { View } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import type { ReactNode } from 'react'
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { WatchFeedItem } from '../../services/career-match-service'
 import { resolveDeckRelease, wrapDeckIndex } from '../../utils/match-deck'
 import './index.scss'
@@ -18,9 +18,14 @@ export default function MatchCompanyDeck({ items, snapshotId, activeIndex, onAct
   const [offsetX, setOffsetX] = useState(0)
   const [horizontal, setHorizontal] = useState(false)
   const [releasing, setReleasing] = useState(false)
-  const cardWidth = useRef(Math.max(240, Taro.getSystemInfoSync().windowWidth - 40))
-  const gesture = useRef({ x: 0, y: 0, horizontal: false, lastX: 0, lastAt: 0, velocityX: 0 })
-  const depths = useMemo(() => [...Array(Math.min(4, items.length))].map((_, depth) => depth).reverse(), [items.length])
+  const cardWidth = useRef(Math.max(240, Taro.getSystemInfoSync().windowWidth - 52))
+  const releaseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const gesture = useRef({ x: 0, y: 0, horizontal: false, lastX: 0, lastAt: 0, velocityX: 0, offsetX: 0 })
+  const positions = items.length > 1 ? [-1, 0, 1] : [0]
+
+  useEffect(() => () => {
+    if (releaseTimer.current) clearTimeout(releaseTimer.current)
+  }, [])
 
   const measure = () => {
     Taro.createSelectorQuery().select('.match-deck__card--active').boundingClientRect((rect) => {
@@ -28,12 +33,17 @@ export default function MatchCompanyDeck({ items, snapshotId, activeIndex, onAct
     }).exec()
   }
 
+  useEffect(() => {
+    measure()
+  }, [activeIndex, items.length])
+
   const touchStart = (event) => {
     if (releasing) return
     const touch = event.touches?.[0]
     if (!touch) return
-    gesture.current = { x: touch.clientX, y: touch.clientY, horizontal: false, lastX: touch.clientX, lastAt: Date.now(), velocityX: 0 }
+    gesture.current = { x: touch.clientX, y: touch.clientY, horizontal: false, lastX: touch.clientX, lastAt: Date.now(), velocityX: 0, offsetX: 0 }
     setHorizontal(false)
+    setOffsetX(0)
     measure()
   }
 
@@ -44,7 +54,7 @@ export default function MatchCompanyDeck({ items, snapshotId, activeIndex, onAct
     const x = touch.clientX - gesture.current.x
     const y = touch.clientY - gesture.current.y
     if (!gesture.current.horizontal) {
-      if (Math.abs(x) < 6 || Math.abs(x) <= Math.abs(y) * 1.05) return
+      if (Math.abs(x) < 2 || Math.abs(x) <= Math.abs(y) * 1.05) return
       gesture.current.horizontal = true
       setHorizontal(true)
     }
@@ -53,19 +63,26 @@ export default function MatchCompanyDeck({ items, snapshotId, activeIndex, onAct
     gesture.current.velocityX = (touch.clientX - gesture.current.lastX) / elapsed
     gesture.current.lastX = touch.clientX
     gesture.current.lastAt = now
-    setOffsetX(Math.max(-cardWidth.current, Math.min(cardWidth.current, x)))
+    const limit = cardWidth.current
+    const bounded = Math.max(-limit, Math.min(limit, x))
+    const overflow = Math.abs(x) - limit
+    const resisted = overflow > 0 ? Math.sign(x) * (limit + Math.min(overflow * 0.28, limit * 0.14)) : bounded
+    gesture.current.offsetX = resisted
+    setOffsetX(resisted)
   }
 
   const touchEnd = () => {
     if (releasing || !gesture.current.horizontal) { setOffsetX(0); setHorizontal(false); return }
     const releaseVelocity = Date.now() - gesture.current.lastAt <= 90 ? gesture.current.velocityX : 0
-    const direction = resolveDeckRelease(offsetX, cardWidth.current, releaseVelocity)
-    if (!direction) { setOffsetX(0); setHorizontal(false); return }
+    const currentOffset = gesture.current.offsetX
+    const direction = resolveDeckRelease(currentOffset, cardWidth.current, releaseVelocity)
+    if (!direction) { gesture.current.offsetX = 0; setOffsetX(0); setHorizontal(false); return }
     setReleasing(true)
     setOffsetX(direction > 0 ? -cardWidth.current * 1.12 : cardWidth.current * 1.12)
-    setTimeout(() => {
+    releaseTimer.current = setTimeout(() => {
       const nextIndex = wrapDeckIndex(activeIndex + direction, items.length)
       onActiveIndexChange(nextIndex, direction > 0 ? 'left' : 'right')
+      gesture.current.offsetX = 0
       setOffsetX(0)
       setHorizontal(false)
       setReleasing(false)
@@ -73,17 +90,15 @@ export default function MatchCompanyDeck({ items, snapshotId, activeIndex, onAct
   }
 
   return <View className={`match-deck ${horizontal ? 'is-dragging' : ''}`} data-snapshot-id={snapshotId} catchMove={horizontal}>
-    {depths.map((depth) => {
-      const stackDirection = offsetX > 0 ? -1 : 1
-      const index = wrapDeckIndex(activeIndex + depth * stackDirection, items.length)
-      const active = depth === 0
-      const stackOffset = Math.min(48, Math.max(18, cardWidth.current * 0.08))
+    {positions.map((position) => {
+      const index = wrapDeckIndex(activeIndex + position, items.length)
+      const active = position === 0
       const style = active
         ? { transform: `translate3d(${offsetX}px, 0, 0)` }
-        : { transform: `translate3d(${stackDirection * depth * stackOffset}px, ${depth * 8}px, 0) scale(${1 - depth * 0.025})`, opacity: Math.max(0.22, 0.48 - depth * 0.08) }
+        : { transform: `translate3d(${position * (cardWidth.current + 12)}px, 0, 0)` }
       return <View
-        className={`match-deck__card match-deck__card--depth-${depth} ${active ? 'match-deck__card--active' : ''} ${releasing && active ? 'is-releasing' : ''}`}
-        key={`${items[index].companyId}:${depth}`}
+        className={`match-deck__card ${position < 0 ? 'match-deck__card--previous' : position > 0 ? 'match-deck__card--next' : 'match-deck__card--active'} ${releasing && active ? 'is-releasing' : ''}`}
+        key={`${items[index].companyId}:${position}`}
         style={style}
         aria-hidden={!active}
         onTouchStart={active ? touchStart : undefined}

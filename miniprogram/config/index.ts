@@ -43,8 +43,8 @@ export default defineConfig<'webpack5'>(async (merge) => {
     copy: {
       patterns: [
         {
-          from: path.resolve(__dirname, '../assets/static/home-hero-bg.jpg'),
-          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.jpg`)
+          from: path.resolve(__dirname, '../assets/home-hero-bg.webp'),
+          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.webp`)
         },
         {
           from: path.resolve(__dirname, '../../public/assets/brandlogo.png'),

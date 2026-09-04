@@ -18,8 +18,10 @@ export interface MiniCompany {
   hasPublicOpportunity?: boolean
   publicOpportunityUpdatedAt?: string | null
   openJobCount?: number
+  publicJobTitles?: string[]
   jobs?: MiniCompanyJob[]
   contacts?: MemberOnlyContact[]
+  contactCount?: number
   remoteWork?: string[]
   culture?: ContentBlock[]
   ceoInsights?: ContentBlock[]
@@ -29,9 +31,12 @@ export interface MiniCompany {
 export interface MiniCompanyJob {
   id: string
   title: string
+  titleZh?: string
+  titleOriginal?: string
   location: string
   salary: string
   jobType: string
+  sourceLabel?: string
   updatedAt: string | null
 }
 
@@ -39,8 +44,14 @@ export interface MiniCompanyJobDetail extends MiniCompanyJob {
   company: string
   category: string
   description: string
+  descriptionZh?: string
+  descriptionOriginal?: string
   requirements: string[]
+  requirementsZh?: string[]
+  requirementsOriginal?: string[]
   benefits: string[]
+  benefitsZh?: string[]
+  benefitsOriginal?: string[]
   officialApplyUrl: string
   publicApplicationEmail: string
   sourceLabel: string
@@ -184,6 +195,7 @@ export interface MiniMembershipPlan {
   description: string
   featured: boolean
   features: string[]
+  purchaseAvailable?: boolean
 }
 
 export interface MemberServiceEntitlement {

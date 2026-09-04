@@ -1,1 +1,1 @@
-export default definePageConfig({ navigationBarTitleText: '企业资料' })
+export default definePageConfig({ navigationBarTitleText: '企业详情' })

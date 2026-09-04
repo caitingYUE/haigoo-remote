@@ -19,6 +19,7 @@ const openid = process.argv.find((argument) => argument.startsWith('--openid='))
 const expectedMatchState = process.argv.find((argument) => argument.startsWith('--expect-match-state='))?.split('=')[1] || ''
 const expectedCompanyScope = process.argv.find((argument) => argument.startsWith('--expect-company-scope='))?.split('=')[1] || ''
 const expectedCompanyTotal = process.argv.find((argument) => argument.startsWith('--expect-company-total='))?.split('=')[1] || ''
+const expectedCompanyPreview = process.argv.find((argument) => argument.startsWith('--expect-company-preview='))?.split('=')[1] || ''
 const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
 const useVercelCurl = process.argv.includes('--vercel-curl')
 const viaCloudrun = process.argv.includes('--via-cloudrun')
@@ -216,6 +217,7 @@ if (action === 'career_watch_options' && payload.capabilities?.wechatSubscriptio
 if (action === 'membership_plans') {
   const plans = Array.isArray(payload.plans) ? payload.plans : []
   const expectedPlans = new Map([
+    ['club_starter_monthly', 99],
     ['mini_club_quarter_2026', 199],
     ['mini_club_half_year_2026', 699]
   ])
@@ -235,6 +237,12 @@ if (action === 'companies') {
   }
   if (expectedCompanyTotal && Number(payload.total) !== Number(expectedCompanyTotal)) {
     throw new Error(`Gateway check failed: expected company total ${expectedCompanyTotal}, received ${payload.total}`)
+  }
+  if (expectedCompanyPreview && (
+    payload.companies.length !== Number(expectedCompanyPreview)
+    || Number(payload.access?.previewLimit) !== Number(expectedCompanyPreview)
+  )) {
+    throw new Error(`Gateway check failed: expected company preview ${expectedCompanyPreview}, received ${payload.companies.length}`)
   }
 }
 

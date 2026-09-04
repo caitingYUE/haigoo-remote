@@ -24,6 +24,17 @@ function cleanLongText(value, maxLength = 8000) {
     .slice(0, maxLength)
 }
 
+function cleanObject(value) {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value
+  if (typeof value !== 'string' || !value.trim()) return {}
+  try {
+    const parsed = JSON.parse(value)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
 function timestamp(value) {
   const time = new Date(value || 0).getTime()
   return Number.isFinite(time) ? time : 0
@@ -79,35 +90,61 @@ export function buildHiringCompanyPage({ companies = [], signals, search = '', i
   }
 }
 
-export function mapCompanyJobSummary(job, companyId) {
-  if (!job || String(job.companyId || '').trim() !== String(companyId || '').trim()) return null
+export function mapCompanyJobSummary(job, companyId, companyName = '') {
+  if (!job) return null
+  const expectedCompanyId = String(companyId || '').trim()
+  const actualCompanyId = String(job.companyId || '').trim()
+  const expectedCompanyName = cleanText(companyName, 255).toLowerCase()
+  const actualCompanyName = cleanText(job.company, 255).toLowerCase()
+  const sameCompany = actualCompanyId === expectedCompanyId
+    || (!actualCompanyId && expectedCompanyName && actualCompanyName === expectedCompanyName)
+  if (!sameCompany) return null
   const id = cleanText(job.id || job.jobId, 255)
-  const title = cleanText(job.title, 255)
-  if (!id || !title) return null
+  const titleOriginal = cleanText(job.title, 255)
+  const titleZh = cleanText(cleanObject(job.translations).title, 255)
+  if (!id || !titleOriginal) return null
   return {
     id,
-    title,
+    title: titleZh || titleOriginal,
+    titleZh,
+    titleOriginal,
     location: cleanText(job.location || job.region, 160),
     salary: cleanText(job.salary, 120),
     jobType: cleanText(job.type || job.jobType, 80),
+    sourceLabel: String(job.sourceType || '').toLowerCase() === 'official' || job.isTrusted
+      ? '岗位来自企业官网'
+      : '岗位来自公开招聘渠道',
     updatedAt: job.updatedAt || job.publishedAt || null
   }
 }
 
-export function mapCompanyJobDetail(job, companyId) {
-  const summary = mapCompanyJobSummary(job, companyId)
+export function mapCompanyJobDetail(job, companyId, companyName = '') {
+  const summary = mapCompanyJobSummary(job, companyId, companyName)
   if (!summary) return null
   const officialApplyUrl = /^https?:\/\//i.test(String(job.url || job.sourceUrl || '').trim())
     ? String(job.url || job.sourceUrl).trim().slice(0, 2048)
     : ''
   const email = String(job.hiringEmail || '').trim().slice(0, 320)
+  const translations = cleanObject(job.translations)
+  const descriptionOriginal = cleanLongText(job.originalDescription || job.description)
+  const descriptionZh = cleanLongText(translations.description)
+  const requirementsOriginal = cleanList(job.requirements)
+  const requirementsZh = cleanList(translations.requirements)
+  const benefitsOriginal = cleanList(job.benefits)
+  const benefitsZh = cleanList(translations.benefits)
   return {
     ...summary,
     company: cleanText(job.company, 255),
     category: cleanText(job.category, 120),
-    description: cleanLongText(job.description),
-    requirements: cleanList(job.requirements),
-    benefits: cleanList(job.benefits),
+    description: descriptionZh || descriptionOriginal,
+    descriptionZh,
+    descriptionOriginal,
+    requirements: requirementsZh.length ? requirementsZh : requirementsOriginal,
+    requirementsZh,
+    requirementsOriginal,
+    benefits: benefitsZh.length ? benefitsZh : benefitsOriginal,
+    benefitsZh,
+    benefitsOriginal,
     officialApplyUrl,
     publicApplicationEmail: !officialApplyUrl && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : '',
     sourceLabel: '岗位与申请方式整理自企业官网及公开渠道'

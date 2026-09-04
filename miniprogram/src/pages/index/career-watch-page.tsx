@@ -18,7 +18,6 @@ import type { CareerWatchResponse, WatchFeedItem, WatchFilterOptions, WatchPrefe
 import { trackMiniEvent } from '../../services/analytics-service'
 import { loginWithWechat } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
-import useMiniNavigationInset from '../../hooks/use-mini-navigation-inset'
 import useMiniShare from '../../hooks/use-mini-share'
 import { matchDeckStorageKey, wrapDeckIndex } from '../../utils/match-deck'
 import heroImage from '../../../assets/home-hero-bg.webp'
@@ -28,7 +27,7 @@ type WatchDraft = Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform
 type RoleOption = { value: string; label: string; families: WatchRoleFamily[] }
 
 const START_FEATURES = [
-  '基于职业方向匹配远程企业',
+  '用真实企业与岗位信息解释推荐',
   '关注企业，持续接收信息更新',
   '掌上笔记，随时提升远程技能。'
 ]
@@ -51,8 +50,9 @@ export default function CareerWatchPage() {
   const [error, setError] = useState('')
   const [activeCompanyIndex, setActiveCompanyIndex] = useState(0)
   const [activeRoleGroup, setActiveRoleGroup] = useState(0)
+  const [expandedRoleGroups, setExpandedRoleGroups] = useState<Record<string, boolean>>({})
+  const [industriesExpanded, setIndustriesExpanded] = useState(false)
   const resumeFlowActive = useRef(false)
-  const navigationInset = useMiniNavigationInset(0)
   useMiniShare('HaigooRemote｜找到更适合你的远程方向', '/pages/index/index')
 
   useEffect(() => {
@@ -208,6 +208,16 @@ export default function CareerWatchPage() {
     ? filterOptions.roleGroups
     : [{ key: 'all', label: '职业方向', options: (filterOptions?.roles || []).map((item) => ({ value: item.label, label: item.label, families: [item.value] })) }], [filterOptions])
   const roleOptions = useMemo(() => roleGroups.flatMap((group) => group.options), [roleGroups])
+  const activeRoleGroupItem = roleGroups[activeRoleGroup] || roleGroups[0]
+  const activeRoleOptions = activeRoleGroupItem?.options || []
+  const activeRoleGroupKey = activeRoleGroupItem?.key || 'all'
+  const roleOptionsExpanded = Boolean(expandedRoleGroups[activeRoleGroupKey])
+  const visibleRoleOptions = roleOptionsExpanded ? activeRoleOptions : activeRoleOptions.slice(0, 6)
+  const industryOptions = filterOptions?.industries || []
+  const selectedIndustries = draft.companyPreferences.industries || []
+  const visibleIndustryOptions = industriesExpanded
+    ? industryOptions
+    : [...industryOptions.filter((item) => selectedIndustries.includes(item.value)), ...industryOptions.filter((item) => !selectedIndustries.includes(item.value))].slice(0, 8)
   const unrepresentedRoleFamilies = useMemo(() => {
     const explicitFamilies = new Set(draft.customRoleTerms.flatMap((term) => roleOptions.find((item) => item.value === term)?.families || []))
     return draft.roleFamilies.filter((role) => !explicitFamilies.has(role))
@@ -260,7 +270,7 @@ export default function CareerWatchPage() {
     })
   }
 
-  const save = async (confirmed = false) => {
+  const save = async (confirmed = false): Promise<void> => {
     if (!draft.roleFamilies.length) return setError('请至少选择一个职业方向')
     if (!confirmed && (!watch || watch.matchState === 'unused')) {
       const result = await showModal({
@@ -271,6 +281,7 @@ export default function CareerWatchPage() {
       if (!result.confirm) return
     }
     if (!await ensureAccount('save')) return
+    let shouldRetry = false
     setBusy(true); setError('')
     try {
       const result = await saveCareerWatch(draft)
@@ -294,9 +305,17 @@ export default function CareerWatchPage() {
         showToast({ title: reconciled.matchState === 'fixed_free' ? '方向结果已生成' : '职业方向已更新', icon: 'success' })
       } else if (saveError?.payload?.code === 'FREE_MATCH_USED') {
         await load()
-        setError('方向结果已生成，可继续查看和订阅企业。')
-      } else setError(saveError instanceof Error ? saveError.message : '方向结果没有生成，请重试')
+      } else {
+        const retry = await showModal({
+          title: '方向生成失败',
+          content: saveError instanceof Error ? saveError.message : '方向结果没有生成，请稍后重试。',
+          cancelText: '稍后再试',
+          confirmText: '重试'
+        })
+        shouldRetry = retry.confirm
+      }
     } finally { setBusy(false) }
+    if (shouldRetry) void save(true)
   }
 
   const roleSummary = useMemo(() => {
@@ -349,14 +368,14 @@ export default function CareerWatchPage() {
     })
   }
 
-  return <View className='watch-root'>
+  return <View className={`watch-root ${step === 'start' ? 'watch-root--start' : ''} ${step === 'feed' ? 'watch-root--feed' : ''}`}>
     <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={watch?.followedUpdates.length || 0} showAccount={step !== 'start' && step !== 'setup'} />
-    <View className={`page-shell watch-page ${step === 'feed' ? 'watch-page--feed' : ''} ${step === 'start' || step === 'setup' ? 'watch-page--flow' : ''}`} style={{ '--watch-navigation-height': `${navigationInset}px` } as React.CSSProperties}>
+    <View className={`page-shell watch-page ${step === 'feed' ? 'watch-page--feed' : ''} ${step === 'start' || step === 'setup' ? 'watch-page--flow' : ''}`}>
     {step === 'loading' ? <View className='watch-loading'><Text className='watch-loading__label'>正在整理匹配企业</Text><View className='match-deck-skeleton'><View /></View></View> : null}
 
     {step === 'start' ? <View className='watch-start'>
       <View className='watch-start__hero'>
-        <Image src={heroImage} mode='aspectFill' />
+        <Image className='watch-start__hero-image' src={heroImage} mode='aspectFill' lazyLoad={false} />
         <Text className='watch-start__brand-mark'>HaigooRemote</Text>
       </View>
       <View className='watch-start__content'>
@@ -376,15 +395,16 @@ export default function CareerWatchPage() {
 
     {step === 'setup' && filterOptions ? <View className='watch-setup'>
       <View className='watch-setup__progress'><View aria-role='button' aria-label='返回启动页' hoverClass='mini-action--pressed' onClick={() => setStep('start')}><MiniIcon name='chevronLeft' size={20} /></View><View className='watch-setup__progress-bars'><View className='is-complete' /><View className='is-active' /><View /></View><Text aria-role='button' aria-label='跳过个性化设置' onClick={() => setStep(watch ? 'feed' : 'start')}>跳过</Text></View>
-      <View className='watch-heading'><Text>设置求职偏好</Text><Text>可选择 1–5 个方向，逐步缩小更适合你的企业范围。</Text></View>
+      <View className='watch-heading'><Text>设置远程工作预期</Text><Text>可选择 1–5 个方向，逐步缩小更适合你的企业范围。</Text></View>
       <View className='watch-field watch-role-field'>
         <View className='watch-field__head'><Text className='watch-field__label'>职业方向</Text><Text>{selectedDirectionCount}/5</Text></View>
         <ScrollView className='watch-role-tabs' scrollX enhanced showScrollbar={false}><View className='watch-role-tabs__inner'>{roleGroups.map((group, index) => <Text aria-role='tab' aria-selected={activeRoleGroup === index} className={activeRoleGroup === index ? 'is-active' : ''} key={group.key} onClick={() => setActiveRoleGroup(index)}>{group.label}</Text>)}</View></ScrollView>
-        <View className='watch-choice-grid'>{(roleGroups[activeRoleGroup]?.options || []).map((item) => <View aria-role='checkbox' aria-checked={draft.customRoleTerms.includes(item.value)} className={draft.customRoleTerms.includes(item.value) ? 'is-active' : ''} hoverClass='mini-action--pressed' key={item.value} onClick={() => toggleRole(item)}><Text>{item.label}</Text>{draft.customRoleTerms.includes(item.value) ? <MiniIcon name='check' size={17} /> : null}</View>)}</View>
+        <View className='watch-choice-grid'>{visibleRoleOptions.map((item) => <View aria-role='checkbox' aria-checked={draft.customRoleTerms.includes(item.value)} className={draft.customRoleTerms.includes(item.value) ? 'is-active' : ''} hoverClass='mini-action--pressed' key={item.value} onClick={() => toggleRole(item)}><Text>{item.label}</Text>{draft.customRoleTerms.includes(item.value) ? <MiniIcon name='check' size={17} /> : null}</View>)}</View>
+        {activeRoleOptions.length > 6 ? <View className='watch-expand-toggle' aria-role='button' aria-expanded={roleOptionsExpanded} hoverClass='mini-action--pressed' onClick={() => setExpandedRoleGroups((current) => ({ ...current, [activeRoleGroupKey]: !current[activeRoleGroupKey] }))}><Text>{roleOptionsExpanded ? '收起' : `展开其余 ${activeRoleOptions.length - 6} 项`}</Text></View> : null}
         {unrepresentedRoleFamilies.length ? <View className='watch-resume-directions'>{unrepresentedRoleFamilies.map((role) => <Text key={role} onClick={() => removeBroadRole(role)}>{filterOptions.roles.find((item) => item.value === role)?.label || role} ×</Text>)}</View> : null}
         {roleSummary ? <Text className='watch-field__selection'>已选：{roleSummary}</Text> : null}
       </View>
-      {filterOptions.industries.length ? <View className='watch-field'><Text className='watch-field__label'>目标行业</Text><View className='watch-chip-row'><Text className={(draft.companyPreferences.industries || []).length ? '' : 'is-active'} onClick={() => clearPreference('industry', 'industries')}>不限</Text>{filterOptions.industries.map((item) => <Text className={(draft.companyPreferences.industries || []).includes(item.value) ? 'is-active' : ''} key={item.value} onClick={() => toggleIndustry(item.value)}>{item.label}</Text>)}</View></View> : null}
+      {industryOptions.length ? <View className='watch-field'><Text className='watch-field__label'>目标行业</Text><View className='watch-chip-row watch-industry-grid'><Text className={selectedIndustries.length ? '' : 'is-active'} onClick={() => clearPreference('industry', 'industries')}>不限</Text>{visibleIndustryOptions.map((item) => <Text className={selectedIndustries.includes(item.value) ? 'is-active' : ''} key={item.value} onClick={() => toggleIndustry(item.value)}>{item.label}</Text>)}</View>{industryOptions.length > 8 ? <View className='watch-expand-toggle' aria-role='button' aria-expanded={industriesExpanded} hoverClass='mini-action--pressed' onClick={() => setIndustriesExpanded((current) => !current)}><Text>{industriesExpanded ? '收起' : `展开其余 ${industryOptions.length - 8} 项`}</Text></View> : null}</View> : null}
       {filterOptions.teamSizes.length ? <View className='watch-field'><Text className='watch-field__label'>企业规模</Text><View className='watch-chip-row'><Text className={draft.companyPreferences.teamSize ? '' : 'is-active'} onClick={() => clearPreference('teamSize', 'teamSize')}>不限</Text>{filterOptions.teamSizes.map((item) => <Text className={draft.companyPreferences.teamSize === item.value ? 'is-active' : ''} key={item.value} onClick={() => setPreference('teamSize', 'teamSize', item.value)}>{item.label}</Text>)}</View></View> : null}
       {filterOptions.ratings.length ? <View className='watch-field'><Text className='watch-field__label'>Glassdoor 最低评分</Text><View className='watch-chip-row'><Text className={draft.companyPreferences.minRating ? '' : 'is-active'} onClick={() => clearPreference('rating', 'minRating')}>不限</Text>{filterOptions.ratings.map((item) => <Text className={draft.companyPreferences.minRating === item.value ? 'is-active' : ''} key={item.value} onClick={() => setPreference('rating', 'minRating', item.value)}>{item.label}</Text>)}</View></View> : null}
       {filterOptions.companyAges.length ? <View className='watch-field'><Text className='watch-field__label'>成立年限</Text><View className='watch-chip-row'><Text className={draft.companyPreferences.minFoundedYears ? '' : 'is-active'} onClick={() => clearPreference('companyAge', 'minFoundedYears')}>不限</Text>{filterOptions.companyAges.map((item) => <Text className={draft.companyPreferences.minFoundedYears === item.value ? 'is-active' : ''} key={item.value} onClick={() => setPreference('companyAge', 'minFoundedYears', item.value)}>{item.label}</Text>)}</View></View> : null}
@@ -396,7 +416,7 @@ export default function CareerWatchPage() {
 
     {step === 'feed' && watch ? <View className='watch-feed'>
       <View className='watch-feed__heading'>
-        <View className='watch-feed__heading-copy'><Text className='watch-feed__eyebrow'>HaigooRemote</Text><Text className='watch-feed__title'>为你匹配</Text></View>
+        <View className='watch-feed__heading-copy'><Text className='watch-feed__title'>为你匹配</Text></View>
         <View className='watch-feed__heading-actions'>
           {!watch.entitlements.isMember ? <View className='watch-feed__membership' aria-role='button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>升级会员</View> : null}
           <View className='watch-feed__settings' aria-role='button' aria-label='修改个性化设置' onClick={openMatchSettings}><MiniIcon name='settings' size={18} /></View>
@@ -416,10 +436,10 @@ export default function CareerWatchPage() {
           onOpenCompany={openCompany}
           onOpenJob={openJob}
           onScoreOpened={openScore}
+          isMember={watch.entitlements.isMember}
         />} />
         <View className='watch-deck-meta'><View className='watch-deck-dots'>{watch.recommendations.map((item, index) => <View className={index === activeCompanyIndex ? 'is-active' : ''} key={item.companyId} />)}</View><Text>{activeCompanyIndex + 1} / {watch.recommendations.length} · 左右滑动，反复比较</Text></View>
       </> : <View className='watch-empty'><MiniIcon name='target' size={30} /><Text>{watch.emptyReason === 'strict_filters' ? '当前条件下暂无合适企业' : '当前方向暂无合适企业'}</Text><Text>{watch.emptyReason === 'strict_filters' ? '可以放宽一项企业条件后再试。' : '调整职业方向后，我们会重新整理。'}</Text>{watch.matchState === 'member_dynamic' ? <View className='primary-button' onClick={() => setStep('setup')}>{watch.emptyReason === 'strict_filters' ? '放宽企业条件' : '调整求职方向'}</View> : <View className='primary-button' onClick={() => void load()}>重新加载</View>}</View>}
-      {error ? <View className='watch-cache-warning'><Text>{error}</Text><Text onClick={() => void load()}>重试</Text></View> : null}
     </View> : null}
     </View>
   </View>
