@@ -4,6 +4,7 @@ import fs from 'node:fs'
 
 process.env.WECHAT_MESSAGE_TOKEN = 'test-message-token'
 process.env.WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON = JSON.stringify({
+  club_starter_monthly: 'club_starter_monthly',
   mini_club_quarter_2026: 'club_quarter',
   mini_club_half_year_2026: 'club_half_year'
 })
@@ -22,13 +23,19 @@ const {
 } = await import('./api/wechat-virtual-payment-notify.js')
 
 assert.deepEqual(parseProductMap(), {
+  club_starter_monthly: 'club_starter_monthly',
   mini_club_quarter_2026: 'club_quarter',
   mini_club_half_year_2026: 'club_half_year'
 })
 assert.deepEqual(EXPECTED_PLAN_AMOUNTS, {
+  club_starter_monthly: 9900,
   mini_club_quarter_2026: 19900,
   mini_club_half_year_2026: 69900
 })
+assert.deepEqual(
+  Object.fromEntries(Object.entries(VIRTUAL_PAYMENT_PRODUCTS.club_starter_monthly).filter(([key]) => ['productId', 'amountCents', 'memberType', 'durationMonths', 'durationDays'].includes(key))),
+  { productId: 'club_starter_monthly', amountCents: 9900, memberType: 'starter', durationMonths: 1, durationDays: 0 }
+)
 assert.deepEqual(
   Object.fromEntries(Object.entries(VIRTUAL_PAYMENT_PRODUCTS.mini_club_quarter_2026).filter(([key]) => ['productId', 'amountCents', 'memberType', 'durationMonths', 'durationDays'].includes(key))),
   { productId: 'club_quarter', amountCents: 19900, memberType: 'quarter', durationMonths: 3, durationDays: 0 }
@@ -108,7 +115,7 @@ assert.ok(cloudrun.includes('requestVirtualPayment&${signData}'), 'paySig must b
 assert.ok(cloudrun.includes('virtualPaymentSignature(login.sessionKey, signData)'), 'session_key must sign the exact signData string')
 assert.ok(miniClient.includes("mode: 'short_series_goods'"), 'the client must use direct virtual-goods mode')
 assert.ok(miniClient.includes("order.status === 'completed'"), 'client success must be followed by server order confirmation')
-assert.ok(membershipPage.includes('开通${selectedPlan.shortLabel}') && membershipPage.includes('purchase(selectedPlan)'), 'supported environments must expose the official in-app purchase entry for the selected server plan')
+assert.ok(/开通\$\{(?:selectedPlan|plan)\.shortLabel\}/.test(membershipPage) && membershipPage.includes('purchase(selectedPlan)'), 'supported environments must expose the official in-app purchase entry for the selected server plan')
 assert.ok(membershipPage.includes('setPaymentAvailable(result.paymentAvailable)'), 'the server catalog must control whether the purchase entry is visible')
 assert.ok(miniClient.includes('if (!isVirtualPaymentSupported())'), 'device capability must be checked when the user starts payment')
 assert.ok(membershipPage.includes('暂时无法购买'), 'unsupported environments must hide payment and explain the safe fallback')
@@ -123,9 +130,10 @@ assert.ok(paymentService.includes('Number(payment.paid_amount_cents || 0) !== pa
 assert.ok(paymentService.includes('parseProductMap()[planId] || product.productId'), 'the versioned product whitelist must remain usable without a duplicate website environment mapping')
 assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*19900/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*69900/)
+assert.match(paymentSetup, /club_starter_monthly[\s\S]*9900/)
 assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*club_quarter/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*club_half_year/)
-assert.ok(!/\|\s*`(?:club_starter_monthly|club_annual)`/.test(paymentSetup), 'payment setup must not instruct operators to create retired products')
+assert.ok(!/\|\s*`club_annual`/.test(paymentSetup), 'payment setup must not instruct operators to create the retired annual product')
 assert.match(envExample, /"mini_club_quarter_2026":"club_quarter"/)
 
 console.log('mini virtual-payment checks passed')

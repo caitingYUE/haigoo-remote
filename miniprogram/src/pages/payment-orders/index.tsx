@@ -5,7 +5,6 @@ import {
   setClipboardData,
   showToast,
   stopPullDownRefresh,
-  switchTab,
   useDidShow,
   usePullDownRefresh
 } from '@tarojs/taro'
@@ -113,7 +112,7 @@ export default function PaymentOrdersPage() {
           <View className='payment-orders-state__icon'><MiniIcon name='user' size={34} /></View>
           <Text className='payment-orders-state__title'>登录后查看订单</Text>
           <Text className='payment-orders-state__copy'>登录 Haigoo 账号后，可以查看支付状态和历史订单。</Text>
-          <View className='payment-orders-state__button' onClick={() => switchTab({ url: '/pages/profile/index' })}>
+          <View className='payment-orders-state__button' onClick={() => navigateTo({ url: '/pages/profile/index' })}>
             <Text>前往登录</Text>
           </View>
         </View>
