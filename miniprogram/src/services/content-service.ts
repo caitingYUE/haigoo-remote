@@ -155,7 +155,7 @@ export function fetchCompanyJob(companyId: string, jobId: string, accessSearch =
     // generic jobs route. Keep this as a real-data fallback for an in-flight
     // experience build, never fabricate a job from the card summary.
     if (!jobId) throw error
-    const fallback = await requestJson<{ success: true; job: MiniCompanyJobDetail }>(`/mini/jobs/${encodeURIComponent(jobId)}`, { authenticated: true })
+    const fallback = await requestJson<{ success: true; job: MiniCompanyJobDetail }>(`/mini/jobs/${encodeURIComponent(jobId)}?companyId=${encodeURIComponent(companyId)}`, { authenticated: true })
     if (!fallback?.job) throw error
     return { success: true as const, company: { id: companyId, name: fallback.job.company }, job: fallback.job }
   })

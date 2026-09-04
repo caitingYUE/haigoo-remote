@@ -1160,9 +1160,15 @@ async function fetchUpstreamJobs(query) {
   }
 }
 
-async function fetchUpstreamJob(jobId) {
+async function fetchUpstreamJob(jobId, companyId = '') {
   const batch = await gatewayRequest('sync', { query: { id: jobId, page: 1, limit: 1 } })
-  const job = Array.isArray(batch.jobs) ? batch.jobs[0] : null
+  let job = Array.isArray(batch.jobs) ? batch.jobs.find((item) => canonicalJobId(item?.id || item?.jobId) === canonicalJobId(jobId)) : null
+  if (!job && companyId) {
+    const companyBatch = await gatewayRequest('sync', { query: { companyId, page: 1, limit: 100, sortBy: 'recent' } })
+    job = Array.isArray(companyBatch.jobs)
+      ? companyBatch.jobs.find((item) => canonicalJobId(item?.id || item?.jobId) === canonicalJobId(jobId))
+      : null
+  }
   return job && canonicalJobId(job.id || job.jobId) === canonicalJobId(jobId)
     ? { ...publicJob(job), id: canonicalJobId(jobId) }
     : null
@@ -1829,7 +1835,7 @@ async function route(req, res) {
         if (state && Date.now() - Number(state.lastSyncAt || 0) >= CACHE_REFRESH_MS) void scheduleSync()
         return send(res, 200, { job: jobs[0], browse })
       }
-      const upstreamJob = await fetchUpstreamJob(jobId)
+      const upstreamJob = await fetchUpstreamJob(jobId, String(url.searchParams.get('companyId') || '').trim())
       void scheduleSync()
       if (!upstreamJob) return send(res, 404, { error: '岗位不存在或已下线' })
       const session = getSession(req)
