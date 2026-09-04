@@ -19,6 +19,7 @@ const suppliedSourceDir = process.argv
 const envFile = process.argv
   .find((argument) => argument.startsWith('--env-file='))
   ?.slice('--env-file='.length)
+const skipWechatUpload = process.argv.includes('--skip-wechat-upload')
 const contractActions = ['sync', 'career_watch_options', 'companies', 'membership_plans']
 
 if (!envFile || !fs.existsSync(path.resolve(envFile))) {
@@ -300,6 +301,8 @@ await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-c
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'career_watch_state', ['--expect-match-state=member_dynamic'])
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'companies', ['--expect-company-scope=member_all'])
 
-run('npm', ['--prefix', 'miniprogram', 'run', 'upload:weapp:experience'], { stdio: 'inherit' })
+if (!skipWechatUpload) {
+  run('npm', ['--prefix', 'miniprogram', 'run', 'upload:weapp:experience'], { stdio: 'inherit' })
+}
 
-console.log(`Preview gateway promoted and experience bundle uploaded: ${deploymentUrl} -> ${stableOrigin}`)
+console.log(`Preview gateway promoted${skipWechatUpload ? '' : ' and experience bundle uploaded'}: ${deploymentUrl} -> ${stableOrigin}`)
