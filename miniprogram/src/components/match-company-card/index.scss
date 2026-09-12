@@ -1,0 +1,85 @@
+.match-company-card {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: flex-start;
+  overflow: hidden;
+  border-radius: var(--match-radius-card, 16px);
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(24, 32, 51, .08);
+}
+.match-company-card__identity { display: grid; padding: var(--match-card-padding, 48px) var(--match-card-padding, 48px) 0; align-items: start; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) 144px; gap: 16px; }
+.match-company-card__identity-main { display: flex; min-width: 0; align-items: flex-start; flex-direction: column; }
+.match-company-card__logo { display: flex; width: 80px; height: 80px; box-sizing: border-box; padding: 10px; align-items: center; justify-content: center; overflow: hidden; border: 1PX solid #e2e6eb; border-radius: 18px; background: #fff; color: var(--color-ink); font-size: 28px; font-weight: 700; }
+.match-company-card__logo image { width: 100%; height: 100%; object-fit: contain; }
+.match-company-card__overview { flex-shrink: 0; }
+.match-company-card__name { display: -webkit-box; width: 100%; margin-top: 20px; overflow: hidden; color: var(--color-ink); font-size: var(--match-card-title-size, 42px); font-weight: 700; line-height: 1.16; text-overflow: ellipsis; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.match-company-card__meta { display: flex; width: 100%; min-width: 0; margin-top: 10px; align-items: center; overflow: hidden; gap: 10px; color: var(--color-secondary); font-size: var(--match-card-meta-size, 24px); line-height: 32px; white-space: nowrap; }
+.match-company-card__meta text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__meta-separator { flex-shrink: 0; color: #d2d5da; }
+.match-company-card__score { display: flex; width: 144px; min-height: 112px; box-sizing: border-box; padding-top: 6px; align-items: flex-end; justify-content: flex-start; flex-direction: column; color: #c94f22; }
+.match-company-card__score text { display: block; line-height: 1; text-align: right; }
+.match-company-card__score text:first-child { max-width: 144px; overflow: visible; font-size: 66px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.02em; white-space: nowrap; }
+.match-company-card__score text:last-child { margin-top: 14px; color: var(--color-muted); font-size: 20px; font-weight: 600; letter-spacing: .08em; }
+.match-company-card__fit { display: flex; min-height: 0; padding: 28px var(--match-card-padding, 48px) 0; overflow: hidden; flex: 1; flex-direction: column; gap: var(--match-card-gap, 20px); }
+.match-company-card__description { display: -webkit-box; overflow: hidden; flex-shrink: 0; color: var(--color-ink); font-size: var(--match-card-body-size, 32px); font-weight: 400; line-height: 46px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.match-company-card__judgments { display: flex; flex-direction: column; }
+.match-company-card__judgments.has-divider { position: relative; margin-right: calc(var(--match-card-padding, 48px) * -1); margin-left: calc(var(--match-card-padding, 48px) * -1); padding: 28px var(--match-card-padding, 48px) 0; border-top: 1PX solid transparent; }
+// Preserve content geometry; only the current card carries a quiet, inset rule.
+.match-company-card__judgments.has-divider::before { position: absolute; top: -1PX; right: var(--match-card-padding, 48px); left: var(--match-card-padding, 48px); height: 1PX; background: rgba(24, 32, 51, .07); opacity: 0; pointer-events: none; content: ''; }
+.match-deck__card--active .match-company-card__judgments.has-divider::before { opacity: 1; }
+.match-company-card__judgment { display: flex; min-width: 0; min-height: 58px; align-items: center; justify-content: space-between; gap: 20px; }
+.match-company-card__judgment-label { flex-shrink: 0; color: var(--color-secondary); font-size: 22px; font-weight: 400; line-height: 30px; }
+.match-company-card__judgment-result { min-width: 0; overflow: hidden; color: var(--color-ink); font-size: 23px; font-weight: 600; line-height: 32px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__rating-result { display: flex; min-width: 0; align-items: center; justify-content: flex-end; gap: 6px; color: var(--color-ink); font-size: 23px; font-weight: 600; }
+.match-company-card__rating-result .mini-icon { color: #e96832; }
+.match-company-card__opportunity { display: grid; min-height: 128px; margin-top: auto; padding: 22px 28px; align-items: center; flex-shrink: 0; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; border: 1PX solid var(--color-border); border-radius: 18px; background: var(--color-surface-soft); }
+.match-company-card__opportunity-copy { min-width: 0; }
+.match-company-card__opportunity-copy > text:first-child { display: -webkit-box; overflow: hidden; color: var(--color-ink); font-size: 26px; font-weight: 700; line-height: 34px; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.match-company-card__opportunity-location { display: flex; min-width: 0; margin-top: 8px; align-items: center; gap: 4px; overflow: hidden; color: var(--color-secondary); font-size: 18px; line-height: 26px; }
+.match-company-card__opportunity-location .mini-icon { flex-shrink: 0; color: var(--color-muted); }
+.match-company-card__opportunity-location text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.match-company-card__opportunity-action { display: inline-flex; align-items: center; gap: 4px; color: #c94f22; font-size: 21px; font-weight: 700; line-height: 28px; white-space: nowrap; }
+.match-company-card__footer { display: flex; min-height: 0; padding: 24px var(--match-card-padding, 48px) 40px; align-items: stretch; flex-shrink: 0; flex-direction: column; gap: 8px; }
+.match-company-card__footer--inactive { pointer-events: none; }
+.match-company-card__footer .company-follow-action.is-compact { width: 100%; min-width: 0; min-height: 92px; padding: 0 24px; border: 1PX solid var(--match-brand, #e96832); border-radius: 18px; background: var(--color-brand-strong); color: #fff; font-size: 26px; }
+.match-company-card__footer .company-follow-action.is-compact.is-followed { border-color: #dfe3e8; background: #f3f4f6; color: #667085; }
+.match-company-card__footer .company-follow-action.is-compact:not(.is-followed) .mini-icon { color: #fff; }
+.match-company-card__reminder { display: flex; min-height: 48px; align-items: center; justify-content: center; }
+.match-company-card__reminder .wechat-reminder-action { display: inline-flex; width: auto; min-height: 48px; align-items: center; justify-content: center; gap: 6px; color: var(--color-brand-text); font-size: 20px; line-height: 28px; }
+.match-company-card__reminder .wechat-reminder-action .mini-icon { color: currentColor; }
+.match-score-overlay { position: fixed; z-index: 1200; inset: 0; display: flex; align-items: flex-end; background: rgba(18, 21, 28, .44); }
+.match-score-sheet { width: 100%; padding: 12px 28px calc(28px + env(safe-area-inset-bottom)); border-radius: 28px 28px 0 0; background: #fff; box-shadow: 0 -18px 54px rgba(18, 21, 28, .16); }
+.match-score-sheet__handle { width: 56px; height: 6px; margin: 0 auto 20px; border-radius: 8px; background: #d7dae0; }
+.match-score-sheet__heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.match-score-sheet__heading > view:first-child text { display: block; }
+.match-score-sheet__heading > view:first-child text:first-child { color: #151f35; font-size: 29px; font-weight: 700; }
+.match-score-sheet__heading > view:first-child text:last-child { margin-top: 5px; color: #697386; font-size: 18px; }
+.match-score-sheet__heading > view:last-child { display: flex; width: 52px; height: 52px; align-items: center; justify-content: center; border-radius: 15px; background: #f4f5f7; color: #475467; }
+.match-score-sheet__rows { margin-top: 22px; }
+.match-score-sheet__row { display: flex; min-height: 72px; padding: 14px 0; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1PX solid #eef0f3; }
+.match-score-sheet__row > view text { display: block; }
+.match-score-sheet__row > view text:first-child { color: var(--color-ink); font-size: 20px; font-weight: 630; }
+.match-score-sheet__row > view text:last-child { margin-top: 4px; color: #697386; font-size: 17px; }
+.match-score-sheet__row > text { color: #d95530; font-size: 21px; font-weight: 700; }
+.match-score-sheet__limited { margin-top: 22px; padding: 20px; border-radius: 16px; background: #f7f7f8; }
+.match-score-sheet__limited text { display: block; }
+.match-score-sheet__limited text:first-child { color: var(--color-ink); font-size: 20px; font-weight: 650; }
+.match-score-sheet__limited text:last-child { margin-top: 7px; color: #697386; font-size: 17px; line-height: 1.5; }
+.match-score-sheet__note { display: flex; margin-top: 20px; padding: 16px; align-items: flex-start; gap: 8px; border-radius: 15px; background: #fff1eb; color: #86401f; }
+.match-score-sheet__note text { flex: 1; font-size: 16px; line-height: 1.5; }
+@media (max-width: 340px) {
+  .match-company-card__identity { grid-template-columns: minmax(0, 1fr) 116px; gap: 10px; }
+  .match-company-card__score { width: 116px; }
+  .match-company-card__score text:first-child { max-width: 116px; font-size: 56px; }
+  .match-company-card__fit { padding-top: 30px; }
+  .match-company-card__judgments.has-divider { padding-top: 20px; }
+  .match-company-card__judgment { min-height: 52px; }
+  .match-company-card__judgment-label { font-size: 19px; }
+  .match-company-card__judgment-result,
+  .match-company-card__rating-result { font-size: 20px; }
+  .match-company-card__opportunity { min-height: 112px; padding: 18px 20px; }
+  .match-company-card__footer { padding-top: 18px; padding-bottom: 28px; }
+}

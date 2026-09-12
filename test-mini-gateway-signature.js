@@ -4,16 +4,38 @@ process.env.MINI_GATEWAY_SHARED_SECRET = 'test-mini-gateway-secret'
 process.env.JWT_SECRET = 'test-jwt-secret-with-sufficient-entropy-for-tests-only'
 
 const {
+  attachRequestTrace,
   gatewaySecrets,
   hasGatewaySignature,
   normalizeEventId,
   normalizeJobSnapshot,
   requestSignature,
+  safeCompanyLogoSource,
   stableJson
 } = await import('./lib/api-handlers/mini-gateway.js')
 
+const traceHeaders = new Map()
+const tracedResponse = {
+  statusCode: 200,
+  payload: null,
+  setHeader(key, value) { traceHeaders.set(String(key).toLowerCase(), String(value)); return this },
+  status(code) { this.statusCode = code; return this },
+  json(payload) { this.payload = payload; return this }
+}
+attachRequestTrace(tracedResponse, 'release-smoke-runtime-contract')
+tracedResponse.status(200).json({ success: true })
+assert.equal(traceHeaders.get('x-haigoo-request-id'), 'release-smoke-runtime-contract')
+assert.equal(tracedResponse.payload.requestId, 'release-smoke-runtime-contract')
+
 const payloadA = { type: 'website', jobId: 'job-1', nested: { b: 2, a: 1 } }
 const payloadB = { nested: { a: 1, b: 2 }, jobId: 'job-1', type: 'website' }
+
+assert.equal(
+  safeCompanyLogoSource('', 'company-1'),
+  '/api/company-assets?companyId=company-1&type=logo',
+  'an existing binary logo asset must be resolved by company id even when the legacy URL field is empty'
+)
+assert.equal(safeCompanyLogoSource('', '../unsafe'), '', 'invalid company ids must not form asset URLs')
 
 assert.equal(stableJson(payloadA), stableJson(payloadB), 'object key order must not alter gateway signatures')
 assert.equal(

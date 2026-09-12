@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="44" height="44" viewBox="0 0 44 44" fill="none"
+     aria-hidden="true" focusable="false">
+  <rect width="44" height="44" fill="transparent"/>
+
+  <!-- visible button background -->
+  <circle cx="22" cy="22" r="19"
+          fill="#151C29" stroke="#E96832" stroke-width="1"/>
+
+  <!-- soft accent plate to help the orange brand color read on dark background -->
+  <circle cx="22" cy="22" r="19" fill="#E96832" opacity="0.18"/>
+
+  <!-- icon group -->
+  <g  stroke-linecap="round" stroke-linejoin="round">
+    <!-- fingerprint -->
+    <path d="M13.8 35.6 A14.8 14.8 0 1 1 36.3 23.6"
+          stroke="#F2ECE6" stroke-opacity="1" stroke-width="1.9"/>
+    <path d="M15.2 30.0 A10.8 10.8 0 1 1 33.1 23.7"
+          stroke="#F2ECE6" stroke-opacity="1" stroke-width="1.9"/>
+    <path d="M17.2 24.8 A6.9 6.9 0 1 1 28.9 23.7"
+          stroke="#F2ECE6" stroke-opacity="1" stroke-width="1.9"/>
+    <path d="M20.0 21.0 A3.1 3.1 0 0 1 24.7 23.5"
+          stroke="#F2ECE6" stroke-opacity="1" stroke-width="1.9"/>
+
+    <!-- orange emphasis accent on the outer ring tip -->
+    <path d="M35.2 19.7 A14.8 14.8 0 0 1 36.3 23.6"
+          stroke="#E96832" stroke-width="1.9"/>
+
+    <!-- cursor -->
+    <path d="M22.8 22.7 L35.8 26.6 L29.8 29.4 L33.2 34.1 L29.9 36.0 L26.4 31.2 L23.5 36.8 Z"
+          fill="#E96832"/>
+    <path d="M22.8 22.7 L35.8 26.6 L29.8 29.4 L33.2 34.1 L29.9 36.0 L26.4 31.2 L23.5 36.8 Z"
+          stroke="#E96832" stroke-width="1.3"/>
+  </g>
+</svg>

@@ -1,4 +1,6 @@
-.mini-icon {
-  display: block;
-  flex-shrink: 0;
+.mini-icon.nut-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  // NutUI sets its own ink color; masks must inherit the surrounding control.
+  color: inherit;
 }

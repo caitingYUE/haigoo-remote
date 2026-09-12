@@ -6,7 +6,17 @@ import prodConfig from './prod'
 
 // https://taro-docs.jd.com/docs/next/config#defineconfig-辅助函数
 export default defineConfig<'webpack5'>(async (merge) => {
-  const outputRoot = process.env.NODE_ENV === 'production' ? 'dist-prod' : 'dist'
+  const releaseChannel = String(process.env.TARO_APP_RELEASE_CHANNEL || '').trim()
+  if (releaseChannel && !['local', 'experience', 'production'].includes(releaseChannel)) {
+    throw new Error(`Unsupported TARO_APP_RELEASE_CHANNEL: ${releaseChannel}`)
+  }
+  const outputRoot = releaseChannel === 'experience'
+    ? 'dist-experience'
+    : releaseChannel === 'local'
+      ? 'dist-local'
+      : process.env.NODE_ENV === 'production'
+        ? 'dist-prod'
+        : 'dist'
   const baseConfig: UserConfigExport<'webpack5'> = {
     projectName: 'miniprogram',
     date: '2026-7-16',
@@ -22,14 +32,16 @@ export default defineConfig<'webpack5'>(async (merge) => {
     plugins: [
       "@tarojs/plugin-generator"
     ],
+    // Taro does not automatically inline arbitrary TARO_APP_* variables in
+    // application code. Keep the environment contract explicit so a prepared
+    // experience bundle never falls back to an empty CloudBase environment.
     defineConstants: {
+      'process.env.TARO_APP_CLOUD_ENV': JSON.stringify(process.env.TARO_APP_CLOUD_ENV || ''),
+      'process.env.TARO_APP_CLOUD_SERVICE': JSON.stringify(process.env.TARO_APP_CLOUD_SERVICE || ''),
+      'process.env.TARO_APP_RELEASE_VERSION': JSON.stringify(process.env.TARO_APP_RELEASE_VERSION || 'development')
     },
     copy: {
       patterns: [
-        {
-          from: path.resolve(__dirname, '../assets/static/home-hero-bg.jpg'),
-          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.jpg`)
-        },
         {
           from: path.resolve(__dirname, '../../public/assets/brandlogo.png'),
           to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-brand-logo.png`)

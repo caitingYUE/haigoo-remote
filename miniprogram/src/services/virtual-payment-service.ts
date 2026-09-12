@@ -14,8 +14,10 @@ interface VirtualPaymentOrder {
   paymentId: string
   planId: string
   amountCents: number
+  refundedAmountCents?: number
+  refundStatus?: string | null
   currency: string
-  status: 'pending' | 'completed' | 'failed' | 'refunded' | string
+  status: 'pending' | 'completed' | 'cancelled' | 'failed' | 'refunded' | string
   createdAt?: string | null
   paidAt?: string | null
 }
@@ -58,7 +60,7 @@ function compareVersion(first: string, second: string) {
   return 0
 }
 
-function supportsVirtualPayment() {
+export function isVirtualPaymentSupported() {
   if (process.env.TARO_ENV !== 'weapp' || typeof wx === 'undefined') return false
   const sdkVersion = String(wx.getSystemInfoSync()?.SDKVersion || '')
   return compareVersion(sdkVersion, '2.19.2') >= 0 || wx.canIUse('requestVirtualPayment')
@@ -86,6 +88,13 @@ export async function getVirtualPaymentOrder(paymentId: string) {
   return response.order
 }
 
+async function updateVirtualPaymentOrder(paymentId: string, status: 'cancelled' | 'failed') {
+  return requestJson<{ order: VirtualPaymentOrder }>(
+    `/mini/payments/orders/${encodeURIComponent(paymentId)}`,
+    { method: 'PUT', authenticated: true, data: { status } }
+  )
+}
+
 export async function getVirtualPaymentOrders(page = 1, pageSize = 20) {
   return requestJson<VirtualPaymentOrderList>(
     `/mini/payments/orders?page=${Math.max(1, page)}&pageSize=${Math.min(50, Math.max(1, pageSize))}`,
@@ -103,11 +112,11 @@ async function waitForPaymentConfirmation(paymentId: string) {
 }
 
 export async function purchaseClubPlan(planId: string) {
-  if (!supportsVirtualPayment()) {
+  if (!isVirtualPaymentSupported()) {
     throw new Error('当前微信版本不支持小程序虚拟支付，请升级微信后重试')
   }
   const login = await Taro.login()
-  if (!login.code) throw new Error('未能获取微信支付身份，请重试')
+  if (!login.code) throw new Error('微信支付没有打开，请重试')
   const created = await requestJson<CreateVirtualPaymentResponse>('/mini/payments/orders', {
     method: 'POST',
     authenticated: true,
@@ -134,13 +143,14 @@ export async function purchaseClubPlan(planId: string) {
   } catch (error) {
     const message = error instanceof Error ? error.message : '微信支付未完成'
     const cancelled = /cancel/i.test(message)
+    await updateVirtualPaymentOrder(created.order.paymentId, cancelled ? 'cancelled' : 'failed').catch(() => undefined)
     void trackMiniEvent('mini_virtual_payment_result', {
       entity_id: planId,
       flow_id: created.order.paymentId,
       status: cancelled ? 'cancelled' : 'failed'
     })
     if (cancelled) throw new Error('已取消支付')
-    throw error
+    throw new Error('微信支付没有完成，请重试')
   }
 
   const order = await waitForPaymentConfirmation(created.order.paymentId)

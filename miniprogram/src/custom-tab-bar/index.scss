@@ -1,0 +1,45 @@
+.custom-tabbar {
+  position: fixed;
+  z-index: 100;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: block;
+  height: calc(112px + env(safe-area-inset-bottom));
+  padding: 12px 32px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1PX solid #e7e8eb;
+  background: #fff;
+  box-shadow: none;
+}
+
+.custom-tabbar__tabs { display: grid; min-width: 0; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+.custom-tabbar__item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 88px;
+  margin: 0;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #667085;
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.custom-tabbar__item::after { border: 0; }
+.custom-tabbar__icon { display: flex; width: 48px; height: 48px; align-items: center; justify-content: center; }
+.custom-tabbar__icon--match { width: 64px; height: 48px; }
+.custom-tabbar__match-icon { width: 64px; height: 64px; filter: drop-shadow(0 4px 10px rgba(24, 32, 51, .10)); }
+.custom-tabbar__item:nth-child(2) { gap: 1px; }
+.custom-tabbar__label { line-height: 28px; }
+.custom-tabbar__item--active { color: #c94f22; font-weight: 600; }
+.custom-tabbar__item--pressed { background: #f6f7fa; }
+.custom-tabbar--hidden { display: none; }

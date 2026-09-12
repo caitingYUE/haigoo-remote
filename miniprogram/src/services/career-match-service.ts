@@ -1,0 +1,562 @@
+import type {
+  CareerCompleteness,
+  CareerIntake,
+  CareerMatchResult,
+  CareerMatchState,
+  CareerRetentionPolicy
+} from '../types'
+import Taro from '@tarojs/taro'
+import { ApiRequestError, createRequestKey, requestJson } from './api-client'
+import { isRenderableImageSource, resolveCloudFileUrls } from './cloud-asset-service'
+import { getMiniUser } from './session'
+import { normalizeComparableText } from '../utils/runtime-compat'
+
+export const CAREER_PRIVACY_VERSION = '2026-08-14-match-v1'
+
+// Older local/preview Cloud Run revisions do not expose the visit-refresh
+// route yet. Keep the client usable during a rolling deployment and avoid
+// repeating a known 404 on every tab return.
+let careerWatchRefreshUnsupported = false
+
+export function fetchCareerMatchState() {
+  return requestJson<CareerMatchState>('/mini/match', { authenticated: true })
+}
+
+export async function fetchMatchFeed() {
+  const response = await requestJson<MatchFeedResponse>('/mini/match/feed', { authenticated: true })
+  const urls = await resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId))
+  return {
+    ...response,
+    recommendations: response.recommendations.map((company) => ({
+      ...company,
+      logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+    }))
+  }
+}
+
+export function followCompany(companyId: string) {
+  return requestJson<{ success: true; companyId: string; followed: boolean }>('/mini/match/follows', {
+    method: 'POST', authenticated: true, data: { companyId, followed: true }
+  })
+}
+
+export function unfollowCompany(companyId: string) {
+  return requestJson<{ success: true; companyId: string; followed: boolean }>(`/mini/match/follows/${encodeURIComponent(companyId)}`, {
+    method: 'DELETE', authenticated: true
+  })
+}
+
+export function sendMatchFeedback(companyId: string, action: 'opened' | 'dismissed' | 'seen') {
+  return requestJson<{ success: true }>('/mini/match/feedback', {
+    method: 'POST', authenticated: true, data: { companyId, action }
+  })
+}
+
+export function setMatchNotifications(companyId: string, enabled: boolean, templateStatus: string) {
+  return requestJson<{ success: true; enabled: boolean; templateStatus: string }>(`/mini/match/follows/${encodeURIComponent(companyId)}/notifications`, {
+    method: 'POST', authenticated: true, data: { enabled, templateStatus }
+  })
+}
+
+export interface CompanyFollowSummary {
+  company_id: string
+  name: string
+  industry: string
+  logoFileId?: string
+  logoUrl?: string
+  openJobCount: number
+  openRoleCategories: string[]
+  followedAt: string | null
+  wechat_enabled: boolean
+  wechat_template_status: string
+}
+
+export function parseCareerResume(filename: string, fileBase64: string) {
+  return requestJson<{
+    success: true
+    sourceType: 'resume'
+    structured: Record<string, unknown>
+    completeness: CareerCompleteness
+    rawFileStored: false
+    message: string
+  }>('/mini/match/resume/parse', {
+    method: 'POST',
+    authenticated: true,
+    data: { filename, fileBase64 }
+  })
+}
+
+export async function parseCareerResumeFile(filename: string, filePath: string) {
+  const ownerId = String(getMiniUser()?.userId || 'bound').replace(/[^A-Za-z0-9_-]/g, '_')
+  const safeName = String(filename || 'resume.pdf').replace(/[^A-Za-z0-9._-]/g, '_')
+  const cloudPath = `mini-career-resumes/${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${safeName}`
+  let fileID = ''
+  try {
+    const uploaded = await Taro.cloud.uploadFile({ cloudPath, filePath })
+    fileID = String(uploaded.fileID || '')
+    if (!fileID) throw new Error('简历上传没有完成，请重试')
+    return await requestJson<{
+      success: true
+      sourceType: 'resume'
+      structured: Record<string, unknown>
+      completeness: CareerCompleteness
+      rawFileStored: false
+      message: string
+    }>('/mini/match/resume/parse', {
+      method: 'POST',
+      authenticated: true,
+      timeout: 90000,
+      data: { filename: safeName, fileId: fileID }
+    })
+  } finally {
+    if (fileID) await Taro.cloud.deleteFile({ fileList: [fileID] }).catch(() => undefined)
+  }
+}
+
+export async function syncCareerResumeFile(filename: string, filePath: string) {
+  const ownerId = String(getMiniUser()?.userId || 'bound').replace(/[^A-Za-z0-9_-]/g, '_')
+  const safeName = String(filename || 'resume.pdf').replace(/[^A-Za-z0-9._-]/g, '_')
+  const cloudPath = `mini-career-resumes/${ownerId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}-${safeName}`
+  let fileID = ''
+  try {
+    const uploaded = await Taro.cloud.uploadFile({ cloudPath, filePath })
+    fileID = String(uploaded.fileID || '')
+    if (!fileID) throw new Error('简历保存没有完成，请重试')
+    return await requestJson<{ success: true; saved: true; duplicate: boolean; resumeId: string }>('/mini/match/resume/sync', {
+      method: 'POST', authenticated: true, timeout: 90000, data: { filename: safeName, fileId: fileID }
+    })
+  } finally {
+    if (fileID) await Taro.cloud.deleteFile({ fileList: [fileID] }).catch(() => undefined)
+  }
+}
+
+export type WatchRoleFamily = 'product' | 'project' | 'engineering' | 'design' | 'data' | 'marketing' | 'sales' | 'operations' | 'research' | 'finance' | 'hr'
+export type WatchPreferenceKey = 'teamSize' | 'rating' | 'companyAge' | 'industry'
+
+export interface WatchFilterOptions {
+  roles: Array<{ value: WatchRoleFamily; label: string; count: number }>
+  roleGroups?: Array<{
+    key: string
+    label: string
+    options: Array<{ value: string; label: string; families: WatchRoleFamily[] }>
+  }>
+  teamSizes: Array<{ value: 'small' | 'growth' | 'large'; label: string; count: number }>
+  ratings: Array<{ value: 3.5 | 4 | 4.5; label: string; count: number }>
+  companyAges: Array<{ value: 3 | 5 | 10; label: string; count: number }>
+  industries: Array<{ value: string; label: string; count: number }>
+}
+
+const RESUME_DIRECTION_ALIASES: Array<[string, string[]]> = [
+  ['产品经理', ['product manager', 'product owner', '产品经理', '产品负责人']],
+  ['运营', ['product operations', 'product ops', 'operations manager', 'operation manager', '运营经理', '产品运营']],
+  ['前端开发', ['frontend engineer', 'front-end engineer', 'frontend developer', '前端工程师', '前端开发']],
+  ['后端开发', ['backend engineer', 'back-end engineer', 'backend developer', '后端工程师', '后端开发']],
+  ['全栈开发', ['full stack engineer', 'full-stack engineer', 'fullstack developer', '全栈工程师', '全栈开发']],
+  ['移动开发', ['mobile engineer', 'ios engineer', 'android engineer', '移动端开发', '移动开发']],
+  ['软件开发', ['software engineer', 'software developer', '软件工程师', '软件开发']],
+  ['数据分析', ['data analyst', 'business intelligence analyst', 'bi analyst', '数据分析师']],
+  ['商业分析', ['business analyst', '商业分析师']],
+  ['数据科学', ['data scientist', '数据科学家']],
+  ['数据开发', ['data engineer', '数据工程师']],
+  ['算法工程师', ['machine learning engineer', 'ml engineer', '算法工程师', '机器学习工程师']],
+  ['产品设计', ['product designer', '产品设计师']],
+  ['UI/UX设计', ['ux designer', 'ui/ux designer', '交互设计师', '用户体验设计']],
+  ['视觉设计', ['visual designer', '视觉设计师']],
+  ['平面设计', ['graphic designer', '平面设计师']],
+  ['测试/QA', ['qa engineer', 'test engineer', 'quality assurance engineer', '测试工程师']],
+  ['运维/SRE', ['devops engineer', 'site reliability engineer', 'sre', '运维工程师']],
+  ['市场营销', ['marketing manager', 'growth marketer', '市场经理', '增长营销']],
+  ['销售', ['sales manager', 'account executive', '销售经理']],
+  ['商务拓展', ['business development manager', 'business development', '商务拓展']],
+  ['客户服务', ['customer success manager', 'customer support', 'customer service', '客户成功经理', '客户支持', '客服']],
+  ['招聘', ['technical recruiter', 'recruiter', 'talent acquisition', '招聘专员', '招聘经理']],
+  ['财务', ['financial analyst', 'finance analyst', '财务分析师']],
+  ['内容创作', ['content manager', 'content strategist', 'copywriter', '内容运营', '内容策略', '文案']]
+]
+
+function resumeDirectionSignals(structured: Record<string, unknown>) {
+  return ['roles', 'roleTerms']
+    .flatMap((key) => Array.isArray(structured[key]) ? structured[key] as unknown[] : [])
+    .map(normalizeComparableText)
+    .filter(Boolean)
+}
+
+export function mapResumeCareerDirections(structured: Record<string, unknown>, filterOptions: WatchFilterOptions) {
+  const options = (filterOptions.roleGroups || []).flatMap((group) => group.options)
+  const byValue = new Map(options.map((option) => [option.value, option]))
+  const signals = resumeDirectionSignals(structured)
+  const matchedValues: string[] = []
+
+  for (const [value, aliases] of RESUME_DIRECTION_ALIASES) {
+    if (!byValue.has(value)) continue
+    const matched = signals.some((signal) => aliases.some((alias) => signal.includes(alias.toLowerCase())))
+    if (matched && !matchedValues.includes(value)) matchedValues.push(value)
+    if (matchedValues.length >= 5) break
+  }
+
+  for (const option of options) {
+    if (matchedValues.length >= 5 || matchedValues.includes(option.value)) continue
+    const normalized = normalizeComparableText(option.label)
+    if (normalized && signals.some((signal) => signal === normalized)) matchedValues.push(option.value)
+  }
+
+  return {
+    customRoleTerms: matchedValues,
+    roleFamilies: [...new Set(matchedValues.flatMap((value) => byValue.get(value)?.families || []))].slice(0, 5)
+  }
+}
+
+export interface WatchProfile {
+  profileId: string
+  sourceMode: 'resume' | 'manual' | 'mixed'
+  roleFamilies: WatchRoleFamily[]
+  customRoleTerms: string[]
+  companyPreferences: {
+    teamSize?: 'small' | 'growth' | 'large'
+    minRating?: 3.5 | 4 | 4.5
+    minFoundedYears?: 3 | 5 | 10
+    industries?: string[]
+  }
+  activePreferenceKeys: WatchPreferenceKey[]
+  toleranceMode: 'balanced' | 'strict'
+  status: 'active' | 'paused'
+  resumeId?: string | null
+  careerProfileId?: string | null
+  sourcePlatform: 'mini' | 'web' | 'legacy_subscription'
+  inAppEnabled: boolean
+  wechatEnabled: boolean
+  wechatTemplateStatus: 'not_requested' | 'accepted' | 'rejected' | 'unavailable'
+  version: number
+  updatedAt: string
+}
+
+export interface WatchFeedItem {
+  companyId: string
+  companyName: string
+  industry: string
+  description: string
+  employeeCount: string
+  headquarters: string
+  rating: number | null
+  ratingSource: string
+  jobId: string
+  jobTitle: string
+  jobLocation: string
+  applyUrl: string
+  openJobCount: number
+  openRoleLabels: string[]
+  publishedAt: string
+  verifiedAt: string
+  reasons: string[]
+  preferenceStatuses: Array<{ key: WatchPreferenceKey; status: 'matched' | 'missing' | 'not_matched'; label: string }>
+  isFollowed: boolean
+  isSubscribed?: boolean
+  logoFileId?: string
+  logoUrl?: string
+  hasUpdate: boolean
+  fitBand: 'high' | 'notable' | 'explore'
+  score: number
+  scoreBreakdown: {
+    direction: { score: number; max: number; label: string }
+    preferences: { score: number; max: number; label: string }
+    opportunity: { score: number; max: number; label: string }
+  } | null
+  scoreConfidence: number
+  updatedAt: string
+}
+
+export interface CareerWatchResponse {
+  success: true
+  matchState: 'unused' | 'fixed_free' | 'member_dynamic'
+  freeMatchAvailable: boolean
+  freeMatchUsedAt: string | null
+  fixedCompanyCount: number
+  profile: WatchProfile | null
+  filterOptions: WatchFilterOptions
+  importSources?: { subscription: boolean; resume: boolean; matchProfile: boolean }
+  entitlements: {
+    isMember: boolean
+    maxRoleFamilies: number
+    maxPreferenceTypes: number | null
+    maxFollows: number | null
+    refreshHours: number | null
+    proactiveDigest: boolean
+    wechatTemplateId: string
+    wechatSubscriptionAvailable: boolean
+  }
+  recommendations: WatchFeedItem[]
+  followedUpdates: Array<{ inboxId: string; companyId: string; companyName: string; eventType: string; hasPublicOpportunity: boolean; occurredAt: string; status: string }>
+  generatedAt: string
+  snapshotId: string
+  validUntil: string | null
+  source?: 'empty' | 'cached' | 'recomputed' | 'stale'
+  stale?: boolean
+  emptyReason: 'watch_not_configured' | 'strict_filters' | 'no_role_update' | null
+}
+
+const watchMatchStates: CareerWatchResponse['matchState'][] = ['unused', 'fixed_free', 'member_dynamic']
+const watchEmptyReasons: Array<NonNullable<CareerWatchResponse['emptyReason']>> = ['watch_not_configured', 'strict_filters', 'no_role_update']
+
+function arrayValue<T>(value: unknown): T[] {
+  return Array.isArray(value) ? value as T[] : []
+}
+
+function validIsoValue(value: unknown) {
+  const source = String(value || '')
+  return Number.isFinite(new Date(source).getTime()) ? source : ''
+}
+
+export function normalizeCareerWatchResponse(value: unknown): CareerWatchResponse {
+  const source = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const rawProfile = source.profile && typeof source.profile === 'object'
+    ? source.profile as Record<string, unknown>
+    : null
+  const rawOptions = source.filterOptions && typeof source.filterOptions === 'object'
+    ? source.filterOptions as Record<string, unknown>
+    : {}
+  const rawEntitlements = source.entitlements && typeof source.entitlements === 'object'
+    ? source.entitlements as Record<string, unknown>
+    : {}
+  const matchState = watchMatchStates.includes(source.matchState as CareerWatchResponse['matchState'])
+    ? source.matchState as CareerWatchResponse['matchState']
+    : 'unused'
+  const emptyReason = watchEmptyReasons.includes(source.emptyReason as NonNullable<CareerWatchResponse['emptyReason']>)
+    ? source.emptyReason as NonNullable<CareerWatchResponse['emptyReason']>
+    : null
+  const profile = rawProfile ? {
+    ...rawProfile,
+    roleFamilies: arrayValue<WatchRoleFamily>(rawProfile.roleFamilies),
+    customRoleTerms: arrayValue<string>(rawProfile.customRoleTerms),
+    companyPreferences: rawProfile.companyPreferences && typeof rawProfile.companyPreferences === 'object' ? rawProfile.companyPreferences : {},
+    activePreferenceKeys: arrayValue<WatchPreferenceKey>(rawProfile.activePreferenceKeys)
+  } as WatchProfile : null
+  const generatedAt = validIsoValue(source.generatedAt)
+  const recommendations = arrayValue<WatchFeedItem>(source.recommendations).map((item) => ({
+    ...item,
+    employeeCount: String(item.employeeCount || ''),
+    headquarters: String(item.headquarters || ''),
+    rating: typeof item.rating === 'number' && Number.isFinite(item.rating) ? item.rating : null,
+    ratingSource: String(item.ratingSource || ''),
+    openJobCount: Math.max(0, Number(item.openJobCount || (item.jobId ? 1 : 0))),
+    openRoleLabels: arrayValue<string>(item.openRoleLabels).map(String).filter(Boolean).slice(0, 2),
+    jobLocation: String(item.jobLocation || ''),
+    publishedAt: String(item.publishedAt || ''),
+    verifiedAt: String(item.verifiedAt || item.updatedAt || ''),
+    reasons: arrayValue<string>(item.reasons),
+    preferenceStatuses: arrayValue<WatchFeedItem['preferenceStatuses'][number]>(item.preferenceStatuses),
+    isFollowed: Boolean(item.isFollowed),
+    isSubscribed: Boolean(item.isSubscribed),
+    score: Math.max(0, Math.min(100, Number(item.score || 0))),
+    scoreBreakdown: item.scoreBreakdown && typeof item.scoreBreakdown === 'object' ? item.scoreBreakdown : null,
+    scoreConfidence: Math.max(0, Math.min(1, Number(item.scoreConfidence || 0)))
+  }))
+  return {
+    ...(source as Partial<CareerWatchResponse>),
+    success: true,
+    matchState,
+    freeMatchAvailable: Boolean(source.freeMatchAvailable),
+    freeMatchUsedAt: source.freeMatchUsedAt ? String(source.freeMatchUsedAt) : null,
+    fixedCompanyCount: Math.max(0, Number(source.fixedCompanyCount || 0)),
+    profile,
+    filterOptions: {
+      roles: arrayValue<WatchFilterOptions['roles'][number]>(rawOptions.roles),
+      roleGroups: arrayValue<NonNullable<WatchFilterOptions['roleGroups']>[number]>(rawOptions.roleGroups),
+      teamSizes: arrayValue<WatchFilterOptions['teamSizes'][number]>(rawOptions.teamSizes),
+      ratings: arrayValue<WatchFilterOptions['ratings'][number]>(rawOptions.ratings),
+      companyAges: arrayValue<WatchFilterOptions['companyAges'][number]>(rawOptions.companyAges),
+      industries: arrayValue<WatchFilterOptions['industries'][number]>(rawOptions.industries)
+    },
+    entitlements: {
+      isMember: Boolean(rawEntitlements.isMember),
+      maxRoleFamilies: Math.max(1, Number(rawEntitlements.maxRoleFamilies || 5)),
+      maxPreferenceTypes: rawEntitlements.maxPreferenceTypes == null ? null : Number(rawEntitlements.maxPreferenceTypes),
+      maxFollows: rawEntitlements.maxFollows == null ? null : Number(rawEntitlements.maxFollows),
+      refreshHours: rawEntitlements.refreshHours == null ? null : Number(rawEntitlements.refreshHours),
+      proactiveDigest: Boolean(rawEntitlements.proactiveDigest),
+      wechatTemplateId: String(rawEntitlements.wechatTemplateId || ''),
+      wechatSubscriptionAvailable: Boolean(rawEntitlements.wechatSubscriptionAvailable)
+    },
+    recommendations,
+    followedUpdates: arrayValue<CareerWatchResponse['followedUpdates'][number]>(source.followedUpdates),
+    generatedAt,
+    snapshotId: String(source.snapshotId || `${profile?.version || 0}:${generatedAt}`),
+    validUntil: matchState === 'fixed_free' ? null : Number.isFinite(new Date(String(source.validUntil || '')).getTime()) ? String(source.validUntil) : '1970-01-01T00:00:00.000Z',
+    emptyReason
+  }
+}
+
+export function isCareerWatchCacheValid(response: CareerWatchResponse, now = Date.now()) {
+  if (response.matchState === 'fixed_free') return response.recommendations.length > 0
+  const expiresAt = new Date(response.validUntil || '').getTime()
+  return response.matchState !== 'unused' && Number.isFinite(expiresAt) && expiresAt > now
+}
+
+async function hydrateCareerWatch(value: unknown) {
+  const response = normalizeCareerWatchResponse(value)
+  // The feed already carries verified company facts. Missing facts are unknown;
+  // fetching a directory page per feed adds a waterfall and cannot fill every ID.
+  const urls = await resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId))
+  return {
+    ...response,
+    recommendations: response.recommendations.map((company) => ({
+      ...company,
+      logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+    }))
+  }
+}
+
+export async function fetchCareerWatch(refreshKey = '') {
+  if (!refreshKey || careerWatchRefreshUnsupported) {
+    return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
+  }
+  try {
+    return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch/refresh', {
+      authenticated: true,
+      method: 'POST',
+      data: { refreshKey },
+      suppressErrorLog: true
+    }))
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.statusCode === 404) {
+      careerWatchRefreshUnsupported = true
+      return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
+    }
+    throw error
+  }
+}
+
+export function fetchCareerWatchOptions() {
+  return requestJson<{ success: true; filterOptions: WatchFilterOptions; capabilities: { wechatSubscriptionAvailable: boolean } }>('/mini/career-watch/options')
+}
+
+export async function saveCareerWatch(data: Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform' | 'version' | 'inAppEnabled' | 'wechatEnabled' | 'wechatTemplateStatus'> & { version?: number }) {
+  return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', {
+    method: 'PUT', authenticated: true, data
+  }))
+}
+
+export function importCareerWatch(source: 'subscription' | 'resume' | 'match_profile') {
+  return requestJson<{ success: true; source: string; sourceUpdatedAt: string; draft: Omit<WatchProfile, 'profileId' | 'updatedAt' | 'version'> }>('/mini/career-watch/import', {
+    method: 'POST', authenticated: true, data: { source }
+  })
+}
+
+export function setCareerWatchNotifications(enabled: boolean, templateStatus: WatchProfile['wechatTemplateStatus']) {
+  return requestJson<{ success: true; enabled: boolean; templateStatus: WatchProfile['wechatTemplateStatus'] }>('/mini/career-watch/notifications', {
+    method: 'POST', authenticated: true, data: { enabled, templateStatus }
+  })
+}
+
+export async function fetchCompanyFollows() {
+  const response = await requestJson<{ success: true; follows: CompanyFollowSummary[] }>('/mini/match/follows', {
+    authenticated: true
+  })
+  const urls = await resolveCloudFileUrls(response.follows.flatMap((company) => [company.logoFileId, company.logoUrl]))
+  return {
+    ...response,
+    follows: response.follows.map((company) => ({
+      ...company,
+      logoUrl: urls.get(company.logoFileId || '') || urls.get(company.logoUrl || '') || ''
+    }))
+  }
+}
+
+export function markCareerWatchUpdatesRead(inboxIds: string[]) {
+  return requestJson<{ success: true; updated: number }>('/mini/match/updates/read', {
+    method: 'POST', authenticated: true, data: { inboxIds }
+  })
+}
+
+export function saveCareerProfile(data: {
+  sourceType: 'manual' | 'resume'
+  careerText: string
+  intake: CareerIntake
+  retentionPolicy: CareerRetentionPolicy
+  consentedAt: string
+}) {
+  return requestJson<{
+    success: true
+    stored: boolean
+    profile: Record<string, unknown>
+    completeness: CareerCompleteness
+  }>('/mini/match/profile', {
+    method: 'PUT',
+    authenticated: true,
+    data: { ...data, privacyVersion: CAREER_PRIVACY_VERSION }
+  })
+}
+
+export function analyzeCareerProfile(data: {
+  retentionPolicy: CareerRetentionPolicy
+  careerText?: string
+  intake?: CareerIntake
+  answers?: Array<{ question: string; answer: string }>
+}) {
+  return requestJson<{
+    success: true
+    status: 'needs_clarification' | 'ready'
+    result: CareerMatchResult
+    rawFileStored: false
+    stored: boolean
+  }>('/mini/match/analyze', {
+    method: 'POST',
+    authenticated: true,
+    timeout: 120000,
+    data: { ...data, idempotencyKey: createRequestKey('career-match') }
+  })
+}
+
+export function deleteCareerData(scope: 'profile' | 'resume' = 'profile', resumeId = '') {
+  return requestJson<{ success: true; deleted: boolean; message: string }>('/mini/match/data', {
+    method: 'DELETE',
+    authenticated: true,
+    data: { scope, resumeId }
+  })
+}
+
+export interface MatchRecommendation {
+  companyId: string
+  name: string
+  industry: string
+  description: string
+  logoFileId?: string
+  logoUrl?: string
+  fitBand: 'high' | 'notable' | 'explore'
+  reasons: string[]
+  evidenceSummary: string
+  hasPublicOpportunity: boolean
+  opportunity?: { jobId: string; title: string } | null
+  isFollowed: boolean
+  hasUpdate: boolean
+}
+
+export interface MatchFeedResponse {
+  success: true
+  profile: {
+    exists: boolean
+    completeness: number
+    retentionPolicy?: CareerRetentionPolicy
+    expiresAt?: string | null
+    updatedAt?: string | null
+  }
+  recommendations: MatchRecommendation[]
+  followedUpdates: Array<Record<string, unknown>>
+  meta: {
+    source: 'cached' | 'recomputed'
+    hasNewData: boolean
+    poolExhausted: boolean
+    generatedAt: string
+    algorithmVersion: string
+    fallbackUsed?: boolean
+    historyWindowDays?: number
+    dailyLimit?: number
+    emptyReason?: 'profile_incomplete' | 'no_supported_match' | null
+  }
+  capabilities: {
+    isMember: boolean
+    maxRecommendations: number
+    maxFollows: number | null
+    wechatTemplateId: string
+    wechatSubscriptionAvailable: boolean
+  }
+}

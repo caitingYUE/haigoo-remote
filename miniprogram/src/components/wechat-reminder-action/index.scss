@@ -1,0 +1,10 @@
+.wechat-reminder-action {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: normal;
+}
+
+.wechat-reminder-action::after { border: 0; }

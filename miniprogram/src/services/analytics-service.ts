@@ -7,15 +7,48 @@ interface MiniEventProperties {
   [key: string]: string | number | boolean | string[] | undefined
 }
 
+interface QueuedMiniEvent {
+  eventId: string
+  eventName: string
+  path: string
+  sentAt: string
+  properties: MiniEventProperties
+}
+
+const eventQueue: QueuedMiniEvent[] = []
+let flushTimer: ReturnType<typeof setTimeout> | null = null
+let flushing = false
+
 function currentPath() {
   const pages = Taro.getCurrentPages()
   const route = pages[pages.length - 1]?.route
   return route ? `/${route}` : '/mini'
 }
 
+export async function flushPendingMiniEvents() {
+  if (flushing || !eventQueue.length || !hasMiniSession()) return
+  flushing = true
+  if (flushTimer) clearTimeout(flushTimer)
+  flushTimer = null
+  const events = eventQueue.splice(0, 20)
+  try {
+    await requestJson('/mini/events', {
+      method: 'POST',
+      authenticated: true,
+      data: { events, releaseVersion: MINI_RELEASE_VERSION }
+    })
+  } catch (error) {
+    eventQueue.unshift(...events)
+    if (eventQueue.length > 100) eventQueue.splice(0, eventQueue.length - 100)
+    console.warn('[mini-analytics] batched delivery failed', events.map((event) => event.eventName), error)
+  } finally {
+    flushing = false
+    if (eventQueue.length && hasMiniSession()) flushTimer = setTimeout(() => { void flushPendingMiniEvents() }, 5000)
+  }
+}
+
 export function trackMiniEvent(eventName: string, properties: MiniEventProperties = {}) {
-  if (!hasMiniSession()) return Promise.resolve()
-  const event = {
+  eventQueue.push({
     eventId: createRequestKey('mini-event'),
     eventName,
     path: currentPath(),
@@ -24,14 +57,12 @@ export function trackMiniEvent(eventName: string, properties: MiniEventPropertie
       ...properties,
       source_key: 'wechat_mini_program'
     }
-  }
-  return requestJson('/mini/events', {
-    method: 'POST',
-    authenticated: true,
-    data: { events: [event], releaseVersion: MINI_RELEASE_VERSION }
-  }).then(() => undefined).catch((error) => {
-    console.warn('[mini-analytics] event delivery failed', eventName, error)
   })
+  if (eventQueue.length > 100) eventQueue.splice(0, eventQueue.length - 100)
+  if (!hasMiniSession()) return Promise.resolve()
+  if (eventQueue.length >= 10) void flushPendingMiniEvents()
+  else if (!flushTimer) flushTimer = setTimeout(() => { void flushPendingMiniEvents() }, 1500)
+  return Promise.resolve()
 }
 
 export function reportMiniError(error: unknown, component = 'app') {

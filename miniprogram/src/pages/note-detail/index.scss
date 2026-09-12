@@ -1,0 +1,44 @@
+.note-detail { padding: 24px 48px calc(72px + env(safe-area-inset-bottom)); background: var(--color-surface); }
+.note-loading { color: var(--color-muted); font-size: 28px; }
+.note-detail__hero { padding: 16px 0 28px; }
+.note-detail__title,
+.note-detail__original,
+.note-detail__summary { display: block; }
+.note-detail__title { margin-top: 10px; color: var(--color-ink); font-size: 48px; font-weight: 700; line-height: 1.25; }
+.note-detail__original { margin-top: 12px; color: var(--color-muted); font-size: 26px; line-height: 1.45; }
+.note-detail__summary { margin-top: 20px; color: var(--color-secondary); font-size: 30px; line-height: 1.65; }
+.note-detail__source { display: flex; margin-top: 24px; align-items: center; gap: 14px; }
+.note-detail__source-mark { display: flex; width: 48px; height: 48px; flex-shrink: 0; align-items: center; justify-content: center; border-radius: 50%; background: var(--color-dark); color: #fff; font-size: 22px; font-weight: 600; }
+.note-detail__source text { display: block; color: var(--color-ink); font-size: 24px; }
+.note-detail__source text:last-child { margin-top: 3px; color: var(--color-muted); font-size: 23px; }
+.note-detail__meta { display: flex; margin-top: 18px; flex-wrap: wrap; gap: 8px 18px; color: var(--color-muted); font-size: 24px; }
+.note-detail__cover { display: block; width: calc(100% + 96px); height: auto; margin: 0 -48px 20px; background: var(--color-surface-soft); }
+.note-detail__content { padding: 8px 0 40px; }
+.note-block { display: block; margin-top: 28px; color: var(--color-secondary); font-size: 32px; font-weight: 400; line-height: 1.85; }
+.note-block--heading_1 { margin-top: 56px; color: var(--color-ink); font-size: 36px; font-weight: 700; line-height: 1.4; }
+.note-block--heading_2 { margin-top: 40px; color: var(--color-ink); font-size: 32px; font-weight: 600; line-height: 1.45; }
+.note-block--quote { padding: 22px 24px; border-left: 4px solid var(--color-brand); background: var(--color-brand-soft); color: var(--color-secondary); font-size: 30px; line-height: 1.75; }
+.note-block__list-item { display: flex; margin-top: 10px; gap: 12px; }
+.note-block__marker { width: 28px; flex-shrink: 0; color: var(--color-brand-strong); }
+.note-block__divider { height: 1PX; margin: 48px 0 8px; background: var(--color-border); }
+
+.note-lock { margin-top: 24px; padding: 28px 0; border-top: 1PX solid var(--color-border); border-bottom: 1PX solid var(--color-border); color: var(--color-ink); }
+.note-lock__eyebrow,
+.note-lock__title,
+.note-lock__copy,
+.note-lock__consult { display: block; }
+.note-lock__eyebrow { color: var(--color-brand-strong); font-size: 24px; font-weight: 600; }
+.note-lock__title { margin-top: 8px; font-size: 32px; font-weight: 600; }
+.note-lock__copy { margin-top: 10px; color: var(--color-secondary); font-size: 28px; line-height: 1.6; }
+.note-lock__button { margin-top: 24px; }
+.note-lock__consult { display: flex; min-height: 88px; align-items: center; justify-content: center; text-align: center; color: var(--color-brand-strong); font-size: 26px; }
+
+.note-detail__finish { margin-top: 32px; border-top: 1PX solid var(--color-border); }
+.note-detail__share { display: flex; min-height: 96px; padding: 0; align-items: center; justify-content: center; gap: 10px; border-radius: 0; background: #fff; color: var(--color-ink); font-size: 27px; font-weight: 600; }
+.note-related { border-top: 1PX solid var(--color-border); }
+.note-related__heading { display: block; padding-top: 40px; color: var(--color-ink); font-size: 34px; font-weight: 600; }
+.note-related__item { display: flex; min-height: 120px; padding: 20px 0; align-items: center; gap: 20px; border-bottom: 1PX solid var(--color-border); }
+.note-related__item > view { flex: 1; min-width: 0; }
+.note-related__item text { display: -webkit-box; overflow: hidden; color: var(--color-ink); font-size: 28px; font-weight: 600; line-height: 1.45; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.note-related__item text + text { display: block; margin-top: 5px; overflow: hidden; color: var(--color-muted); font-size: 23px; font-weight: 400; text-overflow: ellipsis; white-space: nowrap; }
+.note-detail__back { display: flex; min-height: 88px; align-items: center; justify-content: center; color: var(--color-muted); font-size: 26px; }

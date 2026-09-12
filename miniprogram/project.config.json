@@ -1,7 +1,7 @@
 {
   "miniprogramRoot": "dist/",
   "projectname": "miniprogram",
-  "description": "Haigoo Remote WeChat Mini Program",
+  "description": "HaigooRemote WeChat Mini Program",
   "appid": "wxc61db5b8b472925a",
   "setting": {
     "urlCheck": true,
