@@ -69,6 +69,7 @@ type EntitlementKey = 'website_apply' | 'referral'
 
 type EntitlementBaseline = Record<EntitlementKey, number>
 type MemberFilter = 'all' | 'free' | 'active' | 'pending' | 'expired'
+type AccountSourceFilter = 'all' | 'website' | 'both'
 type ServiceEntitlementKey =
   | 'voice_consultation_30m'
   | 'annual_career_planning'
@@ -138,6 +139,10 @@ function formatShortUserId(userId: string) {
   if (!userId) return '-'
   if (userId.length <= 18) return userId
   return `${userId.slice(0, 8)}…${userId.slice(-6)}`
+}
+
+function accountSourceLabel(user: User) {
+  return user.accountSource === 'both' || user.hasMiniAccount ? '官网 + 小程序' : '仅官网'
 }
 
 function getQuickMemberStart(kind: 'now' | 'tomorrow') {
@@ -498,6 +503,7 @@ export default function UserManagementPage() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all')
   const [providerFilter, setProviderFilter] = useState<'all' | 'email' | 'google'>('all')
+  const [sourceFilter, setSourceFilter] = useState<AccountSourceFilter>('all')
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
@@ -538,6 +544,7 @@ export default function UserManagementPage() {
         search: debouncedSearchTerm.trim(),
         status: statusFilter,
         provider: providerFilter,
+        source: sourceFilter,
         memberStatus: memberFilter
       })
       const response = await fetch(`/api/users?${params.toString()}`, {
@@ -562,7 +569,7 @@ export default function UserManagementPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, page, pageSize, debouncedSearchTerm, statusFilter, providerFilter, memberFilter])
+  }, [token, page, pageSize, debouncedSearchTerm, statusFilter, providerFilter, sourceFilter, memberFilter])
 
   // 加载用户列表
   useEffect(() => {
@@ -881,6 +888,7 @@ export default function UserManagementPage() {
         search: debouncedSearchTerm.trim(),
         status: statusFilter,
         provider: providerFilter,
+        source: sourceFilter,
         memberStatus: memberFilter
       })
       const response = await fetch(`/api/users?${params.toString()}`, {
@@ -895,12 +903,14 @@ export default function UserManagementPage() {
     }
 
     const csv = [
-      ['UUID', '用户名', '邮箱', '认证方式', '邮箱验证', '注册时间', '最后登录', '直申次数', '内推次数', '状态'].join(','),
+      ['UUID', '用户名', '邮箱', '账号渠道', '认证方式', '小程序身份数', '邮箱验证', '注册时间', '最后登录', '直申次数', '内推次数', '状态'].join(','),
       ...exportRows.map(user => [
         user.user_id,
         user.username,
         user.email,
+        accountSourceLabel(user),
         user.authProvider,
+        user.miniAccountCount || 0,
         user.emailVerified ? '是' : '否',
         user.createdAt,
         user.lastLoginAt || '-',
@@ -1070,6 +1080,20 @@ export default function UserManagementPage() {
               <option value="suspended">已停用</option>
             </select>
 
+            <select
+              aria-label="按账号渠道筛选"
+              value={sourceFilter}
+              onChange={(e) => {
+                setPage(1)
+                setSourceFilter(e.target.value as AccountSourceFilter)
+              }}
+              className="px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#b7791f] focus:border-transparent"
+            >
+              <option value="all">全部渠道</option>
+              <option value="website">仅官网</option>
+              <option value="both">已绑定小程序</option>
+            </select>
+
             {/* 认证方式过滤 */}
             <select
               value={providerFilter}
@@ -1181,6 +1205,11 @@ export default function UserManagementPage() {
                             <div className="min-w-0">
                               <div className="truncate text-sm font-semibold text-slate-900">{user.username}</div>
                               <div className="truncate text-xs text-slate-500">{user.email}</div>
+                              <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                user.hasMiniAccount ? 'bg-orange-50 text-orange-700' : 'bg-slate-100 text-slate-600'
+                              }`}>
+                                {accountSourceLabel(user)}
+                              </span>
                             </div>
                           </div>
                           <div className="mt-2 text-[11px] text-slate-400">{formatShortUserId(user.user_id)}</div>
@@ -1298,6 +1327,11 @@ export default function UserManagementPage() {
                               <Mail className="w-3 h-3" />
                               {user.email}
                             </div>
+                            <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              user.hasMiniAccount ? 'bg-orange-50 text-orange-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {accountSourceLabel(user)}
+                            </span>
                             {user.profile?.title && (
                               <p className="text-xs text-slate-500">{user.profile.title}</p>
                             )}

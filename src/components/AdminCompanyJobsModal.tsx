@@ -133,24 +133,29 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
         
         try {
             setTranslating(true);
-            const res = await fetch(`/api/data/processed-jobs?action=translate`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ jobIds })
-            });
-            
-            const data = await res.json();
-            if (data.success) {
-                alert(`成功翻译 ${data.count} 个职位`);
-                fetchJobs(); // Refresh to show translations
-            } else {
-                alert(`翻译失败: ${data.error}`);
+            let translatedCount = 0;
+            let failedCount = 0;
+            for (let index = 0; index < jobIds.length; index += 2) {
+                const batch = jobIds.slice(index, index + 2);
+                const res = await fetch(`/api/data/processed-jobs?action=translate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ jobIds: batch })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.error || `翻译请求失败 (${res.status})`);
+                translatedCount += Number(data.count || 0);
+                failedCount += Number(data.failedCount || 0);
             }
+            await fetchJobs();
+            alert(failedCount > 0
+                ? `翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个`
+                : `成功翻译 ${translatedCount} 个职位`);
         } catch (error) {
-            alert('翻译请求失败');
+            alert(`翻译请求失败: ${error instanceof Error ? error.message : '请稍后重试'}`);
         } finally {
             setTranslating(false);
         }
@@ -205,7 +210,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             category: '其他',
             tags: [],
             isManuallyEdited: true,
-            isApproved: true,
+            isApproved: false,
             status: 'active',
             processedAt: new Date(),
             processingVersion: '1.0',
@@ -268,9 +273,10 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             } else {
                 // Create new job
                 const newJob = { ...editingJob, ...companyScopedUpdate } as ProcessedJobData;
-                await dataManagementService.addProcessedJob(newJob);
+                const saved = await dataManagementService.addProcessedJob(newJob);
+                if (!saved) throw new Error('岗位新增未成功写入');
                 // Refresh list to show new job (cannot optimistically update easily as we need ID)
-                fetchJobs();
+                await fetchJobs();
             }
             
             if (shouldClose) {
