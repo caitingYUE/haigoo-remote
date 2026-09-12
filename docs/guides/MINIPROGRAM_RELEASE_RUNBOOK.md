@@ -1,4 +1,4 @@
-> 当前候选为 `1.0.35`，已上传且未提交审核。实时状态、CloudRun 指纹、自动化结果和人工闸门以 [1.0.35 production candidate](../releases/1.0.35-production-candidate.md) 与 [正式送审检查单](MINIPROGRAM_REVIEW_CHECKLIST.md) 为准；下文旧版本数字仅作历史参考。
+> 当前候选为 `1.0.36`，已上传且未提交审核。实时状态、CloudRun 指纹、自动化结果和人工闸门以 [1.0.36 production candidate](../releases/1.0.36-production-candidate.md) 与 [正式送审检查单](MINIPROGRAM_REVIEW_CHECKLIST.md) 为准；下文旧版本数字仅作历史参考。
 
 # Haigoo 小程序正式发布手册
 
