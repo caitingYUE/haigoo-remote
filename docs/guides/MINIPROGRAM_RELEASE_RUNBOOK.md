@@ -1,4 +1,4 @@
-> 2026-09-06：本文含历史发布记录。当前验收候选 1.0.25 以 [正式送审检查单](MINIPROGRAM_REVIEW_CHECKLIST.md) 为准；experience 包连接开发云，正式送审须使用 production 包，并先解决正式接口兼容问题。
+> 当前候选为 `1.0.35`，正在构建验证且未提交审核。实时状态、CloudRun 指纹、自动化结果和人工闸门以 [1.0.35 production candidate](../releases/1.0.35-production-candidate.md) 与 [正式送审检查单](MINIPROGRAM_REVIEW_CHECKLIST.md) 为准；下文旧版本数字仅作历史参考。
 
 # Haigoo 小程序正式发布手册
 
@@ -34,7 +34,7 @@
 7. 确认岗位总数与主站一致、详情可读、Logo 失败时有本地图标兜底。
 8. 生产冒烟测试完成后保存镜像版本号；回滚时切换到上一镜像，不覆盖数据库。
 
-截至 2026-07-28，生产服务状态为 `normal`，最小实例 1、最大实例 2、公网访问关闭，正式 Gateway 签名请求返回 200，无签名请求返回 401，首次全量缓存为 412 个岗位。
+生产服务的实例、网关响应和缓存数量以本次部署后的只读核验记录为准，不沿用下方历史快照数字。
 
 开发 CloudRun 的账号与交互接口使用受保护的稳定 Preview Gateway `mini-preview.haigooremote.com`；Preview 使用独立测试数据库且已应用小程序迁移 054–058，并补齐其快照缺失的基础迁移 019、021、023、026、037、038。岗位缓存使用正式站只读通道，账号、收藏、申请、订阅和浏览额度仍与生产隔离。不要改回临时 `*.vercel.app` 地址；腾讯云大陆容器对该地址曾出现 `ETIMEDOUT`。
 
@@ -44,7 +44,7 @@ Vercel Mini Gateway 有改动时执行 `npm run deploy:mini-preview`。脚本先
 
 运行 Preview 部署前，当前 Git 分支必须已存在于远端仓库；Vercel 不会向不存在的本地分支注入敏感 Preview 变量。发布脚本会同时校验岗位同步、Career Watch 方向选项、微信订阅配置和企业权限契约，任一接口出现签名失败、404、微信 AppID/模板配置不可用或响应结构缺失时都不得切换稳定别名。Preview 的 `WECHAT_MINI_APP_ID` 必须与 `miniprogram/project.config.json` 一致，并配置同一小程序的 AppSecret 与订阅模板；体验消息使用 `WECHAT_MINI_PROGRAM_STATE=trial`，正式环境使用 `formal`。若检查返回 `Unauthorized gateway request`，先同步开发 CloudRun 与 Vercel Preview 的 `MINI_GATEWAY_SHARED_SECRET`，不要通过关闭签名或改用生产服务绕过。
 
-首次配置正式岗位只读源时执行 `node scripts/deploy-mini-cloudrun.mjs --target=development --configure-jobs-source`。后续用 `npm run check:mini-jobs:dev` 验证正式岗位接口，用 `npm run check:mini-cache:dev` 验证开发缓存；截至 2026-07-28，开发缓存为 412 条岗位、242 条热门岗位，列表与详情集合均已完成全量重建。
+首次配置正式岗位只读源时执行 `node scripts/deploy-mini-cloudrun.mjs --target=development --configure-jobs-source`。后续用 `npm run check:mini-jobs:dev` 验证正式岗位接口，用 `npm run check:mini-cache:dev` 验证开发缓存；缓存数量必须以本次只读核验结果记录。
 
 ## 4. 小程序构建与提交
 

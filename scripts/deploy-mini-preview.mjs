@@ -9,7 +9,7 @@ import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const stableOrigin = 'https://mini-preview.haigooremote.com'
-const previewBranch = 'codex/mini-1.0.7-release'
+const previewBranch = process.env.MINI_PREVIEW_GIT_BRANCH || 'codex/mini-1.0.33-production-recovery'
 const suppliedDeployment = process.argv
   .find((argument) => argument.startsWith('--deployment='))
   ?.slice('--deployment='.length)

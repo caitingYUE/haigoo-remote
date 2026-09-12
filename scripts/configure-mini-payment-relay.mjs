@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const previewOrigin = 'https://mini-preview.haigooremote.com'
-const previewBranch = 'codex/mini-1.0.7-release'
+const previewBranch = process.env.MINI_PREVIEW_GIT_BRANCH || 'codex/mini-1.0.33-production-recovery'
 const developmentEnvId = 'haigoo-dev-d2gctbzxma401b345'
 const developmentServiceName = 'haigoo-mini'
 

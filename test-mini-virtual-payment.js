@@ -136,7 +136,7 @@ assert.ok(paymentService.includes("['pending', 'cancelled', 'failed'].includes(p
 assert.ok(paymentService.includes('memberType !== catalogPlan.memberType') && paymentService.includes('durationMonths !== catalogPlan.durationMonths'), 'callback must validate the catalog member type and duration')
 assert.ok(paymentService.includes('Number(payment.paid_amount_cents || 0) !== paidAmountCents'), 'completed callbacks must reject conflicting amounts')
 assert.ok(paymentService.includes('parseProductMap()[planId] || product.productId'), 'the versioned product whitelist must remain usable without a duplicate website environment mapping')
-assert.match(relaySetup, /previewBranch = 'codex\/mini-1\.0\.7-release'/)
+assert.match(relaySetup, /MINI_PREVIEW_GIT_BRANCH \|\| 'codex\/mini-1\.0\.33-production-recovery'/)
 assert.match(relaySetup, /\{ gitBranch: previewBranch \}/)
 assert.match(relaySetup, /'--force', '--yes'/)
 assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*19900/)

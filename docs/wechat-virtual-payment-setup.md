@@ -96,7 +96,7 @@ VERCEL_AUTOMATION_BYPASS_SECRET=Preview部署保护的自动化绕过密钥
 npm run configure:mini-payment-relay
 ```
 
-Preview 发布分支的同名环境变量优先于通用 Preview 变量。发布分支 `codex/mini-1.0.7-release` 如果保留独立的 `WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET`，必须与 Production 和通用 Preview 同步；否则沙箱通知会到达 Preview，但以 `401 invalid signature` 被拒绝。配置脚本会原子更新这三个作用域，避免分支覆盖项漂移。
+Preview 发布分支的同名环境变量优先于通用 Preview 变量。当前默认发布分支为 `codex/mini-1.0.33-production-recovery`，也可通过 `MINI_PREVIEW_GIT_BRANCH` 显式指定后续发布分支。若目标分支保留独立的 `WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET`，必须与 Production 和通用 Preview 同步；否则沙箱通知会到达 Preview，但以 `401 invalid signature` 被拒绝。配置脚本会原子更新这三个作用域，避免分支覆盖项漂移。
 
 ## 数据库迁移
 
