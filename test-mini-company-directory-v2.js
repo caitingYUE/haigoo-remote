@@ -150,7 +150,7 @@ assert.doesNotMatch(gateway, /GREATEST\(h\.first_seen_at, COALESCE\(h\.source_pu
 assert.match(gateway, /j\.is_approved IS TRUE/)
 assert.match(gateway, /latestPublicJobAt: row\.public_opportunity_updated_at/)
 const companyCloudRun = fs.readFileSync('cloudrun/index.mjs', 'utf8')
-assert.match(companyCloudRun, /readFormalCompanyJobs\(id,/) 
+assert.match(companyCloudRun, /readFormalCompanyJobs\(id,/)
 assert.match(companyCloudRun, /企业公开岗位数据不完整，请重试/)
 
 console.log('Strict company directory job eligibility contracts passed')

@@ -1,8 +1,8 @@
 # Haigoo 小程序设计系统
 
-> 适用范围：Haigoo Remote 微信小程序 1.0 及后续页面。  
-> 产品定位：以 Match 为核心的个性化远程职业产品。  
-> 设计方向：Personal Match × Modern Clarity × Quiet Energy。  
+> 适用范围：Haigoo Remote 微信小程序 1.0 及后续页面。
+> 产品定位：以 Match 为核心的个性化远程职业产品。
+> 设计方向：Personal Match × Modern Clarity × Quiet Energy。
 > 上位文档：`PRODUCT.md`、`docs/haigoo-platform-positioning.md`。
 
 ## 1. 产品体验
