@@ -4825,20 +4825,18 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
 
         {isMember ? (
           <section className="relative mb-5 space-y-5 sm:mb-7">
-            {isQuarterMember || isTrialWeekMember ? (
+            {isTrialWeekMember ? (
               <div className="overflow-hidden rounded-[22px] border border-[#c9dce8] bg-[#fffdf8] p-4 shadow-[0_18px_52px_-44px_rgba(111,99,246,0.22)] sm:rounded-[26px] sm:p-5">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                   <div className="min-w-0">
                     <div className="inline-flex rounded-full border border-[#c9dce8] bg-white/86 px-3 py-1 text-xs font-black text-[#466f9d]">{text('本期服务说明', 'Current service details')}</div>
                     <p className="mt-3 text-sm font-semibold leading-6 text-slate-600">
-                      {isTrialWeekMember
-                        ? text('体验服务可使用至当前有效期。需要职业咨询或申请支持时，可以联系顾问。', 'Your trial service remains available through the current term. Contact an advisor for career consulting or application support.')
-                        : text('岗位申请支持和职业成长内容可使用至当前有效期。需要协助时，可以联系顾问。', 'Job application support and career-learning content remain available through the current term. Contact an advisor whenever you need help.')}
+                      {text('体验服务可使用至当前有效期。需要职业咨询或申请支持时，可以联系顾问。', 'Your trial service remains available through the current term. Contact an advisor for career consulting or application support.')}
                     </p>
                   </div>
                   <button
                   type="button"
-                  onClick={() => openClubServiceAdvisor(isTrialWeekMember ? 'legacy_trial_upgrade' : 'legacy_quarter_upgrade')}
+                  onClick={() => openClubServiceAdvisor('legacy_trial_upgrade')}
                   className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-[#466f9d] px-5 py-3 text-sm font-black text-white shadow-[0_18px_38px_-24px_rgba(95,99,246,0.58)] transition-[background-color,color,transform] hover:-translate-y-0.5"
                 >
                   {text('联系顾问', 'Contact advisor')}

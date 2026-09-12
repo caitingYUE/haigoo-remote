@@ -281,3 +281,31 @@ export interface MemberCrmListResponse {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
   canEdit: boolean
 }
+
+export interface CrmConsultationRequest {
+  id: string
+  userId: string
+  topic: string
+  wechatId: string
+  question: string
+  sourcePage: string
+  sourceContentId: string | null
+  sourceCompanyId: string | null
+  status: 'pending' | 'contacted' | 'scheduled' | 'completed' | 'closed'
+  assignedTo: string | null
+  assignedToName: string
+  createdAt: string
+  updatedAt: string
+  contactedAt: string | null
+  closedAt: string | null
+  email: string
+  username: string
+  memberType: string
+}
+
+export interface CrmConsultationListResponse {
+  items: CrmConsultationRequest[]
+  summary: { pending: number; contacted: number; active: number }
+  pagination: { page: number; pageSize: number; total: number; totalPages: number }
+  canEdit: boolean
+}

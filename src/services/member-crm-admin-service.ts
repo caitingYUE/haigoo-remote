@@ -4,6 +4,7 @@ import type {
   CrmCareerWorkspace,
   CrmApplication,
   CrmServiceRecord,
+  CrmConsultationListResponse,
   MemberCrmDetail,
   MemberCrmListResponse,
   MemberCrmProfile
@@ -76,6 +77,16 @@ async function fileRequest(path: string, token?: string | null) {
 export const memberCrmAdminService = {
   list(params: URLSearchParams, token?: string | null) {
     return request<MemberCrmListResponse>(`?resource=members&${params.toString()}`, { token })
+  },
+
+  listConsultations(params: URLSearchParams, token?: string | null) {
+    return request<CrmConsultationListResponse>(`?resource=consultations&${params.toString()}`, { token })
+  },
+
+  updateConsultation(id: string, status: 'pending' | 'contacted' | 'scheduled' | 'completed' | 'closed', token?: string | null) {
+    return request<{ id: string; status: string; updatedAt: string }>('?resource=consultations', {
+      method: 'PATCH', token, body: JSON.stringify({ id, status })
+    })
   },
 
   detail(userId: string, token?: string | null) {

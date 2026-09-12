@@ -4,7 +4,7 @@ import { paymentOrdersAdminService, type AdminPaymentOrder } from '../services/p
 
 const STATUS_LABELS: Record<string, string> = {
   pending: '待支付', capture_pending: '确认中', completed: '已生效', partially_refunded: '部分退款',
-  refunded: '已退款', failed: '失败', review_required: '争议处理中', requested: '待审核',
+  refunded: '已退款', failed: '失败', review_required: '待人工核验', requested: '待审核',
   processing: '退款处理中', rejected: '已拒绝'
 }
 
@@ -59,7 +59,7 @@ export default function AdminPaymentOrdersPage() {
   const summary = useMemo(() => ({
     completed: orders.filter(item => item.status === 'completed').length,
     pendingRefund: orders.filter(item => item.refundRequestStatus === 'requested').length,
-    review: orders.filter(item => item.status === 'review_required').length
+    review: orders.filter(item => item.status === 'review_required' || item.refundRequestStatus === 'review_required').length
   }), [orders])
 
   const review = async (decision: 'approve' | 'reject') => {
@@ -84,7 +84,7 @@ export default function AdminPaymentOrdersPage() {
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="text-xs font-black uppercase tracking-[0.16em] text-[#466f9d]">PayPal Operations</div>
+              <div className="text-xs font-black uppercase tracking-[0.16em] text-[#466f9d]">Payment Operations</div>
               <h1 className="mt-2 text-2xl font-black text-slate-950">支付订单与退款</h1>
               <p className="mt-1 text-sm text-slate-500">订单、权益排期与退款状态以服务端验证结果为准。</p>
             </div>
@@ -102,7 +102,7 @@ export default function AdminPaymentOrdersPage() {
         <form onSubmit={event => { event.preventDefault(); setPage(1); setSubmittedSearch(search.trim()) }} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row">
           <label className="relative flex-1"><Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={search} onChange={event => setSearch(event.target.value)} placeholder="搜索订单号、邮箱或用户名" className="h-11 w-full rounded-xl border border-slate-200 pl-10 pr-3 text-sm outline-none focus:border-[#9fbbd2]" /></label>
           <select value={status} onChange={event => { setStatus(event.target.value); setPage(1) }} className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold text-slate-700">
-            <option value="all">全部状态</option><option value="completed">已生效</option><option value="requested">待审退款</option><option value="capture_pending">确认中</option><option value="refunded">已退款</option><option value="review_required">争议处理中</option><option value="failed">失败</option>
+            <option value="all">全部状态</option><option value="completed">已生效</option><option value="requested">待审退款</option><option value="capture_pending">确认中</option><option value="refunded">已退款</option><option value="review_required">待人工核验</option><option value="failed">失败</option>
           </select>
           <button type="submit" className="h-11 rounded-xl bg-[#466f9d] px-5 text-sm font-black text-white">搜索</button>
         </form>
@@ -113,15 +113,15 @@ export default function AdminPaymentOrdersPage() {
             <table className="min-w-full divide-y divide-slate-100">
               <thead className="bg-slate-50"><tr>{['订单 / 用户', '方案', '金额', '支付状态', '权益时间', '退款', '操作'].map(item => <th key={item} className="whitespace-nowrap px-5 py-3 text-left text-xs font-black text-slate-500">{item}</th>)}</tr></thead>
               <tbody className="divide-y divide-slate-100">
-                {loading ? <tr><td colSpan={7} className="px-5 py-12 text-center text-sm font-bold text-slate-500"><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />加载中...</td></tr> : orders.length === 0 ? <tr><td colSpan={7} className="px-5 py-12 text-center text-sm font-bold text-slate-500">暂无 PayPal 订单</td></tr> : orders.map(order => (
+                {loading ? <tr><td colSpan={7} className="px-5 py-12 text-center text-sm font-bold text-slate-500"><Loader2 className="mx-auto mb-2 h-5 w-5 animate-spin" />加载中...</td></tr> : orders.length === 0 ? <tr><td colSpan={7} className="px-5 py-12 text-center text-sm font-bold text-slate-500">暂无支付订单</td></tr> : orders.map(order => (
                   <tr key={order.paymentId} className="hover:bg-slate-50/70">
                     <td className="px-5 py-4 align-top"><div className="font-mono text-xs font-black text-slate-800">{order.paymentId}</div><div className="mt-1 text-sm font-bold text-slate-700">{order.userName || '-'}</div><div className="text-xs text-slate-500">{order.userEmail}</div><div className="mt-1 text-[11px] text-slate-400">{formatDate(order.createdAt)}</div></td>
                     <td className="px-5 py-4 align-top"><div className="text-sm font-black text-slate-900">{order.planName}</div><div className="mt-1 text-xs text-slate-500">{order.memberType}</div></td>
                     <td className="px-5 py-4 align-top"><div className="text-sm font-black text-slate-900">{formatMoney(order.amountCents, order.currency)}</div>{order.refundedAmountCents > 0 ? <div className="mt-1 text-xs font-bold text-rose-600">已退 {formatMoney(order.refundedAmountCents, order.currency)}</div> : null}</td>
                     <td className="px-5 py-4 align-top"><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black ${statusClass(order.status)}`}>{STATUS_LABELS[order.status] || order.status}</span><div className="mt-2 text-[11px] text-slate-400">{order.providerStatus || '-'}</div></td>
                     <td className="whitespace-nowrap px-5 py-4 align-top text-xs text-slate-500"><div>{formatDate(order.startsAt)}</div><div className="my-1 text-slate-300">↓</div><div>{formatDate(order.expiresAt)}</div></td>
-                    <td className="max-w-[260px] px-5 py-4 align-top">{order.refundRequestStatus ? <><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black ${statusClass(order.refundRequestStatus)}`}>{STATUS_LABELS[order.refundRequestStatus] || order.refundRequestStatus}</span><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{order.refundReason || '-'}</p>{order.refundRequestedAmountCents ? <div className="mt-1 text-xs font-black text-slate-700">预计 {formatMoney(order.refundRequestedAmountCents, order.currency)}</div> : null}</> : <span className="text-xs text-slate-400">无</span>}</td>
-                    <td className="px-5 py-4 align-top">{order.refundRequestStatus === 'requested' && order.refundId ? <button type="button" onClick={() => { setReviewTarget(order); setReviewNote('') }} className="inline-flex items-center gap-2 rounded-lg bg-[#466f9d] px-3 py-2 text-xs font-black text-white"><RotateCcw className="h-4 w-4" />审核退款</button> : <span className="text-xs text-slate-400">-</span>}</td>
+                    <td className="max-w-[260px] px-5 py-4 align-top">{order.refundRequestStatus ? <><span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-black ${statusClass(order.refundRequestStatus)}`}>{STATUS_LABELS[order.refundRequestStatus] || order.refundRequestStatus}</span><p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">{order.provider === 'wechat_virtual' ? '微信支付 · ' : ''}{order.refundReason || '-'}</p>{order.refundRequestedAmountCents ? <div className="mt-1 text-xs font-black text-slate-700">{order.provider === 'wechat_virtual' ? '退款金额' : '预计'} {formatMoney(order.refundRequestedAmountCents, order.currency)}</div> : null}</> : <span className="text-xs text-slate-400">无</span>}</td>
+                    <td className="px-5 py-4 align-top">{order.provider !== 'wechat_virtual' && order.refundRequestStatus === 'requested' && order.refundId ? <button type="button" onClick={() => { setReviewTarget(order); setReviewNote('') }} className="inline-flex items-center gap-2 rounded-lg bg-[#466f9d] px-3 py-2 text-xs font-black text-white"><RotateCcw className="h-4 w-4" />审核退款</button> : <span className="text-xs text-slate-400">-</span>}</td>
                   </tr>
                 ))}
               </tbody>

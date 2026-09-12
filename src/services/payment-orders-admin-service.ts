@@ -1,6 +1,7 @@
 import type { PayPalOrder } from './paypal-payment-service'
 
 export interface AdminPaymentOrder extends PayPalOrder {
+  provider?: 'paypal' | 'wechat_virtual'
   userEmail: string
   userName: string
   refundId?: string | null

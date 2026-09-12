@@ -36,9 +36,6 @@ interface UserStats {
   suspended: number
   newToday: number
   newThisWeek: number
-  websiteOnly: number
-  both: number
-  miniUsers: number
 }
 
 type EditableMemberType = 'none' | 'trial_week' | 'starter' | 'quarter' | 'quarter_pro' | 'year' | 'half_year' | 'annual'
@@ -516,10 +513,7 @@ export default function UserManagementPage() {
     active: 0,
     suspended: 0,
     newToday: 0,
-    newThisWeek: 0,
-    websiteOnly: 0,
-    both: 0,
-    miniUsers: 0
+    newThisWeek: 0
   })
   const { token, isSuperAdmin } = useAuth()
   const [editingUser, setEditingUser] = useState<User | null>(null)
@@ -566,10 +560,7 @@ export default function UserManagementPage() {
             active: Number(data.stats.active || 0),
             suspended: Number(data.stats.suspended || 0),
             newToday: Number(data.stats.newToday || 0),
-            newThisWeek: Number(data.stats.newThisWeek || 0),
-            websiteOnly: Number(data.stats.websiteOnly || 0),
-            both: Number(data.stats.both || 0),
-            miniUsers: Number(data.stats.miniUsers || 0)
+            newThisWeek: Number(data.stats.newThisWeek || 0)
           })
         }
       }
@@ -1002,7 +993,7 @@ export default function UserManagementPage() {
         {/* 页面标题 */}
         <div className="mb-5 sm:mb-8">
           <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">用户管理</h1>
-          <p className="mt-1 text-sm text-slate-600 sm:text-base">统一查看官网账号及其小程序绑定状态</p>
+          <p className="mt-1 text-sm text-slate-600 sm:text-base">管理和监控平台所有注册用户</p>
         </div>
 
         {/* 统计卡片 */}
@@ -1055,17 +1046,6 @@ export default function UserManagementPage() {
               </div>
               <Activity className="w-10 h-10 text-orange-500 opacity-20" />
             </div>
-          </div>
-        </div>
-
-        <div className="mb-6 grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
-            <p className="text-xs font-medium text-slate-500">仅官网</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{stats.websiteOnly}</p>
-          </div>
-          <div className="rounded-lg border border-orange-200 bg-orange-50/60 px-4 py-3">
-            <p className="text-xs font-medium text-orange-700">官网 + 已绑定小程序</p>
-            <p className="mt-1 text-xl font-bold text-orange-900">{stats.both}</p>
           </div>
         </div>
 
@@ -1226,9 +1206,7 @@ export default function UserManagementPage() {
                               <div className="truncate text-sm font-semibold text-slate-900">{user.username}</div>
                               <div className="truncate text-xs text-slate-500">{user.email}</div>
                               <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                                user.hasMiniAccount
-                                  ? 'bg-orange-50 text-orange-700'
-                                  : 'bg-slate-100 text-slate-600'
+                                user.hasMiniAccount ? 'bg-orange-50 text-orange-700' : 'bg-slate-100 text-slate-600'
                               }`}>
                                 {accountSourceLabel(user)}
                               </span>
@@ -1321,7 +1299,7 @@ export default function UserManagementPage() {
                   <tr>
                     <th className="w-[22%] px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">用户信息</th>
                     <th className="w-[11%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">UUID</th>
-                    <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">账号渠道</th>
+                    <th className="w-[7%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">认证方式</th>
                     <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">注册时间</th>
                     <th className="w-[9%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">最后登录</th>
                     <th className="w-[12%] px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">会员信息</th>
@@ -1349,6 +1327,11 @@ export default function UserManagementPage() {
                               <Mail className="w-3 h-3" />
                               {user.email}
                             </div>
+                            <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                              user.hasMiniAccount ? 'bg-orange-50 text-orange-700' : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {accountSourceLabel(user)}
+                            </span>
                             {user.profile?.title && (
                               <p className="text-xs text-slate-500">{user.profile.title}</p>
                             )}
@@ -1366,24 +1349,13 @@ export default function UserManagementPage() {
                         </div>
                       </td>
                       <td className="px-4 py-4">
-                        <div className="space-y-1.5">
-                          <span className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                            user.hasMiniAccount
-                              ? 'bg-orange-50 text-orange-700'
-                              : 'bg-slate-100 text-slate-700'
+                        <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${user.authProvider === 'google' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
                           }`}>
-                            {accountSourceLabel(user)}
-                          </span>
-                          <div className="flex items-center gap-1 text-xs text-slate-500">
-                            <span>{user.authProvider === 'google' ? 'Google 登录' : '邮箱登录'}</span>
-                            {user.emailVerified && <CheckCircle className="h-3.5 w-3.5 text-green-500" />}
-                          </div>
-                          {user.hasMiniAccount && (
-                            <div className="text-[11px] text-slate-400">
-                              已绑定 {user.miniAccountCount || 1} 个小程序身份
-                            </div>
-                          )}
-                        </div>
+                          {user.authProvider === 'google' ? 'Google' : '邮箱'}
+                        </span>
+                        {user.emailVerified && (
+                          <CheckCircle className="inline-block w-4 h-4 text-green-500 ml-2" />
+                        )}
                       </td>
                       <td className="px-4 py-4 text-sm text-slate-600">
                         <div className="flex items-start gap-1.5">

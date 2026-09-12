@@ -12,12 +12,12 @@ export interface User {
 
   // 认证信息
   authProvider: 'google' | 'email' // 认证提供方
-  accountSource?: 'website' | 'both' // 小程序身份必须绑定官网账号
+  accountSource?: 'website' | 'both'
   hasWebsiteAccount?: boolean
   hasMiniAccount?: boolean
   miniAccountCount?: number
-  miniCreatedAt?: string
-  miniLinkedAt?: string
+  miniCreatedAt?: string | null
+  miniLinkedAt?: string | null
   googleId?: string // Google OAuth ID
   passwordHash?: string // 密码哈希（仅邮箱登录）
 

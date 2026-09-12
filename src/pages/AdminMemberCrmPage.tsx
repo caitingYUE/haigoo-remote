@@ -5,7 +5,7 @@ import { useNotificationHelpers } from '../components/NotificationSystem'
 import { memberCrmAdminService } from '../services/member-crm-admin-service'
 import type {
   CrmApplication, CrmCareerArtifact, CrmCareerRun, CrmCareerWorkspace, CrmResumeDocument, CrmServiceDocument, CrmServiceRecord, MemberCrmDetail,
-  MemberCrmListItem, MemberCrmListResponse, MemberCrmProfile
+  CrmConsultationListResponse, CrmConsultationRequest, MemberCrmListItem, MemberCrmListResponse, MemberCrmProfile
 } from '../types/member-crm-types'
 
 const MEMBER_LABELS: Record<string, string> = {
@@ -25,6 +25,13 @@ const APPLICATION_STATUS_LABELS: Record<string, string> = {
   entry_opened: '已打开入口', pending: '待处理', pending_apply: '待确认申请', applied: '已申请',
   reviewed: '简历已阅', referred: '已内推', interviewing: '面试中', offer: 'Offer', success: '已录用',
   rejected: '未通过', failed: '失败', withdrawn: '主动终止', closed: '已关闭'
+}
+const CONSULTATION_TOPIC_LABELS: Record<string, string> = {
+  career_direction: '职业方向判断', resume: '简历与个人表达', remote_search: '远程职业准备',
+  interview: '面试准备', membership: '会员方案咨询', other: '其他问题'
+}
+const CONSULTATION_STATUS_LABELS: Record<string, string> = {
+  pending: '待联系', contacted: '已联系', scheduled: '已安排', completed: '已完成', closed: '已关闭'
 }
 const ENTITLEMENT_STATUS_LABELS: Record<string, string> = {
   available: '可使用', not_scheduled: '未预约', scheduled: '已预约', completed: '已完成',
@@ -129,6 +136,10 @@ export default function AdminMemberCrmPage() {
   const [removalReason, setRemovalReason] = useState('')
   const [visibilitySaving, setVisibilitySaving] = useState(false)
   const [page, setPage] = useState(1)
+  const [workspaceView, setWorkspaceView] = useState<'members' | 'consultations'>('members')
+  const [consultations, setConsultations] = useState<CrmConsultationListResponse | null>(null)
+  const [consultationStatus, setConsultationStatus] = useState('pending')
+  const [consultationLoading, setConsultationLoading] = useState(false)
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 280)
@@ -156,8 +167,23 @@ export default function AdminMemberCrmPage() {
     } finally { setDetailLoading(false) }
   }, [showError, token])
 
+  const loadConsultations = useCallback(async () => {
+    setConsultationLoading(true)
+    try {
+      setConsultations(await memberCrmAdminService.listConsultations(new URLSearchParams({
+        status: consultationStatus,
+        page: '1',
+        pageSize: '50',
+        search: debouncedSearch
+      }), token))
+    } catch (error) {
+      showError('咨询队列加载失败', error instanceof Error ? error.message : '网络错误')
+    } finally { setConsultationLoading(false) }
+  }, [consultationStatus, debouncedSearch, showError, token])
+
   useEffect(() => { void loadList() }, [loadList])
   useEffect(() => { if (selectedMemberId) void loadDetail(selectedMemberId) }, [loadDetail, selectedMemberId])
+  useEffect(() => { if (workspaceView === 'consultations') void loadConsultations() }, [loadConsultations, workspaceView])
   useEffect(() => { setPage(1) }, [attention, debouncedSearch, includeLegacy, memberType, membershipState, serviceStage, showExcluded])
 
   const selectMember = (userId: string) => {
@@ -203,8 +229,24 @@ export default function AdminMemberCrmPage() {
   ] as const
   const items = listData?.items || []
 
+  if (workspaceView === 'consultations') return <ConsultationQueue
+    data={consultations}
+    loading={consultationLoading}
+    status={consultationStatus}
+    search={search}
+    canEdit={Boolean(isSuperAdmin && consultations?.canEdit)}
+    onStatusFilter={setConsultationStatus}
+    onSearch={setSearch}
+    onBack={() => setWorkspaceView('members')}
+    onRefresh={loadConsultations}
+    onUpdate={async (item, status) => {
+      try { await memberCrmAdminService.updateConsultation(item.id, status, token); showSuccess('咨询状态已更新'); await loadConsultations() }
+      catch (error) { showError('更新失败', error instanceof Error ? error.message : '网络错误') }
+    }}
+  />
+
   return <div className="space-y-4 pb-10">
-    <div className="flex items-center justify-end gap-2"><StatusBadge value={isSuperAdmin ? 'active' : 'pending'} label={isSuperAdmin ? '超级管理员 · 可编辑' : '管理员 · 只读'} /><button onClick={() => void loadList()} disabled={loading} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">刷新数据</button></div>
+    <div className="flex flex-wrap items-center justify-between gap-2"><button onClick={() => setWorkspaceView('consultations')} className="rounded-lg bg-[#466f9d] px-4 py-2 text-sm font-semibold text-white">咨询待联系{consultations?.summary.pending ? ` · ${consultations.summary.pending}` : ''}</button><div className="flex items-center gap-2"><StatusBadge value={isSuperAdmin ? 'active' : 'pending'} label={isSuperAdmin ? '超级管理员 · 可编辑' : '管理员 · 只读'} /><button onClick={() => void loadList()} disabled={loading} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">刷新数据</button></div></div>
 
     <section className="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="会员概览">
       {summaryCards.map(([label, value]) => <div key={label} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"><div className="text-xs font-medium text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold tabular-nums text-slate-950">{listError ? '—' : value ?? '—'}</div></div>)}
@@ -231,6 +273,42 @@ export default function AdminMemberCrmPage() {
     </section>
     {flowSnapshot && <ServiceFlowSnapshot item={flowSnapshot} onClose={() => setFlowSnapshot(null)} onOpen={() => selectMember(flowSnapshot.userId)} />}
     {removalTarget && <Modal title="从会员 CRM 列表移除" onClose={() => setRemovalTarget(null)}><p className="text-sm leading-6 text-slate-600">只隐藏“{removalTarget.fullName || removalTarget.username || removalTarget.email}”在 CRM 列表中的展示，不会删除用户、会员状态、简历、服务或申请记录。</p><Field label="移除原因（可选）"><input autoFocus value={removalReason} maxLength={500} onChange={event => setRemovalReason(event.target.value)} className="input mt-4" placeholder="例如：测试数据、暂不纳入服务" /></Field><ModalActions saving={visibilitySaving} onCancel={() => setRemovalTarget(null)} onSave={() => void excludeMember()} /></Modal>}
+  </div>
+}
+
+function ConsultationQueue(props: {
+  data: CrmConsultationListResponse | null
+  loading: boolean
+  status: string
+  search: string
+  canEdit: boolean
+  onStatusFilter: (value: string) => void
+  onSearch: (value: string) => void
+  onBack: () => void
+  onRefresh: () => Promise<void>
+  onUpdate: (item: CrmConsultationRequest, status: CrmConsultationRequest['status']) => Promise<void>
+}) {
+  const items = props.data?.items || []
+  const summary = props.data?.summary
+  return <div className="space-y-4 pb-10">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <button onClick={props.onBack} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700"><ArrowLeft className="h-4 w-4" />返回会员 CRM</button>
+      <button onClick={() => void props.onRefresh()} disabled={props.loading} className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50">刷新队列</button>
+    </div>
+    <section className="grid grid-cols-3 gap-3" aria-label="咨询概览">
+      {[['待联系', summary?.pending], ['已联系', summary?.contacted], ['安排中 / 已完成', summary?.active]].map(([label, value]) => <div key={String(label)} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"><div className="text-xs font-medium text-slate-500">{label}</div><div className="mt-1 text-2xl font-bold text-slate-950">{value ?? '—'}</div></div>)}
+    </section>
+    <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-[minmax(220px,1fr)_180px]">
+        <input value={props.search} onChange={event => props.onSearch(event.target.value)} placeholder="搜索姓名、邮箱或微信号" className="h-10 rounded-lg border border-slate-200 px-3 text-sm outline-none focus:border-[#9fbbd2] focus:ring-2 focus:ring-[#dce9f5]" />
+        <select value={props.status} onChange={event => props.onStatusFilter(event.target.value)} className="h-10 rounded-lg border border-slate-200 px-3 text-sm"><option value="all">全部状态</option>{Object.entries(CONSULTATION_STATUS_LABELS).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select>
+      </div>
+      {props.loading ? <div className="py-16 text-center text-sm text-slate-500">正在加载咨询队列…</div> : items.length === 0 ? <EmptyState>当前筛选下没有咨询记录</EmptyState> : <div className="divide-y divide-slate-100">{items.map(item => <article key={item.id} className="grid gap-4 p-4 xl:grid-cols-[220px_minmax(260px,1fr)_220px]">
+        <div><div className="flex items-center gap-3"><MemberAvatar item={{ fullName: '', username: item.username, email: item.email }} /><div className="min-w-0"><div className="truncate text-sm font-semibold text-slate-900">{item.username || item.email || 'Haigoo 用户'}</div><div className="truncate text-xs text-slate-500">{item.email}</div></div></div><div className="mt-3 text-xs text-slate-500">微信号</div><div className="mt-0.5 break-all text-sm font-semibold text-slate-800">{item.wechatId}</div></div>
+        <div><div className="flex flex-wrap items-center gap-2"><span className="rounded bg-[#eaf0f6] px-2 py-1 text-xs font-semibold text-[#466f9d]">{CONSULTATION_TOPIC_LABELS[item.topic] || item.topic}</span><StatusBadge value={item.status === 'pending' ? 'pending' : 'active'} label={CONSULTATION_STATUS_LABELS[item.status]} /></div><p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-slate-700">{item.question || '用户未填写问题描述'}</p><div className="mt-3 text-xs text-slate-400">来源：{item.sourcePage}{item.sourceCompanyId ? ` · 企业 ${item.sourceCompanyId}` : ''}{item.sourceContentId ? ` · 内容 ${item.sourceContentId}` : ''} · {formatDate(item.createdAt, true)}</div></div>
+        <div className="flex flex-col justify-between gap-3"><div className="text-xs text-slate-500">负责人：{item.assignedToName || '尚未领取'}</div>{props.canEdit ? <select value={item.status} onChange={event => void props.onUpdate(item, event.target.value as CrmConsultationRequest['status'])} className="h-10 rounded-lg border border-slate-200 px-3 text-sm"><option value="pending">待联系</option><option value="contacted">已联系</option><option value="scheduled">已安排</option><option value="completed">已完成</option><option value="closed">已关闭</option></select> : <div className="text-xs text-slate-400">仅超级管理员可更新状态</div>}</div>
+      </article>)}</div>}
+    </section>
   </div>
 }
 
