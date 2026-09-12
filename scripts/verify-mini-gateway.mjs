@@ -14,6 +14,7 @@ const scope = process.argv.find((argument) => argument.startsWith('--scope='))?.
 const requestedAction = process.argv.find((argument) => argument.startsWith('--action='))?.split('=')[1] || 'sync'
 const featured = process.argv.find((argument) => argument.startsWith('--featured='))?.split('=')[1]
 const search = process.argv.find((argument) => argument.startsWith('--search='))?.slice('--search='.length) || ''
+const sortBy = process.argv.find((argument) => argument.startsWith('--sort-by='))?.slice('--sort-by='.length) || ''
 const includeLogo = process.argv.includes('--include-logo')
 const openid = process.argv.find((argument) => argument.startsWith('--openid='))?.slice('--openid='.length) || ''
 const expectedMatchState = process.argv.find((argument) => argument.startsWith('--expect-match-state='))?.split('=')[1] || ''
@@ -109,7 +110,7 @@ const action = requestedAction
 const query = action === 'content_home' || action === 'match_feed' || action === 'career_watch_state'
   ? { openid }
   : action === 'companies'
-    ? { openid, page: '1', pageSize: '5', ...(search ? { search } : {}) }
+    ? { openid, page: '1', pageSize: '5', ...(search ? { search } : {}), ...(sortBy ? { sortBy } : {}) }
   : action === 'career_watch_options' || action === 'membership_plans'
     ? {}
   : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}), ...(search ? { search } : {}) }
@@ -152,7 +153,7 @@ if (viaCloudrun) {
     career_watch_state: '/mini/career-watch',
     career_watch_options: '/mini/career-watch/options',
     membership_plans: '/mini/membership/plans',
-    companies: `/mini/companies?${new URLSearchParams({ page: '1', pageSize: '5', ...(search ? { search } : {}) })}`,
+    companies: `/mini/companies?${new URLSearchParams({ page: '1', pageSize: '5', ...(search ? { search } : {}), ...(sortBy ? { sortBy } : {}) })}`,
     content_home: '/mini/home'
   }[action]
   if (openid && !sessionSignature) throw new Error('CloudRun verification cannot create an authenticated test session')
@@ -273,6 +274,7 @@ console.log(JSON.stringify({
   paymentAvailable: typeof payload.paymentAvailable === 'boolean' ? payload.paymentAvailable : null,
   companyAccessScope: payload.access?.scope || null,
   search: action === 'companies' ? search : null,
+  sortBy: action === 'companies' ? payload.sortBy || null : null,
   sampleCompanies: Array.isArray(payload.companies)
     ? payload.companies.slice(0, 5).map((company) => ({
         id: company.id,
