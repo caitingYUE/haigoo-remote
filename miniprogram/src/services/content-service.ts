@@ -36,7 +36,7 @@ export interface MembershipSummary {
   memberExpireAt?: string | null
 }
 
-export type CompanyDirectorySort = 'latest' | 'relevance'
+export type CompanyDirectorySort = 'latest' | 'newest' | 'relevance'
 
 export interface HomeResponse {
   success: true
@@ -82,7 +82,9 @@ export async function fetchHome(_force = false) {
 
 export function fetchCompanies(params: { search?: string; industry?: string; sortBy?: CompanyDirectorySort; page?: number; pageSize?: number; force?: boolean } = {}) {
   const { force: _force = false, ...queryParams } = params
-  const sortBy: CompanyDirectorySort = queryParams.sortBy === 'relevance' ? 'relevance' : 'latest'
+  const sortBy: CompanyDirectorySort = queryParams.sortBy === 'relevance'
+    ? 'relevance'
+    : queryParams.sortBy === 'newest' ? 'newest' : 'latest'
   queryParams.sortBy = sortBy
   const query = Object.entries(queryParams)
     .filter(([, value]) => value !== undefined && value !== '')
@@ -116,7 +118,9 @@ export function fetchCompanies(params: { search?: string; industry?: string; sor
         }))
     return {
       ...response,
-      sortBy: response.sortBy === 'relevance' ? 'relevance' : sortBy,
+      sortBy: response.sortBy === 'relevance'
+        ? 'relevance'
+        : response.sortBy === 'newest' ? 'newest' : sortBy,
       companies: await hydrateCompanies(scopedCompanies),
       industries,
       access: {

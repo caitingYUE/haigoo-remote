@@ -19,8 +19,6 @@ import { miniContentScope } from '../../hooks/use-retained-resource'
 import './index.scss'
 
 const PAGE_SIZE = 20
-const RETAINED_TTL_MS = 60000
-
 const PLAN_NAMES: Record<string, string> = {
   mini_club_quarter_2026: '季度会员',
   mini_club_half_year_2026: '半年会员',
@@ -66,7 +64,6 @@ export default function PaymentOrdersPage() {
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const lastScope = useRef('')
-  const lastLoadedAt = useRef(0)
   const hasLoaded = useRef(false)
   const loadSequence = useRef(0)
   const authenticated = hasAuthenticatedSession()
@@ -76,7 +73,6 @@ export default function PaymentOrdersPage() {
     const sequence = ++loadSequence.current
     if (lastScope.current !== scope) {
       lastScope.current = scope
-      lastLoadedAt.current = 0
       hasLoaded.current = false
       setOrders([])
       setTotal(0)
@@ -99,7 +95,6 @@ export default function PaymentOrdersPage() {
       setTotal(result.total)
       setHasMore(result.hasMore)
       hasLoaded.current = true
-      lastLoadedAt.current = Date.now()
     } catch (loadError) {
       if (sequence !== loadSequence.current) return
       setError(loadError instanceof Error ? loadError.message : '订单加载失败，请稍后重试')
@@ -113,7 +108,7 @@ export default function PaymentOrdersPage() {
 
   useDidShow(() => {
     const sameScope = lastScope.current === miniContentScope()
-    if (sameScope && hasLoaded.current && Date.now() - lastLoadedAt.current < RETAINED_TTL_MS) return
+    if (sameScope && hasLoaded.current) return
     void loadOrders(1, false, sameScope && hasLoaded.current)
   })
   usePullDownRefresh(() => loadOrders(1, false, hasLoaded.current).finally(() => stopPullDownRefresh()))

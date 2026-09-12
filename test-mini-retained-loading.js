@@ -8,6 +8,7 @@ assert.match(hook, /const CACHE_LIMIT = 40/)
 assert.match(hook, /const retainedResources = new Map/)
 assert.match(hook, /useRetainedResource<T>\(initialKey = ''\)/)
 assert.match(hook, /scopeChanged \? null : current\.data/)
+assert.match(hook, /CACHE_TTL_MS = Number\.POSITIVE_INFINITY/)
 assert.match(hook, /writeRetained\(current\.scope, current\.key, value/)
 assert.match(hook, /\[401, 403\]\.includes/)
 assert.doesNotMatch(hook, /setStorageSync/)
@@ -53,10 +54,9 @@ for (const path of [
   './miniprogram/src/pages/payment-orders/index.tsx'
 ]) {
   const retainedPage = read(path)
-  assert.match(retainedPage, /RETAINED_TTL_MS = 60000/)
-  assert.match(retainedPage, /lastLoadedAt/)
   assert.match(retainedPage, /hasLoaded/)
   assert.match(retainedPage, /sameScope/)
+  assert.match(retainedPage, /if \(sameScope && hasLoaded\.current\) return/)
 }
 
 const favorites = read('./miniprogram/src/pages/favorite-jobs/index.tsx')

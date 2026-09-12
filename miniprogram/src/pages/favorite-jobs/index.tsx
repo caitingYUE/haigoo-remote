@@ -8,8 +8,6 @@ import { hasAuthenticatedSession } from '../../services/session'
 import { miniContentScope } from '../../hooks/use-retained-resource'
 import './index.scss'
 
-const RETAINED_TTL_MS = 60000
-
 export default function FavoriteJobsPage() {
   const [records, setRecords] = useState<FavoriteJobRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -20,7 +18,6 @@ export default function FavoriteJobsPage() {
   const pending = useRef(false)
   const removePending = useRef(false)
   const lastScope = useRef('')
-  const lastLoadedAt = useRef(0)
   const hasLoaded = useRef(false)
   const loadSequence = useRef(0)
 
@@ -32,7 +29,6 @@ export default function FavoriteJobsPage() {
       pending.current = false
       removePending.current = false
       page.current = 0
-      lastLoadedAt.current = 0
       hasLoaded.current = false
       setRecords([])
       setHasMore(false)
@@ -54,7 +50,6 @@ export default function FavoriteJobsPage() {
       page.current = result.page
       setHasMore(result.hasMore)
       hasLoaded.current = true
-      lastLoadedAt.current = Date.now()
     } catch (cause) {
       if (sequence !== loadSequence.current) return
       if (scope !== miniContentScope()) setRecords([])
@@ -65,7 +60,7 @@ export default function FavoriteJobsPage() {
 
   useDidShow(() => {
     const sameScope = lastScope.current === miniContentScope()
-    if (sameScope && hasLoaded.current && Date.now() - lastLoadedAt.current < RETAINED_TTL_MS) return
+    if (sameScope && hasLoaded.current) return
     void load(true, sameScope && hasLoaded.current)
   })
   usePullDownRefresh(() => { void load(true, hasLoaded.current) })

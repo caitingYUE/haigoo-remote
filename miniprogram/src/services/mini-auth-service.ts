@@ -48,7 +48,9 @@ export async function refreshWechatSession() {
   return session
 }
 
-export async function refreshWechatSessionIfStale(maxAgeMs = 60000) {
+// Sensitive pages validate server-side membership on every return. Requests
+// are still deduplicated while in flight.
+export async function refreshWechatSessionIfStale(maxAgeMs = 0) {
   if (!hasAuthenticatedSession()) return null
   if (Date.now() - lastSessionRefreshAt < Math.max(0, maxAgeMs)) return null
   if (sessionRefreshPending) return sessionRefreshPending

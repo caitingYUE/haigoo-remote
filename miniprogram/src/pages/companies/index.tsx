@@ -102,9 +102,10 @@ export default function CompaniesPage() {
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/companies/index')
     const previousScope = miniContentScope()
-    void load(false)
-    if (hasAuthenticatedSession()) void refreshWechatSessionIfStale().catch(() => null).then(() => {
+    if (!hasAuthenticatedSession()) { void load(false); return }
+    void refreshWechatSessionIfStale().catch(() => null).then(() => {
       if (previousScope !== miniContentScope()) void load(true)
+      else void load(false)
     })
   })
   useEffect(() => onCompanyFollowChange(({ companyId, followed: nextFollowed }) => {

@@ -13,20 +13,16 @@ import { onCompanyFollowChange } from '../../services/company-follow-state'
 import { miniContentScope } from '../../hooks/use-retained-resource'
 import './index.scss'
 
-const RETAINED_TTL_MS = 60000
-
 export default function FollowedCompaniesPage() {
   const [companies, setCompanies] = useState<CompanyFollowSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [reminderConfig, setReminderConfig] = useState({ available: false, templateId: '' })
   const lastScope = useRef('')
-  const lastLoadedAt = useRef(0)
   const hasLoaded = useRef(false)
   const loadSequence = useRef(0)
   useEffect(() => () => { loadSequence.current++ }, [])
   useEffect(() => onCompanyFollowChange(({ companyId, followed, reminderEnabled }) => {
-    lastLoadedAt.current = 0
     setCompanies((current) => followed
       ? current.map((company) => company.company_id === companyId
           ? { ...company, wechat_enabled: reminderEnabled, wechat_template_status: reminderEnabled ? 'accepted' : company.wechat_template_status }
@@ -41,7 +37,6 @@ export default function FollowedCompaniesPage() {
       lastScope.current = scope
       setCompanies([])
       setReminderConfig({ available: false, templateId: '' })
-      lastLoadedAt.current = 0
       hasLoaded.current = false
       setLoading(true)
     }
@@ -60,7 +55,6 @@ export default function FollowedCompaniesPage() {
         templateId: String(watch?.entitlements.wechatTemplateId || '')
       })
       hasLoaded.current = true
-      lastLoadedAt.current = Date.now()
     } catch (loadError) {
       if (sequence !== loadSequence.current) return
       if (scope !== miniContentScope()) setCompanies([])
@@ -72,7 +66,7 @@ export default function FollowedCompaniesPage() {
 
   useDidShow(() => {
     const sameScope = lastScope.current === miniContentScope()
-    if (sameScope && hasLoaded.current && Date.now() - lastLoadedAt.current < RETAINED_TTL_MS) return
+    if (sameScope && hasLoaded.current) return
     void load({ preserve: sameScope && hasLoaded.current })
   })
   usePullDownRefresh(async () => {

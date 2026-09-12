@@ -12,7 +12,8 @@ export function miniContentScope() {
 }
 
 const CACHE_LIMIT = 40
-const CACHE_TTL_MS = 60000
+// Keep page data stable until an explicit pull-to-refresh or account change.
+const CACHE_TTL_MS = Number.POSITIVE_INFINITY
 const retainedResources = new Map<string, { data: unknown; loadedAt: number }>()
 interface RetainedState<T> {
   key: string

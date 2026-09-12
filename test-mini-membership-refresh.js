@@ -37,17 +37,25 @@ for (const [path, payloadCall] of [
 
 const companiesPage = read('miniprogram/src/pages/companies/index.tsx')
 assert.match(companiesPage, /refreshWechatSessionIfStale\(\)/)
-assert.match(companiesPage, /void load\(false\)/)
+assert.ok(
+  companiesPage.indexOf('refreshWechatSessionIfStale()') < companiesPage.indexOf('else void load(false)'),
+  'company directory must validate membership before restoring retained data'
+)
 assert.doesNotMatch(companiesPage, /useDidShow\(\(\) => \{[\s\S]{0,500}setData\(null\)/)
 const watchPage = read('miniprogram/src/pages/index/career-watch-page.tsx')
 assert.match(watchPage, /refreshWechatSessionIfStale\(\)/)
 assert.doesNotMatch(watchPage, /useDidShow\(\(\) => \{[\s\S]{0,500}setWatch\(null\)/)
 const companyDetail = read('miniprogram/src/pages/company-detail/index.tsx')
 assert.match(companyDetail, /refreshWechatSessionIfStale\(\)/)
-assert.match(companyDetail, /void load\(false\)/)
+assert.ok(
+  companyDetail.indexOf('refreshWechatSessionIfStale()') < companyDetail.indexOf('else void load(false)'),
+  'company detail must validate membership before restoring retained data'
+)
 assert.doesNotMatch(companyDetail, /useDidShow\(\(\) => \{[\s\S]{0,400}setData\(null\)/)
 const profilePage = read('miniprogram/src/pages/profile/index.tsx')
 assert.match(profilePage, /const activeMembership = dashboardLoaded \? membership : null/)
+const miniAuthSource = read('miniprogram/src/services/mini-auth-service.ts')
+assert.match(miniAuthSource, /refreshWechatSessionIfStale\(maxAgeMs = 0\)/)
 
 let resolveFirst
 let loginCount = 0

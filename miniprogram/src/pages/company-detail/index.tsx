@@ -87,9 +87,10 @@ export default function CompanyDetailPage() {
   }, [accessSearch, id, loadResource, resourceKey])
   useDidShow(() => {
     const previousScope = miniContentScope()
-    void load(false)
-    if (hasAuthenticatedSession()) void refreshWechatSessionIfStale().catch(() => null).then(() => {
+    if (!hasAuthenticatedSession()) { void load(false); return }
+    void refreshWechatSessionIfStale().catch(() => null).then(() => {
       if (previousScope !== miniContentScope()) void load(true)
+      else void load(false)
     })
   })
 
