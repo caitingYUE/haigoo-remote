@@ -26,12 +26,16 @@ assert.deepEqual(matchCompanyNames(similar, 'Buffer').ids, ['a'], 'exact beats s
 assert.equal(matchCompanyNames(similar, 'Bufer').outcome, 'matched')
 const directoryRows = [
   { company_id: 'title', name: 'Other Co', public_job_titles: ['Product Manager'], public_opportunity_updated_at: '2026-09-08T00:00:00Z' },
-  { company_id: 'translated', name: '国际公司', translations: { name: 'Global Company' }, public_job_titles: ['Engineer'], public_opportunity_updated_at: '2026-09-07T00:00:00Z' }
+  { company_id: 'translated', name: '国际公司', translations: { name: 'Global Company' }, public_job_titles: ['Engineer'], public_opportunity_updated_at: '2026-09-07T00:00:00Z' },
+  { company_id: 'newpath', name: 'NewPath Conveyancing', public_job_titles: ['Remote Office Assistant'], public_opportunity_updated_at: '2026-09-09T00:00:00Z' },
+  { company_id: 'supabase', name: 'Supabase', public_job_titles: ['Engineer'], public_opportunity_updated_at: '2026-09-06T00:00:00Z' }
 ]
 assert.deepEqual(rankDirectoryCompanies(directoryRows, 'Product Manger', { mode: 'free' }).ids, ['title'])
+assert.deepEqual(rankDirectoryCompanies(directoryRows, 'newpath', { mode: 'free' }).ids, ['newpath'], 'an exact company-name token remains searchable for free users')
+assert.equal(rankDirectoryCompanies(directoryRows, 'supa', { mode: 'free' }).outcome, 'too_broad', 'arbitrary partial prefixes do not widen free directory access')
 assert.deepEqual(rankDirectoryCompanies(directoryRows, '%', { mode: 'member' }).ids, [])
 assert.equal(rankDirectoryCompanies(directoryRows, 'Product', { mode: 'member' }).ids[0], 'title')
-assert.deepEqual(rankDirectoryCompanies(directoryRows, '', { mode: 'member' }).companies.map((row) => row.company_id), ['title', 'translated'])
+assert.deepEqual(rankDirectoryCompanies(directoryRows, '', { mode: 'member' }).companies.map((row) => row.company_id), ['newpath', 'title', 'translated', 'supabase'])
 console.log('Named company search: normalization, typo bounds, aliases, short names and exact priority passed')
 
 const read = (file) => fs.readFileSync(file, 'utf8')
