@@ -52,6 +52,12 @@ assert.equal(company.careersUrl, '', 'missing careers links must stay empty')
 assert.equal('careersPage' in company, false, 'legacy unvalidated Careers fields must stay out of the contract')
 assert.equal(mapMiniCompany({ company_id: 'company-2', name: 'No Industry' }).industry, '', 'missing industries must stay empty instead of receiving a fabricated category')
 
+const categorizedCompany = mapMiniCompany({
+  company_id: 'company-role', name: 'Role Co',
+  open_role_categories: ['软件开发', '前端开发', '产品经理']
+})
+assert.deepEqual(categorizedCompany.openRoleCategories, ['前端开发', '产品经理'])
+
 const cachedCompany = mapMiniCompany({
   company_id: 'company-1', name: 'Remote Co',
   cached_logo_url: '/api/company-assets?companyId=company-1&type=logo&v=abc123'

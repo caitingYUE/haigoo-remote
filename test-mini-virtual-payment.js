@@ -43,10 +43,14 @@ assert.deepEqual(
 assert.equal(VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026.productId, 'club_half_year')
 assert.equal(VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026.amountCents, 69900)
 assert.equal(VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026.durationMonths, 6)
-assert.doesNotThrow(() => ensurePurchaseEligible({
+assert.throws(() => ensurePurchaseEligible({
   member_status: 'active', member_type: 'half_year',
   member_expire_at: '2099-12-31T00:00:00.000Z'
-}, VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026))
+}, VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026), error => error.code === 'VIRTUAL_PAYMENT_HALF_YEAR_ALREADY_ACTIVE')
+for (const plan of [VIRTUAL_PAYMENT_PRODUCTS.club_starter_monthly, VIRTUAL_PAYMENT_PRODUCTS.mini_club_quarter_2026]) {
+  assert.doesNotThrow(() => ensurePurchaseEligible({member_status: 'active', member_type: plan.memberType, member_expire_at: '2099-12-31T00:00:00.000Z'}, plan))
+}
+assert.doesNotThrow(() => ensurePurchaseEligible({member_status: 'expired', member_type: 'half_year', member_expire_at: '2020-01-01'}, VIRTUAL_PAYMENT_PRODUCTS.mini_club_half_year_2026))
 assert.throws(() => ensurePurchaseEligible({
   member_status: 'active', member_type: 'half_year',
   member_expire_at: '2099-12-31T00:00:00.000Z'
@@ -109,14 +113,18 @@ const membershipPage = fs.readFileSync(new URL('./miniprogram/src/pages/membersh
 const orderCenter = fs.readFileSync(new URL('./miniprogram/src/pages/payment-orders/index.tsx', import.meta.url), 'utf8')
 const paymentService = fs.readFileSync(new URL('./lib/services/wechat-virtual-payment-service.js', import.meta.url), 'utf8')
 const paymentSetup = fs.readFileSync(new URL('./docs/wechat-virtual-payment-setup.md', import.meta.url), 'utf8')
+const relaySetup = fs.readFileSync(new URL('./scripts/configure-mini-payment-relay.mjs', import.meta.url), 'utf8')
 const envExample = fs.readFileSync(new URL('./.env.example', import.meta.url), 'utf8')
+const refundMigration = fs.readFileSync(new URL('./server-utils/dal/migrations/085_wechat_virtual_payment_refunds.sql', import.meta.url), 'utf8')
+const refundService = fs.readFileSync(new URL('./lib/services/wechat-virtual-payment-service.js', import.meta.url), 'utf8')
+const refundCallback = fs.readFileSync(new URL('./api/wechat-virtual-payment-notify.js', import.meta.url), 'utf8')
 
 assert.ok(cloudrun.includes('requestVirtualPayment&${signData}'), 'paySig must bind the API method and the exact signData string')
 assert.ok(cloudrun.includes('virtualPaymentSignature(login.sessionKey, signData)'), 'session_key must sign the exact signData string')
 assert.ok(miniClient.includes("mode: 'short_series_goods'"), 'the client must use direct virtual-goods mode')
 assert.ok(miniClient.includes("order.status === 'completed'"), 'client success must be followed by server order confirmation')
 assert.ok(/开通\$\{(?:selectedPlan|plan)\.shortLabel\}/.test(membershipPage) && membershipPage.includes('purchase(selectedPlan)'), 'supported environments must expose the official in-app purchase entry for the selected server plan')
-assert.ok(membershipPage.includes('setPaymentAvailable(result.paymentAvailable)'), 'the server catalog must control whether the purchase entry is visible')
+assert.ok(membershipPage.includes('const paymentAvailable = Boolean(data?.paymentAvailable)'), 'the server catalog must control whether the purchase entry is visible')
 assert.ok(miniClient.includes('if (!isVirtualPaymentSupported())'), 'device capability must be checked when the user starts payment')
 assert.ok(membershipPage.includes('暂时无法购买'), 'unsupported environments must hide payment and explain the safe fallback')
 assert.ok(!membershipPage.includes('openOfficialAccount') && !membershipPage.includes('setClipboardData'), 'the release must not route purchases around official payment')
@@ -124,10 +132,13 @@ assert.ok(orderCenter.includes('getVirtualPaymentOrders'), 'users must have an i
 assert.ok(orderCenter.includes('支付成功') && orderCenter.includes('已退款'), 'the order center must distinguish terminal payment states')
 assert.ok(orderCenter.includes('已取消'), 'the order center must show client-cancelled orders honestly')
 assert.ok(miniClient.includes("cancelled ? 'cancelled' : 'failed'"), 'the client must report terminal payment invocation results')
-assert.ok(paymentService.includes("status IN ('pending', 'cancelled', 'failed')"), 'a late verified callback must still complete a client-cancelled order')
+assert.ok(paymentService.includes("['pending', 'cancelled', 'failed'].includes(payment.status)"), 'a late verified callback must still complete a client-cancelled order')
 assert.ok(paymentService.includes('memberType !== catalogPlan.memberType') && paymentService.includes('durationMonths !== catalogPlan.durationMonths'), 'callback must validate the catalog member type and duration')
 assert.ok(paymentService.includes('Number(payment.paid_amount_cents || 0) !== paidAmountCents'), 'completed callbacks must reject conflicting amounts')
 assert.ok(paymentService.includes('parseProductMap()[planId] || product.productId'), 'the versioned product whitelist must remain usable without a duplicate website environment mapping')
+assert.match(relaySetup, /previewBranch = 'codex\/mini-1\.0\.7-release'/)
+assert.match(relaySetup, /\{ gitBranch: previewBranch \}/)
+assert.match(relaySetup, /'--force', '--yes'/)
 assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*19900/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*69900/)
 assert.match(paymentSetup, /club_starter_monthly[\s\S]*9900/)
@@ -135,5 +146,11 @@ assert.match(paymentSetup, /mini_club_quarter_2026[\s\S]*club_quarter/)
 assert.match(paymentSetup, /mini_club_half_year_2026[\s\S]*club_half_year/)
 assert.ok(!/\|\s*`club_annual`/.test(paymentSetup), 'payment setup must not instruct operators to create the retired annual product')
 assert.match(envExample, /"mini_club_quarter_2026":"club_quarter"/)
+assert.ok(refundCallback.includes('await wechatVirtualPaymentService.applyRefund(notification)'), 'WeChat refund callbacks must reconcile the order automatically')
+assert.ok(refundService.includes('async applyRefund(notification)'), 'WeChat virtual payment service must expose refund reconciliation')
+assert.ok(refundService.includes('refunded_amount_cents'), 'Refund reconciliation must load cumulative refunded amount')
+assert.ok(refundMigration.includes('CREATE OR REPLACE FUNCTION apply_wechat_virtual_refund'), 'Refund migration must provide an idempotent database reconciliation function')
+assert.ok(refundMigration.includes("superseded_reason = 'wechat_virtual_refund'"), 'Full refunds must supersede the refunded entitlement segment')
+assert.ok(refundMigration.includes("requiresManualReview"), 'Partial or consumed refunds must remain reviewable')
 
 console.log('mini virtual-payment checks passed')

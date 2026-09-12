@@ -1,0 +1,2 @@
+ALTER TABLE jobs
+  ALTER COLUMN is_approved SET DEFAULT FALSE;

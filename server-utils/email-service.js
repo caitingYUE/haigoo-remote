@@ -54,6 +54,7 @@ function formatEmailDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '待确认'
   return date.toLocaleString('zh-CN', {
+    timeZone: 'Asia/Shanghai',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -66,7 +67,7 @@ function getMembershipEmailLabel(memberType, plan) {
   const labels = {
     trial_week: '体验会员',
     starter: '月度会员',
-    quarter: 'Club 会员',
+    quarter: '季度会员',
     quarter_pro: 'Club 会员',
     year: '年度会员',
     half_year: '半年会员',
@@ -86,7 +87,7 @@ function getMembershipEmailBenefits(memberType, plan) {
 /**
  * 发送邮件（通用）via Resend API
  */
-export async function sendEmail(to, subject, html) {
+export async function sendEmail(to, subject, html, { idempotencyKey } = {}) {
   if (!RESEND_CONFIGURED) {
     console.warn(`[email-service] RESEND_API_KEY not set, skipping email to ${to}`)
     return false
@@ -97,7 +98,8 @@ export async function sendEmail(to, subject, html) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        ...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {})
       },
       body: JSON.stringify({
         from: `${FROM_NAME} <${FROM_EMAIL}>`,
@@ -211,7 +213,10 @@ export async function sendMembershipActivatedEmail({
   accountEmail,
   memberType,
   memberStartAt,
-  memberExpireAt
+  memberExpireAt,
+  isRenewal = false,
+  purchaseSucceeded = false,
+  idempotencyKey
 }) {
   const normalizedType = normalizeMemberType(memberType)
   const plan = getPlanConfigByType(normalizedType)
@@ -224,7 +229,7 @@ export async function sendMembershipActivatedEmail({
   const expireAt = formatEmailDate(memberExpireAt)
   const benefits = getMembershipEmailBenefits(normalizedType, plan)
 
-  const subject = `你的 ${membershipLabel}已生效`
+  const subject = isRenewal ? `${membershipLabel}续费成功，有效期已顺延` : purchaseSucceeded ? `${membershipLabel}购买成功` : `你的 ${membershipLabel}已生效`
   const html = `
 <!DOCTYPE html>
 <html>
@@ -258,8 +263,8 @@ export async function sendMembershipActivatedEmail({
     <div class="shell">
       <div class="hero">
         <div class="brand">Haigoo Remote Club</div>
-        <h1 class="title">会员服务已生效</h1>
-        <p class="subtitle">Hi，${displayName}。本期服务已开始，可前往个人中心查看可用内容和有效期。</p>
+        <h1 class="title">${isRenewal ? '续费成功，有效期已顺延' : purchaseSucceeded ? '会员购买成功' : '会员服务已生效'}</h1>
+        <p class="subtitle">Hi，${displayName}。${isRenewal ? '购买成功！会员有效期已在原到期日基础上自然顺延，现有权益可继续使用。' : '可前往个人中心查看可用内容和有效期。'}</p>
       </div>
       <div class="content">
         <div class="panel">
@@ -268,11 +273,11 @@ export async function sendMembershipActivatedEmail({
             <div class="value">${displayMemberType}</div>
           </div>
           <div class="row">
-            <div class="label">生效时间</div>
+            <div class="label">${isRenewal ? '原到期时间' : '生效时间'}</div>
             <div class="value">${escapeHtml(effectiveAt)}</div>
           </div>
           <div class="row">
-            <div class="label">到期时间</div>
+            <div class="label">${isRenewal ? '顺延后到期时间' : '到期时间'}</div>
             <div class="value">${escapeHtml(expireAt)}</div>
           </div>
           <div class="row">
@@ -304,7 +309,86 @@ export async function sendMembershipActivatedEmail({
 </html>
   `.trim()
 
-  return sendEmail(to, subject, html)
+  return sendEmail(to, subject, html, { idempotencyKey })
+}
+
+/**
+ * 发送会员退款通知邮件
+ */
+export async function sendMembershipRefundedEmail({
+  to,
+  username,
+  accountEmail,
+  memberType,
+  paymentId,
+  refundAmountCents,
+  refundedAt,
+  membershipActive,
+  memberExpireAt,
+  idempotencyKey
+}) {
+  const normalizedType = normalizeMemberType(memberType)
+  const plan = getPlanConfigByType(normalizedType)
+  const siteUrl = (process.env.SITE_URL || 'https://haigooremote.com').replace(/\/$/, '')
+  const displayName = escapeHtml(username || '你好')
+  const displayEmail = escapeHtml(accountEmail || to)
+  const membershipLabel = escapeHtml(getMembershipEmailLabel(normalizedType, plan))
+  const orderTail = escapeHtml(String(paymentId || '').slice(-4) || '待确认')
+  const amount = Number.isSafeInteger(Number(refundAmountCents))
+    ? `¥${(Math.max(0, Number(refundAmountCents)) / 100).toFixed(2)}`
+    : '待确认'
+  const refundTime = formatEmailDate(refundedAt)
+  const expireTime = formatEmailDate(membershipActive ? memberExpireAt : refundedAt)
+  const subject = membershipActive ? '退款已完成，会员有效期已调整' : '退款已完成，会员权益已失效'
+  const statusLabel = membershipActive ? '仍有其他有效会员权益' : '本次会员权益已失效'
+  const timeLabel = membershipActive ? '调整后有效期' : '权益失效时间'
+  const description = membershipActive
+    ? '本笔订单已完成退款。由于账户仍有其他未退款的会员订单，现有会员权益将按调整后的有效期继续生效。'
+    : '本笔订单已完成退款，对应会员权益已同步取消。'
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { margin:0; background:#f6f8fc; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; color:#0f172a; }
+    .wrapper { max-width:640px; margin:0 auto; padding:28px 16px; }
+    .shell { overflow:hidden; border:1px solid #e2e8f0; border-radius:24px; background:#fff; }
+    .hero { padding:28px; border-bottom:1px solid #e2e8f0; background:linear-gradient(180deg,#fff8e8,#fff); }
+    .brand { color:#8f5e19; font-size:12px; font-weight:800; letter-spacing:.18em; text-transform:uppercase; }
+    .title { margin:12px 0 8px; font-size:28px; line-height:1.25; }
+    .subtitle,.foot { color:#64748b; font-size:14px; line-height:1.8; }
+    .content { padding:28px; }
+    .panel { padding:14px 18px; border:1px solid #fed7aa; border-radius:18px; background:#fff7ed; }
+    .row { display:flex; justify-content:space-between; gap:16px; padding:10px 0; border-bottom:1px solid #ffedd5; }
+    .row:last-child { border-bottom:0; }
+    .label { color:#9a3412; font-size:13px; }
+    .value { color:#7c2d12; font-size:14px; font-weight:700; text-align:right; }
+    .foot { margin-top:24px; }
+    .support { color:#8f5e19; font-weight:700; text-decoration:none; }
+  </style>
+</head>
+<body><div class="wrapper"><div class="shell">
+  <div class="hero"><div class="brand">Haigoo Remote Club</div><h1 class="title">${subject}</h1>
+    <p class="subtitle">Hi，${displayName}。${description}</p></div>
+  <div class="content"><div class="panel">
+    <div class="row"><div class="label">会员类型</div><div class="value">${membershipLabel}</div></div>
+    <div class="row"><div class="label">退款订单</div><div class="value">尾号 ${orderTail}</div></div>
+    <div class="row"><div class="label">退款金额</div><div class="value">${escapeHtml(amount)}</div></div>
+    <div class="row"><div class="label">退款时间</div><div class="value">${escapeHtml(refundTime)}</div></div>
+    <div class="row"><div class="label">权益状态</div><div class="value">${statusLabel}</div></div>
+    <div class="row"><div class="label">${timeLabel}</div><div class="value">${escapeHtml(expireTime)}</div></div>
+    <div class="row"><div class="label">注册账户</div><div class="value">${displayEmail}</div></div>
+  </div>
+  <div class="foot">如需确认退款或会员状态，请联系客服：
+    <a class="support" href="mailto:hi@haigooremote.com">hi@haigooremote.com</a><br />
+    海狗网站：<a class="support" href="${siteUrl}">${siteUrl}</a>
+  </div></div>
+</div></div></body>
+</html>`.trim()
+
+  return sendEmail(to, subject, html, { idempotencyKey })
 }
 
 /**

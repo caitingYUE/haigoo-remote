@@ -9,23 +9,37 @@ import { pipeline } from 'stream/promises'
 import cloudbase from '@cloudbase/node-sdk'
 import { isLeaseActive, stableJson, staleCleanupDecision, syncDecision } from './sync-policy.mjs'
 import {
+  buildCompanyJobMetadata,
+  createCompanyJobMetadataLoader,
+  companyJobMetadata,
   mapCompanyJobDetail,
-  mapCompanyJobSummary
+  readFormalCompanyCatalog
 } from './company-directory.mjs'
+import { createVirtualPaymentReconciler } from './virtual-payment-reconciliation.mjs'
 
 const port = Number(process.env.PORT || 8080)
+// Hash running source, rather than an environment label that can outlive code.
+const sourceRevision = ['index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'virtual-payment-reconciliation.mjs']
+  .reduce((hash, file) => hash.update(fs.readFileSync(new URL(file, import.meta.url))), crypto.createHash('sha256')).digest('hex')
 const apiOrigin = String(process.env.HAIGOO_API_ORIGIN || '').replace(/\/+$/, '')
 const jobsApiOrigin = String(process.env.HAIGOO_JOBS_API_ORIGIN || apiOrigin).replace(/\/+$/, '')
 const appId = String(process.env.WECHAT_MINI_APP_ID || '')
 const appSecret = String(process.env.WECHAT_MINI_APP_SECRET || '')
 const gatewaySecret = String(process.env.MINI_GATEWAY_SHARED_SECRET || '')
 const jobsGatewaySecret = String(process.env.MINI_JOBS_GATEWAY_SHARED_SECRET || gatewaySecret)
+const catalogSourceSecret = String(process.env.MINI_CATALOG_SOURCE_SECRET || jobsGatewaySecret)
 const sessionSecret = String(process.env.MINI_SESSION_SECRET || '')
 const syncSecret = String(process.env.MINI_SYNC_SECRET || '')
 const vercelAutomationBypassSecret = String(process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '')
 const virtualPaymentOfferId = String(process.env.WECHAT_VIRTUAL_PAYMENT_OFFER_ID || '').trim()
 const virtualPaymentAppKey = String(process.env.WECHAT_VIRTUAL_PAYMENT_APP_KEY || '').trim()
 const virtualPaymentEnv = Number(process.env.WECHAT_VIRTUAL_PAYMENT_ENV || 0) === 1 ? 1 : 0
+const virtualPaymentReconciler = createVirtualPaymentReconciler({
+  appId,
+  appSecret,
+  appKey: virtualPaymentAppKey,
+  env: virtualPaymentEnv
+})
 const jobsCollection = 'mini_jobs'
 const jobListCollection = 'mini_job_list'
 const syncCollection = 'mini_sync_state'
@@ -55,6 +69,9 @@ const SYNC_LEASE_MS = Math.max(5 * 60 * 1000, Number(process.env.MINI_SYNC_LEASE
 const LOGO_RETRY_MS = Math.max(60 * 60 * 1000, Number(process.env.MINI_LOGO_RETRY_MS || 24 * 60 * 60 * 1000))
 const LIST_MEMORY_CACHE_MS = Math.max(30 * 1000, Number(process.env.MINI_LIST_MEMORY_CACHE_MS || 5 * 60 * 1000))
 const SYNC_STATE_MEMORY_CACHE_MS = Math.max(10 * 1000, Number(process.env.MINI_SYNC_STATE_MEMORY_CACHE_MS || 60 * 1000))
+const catalogSyncEnabled = String(process.env.MINI_CATALOG_SYNC_ENABLED || '').trim().toLowerCase() === 'true'
+const CATALOG_SYNC_INTERVAL_MS = Math.max(15 * 60 * 1000, Number(process.env.MINI_CATALOG_SYNC_INTERVAL_MS || 60 * 60 * 1000))
+const CATALOG_SYNC_MAX_RECORDS = Math.max(1, Math.min(5000, Number(process.env.MINI_CATALOG_SYNC_MAX_RECORDS || 5000)))
 const STALE_CLEANUP_MAX_RATIO = Math.max(0, Math.min(1, Number(process.env.MINI_STALE_CLEANUP_MAX_RATIO || 0.2)))
 const CACHE_MODEL_VERSION = '2026-08-18-trusted-companies-only-v1'
 // The trusted-company filter intentionally invalidates the old RSS-inclusive
@@ -77,10 +94,14 @@ function signGatewayRequest(method, action, timestamp, body, secret = gatewaySec
     .digest('hex')
 }
 
-async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, timeoutMs = GATEWAY_REQUEST_TIMEOUT_MS, requestId = '' } = {}) {
-  const useFormalJobsSource = action === 'sync' && jobsApiOrigin !== apiOrigin
-  const requestOrigin = useFormalJobsSource ? jobsApiOrigin : apiOrigin
-  const requestSecret = useFormalJobsSource ? jobsGatewaySecret : gatewaySecret
+async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, timeoutMs = GATEWAY_REQUEST_TIMEOUT_MS, requestId = '', target = '' } = {}) {
+  const resolvedTarget = target || (action === 'sync' && jobsApiOrigin !== apiOrigin ? 'formal' : 'preview')
+  if (!['preview', 'formal'].includes(resolvedTarget)) throw new Error(`Unsupported gateway target: ${resolvedTarget}`)
+  const useFormalSource = resolvedTarget === 'formal'
+  const requestOrigin = useFormalSource ? jobsApiOrigin : apiOrigin
+  const requestSecret = action === 'company_catalog_snapshot' && useFormalSource
+    ? catalogSourceSecret
+    : useFormalSource ? jobsGatewaySecret : gatewaySecret
   const timestamp = String(Date.now())
   const params = new URLSearchParams({
     action,
@@ -94,7 +115,7 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
     signal: AbortSignal.timeout(timeoutMs),
     headers: {
       Accept: 'application/json',
-      ...(!useFormalJobsSource && vercelAutomationBypassSecret
+      ...(!useFormalSource && vercelAutomationBypassSecret
         ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret }
         : {}),
       ...(method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
@@ -112,13 +133,6 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
     throw error
   }
   return payload
-}
-
-function canonicalCompanyJobs(result, companyId, companyName = '') {
-  return (Array.isArray(result?.jobs) ? result.jobs : [])
-    .map((job) => mapCompanyJobSummary(job, companyId, companyName))
-    .filter(Boolean)
-    .slice(0, 100)
 }
 
 function canonicalJobId(value) {
@@ -167,11 +181,11 @@ function appOriginUrl(value) {
   return `${jobsApiOrigin}${source.startsWith('/') ? '' : '/'}${source}`
 }
 
-function contentOriginUrl(value) {
+function contentOriginUrl(value, origin = apiOrigin) {
   const source = String(value || '').trim()
   if (!source) return ''
   if (/^https?:\/\//i.test(source)) return source
-  return `${apiOrigin}${source.startsWith('/') ? '' : '/'}${source}`
+  return `${origin}${source.startsWith('/') ? '' : '/'}${source}`
 }
 
 function byteLimitTransform(maxBytes) {
@@ -268,9 +282,10 @@ function persistContentAssetIndex() {
   return contentAssetPersistPromise
 }
 
-async function cacheContentImage({ ownerType, ownerId, sourcePath, folder, timeoutMs = 10000 }) {
+async function cacheContentImage({ ownerType, ownerId, sourcePath, folder, timeoutMs = 10000, sourceOrigin = apiOrigin }) {
   if (!sourcePath || !ownerId) return { fileId: '', created: false }
-  const sourceHash = crypto.createHash('sha1').update(sourcePath).digest('hex').slice(0, 16)
+  const source = contentOriginUrl(sourcePath, sourceOrigin)
+  const sourceHash = crypto.createHash('sha1').update(source).digest('hex').slice(0, 16)
   const cacheKey = `${ownerType}-${crypto.createHash('sha256').update(String(ownerId)).digest('hex').slice(0, 24)}-${sourceHash}`
   if (contentAssetMemory.has(cacheKey)) return { fileId: contentAssetMemory.get(cacheKey), created: false }
   if (contentAssetPending.has(cacheKey)) return contentAssetPending.get(cacheKey)
@@ -278,13 +293,16 @@ async function cacheContentImage({ ownerType, ownerId, sourcePath, folder, timeo
     return { fileId: '', created: false }
   }
   const pending = (async () => {
-    const source = contentOriginUrl(sourcePath)
     const tempDir = await mkdtemp(path.join(os.tmpdir(), `haigoo-${ownerType}-`))
     const tempPath = path.join(tempDir, 'asset')
     try {
+      const usePreviewCredential = Boolean(vercelAutomationBypassSecret && new URL(source).origin === new URL(apiOrigin).origin)
       const response = await fetch(source, {
         signal: AbortSignal.timeout(timeoutMs),
-        headers: vercelAutomationBypassSecret ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret } : {}
+        // Preview credentials belong only to the configured account origin.
+        headers: usePreviewCredential
+          ? { 'x-vercel-protection-bypass': vercelAutomationBypassSecret } : {},
+        redirect: usePreviewCredential ? 'error' : 'follow'
       })
       const contentType = response.headers.get('content-type') || ''
       if (!response.ok || !contentType.startsWith('image/') || !response.body) {
@@ -354,6 +372,9 @@ async function attachCompanyLogos(companies) {
       ownerType: 'company',
       ownerId: companyId,
       sourcePath,
+      // Company logos share the authoritative jobs source. Preview account
+      // databases may contain follows without the corresponding binary assets.
+      sourceOrigin: sourcePath.startsWith('/api/company-assets?') ? jobsApiOrigin : apiOrigin,
       folder: 'mini-company-logos',
       timeoutMs: 4000
     })
@@ -366,6 +387,18 @@ async function attachCompanyLogos(companies) {
   })
   if (created) await persistContentAssetIndex()
   return hydrated
+}
+
+async function attachFollowLogos(follows) {
+  const hydrated = await attachCompanyLogos((Array.isArray(follows) ? follows : []).map((follow) => ({
+    ...follow,
+    id: follow.company_id
+  })))
+  return hydrated.map((follow) => {
+    const publicFollow = { ...follow }
+    delete publicFollow.id
+    return publicFollow
+  })
 }
 
 function publicJob(job, logoFileId = '') {
@@ -396,8 +429,8 @@ function publicJob(job, logoFileId = '') {
 
 function compactTranslations(value) {
   if (!value || typeof value !== 'object') return undefined
-  const { title, company, location, type } = value
-  const compact = { title, company, location, type }
+  const { title, company, location, type, jobType, salary } = value
+  const compact = { title, company, location, type, jobType, salary }
   return Object.values(compact).some(Boolean) ? compact : undefined
 }
 
@@ -825,11 +858,10 @@ function invalidateListDocumentCache() {
 }
 
 async function cachedCompanyLogoFileIds(companyIds) {
-  const wanted = new Set((Array.isArray(companyIds) ? companyIds : []).map((value) => String(value || '').trim()).filter(Boolean))
+  const wanted = new Set(companyIds)
   const result = new Map()
   if (!wanted.size) return result
-  const records = await readAllListDocuments()
-  for (const record of records) {
+  for (const record of await readAllListDocuments()) {
     const payload = record?.payload || {}
     const companyId = String(payload.companyId || '').trim()
     if (!wanted.has(companyId) || result.has(companyId)) continue
@@ -837,6 +869,29 @@ async function cachedCompanyLogoFileIds(companyIds) {
     if (fileId.startsWith('cloud://')) result.set(companyId, fileId)
   }
   return result
+}
+
+// The legacy persistent index is disabled in Mini Program 1.0 and can contain
+// historical active records. Only immutable company logos may reuse it.
+const readCurrentCompanyJobMetadata = createCompanyJobMetadataLoader((page) =>
+  gatewayRequest('sync', { query: { page, limit: 100, sortBy: 'recent' } }))
+
+async function readFormalCompanyJobs(companyId, companyName = '') {
+  const first = await gatewayRequest('sync', {
+    query: { companyId, page: 1, limit: 100, sortBy: 'recent' }
+  })
+  const total = Math.max(0, Number(first?.total || first?.jobs?.length || 0))
+  const pageSize = Math.max(1, Number(first?.pageSize || 100))
+  const pages = Math.max(1, Math.ceil(total / pageSize))
+  const batches = [first]
+  for (let page = 2; page <= pages; page += 3) {
+    const next = await Promise.all(Array.from({ length: Math.min(3, pages - page + 1) }, (_, offset) =>
+      gatewayRequest('sync', { query: { companyId, page: page + offset, limit: pageSize, sortBy: 'recent' } })))
+    batches.push(...next)
+  }
+  const records = batches.flatMap((batch) => Array.isArray(batch?.jobs) ? batch.jobs : [])
+  if (records.length < total) throw new Error('企业公开岗位数据不完整，请重试')
+  return companyJobMetadata(buildCompanyJobMetadata(records), companyId, companyName)
 }
 
 async function readAllListDocuments({ bypassCache = false } = {}) {
@@ -1058,6 +1113,98 @@ async function runSyncWithLease({ force = false } = {}) {
   } finally {
     await releaseSyncLease()
   }
+}
+
+let catalogSyncPromise = null
+let catalogSyncStateCache = null
+
+async function getCatalogSyncState({ bypassCache = false } = {}) {
+  if (!bypassCache && catalogSyncStateCache && Date.now() - catalogSyncStateCache.loadedAt < SYNC_STATE_MEMORY_CACHE_MS) return catalogSyncStateCache.state
+  const result = await db.collection(syncCollection).doc('catalog').get()
+  const state = documentFromResult(result) || { _id: 'catalog', consecutiveFailures: 0, lastSuccessAt: 0 }
+  catalogSyncStateCache = { state, loadedAt: Date.now() }
+  return state
+}
+
+async function setCatalogSyncState(value) {
+  const state = { _id: 'catalog', ...value }
+  await db.collection(syncCollection).doc('catalog').set(withoutDocumentId(state))
+  catalogSyncStateCache = { state, loadedAt: Date.now() }
+  return state
+}
+
+async function acquireCatalogLease({ force = false } = {}) {
+  let outcome = { acquired: false, reason: 'unknown' }
+  await db.runTransaction(async (transaction) => {
+    const reference = transaction.collection(syncCollection).doc('catalog')
+    const result = await reference.get()
+    const state = documentFromResult(result) || { _id: 'catalog', consecutiveFailures: 0, lastSuccessAt: 0 }
+    if (!force && Number(state.syncLeaseExpiresAt || 0) > Date.now()) {
+      outcome = { acquired: false, reason: 'leased' }
+      return
+    }
+    await reference.set(withoutDocumentId({ ...state, syncLeaseOwner: syncInstanceId, syncLeaseStartedAt: Date.now(), syncLeaseExpiresAt: Date.now() + SYNC_LEASE_MS }))
+    outcome = { acquired: true, reason: 'acquired' }
+  })
+  catalogSyncStateCache = null
+  return outcome
+}
+
+async function releaseCatalogLease() {
+  await db.runTransaction(async (transaction) => {
+    const reference = transaction.collection(syncCollection).doc('catalog')
+    const result = await reference.get()
+    const state = documentFromResult(result)
+    if (!state || state.syncLeaseOwner !== syncInstanceId) return
+    await reference.set(withoutDocumentId({ ...state, syncLeaseOwner: '', syncLeaseStartedAt: 0, syncLeaseExpiresAt: 0 }))
+  }).catch((error) => console.warn('[mini-cloudrun] catalog lease release failed', error?.message || error))
+  catalogSyncStateCache = null
+}
+
+async function runCompanyCatalogSync({ force = false } = {}) {
+  if (!catalogSyncEnabled && !force) return { skipped: true, reason: 'catalog_sync_disabled' }
+  const lease = await acquireCatalogLease({ force })
+  if (!lease.acquired) return { skipped: true, reason: lease.reason }
+  const startedAt = Date.now()
+  const previous = await getCatalogSyncState({ bypassCache: true })
+  try {
+    const catalog = await readFormalCompanyCatalog(gatewayRequest, {
+      pageSize: 250,
+      maxCompanies: CATALOG_SYNC_MAX_RECORDS,
+      maxJobs: CATALOG_SYNC_MAX_RECORDS * 4
+    })
+    const { companies, jobs } = catalog
+    const companyIds = new Set(companies.map((company) => String(company.id || company.companyId || '').trim()))
+    const jobIds = new Set(jobs.map((job) => String(job.id || job.jobId || '').trim()))
+    if (companyIds.size !== companies.length || jobIds.size !== jobs.length || jobs.some((job) => !companyIds.has(String(job.companyId || '').trim()))) throw new Error('formal catalog contains duplicate or dangling ids')
+    const imported = await gatewayRequest('company_catalog_import', {
+      target: 'preview',
+      method: 'POST',
+      body: { version: catalog.version, generatedAt: catalog.generatedAt, totalCompanies: catalog.totalCompanies, totalJobs: catalog.totalJobs, companies, jobs }
+    })
+    const result = { skipped: false, source: catalog.source, version: catalog.version, companies: companies.length, jobs: jobs.length, durationMs: Date.now() - startedAt, imported: Boolean(imported?.imported || imported?.success) }
+    await setCatalogSyncState({ ...previous, lastSuccessAt: Date.now(), lastSuccessSource: catalog.source, lastSuccessVersion: catalog.version, lastSuccessCompanies: companies.length, lastSuccessJobs: jobs.length, consecutiveFailures: 0, lastFailureAt: 0, lastFailure: '' })
+    return result
+  } catch (error) {
+    await setCatalogSyncState({ ...previous, consecutiveFailures: Number(previous.consecutiveFailures || 0) + 1, lastFailureAt: Date.now(), lastFailure: String(error?.message || error).slice(0, 500) })
+    throw error
+  } finally {
+    await releaseCatalogLease()
+  }
+}
+
+function syncCompanyCatalogToPreview({ force = false } = {}) {
+  if (catalogSyncPromise) return catalogSyncPromise
+  catalogSyncPromise = runCompanyCatalogSync({ force })
+    .then((result) => { if (!result.skipped) console.log('[mini-cloudrun] catalog sync completed', result); return result })
+    .finally(() => { catalogSyncPromise = null })
+  return catalogSyncPromise
+}
+
+function scheduleCompanyCatalogSync() {
+  void syncCompanyCatalogToPreview().catch((error) => {
+    console.error('[mini-cloudrun] catalog sync failed', error?.message || error)
+  })
 }
 
 function buildJobsResponse(items, query) {
@@ -1340,6 +1487,33 @@ function virtualPaymentSignature(key, value) {
   return crypto.createHmac('sha256', key).update(value).digest('hex')
 }
 
+async function reconcileVirtualPaymentOrders(orders, openid) {
+  let changed = false
+  const candidates = (orders || []).filter((order) => ['completed', 'partially_refunded'].includes(String(order?.status || ''))).slice(0, 4)
+  let cursor = 0
+  await Promise.all(Array.from({ length: Math.min(2, candidates.length) }, async () => {
+    while (cursor < candidates.length) {
+      const order = candidates[cursor++]
+      try {
+        const reconciled = await virtualPaymentReconciler.reconcile({ ...order, openid }, (snapshot) => (
+          gatewayRequest('virtual_payment_reconcile_refund', {
+            method: 'POST',
+            body: snapshot,
+            timeoutMs: 10000
+          })
+        ))
+        changed ||= reconciled
+      } catch (error) {
+        console.warn('[mini-cloudrun] virtual payment reconciliation deferred', {
+          paymentId: String(order?.paymentId || ''),
+          message: error?.message || String(error)
+        })
+      }
+    }
+  }))
+  return changed
+}
+
 function readBody(req) {
   return new Promise((resolve, reject) => {
     let body = ''
@@ -1411,7 +1585,7 @@ async function route(req, res) {
   const requestId = /^[A-Za-z0-9._:-]{8,96}$/.test(receivedRequestId) ? receivedRequestId : `mini-${crypto.randomUUID()}`
   res.setHeader('X-Haigoo-Request-Id', requestId)
   try {
-    if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true })
+    if (req.method === 'GET' && url.pathname === '/health') return send(res, 200, { ok: true, sourceRevision })
     if (req.method === 'GET' && url.pathname === '/health/upstream') {
       const startedAt = Date.now()
       const result = await gatewayRequest('career_watch_options', { timeoutMs: 5000 })
@@ -1431,6 +1605,11 @@ async function route(req, res) {
       const result = await runSyncWithLease({ force: url.searchParams.get('full') === 'true' })
       return send(res, 200, { success: true, ...result })
     }
+    if (req.method === 'POST' && url.pathname === '/internal/catalog-sync') {
+      if (!syncSecret || req.headers['x-mini-sync-secret'] !== syncSecret) return send(res, 401, { error: 'Unauthorized' })
+      const result = await syncCompanyCatalogToPreview({ force: url.searchParams.get('full') === 'true' })
+      return send(res, 200, { success: true, ...result })
+    }
     if (req.method === 'GET' && url.pathname === '/mini/home') {
       const session = getSession(req)
       const result = await gatewayRequest('content_home', {
@@ -1444,17 +1623,32 @@ async function route(req, res) {
     }
     if (req.method === 'GET' && url.pathname === '/mini/companies') {
       const session = getSession(req)
-      const result = await gatewayRequest('companies', {
-        requestId,
-        query: {
-          openid: session?.openid || '',
-          search: url.searchParams.get('search') || '',
-          industry: url.searchParams.get('industry') || '',
-          page: url.searchParams.get('page') || '1',
-          pageSize: url.searchParams.get('pageSize') || '20'
+      const [result, metadata] = await Promise.all([
+        gatewayRequest('companies', {
+          requestId,
+          query: {
+            openid: session?.openid || '',
+            search: url.searchParams.get('search') || '',
+            industry: url.searchParams.get('industry') || '',
+            sortBy: url.searchParams.get('sortBy') || 'latest',
+            page: url.searchParams.get('page') || '1',
+            pageSize: url.searchParams.get('pageSize') || '20'
+          }
+        }).then(async (result) => ({ ...result, companies: await attachCompanyLogos(result.companies) })),
+        readCurrentCompanyJobMetadata()
+      ])
+      return send(res, 200, { ...result, companies: result.companies.map((company) => {
+        const companyMetadata = companyJobMetadata(metadata, company.id, company.name)
+        return {
+          ...company,
+          openRoleCategories: companyMetadata.openRoleCategories,
+          // Keep directory counts and detail jobs on the same formal source.
+          openJobCount: companyMetadata.jobs.length,
+          hasPublicOpportunity: companyMetadata.jobs.length > 0,
+          publicOpportunityUpdatedAt: companyMetadata.publicOpportunityUpdatedAt || company.publicOpportunityUpdatedAt || null,
+          newJobsUntil: companyMetadata.newJobsUntil || company.newJobsUntil || null
         }
-      })
-      return send(res, 200, { ...result, companies: await attachCompanyLogos(result.companies) })
+      }) })
     }
     if (req.method === 'GET' && /^\/mini\/companies\/[^/]+$/.test(url.pathname)) {
       const session = getSession(req)
@@ -1464,28 +1658,35 @@ async function route(req, res) {
         query: { openid: session?.openid || '', id, search: url.searchParams.get('search') || '' }
       })
       let jobs = []
+      let openRoleCategories = []
+      const openJobCount = Number(result.company?.openJobCount || 0)
       try {
         const companyName = String(result.company?.name || '').trim()
-        const formalJobs = await gatewayRequest('sync', {
-          query: { companyId: id, page: '1', limit: '100', sortBy: 'recent' }
-        })
-        jobs = canonicalCompanyJobs(formalJobs, id, companyName)
-        if (!jobs.length && companyName) {
-          const legacyJobs = await gatewayRequest('sync', {
-            query: { search: String(result.company?.name || '').trim(), page: '1', limit: '100', sortBy: 'recent' }
-          })
-          jobs = canonicalCompanyJobs(legacyJobs, id, companyName)
-        }
+        const metadata = companyJobMetadata(await readCurrentCompanyJobMetadata(), id, companyName)
+        jobs = metadata.jobs
+        openRoleCategories = metadata.openRoleCategories
       } catch (error) {
         console.warn('[mini-cloudrun] formal company jobs unavailable', { companyId: id, message: error?.message || String(error) })
+        // Retry against the company-specific source below. A global metadata
+        // snapshot can be complete while still missing a legacy company-id
+        // mapping, so an empty result is not enough evidence of no jobs.
+      }
+      if (!jobs.length && openJobCount > 0) {
+        const fallback = await readFormalCompanyJobs(id, String(result.company?.name || '').trim())
+        jobs = fallback.jobs
+        openRoleCategories = fallback.openRoleCategories
+      }
+      if (openJobCount > 0 && !jobs.length) {
+        throw new Error('企业公开岗位数据不完整，请重试')
       }
       result.company = {
         ...result.company,
         jobs,
+        openRoleCategories,
         // The gateway database is authoritative for directory availability and
         // counts. Formal job records only add display details here.
-        openJobCount: Number(result.company?.openJobCount || 0),
-        hasPublicOpportunity: Boolean(result.company?.hasPublicOpportunity),
+        openJobCount: jobs.length,
+        hasPublicOpportunity: jobs.length > 0,
         publicOpportunityUpdatedAt: result.company?.publicOpportunityUpdatedAt || null
       }
       const [company] = await attachCompanyLogos(result.company ? [result.company] : [])
@@ -1518,9 +1719,13 @@ async function route(req, res) {
         : null
       const job = mappedJob ? { ...mappedJob, id: canonicalJobId(jobId) } : null
       if (!job) return send(res, 404, { error: '岗位不存在或已下线' })
+      const [companyLogo] = await attachCompanyLogos([companyResult.company])
       return send(res, 200, {
         success: true,
-        company: { id: companyId, name: String(companyResult.company?.name || job.company || '') },
+        company: {
+          id: companyId, name: String(companyResult.company?.name || job.company || ''),
+          logoFileId: companyLogo?.logoFileId || '', logoUrl: companyLogo?.logoUrl || ''
+        },
         job
       })
     }
@@ -1616,6 +1821,16 @@ async function route(req, res) {
       const recommendations = await attachCompanyLogos((result.recommendations || []).map((item) => ({ ...item, id: item.companyId })))
       return send(res, 200, { ...result, recommendations })
     }
+    if (req.method === 'POST' && url.pathname === '/mini/career-watch/refresh') {
+      const session = getSession(req)
+      if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
+      const body = await readBody(req)
+      const refreshKey = String(body?.refreshKey || '')
+      if (!/^[A-Za-z0-9._:-]{1,80}$/.test(refreshKey)) return send(res, 400, { error: '刷新标识无效，请重试' })
+      const result = await gatewayRequest('career_watch_refresh', { requestId, method: 'POST', body: { openid: session.openid, refreshKey } })
+      const recommendations = await attachCompanyLogos((result.recommendations || []).map((item) => ({ ...item, id: item.companyId })))
+      return send(res, 200, { ...result, recommendations })
+    }
     if (req.method === 'GET' && url.pathname === '/mini/career-watch') {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'LOGIN_REQUIRED', error: '请先登录并连接 Haigoo 账号' })
@@ -1655,7 +1870,7 @@ async function route(req, res) {
       const session = getSession(req)
       if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
       const result = await gatewayRequest('match_follows', { query: { openid: session.openid } })
-      return send(res, 200, result)
+      return send(res, 200, { ...result, follows: await attachFollowLogos(result.follows) })
     }
     if (req.method === 'POST' && url.pathname === '/mini/match/follows') {
       const session = getSession(req)
@@ -1867,7 +2082,19 @@ async function route(req, res) {
     if (req.method === 'POST' && url.pathname === '/mini/auth/session') {
       const body = await readBody(req)
       const { openid } = await exchangeCode(String(body.code || ''))
-      const session = await gatewayRequest('session', { method: 'POST', body: { openid } })
+      let session = await gatewayRequest('session', { method: 'POST', body: { openid } })
+      if (session.user) {
+        try {
+          const payments = await gatewayRequest('virtual_payment_list', {
+            query: { openid, page: 1, pageSize: 5 }
+          })
+          if (await reconcileVirtualPaymentOrders(payments.orders, openid)) {
+            session = await gatewayRequest('session', { method: 'POST', body: { openid } })
+          }
+        } catch (error) {
+          console.warn('[mini-cloudrun] session refund reconciliation deferred', error?.message || error)
+        }
+      }
       return send(res, 200, { ...session, token: sessionToken({ openid, userId: session.user?.userId || null }) })
     }
     if (req.method === 'POST' && url.pathname === '/mini/account/bind') {
@@ -2048,13 +2275,22 @@ async function route(req, res) {
           error: '请先登录并绑定 Haigoo 网站账号'
         })
       }
-      const result = await gatewayRequest('virtual_payment_list', {
+      let result = await gatewayRequest('virtual_payment_list', {
         query: {
           openid: session.openid,
           page: Math.max(1, Number(url.searchParams.get('page')) || 1),
           pageSize: Math.min(50, Math.max(1, Number(url.searchParams.get('pageSize')) || 20))
         }
       })
+      if (await reconcileVirtualPaymentOrders(result.orders, session.openid)) {
+        result = await gatewayRequest('virtual_payment_list', {
+          query: {
+            openid: session.openid,
+            page: Math.max(1, Number(url.searchParams.get('page')) || 1),
+            pageSize: Math.min(50, Math.max(1, Number(url.searchParams.get('pageSize')) || 20))
+          }
+        })
+      }
       return send(res, 200, result)
     }
     if (req.method === 'GET' && /^\/mini\/payments\/orders\/[^/]+$/.test(url.pathname)) {
@@ -2066,9 +2302,14 @@ async function route(req, res) {
         })
       }
       const paymentId = decodeURIComponent(url.pathname.split('/').pop())
-      const result = await gatewayRequest('virtual_payment_status', {
+      let result = await gatewayRequest('virtual_payment_status', {
         query: { openid: session.openid, paymentId }
       })
+      if (await reconcileVirtualPaymentOrders(result.order ? [result.order] : [], session.openid)) {
+        result = await gatewayRequest('virtual_payment_status', {
+          query: { openid: session.openid, paymentId }
+        })
+      }
       return send(res, 200, result)
     }
     if (req.method === 'PUT' && /^\/mini\/payments\/orders\/[^/]+$/.test(url.pathname)) {
@@ -2122,30 +2363,43 @@ async function route(req, res) {
     }
     if (req.method === 'GET' && url.pathname === '/mini/favorites') {
       const session = getSession(req)
-      if (!session) return send(res, 401, { error: '微信登录已失效，请重新登录' })
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
       const data = await gatewayRequest('favorites', { query: { openid: session.openid } })
       const favorites = Array.isArray(data.favorites) ? data.favorites : []
-      const jobIds = favorites.map((item) => String(item.jobId || '')).filter(Boolean)
-      return send(res, 200, {
-        favorites,
-        favoriteJobIds: jobIds,
-        jobs: await getCachedJobs(jobIds)
-      })
+      const jobIds = [...new Set(favorites.map((item) => String(item.jobId || '')).filter(Boolean))]
+      // A detail-page heart needs only IDs, never a fan-out of job requests.
+      if (url.searchParams.get('idsOnly') === 'true') return send(res, 200, { success: true, favoriteJobIds: jobIds })
+      const page = Math.max(1, Math.floor(Number(url.searchParams.get('page')) || 1))
+      const pageSize = 30
+      const pageFavorites = favorites.slice((page - 1) * pageSize, page * pageSize)
+      const metadata = pageFavorites.length ? await readCurrentCompanyJobMetadata() : new Map()
+      const jobsById = new Map([...metadata.values()].flatMap((entry) => entry.jobs).map((job) => [job.id, job]))
+      const records = pageFavorites.map((item) => ({
+        jobId: item.jobId, createdAt: item.createdAt,
+        title: item.title || '', company: item.company || '',
+        job: jobsById.get(canonicalJobId(item.jobId)) || null
+      }))
+      return send(res, 200, { success: true, favorites: records, favoriteJobIds: jobIds, page, hasMore: page * pageSize < favorites.length })
     }
     if (req.method === 'POST' && url.pathname === '/mini/favorites') {
       const session = getSession(req)
-      if (!session) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
+      if (!session?.userId) return send(res, 401, { code: 'ACCOUNT_BIND_REQUIRED', error: '请先登录并绑定 Haigoo 网站账号' })
       const body = await readBody(req)
       const jobId = String(body.jobId || '').trim()
-      const [job] = body.favorite === false ? [] : await getCachedJobs([jobId], 1)
+      if (!jobId) return send(res, 400, { error: '岗位参数无效' })
+      // Validate additions against the same authoritative source as job detail.
+      // Removal remains available after a posting disappears.
+      const rawJob = body.favorite === false ? null : await fetchUpstreamJob(jobId, String(body.companyId || ''))
+      if (body.favorite !== false && (!rawJob || rawJob.memberOnly || rawJob.isApproved === false
+        || ['closed', 'expired', 'inactive'].includes(String(rawJob.status || '').toLowerCase()))) {
+        return send(res, 404, { error: '岗位不存在或已下线，暂时无法收藏' })
+      }
       const result = await gatewayRequest('favorites', {
         method: 'POST',
         body: {
-          openid: session.openid,
-          jobId,
-          jobSnapshot: job ? { id: job.id, title: job.title, company: job.company } : undefined,
-          favorite: body.favorite !== false,
-          idempotencyKey: body.idempotencyKey
+          openid: session.openid, jobId,
+          jobSnapshot: rawJob ? { id: jobId, title: rawJob.translations?.title || rawJob.title, company: rawJob.company } : undefined,
+          favorite: body.favorite !== false, idempotencyKey: body.idempotencyKey
         }
       })
       return send(res, 200, result)
@@ -2222,9 +2476,16 @@ server.listen(port, () => {
   console.log(`[mini-cloudrun] listening on ${port}`)
   if (legacyJobCacheEnabled) void scheduleSync()
   else console.log('[mini-cloudrun] legacy job cache disabled for Mini Program 1.0')
+  if (catalogSyncEnabled) scheduleCompanyCatalogSync()
+  else console.log('[mini-cloudrun] formal company catalog sync disabled')
 })
 
 if (legacyJobCacheEnabled) {
   const syncTimer = setInterval(() => { void scheduleSync() }, SYNC_TIMER_MS)
   syncTimer.unref()
+}
+
+if (catalogSyncEnabled) {
+  const catalogTimer = setInterval(scheduleCompanyCatalogSync, CATALOG_SYNC_INTERVAL_MS)
+  catalogTimer.unref()
 }

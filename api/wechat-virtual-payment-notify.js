@@ -92,7 +92,7 @@ async function forwardSandboxNotification(notification) {
       signal: controller.signal
     })
     const payload = await response.json().catch(() => ({}))
-    if (!response.ok || Number(payload?.ErrCode || 0) !== 0) {
+    if (!response.ok || payload?.ErrCode == null || Number(payload.ErrCode) !== 0) {
       throw new Error(`sandbox callback returned ${response.status}`)
     }
   } finally {
@@ -133,9 +133,18 @@ export default async function handler(req, res) {
     const validWechatSignature = hasValidSignature(req)
     const validRelaySignature = hasValidRelaySignature(req, notification)
     if (!validWechatSignature && !validRelaySignature) {
+      console.warn('[wechat-virtual-payment] callback authentication rejected', {
+        event: String(notification?.Event || ''),
+        env: Number(notification?.Env),
+        hasWechatSignature: Boolean(req.query?.signature && req.query?.timestamp && req.query?.nonce),
+        hasRelaySignature: Boolean(
+          req.headers?.['x-haigoo-payment-relay-timestamp']
+          && req.headers?.['x-haigoo-payment-relay-signature']
+        )
+      })
       return res.status(401).json({ ErrCode: 401, ErrMsg: 'invalid signature' })
     }
-    if (validRelaySignature && Number(notification?.Env) !== 1) {
+    if (validRelaySignature && !(notification?.Event === 'xpay_refund_notify' && notification?.Env == null) && Number(notification?.Env) !== 1) {
       return res.status(400).json({ ErrCode: 400, ErrMsg: 'invalid relay environment' })
     }
     if (notification?.Encrypt || req.query?.encrypt_type === 'aes') {
@@ -145,20 +154,47 @@ export default async function handler(req, res) {
       })
     }
     const event = String(notification?.Event || '')
-    if (event === 'xpay_goods_deliver_notify') {
-      if (
-        validWechatSignature &&
-        !validRelaySignature &&
-        process.env.VERCEL_ENV === 'production' &&
-        Number(notification?.Env) === 1
-      ) {
+    const paymentEvent = ['xpay_goods_deliver_notify', 'xpay_refund_notify'].includes(event)
+    if (paymentEvent) {
+      if (validRelaySignature && process.env.VERCEL_ENV === 'production') {
+        return res.status(400).json({ ErrCode: 400, ErrMsg: 'relay loop rejected' })
+      }
+      // WeChat's documented refund payload does not include Env. Resolve from the original order.
+      let env = notification?.Env
+      if (event === 'xpay_refund_notify' && env == null) {
+        env = await wechatVirtualPaymentService.getRefundEnvironment(notification)
+        if (env == null) {
+          // Sandbox refunds also omit Env. The Preview callback performs the
+          // same order/OpenId/amount checks before applying the notification.
+          if (process.env.VERCEL_ENV === 'production' && validWechatSignature && !validRelaySignature) {
+            await forwardSandboxNotification(notification)
+            return success(res)
+          }
+          return res.status(404).json({ ErrCode: 404, ErrMsg: 'order environment unresolved' })
+        }
+      }
+      if (env == null || ![0, 1].includes(Number(env))) {
+        return res.status(400).json({ ErrCode: 400, ErrMsg: 'invalid environment' })
+      }
+      if (process.env.VERCEL_ENV === 'production' && Number(env) === 1) {
+        if (validRelaySignature) return res.status(400).json({ ErrCode: 400, ErrMsg: 'relay loop rejected' })
         await forwardSandboxNotification(notification)
         return success(res)
       }
+      if (process.env.VERCEL_ENV === 'preview' && Number(env) !== 1) {
+        return res.status(400).json({ ErrCode: 400, ErrMsg: 'invalid preview environment' })
+      }
+    }
+    if (event === 'xpay_goods_deliver_notify') {
       await wechatVirtualPaymentService.completeOrder(notification)
       return success(res)
     }
     if (event === 'xpay_refund_notify' || event === 'xpay_complaint_notify') {
+      if (event === 'xpay_refund_notify') {
+        const result = await wechatVirtualPaymentService.applyRefund(notification)
+        if (result.requiresManualReview) console.warn('[wechat-virtual-payment] refund requires review', { paymentId: notification.MchOrderId })
+        return success(res)
+      }
       console.warn('[wechat-virtual-payment] manual follow-up event received', {
         event,
         outTradeNo: String(notification?.OutTradeNo || ''),

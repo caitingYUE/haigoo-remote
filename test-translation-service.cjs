@@ -19,7 +19,8 @@ async function run() {
   console.warn = (...args) => providerLogs.push(args.join(' '))
 
   try {
-    global.fetch = async (url) => {
+    global.fetch = async (url, options) => {
+      assert.ok(options.signal, 'all translation providers must have a request timeout signal')
       if (!String(url).includes('dashscope.aliyuncs.com')) return failedResponse()
 
       return new Response(JSON.stringify({
@@ -40,7 +41,10 @@ async function run() {
     assert.match(translated.translations.description, /[\u4e00-\u9fa5]/)
     assert.equal(translated.translationError, undefined)
 
-    global.fetch = async () => failedResponse()
+    global.fetch = async (_url, options) => {
+      assert.ok(options.signal, 'fallback providers must have a request timeout signal')
+      return failedResponse()
+    }
 
     const failed = await service.translateJob({
       id: 'all-providers-failed',
