@@ -94,6 +94,13 @@ function signGatewayRequest(method, action, timestamp, body, secret = gatewaySec
     .digest('hex')
 }
 
+function gatewayWireBody(body) {
+  // Sign the exact JSON value sent over the wire. JSON.stringify omits
+  // undefined object fields, which previously made unfavourite requests sign
+  // jobSnapshot:null while Vercel received no jobSnapshot field at all.
+  return JSON.parse(JSON.stringify(body || {}))
+}
+
 async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, timeoutMs = GATEWAY_REQUEST_TIMEOUT_MS, requestId = '', target = '' } = {}) {
   const resolvedTarget = target || (action === 'sync' && jobsApiOrigin !== apiOrigin ? 'formal' : 'preview')
   if (!['preview', 'formal'].includes(resolvedTarget)) throw new Error(`Unsupported gateway target: ${resolvedTarget}`)
@@ -109,7 +116,8 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
     ...(requestId ? { requestId } : {})
   })
   const signedQuery = Object.fromEntries([...params.entries()].filter(([key]) => key !== 'action'))
-  const signaturePayload = method === 'GET' ? signedQuery : body
+  const wireBody = method === 'GET' ? body : gatewayWireBody(body)
+  const signaturePayload = method === 'GET' ? signedQuery : wireBody
   const response = await fetch(`${requestOrigin}/api/mini?${params}`, {
     method,
     signal: AbortSignal.timeout(timeoutMs),
@@ -123,13 +131,19 @@ async function gatewayRequest(action, { method = 'GET', body = {}, query = {}, t
       'X-Haigoo-Mini-Signature': signGatewayRequest(method, action, timestamp, signaturePayload, requestSecret),
       ...(requestId ? { 'X-Haigoo-Request-Id': requestId } : {})
     },
-    ...(method !== 'GET' ? { body: JSON.stringify(body) } : {})
+    ...(method !== 'GET' ? { body: JSON.stringify(wireBody) } : {})
   })
   const payload = await response.json().catch(() => ({ success: false, error: '上游服务返回无效数据' }))
   if (!response.ok) {
-    const error = new Error(payload.error || '上游服务暂不可用')
-    error.statusCode = response.status
-    error.payload = payload
+    const gatewayAuthFailed = response.status === 401 && String(payload.error || '').trim() === 'Unauthorized gateway request'
+    const safePayload = gatewayAuthFailed
+      ? { success: false, code: 'UPSTREAM_GATEWAY_AUTH_FAILED', error: '服务鉴权暂时不可用，请稍后重试' }
+      : payload
+    const error = new Error(safePayload.error || '上游服务暂不可用')
+    // An internal Cloud Run -> Vercel credential failure is not evidence that
+    // the end user's Mini Program session expired.
+    error.statusCode = gatewayAuthFailed ? 502 : response.status
+    error.payload = safePayload
     throw error
   }
   return payload

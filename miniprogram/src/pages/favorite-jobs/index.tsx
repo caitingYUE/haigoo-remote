@@ -77,9 +77,15 @@ export default function FavoriteJobsPage() {
       Taro.showToast({ title: '已取消收藏', icon: 'success' })
       // Reload from page one because a removal changes server pagination offsets.
       removePending.current = false
-      await load(true, true)
+      setRemoving('')
+      void load(true, true)
     } catch (cause) { if (scope === miniContentScope()) Taro.showToast({ title: cause instanceof Error ? cause.message : '取消收藏失败', icon: 'none' }) }
-    finally { if (scope === miniContentScope()) { removePending.current = false; setRemoving('') } }
+    finally {
+      // Busy state is local UI state and must always settle, including when an
+      // authentication response changes the current content scope.
+      removePending.current = false
+      setRemoving('')
+    }
   }
 
   const open = (record: FavoriteJobRecord) => {

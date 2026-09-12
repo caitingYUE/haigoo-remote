@@ -214,6 +214,12 @@ await new Promise(setImmediate)
 finishRequest({ statusCode: 401, data: {} })
 assert.equal(await currentExpired, 401)
 assert.equal(clears, 1)
+activeToken = 'service-auth-session'
+const serviceAuthFailure = api.requestJson('/test', { authenticated: true }).catch(error => error.statusCode)
+await new Promise(setImmediate)
+finishRequest({ statusCode: 401, data: { code: 'UPSTREAM_GATEWAY_AUTH_FAILED', error: 'Unauthorized gateway request' } })
+assert.equal(await serviceAuthFailure, 401)
+assert.equal(clears, 1, 'an internal gateway credential failure must not log out the end user')
 activeToken = 'account-a'
 const staleSuccess = api.requestJson('/test', { authenticated: true }).catch(error => error.payload.code)
 await new Promise(setImmediate)

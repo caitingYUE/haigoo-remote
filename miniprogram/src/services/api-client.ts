@@ -83,6 +83,13 @@ function parseJsonResponse<T>(data: T | string): T {
   }
 }
 
+function shouldClearMiniSession(statusCode: number, payload: Record<string, unknown>) {
+  if (statusCode !== 401) return false
+  const code = String(payload.code || '').trim()
+  const message = String(payload.error || payload.message || '').trim()
+  return code !== 'UPSTREAM_GATEWAY_AUTH_FAILED' && message !== 'Unauthorized gateway request'
+}
+
 export async function requestJson<T>(
   path: string,
   options: ApiRequestOptions = {}
@@ -163,7 +170,7 @@ export async function requestJson<T>(
         code: String(payload.code || '')
       })
     }
-    if (response.statusCode === 401 && sessionToken && sessionToken === getMiniSessionToken()) clearMiniSession()
+    if (shouldClearMiniSession(response.statusCode, payload) && sessionToken && sessionToken === getMiniSessionToken()) clearMiniSession()
     throw new ApiRequestError(message, response.statusCode, payload)
   }
 

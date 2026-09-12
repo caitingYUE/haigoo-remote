@@ -67,6 +67,14 @@ swiper.props.onChange({ detail: { current: 0, source: 'touch' } }); assert.deepE
 assert.equal(Deck({ items: [], activeIndex: 0 }), null)
 
 const cloud = read('cloudrun/index.mjs')
+const wireBodySource = cloud.slice(cloud.indexOf('function gatewayWireBody'), cloud.indexOf('\n\nasync function gatewayRequest'))
+const gatewayWireBody = vm.runInNewContext(`${wireBodySource}; gatewayWireBody`, { JSON })
+assert.deepEqual(
+  JSON.parse(JSON.stringify(gatewayWireBody({ jobId: 'j', favorite: false, jobSnapshot: undefined }))),
+  { jobId: 'j', favorite: false },
+  'gateway signatures must use the same JSON body that is sent over the wire'
+)
+assert.match(cloud, /gatewayAuthFailed \? 502 : response\.status/)
 const routes = cloud.slice(cloud.indexOf("    if (req.method === 'GET' && url.pathname === '/mini/favorites')"), cloud.indexOf("    if (req.method === 'GET' && url.pathname === '/mini/applications')"))
 const runRoute = (method, path, body, deps = {}) => vm.runInNewContext(`(async () => { ${routes} })()`, {
   req: { method }, res: {}, url: new URL(`https://local.test${path}`), getSession: () => ({ userId: 'user-a', openid: 'account-a' }),
@@ -86,6 +94,10 @@ assert.equal((await runRoute('POST', '/mini/favorites', { jobId: 'deleted', favo
 assert.equal(upstreamReads, 0, 'removal must work for missing or closed postings')
 assert.equal((await runRoute('POST', '/mini/favorites', { jobId: 'deleted', favorite: true }, postDeps)).status, 404)
 assert.equal((await runRoute('POST', '/mini/favorites', { jobId: '', favorite: true }, postDeps)).status, 400)
+const favoritePage = read('miniprogram/src/pages/favorite-jobs/index.tsx')
+const removeSource = favoritePage.slice(favoritePage.indexOf('  const remove ='), favoritePage.indexOf('\n\n  const open ='))
+assert.match(removeSource, /finally \{[\s\S]*removePending\.current = false[\s\S]*setRemoving\(''\)/, 'remove busy state must settle even after a session scope change')
+assert.doesNotMatch(removeSource, /finally \{ if \(scope === miniContentScope\(\)\)/)
 for (const file of ['lib/api-handlers/mini-gateway.js', 'lib/api-handlers/user-profile.js']) assert.match(read(file), /saveJobFavorite\(/)
 assert.match(read('miniprogram/src/app.config.ts'), /pages\/favorite-jobs\/index/)
 assert.match(read('miniprogram/src/pages/profile/index.tsx'), /pages\/favorite-jobs\/index/)
