@@ -9,6 +9,7 @@ import dotenv from 'dotenv'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const sourceDir = path.join(rootDir, 'cloudrun')
+const cloudbaseSdkPath = path.join(sourceDir, 'node_modules/@cloudbase/node-sdk')
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const configureVercel = process.argv.includes('--configure-vercel')
 const configureJobsSource = process.argv.includes('--configure-jobs-source')
@@ -21,6 +22,9 @@ if (!['development', 'production'].includes(target)) {
 if (syncPreviewContract && (target !== 'development' || !previewEnvFile)) {
   throw new Error('--sync-preview-contract is development-only and requires --preview-env-file')
 }
+await fs.access(cloudbaseSdkPath).catch(() => {
+  throw new Error('CloudRun dependencies are missing. Run `npm ci --prefix cloudrun` before deployment.')
+})
 
 const environments = {
   development: {
@@ -292,7 +296,7 @@ try {
 // The SDK only submits an asynchronous deployment. A normal service status can
 // still describe its previous version; verify the code actually serving traffic.
 const { checkAndGetCredential } = require(path.join(globalModules, '@cloudbase/cli/lib/utils/net/credential.js'))
-const cloudbase = require(path.join(rootDir, 'cloudrun/node_modules/@cloudbase/node-sdk'))
+const cloudbase = require(cloudbaseSdkPath)
 const credential = await checkAndGetCredential(true)
 const runtime = cloudbase.init({ env: deployment.envId, secretId: credential.secretId, secretKey: credential.secretKey, sessionToken: credential.token })
 let verifiedResponses = 0
