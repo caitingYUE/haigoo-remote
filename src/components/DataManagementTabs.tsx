@@ -1343,7 +1343,6 @@ const DataManagementTabs: React.FC<DataManagementTabsProps> = ({ className }) =>
                   <li><span className="font-medium text-white">抓取 RSS：</span>拉取最近 7 天的 RSS 原始数据，写入后台参考池。</li>
                   <li><span className="font-medium text-white">处理草稿：</span>把原始 RSS 转成待审核岗位草稿，不会直接上前台。</li>
                   <li><span className="font-medium text-white">补翻译：</span>每日仅为最近 7 天的 RSS 草稿补翻译，方便后台编辑审核。</li>
-                  <li><span className="font-medium text-white">可信企业爬取：</span>仅保留后台手动触发，用于人工补录和核查。</li>
                 </ol>
                 <p className="text-xs text-slate-400 mt-2 border-t border-slate-600 pt-2">
                   💡 当前自动任务以“后台参考与补数”为主，公开前台仍只展示人工审核通过的岗位。

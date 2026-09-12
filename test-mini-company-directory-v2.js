@@ -127,8 +127,6 @@ assert.ok(verifier.indexOf('SET is_approved = false') < verifier.indexOf('reconc
 const trustedCompanies = fs.readFileSync('lib/api-handlers/trusted-companies.js', 'utf8')
 assert.match(trustedCompanies, /SET member_only = \$2,[\s\S]+reconcileCompanyDirectoryHistory/)
 assert.match(trustedCompanies, /UPDATE jobs SET status = 'inactive'[\s\S]+reconcileCompanyDirectoryHistory/)
-assert.match(fs.readFileSync('lib/cron-handlers/stream-crawl-trusted-jobs.js', 'utf8'), /UPDATE jobs SET status = 'inactive'[\s\S]+reconcileCompanyDirectoryHistory/)
-
 const miniContentService = fs.readFileSync('miniprogram/src/services/content-service.ts', 'utf8')
 assert.match(miniContentService, /export type CompanyDirectorySort = 'latest' \| 'newest' \| 'relevance'/)
 assert.match(miniContentService, /fetchCompanies\(params: \{[^}]*sortBy\?: CompanyDirectorySort/)

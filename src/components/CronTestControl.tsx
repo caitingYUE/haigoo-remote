@@ -49,7 +49,6 @@ interface StepResult {
 const PIPELINE_STEPS: PipelineStep[] = [
   { name: 'Fetch RSS', endpoint: '/api/cron/stream-fetch-rss', mode: 'sse' },
   { name: 'Process RSS', endpoint: '/api/cron/stream-process-rss', mode: 'sse' },
-  { name: '手动爬取可信企业岗位', endpoint: '/api/cron/stream-crawl-trusted-jobs', mode: 'sse' },
   { name: 'Translate Jobs', endpoint: '/api/cron/stream-translate-jobs', mode: 'sse' },
 ];
 
@@ -200,32 +199,6 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
       case 'no_updates':
         return '没有需要更新的岗位数据';
 
-      // 手动爬取可信企业岗位 特有
-      case 'no_companies':
-        return '没有找到需要爬取的公司';
-      case 'target_selected':
-        return `选择 ${data.targetCount} 个公司进行爬取（共 ${data.totalCompanies} 个）`;
-      case 'crawl_start':
-        return `开始爬取 ${data.targetCount} 个公司的职位信息`;
-      case 'company_crawl_start':
-        return `${data.message}`;
-      case 'company_skipped':
-        return `${data.message}`;
-      case 'company_crawl_complete':
-        return `${data.message}`;
-      case 'company_crawl_failed':
-        return `${data.message}`;
-      case 'crawl_complete':
-        return `${data.message}`;
-      case 'save_jobs_start':
-        return '开始保存爬取的职位数据';
-      case 'save_jobs_complete':
-        return `${data.message}`;
-      case 'save_companies_start':
-        return '开始保存更新的公司信息';
-      case 'save_companies_complete':
-        return `${data.message}`;
-
       case 'error':
         return `任务失败：${data.error}`;
       default:
@@ -322,35 +295,6 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
           trustedMatches: data.stats?.trustedMatches,
           aiClassifications: data.stats?.aiClassifications,
           noUpdates: data.stats?.noUpdates
-        };
-
-      // 手动爬取可信企业岗位 进度信息
-      case '手动爬取可信企业岗位:scan_complete':
-        return { totalCompanies: data.totalCompanies };
-      case '手动爬取可信企业岗位:target_selected':
-        return { targetCount: data.targetCount, totalCompanies: data.totalCompanies };
-      case '手动爬取可信企业岗位:crawl_start':
-        return { targetCount: data.targetCount };
-      case '手动爬取可信企业岗位:company_crawl_start':
-        return { currentCompany: data.companyIndex, totalCompanies: data.totalCompanies };
-      case '手动爬取可信企业岗位:company_crawl_complete':
-        return { jobsFound: data.jobsFound, companyUpdated: data.companyUpdated };
-      case '手动爬取可信企业岗位:crawl_complete':
-        return {
-          processedCompanies: data.processedCompanies,
-          updatedCompanies: data.updatedCompanies,
-          newJobsFound: data.newJobsFound
-        };
-      case '手动爬取可信企业岗位:save_jobs_complete':
-        return { savedCount: data.savedCount, newJobs: data.newJobs };
-      case '手动爬取可信企业岗位:save_companies_complete':
-        return { savedCount: data.savedCount, updatedCount: data.updatedCount };
-      case '手动爬取可信企业岗位:complete':
-        return {
-          processedCompanies: data.stats?.processedCompanies,
-          updatedCompanies: data.stats?.updatedCompanies,
-          newJobsFound: data.stats?.newJobsFound,
-          totalCompanies: data.stats?.totalCompanies
         };
 
       // 向后兼容：如果没有提供stepName，使用原来的逻辑（可能会有冲突）
@@ -515,8 +459,7 @@ const CronTestControl: React.FC<CronTestControlProps> = ({ onMonitorUpdated }) =
       const successMessage = stepName === 'Translate Jobs' ? '翻译任务完成' :
         stepName === 'Fetch RSS' ? 'RSS抓取任务完成' :
           stepName === 'Process RSS' ? 'RSS数据处理完成' :
-            stepName === '手动爬取可信企业岗位' ? '可信企业手动爬取完成' :
-              '任务完成';
+            '任务完成';
 
       // 更新成功状态
       setResults(prev => prev.map((r, idx) =>

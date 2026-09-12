@@ -36,6 +36,7 @@
     "test:mini-company-contacts": "node test-mini-company-contacts-and-follows.js",
     "test:mini-company-acquisition": "node test-mini-company-acquisition.js",
     "test:mini-company-catalog": "node test-mini-company-catalog-sync.js",
+    "test:cron-policy": "node test-cron-policy.js",
     "check:mini-company-directory": "node scripts/verify-mini-company-directory-v2.mjs",
     "test:career-watch": "node test-career-watch.js",
     "test:mini-1027-feedback": "node test-mini-1027-feedback.js",

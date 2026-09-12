@@ -20,6 +20,13 @@ export default async function handler(req, res) {
     });
   }
 
+  if (taskName === 'stream-crawl-trusted-jobs') {
+    return res.status(410).json({
+      success: false,
+      error: 'Trusted-company job crawling is disabled. Only URL validity verification remains enabled.'
+    });
+  }
+
   try {
     switch (taskName) {
       case 'stream-fetch-rss': {
@@ -33,10 +40,6 @@ export default async function handler(req, res) {
       case 'stream-translate-jobs': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
         return await streamTranslateJobsHandler(req, res);
-      }
-      case 'stream-crawl-trusted-jobs': {
-        const { default: streamCrawlTrustedJobsHandler } = await import('../../lib/cron-handlers/stream-crawl-trusted-jobs.js');
-        return await streamCrawlTrustedJobsHandler(req, res);
       }
       case 'stream-verify-links': {
         const { default: streamVerifyLinksHandler } = await import('../../lib/cron-handlers/stream-verify-links.js');
@@ -92,7 +95,6 @@ export default async function handler(req, res) {
 
       case 'daily-enrich': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
-        // Trusted-company crawl runs on its own controlled six-hour schedule.
         return await runSequence(req, res, [
           { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler }
         ]);
@@ -105,7 +107,6 @@ export default async function handler(req, res) {
             'stream-fetch-rss',
             'stream-process-rss',
             'stream-translate-jobs',
-            'stream-crawl-trusted-jobs',
             'stream-verify-links',
             'rotate-featured',
             'admin-daily-featured-email',
@@ -117,7 +118,7 @@ export default async function handler(req, res) {
             'daily-enrich'
           ],
           taskNotes: {
-            'stream-crawl-trusted-jobs': 'scheduled every six hours; AI fallback disabled'
+            'stream-verify-links': 'scheduled daily; checks approved job URLs only'
           }
         });
     }
