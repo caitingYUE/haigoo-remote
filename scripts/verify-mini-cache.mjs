@@ -84,8 +84,21 @@ const allListDocuments = (await readAll('mini_job_list', Number(listCount.total 
 const cachedLogoCount = allListDocuments.filter((item) => (
   String(item.payload?.cachedLogoUrl || item.payload?.cachedCompanyLogoUrl || '').startsWith('cloud://')
 )).length
+const hiringCompanyIds = new Set(allListDocuments.map((item) => String(item.payload?.companyId || '').trim()).filter(Boolean))
+const companiesWithCachedLogo = new Set(allListDocuments.filter((item) => (
+  String(item.logoFileId || item.payload?.cachedLogoUrl || item.payload?.cachedCompanyLogoUrl || '').startsWith('cloud://')
+)).map((item) => String(item.payload?.companyId || '').trim()).filter(Boolean))
 const hashedDocumentCount = allListDocuments.filter((item) => Boolean(item.sourceHash)).length
 const state = unwrapDocument(stateResult.data?.[0]) || {}
+const listTotal = Number(listCount.total || 0)
+const detailTotal = Number(detailCount.total || 0)
+const logoCoverage = hiringCompanyIds.size ? companiesWithCachedLogo.size / hiringCompanyIds.size : 0
+if (detail.BaseInfo?.Status !== 'normal') throw new Error(`Mini CloudRun is not normal: ${detail.BaseInfo?.Status || 'unknown'}`)
+if (!state.cacheReady || state.fullSyncInProgress) throw new Error('Mini job cache is not ready for release')
+if (!listTotal || listTotal !== detailTotal) throw new Error(`Mini job cache collections are inconsistent: list=${listTotal}, detail=${detailTotal}`)
+if (!hiringCompanyIds.size || logoCoverage < 0.9) {
+  throw new Error(`Mini company logo coverage is below 90%: ${(logoCoverage * 100).toFixed(1)}%`)
+}
 const samples = (Array.isArray(sampleResult.data) ? sampleResult.data : [])
   .map(unwrapDocument)
   .filter(Boolean)
@@ -118,11 +131,14 @@ console.log(JSON.stringify({
     stateMemoryCacheMs: Number(environment.MINI_SYNC_STATE_MEMORY_CACHE_MS || 0),
     staleCleanupMaxRatio: Number(environment.MINI_STALE_CLEANUP_MAX_RATIO || 0)
   },
-  listDocuments: Number(listCount.total || 0),
-  detailDocuments: Number(detailCount.total || 0),
+  listDocuments: listTotal,
+  detailDocuments: detailTotal,
   featuredDocuments: Number(featuredCount.total || 0),
   rankedDocuments: Number(rankedCount.total || 0),
   cachedLogoDocuments: cachedLogoCount,
+  hiringCompanies: hiringCompanyIds.size,
+  companiesWithCachedLogo: companiesWithCachedLogo.size,
+  companyLogoCoverage: Number((logoCoverage * 100).toFixed(1)),
   hashedDocuments: hashedDocumentCount,
   state: {
     cacheReady: Boolean(state.cacheReady),

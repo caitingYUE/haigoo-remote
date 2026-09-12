@@ -59,12 +59,20 @@
       "schedule": "10 4 * * *"
     },
     {
+      "path": "/api/cron/stream-crawl-trusted-jobs",
+      "schedule": "15 */6 * * *"
+    },
+    {
       "path": "/api/cron/membership-lifecycle",
       "schedule": "0 * * * *"
     },
     {
       "path": "/api/cron/cleanup-analytics",
       "schedule": "20 2 * * *"
+    },
+    {
+      "path": "/api/cron/mini-career-retention",
+      "schedule": "35 2 * * *"
     },
     {
       "path": "/api/cron/daily-digest",

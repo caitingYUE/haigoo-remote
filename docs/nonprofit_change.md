@@ -1,3 +1,5 @@
+> 2026-09-01 scope note: This historical brief applies only to the public website's temporary `Compliance Free Mode`. It does not define the WeChat Mini Program's positioning and must not be used to disable or describe away the Mini Program's personalized Match experience. See `PRODUCT.md` and `docs/haigoo-platform-positioning.md` for the current platform boundary.
+
 请对当前 Haigoo Remote 网站进行一次“最小范围合规改造”。
 
 网站：

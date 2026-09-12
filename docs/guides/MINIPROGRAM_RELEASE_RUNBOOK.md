@@ -1,3 +1,5 @@
+> 2026-09-06：本文含历史发布记录。当前验收候选 1.0.25 以 [正式送审检查单](MINIPROGRAM_REVIEW_CHECKLIST.md) 为准；experience 包连接开发云，正式送审须使用 production 包，并先解决正式接口兼容问题。
+
 # Haigoo 小程序正式发布手册
 
 ## 1. 固定架构
@@ -14,6 +16,7 @@
 - 开发 CloudRun 的 `MINI_GATEWAY_SHARED_SECRET` 对应 Vercel 的同名变量；生产 CloudRun 的该变量对应 Vercel `MINI_GATEWAY_PRODUCTION_SECRET`。
 - 开发和生产分别生成 `MINI_SESSION_SECRET`、`MINI_SYNC_SECRET`。
 - 开发 CloudRun 通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问受保护的 Vercel Preview；该密钥不得配置到生产服务。
+- 企业目录发布前执行 `npm run check:mini-company-directory`，确认搜索/排序、严格审核条件、目录快照入口和小程序搜索文案契约；开发环境联调再执行 `node scripts/verify-mini-gateway.mjs --target=development --action=companies --via-cloudrun`。
 - 开发 CloudRun 使用 `MINI_JOBS_GATEWAY_SHARED_SECRET` 读取正式岗位；Vercel Production 对应 `MINI_GATEWAY_READONLY_SECRET`，代码只允许该密钥执行 `sync`，不得用生产通用 Gateway 密钥代替。
 - 两个环境使用同一个微信 AppID 时可使用同一个 AppSecret，但不得写入仓库。
 - 生产 CloudRun 只连接正式 Gateway；开发环境不得写入正式收藏、申请、订阅或浏览额度数据。
@@ -39,17 +42,19 @@
 
 Vercel Mini Gateway 有改动时执行 `npm run deploy:mini-preview`。脚本先验证新的不可变 Preview 部署，再更新稳定子域名，失败时不会覆盖上一个可用部署。CloudRun 代码有改动时执行 `npm run deploy:mini-cloudrun:dev`。执行 `npm run check:mini-gateway:dev` 可核对当前开发链路。
 
+运行 Preview 部署前，当前 Git 分支必须已存在于远端仓库；Vercel 不会向不存在的本地分支注入敏感 Preview 变量。发布脚本会同时校验岗位同步、Career Watch 方向选项、微信订阅配置和企业权限契约，任一接口出现签名失败、404、微信 AppID/模板配置不可用或响应结构缺失时都不得切换稳定别名。Preview 的 `WECHAT_MINI_APP_ID` 必须与 `miniprogram/project.config.json` 一致，并配置同一小程序的 AppSecret 与订阅模板；体验消息使用 `WECHAT_MINI_PROGRAM_STATE=trial`，正式环境使用 `formal`。若检查返回 `Unauthorized gateway request`，先同步开发 CloudRun 与 Vercel Preview 的 `MINI_GATEWAY_SHARED_SECRET`，不要通过关闭签名或改用生产服务绕过。
+
 首次配置正式岗位只读源时执行 `node scripts/deploy-mini-cloudrun.mjs --target=development --configure-jobs-source`。后续用 `npm run check:mini-jobs:dev` 验证正式岗位接口，用 `npm run check:mini-cache:dev` 验证开发缓存；截至 2026-07-28，开发缓存为 412 条岗位、242 条热门岗位，列表与详情集合均已完成全量重建。
 
 ## 4. 小程序构建与提交
 
 1. `npm run type-check`。
-2. 在 `miniprogram/` 执行 `npm run build:weapp:prod`。
+2. 先更新 `miniprogram/package.json` 的版本号。体验版在 `miniprogram/` 执行 `npm run build:weapp:experience`；正式提审执行 `npm run build:weapp:prod`。
    - 脚本使用 Taro 官方 `--no-check` 参数跳过存在 macOS 原生崩溃的 Doctor 远程 schema 校验；TypeScript、JSON、上线契约和真实构建仍需全部通过。
-   - 开发产物保留在 `dist/`；正式产物写入 `dist-prod/`，并生成可独立导入的 `.wechat-production/`，不会再被本地 `--watch` 覆盖。
-3. 微信开发者工具导入 `miniprogram/.wechat-production/`，执行代码依赖分析，主包目标不超过 1.8 MiB。
-4. 确认上传时关闭 source map，产物中的环境为 `cloud1/haigoo-mini-prod`。
-5. 上传体验版，以审核账号完成只读冒烟和真机回归。
+   - 体验产物写入 `dist-experience/` 和 `.wechat-experience/`，只允许 `haigoo-dev/haigoo-mini`；正式产物写入 `dist-prod/` 和 `.wechat-production/`，只允许 `cloud1/haigoo-mini-prod`。构建闸门会扫描实际编译代码，发现环境、服务名或版本串线时直接失败。
+3. 微信开发者工具按目标导入对应目录，执行代码依赖分析，主包目标不超过 1.8 MiB。
+4. 确认上传时关闭 source map；体验上传不得选择 `.wechat-production/`，正式提审不得选择 `.wechat-experience/`。
+5. 上传体验版前，先通过开发 Gateway、Career Watch 选项和企业访问契约检查，再以审核账号完成只读冒烟和真机回归。
 6. 在微信公众平台完成隐私保护指引、服务类目、审核说明和版本说明。
 7. 审核通过后发布；首日监控登录、5xx、延迟、岗位加载、收藏和订阅写入。
 

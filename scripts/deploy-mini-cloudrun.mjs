@@ -5,22 +5,28 @@ import path from 'node:path'
 import { createRequire } from 'node:module'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import dotenv from 'dotenv'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const sourceDir = path.join(rootDir, 'cloudrun')
 const target = process.argv.find((argument) => argument.startsWith('--target='))?.split('=')[1]
 const configureVercel = process.argv.includes('--configure-vercel')
 const configureJobsSource = process.argv.includes('--configure-jobs-source')
+const syncPreviewContract = process.argv.includes('--sync-preview-contract')
+const previewEnvFile = process.argv.find((argument) => argument.startsWith('--preview-env-file='))?.slice('--preview-env-file='.length) || ''
 
 if (!['development', 'production'].includes(target)) {
-  throw new Error('Usage: node scripts/deploy-mini-cloudrun.mjs --target=development|production [--configure-vercel] [--configure-jobs-source]')
+  throw new Error('Usage: node scripts/deploy-mini-cloudrun.mjs --target=development|production [--configure-vercel] [--configure-jobs-source] [--sync-preview-contract --preview-env-file=/path/to/preview.env]')
+}
+if (syncPreviewContract && (target !== 'development' || !previewEnvFile)) {
+  throw new Error('--sync-preview-contract is development-only and requires --preview-env-file')
 }
 
 const environments = {
   development: {
     envId: 'haigoo-dev-d2gctbzxma401b345',
     serviceName: 'haigoo-mini',
-    minNum: 0,
+    minNum: 1,
     maxNum: 1,
     apiOrigin: 'https://mini-preview.haigooremote.com',
     jobsApiOrigin: 'https://haigooremote.com'
@@ -70,7 +76,7 @@ function safeConfig(baseConfig, environment, minNum, maxNum) {
 
 async function copyDeploymentSource() {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `haigoo-mini-${target}-`))
-  for (const filename of ['Dockerfile', 'index.mjs', 'sync-policy.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
+  for (const filename of ['Dockerfile', 'index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'virtual-payment-reconciliation.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
     await fs.copyFile(path.join(sourceDir, filename), path.join(tempDir, filename))
   }
   return tempDir
@@ -95,13 +101,35 @@ function upsertVercelSecret(name, secret, environment = 'production') {
   console.log(`Vercel ${environment} secret ${name} configured.`)
 }
 
-function deployVercelProduction() {
-  const result = spawnSync('npx', ['vercel', '--prod', '--yes'], {
+function readExistingAutomationBypass() {
+  const payload = JSON.parse(execFileSync('npx', [
+    'vercel', 'project', 'protection', 'haigoo-remote', '--json'
+  ], {
     cwd: rootDir,
     encoding: 'utf8',
-    stdio: 'inherit'
+    maxBuffer: 10 * 1024 * 1024,
+    stdio: ['ignore', 'pipe', 'pipe']
+  }))
+  const candidates = [payload?.protectionBypass, payload?.project?.protectionBypass, payload]
+    .filter((value) => value && typeof value === 'object')
+    .flatMap((value) => Object.entries(value))
+    .filter(([, value]) => value?.scope === 'automation-bypass')
+  const selected = candidates.find(([, value]) => value?.isEnvVar === true) || candidates[0]
+  if (!selected?.[0]) throw new Error('No existing Vercel automation bypass is available for development CloudRun')
+  return selected[0]
+}
+
+function readPreviewContract() {
+  const absolutePath = path.resolve(previewEnvFile)
+  return fs.readFile(absolutePath, 'utf8').then((source) => {
+    const environment = dotenv.parse(source)
+    if (environment.VERCEL_ENV !== 'preview') {
+      throw new Error('Preview contract file must contain VERCEL_ENV=preview')
+    }
+    return {
+      bypassSecret: readExistingAutomationBypass()
+    }
   })
-  if (result.status !== 0) throw new Error('Unable to redeploy Vercel Production')
 }
 
 const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
@@ -138,9 +166,6 @@ if (target === 'development') {
   }
   if (configureJobsSource) {
     upsertVercelSecret('MINI_GATEWAY_READONLY_SECRET', jobsGatewaySecret)
-    // The read-only scope is code-enforced, so publish the current gateway
-    // before switching CloudRun to the formal jobs source.
-    deployVercelProduction()
   }
   targetEnvironment = {
     ...developmentEnvironment,
@@ -148,6 +173,11 @@ if (target === 'development') {
     HAIGOO_API_ORIGIN: deployment.apiOrigin,
     HAIGOO_JOBS_API_ORIGIN: deployment.jobsApiOrigin,
     MINI_JOBS_GATEWAY_SHARED_SECRET: jobsGatewaySecret,
+    MINI_CATALOG_SOURCE_SECRET: String(developmentEnvironment.MINI_CATALOG_SOURCE_SECRET || jobsGatewaySecret),
+    MINI_CATALOG_SYNC_ENABLED: 'true',
+    MINI_CATALOG_SYNC_INTERVAL_MS: '3600000',
+    MINI_CATALOG_SYNC_MAX_RECORDS: '5000',
+    MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true',
     NODE_ENV: 'production'
   }
 } else if (existingDetail) {
@@ -181,6 +211,14 @@ if (target === 'development') {
   upsertVercelSecret('MINI_GATEWAY_PRODUCTION_SECRET', targetEnvironment.MINI_GATEWAY_SHARED_SECRET)
 }
 
+if (syncPreviewContract) {
+  const previewContract = await readPreviewContract()
+  targetEnvironment = {
+    ...targetEnvironment,
+    VERCEL_AUTOMATION_BYPASS_SECRET: previewContract.bypassSecret
+  }
+}
+
 // Apply the current bounded synchronization policy to existing services too;
 // otherwise legacy 8-way workers and hourly full-sync settings survive deploys.
 targetEnvironment = {
@@ -195,7 +233,14 @@ targetEnvironment = {
   MINI_LOGO_RETRY_MS: '86400000',
   MINI_LIST_MEMORY_CACHE_MS: '300000',
   MINI_SYNC_STATE_MEMORY_CACHE_MS: '60000',
-  MINI_STALE_CLEANUP_MAX_RATIO: '0.2'
+  MINI_STALE_CLEANUP_MAX_RATIO: '0.2',
+  MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true',
+  ...(target === 'development' ? {
+    MINI_CATALOG_SYNC_ENABLED: 'true',
+    MINI_CATALOG_SYNC_INTERVAL_MS: '3600000',
+    MINI_CATALOG_SYNC_MAX_RECORDS: '5000',
+    MINI_CATALOG_SOURCE_SECRET: String(targetEnvironment.MINI_CATALOG_SOURCE_SECRET || targetEnvironment.MINI_JOBS_GATEWAY_SHARED_SECRET || '')
+  } : {})
 }
 
 for (const key of [
@@ -231,6 +276,9 @@ if (target === 'development' && targetEnvironment.HAIGOO_JOBS_API_ORIGIN !== dep
 
 const baseConfig = existingDetail?.ServerConfig || developmentConfig
 const tempDir = await copyDeploymentSource()
+const sourceHash = crypto.createHash('sha256')
+for (const file of ['index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'virtual-payment-reconciliation.mjs']) sourceHash.update(await fs.readFile(path.join(tempDir, file)))
+const expectedSourceRevision = sourceHash.digest('hex')
 try {
   await targetService.deploy({
     serverName: deployment.serviceName,
@@ -241,6 +289,25 @@ try {
   await fs.rm(tempDir, { recursive: true, force: true })
 }
 
+// The SDK only submits an asynchronous deployment. A normal service status can
+// still describe its previous version; verify the code actually serving traffic.
+const { checkAndGetCredential } = require(path.join(globalModules, '@cloudbase/cli/lib/utils/net/credential.js'))
+const cloudbase = require(path.join(rootDir, 'cloudrun/node_modules/@cloudbase/node-sdk'))
+const credential = await checkAndGetCredential(true)
+const runtime = cloudbase.init({ env: deployment.envId, secretId: credential.secretId, secretKey: credential.secretKey, sessionToken: credential.token })
+let verifiedResponses = 0
+for (let attempt = 0; attempt < 60 && verifiedResponses < 2; attempt++) {
+  try {
+    const response = await runtime.callContainer({ name: deployment.serviceName, method: 'GET', path: '/health' })
+    const payload = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+    verifiedResponses = response.statusCode === 200 && payload?.sourceRevision === expectedSourceRevision ? verifiedResponses + 1 : 0
+  } catch { verifiedResponses = 0 }
+  if (verifiedResponses < 2) {
+    if (attempt % 6 === 0) console.log('Waiting for the uploaded source to serve development/production traffic...')
+    await new Promise((resolve) => setTimeout(resolve, 10000))
+  }
+}
+if (verifiedResponses < 2) throw new Error('Deployment not verified: running source does not match the uploaded source')
 const deployed = await targetService.detail({ serverName: deployment.serviceName })
 const deployedConfig = deployed.ServerConfig || {}
 const accessTypes = deployedConfig.OpenAccessTypes || []
@@ -258,6 +325,7 @@ console.log(JSON.stringify({
   target,
   envId: deployment.envId,
   serviceName: deployment.serviceName,
+  sourceRevision: expectedSourceRevision,
   accessTypes,
   minNum: deployedConfig.MinNum,
   maxNum: deployedConfig.MaxNum,

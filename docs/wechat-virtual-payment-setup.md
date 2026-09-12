@@ -26,13 +26,15 @@ AppKey 只能保存在 CloudRun 环境变量中，不能放入 Vercel 前端变�
 
 ### 2. 道具管理
 
-使用“道具直购”创建并发布三个商品。商品 ID 可以自定义，价格必须与服务端方案一致：
+使用“道具直购”创建并发布三个商品。微信 `productId` 与价格必须和下表一致；服务端方案 ID 保持稳定，不直接作为微信道具 ID：
 
 | 服务端方案 ID | 微信 `productId` | 商品名称 | 微信后台价格（元） | 接口 `goodsPrice`（分） |
 | --- | --- | --- | ---: | ---: |
-| `club_starter_monthly` | `club_starter_monthly` | Club Starter 30 天权益 | 99 | 9900 |
-| `club_half_year` | `club_half_year` | Club Member 6 个月权益 | 499 | 49900 |
-| `club_annual` | `club_annual` | Club Partner 1 年权益 | 998 | 99800 |
+| `club_starter_monthly` | `club_starter_monthly` | 海狗远程月度会员（1 个月） | 99 | 9900 |
+| `mini_club_quarter_2026` | `club_quarter` | 海狗远程季度会员（3 个月） | 199 | 19900 |
+| `mini_club_half_year_2026` | `club_half_year` | 海狗远程半年会员（6 个月） | 699 | 69900 |
+
+历史道具 `club_starter_monthly` 现已重新纳入小程序购买目录；`club_annual` 可继续保留，但当前目录不会返回或接受它。
 
 服务端会同时校验方案 ID、`productId`、价格、权益类型和期限；任一项不一致都会停止下单。代码不会接受客户端传入的价格，也不会在商品未配置时降级到二维码或转账。
 
@@ -72,7 +74,7 @@ Preview 与 Production 应分别配置对应环境的商品 ID 映射：
 
 ```dotenv
 WECHAT_MINI_APP_ID=当前小程序AppID
-WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON={"club_starter_monthly":"club_starter_monthly","club_half_year":"club_half_year","club_annual":"club_annual"}
+WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON={"club_starter_monthly":"club_starter_monthly","mini_club_quarter_2026":"club_quarter","mini_club_half_year_2026":"club_half_year"}
 WECHAT_MESSAGE_TOKEN=与微信消息推送后台相同的Token
 WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET=Preview与Production共享的独立高强度随机密钥
 ```
@@ -93,6 +95,8 @@ VERCEL_AUTOMATION_BYPASS_SECRET=Preview部署保护的自动化绕过密钥
 ```bash
 npm run configure:mini-payment-relay
 ```
+
+Preview 发布分支的同名环境变量优先于通用 Preview 变量。发布分支 `codex/mini-1.0.7-release` 如果保留独立的 `WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET`，必须与 Production 和通用 Preview 同步；否则沙箱通知会到达 Preview，但以 `401 invalid signature` 被拒绝。配置脚本会原子更新这三个作用域，避免分支覆盖项漂移。
 
 ## 数据库迁移
 
@@ -118,7 +122,7 @@ server-utils/dal/migrations/060_align_wechat_virtual_payment_products.sql
 
 ## 尚未启用的能力
 
-- 主动退款 API 与退款后的精确权益回收尚未启用。正式开放购买前，需要根据微信后台实际开通的退款接口补齐，并完成一次端到端退款测试。
+- `xpay_refund_notify` 的自动退款处理代码已补齐（依赖迁移 085、086 及回调后端部署；上线状态见 `artifacts/mini-review-2026-09-07/退款闭环实施进度.md`）：全额退款会按原订单撤销未使用的会员权益并重算其他权益；部分退款、已履约服务或无法唯一归属的权益会标记为待人工复核。正式开放购买前，仍需使用微信后台实际退款能力完成一次端到端退款测试，并确认退款事件已启用。
 - 当前只支持 JSON + 明文消息推送。若改用安全模式，需要先实现并验证 EncodingAESKey 解密，不能只切换后台选项。
 
 官方入口：
