@@ -334,47 +334,58 @@ async function cacheContentImage({ ownerType, ownerId, sourcePath, folder, timeo
 }
 
 async function attachNoteCovers(notes) {
-  await loadContentAssetIndex()
-  let created = false
-  const hydrated = await mapWithConcurrency(Array.isArray(notes) ? notes : [], 4, async (note) => {
+  return (Array.isArray(notes) ? notes : []).map((note) => {
     const { _coverSourcePath, ...publicNote } = note || {}
-    if (publicNote.coverFileId) return publicNote
-    const cached = await cacheContentImage({ ownerType: 'note', ownerId: note?.id, sourcePath: _coverSourcePath, folder: 'mini-note-covers' })
-    created ||= cached.created
-    return { ...publicNote, coverFileId: cached.fileId }
+    const coverUrl = contentOriginUrl(_coverSourcePath, apiOrigin)
+    return coverUrl ? { ...publicNote, coverFileId: '', coverUrl } : publicNote
   })
-  if (created) await persistContentAssetIndex()
-  return hydrated
 }
 
 async function attachCompanyLogos(companies) {
+  const normalized = (Array.isArray(companies) ? companies : []).map((company) => {
+    const { _logoSourcePath, ...publicCompany } = company || {}
+    const sourcePath = String(_logoSourcePath || '').trim()
+    const directUrl = contentOriginUrl(
+      sourcePath,
+      sourcePath.startsWith('/api/company-assets?') ? jobsApiOrigin : apiOrigin
+    )
+    return { company, publicCompany, sourcePath, directUrl }
+  })
+  if (normalized.every(({ directUrl }) => Boolean(directUrl))) {
+    return normalized.map(({ publicCompany, directUrl }) => ({
+      ...publicCompany,
+      logoFileId: directUrl,
+      logoUrl: directUrl
+    }))
+  }
   await loadContentAssetIndex()
-  const companyIds = (Array.isArray(companies) ? companies : [])
-    .map((company) => String(company?.id || '').trim())
+  const companyIds = normalized
+    .filter(({ directUrl }) => !directUrl)
+    .map(({ company }) => String(company?.id || '').trim())
     .filter(Boolean)
   const cachedJobLogos = await cachedCompanyLogoFileIds(companyIds).catch((error) => {
     console.warn('[mini-cloudrun] company logo cache lookup failed', error?.message || error)
     return new Map()
   })
   let created = false
-  const hydrated = await mapWithConcurrency(Array.isArray(companies) ? companies : [], 4, async (company) => {
-    const { _logoSourcePath, ...publicCompany } = company || {}
+  const hydrated = await mapWithConcurrency(normalized, 4, async ({ company, publicCompany, sourcePath, directUrl }) => {
+    if (directUrl) return { ...publicCompany, logoFileId: directUrl, logoUrl: directUrl }
     const companyId = String(company?.id || '').trim()
     const existingLogoFileId = String(publicCompany.logoFileId || '').trim()
     if (existingLogoFileId.startsWith('cloud://')) return publicCompany
     if (/^https?:\/\//i.test(existingLogoFileId)) return { ...publicCompany, logoUrl: existingLogoFileId }
     const cachedJobLogo = cachedJobLogos.get(companyId) || ''
     if (cachedJobLogo) return { ...publicCompany, logoFileId: cachedJobLogo }
-    const sourcePath = String(_logoSourcePath || '').trim() || (existingLogoFileId.startsWith('/api/company-assets?') ? existingLogoFileId : '') || (companyId
+    const fallbackSourcePath = sourcePath || (existingLogoFileId.startsWith('/api/company-assets?') ? existingLogoFileId : '') || (companyId
       ? `/api/company-assets?companyId=${encodeURIComponent(companyId)}&type=logo`
       : '')
     const cached = await cacheContentImage({
       ownerType: 'company',
       ownerId: companyId,
-      sourcePath,
+      sourcePath: fallbackSourcePath,
       // Company logos share the authoritative jobs source. Preview account
       // databases may contain follows without the corresponding binary assets.
-      sourceOrigin: sourcePath.startsWith('/api/company-assets?') ? jobsApiOrigin : apiOrigin,
+      sourceOrigin: fallbackSourcePath.startsWith('/api/company-assets?') ? jobsApiOrigin : apiOrigin,
       folder: 'mini-company-logos',
       timeoutMs: 4000
     })
@@ -382,7 +393,7 @@ async function attachCompanyLogos(companies) {
     return {
       ...publicCompany,
       logoFileId: cached.fileId,
-      ...(!cached.fileId && /^https?:\/\//i.test(sourcePath) ? { logoUrl: sourcePath } : {})
+      ...(!cached.fileId && /^https?:\/\//i.test(fallbackSourcePath) ? { logoUrl: fallbackSourcePath } : {})
     }
   })
   if (created) await persistContentAssetIndex()

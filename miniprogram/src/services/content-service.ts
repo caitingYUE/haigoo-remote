@@ -9,18 +9,22 @@ const MINI_PLAN_CONTRACTS = {
 } as const
 
 async function hydrateCompanies<T extends { logoFileId?: string; logoUrl?: string }>(companies: T[]) {
-  const urls = await resolveCloudFileUrls(companies.flatMap((company) => [company.logoFileId, company.logoUrl]))
+  const urls = await resolveCloudFileUrls(companies.flatMap((company) => (
+    /^https?:\/\//i.test(String(company.logoUrl || '')) ? [] : [company.logoFileId, company.logoUrl]
+  )))
   return companies.map((company) => ({
     ...company,
-    logoUrl: urls.get(company.logoFileId || '') || urls.get(company.logoUrl || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+    logoUrl: (/^https?:\/\//i.test(String(company.logoUrl || '')) ? company.logoUrl : '') || urls.get(company.logoFileId || '') || urls.get(company.logoUrl || '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
   }))
 }
 
 async function hydrateNotes(notes: GrowthNote[]) {
-  const urls = await resolveCloudFileUrls(notes.map((note) => note.coverFileId))
+  const urls = await resolveCloudFileUrls(notes.flatMap((note) => (
+    /^https?:\/\//i.test(String(note.coverUrl || '')) ? [] : [note.coverFileId]
+  )))
   return notes.map((note) => ({
     ...note,
-    coverUrl: urls.get(note.coverFileId || '') || note.coverUrl || note.coverFileId || ''
+    coverUrl: (/^https?:\/\//i.test(String(note.coverUrl || '')) ? note.coverUrl : '') || urls.get(note.coverFileId || '') || note.coverFileId || ''
   }))
 }
 

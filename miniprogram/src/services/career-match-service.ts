@@ -24,12 +24,14 @@ export function fetchCareerMatchState() {
 
 export async function fetchMatchFeed() {
   const response = await requestJson<MatchFeedResponse>('/mini/match/feed', { authenticated: true })
-  const urls = await resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId))
+  const urls = await resolveCloudFileUrls(response.recommendations.flatMap((company) => (
+    /^https?:\/\//i.test(String(company.logoUrl || '')) ? [] : [company.logoFileId]
+  )))
   return {
     ...response,
     recommendations: response.recommendations.map((company) => ({
       ...company,
-      logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+      logoUrl: (/^https?:\/\//i.test(String(company.logoUrl || '')) ? company.logoUrl : '') || urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
     }))
   }
 }
@@ -395,12 +397,14 @@ async function hydrateCareerWatch(value: unknown) {
   const response = normalizeCareerWatchResponse(value)
   // The feed already carries verified company facts. Missing facts are unknown;
   // fetching a directory page per feed adds a waterfall and cannot fill every ID.
-  const urls = await resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId))
+  const urls = await resolveCloudFileUrls(response.recommendations.flatMap((company) => (
+    /^https?:\/\//i.test(String(company.logoUrl || '')) ? [] : [company.logoFileId]
+  )))
   return {
     ...response,
     recommendations: response.recommendations.map((company) => ({
       ...company,
-      logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+      logoUrl: (/^https?:\/\//i.test(String(company.logoUrl || '')) ? company.logoUrl : '') || urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
     }))
   }
 }
@@ -451,12 +455,14 @@ export async function fetchCompanyFollows() {
   const response = await requestJson<{ success: true; follows: CompanyFollowSummary[] }>('/mini/match/follows', {
     authenticated: true
   })
-  const urls = await resolveCloudFileUrls(response.follows.flatMap((company) => [company.logoFileId, company.logoUrl]))
+  const urls = await resolveCloudFileUrls(response.follows.flatMap((company) => (
+    /^https?:\/\//i.test(String(company.logoUrl || '')) ? [] : [company.logoFileId, company.logoUrl]
+  )))
   return {
     ...response,
     follows: response.follows.map((company) => ({
       ...company,
-      logoUrl: urls.get(company.logoFileId || '') || urls.get(company.logoUrl || '') || ''
+      logoUrl: (/^https?:\/\//i.test(String(company.logoUrl || '')) ? company.logoUrl : '') || urls.get(company.logoFileId || '') || urls.get(company.logoUrl || '') || ''
     }))
   }
 }

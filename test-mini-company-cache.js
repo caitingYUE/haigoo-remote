@@ -62,6 +62,10 @@ const content = loadTs('miniprogram/src/services/content-service.ts', {
   './api-client': { requestJson: async () => ({ companies: directoryCompanies, access: { scope: 'free_fixed' } }) }
 })
 assert.equal((await content.fetchCompanies()).companies[0].logoUrl, logoFileId)
+assert.equal(nativeLookups, 1)
+directoryCompanies = [{ id: 'direct', name: 'Direct', logoFileId, logoUrl: 'https://assets.example/direct.png' }]
+assert.equal((await content.fetchCompanies()).companies[0].logoUrl, 'https://assets.example/direct.png')
+assert.equal(nativeLookups, 1, 'an existing HTTPS logo must bypass private CloudBase signing')
 directoryCompanies = [
   { id: 'legacy', name: 'Legacy Gateway' },
   { id: 'string-fields', name: 'String Fields', hasPublicOpportunity: 'true', openJobCount: '2' },

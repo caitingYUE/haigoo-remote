@@ -206,7 +206,7 @@ await imageCache.cacheContentImage({ ...imageInput, sourcePath: imageInput.sourc
 assert.equal(imageRequests.length, 3, 'version changes must refresh the cached image')
 await imageCache.cacheContentImage({ ...imageInput, sourcePath: 'https://external.example/logo.webp' })
 assert.equal(Object.keys(imageRequests[3].options.headers).length, 0, 'external images cannot receive preview credentials')
-assert.match(cloudrun, /sourceOrigin: sourcePath.startsWith\('\/api\/company-assets\?'\) \? jobsApiOrigin : apiOrigin/)
+assert.match(cloudrun, /sourceOrigin: fallbackSourcePath.startsWith\('\/api\/company-assets\?'\) \? jobsApiOrigin : apiOrigin/)
 
 const detail = read('./miniprogram/src/pages/company-detail/index.tsx')
 const styles = read('./miniprogram/src/pages/company-detail/index.scss')
