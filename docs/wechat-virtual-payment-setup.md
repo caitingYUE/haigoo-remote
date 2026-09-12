@@ -96,6 +96,8 @@ VERCEL_AUTOMATION_BYPASS_SECRET=Preview部署保护的自动化绕过密钥
 npm run configure:mini-payment-relay
 ```
 
+Preview 发布分支的同名环境变量优先于通用 Preview 变量。发布分支 `codex/mini-1.0.7-release` 如果保留独立的 `WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET`，必须与 Production 和通用 Preview 同步；否则沙箱通知会到达 Preview，但以 `401 invalid signature` 被拒绝。配置脚本会原子更新这三个作用域，避免分支覆盖项漂移。
+
 ## 数据库迁移
 
 开发数据库和生产数据库分别执行：
@@ -120,7 +122,7 @@ server-utils/dal/migrations/060_align_wechat_virtual_payment_products.sql
 
 ## 尚未启用的能力
 
-- 主动退款 API 与退款后的精确权益回收尚未启用。正式开放购买前，需要根据微信后台实际开通的退款接口补齐，并完成一次端到端退款测试。
+- `xpay_refund_notify` 的自动退款处理代码已补齐（依赖迁移 085、086 及回调后端部署；上线状态见 `artifacts/mini-review-2026-09-07/退款闭环实施进度.md`）：全额退款会按原订单撤销未使用的会员权益并重算其他权益；部分退款、已履约服务或无法唯一归属的权益会标记为待人工复核。正式开放购买前，仍需使用微信后台实际退款能力完成一次端到端退款测试，并确认退款事件已启用。
 - 当前只支持 JSON + 明文消息推送。若改用安全模式，需要先实现并验证 EncodingAESKey 解密，不能只切换后台选项。
 
 官方入口：

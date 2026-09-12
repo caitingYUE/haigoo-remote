@@ -20,6 +20,7 @@ const expectedMatchState = process.argv.find((argument) => argument.startsWith('
 const expectedCompanyScope = process.argv.find((argument) => argument.startsWith('--expect-company-scope='))?.split('=')[1] || ''
 const expectedCompanyTotal = process.argv.find((argument) => argument.startsWith('--expect-company-total='))?.split('=')[1] || ''
 const expectedCompanyPreview = process.argv.find((argument) => argument.startsWith('--expect-company-preview='))?.split('=')[1] || ''
+const expectOpenCompanies = process.argv.includes('--expect-open-companies')
 const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
 const useVercelCurl = process.argv.includes('--vercel-curl')
 const viaCloudrun = process.argv.includes('--via-cloudrun')
@@ -108,7 +109,7 @@ const action = requestedAction
 const query = action === 'content_home' || action === 'match_feed' || action === 'career_watch_state'
   ? { openid }
   : action === 'companies'
-    ? { openid, page: '1', pageSize: '5' }
+    ? { openid, page: '1', pageSize: '5', ...(search ? { search } : {}) }
   : action === 'career_watch_options' || action === 'membership_plans'
     ? {}
   : { page: '1', limit: '20', ...(featured === 'true' ? { featured: 'true' } : {}), ...(search ? { search } : {}) }
@@ -151,7 +152,7 @@ if (viaCloudrun) {
     career_watch_state: '/mini/career-watch',
     career_watch_options: '/mini/career-watch/options',
     membership_plans: '/mini/membership/plans',
-    companies: '/mini/companies?page=1&pageSize=5',
+    companies: `/mini/companies?${new URLSearchParams({ page: '1', pageSize: '5', ...(search ? { search } : {}) })}`,
     content_home: '/mini/home'
   }[action]
   if (openid && !sessionSignature) throw new Error('CloudRun verification cannot create an authenticated test session')
@@ -244,6 +245,12 @@ if (action === 'companies') {
   )) {
     throw new Error(`Gateway check failed: expected company preview ${expectedCompanyPreview}, received ${payload.companies.length}`)
   }
+  if (expectOpenCompanies && (
+    payload.companies.length === 0
+    || payload.companies.some((company) => company.hasPublicOpportunity !== true || Number(company.openJobCount || 0) <= 0)
+  )) {
+    throw new Error('Gateway check failed: company directory is empty or contains a company without an open opportunity')
+  }
 }
 
 console.log(JSON.stringify({
@@ -265,6 +272,15 @@ console.log(JSON.stringify({
   returnedPlans: Array.isArray(payload.plans) ? payload.plans.map((plan) => ({ id: plan.id, price: plan.price })) : null,
   paymentAvailable: typeof payload.paymentAvailable === 'boolean' ? payload.paymentAvailable : null,
   companyAccessScope: payload.access?.scope || null,
+  search: action === 'companies' ? search : null,
+  sampleCompanies: Array.isArray(payload.companies)
+    ? payload.companies.slice(0, 5).map((company) => ({
+        id: company.id,
+        name: company.name,
+        openJobCount: company.openJobCount,
+        openRoleCategories: company.openRoleCategories
+      }))
+    : [],
   profile: payload.profile ? {
     exists: Boolean(payload.profile.exists),
     completeness: payload.profile.completeness ?? null,

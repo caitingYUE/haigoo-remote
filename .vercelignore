@@ -1,0 +1,16 @@
+# Local design, audit, and generated artifacts are not website runtime inputs.
+.impeccable/
+.superpowers/
+artifacts/
+audit/
+docs/
+output/
+tmp/
+
+# The WeChat bundle is built and uploaded through its own release pipeline.
+miniprogram/
+
+# Local regression suites are run before deployment, not inside Vercel builds.
+test-*.js
+test-*.cjs
+scripts/test-*.mjs

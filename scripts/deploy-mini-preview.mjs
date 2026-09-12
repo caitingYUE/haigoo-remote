@@ -66,9 +66,10 @@ const previewContractKeys = [
   'WECHAT_VIRTUAL_PAYMENT_OFFER_ID',
   'WECHAT_VIRTUAL_PAYMENT_APP_KEY',
   'WECHAT_VIRTUAL_PAYMENT_ENV',
-  'WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON'
+  'WECHAT_VIRTUAL_PAYMENT_PRODUCTS_JSON',
+  'MINI_ALLOW_CATALOG_IMPORT'
 ]
-const effectiveEnvironment = { ...previewEnvironment, ...developmentContract }
+const effectiveEnvironment = { ...previewEnvironment, ...developmentContract, MINI_ALLOW_CATALOG_IMPORT: 'true' }
 const previewDeploymentEnvironment = Object.fromEntries(
   previewContractKeys.map((key) => [key, effectiveEnvironment[key]]).filter(([, value]) => value)
 )
@@ -160,8 +161,13 @@ function createVerifiedSourceSnapshot() {
   // intentionally clean, so restore only the branch identity needed for the
   // correct Preview contract instead of deploying the dirty source checkout.
   run('git', ['init', '--initial-branch', previewBranch], { cwd: stagingDir })
-  run('git', ['config', 'user.name', 'Haigoo Preview Release'], { cwd: stagingDir })
-  run('git', ['config', 'user.email', 'preview-release@localhost'], { cwd: stagingDir })
+  const gitName = run('git', ['config', '--get', 'user.name']).trim()
+  const gitEmail = run('git', ['config', '--get', 'user.email']).trim()
+  if (!gitName || !gitEmail || /(?:localhost|example\.com)$/i.test(gitEmail)) {
+    throw new Error('Preview deployment requires a real Git author email that matches the connected Git account')
+  }
+  run('git', ['config', 'user.name', gitName], { cwd: stagingDir })
+  run('git', ['config', 'user.email', gitEmail], { cwd: stagingDir })
   const remoteUrl = run('git', ['remote', 'get-url', 'origin']).trim()
   if (remoteUrl) run('git', ['remote', 'add', 'origin', remoteUrl], { cwd: stagingDir })
   run('git', ['add', '--all'], { cwd: stagingDir })
@@ -297,9 +303,9 @@ run('node', [
 ], { stdio: 'inherit' })
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.unused, 'career_watch_state', ['--expect-match-state=unused'])
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'career_watch_state', ['--expect-match-state=fixed_free'])
-await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-preview=12'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.fixed, 'companies', ['--expect-company-scope=free_fixed', '--expect-company-preview=12', '--expect-open-companies'])
 await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'career_watch_state', ['--expect-match-state=member_dynamic'])
-await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'companies', ['--expect-company-scope=member_all'])
+await verifyCloudrunFixture(MINI_SMOKE_FIXTURES.member, 'companies', ['--expect-company-scope=member_all', '--expect-open-companies'])
 
 if (!skipWechatUpload) {
   run('npm', ['--prefix', 'miniprogram', 'run', 'upload:weapp:experience'], { stdio: 'inherit' })

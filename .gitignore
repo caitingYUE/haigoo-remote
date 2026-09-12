@@ -40,3 +40,16 @@ dist-ssr
 archive/trusted-companies/
 archive/trusted-companies-export/
 .env*.local
+
+# Local design and verification output
+.impeccable/
+.superpowers/
+artifacts/*
+!artifacts/miniprogram-design-qa/
+!artifacts/miniprogram-design-qa/**
+audit/
+output/
+tmp/
+
+# Root-level design source exports are not application runtime assets.
+/assets/

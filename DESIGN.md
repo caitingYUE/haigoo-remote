@@ -4,6 +4,19 @@
 > Updated: 2026-08-13  
 > Product direction: **CONTEMPORARY EDITORIAL UTILITY × GLOBAL CAREER × QUIET PREMIUM**
 
+## 2026-09-01 platform-scope clarification
+
+This document's open-information and non-personalized-discovery rules govern the public website unless a section explicitly says otherwise. They must not be applied as a ban on the WeChat Mini Program's product model.
+
+Haigoo now has two connected product surfaces:
+
+- **Website:** an open, general-purpose remote-work information and career workspace. Public discovery remains objective, broadly browsable, and oriented toward official application.
+- **WeChat Mini Program:** an independent personalized Match product. It helps users define a career direction and discover suitable remote companies and jobs through explainable matching, following, reminders, and return visits.
+
+The products may share account, membership, resume, direction, follow, favorite, application, and service data, but they do not share one information architecture. Match is the Mini Program's primary identity and may be the visually strongest persistent navigation entry.
+
+Canonical product scope is defined in `PRODUCT.md` and `docs/haigoo-platform-positioning.md`. Mini Program visual and interaction decisions are defined in `docs/haigoo-mini-design-system.md` and the current Match specification.
+
 ## 2026-08-13 visual authority override
 
 This section supersedes older color guidance elsewhere in this document. The first editorial pass felt dusty and mixed orange, muted green, violet, blue, and bright membership gold without a stable hierarchy. The current public product uses one visual authority:
@@ -33,10 +46,10 @@ Haigoo Remote is:
 - A home for existing historical Club members whose real, existing benefits remain available.
 - A place where independent career consulting may be introduced without being attached to any job-information or application flow.
 
-Haigoo Remote is not:
+The public Haigoo Remote website is not:
 
 - A recruiting marketplace or candidate-screening service.
-- A personalized job-recommendation or matching product for new/free/anonymous users.
+- A personalized job-recommendation or matching product for new/free/anonymous users. This website rule does not apply to the WeChat Mini Program, whose primary product is personalized Match.
 - A paid job-information directory.
 - A referral or private-contact marketplace.
 - A high-pressure membership conversion funnel.

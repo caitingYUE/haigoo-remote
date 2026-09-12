@@ -329,8 +329,8 @@ manualGenerateTestData();   // 手动生成测试数据
 
 ### 设计文档
 - [设计原则](./Design-Principles.md)
-- [UI设计规范](./UI-Design-Specification.md)
-- [颜色规范](./Color-Specification.md)
+- [当前设计规范](../../DESIGN.md)
+- [颜色与视觉令牌](../../DESIGN.md)
 
 ## 🔄 维护和更新
 

@@ -1,1072 +1,415 @@
-# Design QA: 英语面试连续横向轨道
-
-- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-855d1cde-e670-4483-8e67-385f6acd7b27.png`
-- Initial implementation screenshot: `/private/tmp/haigoo-english-interview-continuous-initial.png`
-- Scrolled-state screenshot: `/private/tmp/haigoo-english-interview-continuous-scrolled.png`
-- Mobile screenshot: `/private/tmp/haigoo-english-interview-continuous-mobile.png`
-- Combined comparison evidence: `/private/tmp/haigoo-english-interview-continuous-comparison.png`
-- Viewports: desktop 2048 × 1058; mobile 390 × 844
-- State: authenticated Club member, 英语面试「全部」分类
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The desktop initial state preserves the intended composition: one large card occupies the left two-row column and four compact cards form two rows on the right.
-- The featured card and supporting cards share one continuous horizontal track. Pointer dragging changed the rail from `scrollLeft = 0` to `scrollLeft = 400`, confirming that the full composition moves together.
-- English interview previous/next buttons and page counters are absent on desktop and mobile.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: Existing Haigoo typography, hierarchy, truncation, and line heights are preserved.
-- Spacing and layout rhythm: The desktop rail uses a 24 px gap, a half-width featured column, and two compact supporting columns visible initially; additional columns continue horizontally without increasing the section height.
-- Colors and visual tokens: Existing white surfaces, blue-gray borders, purple filters, green Club pills, radii, and shadows are unchanged.
-- Image quality and asset fidelity: Existing video covers and object-fit behavior are retained without generated or stretched replacements.
-- Copy and content: Titles, descriptions, categories, dates, access states, filters, links, and tracking hooks remain unchanged.
-
-## Full-view Comparison Evidence
-
-The combined comparison places the supplied source state above the rendered implementation. The implementation preserves the source composition while removing the right-side paging controls requested in the latest interaction specification.
-
-## Focused Region Comparison Evidence
-
-The source image and implementation screenshots both show the complete English interview module at readable desktop scale, so no additional crop was required.
-
-## Interaction and Responsive Checks
-
-- Desktop pointer drag moved the rail continuously from 0 to 400 px; the URL remained `/careerlearning`, confirming drag-click suppression.
-- All English interview cards participate in the same scroll container; the first card is no longer fixed.
-- Exact button queries for `上一页英语面试` and `下一页英语面试` returned zero on desktop and mobile.
-- Mobile document width equals viewport width (390 px), with no horizontal page overflow.
-- Browser console returned zero errors after a clean reload and data load.
-- ESLint, TypeScript type checking, production build, and `git diff --check` all pass.
-
-## Comparison History
-
-1. P1: The first featured card remained fixed while only the supporting grid paged.
-   - Fix: Moved the featured card and all supporting cards into one continuous horizontal scroll container.
-   - Post-fix evidence: Pointer drag moves the complete track and exposes later columns while the featured card exits the viewport.
-2. P2: The right-side previous/next controls and page indicator added visual noise and implied discrete paging.
-   - Fix: Removed those controls and the page counter; desktop now uses direct drag/touch/wheel scrolling.
-3. P2: Straight column-flow ordering placed the third item in the top row before the second item.
-   - Fix: Preserved row-major content order while rendering through the two-row CSS grid.
-4. P2: The responsive fallback still displayed English-specific paging controls.
-   - Fix: Removed English interview paging controls from non-featured breakpoints as well, while retaining swipe/drag navigation.
-
-## Implementation Checklist
-
-- [x] Keep the initial left-large/right-two-row composition.
-- [x] Move the entire module as one continuous horizontal track.
-- [x] Remove the right-side paging buttons and page number.
-- [x] Preserve filters, links, analytics, membership badges, and video content.
-- [x] Verify desktop dragging, mobile layout, console output, type checking, linting, and production build.
+# Design QA
 
 final result: passed
 
----
+## 2026-09-05 Match page — iPhone 12/13 Pro visual calibration
 
-# Design QA: 统一配色与现代化精修（2026-08-13）
+### Visual truth and reviewed state
 
-- User reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-20e6e48e-d47c-4ad6-8dab-cbfba4ee48f7.png`
-- Baseline: `artifacts/palette-unification-2026-08-13/01-before-jobs-desktop.png`
-- Final jobs desktop: `artifacts/palette-unification-2026-08-13/12-final-jobs-desktop.png`
-- Before/after comparison: `artifacts/palette-unification-2026-08-13/11-before-after-jobs.png`
-- Homepage desktop: `artifacts/palette-unification-2026-08-13/06-home-desktop.png`
-- Jobs mobile: `artifacts/palette-unification-2026-08-13/09-jobs-mobile.png`
-- Homepage mobile: `artifacts/palette-unification-2026-08-13/10-home-mobile.png`
-- Standards review: `artifacts/palette-unification-2026-08-13/web-interface-guidelines-review.md`
-- Viewports: desktop 1440 × 1000; mobile 390 × 844
-- State: local guest preview with real development job data; membership visuals additionally verified in source and semantic tokens.
+- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-fece220b-f5ba-40b5-bf65-7a747a7dfd93.png` (578 x 1210 px).
+- Implementation screenshot: `/private/tmp/match-final-visual-578x1210.png` (578 x 1210 px), cropped from WeChat DevTools running the iPhone 12/13 Pro profile at 390 x 844 CSS px, DPR 3.
+- Combined comparison: `/private/tmp/match-final-comparison.png` (1156 x 1210 px).
+- State: authenticated free user, real Slasify recommendation at index 5 / 5, real Product Manager opportunity, unfollowed state.
+- Density normalization: source and implementation were compared on equal 578 px-wide canvases. The source omits the iOS status-bar/notch region; app-owned content was aligned from the Haigoo navigation and section dividers rather than raw top-edge coordinates.
 
-## Design Read
+### Comparison result
 
-- Surface: Operate / product workspace.
-- Direction: contemporary editorial utility, bright and calm rather than dusty or magazine-heavy.
-- Coherence rule: orange for brand/action/selection; ink and cool neutrals for structure; copper only for small Club identity; semantic status colors stay local.
-- Dials: boldness 6, motion 4, density 6.
+- Fonts and typography: the page title, company name, score, recommendation, evidence rows, role card, and CTA now follow the source hierarchy. `91%` renders without truncation; the score column also has capacity for `100%`.
+- Spacing and layout: the title, count, direction/settings row, update/member row, card, pagination, and TabBar form the same reading sequence. The active card uses a source-equivalent narrow proportion, complete one-screen presentation, balanced exterior space, and visible adjacent-card edges.
+- Colors and tokens: existing Haigoo orange and neutral surfaces were retained as requested. The card uses a white surface, restrained shadow, subtle dividers, and a light role module without gradients or added decoration.
+- Image and icon fidelity: the real company logo remains `aspectFit`; the existing icon library supplies settings, location, and navigation icons. No visual asset was fabricated.
+- Copy and content: company, industry, location, score, description, evidence, role, and follow state remain API-driven. The real Slasify description occupies two lines and its missing rating row stays hidden, so the card is slightly taller internally than the fully populated Kraken mock.
+- Interaction preservation: the previous, active, and next cards remain mounted. Their horizontal positions now use one card width plus a 12 px gap, so adjacent cards follow the finger continuously. Card tap still opens company detail; job and follow controls stop propagation and retain their existing actions.
 
-## Findings and fixes
+### Comparison history
 
-1. P1 resolved: orange, bright membership gold, violet/blue, and dark editorial green competed on the same job screen.
-   - Fix: introduced a final semantic palette-cohesion layer and remapped legacy utilities by role.
-   - Evidence: final live color probe reports no legacy purple or dark-green text in the jobs surface.
-2. P1 resolved: membership color leaked into ordinary save/share controls and page accents.
-   - Fix: ordinary actions are neutral; one quiet copper-gold is reserved for Club badges, member plans, subscription controls, and referral contact cards.
-3. P2 resolved: selected rows, tabs, tiny section rules, filters, and loading/empty actions used unrelated colors.
-   - Fix: all interaction and selection states now resolve to the same warm-orange scale.
-4. P2 resolved: notification feedback used large green/yellow/red/indigo surfaces.
-   - Fix: notifications use a neutral white surface with a thin semantic edge and local icon color.
-5. P2 resolved: several icon-only controls were smaller than 44 px or lacked an accessible name.
-   - Fix: delete, close, carousel, LinkedIn, and navigation controls now use labelled 44 px targets.
-6. P3 resolved: `transition-all`, three-dot loading copy, and missing image dimensions conflicted with the final web-interface review.
-   - Fix: transitions are property-scoped, loading copy uses `…`, and reviewed images declare intrinsic dimensions.
-7. Regression prevention resolved: `DESIGN.md` still named purple as the public accent.
-   - Fix: added a 2026-08-13 visual-authority override and marked the older palette as historical migration context.
+- Pass 1 established the three-row header, full-height card composition, large score treatment, narrow card width, exposed neighbors, and continuous deck geometry. The score was clipped and the card was visibly too tall.
+- Pass 2 widened the score column, bounded the card height, and tightened the header. The score rendered fully, but Logo/name scale and the rpx height conversion still exceeded the source.
+- Pass 3 set the Logo to 80 rpx, company name to 42 rpx, and card maximum height to 912 rpx. The final equal-width comparison has no actionable P0/P1/P2 mismatch after accounting for the source's omitted system status region and different real-data content.
 
-## Audit health
+### Verification
 
-| Dimension | Score | Evidence |
-| --- | ---: | --- |
-| Accessibility | 4/4 | skip link retained, visible focus, labelled controls, live status, 44 px targets |
-| Performance | 3/4 | lazy images and scoped transitions; large legacy detail component remains technical debt |
-| Theming | 3/4 | semantic authority is coherent; legacy hard-coded utilities are still bridged by compatibility selectors |
-| Responsive | 4/4 | no overflow at 1440 px or 390 px; mobile list hierarchy remains clear |
-| Implementation integrity | 4/4 | Impeccable scan clean; design tokens and documentation agree |
-| **Total** | **18/20** | **Excellent — minor architectural cleanup remains** |
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `npm run test:mini-career` passed.
+- `npm run test:mini-career-watch` passed.
+- Impeccable layout detection returned no findings.
+- `git diff --check` passed.
+- Two legacy source-assertion tests remain stale: `test:mini-match-follow-loop` inspects an unused older release-threshold utility, while `test:mini-match-v2` requires `REMOTEMATCH` and the previously removed `为什么推荐给你` block. The implementation was not regressed to satisfy those obsolete assertions.
+
+Final result: passed
+
+## 2026-09-03 Company directory content — compact three-line cards
+
+### Visual truth and reviewed state
+
+- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-63d92fdc-b2d5-42a8-8eb0-dc5cba61310f.png`.
+- Implementation screenshot: `/private/tmp/haigoo-companies-content-final.png`.
+- Target viewport: WeChat DevTools iPhone 12/13 Pro, 390 x 844 CSS px, DPR 3.
+- The source and implementation were inspected together in one comparison input. Existing Haigoo navigation and TabBar were intentionally excluded from source matching and left unchanged.
+
+### Comparison result
+
+- Search measures 358 x 45 CSS px, equivalent to the requested 32 rpx page margins and approximately 88 rpx height. Filter chips measure 33 CSS px high and remain horizontally scrollable.
+- Cards measure 358 x 81 CSS px, equivalent to approximately 162 rpx high, with 16 rpx vertical gaps, 24 rpx radius, fine border, and no heavy shadow. The final viewport shows five complete cards plus the top of a sixth.
+- Card hierarchy is fixed to three rows: name plus real rating, industry plus company size, then headquarters plus application directions. Long values are single-line ellipsized before the 45 x 45 CSS px (90 rpx) follow hit area.
+- The directory response's real public-title field is used when present. Where that deployed response omits titles, the page reads the existing authorized company-detail endpoint and deduplicates its real translated/original titles through the shared role classifier. Empty detail results display `暂无可申请岗位`; no company-specific direction copy is hardcoded.
+- Real Buffer titles resolve to `设计、市场等可申请` in the captured state. Existing follow state, search/filter behavior, card navigation, routes, APIs, top navigation, and TabBar behavior remain unchanged.
+
+### Verification
+
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `git diff --check` passed for the Companies page files.
+
+## 2026-09-03 Company directory — search, filters, and list refinement
+
+### Visual truth and reviewed state
+
+- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-4ad57156-d8a1-4954-9980-dd6cd8eb9ffb.png` (636 x 1274, including its reference device frame).
+- Implementation screenshot: `/private/tmp/haigoo-companies-final.png` (610 x 1318 simulator capture).
+- Target viewport: WeChat DevTools iPhone 12/13 Pro, 390 x 844 CSS px, DPR 3.
+- State: real free directory with 12 available companies, default industry filter, real follow states, and the existing Haigoo navigation and TabBar.
+- Density normalization: comparison aligned the app-owned content by viewport width. The reference-only phone frame and the intentionally retained product navigation were excluded from geometric comparison.
+
+### Findings
+
+- No actionable P0/P1/P2 findings remain after the final combined comparison.
+- Fonts and typography: title treatment remains the approved product version; search copy, filter labels, company names, metadata, facts, and role counts reproduce the reference hierarchy without unintended wrapping.
+- Spacing and layout: the 350 x 45 CSS px search field, 33 CSS px filter chips, 350 x 99 CSS px company cards, 47 CSS px logos, and 37 CSS px follow controls form the same compact rhythm as the source. The native TabBar remains unobstructed.
+- Colors and tokens: white cards, pale-gray page/search surfaces, fine neutral borders, dark active filter, and restrained orange action accents match the source direction without gradients or heavy shadows.
+- Image and icon fidelity: real API logos remain `aspectFit`; missing logos retain the existing initial fallback. The existing MiniIcon plus/check glyphs replace the former labeled follow button without changing follow behavior.
+- Copy and content: title/subtitle, company order, industries, employee counts, addresses, Glassdoor ratings, role counts, pagination, and follow state remain API-driven. The count now follows the required `免费版X家` / `会员版X家` format.
+
+### Comparison history
+
+- Pass 1 established the search, filter, card, and compact follow-control treatment. The count still contained extra spaces, and the 78 CSS px cards were materially denser than the source.
+- Pass 2 removed the count spacing and increased cards to 99 CSS px while keeping their logo and control sizes stable. The final source/implementation comparison shows aligned card proportions and list rhythm.
+
+### Interaction and runtime verification
+
+- Existing search submit, horizontal category selection, company-detail navigation, pagination, membership boundary, follow/unfollow state, and TabBar handlers remain wired to their original real-data flows.
+- WeChat DevTools current-page inspection confirmed `/pages/companies/index`; the console error filter returned no matches.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+
+### Focused-region decision
+
+The final full-view capture keeps the search field, filter states, company metadata, follow controls, borders, and truncation readable. Runtime element-size checks provided the focused geometry evidence, so a separate raster crop was unnecessary.
+
+## 2026-09-03 Company detail — visual-reference rebuild
+
+### Visual truth and reviewed state
+
+- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-08bc1aaa-9f1b-42ba-aff3-2a82ab1707d3.png` (650 x 1246), `codex-clipboard-a98be365-4df5-4835-8721-7d6da5c8070b.png` (670 x 1266), and `codex-clipboard-c0050503-eb9a-4df9-a606-0041b2885446.png` (646 x 1264).
+- Implementation evidence: `/private/tmp/haigoo-company-detail-final.jpg` (592 x 1280 simulator capture) and clean DevTools window crop `/private/tmp/haigoo-company-detail-final.png` (272 x 598).
+- Target viewport: WeChat DevTools iPhone 12/13 Pro, 390 x 844 CSS px, DPR 3.
+- State: authenticated company directory, real Buffer company response, overview selected; jobs and culture states were also activated and inspected.
+- Density normalization: the references include device frames while the implementation evidence is the app viewport. Comparison aligned the app-owned summary, tab bar, content cards, and fixed action bar by normalized screen width.
+
+### Findings
+
+- No actionable P0/P1/P2 findings remain after the final combined comparison.
+- Typography: company identity, metric values, tab labels, card headings, job titles, metadata, and fixed actions follow the reference hierarchy without unintended wrapping.
+- Spacing and layout: the identity area, four equal metric cards, three-tab navigation, card widths, content rhythm, and safe-area footer reproduce the reference composition. The page scrolls naturally when the real content is longer.
+- Colors and tokens: the restrained white/light-gray surfaces, fine borders, orange active state, neutral copy, and black website action match the selected visual direction without gradients or heavy shadows.
+- Image and icon fidelity: the real API logo is retained with `aspectFit`; existing NutUI-backed MiniIcon glyphs are reused for metrics, location, jobs, and gated content.
+- Copy and content: all company, rating, employee, founding, address, job, contact, culture, and entitlement content remains API-driven. Buffer has no rating or contact record in the reviewed response, so the UI truthfully shows an empty rating marker and omits the reference-only gated contact card instead of inventing data.
+
+### Comparison history
+
+- Pass 1 established the summary, metrics, tabs, focused content panels, job list, culture facts, and fixed actions. The employee value repeated the unit from the source string and truncated inside its metric card.
+- Pass 2 removed only the redundant trailing employee unit for presentation. The final screenshot shows `51–200` centered without truncation while preserving the source value everywhere else.
+
+### Interaction and runtime verification
+
+- Overview, jobs, and culture tabs were activated in WeChat DevTools. The jobs state rendered all three real jobs, and the culture state rendered the real company scale, founding year, location, and remote-work tags.
+- Existing subscription, official-link copy, job navigation, membership upgrade, native back behavior, and access conditions remain wired to their original handlers.
+- WeChat DevTools console error filter returned no matches.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `git diff --check` passed for the company-detail page files.
+
+## 2026-09-03 Membership plans — monthly and half-year natural-height refinement
+
+### Visual truth and reviewed states
+
+- Reference captures: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-87953d1a-65de-4b99-8a90-f76f79c8baf6.png` and `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-78ae59ef-d8c9-453d-96f1-7dca401bf74e.png`.
+- Implementation captures: `/private/tmp/haigoo-membership-monthly-final.png` and `/private/tmp/haigoo-membership-halfyear-final.png`, cropped directly from the same WeChat DevTools simulator window.
+- Target viewport: iPhone 12/13 Pro, 390 x 844 CSS px, DPR 3.
+- Reviewed states: real monthly membership selected with dynamic renewal CTA; real half-year plan selected with dynamic purchase CTA.
+- Overlay method: reference device frames were removed, then app-owned content was width-normalized and aligned at the hero title baseline and shared content frame. Monthly copy/count differences were excluded from geometry scoring because the reference shows a different selected plan.
+
+### Findings
+
+- No actionable P0/P1/P2 findings remain after the normalized overlays.
+- The hero label is removed; the white hero, two-line light-weight heading, subtitle, tags, and light-gray plan zone follow the reference hierarchy.
+- Hero, plan grid, benefit card, and fixed CTA share the normalized reference content frame; the principal left/right boundaries and baselines are within the requested 4 CSS px tolerance.
+- Plan cards are equal width and height. The selected card uses the brand-orange surface, while quarter and half-year badges read `省¥99` and `全部权益` without the former recommendation label.
+- Monthly pricing is isolated at each card bottom. API prices and benefits remain intact; original-price anchors and monthly prices retain the existing approved calculations.
+- Benefit rows use the requested 112rpx height, 40rpx horizontal padding, and 1rpx dividers. The three-item monthly card ends naturally, while the five-item half-year card grows naturally and remains scrollable above the fixed purchase bar.
+- The purchase bar preserves dynamic open/renew wording, non-auto-renewal copy, and the iPhone bottom safe area.
+
+### Verification
+
+- WeChat DevTools accessibility output confirmed `续费月度会员 · ¥99` for the monthly state and `开通半年会员 · ¥699` for the half-year state.
+- WeChat DevTools console error filter returned no matches.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `git diff --check` passed for the membership page files.
+
+## 2026-09-03 Membership plans — reference structure alignment
+
+### Visual truth and state
+
+- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-816407d4-bf7e-420d-9d4b-dbad4b676430.png` (722 x 1254, including the reference device frame).
+- Implementation screenshot: `/private/tmp/haigoo-membership-structure-final.jpg` (592 x 1280 optimized WeChat simulator capture).
+- Target viewport: WeChat DevTools iPhone 12/13 Pro, 390 x 844 CSS px, DPR 3.
+- State: signed-in user, real half-year plan selected, purchase available.
+- Density normalization: comparison used app-owned content proportions because the source contains a device frame and the implementation is an optimized simulator-only capture.
+
+### Findings
+
+- No actionable P0/P1/P2 findings remain after the final combined comparison.
+- Typography: price, crossed-out original price, monthly price, saving amount, plan label, benefit titles, and CTA follow the reference hierarchy without truncation.
+- Spacing and layout: the three plan cards are equal height, the selected half-year plan uses the full brand-orange surface, all five real half-year benefits form a compact list, and the fixed purchase area has no intervening blank block.
+- Colors and tokens: white default cards, black compact plan badges, orange selected card and CTA, and restrained neutral dividers match the selected reference direction.
+- Image and icon fidelity: there are no app-specific raster assets in this surface; the existing MiniIcon check glyph is reused for benefit rows.
+- Copy and content: prices and benefit titles are sourced from the existing plan response. Original-price anchors follow the approved reference values; monthly price and saving amounts are calculated from the active price. Only real quota-bearing half-year benefits receive the `赠品` label.
+
+### Comparison history
+
+- Pass 1 aligned cards, benefits, and purchase bar, but the API's `featured` flag did not render a recommendation badge in the simulator state.
+- Pass 2 keyed the recommendation badge to the real quarter member type, restored the half-year `全部权益` badge, and confirmed both badges in the final screenshot. No P0/P1/P2 mismatch remains in the requested structure.
+
+### Interaction and runtime verification
+
+- Selecting the quarter plan updates the fixed purchase area to `开通季度会员 · ¥199` and `约 ¥66/月 · 到期不自动续费`; relaunch restores the half-year default state.
+- The fixed purchase bar remains above the iPhone safe area and the page reserves its height below the benefit list.
+- WeChat DevTools console error filter returned no matches.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `git diff --check` passed for the membership page files.
+
+### Focused-region decision
+
+The full-view comparison keeps all plan pricing metadata, gift tags, benefit titles, and purchase copy legible, so a separate crop was not necessary for this structural pass.
+
+## 2026-09-03 Membership plans — editorial composition rebuild
+
+### Visual truth and state
+
+- Scope: membership value, plan selection, benefit presentation, and fixed purchase bar only. Existing navigation, prices, entitlement arrays, availability rules, and payment flow were retained.
+- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-cee89262-8a47-43a9-bc34-3c4597bfae4f.png` (650 x 1252, including a reference phone frame).
+- Implementation screenshot: `/private/tmp/haigoo-membership-final.jpg` (554 x 1200 optimized simulator capture).
+- Target viewport: WeChat DevTools iPhone 12/13 Pro, 390 x 844 CSS px, DPR 3.
+- State: authenticated user, quarterly plan selected, purchase available; fixed bar reads `季度会员 ¥199 · 3 个月 立即开通`.
+- Density normalization: the reference includes an outer device frame while the implementation capture is the simulator screen. Comparison therefore aligned app-owned content proportions and section order instead of using raw pixel equality.
+
+### Findings
+
+- No actionable P0/P1/P2 findings remain.
+- Typography: the two-line value statement, plan prices, benefit titles, descriptions, and purchase summary form a clear hierarchy with readable Chinese optical weights and no truncation in the reviewed state.
+- Spacing and layout: three plans are equal height; the selected plan uses an orange border, small check marker, and restrained elevation. The benefit card expands into available vertical space, removing the previous lower-page void while leaving the fixed purchase bar unobstructed.
+- Colors and tokens: the page uses white, warm gray, ink, and the existing orange action color. There is no gradient, illustrative filler, or excessive shadow.
+- Image and icon fidelity: the page contains no source imagery to reproduce; existing library check icons are used consistently for selection and benefit rows.
+- Copy and content: API-provided prices, durations, descriptions, and entitlement titles remain unchanged. Added benefit subtitles explain the existing entitlement text without changing availability or quota.
+
+### Comparison history
+
+- Pass 1 established the editorial hierarchy and corrected the selected-card treatment, but the three-item quarterly plan still left a visibly loose region above the fixed purchase bar.
+- Pass 2 made the page and benefit section a flex composition so the benefit rows absorb only the available residual height. The final combined source-and-implementation comparison shows a continuous value → plans → benefits → purchase sequence without a dominant blank block.
+
+### Interaction and runtime verification
+
+- Selecting the quarterly card updates both the benefits and fixed purchase summary to `季度会员 ¥199 · 3 个月` while preserving the existing purchase action.
+- The purchase bar remains above the home indicator and the page reserves bottom safe-area space, so the bar does not cover benefits or secondary actions.
+- WeChat DevTools reported 0 application errors; only existing base-library deprecation/preload warnings remain.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `git diff --check` passed for the membership page files.
+
+### Focused-region decision
+
+The optimized simulator capture keeps plan prices, check markers, benefit titles/descriptions, and the purchase summary readable at full-view scale, so a separate focused crop was not needed.
+
+## 2026-09-03 Match company card — real-data detail refinement
+
+### Scope and visual truth
+
+- Scope: Match company-card data presentation and its internal spacing only. Top navigation, TabBar, carousel behavior, follow behavior, and other pages were not changed.
+- Target device: WeChat DevTools iPhone 12/13 Pro, 390 x 844, DPR 3.
+- Visual source: supplied reference `codex-clipboard-d02d9f9a-a5b2-41dc-b718-c451ef52a337.png`.
+- Implementation capture: `/private/tmp/haigoo-match-data-final.jpg`.
+- The source and implementation captures were inspected together in one visual comparison input.
+
+### Comparison result
+
+- Company location now appears beneath the industry when the existing company record contains an address. The active Eigen AI card displayed `总部 · 硅谷，美国`; the adjacent real Kraken record exposed `总部 · Remote First， US` and rating `4.1` in the rendered accessibility tree.
+- The score circle keeps the existing score data while matching the reference more closely through lighter numeral weight, tighter tracking, and increased score/label separation.
+- The identity block now has deliberate space after the industry/location facts before the divider.
+- The role title is sourced from the real public job-history relation and selects the translated title first, falling back to the original title. No role fixture or synthetic publication date was added.
+- The unfollowed Match-card action uses the existing icon system's `plus` glyph. The captured active company was already followed, so the screenshot correctly shows the followed state; the unfollowed state is covered by the focused source assertion.
+- The time label is now `发布于` and accepts only the real latest job `source_published_at` value. It intentionally disappears when that field is absent instead of relabeling crawl, verification, or update time as publication time.
+
+### Blocker
+
+The current WeChat DevTools session is connected to the already-deployed development service, whose career-watch response does not yet include the newly added `publishedAt` field. The local service implementation and read-only database integration check return the real latest publication time, but the final DevTools screenshot cannot display or visually verify `发布于` until that development service is deployed. Deployment was not requested, so it was not performed.
+
+### Verification
+
+- `npm run test:mini-career-watch` passed.
+- Root `npm run type-check` passed.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- Final DevTools console showed 0 errors; existing base-library deprecation and preload warnings remain.
+- `git diff --check` passed before this QA record update.
+
+## 2026-09-03 Match page and company card — Figma source correction
+
+### Scope and visual truth
+
+- Scope: Match results header, carousel deck, and company card only. Existing top navigation, bottom TabBar, real data, and business actions were retained.
+- Target device: WeChat DevTools iPhone 12/13 Pro, 390 x 844, DPR 3.
+- Figma Make source: file `GWvL94MvgSTAA0827B5WGg`, `MatchScreen.tsx`; supplied visual reference `codex-clipboard-dddf752b-7bca-4699-a5a2-f84dd06eb6e9.png`.
+- Implementation capture: `/private/tmp/haigoo-match-figma-final.jpg` (DevTools displayed at 78% on a Retina desktop, so comparison used normalized screen proportions and app-owned content regions rather than raw pixel equality).
+- State: authenticated Match feed, real Kraken company at carousel index 3 / 5, unfollowed state visible.
+
+### Comparison and iteration history
+
+- Pass 1 removed the oversized page/card void, but the sparse real-data state still concentrated free space between the role and verification rows, and the card radius was visibly tighter than the source.
+- Pass 2 grouped recommendation, role, and verification into one flexible region, distributed residual height across its three meaningful blocks, and corrected the card to the source-equivalent 22 px radius after viewport scaling.
+- The final source-and-implementation comparison was performed in one visual input. The final layout matches the reference direction: clear identity/reason/role/time/action hierarchy, a single immersive card, slight previous/next edges, no clipped neighboring score ring, a full-width primary follow control, and no blank success/scroll region beneath the deck.
+- Product-specific differences are intentional: the native Haigoo top navigation and three-item TabBar remain, and only fields present in the live company data are displayed.
+
+### Interaction and runtime verification
+
+- Existing horizontal carousel, real company data, follow behavior, and TabBar implementation were left unchanged.
+- The `编辑` action is vertically centered across the complete preference row and remains within the rounded container.
+- The feed now owns exactly the remaining viewport height through a single flex chain; card deck and metadata cannot extend the document and expose a lower blank block when scrolling.
+- Full-screen and focused-card checks confirmed readable copy, visible role/time/detail controls, and complete side-card slivers without neighboring card content leaking into view.
+- Final DevTools console showed no application errors; only existing base-library deprecation/preload warnings remained.
+- `cd miniprogram && npm run type-check` passed.
+- `cd miniprogram && npm run build:weapp` passed with the existing three CSS ordering warnings.
+- `git diff --check` passed.
+
+## Previous QA record
+
+previous result: blocked
+
+## Scope
+
+- Batch 1: onboarding/start screen and companies list.
+- Batch 2: profile center and membership plans.
+- Target device: WeChat DevTools iPhone 12/13 Pro, 390 x 844, DPR 3.
+- Source: Figma Make file `GWvL94MvgSTAA0827B5WGg`, 402 x 874 content frame.
+
+## Source Evidence
+
+- The Figma Make source code and component hierarchy were read through the Figma design context API.
+- Exact layout, type, spacing, colors, radii, image URL, and component order were extracted for `OnboardingScreen.tsx` and `CompaniesScreen.tsx`.
+- The source hero asset is the Unsplash image referenced by `OnboardingScreen.tsx`; the local asset was replaced with that exact image request.
+- Figma Make does not support the Figma `get_screenshot` API. The generated preview URL was accessible to browser automation, but direct Chrome rendering later returned `Error proxying request to container`, so a stable source PNG could not be captured for the required combined comparison.
+
+## Implementation Evidence
+
+- Companies baseline: `artifacts/figma-secondary-pages-2026-09-02/companies-before.png`
+- Companies pass 1: `artifacts/figma-secondary-pages-2026-09-02/companies-pass-1.png`
+- Companies pass 2: `artifacts/figma-secondary-pages-2026-09-02/companies-after.png`
+- Onboarding source image: `artifacts/figma-secondary-pages-2026-09-02/onboarding-source-image.png`
+- Profile baseline: `artifacts/figma-secondary-pages-2026-09-02/profile-before.png`
+- Profile final: `artifacts/figma-secondary-pages-2026-09-02/profile-after.png`
+- Membership final: `artifacts/figma-secondary-pages-2026-09-02/membership-after.png`
+- Batch 2 source implementation was read directly from Figma Make `ProfileScreen.tsx` and `MembershipScreen.tsx`.
+
+All final screenshots were captured from the same WeChat DevTools iPhone 12/13 Pro device profile. The simulator screenshot command returns the full device image, so system status/navigation/safe-area pixels remain explicitly treated as platform regions rather than product content pixels.
+
+## Comparison History
+
+### Companies Pass 1
+
+Largest issues:
+
+1. Card height remained about 20 px taller than the Figma list row.
+2. Follow buttons were wider than the Figma control.
+3. The custom WeChat navigation region consumed vertical space not present in the Figma content frame.
+
+Fixes:
+
+- Reduced card vertical padding.
+- Reduced follow control width while preserving its label and state.
+- Kept the custom navigation as a separate platform region rather than changing product navigation.
+
+### Companies Pass 2
+
+- The visible list density increased from about four cards to six cards in the same viewport.
+- Company copy, company order, open-role counts, follow states, and navigation remained unchanged.
+- No further high-risk visual restructuring was made without a stable source PNG.
+
+### Onboarding
+
+- Replaced the old neon keyboard image with the exact Figma-referenced remote-work photo.
+- Changed the hero from capped 40vh to 46vh.
+- Matched the Figma content padding, title scale/weight, feature spacing, check container, primary CTA height/radius, and brand mark.
+- Preserved the product's current copy and resume-upload interaction as required.
+
+### Profile and membership
+
+- Matched the profile surface to the source treatment with a neutral page background, 58 px avatar scale, three-column-capable stat styling, black membership card, grouped white menu surfaces, 14 px source-equivalent radii, and Figma gray borders.
+- Kept the real profile data contract and current two-stat data shape; no synthetic stat or menu item was added.
+- Matched the membership selected-plan state to Figma's orange fill and white text, removed the extra visible selection glyph, and aligned plan spacing, benefit rows, neutral borders, and the fixed purchase region.
+- Preserved real plan data, payment availability checks, purchase confirmation, membership renewal behavior, consultation navigation, and order navigation.
+
+## Blocker
+
+The required side-by-side, 50% overlay, and pixel-difference comparison cannot be completed honestly because the Figma Make source frame could not be exported as a stable image. Final implementation screenshots are now available; only the source PNG and therefore the computed overlay/diff evidence remain unavailable. The earlier blank simulator state was recovered and is no longer an active blocker.
+
+The three remaining comparison constraints are recorded separately: system status/navigation/safe-area pixels are excluded from the Figma content frame; profile keeps the current two-stat real-data contract instead of inventing the source's third stat; membership keeps the current real plan/benefit/payment data instead of replacing it with source-only reviews or copy.
 
 ## Verification
 
-- [x] Same-viewport before/after visual comparison inspected.
-- [x] Jobs, homepage, career growth, and login visually checked on local server.
-- [x] Jobs and homepage checked at 390 × 844 with zero horizontal overflow.
-- [x] Save/share, tabs, selection, loading, empty, QR modal source, and notification treatment reviewed.
-- [x] Impeccable deterministic scan: 0 findings.
-- [x] Primary contrast: accent/white 4.54:1; muted/white 4.97:1; member copper/member surface 7.57:1.
-- [x] Production build: passed.
-- [x] Compliance UI policy: passed.
-- [x] Job access policy: passed.
-- [x] Hero recommendation policy: passed.
-- [x] Targeted ESLint: 0 errors; inherited warnings documented.
+- `cd miniprogram && npm run build:weapp` passed; existing CSS order and asset-size warnings remain.
+- `cd miniprogram && npm run type-check` passed.
+- `git diff --check -- miniprogram/src/pages/profile/index.scss miniprogram/src/pages/membership/index.scss design-qa.md` passed.
 
-final result: passed
+## 2026-09-04 Match company card — vertical identity and evidence layout
 
----
+### Scope and evidence
 
-# Design QA: Taste Skill 视觉升级（2026-08-13）
+- Source visual: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-0b9d95f1-ea2b-494e-aae0-11629cb3903d.png` (375 x 824 px).
+- Implementation capture: `artifacts/match-card-visual-qa-2026-09-04/match-card-after.png` (273 x 584 px), captured from WeChat DevTools with the iPhone 12/13 Pro simulator displayed at 78%.
+- Combined comparison: `artifacts/match-card-visual-qa-2026-09-04/match-card-comparison.png` (774 x 824 px). Both app surfaces were width-normalized to 375 px and placed in the same image for visual judgment.
+- Reviewed state: real Appwrite recommendation, score 85, unfollowed, one real public opportunity. The current server data has no valid company rating or remote-culture signal for this record, so those missing evidence rows are intentionally absent.
 
-- User reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-463dbddd-062a-4dae-88d8-64c3a2c9d2c2.png`
-- Live reference capture: `artifacts/taste-visual-upgrade-2026-08-13/10-qa-reference-1276x718.png`
-- Homepage implementation: `artifacts/taste-visual-upgrade-2026-08-13/11-qa-home-1276x718.png`
-- Same-input comparison: `artifacts/taste-visual-upgrade-2026-08-13/12-qa-side-by-side.png`
-- Additional desktop evidence: `artifacts/taste-visual-upgrade-2026-08-13/03-after-home-desktop.png`, `04-after-jobs-desktop.png`, `05-after-career-desktop.png`, `06-after-login-desktop.png`
-- Mobile evidence: `artifacts/taste-visual-upgrade-2026-08-13/13-after-home-mobile-final.png`, `08-after-jobs-mobile.png`, `09-after-login-mobile.png`
-- Comparison viewport: 1276 × 718 CSS px at deviceScaleFactor 1; mobile viewport: 390 × 844 CSS px.
-- State: unauthenticated public homepage, Remote Jobs, Career Growth, and login flow using local application data.
+### Full-view and focused comparison
 
-## Findings
+- The full simulator crop keeps the page header, preference row, active card, pagination, and TabBar visible, confirming that the requested exterior regions did not move.
+- The card itself is the focused comparison region. Its identity is now Logo → company name → industry/location in the left column, while the dynamic `85% / 匹配度` block is independently aligned at the upper-right.
+- The Chinese quoted description precedes the divider. The evidence rows follow the divider, and the job module follows the available evidence without placeholders or a flexible spacer.
+- The job module is directly followed by the existing follow action and company-detail link. There is no internal blank region over 80rpx.
 
-- No actionable P0/P1/P2 visual or interaction findings remain in the reviewed scope.
-- The visual system now uses a brighter white/cool-daylight canvas, deep neutral ink, and one orange public accent. Member gold remains a separate semantic status color.
-- Floating navigation, pill controls, high-contrast sans typography, soft depth, and restrained ambient light carry the reference's modern product character without copying its brand or decorative collage.
-- Actual Haigoo product and lifestyle imagery remains the focal visual source. Existing routes, data, permissions, analytics hooks, and forms are preserved.
-- The interface is intentionally locked to a light theme for this direction; dark mode is outside this visual brief.
+### Findings
 
-## Required fidelity surfaces
+- No actionable P0/P1/P2 visual issue remains in the requested card-internal scope.
+- The implementation uses real API-backed company, role, score, rating, location, timezone, salary, and follow-state inputs. Missing evidence is hidden instead of filled with synthetic values.
+- Logo assets use the existing image URL with `aspectFit` inside a white, padded, bordered square. The initial fallback renders only when no logo URL exists.
+- Long company names and industry/location metadata use single-line ellipsis inside `minmax(0, 1fr)`. Job titles use a two-line clamp. Missing ratings remove only the rating row; missing jobs remove the complete job region.
+- The source mock shows all three evidence rows, while the real Appwrite state shows one. This is an intentional data-state difference required by the no-fabrication and hide-missing rules, not a visual defect.
+- The source mock's English `ACCURACY` label and compact action are intentionally not copied: the accepted specification requires `匹配度`, and freezes the existing follow and company-detail actions.
 
-- Typography: Replaced the heavy editorial serif hierarchy with an `Avenir Next` / system sans stack, tightened headline rhythm, and retained readable Chinese fallbacks.
-- Spacing and layout: Introduced a floating desktop header, stronger Hero whitespace, consistent 14/18/28 px control/card radii, and responsive single-column mobile composition.
-- Colors: Public accent is orange; member-only semantics remain gold. Former blue-purple visual accents are removed from the reviewed public states.
-- Imagery: Reused real project images and logos with fixed aspect ratios, cover behavior, and soft shadows. No fake assets or CSS-drawn replacement illustrations were added.
-- Copy: Visible English dash constructions touched in the refreshed surfaces were normalized; product wording, business claims, and Chinese route labels remain unchanged.
-- Icons: Existing Lucide outline icons are retained consistently, with accessible labels on icon-only controls.
-- Accessibility and behavior: Keyboard focus is visible, login input focus uses the orange semantic ring, mobile navigation has an accessible name, reduced motion disables refresh animations, and the 390 px pages have no horizontal overflow.
+### Comparison history
 
-## Interaction and responsive evidence
+- Pass 1 removed the old horizontal identity row, score ring, recommendation heading, orange tag cluster, pink job icon, and `flex: 1` spacer. It established the required vertical identity, description-first order, conditional evidence rows, and light-gray job module.
+- Pass 2 checked the built result in WeChat DevTools at the reference device profile. The full location remained readable, the card collapsed naturally around sparse evidence, and no follow-action or exterior-page regression appeared.
 
-- Mobile menu opened through `打开移动菜单`; selecting Remote Jobs navigated to `/jobs`.
-- The unauthenticated role filter opened the expected login dialog instead of exposing member-only filtering.
-- Homepage search accepted `产品经理` and preserved the expected login redirect with the search query.
-- Login email focus rendered the orange border, focus ring, and shadow state.
-- Browser console review found no runtime errors; only existing React Router future warnings and development logs were present.
-- Homepage, Remote Jobs, Career Growth, and login were inspected at desktop and mobile breakpoints.
+### Verification
 
-## Comparison history
+- `node test-mini-company-match.js` passed.
+- `npm run test:mini-career-watch` passed after its obsolete `发布于` card assertion was updated to the accepted job-module structure.
+- `npm run type-check` passed.
+- `node --check lib/services/career-watch-service.js` passed.
+- `npm --prefix miniprogram run build:weapp` passed with the three pre-existing CSS ordering warnings.
+- Impeccable layout detection returned no findings for the changed component styles.
+- `git diff --check` passed for the scoped implementation and test files.
 
-1. P2: The previous global treatment used a warm gray paper field, serif display type, long flat dividers, and dark muted accents that felt heavy and archival.
-   - Fix: Rebuilt shared tokens and page-level surfaces around bright daylight neutrals, bold sans hierarchy, orange action cues, floating controls, and selective soft depth.
-   - Post-fix evidence: `12-qa-side-by-side.png` and the four desktop route captures.
-2. P2: The first mobile Hero refresh allowed the decorative heart to clip against the right edge at 390 px.
-   - Fix: Removed the decorative heart below the tablet breakpoint while preserving the desktop composition.
-   - Post-fix evidence: `13-after-home-mobile-final.png` shows clean 390 px bounds and an unclipped headline/search stack.
-3. P3: The reference uses a floating product collage and a serif subheading.
-   - Decision: Kept Haigoo's real imagery and all-sans hierarchy because the user's stated problem was the existing magazine/serif weight; only the reference's clarity, light, accent, and floating depth were carried over.
-
-## Implementation checklist
-
-- [x] Install and read the requested Taste Skill package.
-- [x] Refresh shared design tokens and global public surfaces.
-- [x] Upgrade Homepage, Remote Jobs, Career Growth, profile/consultation shells, membership surfaces, and authentication cards through shared styles.
-- [x] Preserve business behavior, routes, permissions, and data integrations.
-- [x] Verify desktop/mobile rendering and primary interactions.
-- [x] Pass TypeScript, production build, UI compliance, job-access policy, Hero recommendation, and whitespace checks.
-
-final result: passed
-
----
-
-# Design QA: Career Growth 播放页与「我的 Haigoo」
-
-- Playback visual reference supplied by user: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-8c67502d-3bc0-44d2-9c4d-2088baf2c966.png`
-- Playback before: `artifacts/brand-upgrade-playback-profile/before/watch-desktop.png`
-- Playback after: `artifacts/brand-upgrade-playback-profile/after/watch-desktop.png`
-- Playback comparison: `artifacts/brand-upgrade-playback-profile/compare/watch-desktop-before-after.png`
-- Profile before: `artifacts/brand-upgrade-playback-profile/before/profile-desktop.png`
-- Profile after: `artifacts/brand-upgrade-playback-profile/after/profile-desktop.png`
-- Profile comparison: `artifacts/brand-upgrade-playback-profile/compare/profile-desktop-before-after.png`
-- Mobile evidence: `artifacts/brand-upgrade-playback-profile/after/watch-mobile.png`, `artifacts/brand-upgrade-playback-profile/after/profile-mobile.png`
-- Viewports: desktop 1440 × 692; mobile 375 × 812
-- State: authenticated ordinary user with real saved-opportunity and application-record data; published CEO interview with live company notes
-
-## Findings
-
-- No actionable P0/P1/P2 visual or interaction findings remain in this scope.
-- Playback now makes the video the primary object and presents supporting information as an editorial company dossier, rather than a second application-like product panel.
-- My Haigoo has a clear greeting → quick access → saved opportunities / application records hierarchy and no longer reads like a sparse MVP dashboard.
-- Both pages use warm ivory, deep ink, serif display type, fine rules, restrained purple accents, and low-radius media consistently with the redesigned Homepage.
-- Desktop and mobile captures show no horizontal overflow. Each route retains one H1 and the global single `main` landmark.
-- Mobile changes information order and control treatment; it is not a simple vertical stack of the previous desktop cards.
-- The final mobile playback capture records the iframe before its remote poster painted, but the responsive media frame, content order, title wrapping, and document width are verified; the desktop capture verifies the loaded video state.
-
-## Comparison history
-
-1. P2: The playback page used a fixed-height two-card layout, a purple title pill, nested rounded note cards, and a vertical icon rail that visually competed with the video.
-   - Fix: Changed to normal document flow, enlarged the video column, placed story metadata beneath it, and rebuilt the right side as a flat sticky dossier.
-   - Post-fix evidence: `watch-desktop-before-after.png` shows a single video-first hierarchy and divider-led supporting content.
-2. P2: The ordinary-user profile had excessive empty space, disconnected large counters, a consultation promotion card, and separate feature-page framing.
-   - Fix: Added one compact personal workspace with a quiet sidebar, restrained greeting, quick-access strip, and paired saved/application records.
-   - Post-fix evidence: `profile-desktop-before-after.png` shows useful real data above the fold and no ordinary-user upsell surface.
-3. P2: Historical application statuses exposed old referral/intermediation language.
-   - Fix: Mapped existing stored values to user-owned progress labels (`想申请`, `已申请`, `面试`, `已结束`) without changing persisted values or services.
-   - Post-fix evidence: final desktop profile capture and source review of `MyApplicationsTab.tsx`.
-4. P2: Several interactive targets were visually compact but below the 44 px touch target.
-   - Fix: Raised application status and delete controls to a 44 px minimum, preserved visible focus, and added an explicit destructive action label.
-   - Post-fix evidence: source review and successful TypeScript production build.
-
-## Preserved behavior and compliance checks
-
-- [x] Video access still uses existing authentication and membership capabilities.
-- [x] Existing company notes, clips, favorites, public openings, resources, and source links remain data-driven.
-- [x] Saved-opportunity and application-record fetch/update/delete behavior is unchanged.
-- [x] No membership sale, consulting CTA, recommendation ranking, recruiter contact, or job-payment surface was added.
-- [x] Dormant historical membership, redemption, and payment code remains configuration-gated rather than deleted.
-- [x] Compliance UI policy test passed.
-- [x] TypeScript check, production build, and diff whitespace check passed.
-
-final result: passed
-
----
-
-# Design QA: Career Growth editorial rebuild
-
-**Findings**
-
-- [P2] Full visual comparison remains blocked by the in-app Browser capture service.
-  - Location: `/careerlearning` and `/careerlearning/watch/module/:id`, desktop and mobile implementation captures.
-  - Evidence: the Browser repeatedly returned `Page.captureScreenshot` timeouts after the implementation rendered and interactions completed. The mobile notes route produced a valid post-build screenshot, but the content-index and watch-route captures could not be normalized reliably.
-  - Impact: typography, spacing, and hierarchy were verified through the live Browser DOM and the visible preview, but the required same-viewport combined image comparison is incomplete.
-  - Fix: recapture the two missing routes in the in-app Browser when its screenshot service is responsive, combine them with the existing source captures, and rerun the visual pass before declaring the phase complete.
-
-**Verified surfaces**
-
-- Source visual truth: the existing Homepage flat editorial system and `artifacts/brand-upgrade-career/before/career-list-desktop.png` / `career-list-mobile.png`.
-- Valid implementation evidence: `artifacts/brand-upgrade-career/after/notes-page-mobile.png`.
-- Valid combined comparison: `artifacts/brand-upgrade-career/compare/notes-mobile-before-after.jpg`.
-- Mobile implementation viewport: 375 × 812 CSS px, deviceScaleFactor 2; output normalized to 375 × 812 px by the Browser.
-- State: unauthenticated user, real local API data, remote-preparation note ID `273fa1b4-2044-42cc-a238-bf1cd386cdd5`.
-
-**Interaction and responsive evidence**
-
-- Remote-preparation filter `初级` reached the selected state.
-- Video-notes dialog opened, exposed its accessible dialog name, and closed from `关闭视频笔记`.
-- Console errors: none. Existing React Router future warnings only.
-- `/careerlearning`, watch, and notes routes matched client width to scroll width at 375, 768, 1024, and 1440 px.
-- The career index exposes one H1 and one global main landmark.
-- The mobile watch lock layout measured 343 px wide inside a 375 px viewport and no longer uses the old fixed, clipped card stack.
-- Type checking, compliance UI policy tests, production build, and `git diff --check` pass.
-
-**Implementation checklist**
-
-- [x] Editorial career masthead and real content count.
-- [x] Flat chapter headers, filters, and story rows.
-- [x] Flat watch lock state and mobile document flow.
-- [x] Reading-width notes document and index rail.
-- [x] Preserve guest/member permissions, notes, favorites, audio, analytics, and source links.
-- [ ] Recapture index and watch-route implementation screenshots and complete same-viewport image comparison.
-
-final result: blocked
-
----
-
-# Design QA: Remote Companies editorial rebuild
-
-- Style source visual truth: `artifacts/brand-upgrade-phase2/15-final-home-1440.png`
-- Original directory source capture: `artifacts/brand-upgrade-companies/before/companies-desktop.png`
-- Directory implementation screenshot: `artifacts/brand-upgrade-companies/after/companies-desktop.png`
-- Original detail source capture: `artifacts/brand-upgrade-companies/before/company-detail-desktop.png`
-- Detail implementation screenshot: `artifacts/brand-upgrade-companies/after/company-detail-desktop.png`
-- Mobile source/implementation: `artifacts/brand-upgrade-companies/before/company-detail-mobile.png`, `artifacts/brand-upgrade-companies/after/company-detail-mobile.png`
-- Full-view comparison evidence: `artifacts/brand-upgrade-companies/compare/companies-before-after.png`, `artifacts/brand-upgrade-companies/compare/company-detail-before-after.png`
-- Focused mobile comparison evidence: `artifacts/brand-upgrade-companies/compare/company-detail-mobile-before-after.png`
-- Desktop viewport: 1440 × 900 CSS px at deviceScaleFactor 1; source and implementation normalized to 1440 × 900 px for comparison.
-- Mobile viewport: 375 × 812 CSS px at deviceScaleFactor 1; source and implementation are 375 × 812 px.
-- State: unauthenticated public directory and Scopic detail route; real local API data.
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The directory now reads as a maintained company index: title, source policy, search, methodology, update status, and company records form one continuous hierarchy.
-- The detail page replaces nested rounded cards with one flat company document. Locked guest fields no longer dominate the page, and the official-source boundary is explicit.
-- The active company job list no longer receives match/recommendation scores. Historical member email access remains conditional on the existing `isMember` state and real company data.
-
-## Required fidelity surfaces
-
-- Fonts and typography: Homepage serif/sans roles are reused. Directory headings stay to two deliberate lines at 375 and 1440 px; metadata remains small but readable and form inputs are at least 16 px on mobile.
-- Spacing and layout rhythm: 1–2 px rules establish section rhythm. Feature images use the existing 18 px media radius; normal company records and facts do not become cards.
-- Colors and visual tokens: warm ivory, deep ink, mist, sage, and purple accent map to existing semantic variables. Purple is limited to links/focus/action accents.
-- Image quality and asset fidelity: existing company cover and logo assets are reused, aspect-ratio space is reserved, and below-fold images are lazy loaded. No replacement CSS/SVG illustration was introduced.
-- Copy and content: endorsement, targeting, and recommendation framing is removed from static page copy. Dynamic company descriptions remain source data and are not rewritten in the UI layer.
-- Icons: one existing Lucide outline family is used, with text labels on actions and no emoji icons.
-- Accessibility: company records are semantic buttons, inputs have labels, icon-only search has an accessible name, expansion exposes `aria-expanded`, focus rings come from the global system, and reduced motion is respected.
-
-## Interaction and responsive evidence
-
-- Expand/collapse `查看整理说明` was tested; the control changed to `收起整理说明` and exposed the five information notes.
-- Selecting `查看 Scopic 的企业资料` navigated to `/c/Scopic`.
-- Browser console error log after directory → detail navigation: empty.
-- Directory document width checks: 375/375, 768/768, 1024/1024, 1440/1440 (client/scroll width).
-- Detail document width checks: 375/375, 768/768, 1024/1024, 1440/1440 (client/scroll width).
-- Directory featured columns: 1 at 375; 2 at 768, 1024, and 1440. Detail Hero/About sections: 1 column at 375 and 768; 2 columns at 1024 and 1440.
-
-## Comparison history
-
-1. P2: The first directory Hero pass allowed the Chinese particle `的` to wrap onto its own line.
-   - Fix: Split the title into two authored line spans and reduced the mobile display scale to 11.5vw.
-   - Post-fix evidence: browser measurements show a two-line 88 px heading at 375 px and a two-line 141 px heading at 1440 px, with document width equal to the viewport.
-2. P2: The first implementation produced nested `<main>` landmarks inside the global layout.
-   - Fix: Replaced page-local `<main>` wrappers with neutral content containers while retaining the global main landmark.
-   - Post-fix evidence: final DOM snapshots show one global main region with sequential h1 → h2 → h3 hierarchy.
-3. P2: Company-detail job rows still received legacy match-score values.
-   - Fix: Removed the `matchScore` prop from both active company-detail presentations while retaining the underlying matching code elsewhere.
-   - Post-fix evidence: final component calls include only factual list display, application-method state, and existing saved-job behavior.
-
-## Validation
-
-- `npm run test:compliance-ui` — passed.
-- `npm run type-check` — passed.
-- `npm run build` — passed.
-- `git diff --check` — passed.
-
-final result: passed
-
----
-
-# Design QA: 远程工作、我的 Haigoo 与职业咨询平面化（2026-08-11）
-
-- Baseline Remote Jobs: `artifacts/brand-upgrade-followup/before/jobs-desktop.png`
-- Final Remote Jobs desktop: `artifacts/brand-upgrade-followup/after/jobs-desktop-v2.png`
-- Final Remote Jobs mobile: `artifacts/brand-upgrade-followup/after/jobs-mobile-375.png`
-- Combined Remote Jobs comparison: `artifacts/brand-upgrade-followup/jobs-before-after.png`（左：改造前；右：改造后）
-- Final consulting desktop: `artifacts/brand-upgrade-followup/after/consulting-desktop-v2.png`
-- Final consulting mobile: `artifacts/brand-upgrade-followup/after/consulting-mobile-375.png`
-- Final contact modal: `artifacts/brand-upgrade-followup/after/consulting-contact-modal.png`
-- Viewports: 1440 × 1000 desktop and 375 × 812 mobile.
-- State: Remote Jobs uses real locally returned job data; the consultation presentation was rendered through a temporary development-only visual-QA route that was removed after capture. The production consultation entry remains authentication-protected inside My Haigoo.
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain on the rendered Remote Jobs and consulting surfaces.
-- Remote Jobs no longer depends on a handwritten banner, decorative illustration header, or stacked rounded job cards. The list uses company/title/region/update/source rows, objective sort labels, fine dividers, and one accent arrow.
-- Job detail sections use editorial rules and whitespace rather than repeated large cards. Guest visibility and masked metadata behavior are unchanged.
-- The consulting Hero no longer displays a QR code. One CTA opens an accessible contact dialog with focus entry, focus containment, Escape close, focus restoration, QR, and email.
-- The consulting page is organized around four realistic moments, three outcomes, a compact capability list, FAQ, and one boundary note. It does not resemble a package comparison or recruitment funnel.
-- The My Haigoo free-user Home uses one greeting, three compact quick links, saved opportunities, and application records. The global/sidebar language is “我的 Haigoo / 咨询服务”; historical members retain their member-only workspace and real entitlements.
-- Desktop and 375 px captures show no horizontal page overflow. The consultation headline was reduced and given explicit wrap rules after the first visual QA exposed clipping.
-
-## Comparison History
-
-1. P1: Remote Jobs was visually dominated by a decorative handwritten filter banner and large independently rounded cards.
-   - Fix: Replaced it with a flat publication header, continuous job rows, factual metadata, and divider-led selection states.
-   - Evidence: `jobs-before-after.png`.
-2. P1: Job detail repeated rounded content cards and shadows, breaking the new Homepage's editorial language.
-   - Fix: Converted the detail header stats to divided columns and the description/requirements/skills content to rule-separated reading sections.
-   - Evidence: `after/jobs-desktop-v2.png`.
-3. P1: The consultation QR code occupied the Hero and made contact conversion the visual center of the service.
-   - Fix: Moved QR and email into a modal/drawer launched by one calm CTA.
-   - Evidence: `after/consulting-contact-modal.png`.
-4. P2: The first consultation Hero pass forced the Chinese heading past the right edge at 1440 px.
-   - Fix: Added explicit min-width and word wrapping, constrained the text measure, and lowered the maximum display size.
-   - Evidence: `after/consulting-desktop-v2.png` and `after/consulting-mobile-375.png`.
-
-## Interaction and Compliance Checks
-
-- Job rows expose descriptive keyboard labels and Enter/Space activation without changing the existing selection callback.
-- Sort remains `默认 / 最新`; personalized score rendering remains controlled by `COMPLIANCE_FEATURES.personalizedJobDiscovery`.
-- Primary application copy remains `官网直申（需登录）` for guests; existing quota/member behavior remains in `JobDetailPanel`.
-- No consulting, Club purchase, membership banner, referral, or private-contact CTA was added to the public job flow.
-- Consultation modal focus management and close controls were verified through the browser semantic snapshot.
-- `npm run test:compliance-ui`, `npm run type-check`, and `npm run build` pass.
-
-final result: passed
-
----
-
-# Design QA: 首页 Hero、品牌企业卡片与职业咨询中心重构（2026-08-11）
-
-- Source visual truth:
-  - `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-8cba5d67-a3eb-4269-bb3e-33ef98b6ca35.png`
-  - `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-bf7a08db-98e6-4d6b-9d42-e017bf185100.png`
-  - `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-9bf8e259-3442-435d-90f2-61c8a2add856.png`
-- Final desktop implementation:
-  - `artifacts/design-qa/turn3-home-final-1440x748.png`
-  - `artifacts/design-qa/turn3-club-final-1440x748.png`
-- Final mobile implementation:
-  - `artifacts/design-qa/turn3-home-mobile-v1.png`
-  - `artifacts/design-qa/turn3-club-mobile-v1.png`
-- Full-view comparison evidence:
-  - `artifacts/design-qa/turn3-home-comparison-1440x748.png`
-  - `artifacts/design-qa/turn3-club-comparison-1440x748.png`
-- Focused region evidence:
-  - `artifacts/design-qa/turn3-home-club-card-v1.png`
-  - `artifacts/design-qa/turn3-club-mid-v1.png`
-  - `artifacts/design-qa/turn3-club-bottom-v1.png`
-- CSS viewport: 1440 × 748 desktop and 390 × 844 mobile.
-- Density normalization: source screenshots are 2880 × 1496 at 2× density; comparison copies were downsampled to 1440 × 748 and compared with 1440 × 748 browser captures at deviceScaleFactor 1.
-- State: authenticated free user; compliance switches at their default production-safe values.
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- Hero now has one small contextual note and one consolidated companion/source panel instead of three competing floating surfaces.
-- The restored Haigoo Remote Club card is visible independently of membership promotion banners and includes brand identity, operator, contact, social links, and company information.
-- The non-member Club center now presents career pain points, broader career-planning scenarios, service scope, process, FAQ, and explicit service boundaries without pricing or checkout.
-- Desktop and mobile document widths equal their viewports; no horizontal overflow was detected.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: Existing brand handwriting, Chinese sans-serif hierarchy, and body type are retained. Hero title, consulting headline, section headings, and detail text have distinct optical weights and stable line wrapping at desktop and mobile sizes.
-- Spacing and layout rhythm: Hero content aligns to a restrained two-column frame; category choices share one dock; right-side information is consolidated. Club sections use consistent 24–30 px radii, balanced section gaps, and a clear reading sequence.
-- Colors and visual tokens: Existing warm ivory, slate, pale blue, and Club violet tokens remain. Contact and boundary surfaces use warm neutrals rather than purchase-oriented color treatments.
-- Image quality and asset fidelity: Existing source photography, handwriting assets, Haigoo character art, QR code, company covers, and brand logo are preserved. No placeholder imagery, custom SVG art, or CSS illustration substitutes were introduced.
-- Copy and content: Career support is explicitly broader than remote work and uses realistic common scenarios without presenting them as customer testimonials. The page clearly excludes job-information sales, recommendations, referrals, recruitment matching, and hiring guarantees.
-- Icons and interactions: Existing Lucide icon family is used consistently. Hero search navigates to the filtered jobs page, the consulting CTA scrolls to the advisor contact, and FAQ disclosure controls open correctly with keyboard-visible focus styling.
-- Accessibility and responsiveness: Semantic headings, native details/summary controls, visible focus, alt text for QR imagery, 390 px layout checks, and practical mobile tap targets are present.
-
-## Comparison History
-
-1. P1: The Hero used three visually independent floating cards, making the right side feel scattered and weakening the relationship between the title, search, and source explanation.
-   - Fix: Consolidated the Haigoo companion and three source attributes into one bottom glass panel, aligned the small-joy note to the image, tightened the content frame, and grouped category choices into one dock.
-   - Post-fix evidence: `turn3-home-comparison-1440x748.png` shows a stable left-to-right hierarchy with fewer floating boundaries.
-2. P1: The Haigoo Remote Club company identity card was incorrectly tied to the membership-promotion flag and disappeared when conversion banners were disabled.
-   - Fix: Added a separate default-on `homeClubInfoCard` compliance switch and restored the card without restoring any membership sales banner.
-   - Post-fix evidence: `turn3-home-club-card-v1.png` shows brand, operator, contact, and social details below the company/community section.
-3. P1: The non-member Club center had a sparse product-list layout that did not explain user pain, broader career-planning scenarios, consulting process, expected support, or decision boundaries.
-   - Fix: Rebuilt the page around common career problems, scenario-based guidance, service scope, four-step process, FAQ, and a single advisor contact path with no price or checkout.
-   - Post-fix evidence: `turn3-club-comparison-1440x748.png`, `turn3-club-mid-v1.png`, and `turn3-club-bottom-v1.png` show the complete hierarchy and interactive FAQ state.
-4. P2: The first FAQ retained the browser's default focus outline after interaction, creating a visually heavy rectangle.
-   - Fix: Added an intentional rounded focus-visible ring that matches Club violet tokens.
-   - Post-fix evidence: final source uses the controlled focus style and targeted ESLint reports no errors.
-
-## Primary Interactions Tested
-
-- Hero search with “产品经理” navigates to `/jobs?search=产品经理`.
-- Primary consulting CTA scrolls to the Haigoo advisor QR/contact surface.
-- FAQ disclosure opens and exposes the complete answer.
-- Browser console checked with zero errors.
-
-## Implementation Checklist
-
-- [x] Rebalance Hero typography, search, categories, note, and companion/source surfaces.
-- [x] Restore the Haigoo Remote Club company identity card independently of sales banners.
-- [x] Expand Club center around real career pain points and broader career planning.
-- [x] Keep pricing, checkout, job sales, matching, and hiring promises out of the non-member experience.
-- [x] Verify desktop, mobile, interactions, console, TypeScript, ESLint, and compliance regression tests.
-
-final result: passed
-
----
-
-# Design QA: Hero 精简、交流群文案与会员边界收口（2026-08-11）
-
-- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-f009c0c9-17be-4725-a0a0-b1046e8167d4.png`
-- Desktop implementation: `/Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/artifacts/design-qa/home-hero-refinement-1960x1099.jpg`
-- Mobile implementation: `/Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/artifacts/design-qa/home-hero-refinement-mobile.jpg`
-- Full-view comparison evidence: `/Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/artifacts/design-qa/home-hero-refinement-comparison.jpg`
-- Focused company/community evidence: `/Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/artifacts/design-qa/home-companies-community-refinement.jpg`
-- Free Club evidence: `/Users/caitlinyct/Haigoo_Admin/Haigoo_assistant/artifacts/design-qa/free-club-consulting-refinement.jpg`
-- Source pixels: 2048 × 1099; desktop browser content: 1960 × 1099; mobile: 390 × 844; device scale factor: 1.
-- Normalization: the source was fit into a 1960 × 1099 white canvas before side-by-side comparison because the in-app browser content area capped the desktop capture at 1960 px wide.
-- States: anonymous/new-user homepage, signed-in free Club center/home, and existing Partner member Club center.
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The duplicated Haigoo greeting above the Hero title is absent for anonymous and free users. Genuine system notices retain their independent render path.
-- “今日小确幸” remains as a text-led note and no longer shows the redundant sparkle icon.
-- The right-side Haigoo companion card, public-source strip, search, category controls, company cards, and community QR remain intact.
-- The community module uses the approved copy: “岗位分享 / 自由分享好机会 / 开放交流群，正在找机会的朋友可以互相探讨。”
-- Existing Partner members retain Hero recommendations, expiry status, member recommendation workspace, email-application entitlement copy, benefits dashboard, detailed benefit cards, and Club QA.
-- The ¥99 and ¥998 offer cards, their comparison catalog, PayPal/orders, and redemption entry are absent with default compliance flags. The ¥499 career-transition consulting entry remains available to members.
-- Signed-in free users see the single career-consulting presentation with no price, product comparison, order, payment, or redemption entry. Favorites, applications, and feedback remain available.
-- Mobile document width equals viewport width at 390 px; no horizontal overflow or clipped persistent controls were found.
-- Browser console contained no errors; only existing React Router future-flag warnings were present.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: Existing Haigoo handwritten title assets, weights, line breaks, supporting-copy hierarchy, and bilingual routes are unchanged. Removing the two redundant decorative elements improves hierarchy without changing brand typography.
-- Spacing and layout rhythm: The Hero retains its two-column desktop composition, existing mobile single-column behavior, note/card radii, search rhythm, category grid, and information strip. Removing the top greeting also removes its reserved title offset.
-- Colors and visual tokens: Warm ivory background, sea-view image, slate text, purple actions, cream borders, and existing Club tokens remain unchanged.
-- Image quality and asset fidelity: The original sea-view background, Haigoo mascot asset, company covers, QR codes, and icon library assets remain in use; no placeholder or code-drawn replacement was introduced.
-- Copy and content: Requested community copy is exact in Chinese. Enterprise cards remain visible. Free/member segmentation copy states the public-information and consulting boundaries without removing historical member entitlements.
-
-## Comparison History
-
-1. P2 from annotated source: the greeting above the Hero title duplicated the right-side Haigoo card.
-   - Fix: gated the ordinary greeting behind `VITE_ENABLE_HOME_HERO_GREETING_BANNER=false` while preserving system notices.
-   - Post-fix evidence: the anonymous desktop/mobile captures show no greeting above the title; the right companion card remains on desktop.
-2. P2 from annotated source: the sparkle badge competed with the “今日小确幸” note.
-   - Fix: removed the badge wrapper and kept the note title/body unchanged.
-   - Post-fix evidence: the desktop comparison shows a clean text-led note with no empty spacing or alignment regression.
-3. P1 compliance regression risk: existing member pages exposed the ¥99/¥998 catalog while also carrying historical member tools.
-   - Fix: kept historical member status, workspace, recommendation, email-apply copy, benefit details, and QA, but gated the two legacy offers and their comparison catalog behind a restore switch.
-   - Post-fix evidence: Partner-member browser inspection showed the full member workspace and only the ¥499 consulting entry; no ¥99, ¥998, redemption, order, or PayPal entry was present.
-
-## Implementation Checklist
-
-- [x] Remove duplicate Hero greeting without hiding system notices.
-- [x] Remove the “今日小确幸” badge icon.
-- [x] Apply the exact community copy and preserve the QR/actions.
-- [x] Preserve the company card section.
-- [x] Preserve historical member recommendations, email applications, validity, workbench, benefits, and QA.
-- [x] Hide ¥99/¥998 offers, comparison catalog, redemption, PayPal, and orders behind restore switches.
-- [x] Verify anonymous, free, member, desktop, and mobile states.
-- [x] Pass type-check, production build, quota/recommendation tests, source assertions, console, overflow, and diff checks.
-
-final result: passed
-
----
-
-# Design QA: 新用户 Hero 与 Club 咨询中心 — 2026-08-11
-
-- Source visual truth: `/Users/caitlinyct/Desktop/Haigoo Assistant/治愈系UI/插画风-首页.png`
-- New-user Hero implementation: `artifacts/design-qa/home-hero-new-desktop-final.png`
-- Mobile Hero implementation: `artifacts/design-qa/home-hero-new-mobile.png`
-- Member-preserved Hero: `artifacts/design-qa/home-hero-member-preserved-desktop.png`
-- Free-user Club home: `artifacts/design-qa/free-club-home-desktop.png`
-- Free-user consulting page: `artifacts/design-qa/free-club-consulting-desktop.png`
-- Side-by-side Hero comparison: `artifacts/design-qa/home-hero-reference-comparison.png`
-- Viewports: desktop 1536 × 1024 CSS px; mobile 390 × 844 CSS px; device scale factor 1
-- Pixel normalization: source and desktop implementation are both 1536 × 1024 px in the comparison; no density resampling beyond equal-size normalization
-- States: new/free-user Hero branch without recommendations; existing Partner-member Hero branch; free-user unified Club home and consulting-only Club page
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The new-user Hero now uses the reference's core composition: handwritten value proposition and search on the left, a warm remote-work scene on the right, a small daily note, a Haigoo companion card, and a compact trust strip.
-- The implementation intentionally reuses the product's existing sea-view background, Haigoo illustration, category images, colors, radii, and typography instead of copying the reference's laptop photography or introducing a second illustration style.
-- The free-user Club page presents one `职业咨询服务`, the requested service contents, advisor QR code, and email contact. Price, plan comparison, PayPal, and order UI are absent.
-- The unified free-user Club home contains saved roles and application records in a responsive two-column desktop layout; resume optimization and Copilot are absent. Existing members retain the original resume assistant and member workspace.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: Existing responsive handwritten WebP title assets are preserved. Supporting text uses the established Haigoo font stack, weights, and line heights; mobile wrapping remains readable without truncation.
-- Spacing and layout rhythm: The desktop Hero keeps a balanced two-column composition and aligns the companion/trust overlays to the right-side scene. Mobile collapses to one content column with no page-level overflow (`390 px` client and scroll width).
-- Colors and visual tokens: Warm ivory surfaces, muted blue-gray copy, lavender actions, fine beige borders, and soft shadows match the reference direction while staying within existing product tokens.
-- Image quality and asset fidelity: Existing high-resolution sea-view and Haigoo raster assets are used at contained/cropped ratios without stretching, replacement SVGs, emoji, or placeholder artwork.
-- Copy and content: Hero compliance copy, public-source labels, the exact consultation deliverables, advisor contact, and Club information boundary are present. Job-selling, price, PayPal, order, and plan-comparison copy are absent from the new free-user surfaces.
-
-## Full-view Comparison Evidence
-
-`artifacts/design-qa/home-hero-reference-comparison.png` places the 1536 × 1024 source and implementation together at equal scale. Both show a left-led value proposition, search and role categories, with the scene and lightweight companion content occupying the right half. The implementation uses a slimmer trust strip so the existing `我们如何整理信息` module remains visible directly below the Hero.
-
-## Focused Region Comparison Evidence
-
-No extra crop was required: at 1536 × 1024 the title, note card, companion card, category controls, and trust copy remain legible in the combined comparison. The Club screenshots separately verify the denser information panels and QR-code treatment.
-
-## Interaction and Responsive Checks
-
-- Existing Partner member: `今日为你推荐的5个匹配岗位` remains visible and the new visitor scene is hidden.
-- Direct `/profile?tab=orders` navigation redirects to `/profile?tab=resume` while the PayPal flag is off.
-- Visible PayPal queries return no result on the member Club page; browser console reports zero errors.
-- Free Club consulting render contains the requested service list and QR contact, with no price, PayPal, or comparison text.
-- Free Club home render excludes resume assistant and Copilot and includes saved/application modules; the application module's loading state was also verified.
-- Mobile Hero document width equals the 390 px viewport with no horizontal overflow.
-
-## Comparison History
-
-1. P2: Removing recommendations left the right half of the Hero visually underused.
-   - Fix: Added a reference-matched daily note, Haigoo companion card, and public-source trust strip over the existing remote-work scene.
-   - Post-fix evidence: `home-hero-reference-comparison.png` shows a balanced two-column composition at equal viewport size.
-2. P1: The first member-preservation condition still required a user ID, so a valid member account without that field could enter the new-user Hero.
-   - Fix: Members now preserve recommendations directly; the user-ID requirement applies only to nonmember legacy-usage eligibility.
-   - Post-fix evidence: `home-hero-member-preserved-desktop.png` and the browser DOM both show the original daily-five recommendation panel for the active Partner member.
-3. P2: The initial free Club home stacked saved and application panels, placing applications below the first desktop viewport.
-   - Fix: Moved both panels into one responsive two-column desktop grid while preserving the mobile stack.
-4. P2: The consultation introduction mentioned that prices were hidden, exposing internal implementation language.
-   - Fix: Reduced the copy to service scope and advisor contact only; the final render contains no price wording.
-
-## Implementation Checklist
-
-- [x] Fill the new/free-user Hero without restoring personalized recommendations.
-- [x] Preserve member and historical-recommendation experiences.
-- [x] Reduce free-user Club to one consultation service and advisor contact.
-- [x] Remove independent free-user saved/application navigation and aggregate both on Club home.
-- [x] Hide orders and prevent PayPal front-end initialization by default.
-- [x] Verify desktop, mobile, segmentation, direct-route behavior, console output, type checking, quota tests, recommendation tests, and production build.
-
-final result: passed
-
----
-
-# Design QA: Club 开通方式与兑换码入口 — 2026-08-08
-
-- Source plan-card reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-cee96a53-2058-4198-8268-c851692d4f2a.png`
-- Source Club hero reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-62a21c5b-2bff-46c2-8503-79098d42571a.png`
-- Plan-card implementation: `artifacts/design-qa/club-plan-cards-desktop.jpg`
-- Payment-method dialog: `artifacts/design-qa/club-payment-tabs-desktop.jpg`
-- Redemption dialog: `artifacts/design-qa/club-redemption-desktop.jpg`
-- Mobile payment dialog: `artifacts/design-qa/club-payment-tabs-mobile.jpg`
-- Side-by-side comparison: `artifacts/design-qa/club-payment-interaction-comparison.png`
-- State: authenticated free user at `http://localhost:3000/profile?tab=membership`; PayPal feature flag disabled so advisor assistance is selected initially.
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain for the requested flow.
-- The Club page always exposes the existing membership-code entry and the redemption dialog remains fully functional independently of PayPal availability.
-- Plan cards no longer disclose PayPal/advisor options before plan selection. Each CTA opens one payment dialog with two equal tabs, and advisor content renders inside that dialog rather than opening a second modal.
-- The payment dialog uses the selected plan card's exact “适合谁” copy. The previously invented assessment/action-plan sentence is absent from the rendered payment flow.
-- Decorative title icons and eyebrow pills were removed from the payment, plan-chooser, order and redemption surfaces added for this feature. Functional benefit checks and status treatments remain.
-
-## Interaction and responsive checks
-
-- Verified PayPal and advisor tabs are both present and mutually selectable inside one dialog; the dialog count remains one in the advisor state.
-- Verified the advisor tab displays the QR code and the PayPal tab removes it while retaining the same selected plan context.
-- Verified `兑换会员码` opens `兑换会员权益` with the code input and `确认兑换` action.
-- Verified desktop and 390 × 844 mobile payment-dialog layouts. The mobile dialog remains vertically scrollable and keeps both method tabs visible.
-- Browser console contains no errors; only existing React Router v7 future-flag warnings were observed.
-- TypeScript type checking, production build, PayPal tests, membership-redemption tests and `git diff --check` pass. Targeted ESLint reports zero errors and thirteen pre-existing warnings in `ProfileCenterPage.tsx`.
-
-## Comparison history
-
-1. P1: Payment options were exposed below every plan card and duplicated interaction decisions before checkout.
-   - Fix: Removed the plan-card hint and moved both methods into equal tabs inside the payment dialog.
-2. P1: Advisor assistance opened another modal from the payment dialog.
-   - Fix: Rendered QR code, instructions and completion action directly in the advisor tab.
-3. P1: The redemption-code entry depended on runtime readiness state and could disappear.
-   - Fix: Preserved it as a fixed channel entry while keeping server-side validation on submission.
-4. P2: Payment copy introduced new product language unrelated to the selected plan card.
-   - Fix: Reused each plan's existing “适合谁” copy verbatim.
-5. P2: Decorative icons and pill labels made the new surfaces feel visually over-designed.
-   - Fix: Simplified headings, actions and the redemption dialog while retaining established Haigoo layout and brand color.
-
-final result: passed
-
----
-
-# Mini Program Visual Refresh & Enterprise Information QA — 2026-07-22
-
-## Scope and Evidence
-
-- Reference home: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-e1f1f3db-c6d9-4b30-853c-bee40d317722.png`
-- Reference jobs: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-d7df3be5-9f25-43d0-af34-8944022be536.png`
-- Implementation: `miniprogram/src/pages/index`, `miniprogram/src/pages/jobs`, `miniprogram/src/pages/learning`, `miniprogram/src/pages/job-detail`, `miniprogram/src/pages/profile`, and `miniprogram/src/pages/account-bind`
-- Home comparison: `artifacts/miniprogram-design-qa/home-comparison.png`
-- Jobs comparison: `artifacts/miniprogram-design-qa/jobs-comparison.png`
-- Final page captures: `artifacts/miniprogram-design-qa/home-final.png`, `jobs-final.png`, `membership-final.png`, and `company-final.png`
-- Comparison viewport: 794 × 1131 browser content. The 794 × 1536 home reference was compared at equal width using a top-region crop to 1131 px.
-- States checked: H5 visual preview with realistic local job fallback, free-user membership state, and job-detail enterprise tab after an actual click.
-
-## Findings
-
-- No actionable P0/P1/P2 visual findings remain.
-- The current H5 preview intentionally uses the real website hero crop and the existing HAIGOO logo/avatar assets rather than approximated CSS artwork.
-- H5 API requests cannot reach the mini-program cloud runtime; realistic jobs are supplied only in the H5 preview fallback. The WeChat build continues to use live backend data.
-- Minor P3 difference: transparent padding inside the original logo asset requires optical scaling; the implementation preserves the real asset and light logo background as requested.
-
-## Required Fidelity Surfaces
-
-- Typography: dark navy headings, restrained gray supporting copy, and purple emphasis aligned with the supplied references.
-- Spacing: rounded but flat white cards, compact job-card rhythm, and section spacing aligned to the reference hierarchy.
-- Colors: cool off-white page background, white surfaces, purple actions/pills, and no decorative dark gradients.
-- Image assets: website hero background, existing brand logo, user avatar, and company logos use native assets with contained aspect ratios.
-- Copy: home hero, membership/subscription entry points, top-six popular categories, and company profile fields match the requested product states.
-
-## Interaction and Data Checks
-
-- Home, jobs, membership, subscription, account binding, and job detail share the same flat visual system.
-- Job categories are sorted by backend aggregation count, limited to six, and preceded by the dedicated `🔥 热门` control.
-- The job-detail `企业信息` tab was clicked and verified with company description, tags, industry, location, and website fields.
-- Membership users receive subscription content/entry states; free users receive the three-service membership presentation.
-
-## Comparison History
-
-1. P1: Dark gradients and warm decorative surfaces diverged from the supplied flat references.
-   - Fix: Replaced them with white/cool-gray surfaces, purple accents, restrained borders, and soft elevation.
-2. P2: The home hero used decorative CSS artwork and did not visually connect to the website.
-   - Fix: Reused the website hero image with a uniform overlay and reference-matched text/CTA composition.
-3. P2: Category ordering was not guaranteed by popularity and the client ignored the CloudRun `categories` response.
-   - Fix: Sorted aggregation counts in CloudRun and the client, limited the result to six, and added the `🔥 热门` control.
-4. P2: Enterprise information was sparse and buried at the bottom of job details.
-   - Fix: Promoted it to the second detail tab and exposed the available structured company fields.
-5. P2: H5 nested image rendering could crop job/company logos during visual QA.
-   - Fix: Added contained sizing for the generated inner image element while retaining native mini-program behavior.
-
-## Implementation Checklist
-
-- [x] Match the supplied home and jobs visual direction.
-- [x] Keep the logo area light and use the existing brand asset.
-- [x] Apply the same flat design language to membership and subscription pages.
-- [x] Limit category filters to six popularity-ranked options and mark the hot entry.
-- [x] Present enterprise information as the second job-detail tab.
-- [x] Verify home, jobs, membership, and company-tab screenshots.
-- [x] Verify TypeScript, Node syntax, and production WeChat build.
-
-final result: passed
-
----
-
-# Design QA: Club 支付方案收束与单色卡片
-
-- Reference visual: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-f52fa4db-5463-416e-b5f0-abd0796e175c.png`
-- Final plan-card screenshot: `/private/tmp/club-payment-plan-actions.png`
-- Final benefit-detail screenshot: `/private/tmp/club-benefit-details.png`
-- Final FAQ screenshot: `/private/tmp/club-benefits-and-faq.png`
-- Combined comparison evidence: `/private/tmp/club-pricing-visual-comparison.png`
-- Viewport and state: local desktop preview at `http://localhost:3000/profile?tab=membership`; authenticated legacy quarterly member
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain for the requested pricing surface.
-- The three cards use a shared white surface, neutral border and one black CTA treatment, echoing the supplied pricing reference without replacing Haigoo's typography, rounded cards or existing brand purple.
-- Plan-title stage chips are absent, while the three-item stage selector remains above the cards. Selecting a stage uses the brand-purple card ring, status label and CTA; unselected plan CTAs remain black.
-- The explanation is reduced to payment plans, benefit details and membership QA. The intentionally retained footer contains the existing service promise and advisor-contact module; service-flow, delivery-sample, service-boundary and duplicate support panels remain hidden.
-- Unsupported cells retain a muted gray minus treatment; included cells retain the purple check treatment.
-
-## Interaction and implementation checks
-
-- Clicking `申请远程陪伴` opens the existing advisor dialog with the Club Member service context; the dialog can be closed normally.
-- The legacy quarterly-member preview no longer presents all three cards as purple upgrade panels; it keeps the neutral card system and black CTAs.
-- `npm run build` and `git diff --check` pass.
-
-## Comparison note
-
-The combined comparison confirms the intended shared traits from the reference—white cards, restrained borders, black CTAs and a clear plan-to-details hierarchy—while preserving Haigoo's three-column layout and Chinese service content.
-
-final result: passed
-
-# Design QA: 英文 Hero WebP 与首页性能收紧
-
-- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-c78f8d4d-847f-4a37-b8ef-8e86b0e88503.png`
-- Chinese regression reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-e08e62eb-9c1c-49d5-a333-77e7c25359b6.png`
-- Final English implementation: `/private/tmp/haigoo-en-final-1280x720-20260718.png`
-- Final Chinese implementation: `/private/tmp/haigoo-zh-final-2048x1080-20260718.png`
-- Mobile English implementation: `/private/tmp/haigoo-after-en-mobile-20260718.png`
-- Mobile Chinese implementation: `/private/tmp/haigoo-after-zh-mobile-20260718.png`
-- Full-view comparison evidence: `/private/tmp/haigoo-en-final-comparison-1280-20260718.png`
-- Focused featured-tabs evidence: `/private/tmp/haigoo-en-featured-tabs-final-20260718.png`
-- Viewports: 2048 × 1080, 1280 × 720, and 390 × 844
-- State: authenticated member with live recommendation data; English `/en` and default Chinese `/`
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The English display title is now a bold transparent WebP picture with responsive 680/1020/1360 sources instead of a runtime-loaded custom font.
-- English navigation and homepage section labels are shorter, and the seven Featured Jobs filters remain on one horizontal line at desktop width.
-- Both language versions preserve the original two-column Hero composition and have a safe vertical gap between the greeting banner and title.
-- The mobile document width equals the 390 px viewport in both languages, with no page-level horizontal overflow.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: The English title keeps the supplied handwritten character while using a heavier raster treatment matching the Chinese title. Interface typography remains unchanged.
-- Spacing and layout rhythm: Greeting-to-title spacing is stabilized across languages. Search, categories, recommendation card, and lower sections retain their established rhythm.
-- Colors and visual tokens: Existing navy title color, warm background, purple heart, borders, shadows, and card surfaces are preserved.
-- Image quality and asset fidelity: English title sources are transparent WebP files at 680, 1020, and 1360 px. Their file sizes are approximately 10, 16, and 22 KB; the unused 4.2 MB font is no longer shipped in the production public bundle.
-- Copy and content: Requested labels are now `Companies`, `Daily 5 recommended matches`, `Featured Jobs`, `Marketing`, `Sales`, `Featured Companies`, and `Wechat Group`. Job content remains in its source language.
-
-## Interaction and Responsive Checks
-
-- English and Chinese routes load independently and preserve the existing header, search, category, recommendation, and membership interactions.
-- Responsive image selection uses the 680 px title source on mobile and the high-density source on desktop.
-- Featured Jobs filters share one row at 1280 px; smaller screens use horizontal overflow inside the filter control without creating page overflow.
-- Browser screenshots confirm 2048 px desktop, 1280 px desktop, and 390 px mobile layouts.
-- TypeScript, production build, targeted ESLint, and `git diff --check` pass; targeted ESLint reports warnings only and zero errors.
-
-## Comparison History
-
-1. P1: The English Hero depended on a 4.2 MB custom font file at runtime.
-   - Fix: Rasterized the exact two-line title into three responsive WebP assets and removed the font declaration and public font from the production bundle.
-   - Post-fix evidence: Production `dist` contains no `.ttf` file, and the three title sources are approximately 10–22 KB each.
-2. P2: Long English labels increased header pressure and caused the final Featured Jobs filter to wrap.
-   - Fix: Applied the requested shorter copy and made the filter group a single non-wrapping horizontal row with compact spacing.
-   - Post-fix evidence: All seven filters share the same top coordinate in the 1280 px browser measurement.
-3. P2: The taller image-based title could sit too close to the absolute greeting banner, especially in Chinese.
-   - Fix: Added banner-aware top spacing to the left Hero column at mobile and desktop breakpoints.
-   - Post-fix evidence: English and Chinese desktop captures show a clear gap, while both mobile captures remain fully visible.
-4. P2: The English heart initially sat below the new raster title rather than beside the final word.
-   - Fix: Repositioned the existing heart asset to the end of the second title line.
-   - Post-fix evidence: The final 1280 px capture shows the heart aligned after the period without touching the recommendation card.
-
-## Implementation Checklist
-
-- [x] Replace the English runtime font title with responsive WebP sources.
-- [x] Remove the unused font from the production bundle.
-- [x] Shorten all requested English navigation and homepage labels.
-- [x] Keep Featured Jobs filters on one line.
-- [x] Restore safe Chinese greeting-to-title spacing.
-- [x] Verify English and Chinese desktop/mobile layouts and production output.
-
-final result: passed
-
----
-
-# Design QA: 英文首页 Hero、语言路由与响应式导航
-
-- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-141ee66d-51fa-4663-8df6-ecbe0b069f72.png`
-- Implementation screenshot: `/private/tmp/haigoo-en-hero-final.png`
-- Club benefits screenshot: `/private/tmp/haigoo-en-club-final.png`
-- Mobile screenshot: `/private/tmp/haigoo-en-mobile-final.png`
-- Combined comparison evidence: `/private/tmp/haigoo-hero-comparison.png`
-- Viewports: desktop 1280 × 720; compact desktop 1024 × 768; mobile 390 × 844
-- State: authenticated Club member, English `/en`; live job content remains in its original source language
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The English Hero now follows the reference composition with a two-line handwritten headline, concise supporting copy, search/categories on the left, and recommendations on the right.
-- The desktop header fits without overlap at 1280 px and 1024 px. Search, navigation gaps, user identity, and badges adapt progressively; mobile retains the existing menu interaction.
-- English routes consistently use `/en`, while unprefixed routes default to Chinese. Switching languages preserves the current internal destination.
-- Club highlights, plans, comparison table, FAQ, service promise, and supporting labels use concise English copy.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: The English headline uses the existing local Haigoo handwriting font with responsive sizing and a stable two-line composition.
-- Spacing and layout rhythm: Header widths and gaps shrink by breakpoint without changing navigation order or interaction targets.
-- Colors and visual tokens: Existing brand colors, borders, shadows, card radii, and warm Hero background are preserved.
-- Image quality and asset fidelity: Existing logo, heart, category icons, and company imagery are reused without generated replacements.
-- Copy and content: Interface copy is localized; job titles and employer-provided job metadata remain original as requested.
-
-## Interaction and Responsive Checks
-
-- Language toggle changes `/` to `/en` and changes `/en` back to `/`; English navigation retains the `/en` prefix.
-- The English language control reads `CH` and keeps an accessible Chinese-language label.
-- Header document width equals viewport width at 1280 px, 1024 px, and 390 px, with no horizontal page overflow.
-- Search, navigation, account controls, mobile menu, and Club membership interactions remain reachable.
-- Browser console returned zero errors during route, membership, and responsive checks.
-
-## Comparison History
-
-1. P2: The first English Hero pass wrapped the headline to three lines.
-   - Fix: Reduced responsive headline sizing and tuned the English line grouping to preserve the intended two-line expression.
-2. P2: Fixed header widths squeezed navigation and account controls on narrower desktop screens.
-   - Fix: Added flexible search sizing, breakpoint-based gaps, and progressive hiding of secondary account text while preserving the avatar and controls.
-3. P2: English copy was incomplete across the Club benefits experience.
-   - Fix: Added concise English strings for value highlights, plan cards, benefits comparison, FAQ, service promise, and side navigation.
-4. P2: Language state did not have a shareable route contract.
-   - Fix: Made `/en` the pathname source of truth and localized internal navigation while retaining the existing route definitions.
-
-## Implementation Checklist
-
-- [x] Use `CH` as the English-page language switch label.
-- [x] Prevent header overlap across desktop and mobile breakpoints.
-- [x] Add concise English Club benefits content.
-- [x] Add `/en` routing and preserve paths on language switch.
-- [x] Recompose the English Hero from the supplied visual reference.
-- [x] Preserve original-language job content and existing interactions.
-
-final result: passed
-
----
-
-# Design QA: Hero 标题粗细与中英文比例回调
-
-- English issue reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-54d5d506-6b8e-4da2-8f77-acc62941b1e1.png`
-- Chinese current-state reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-fd345169-6dfb-4d96-8b15-52f1b69c5f42.png`
-- Chinese online reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-2939c8c4-80a5-49bd-a731-d780738225bb.png`
-- Final English screenshot: `/private/tmp/haigoo-hero-en-thin-2048x1080-20260718.png`
-- Final Chinese screenshot: `/private/tmp/haigoo-hero-zh-balanced-2048x1080-20260718.png`
-- Mobile English screenshot: `/private/tmp/haigoo-hero-en-thin-mobile-20260718.png`
-- Mobile Chinese screenshot: `/private/tmp/haigoo-hero-zh-balanced-mobile-20260718.png`
-- English comparison evidence: `/private/tmp/haigoo-hero-en-weight-comparison-20260718.png`
-- Chinese comparison evidence: `/private/tmp/haigoo-hero-zh-online-comparison-20260718.png`
-- Viewports: desktop 2048 × 1080; mobile 390 × 844
-- State: authenticated member with live recommendation data; `/en` and default `/`
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- English title keeps its existing size and line breaks while removing the artificial outline weight.
-- English alpha coverage fell from 4,166,681 to 2,019,813 at the 680 px source, a 51.5% reduction.
-- Chinese desktop title width fell from 126.2% to 102%, closely matching the online title-to-column proportion.
-- Chinese mobile retains a separate 122% width so the title stays readable and visually full without page overflow.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: Both titles preserve the original Haigoo handwriting source. English now has the intended light handwritten stroke; Chinese keeps its original stroke but uses the online-like scale.
-- Spacing and layout rhythm: The smaller Chinese title reduces empty visual tension and lets description, search, and category cards rise naturally. English spacing and right-card alignment remain unchanged.
-- Colors and visual tokens: Title navy, heart purple, warm background, borders, and card tokens are unchanged.
-- Image quality and asset fidelity: The same transparent WebP source set and real heart asset remain in use. No runtime font was reintroduced.
-- Copy and content: No copy, recommendation data, search behavior, category behavior, or language routing changed in this pass.
-
-## Comparison History
-
-1. P1: English raster title was more than twice as visually dense as the intended handwritten reference.
-   - Fix: Regenerated all three WebP sizes without the 2/3/4 px artificial outlines.
-   - Post-fix evidence: Alpha coverage decreased 51.5% while bounding dimensions and two-line layout stayed stable.
-2. P2: Chinese desktop title occupied too much of the left column compared with the online Hero.
-   - Fix: Reduced desktop image width from 126.2% to 102% and preserved the existing negative alignment offset.
-   - Post-fix evidence: Desktop comparison shows title, description, search, and category proportions close to the online reference.
-3. P2: Applying desktop scale globally made the mobile Chinese title too small.
-   - Fix: Added a mobile-specific 122% width before the `sm` breakpoint.
-   - Post-fix evidence: The 390 px capture keeps both Chinese lines prominent and document width remains exactly 390 px.
-
-## Implementation Checklist
-
-- [x] Reduce English stroke density by at least 50%.
-- [x] Preserve English title size and line breaks.
-- [x] Match Chinese desktop title scale to the online reference.
-- [x] Keep Chinese mobile title readable.
-- [x] Verify desktop/mobile overflow and both language routes.
-- [x] Pass build, TypeScript, targeted ESLint, and diff checks.
-
-final result: passed
-
----
-
-# Design QA: Hero 标题爱心定位
-
-- Chinese issue reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-4ba388bf-61f3-4429-8f5e-09d47b038a54.png`
-- English issue reference: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-a43fea84-92b5-4648-a40c-5274f0848737.png`
-- Final Chinese screenshot: `/private/tmp/haigoo-heart-zh-desktop-20260718.png`
-- Final English screenshot: `/private/tmp/haigoo-heart-en-desktop-20260718.png`
-- Mobile Chinese screenshot: `/private/tmp/haigoo-heart-zh-mobile-20260718.png`
-- Mobile English screenshot: `/private/tmp/haigoo-heart-en-mobile-20260718.png`
-- Chinese comparison evidence: `/private/tmp/haigoo-heart-zh-comparison-20260718.png`
-- English comparison evidence: `/private/tmp/haigoo-heart-en-comparison-20260718.png`
-- Viewports: desktop 2048 × 1080; mobile 390 × 844
-- State: authenticated member with live recommendation data; default `/` and `/en`
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- English Hero no longer renders the standalone heart image at either viewport.
-- Chinese desktop heart now sits directly after “生活” instead of drifting toward the right edge of the title container.
-- Chinese mobile uses a separate responsive horizontal position so it remains close to the second-line text without overlap or page overflow.
-- Existing title images, sizing, copy, routes, recommendations, search, and Hero spacing remain unchanged.
-
-## Comparison History
-
-1. P2: The standalone English heart competed with the punctuation and looked detached from the handwritten title.
-   - Fix: Removed the heart node from the English render branch.
-   - Post-fix evidence: DOM count for `hero-love-inline` is 0 on `/en` at desktop and mobile.
-2. P2: The Chinese heart used a percentage based on the full title container, placing it well beyond the shorter second line.
-   - Fix: Positioned the asset against the measured second-line image bounds, with separate mobile and desktop percentages.
-   - Post-fix evidence: DOM count remains 1 on `/`; the heart follows “生活” at both verified viewports.
-
-## Implementation Checklist
-
-- [x] Remove the English title heart.
-- [x] Reposition the Chinese title heart near the second-line ending.
-- [x] Preserve desktop and mobile layout stability.
-- [x] Verify DOM state on both language routes.
-- [x] Pass build, TypeScript, targeted ESLint, and diff checks.
-
-final result: passed
-
----
-
-# Design QA: 英文 Hero 新手写标题资源
-
-- Source visual truth: `/Users/caitlinyct/Downloads/已生成图像 1 (1).png`
-- Final desktop implementation: `/private/tmp/haigoo-new-title-en-desktop-pass1-20260718.png`
-- Final mobile implementation: `/private/tmp/haigoo-new-title-en-mobile-final-20260718.png`
-- Chinese regression screenshot: `/private/tmp/haigoo-new-title-zh-regression-20260718.png`
-- Focused comparison evidence: `/private/tmp/haigoo-new-title-en-comparison-20260718.png`
-- Full-view comparison evidence: the final desktop implementation above; the source is a title-only raster rather than a full-page mockup.
-- Viewports: desktop 2048 × 1080; mobile 390 × 844
-- State: authenticated member with live recommendation data; English `/en` and default Chinese `/`
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- The browser-rendered handwriting preserves the supplied letterforms, word spacing, two-line composition, punctuation, and dark navy color.
-- The checkerboard pattern in the supplied RGB PNG was removed and is not present in the page asset.
-- Desktop title aligns with the Hero content column and remains clear of the recommendation card.
-- Mobile title fits within the 390 px viewport with 2.5 px of right-side safety space and no horizontal document overflow.
-- The Chinese title asset, heart position, and layout remain unchanged.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: The supplied handwriting remains rasterized as authored; no fallback font substitution is used.
-- Spacing and layout rhythm: Desktop keeps the existing Hero column alignment; mobile uses a slightly narrower width and smaller negative offset to protect the final period.
-- Colors and visual tokens: Ink is normalized to the existing Hero navy and remains legible on the warm background.
-- Image quality and asset fidelity: Source background was converted to true transparency and exported as responsive lossless WebP assets at 680, 1020, and 1360 px widths.
-- Copy and content: The title text remains exactly “Work and live / the way you love.” and all surrounding English and Chinese content is unchanged.
-
-## Comparison History
-
-1. P2: The source PNG contained a baked checkerboard instead of transparency.
-   - Fix: Derived a soft alpha mask from the neutral checkerboard range, retained antialiased handwriting edges, and exported transparent WebP sources.
-   - Post-fix evidence: The focused comparison shows a clean warm page background with no checkerboard artifacts or gray halo.
-2. P2: The first mobile fit extended the raster to x=391 in a 390 px viewport, leaving the final period too close to the clipped edge.
-   - Fix: Reduced mobile width from 108% to 106% and negative offset from -2% to -1%, while preserving the desktop scale at the `sm` breakpoint.
-   - Post-fix evidence: Final mobile bounds are x=16.5–387.5 px and document width equals viewport width at 390 px.
-
-## Implementation Checklist
-
-- [x] Replace the English Hero title with the supplied handwriting.
-- [x] Remove the baked checkerboard and preserve transparent antialiasing.
-- [x] Export responsive, lossless WebP assets.
-- [x] Align desktop and mobile proportions independently.
-- [x] Verify English desktop/mobile and Chinese desktop regression.
-- [x] Pass build, TypeScript, targeted ESLint, and diff checks.
-
-final result: passed
-
----
-
-# Design QA: 英文 Hero 标题宽度收紧
-
-- Source visual truth: `/var/folders/31/06qzndgs1cbb3kw9z360dtq80000gn/T/codex-clipboard-90a6b324-4eeb-477b-8bee-aeac78f3d895.png`
-- Final desktop implementation: `/private/tmp/haigoo-title-width-en-desktop-20260718.png`
-- Final mobile implementation: `/private/tmp/haigoo-title-width-en-mobile-20260718.png`
-- Chinese regression screenshot: `/private/tmp/haigoo-title-width-zh-regression-20260718.png`
-- Full-view comparison evidence: `/private/tmp/haigoo-title-width-full-comparison-20260718.png`
-- Focused comparison evidence: `/private/tmp/haigoo-title-width-focus-comparison-20260718.png`
-- Viewports: desktop 2048 × 1080; mobile 390 × 844
-- State: authenticated member with live recommendation data; English `/en` and default Chinese `/`
-
-## Findings
-
-- No actionable P0/P1/P2 findings remain.
-- Desktop search control is 576 px wide; the title canvas is constrained to the same 576 px grid and its visible ink spans approximately 565 px.
-- Mobile title and search control both occupy the same 350 px content width; visible ink remains inset to approximately x=26.8–363.2 px.
-- The reduced title height improves the balance between the Hero title, supporting copy, search field, and right recommendation card.
-- The Chinese title keeps its original 630 px wrapper, responsive image sizing, and single heart asset.
-
-## Required Fidelity Surfaces
-
-- Fonts and typography: The supplied handwritten raster and its two-line composition are unchanged; only rendered scale is reduced.
-- Spacing and layout rhythm: English title now shares the search control’s `max-w-xl` grid and preserves a small optical inset from the search border.
-- Colors and visual tokens: Navy ink and warm background treatment are unchanged.
-- Image quality and asset fidelity: The existing responsive lossless WebP set remains in use; scaling stays above the selected source’s required display density.
-- Copy and content: Title text and all surrounding English and Chinese content remain unchanged.
-
-## Comparison History
-
-1. P2: The English title’s visible width extended beyond the search field and dominated the left Hero column.
-   - Fix: Reduced the English wrapper from 630 px to 576 px and changed image scale from 108% to 102% at desktop.
-   - Post-fix evidence: Browser bounds show the 576 px search and title grids aligned; estimated visible title ink is 565 px wide.
-2. P2: A desktop-only reduction could leave the mobile title wider than its search field.
-   - Fix: Set the mobile image to 100% of the same 350 px content width, retaining the 102% optical correction only from `sm` upward.
-   - Post-fix evidence: Mobile image and search bounds are both x=20–370 px with document width equal to the 390 px viewport.
-
-## Implementation Checklist
-
-- [x] Keep the English title no wider than the search field.
-- [x] Preserve small optical insets for transparent image padding.
-- [x] Apply the same width contract at 390 px.
-- [x] Keep the Chinese Hero unchanged.
-- [x] Verify full-view and focused before/after evidence.
-- [x] Pass build, TypeScript, targeted ESLint, and diff checks.
-
-final result: passed
-
----
-
-# Final validation checkpoint: Playback and My Haigoo
-
-- Full findings and comparison history: `Design QA: Career Growth 播放页与「我的 Haigoo」` above.
-- Same-viewport comparisons: `artifacts/brand-upgrade-playback-profile/compare/watch-desktop-before-after.png`, `artifacts/brand-upgrade-playback-profile/compare/profile-desktop-before-after.png`.
-- Mobile evidence: `artifacts/brand-upgrade-playback-profile/after/watch-mobile.png`, `artifacts/brand-upgrade-playback-profile/after/profile-mobile.png`.
-- Production build, TypeScript check, compliance UI policy test, and whitespace diff check all pass after the final 44 px target correction.
-- Visual review confirms no remaining P0/P1/P2 issue in the requested playback and My Haigoo scope.
-
-final result: passed
+Final result: passed

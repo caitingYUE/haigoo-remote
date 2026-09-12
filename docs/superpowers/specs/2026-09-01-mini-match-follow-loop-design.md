@@ -1,5 +1,7 @@
 # Haigoo 小程序 Match 关注闭环设计规格
 
+> 2026-09-02 supersession note: This document remains authoritative for the follow loop, reversible deck behavior, real-data requirements, cache validity, and separation of company follow from WeChat reminders. The current gesture threshold is 14% or a qualified fast swipe; the current visual and information direction follows `docs/superpowers/specs/2026-09-01-mini-match-immersive-v2-design.md` and `docs/haigoo-mini-design-system.md`.
+
 - 日期：2026-09-01
 - 状态：已完成对话评审，待书面规格复核
 - 设计路径：Architectural
@@ -42,10 +44,10 @@
 
 ## 3. 已选方案
 
-采用“解释型 Match + 温暖档案卡片 + 显式关注”的方案：
+本版本当时采用“解释型 Match + 温暖档案卡片 + 显式关注”的方案。其行为规则仍有效，但视觉与信息密度已经被 V2 规格替代：
 
 - Match 先给出可解释的匹配理由，再引导查看企业与关注岗位动态。
-- 卡片采用已确认的 B 方案“温暖档案”：深色档案式顶部、温暖浅色内容区、克制的编辑感排版和推荐语，兼顾品牌仪式感与信息可信度。
+- 不再实施本文件所述的“温暖档案”视觉；卡片结构、视觉和文案以 `docs/superpowers/specs/2026-09-01-mini-match-immersive-v2-design.md` 为准。
 - 卡片以叠放卡组呈现，左右滑动只切换企业；关注和取关只由明确按钮触发。
 - 企业关注与微信提醒解耦，避免将系统授权拒绝误判为业务失败。
 
@@ -105,9 +107,9 @@ Match 页按以下层级组织：
 
 交互规则：
 
-- 前景卡完整展示；后方最多露出两张卡，通过轻微位移、缩放和旋转表达层级。
+- 前景卡完整展示；后方最多露出三张卡，通过轻微位移、缩放和旋转表达层级。
 - 用户可向左或向右拖动切换企业，卡组首尾循环，可反复返回已看卡片。
-- 松手时水平位移达到卡片宽度的 25% 才完成切换；不足阈值自动回弹。
+- 松手时水平位移达到卡片宽度的 14% 完成切换；快速轻扫在位移达到 24px 后可按速度触发，不足阈值自动回弹。
 - 手指移动达到系统可识别的水平拖动后才接管卡片，优先避免与页面纵向滚动冲突。
 - 点击“关注岗位动态”“已关注”“查看企业”或岗位入口时不得触发滑动。
 - 左右滑动只修改当前卡片索引，不修改关注状态、不申请微信权限。
@@ -236,7 +238,7 @@ Match 页按以下层级组织：
 
 - 固定快照稳定展示五张卡。
 - 卡片可向左、向右循环，能回到已看卡片。
-- 25% 切换阈值、未达阈值回弹和纵向滚动无冲突。
+- 14%/速度切换阈值、未达阈值回弹和纵向滚动无冲突。
 - 卡片内按钮点击不会触发滑动。
 - 关注成功、失败、重复点击保护和跨页面同步正确。
 - 取关确认、取消、失败和成功状态正确。
@@ -256,7 +258,7 @@ Match 页按以下层级组织：
 - 在小屏设备、iPhone 12/13 尺寸和大屏设备中检查叠放层级、按钮、安全区和内容截断。
 - 开启减弱动画后验证卡片切换。
 - 微信开发者工具和至少一台真机完成关键流程截图对比。
-- 与已批准的“温暖档案”视觉和用户参考图进行同视口对照，不以单张截图代替差异检查。
+- 与 V2 视觉参考 `artifacts/miniprogram-match-v2-reference/match-v2-reference.png` 进行同视口对照，不以单张截图代替差异检查。
 
 ### 14.4 工程与上线门禁
 

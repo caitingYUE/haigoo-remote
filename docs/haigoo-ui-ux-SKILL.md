@@ -9,6 +9,8 @@ description: >
 
 # Haigoo UI/UX Skill
 
+> 2026-09-01 product authority: Haigoo website and WeChat Mini Program are related but distinct products. The website serves broad, open remote-work discovery. The Mini Program is a personalized product centered on Match, with company and career-note surfaces supporting that core journey. For Mini Program work, `PRODUCT.md`, `docs/haigoo-platform-positioning.md`, `docs/haigoo-mini-design-system.md`, and the latest approved Mini Program specification override any older whole-product editorial or non-personalization language in this file.
+
 ## 1. 什么时候必须使用这个 Skill
 
 当任务涉及以下任一场景时，优先使用本 Skill：
@@ -61,6 +63,12 @@ Haigoo 的体验应当同时具备：
 
 > “这里一直有人维护，也记得我做过什么。”
 
+小程序还必须额外传达：
+
+> “这里不是把更多岗位堆给我，而是在持续理解我，帮我缩小真正适合的方向。”
+
+Match 是小程序的核心产品能力和一级导航中心。企业目录负责扩展探索，笔记负责沉淀判断与成长；两者不能与 Match 争夺主叙事。
+
 ---
 
 ## 3. 不要把 Haigoo 做成什么
@@ -108,7 +116,7 @@ Haigoo 的体验应当同时具备：
 
 - warm ivory / warm white
 - deep ink navy
-- restrained Haigoo purple
+- restrained Haigoo orange
 - mist blue
 - soft sand
 - muted sage
@@ -629,9 +637,9 @@ Editorial 字体用于：
 
 ### Background
 
-- warm ivory
-- warm white
-- occasional mist surface
+- cool off-white
+- clean white
+- occasional light-gray surface
 
 ### Text
 
@@ -640,16 +648,17 @@ Editorial 字体用于：
 
 ### Accent
 
-- Haigoo purple：只用于 active / link / small highlight
+- Haigoo orange：用于 Match 主识别、关键 active、明确操作和小面积强调
+- black / ink：用于高可信信息和核心标题
 - mist blue
-- soft sand
 - muted sage
 
 ### Radius
 
-- large container: 20–24px
-- card: 14–18px
-- button / pill: full radius when appropriate
+- large Match card: 16px
+- standard card / list row: 12px
+- button / field: 10px
+- badge / chip: 8px or full radius only when semantically appropriate
 
 不要所有容器都使用同一个巨大圆角。
 

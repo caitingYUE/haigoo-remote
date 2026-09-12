@@ -76,7 +76,7 @@ function safeConfig(baseConfig, environment, minNum, maxNum) {
 
 async function copyDeploymentSource() {
   const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), `haigoo-mini-${target}-`))
-  for (const filename of ['Dockerfile', 'index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
+  for (const filename of ['Dockerfile', 'index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'virtual-payment-reconciliation.mjs', 'package.json', 'package-lock.json', 'container.config.json']) {
     await fs.copyFile(path.join(sourceDir, filename), path.join(tempDir, filename))
   }
   return tempDir
@@ -99,15 +99,6 @@ function upsertVercelSecret(name, secret, environment = 'production') {
     throw new Error(`Unable to configure Vercel ${environment} secret ${name}: ${result.stderr || result.stdout}`)
   }
   console.log(`Vercel ${environment} secret ${name} configured.`)
-}
-
-function deployVercelProduction() {
-  const result = spawnSync('npx', ['vercel', '--prod', '--yes'], {
-    cwd: rootDir,
-    encoding: 'utf8',
-    stdio: 'inherit'
-  })
-  if (result.status !== 0) throw new Error('Unable to redeploy Vercel Production')
 }
 
 function readExistingAutomationBypass() {
@@ -175,9 +166,6 @@ if (target === 'development') {
   }
   if (configureJobsSource) {
     upsertVercelSecret('MINI_GATEWAY_READONLY_SECRET', jobsGatewaySecret)
-    // The read-only scope is code-enforced, so publish the current gateway
-    // before switching CloudRun to the formal jobs source.
-    deployVercelProduction()
   }
   targetEnvironment = {
     ...developmentEnvironment,
@@ -185,6 +173,10 @@ if (target === 'development') {
     HAIGOO_API_ORIGIN: deployment.apiOrigin,
     HAIGOO_JOBS_API_ORIGIN: deployment.jobsApiOrigin,
     MINI_JOBS_GATEWAY_SHARED_SECRET: jobsGatewaySecret,
+    MINI_CATALOG_SOURCE_SECRET: String(developmentEnvironment.MINI_CATALOG_SOURCE_SECRET || jobsGatewaySecret),
+    MINI_CATALOG_SYNC_ENABLED: 'true',
+    MINI_CATALOG_SYNC_INTERVAL_MS: '3600000',
+    MINI_CATALOG_SYNC_MAX_RECORDS: '5000',
     MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true',
     NODE_ENV: 'production'
   }
@@ -242,7 +234,13 @@ targetEnvironment = {
   MINI_LIST_MEMORY_CACHE_MS: '300000',
   MINI_SYNC_STATE_MEMORY_CACHE_MS: '60000',
   MINI_STALE_CLEANUP_MAX_RATIO: '0.2',
-  MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true'
+  MINI_MATCH_FIXED_SNAPSHOT_ENABLED: 'true',
+  ...(target === 'development' ? {
+    MINI_CATALOG_SYNC_ENABLED: 'true',
+    MINI_CATALOG_SYNC_INTERVAL_MS: '3600000',
+    MINI_CATALOG_SYNC_MAX_RECORDS: '5000',
+    MINI_CATALOG_SOURCE_SECRET: String(targetEnvironment.MINI_CATALOG_SOURCE_SECRET || targetEnvironment.MINI_JOBS_GATEWAY_SHARED_SECRET || '')
+  } : {})
 }
 
 for (const key of [
@@ -278,6 +276,9 @@ if (target === 'development' && targetEnvironment.HAIGOO_JOBS_API_ORIGIN !== dep
 
 const baseConfig = existingDetail?.ServerConfig || developmentConfig
 const tempDir = await copyDeploymentSource()
+const sourceHash = crypto.createHash('sha256')
+for (const file of ['index.mjs', 'company-directory.mjs', 'sync-policy.mjs', 'virtual-payment-reconciliation.mjs']) sourceHash.update(await fs.readFile(path.join(tempDir, file)))
+const expectedSourceRevision = sourceHash.digest('hex')
 try {
   await targetService.deploy({
     serverName: deployment.serviceName,
@@ -288,6 +289,25 @@ try {
   await fs.rm(tempDir, { recursive: true, force: true })
 }
 
+// The SDK only submits an asynchronous deployment. A normal service status can
+// still describe its previous version; verify the code actually serving traffic.
+const { checkAndGetCredential } = require(path.join(globalModules, '@cloudbase/cli/lib/utils/net/credential.js'))
+const cloudbase = require(path.join(rootDir, 'cloudrun/node_modules/@cloudbase/node-sdk'))
+const credential = await checkAndGetCredential(true)
+const runtime = cloudbase.init({ env: deployment.envId, secretId: credential.secretId, secretKey: credential.secretKey, sessionToken: credential.token })
+let verifiedResponses = 0
+for (let attempt = 0; attempt < 60 && verifiedResponses < 2; attempt++) {
+  try {
+    const response = await runtime.callContainer({ name: deployment.serviceName, method: 'GET', path: '/health' })
+    const payload = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+    verifiedResponses = response.statusCode === 200 && payload?.sourceRevision === expectedSourceRevision ? verifiedResponses + 1 : 0
+  } catch { verifiedResponses = 0 }
+  if (verifiedResponses < 2) {
+    if (attempt % 6 === 0) console.log('Waiting for the uploaded source to serve development/production traffic...')
+    await new Promise((resolve) => setTimeout(resolve, 10000))
+  }
+}
+if (verifiedResponses < 2) throw new Error('Deployment not verified: running source does not match the uploaded source')
 const deployed = await targetService.detail({ serverName: deployment.serviceName })
 const deployedConfig = deployed.ServerConfig || {}
 const accessTypes = deployedConfig.OpenAccessTypes || []
@@ -305,6 +325,7 @@ console.log(JSON.stringify({
   target,
   envId: deployment.envId,
   serviceName: deployment.serviceName,
+  sourceRevision: expectedSourceRevision,
   accessTypes,
   minNum: deployedConfig.MinNum,
   maxNum: deployedConfig.MaxNum,

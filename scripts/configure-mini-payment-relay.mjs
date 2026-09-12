@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const previewOrigin = 'https://mini-preview.haigooremote.com'
+const previewBranch = 'codex/mini-1.0.7-release'
 const developmentEnvId = 'haigoo-dev-d2gctbzxma401b345'
 const developmentServiceName = 'haigoo-mini'
 
@@ -18,24 +19,18 @@ function parseEnvironment(value) {
   return { ...value }
 }
 
-function upsertVercelEnvironment(name, value, environment, { sensitive = true } = {}) {
+function upsertVercelEnvironment(name, value, environment, { sensitive = true, gitBranch = '' } = {}) {
   const sensitivityArgs = sensitive ? ['--sensitive'] : []
-  let result = spawnSync(
+  const branchArgs = gitBranch ? ['--git-branch', gitBranch] : []
+  const result = spawnSync(
     'npx',
-    ['vercel', 'env', 'add', name, environment, ...sensitivityArgs],
+    ['vercel', 'env', 'add', name, environment, ...sensitivityArgs, ...branchArgs, '--force', '--yes'],
     { cwd: rootDir, input: `${value}\n`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
   )
-  if (result.status !== 0 && `${result.stderr}\n${result.stdout}`.toLowerCase().includes('already exists')) {
-    result = spawnSync(
-      'npx',
-      ['vercel', 'env', 'update', name, environment, ...sensitivityArgs, '--yes'],
-      { cwd: rootDir, input: `${value}\n`, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] }
-    )
-  }
   if (result.status !== 0) {
     throw new Error(`Unable to configure Vercel ${environment} variable ${name}: ${result.stderr || result.stdout}`)
   }
-  console.log(`Vercel ${environment} variable ${name} configured`)
+  console.log(`Vercel ${environment}${gitBranch ? ` (${gitBranch})` : ''} variable ${name} configured`)
 }
 
 const globalModules = execFileSync('npm', ['root', '-g'], { encoding: 'utf8' }).trim()
@@ -62,6 +57,12 @@ for (const environment of ['preview', 'production']) {
   )
 }
 upsertVercelEnvironment(
+  'WECHAT_VIRTUAL_PAYMENT_RELAY_SECRET',
+  relaySecret,
+  'preview',
+  { gitBranch: previewBranch }
+)
+upsertVercelEnvironment(
   'WECHAT_VIRTUAL_PAYMENT_SANDBOX_CALLBACK_ORIGIN',
   previewOrigin,
   'production',
@@ -73,4 +74,4 @@ upsertVercelEnvironment(
   'production'
 )
 
-console.log('Payment callback relay configured. Redeploy Preview and Production before sandbox testing.')
+console.log('Payment callback relay configured for Production, generic Preview and the release Preview branch. Redeploy Preview and Production before sandbox testing.')

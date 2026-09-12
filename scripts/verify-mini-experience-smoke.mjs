@@ -131,6 +131,9 @@ function validRecommendationCard(company) {
 }
 
 function validSnapshot(result) {
+  if (result?.matchState === 'fixed_free') {
+    return Boolean(result.snapshotId && result.validUntil == null && Number.isFinite(Date.parse(result.generatedAt)))
+  }
   return Boolean(
     result?.snapshotId
     && result?.validUntil
@@ -141,6 +144,13 @@ function validSnapshot(result) {
 
 async function state(fixture) {
   return gatewayRequest('career_watch_state', { query: { openid: fixture.openid } })
+}
+
+async function refreshState(fixture, refreshKey) {
+  return gatewayRequest('career_watch_refresh', {
+    method: 'POST',
+    body: { openid: fixture.openid, refreshKey }
+  })
 }
 
 async function companies(fixture, pageSize = 50, page = 1, filters = {}) {
@@ -206,8 +216,8 @@ if (fixedState.matchState !== 'fixed_free'
 if (!companyIds(fixedSearchAttempt).includes(freeDirectoryIds[0])) {
   throw new Error('Free fixture could not find an exact company-name match')
 }
-if (exactCompanyName.length > 1 && companyIds(fuzzySearchAttempt).includes(freeDirectoryIds[0])) {
-  throw new Error('Free fixture received a fuzzy company-name match')
+if (exactCompanyName.length >= 5 && !companyIds(fuzzySearchAttempt).includes(freeDirectoryIds[0])) {
+  throw new Error('Free fixture could not recover a single-character company-name typo')
 }
 if (!sameValues(fixedIds, recommendationIds(repeatedFixedState).slice(0, 5))) {
   throw new Error('Free fixture Match recommendations changed between reads')
@@ -220,6 +230,9 @@ if (!validSnapshot(fixedState)
 
 let memberState = await state(MINI_SMOKE_FIXTURES.member)
 if (!memberState.profile || memberState.recommendations?.length === 0) memberState = await saveDirection(MINI_SMOKE_FIXTURES.member)
+const memberRefreshKey = `release-smoke-${crypto.randomUUID()}`
+memberState = await refreshState(MINI_SMOKE_FIXTURES.member, memberRefreshKey)
+const repeatedMemberState = await refreshState(MINI_SMOKE_FIXTURES.member, memberRefreshKey)
 const memberCompanies = await completeMemberDirectory(MINI_SMOKE_FIXTURES.member)
 const memberRows = memberCompanies.companies || []
 const memberSorted = memberRows.every((company, index) => index === 0
@@ -228,7 +241,11 @@ if (memberState.matchState !== 'member_dynamic' || memberState.recommendations?.
   throw new Error('Member fixture did not receive a dynamic Match result')
 }
 if (!validSnapshot(memberState) || memberState.recommendations.some((company) => !validRecommendationCard(company))) {
-  throw new Error('Member fixture Match snapshot is incomplete')
+  const invalidCards = memberState.recommendations.filter((company) => !validRecommendationCard(company)).length
+  throw new Error(`Member fixture Match snapshot is incomplete (snapshot=${Boolean(memberState.snapshotId)}, generatedAt=${memberState.generatedAt || 'missing'}, validUntil=${memberState.validUntil || 'missing'}, recommendations=${memberState.recommendations.length}, invalidCards=${invalidCards})`)
+}
+if (memberState.snapshotId !== repeatedMemberState.snapshotId) {
+  throw new Error('Member Match refresh is not idempotent for the same visit')
 }
 if (memberCompanies.access?.scope !== 'member_all' || memberCompanies.total !== memberRows.length || memberRows.length === 0) {
   throw new Error('Member fixture company directory is incomplete')
@@ -247,6 +264,6 @@ console.log(JSON.stringify({
   origin,
   unused: { matchState: unusedState.matchState, companyScope: unusedCompanies.access.scope },
   fixed: { matchState: fixedState.matchState, recommendations: fixedIds.length, total: fixedCompanies.total, stable: true },
-  member: { matchState: memberState.matchState, recommendations: memberState.recommendations.length, hiringCompanies: memberCompanies.total, sorted: memberSorted },
+  member: { matchState: memberState.matchState, recommendations: memberState.recommendations.length, hiringCompanies: memberCompanies.total, sorted: memberSorted, refreshed: true, idempotent: true },
   requestTracing: true
 }, null, 2))

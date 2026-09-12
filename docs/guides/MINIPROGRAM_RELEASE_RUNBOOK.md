@@ -1,3 +1,5 @@
+> 2026-09-06：本文含历史发布记录。当前验收候选 1.0.25 以 [正式送审检查单](MINIPROGRAM_REVIEW_CHECKLIST.md) 为准；experience 包连接开发云，正式送审须使用 production 包，并先解决正式接口兼容问题。
+
 # Haigoo 小程序正式发布手册
 
 ## 1. 固定架构
@@ -14,6 +16,7 @@
 - 开发 CloudRun 的 `MINI_GATEWAY_SHARED_SECRET` 对应 Vercel 的同名变量；生产 CloudRun 的该变量对应 Vercel `MINI_GATEWAY_PRODUCTION_SECRET`。
 - 开发和生产分别生成 `MINI_SESSION_SECRET`、`MINI_SYNC_SECRET`。
 - 开发 CloudRun 通过 `VERCEL_AUTOMATION_BYPASS_SECRET` 访问受保护的 Vercel Preview；该密钥不得配置到生产服务。
+- 企业目录发布前执行 `npm run check:mini-company-directory`，确认搜索/排序、严格审核条件、目录快照入口和小程序搜索文案契约；开发环境联调再执行 `node scripts/verify-mini-gateway.mjs --target=development --action=companies --via-cloudrun`。
 - 开发 CloudRun 使用 `MINI_JOBS_GATEWAY_SHARED_SECRET` 读取正式岗位；Vercel Production 对应 `MINI_GATEWAY_READONLY_SECRET`，代码只允许该密钥执行 `sync`，不得用生产通用 Gateway 密钥代替。
 - 两个环境使用同一个微信 AppID 时可使用同一个 AppSecret，但不得写入仓库。
 - 生产 CloudRun 只连接正式 Gateway；开发环境不得写入正式收藏、申请、订阅或浏览额度数据。
