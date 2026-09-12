@@ -1,0 +1,97 @@
+.followed-companies-page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding-top: 32px;
+  padding-bottom: calc(48px + env(safe-area-inset-bottom));
+  background: #f7f7f7;
+}
+
+.followed-companies__heading { margin-bottom: 28px; }
+.followed-companies__heading text { display: block; }
+.followed-companies__heading .page-heading { color: #111; font-size: 44px; font-weight: 800; line-height: 1.15; }
+.followed-companies__heading .page-subtitle { margin-top: 10px; color: #999; font-size: 23px; line-height: 1.5; }
+
+.followed-companies__inline-error {
+  display: flex;
+  min-height: 88px;
+  padding: 0 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1PX solid #f2d1c5;
+  border-radius: 18px;
+  background: #fff7f4;
+  color: #777;
+  font-size: 22px;
+}
+.followed-companies__inline-error text:first-child { min-width: 0; flex: 1; }
+.followed-companies__inline-error text:last-child { display: flex; min-height: 88px; align-items: center; flex-shrink: 0; color: var(--color-brand-strong); font-weight: 600; }
+
+.followed-company-list {
+  overflow: hidden;
+  border: 1PX solid #e5e5e5;
+  border-radius: 28px;
+  background: #fff;
+}
+
+.followed-company { padding: 28px 30px; border-bottom: 1PX solid #ededed; }
+.followed-company:last-child { border-bottom: 0; }
+
+.followed-company__main {
+  display: grid;
+  min-height: 112px;
+  align-items: center;
+  grid-template-columns: 88px minmax(0, 1fr) 40px;
+  column-gap: 20px;
+}
+
+.followed-company__logo {
+  display: flex;
+  width: 88px;
+  height: 88px;
+  box-sizing: border-box;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1PX solid #e5e5e5;
+  border-radius: 20px;
+  background: #fafafa;
+  color: #555;
+  font-size: 25px;
+  font-weight: 700;
+}
+.followed-company__logo image { width: 72%; height: 72%; }
+
+.followed-company__identity { display: flex; min-width: 0; align-items: flex-start; flex-direction: column; gap: 5px; }
+.followed-company__name, .followed-company__industry, .followed-company__roles { display: block; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.followed-company__name { color: #171717; font-size: 29px; font-weight: 650; line-height: 1.35; }
+.followed-company__industry { color: #999; font-size: 22px; line-height: 1.45; }
+.followed-company__roles { color: #555; font-size: 22px; line-height: 1.45; }
+.followed-company__roles.is-empty { color: #aaa; }
+.followed-company__main > .mini-icon { color: #aaa; }
+
+
+.followed-company__actions { display: grid; margin-top: 18px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.followed-company__actions button { min-height: 88px; font-size: 23px; }
+.followed-company__reminder .wechat-reminder-action {
+  display: flex;
+  min-height: 88px;
+  padding: 0 18px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1PX solid var(--color-brand-line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--color-brand-dark);
+  font-weight: 600;
+}
+.followed-company__reminder .wechat-reminder-action.is-enabled { background: var(--color-brand-soft); }
+.followed-company__unfollow .company-follow-action { min-height: 88px; padding: 0 18px; border-color: #dedede; background: #f6f6f6; color: #666; font-size: 23px; }
+
+@media (max-width: 340px) {
+  .followed-company { padding-right: 24px; padding-left: 24px; }
+  .followed-company__main { grid-template-columns: 76px minmax(0, 1fr) 32px; column-gap: 16px; }
+  .followed-company__logo { width: 76px; height: 76px; }
+  .followed-company__actions { grid-template-columns: 1fr; }
+}

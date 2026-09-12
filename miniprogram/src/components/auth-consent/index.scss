@@ -1,0 +1,5 @@
+.auth-consent { margin: 20px 0; color: var(--color-secondary); font-size: 24px; line-height: 1.6; }
+.auth-consent__choice { display: flex; min-height: 88px; align-items: center; gap: 12px; }
+.auth-consent__links { display: flex; flex-wrap: wrap; align-items: center; color: var(--color-brand-text); }
+.auth-consent__links > text { display: inline-flex; min-height: 72px; align-items: center; }
+.auth-consent__and { margin: 0 6px; color: var(--color-secondary); }

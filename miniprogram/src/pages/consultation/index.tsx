@@ -6,7 +6,6 @@ import advisorImage from '../../../assets/haigoo-advisor.png'
 import { createRequestKey } from '../../services/api-client'
 import { trackMiniEvent } from '../../services/analytics-service'
 import { fetchConsultations, submitConsultation } from '../../services/content-service'
-import { loginWithWechat } from '../../services/mini-auth-service'
 import { hasAuthenticatedSession } from '../../services/session'
 import type { ConsultationRequest } from '../../types'
 import './index.scss'
@@ -53,8 +52,7 @@ export default function ConsultationPage() {
     if (hasAuthenticatedSession()) return true
     const result = await showModal({ title: '请先登录', content: '登录后可以提交咨询并查看记录。', confirmText: '去登录' })
     if (result.confirm) {
-      const session = await loginWithWechat().catch(() => null)
-      navigateTo({ url: session?.bound ? '/pages/consultation/index' : '/pages/account-bind/index' })
+      navigateTo({ url: '/pages/profile/index' })
     }
     return false
   }

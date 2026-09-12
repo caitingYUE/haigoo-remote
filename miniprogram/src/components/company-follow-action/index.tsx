@@ -7,6 +7,7 @@ import { followCompany, unfollowCompany } from '../../services/career-match-serv
 import { emitCompanyFollowChange } from '../../services/company-follow-state'
 import { trackMiniEvent } from '../../services/analytics-service'
 import { hasAuthenticatedSession } from '../../services/session'
+import { ApiRequestError } from '../../services/api-client'
 import './index.scss'
 
 interface CompanyFollowActionProps {
@@ -56,6 +57,11 @@ export default function CompanyFollowAction({ companyId, companyName, followed, 
       showToast({ title: followed ? '已取消关注' : '已关注企业', icon: 'success' })
       void trackMiniEvent(followed ? 'mini_company_unfollow_success' : 'mini_company_follow_success', { entity_id: companyId })
     } catch (error) {
+      if (error instanceof ApiRequestError && error.payload.code === 'COMPANY_FOLLOW_LIMIT_REACHED') {
+        const result = await showModal({ title: '企业订阅已达免费上限', content: '开通会员，订阅更多企业岗位更新。', confirmText: '开通会员', cancelText: '管理订阅', confirmColor: '#C94F22' })
+        if (result.confirm || result.cancel) navigateTo({ url: result.confirm ? '/pages/membership/index' : '/pages/followed-companies/index' })
+        return
+      }
       showToast({ title: error instanceof Error ? error.message : followed ? '取消关注失败，请重试' : '关注失败，请重试', icon: 'none' })
       void trackMiniEvent(followed ? 'mini_company_unfollow_failed' : 'mini_company_follow_failed', { entity_id: companyId })
     } finally { setBusy(false) }

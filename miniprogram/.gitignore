@@ -1,6 +1,9 @@
 dist/
 dist-prod/
+dist-local/
+dist-experience/
 .wechat-production/
+.wechat-experience/
 deploy_versions/
 .temp/
 .rn_temp/

@@ -46,16 +46,16 @@ export function companyOpenRoleSummary(company: Pick<MiniCompany, 'publicJobTitl
   return formatOpenRoleSummary(roleLabelsFromTitles(jobTitles), company.openJobCount || 0)
 }
 
-function conciseCompanyDescription(value: string) {
+export function conciseCompanyDescription(value: string) {
   const normalized = String(value || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/https?:\/\/\S+/gi, ' ')
-    .replace(/[“”"']/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+    .replace(/<[^>]+>/g, ' ').replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/\s+/g, ' ').trim()
   if (!normalized) return ''
-  const sentence = normalized.split(/[。！？!?\n]/).map((part) => part.trim()).find(Boolean) || normalized
-  return sentence.length > 86 ? `${sentence.slice(0, 85)}…` : sentence
+  const sentences = normalized.split(/[。！？!?]|\.\s+(?=[A-Z])/).map((part) => part.trim()).filter(Boolean)
+  // Extract an existing positioning sentence; do not generate unsupported claims.
+  const positioning = sentences.find((part) => part.length <= 86 && /(?:是一家|是一个|提供|专注于|致力于|帮助|\b(?:provides?|helps?|builds?|is an?|platform for)\b)/i.test(part))
+  const text = positioning || normalized
+  return text.length > 86 ? `${text.slice(0, 85)}…` : text
 }
 
 type MatchCompanySignals = WatchFeedItem & {

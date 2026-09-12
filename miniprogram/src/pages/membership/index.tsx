@@ -1,11 +1,12 @@
 import { Text, View } from '@tarojs/components'
 import Taro, { navigateBack, navigateTo, showModal, showToast, useDidShow } from '@tarojs/taro'
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { trackMiniEvent } from '../../services/analytics-service'
 import ContentSkeleton from '../../components/content-skeleton'
 import MiniIcon from '../../components/mini-icon'
+import useRetainedResource from '../../hooks/use-retained-resource'
 import { fetchMembershipPlans } from '../../services/content-service'
-import { loginWithWechat } from '../../services/mini-auth-service'
+import { refreshWechatSession } from '../../services/mini-auth-service'
 import { hasAuthenticatedSession } from '../../services/session'
 import { isVirtualPaymentSupported, purchaseClubPlan } from '../../services/virtual-payment-service'
 import type { MiniMembershipPlan } from '../../types'
@@ -36,6 +37,8 @@ const planPresentationByType: Record<string, { positioning: string; badge?: stri
 }
 type MembershipBenefit = { key: string; group: '数字权益' | '1对1服务'; title: string; value?: string; aliases: string[] }
 const membershipBenefits: MembershipBenefit[] = [
+  { key: 'website_apply', group: '数字权益', title: 'HaigooRemote官网无限申请', aliases: [] },
+  { key: 'notes', group: '数字权益', title: '远程职业笔记无限学习', aliases: [] },
   { key: 'matching', group: '数字权益', title: '全库企业无限匹配', aliases: ['浏览在招远程企业', '企业无限匹配'] },
   { key: 'updates', group: '数字权益', title: '所有企业岗位更新通知', aliases: ['按方向接收岗位更新', '接收方向更新', '岗位更新'] },
   { key: 'contacts', group: '数字权益', title: '查看内部联系人信息', aliases: ['查看已收录联系人', '内部联系人'] },
@@ -46,12 +49,16 @@ const membershipBenefits: MembershipBenefit[] = [
 ]
 
 function isBenefitIncluded(plan: MiniMembershipPlan, benefit: MembershipBenefit) {
+  // These shared website entitlements are already granted by membership.js and
+  // free-usage.js. Only render them for the validated plans returned by the API.
+  if (benefit.key === 'website_apply' || benefit.key === 'notes') return ['starter', 'quarter', 'half_year'].includes(plan.memberType)
   if (benefit.group === '1对1服务' && plan.memberType !== 'half_year') return false
   if (benefit.key === 'support') return plan.memberType === 'quarter' || plan.memberType === 'half_year'
   return plan.features.some((feature) => benefit.aliases.some((alias) => feature.includes(alias)))
 }
 
 export default function MembershipPage() {
+  const loadVersion = useRef(0)
   const navigation = useMemo(() => {
     const system = Taro.getSystemInfoSync()
     const statusBarHeight = system.statusBarHeight || 20
@@ -60,30 +67,44 @@ export default function MembershipPage() {
     const rightInset = menu?.left ? Math.max(96, system.windowWidth - menu.left + 8) : 96
     return { statusBarHeight, barHeight, rightInset }
   }, [])
-  const [plans, setPlans] = useState<MiniMembershipPlan[]>([])
-  const [membership, setMembership] = useState<{ isMember: boolean; memberType: string; memberExpireAt?: string | null } | null>(null)
-  const [paymentAvailable, setPaymentAvailable] = useState(false)
+  const { data, loading, refreshing, error: resourceError, load: loadResource } = useRetainedResource<Awaited<ReturnType<typeof fetchMembershipPlans>>>('membership-plans')
+  const plans = data?.plans || []
+  const membership = data?.membership || null
+  const paymentAvailable = Boolean(data?.paymentAvailable)
   const [selectedPlanId, setSelectedPlanId] = useState('')
   const [paying, setPaying] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [sessionError, setSessionError] = useState('')
+  const error = resourceError || sessionError
   const load = useCallback(async () => {
-    setLoading(true)
-    setError('')
+    const currentLoadVersion = ++loadVersion.current
+    setSessionError('')
     try {
-      const result = await fetchMembershipPlans(); setPlans(result.plans); setMembership(result.membership); setPaymentAvailable(result.paymentAvailable)
-      setSelectedPlanId((current) => {
-        if (current && result.plans.some((plan) => plan.id === current)) return current
-        return result.plans.find((plan) => result.membership?.isMember && plan.memberType === result.membership.memberType)?.id
-          || result.plans.find((plan) => plan.memberType === 'quarter')?.id
-          || result.plans.find((plan) => plan.featured)?.id
-          || result.plans[0]?.id
-          || ''
-      })
-      void trackMiniEvent('mini_membership_plans_view', { payment_available: result.paymentAvailable, client_payment_supported: isVirtualPaymentSupported() })
-    } catch (loadError) { setError(loadError instanceof Error ? loadError.message : '会员方案加载失败') } finally { setLoading(false) }
-  }, [])
+      if (hasAuthenticatedSession()) await refreshWechatSession()
+      if (currentLoadVersion !== loadVersion.current) return
+      await loadResource('membership-plans', async () => {
+        const result = await fetchMembershipPlans()
+        void trackMiniEvent('mini_membership_plans_view', { payment_available: result.paymentAvailable, client_payment_supported: isVirtualPaymentSupported() })
+        return result
+      }, true)
+    } catch (loadError) {
+      if (currentLoadVersion === loadVersion.current) {
+        const message = loadError instanceof Error ? loadError.message : '会员状态加载失败'
+        if (data) showToast({ title: '暂时无法更新，已保留上次内容', icon: 'none' })
+        else setSessionError(message)
+      }
+    }
+  }, [data, loadResource])
   useDidShow(() => { void load() })
+  useEffect(() => {
+    setSelectedPlanId((current) => {
+      if (current && plans.some((plan) => plan.id === current)) return current
+      return plans.find((plan) => membership?.isMember && plan.memberType === membership.memberType)?.id
+        || plans.find((plan) => plan.memberType === 'quarter')?.id
+        || plans.find((plan) => plan.featured)?.id
+        || plans[0]?.id
+        || ''
+    })
+  }, [data])
 
   const purchase = async (plan: MiniMembershipPlan) => {
     if (!hasAuthenticatedSession()) {
@@ -91,12 +112,18 @@ export default function MembershipPage() {
       if (result.confirm) navigateTo({ url: '/pages/profile/index' })
       return
     }
-    const confirmed = await showModal({ title: `开通${plan.shortLabel}`, content: `价格 ¥${plan.price}，有效期 ${duration(plan)}。`, confirmText: '微信支付' })
+    if (membership?.isMember && membership.memberType === 'half_year' && plan.memberType === 'half_year') {
+      const result = await showModal({ title: '无需重复购买', content: '你的半年会员仍在有效期内。如有需要，请咨询顾问。', confirmText: '咨询顾问' })
+      if (result.confirm) navigateTo({ url: '/pages/consultation/index?sourcePage=membership' })
+      return
+    }
+    const isRenewal = Boolean(membership?.isMember && membership.memberType === plan.memberType)
+    const confirmed = await showModal({ title: `${isRenewal ? '续费' : '开通'}${plan.shortLabel}`, content: isRenewal ? `价格 ¥${plan.price}。购买后，有效期将在当前到期日基础上顺延 ${duration(plan)}，并发送购买成功邮件告知新的到期日期。` : `价格 ¥${plan.price}，有效期 ${duration(plan)}。`, confirmText: '微信支付' })
     if (!confirmed.confirm) return
     setPaying(plan.id)
     try {
       const order = await purchaseClubPlan(plan.id)
-      if (order.status === 'completed') { await loginWithWechat(); await load(); showToast({ title: '会员权益已开通', icon: 'success' }) }
+      if (order.status === 'completed') { await load(); showToast({ title: isRenewal ? '续费成功' : '会员权益已开通', icon: 'success' }) }
       else showModal({ title: '支付结果确认中', content: '稍后可在订单记录中查看结果。', showCancel: false })
     } catch (purchaseError) {
       const message = purchaseError instanceof Error ? purchaseError.message : '支付未完成'
@@ -108,7 +135,8 @@ export default function MembershipPage() {
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId) || plans[0]
   const selectedPlanPresentation = selectedPlan ? planPresentationByType[selectedPlan.memberType] : null
   const selectedPlanAvailable = selectedPlan?.purchaseAvailable !== false
-  const canPurchaseSelected = selectedPlanAvailable && (!membership?.isMember || membership.memberType === selectedPlan?.memberType)
+  const halfYearAlreadyActive = Boolean(membership?.isMember && membership.memberType === 'half_year' && selectedPlan?.memberType === 'half_year')
+  const canPurchaseSelected = !halfYearAlreadyActive && selectedPlanAvailable && (!membership?.isMember || membership.memberType === selectedPlan?.memberType)
 
   return (
     <View className='membership-root'>
@@ -127,9 +155,10 @@ export default function MembershipPage() {
       <View className='membership-heading'><Text className='page-heading'>打开全球机会</Text><Text className='membership-heading__accent'>从远程工作开始</Text><Text className='page-subtitle'>10w+人正在通过 Haigoo Remote 发现全球新机会。</Text><View className='membership-tags'><Text>无限匹配</Text><Text>企业联系人</Text><Text>简历优化</Text><Text>岗位提醒</Text></View></View>
       <View className='membership-content'>
       {membership?.isMember ? <View className='membership-current'><Text className='membership-current__label'>当前有效会员</Text><Text className='membership-current__type'>{memberTypeLabel(membership.memberType)}</Text><Text className='membership-current__expire'>{formatCalendarDate(membership.memberExpireAt) ? `有效期至 ${formatCalendarDate(membership.memberExpireAt)}` : '权益正在生效'}</Text></View> : null}
-      {error ? <View className='empty-state'><Text className='empty-state__title'>会员方案暂时不可用</Text><Text className='empty-state__copy'>{error}</Text></View> : null}
+      {error && !data ? <View className='empty-state'><Text className='empty-state__title'>会员方案暂时不可用</Text><Text className='empty-state__copy'>{error}</Text></View> : null}
+      {refreshing && data ? <View className='membership-refreshing' aria-live='polite' aria-busy><View className='membership-refreshing__spinner' /><Text>正在更新方案</Text></View> : null}
       <View className='membership-plans'>
-        {loading ? <ContentSkeleton rows={3} /> : null}
+        {loading && !data && !error ? <ContentSkeleton rows={3} /> : null}
         {plans.map((plan) => {
           const presentation = planPresentationByType[plan.memberType]
           return <View className={`membership-plan ${selectedPlan?.id === plan.id ? 'membership-plan--selected' : ''}`} key={plan.id} aria-role='radio' aria-label={`选择${plan.shortLabel}`} aria-checked={selectedPlan?.id === plan.id} hoverClass='mini-action--pressed' onClick={() => setSelectedPlanId(plan.id)}>
@@ -158,9 +187,10 @@ export default function MembershipPage() {
           {groupIndex === 0 ? <View className='membership-benefits__divider' /> : null}
         </View>)}
       </View> : null}
-      {paymentAvailable && selectedPlan && canPurchaseSelected ? <View className='membership-purchase'><View className={`primary-button membership-plan__button ${paying ? 'primary-button--disabled' : ''}`} aria-role='button' aria-label={paying === selectedPlan.id ? '正在支付' : membership?.memberType === selectedPlan.memberType ? `续费${selectedPlan.shortLabel}` : `开通${selectedPlan.shortLabel}`} aria-disabled={Boolean(paying)} hoverClass={paying ? undefined : 'mini-action--pressed'} onClick={paying ? undefined : () => purchase(selectedPlan)}>{paying === selectedPlan.id ? '正在支付…' : membership?.memberType === selectedPlan.memberType ? `续费${selectedPlan.shortLabel} · ¥${selectedPlan.price}` : `开通${selectedPlan.shortLabel} · ¥${selectedPlan.price}`}</View><Text className='membership-purchase__note'>有效期 {duration(selectedPlan)} · 到期不自动续费</Text></View> : null}
+      {paymentAvailable && selectedPlan && canPurchaseSelected ? <View className='membership-purchase'><View className={`primary-button membership-plan__button ${paying ? 'primary-button--disabled' : ''}`} aria-role='button' aria-label={paying === selectedPlan.id ? '正在支付' : membership?.memberType === selectedPlan.memberType ? `续费${selectedPlan.shortLabel}` : `开通${selectedPlan.shortLabel}`} aria-disabled={Boolean(paying)} hoverClass={paying ? undefined : 'mini-action--pressed'} onClick={paying ? undefined : () => purchase(selectedPlan)}>{paying === selectedPlan.id ? '正在支付…' : membership?.memberType === selectedPlan.memberType ? `续费${selectedPlan.shortLabel} · ¥${selectedPlan.price}` : `开通${selectedPlan.shortLabel} · ¥${selectedPlan.price}`}</View><Text className='membership-purchase__note'>{membership?.isMember ? `在当前到期日基础上顺延 ${duration(selectedPlan)}` : `有效期 ${duration(selectedPlan)}`} · 到期不自动续费</Text></View> : null}
+      {halfYearAlreadyActive ? <View className='membership-unavailable'><Text className='membership-unavailable__title'>半年会员无需重复购买</Text><Text className='membership-unavailable__copy'>你的半年会员仍在有效期内。如有需要，可通过下方入口咨询顾问。</Text></View> : null}
       {paymentAvailable && selectedPlan && !selectedPlanAvailable ? <View className='membership-unavailable'><Text className='membership-unavailable__title'>该方案暂时无法购买</Text><Text className='membership-unavailable__copy'>其他会员方案可正常开通，请稍后再试。</Text></View> : null}
-      {paymentAvailable && selectedPlan && selectedPlanAvailable && !canPurchaseSelected ? <View className='membership-unavailable'><Text className='membership-unavailable__title'>当前有效期内仅支持同档续费</Text><Text className='membership-unavailable__copy'>选择当前方案即可续费；方案变更可在到期后进行。</Text></View> : null}
+      {paymentAvailable && selectedPlan && selectedPlanAvailable && !canPurchaseSelected && !halfYearAlreadyActive ? <View className='membership-unavailable'><Text className='membership-unavailable__title'>当前有效期内仅支持同档续费</Text><Text className='membership-unavailable__copy'>选择当前方案即可续费；方案变更可在到期后进行。</Text></View> : null}
       {!loading && plans.length > 0 && !paymentAvailable ? <View className='membership-unavailable'><Text className='membership-unavailable__title'>暂时无法购买</Text><Text className='membership-unavailable__copy'>你可以先查看方案内容，或咨询职业顾问。</Text></View> : null}
       <View className='membership-support'>
         <View aria-role='button' aria-label='咨询会员方案' onClick={() => navigateTo({ url: '/pages/consultation/index?sourcePage=membership' })}>咨询会员方案</View>

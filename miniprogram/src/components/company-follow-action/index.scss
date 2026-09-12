@@ -41,7 +41,5 @@
   font-size: 22px;
 }
 
-.company-follow-action.is-compact:not(.is-followed) .mini-icon { color: var(--color-brand-strong); }
-
 .company-follow-action.is-compact.is-followed { background: var(--color-brand-soft); }
 .company-follow-action.is-busy { opacity: .68; }

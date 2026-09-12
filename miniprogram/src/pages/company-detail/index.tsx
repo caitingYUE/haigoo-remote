@@ -1,12 +1,20 @@
-import { Image, Text, View } from '@tarojs/components'
-import Taro, { navigateTo, setClipboardData, showToast, useDidShow, useRouter } from '@tarojs/taro'
-import { useCallback, useState } from 'react'
+import { Text, View } from '@tarojs/components'
+import { createSelectorQuery, navigateTo, nextTick, setClipboardData, showToast, useDidShow, useResize, useRouter } from '@tarojs/taro'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import ContentSkeleton from '../../components/content-skeleton'
+import CompanyLogo from '../../components/company-logo'
+import CompanyFollowAction from '../../components/company-follow-action'
 import MiniIcon from '../../components/mini-icon'
+import WechatReminderAction, { requestWechatReminderAuthorization } from '../../components/wechat-reminder-action'
 import useMiniShare from '../../hooks/use-mini-share'
-import { fetchCompany } from '../../services/content-service'
-import { fetchCareerWatch, fetchCompanyFollows, followCompany, setMatchNotifications, unfollowCompany } from '../../services/career-match-service'
+import useRetainedResource, { miniContentScope } from '../../hooks/use-retained-resource'
+import { fetchCompanyDetail } from '../../services/content-service'
+import { fetchCareerWatch, fetchCompanyFollows, setMatchNotifications } from '../../services/career-match-service'
+import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
 import { hasAuthenticatedSession } from '../../services/session'
-import type { ContentBlock, MiniCompany, MiniCompanyJob } from '../../types'
+import type { ContentBlock, MemberOnlyContact, MiniCompanyJob } from '../../types'
+import { formatCalendarDate } from '../../utils/runtime-compat'
+import { buildCompanyContactsCopy } from '../../utils/company-contacts-copy'
 import './index.scss'
 
 function Blocks({ items }: { items: ContentBlock[] }) {
@@ -36,127 +44,122 @@ export default function CompanyDetailPage() {
   const router = useRouter()
   const id = String(router.params.id || '')
   const accessSearch = String(router.params.search || '').trim()
-  const [company, setCompany] = useState<MiniCompany | null>(null)
-  const [logoFailed, setLogoFailed] = useState(false)
+  const resourceKey = `company-detail:${id}:${accessSearch}`
+  const { data, refreshing, error, load: loadResource } = useRetainedResource<Awaited<ReturnType<typeof fetchCompanyDetail>>>(resourceKey)
+  const company = data?.company || null
+  const access = data?.access || null
   const [followed, setFollowed] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
-  const [subscriptionBusy, setSubscriptionBusy] = useState(false)
   const [subscriptionConfig, setSubscriptionConfig] = useState({ available: false, templateId: '' })
   const [activeTab, setActiveTab] = useState<'overview' | 'jobs' | 'culture'>('overview')
-  const [error, setError] = useState('')
+  const [footerHeight, setFooterHeight] = useState(0)
+  const loadSequence = useRef(0)
+  useEffect(() => () => { loadSequence.current++ }, [])
+  const measureFooter = useCallback(() => {
+    nextTick(() => {
+      createSelectorQuery().select('.company-detail__footer').boundingClientRect((rect) => {
+        if (rect && !Array.isArray(rect) && rect.height > 0) setFooterHeight(rect.height)
+      }).exec()
+    })
+  }, [])
+  useEffect(measureFooter, [measureFooter, company, followed, subscribed, error])
+  useResize(measureFooter)
   useMiniShare(company ? `${company.name}｜远程企业资料` : 'Haigoo 远程企业资料', `/pages/company-detail/index?id=${encodeURIComponent(id)}${accessSearch ? `&search=${encodeURIComponent(accessSearch)}` : ''}`)
-  const load = useCallback(async () => {
-    setError('')
-    try {
-      const authenticated = hasAuthenticatedSession()
-      const emptyFollows = { success: true as const, follows: [] as Array<{ company_id: string; name: string; industry: string; wechat_enabled?: boolean; wechat_template_status?: string }> }
-      const [companyResult, follows, watch] = await Promise.all([
-        fetchCompany(id, true, accessSearch),
-        authenticated ? fetchCompanyFollows().catch(() => emptyFollows) : Promise.resolve(emptyFollows),
-        authenticated ? fetchCareerWatch().catch(() => null) : Promise.resolve(null)
-      ])
-      const companyFollow = follows.follows.find((item) => String(item.company_id) === id)
-      setCompany(companyResult)
-      setFollowed(Boolean(companyFollow))
-      setSubscribed(Boolean(companyFollow?.wechat_enabled && companyFollow.wechat_template_status === 'accepted'))
-      setSubscriptionConfig({
-        available: Boolean(watch?.entitlements.wechatSubscriptionAvailable),
-        templateId: String(watch?.entitlements.wechatTemplateId || '')
-      })
-    } catch (loadError) { setError(loadError instanceof Error ? loadError.message : '企业资料加载失败') }
-  }, [accessSearch, id])
-  useDidShow(() => { void load() })
+  const load = useCallback(async (force = false) => {
+    const sequence = ++loadSequence.current
+    const scope = miniContentScope()
+    const authenticated = hasAuthenticatedSession()
+    const emptyFollows = { success: true as const, follows: [] as Array<{ company_id: string; name: string; industry: string; wechat_enabled?: boolean; wechat_template_status?: string }> }
+    const detailRequest = loadResource(resourceKey, () => fetchCompanyDetail(id, force, accessSearch), force)
+    const [follows, watch] = await Promise.all([
+      authenticated ? fetchCompanyFollows().catch(() => emptyFollows) : Promise.resolve(emptyFollows),
+      authenticated ? fetchCareerWatch().catch(() => null) : Promise.resolve(null)
+    ])
+    await detailRequest
+    if (sequence !== loadSequence.current || scope !== miniContentScope()) return
+    const companyFollow = follows.follows.find((item) => String(item.company_id) === id)
+    setFollowed(Boolean(companyFollow))
+    setSubscribed(Boolean(companyFollow?.wechat_enabled && companyFollow.wechat_template_status === 'accepted'))
+    setSubscriptionConfig({
+      available: Boolean(watch?.entitlements.wechatSubscriptionAvailable),
+      templateId: String(watch?.entitlements.wechatTemplateId || '')
+    })
+  }, [accessSearch, id, loadResource, resourceKey])
+  useDidShow(() => {
+    const previousScope = miniContentScope()
+    void load(false)
+    if (hasAuthenticatedSession()) void refreshWechatSessionIfStale().catch(() => null).then(() => {
+      if (previousScope !== miniContentScope()) void load(true)
+    })
+  })
 
-  const requestWechatNotice = async (templateId: string) => {
-    try {
-      const requestSubscribeMessage = Taro.requestSubscribeMessage as unknown as (options: { tmplIds: string[] }) => Promise<Record<string, string>>
-      const result = await requestSubscribeMessage({ tmplIds: [templateId] })
-      const status = String(result[templateId] || '')
-      if (status === 'accept') return true
-      if (status === 'ban') await Taro.showModal({ title: '订阅消息未开启', content: '请在小程序设置中开启订阅消息后重试。', showCancel: false, confirmText: '知道了' })
-      else showToast({ title: '未订阅更新，可稍后再试', icon: 'none' })
-      return false
-    } catch {
-      showToast({ title: '微信订阅暂不可用，请稍后再试', icon: 'none' })
-      return false
-    }
-  }
-
-  const toggleSubscription = async () => {
-    if (!company || subscriptionBusy) return
-    if (!hasAuthenticatedSession()) {
-      const result = await Taro.showModal({ title: '登录后订阅更新', content: '登录后可订阅企业岗位更新。', confirmText: '去登录' })
-      if (result.confirm) navigateTo({ url: '/pages/profile/index' })
+  const requestReminderAfterFollow = async () => {
+    if (!subscriptionConfig.available || !subscriptionConfig.templateId) {
+      showToast({ title: '已关注，可稍后开启微信提醒', icon: 'none' })
       return
     }
-    setSubscriptionBusy(true)
-    let addedFollow = false
     try {
-      if (subscribed) {
-        await setMatchNotifications(company.id, false, 'not_requested')
-        await unfollowCompany(company.id)
-        setFollowed(false)
+      const status = await requestWechatReminderAuthorization(subscriptionConfig.templateId)
+      if (status === 'accepted') {
+        await setMatchNotifications(id, true, status)
+        setSubscribed(true)
+        showToast({ title: '微信提醒已开启', icon: 'success' })
+      } else {
+        await setMatchNotifications(id, false, status).catch(() => undefined)
         setSubscribed(false)
-        showToast({ title: '已取消订阅', icon: 'success' })
-        return
+        showToast({ title: status === 'unavailable' ? '请在小程序设置中开启订阅消息' : '已关注，可稍后开启微信提醒', icon: 'none' })
       }
-      if (!subscriptionConfig.available || !subscriptionConfig.templateId) {
-        showToast({ title: '微信订阅暂不可用，请稍后再试', icon: 'none' })
-        return
-      }
-      if (!followed) {
-        await followCompany(company.id)
-        addedFollow = true
-      }
-      const accepted = await requestWechatNotice(subscriptionConfig.templateId)
-      if (!accepted) {
-        if (addedFollow) await unfollowCompany(company.id).catch(() => undefined)
-        return
-      }
-      await setMatchNotifications(company.id, true, 'accepted')
-      setFollowed(true)
-      setSubscribed(true)
-      showToast({ title: '已订阅企业更新', icon: 'success' })
-    } catch (subscriptionError) {
-      if (addedFollow) await unfollowCompany(company.id).catch(() => undefined)
-      showToast({ title: subscriptionError instanceof Error ? subscriptionError.message : '订阅没有完成，请重试', icon: 'none' })
-    } finally { setSubscriptionBusy(false) }
+    } catch {
+      setSubscribed(false)
+      showToast({ title: '微信提醒未开启，关注状态已保留', icon: 'none' })
+    }
   }
 
-  if (error) return <View className='page-shell'><View className='empty-state' aria-live='polite'><Text className='empty-state__title'>无法查看企业资料</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' aria-role='button' aria-label='重新加载企业资料' hoverClass='mini-action--pressed' onClick={load}>重新加载</View></View></View>
-  if (!company) return <View className='page-shell company-detail-loading'>正在加载企业资料…</View>
+  if (error) return <View className='page-shell'><View className='empty-state' aria-live='polite'><Text className='empty-state__title'>无法查看企业资料</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' aria-role='button' aria-label='重新加载企业资料' hoverClass='mini-action--pressed' onClick={() => void load(true)}>重新加载</View></View></View>
+  if (!company) return <View className='page-shell company-detail-loading'><ContentSkeleton rows={4} /></View>
 
   const jobs = company.jobs || []
   const officialJobCount = jobs.length
   const renderJobs = (items = jobs) => items.length ? <View className='company-detail__jobs'>{items.map((job) => {
     const title = companyJobTitle(job)
-    const facts = [job.location, job.jobType].map(safeJobFact).filter(Boolean)
+    const facts = [job.jobType, job.location].map(safeJobFact).filter(Boolean)
     const salary = safeJobFact(job.salary)
+    const publishedAt = formatCalendarDate(job.publishedAt)
     return <View className='company-job' aria-role='button' aria-label={`查看岗位 ${title}`} hoverClass='mini-action--pressed' key={job.id} onClick={() => navigateTo({ url: `/pages/job-detail/index?companyId=${encodeURIComponent(company.id)}&jobId=${encodeURIComponent(job.id)}${accessSearch ? `&search=${encodeURIComponent(accessSearch)}` : ''}` })}>
-      <View className='company-job__icon'><MiniIcon name='briefcase' size={17} /></View>
       <View className='company-job__copy'>
-        <Text>{title}</Text>
-        <Text>{facts.length ? facts.join(' · ') : '查看岗位信息'}</Text>
+        <View className='company-job__heading'><Text className='company-job__title'>{title}</Text>{salary ? <Text className='company-job__salary'>{salary}</Text> : null}</View>
+        {facts.length ? <Text className='company-job__facts'>{facts.join(' · ')}</Text> : null}
+        {publishedAt ? <Text className='company-job__date'>{publishedAt} 发布</Text> : null}
       </View>
-      {salary ? <Text className='company-job__salary'>{salary}</Text> : null}
       <MiniIcon name='chevronRight' size={17} />
     </View>
   })}</View> : <Text className='company-detail__empty-copy'>暂无公开岗位</Text>
 
-  const contactSection = company.contacts?.length ? <View className='company-detail__contact-card'>
+  const fullContacts = company.contacts || []
+  const previews = company.contactPreviews || []
+  const renderContactChannels = (contact: MemberOnlyContact) => <View className='company-contact__channels'>
+    <View className={`company-contact__channel ${contact.email?.trim() ? 'is-available' : ''}`} aria-label={contact.email?.trim() ? '已收录工作邮箱' : '未收录工作邮箱'}>
+      <MiniIcon name='mail' size={18} />{contact.email?.trim() ? <MiniIcon name='check' size={12} /> : null}
+    </View>
+    <View className={`company-contact__channel ${contact.linkedin?.trim() ? 'is-available' : ''}`} aria-label={contact.linkedin?.trim() ? '已收录 LinkedIn' : '未收录 LinkedIn'}>
+      <Text className='company-contact__linkedin'>in</Text>{contact.linkedin?.trim() ? <MiniIcon name='check' size={12} /> : null}
+    </View>
+  </View>
+  const contactSection = access?.contacts && fullContacts.length ? <View className='company-detail__contact-card'>
     <View className='company-detail__contact-title'><MiniIcon name='shield' size={20} /><Text>企业联系人</Text><Text className='company-detail__member-badge'>会员</Text></View>
-    <View className='company-detail__contacts'>{company.contacts.map((contact) => {
-      const copyValue = contact.email || contact.linkedin
-      const contactMeta = [contact.name ? contact.title : '', contact.email || (contact.linkedin ? 'LinkedIn' : '')].filter(Boolean).join(' · ')
-      return <View className='company-contact' key={contact.id}><View><Text>{contact.name || contact.title || '企业联系信息'}</Text><Text>{contactMeta}</Text></View><Text aria-role='button' aria-label={`复制 ${contact.name || contact.title || '联系信息'}`} onClick={() => void copyLink(copyValue, '联系信息已复制')}>复制</Text></View>
-    })}</View>
-  </View> : Number(company.contactCount || 0) > 0 ? <View className='company-detail__contact-card company-detail__contact-card--locked' aria-role='button' aria-label='查看会员企业联系人权益' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}><View className='company-detail__contact-icon'><MiniIcon name='shield' size={20} /></View><View><Text>企业联系人</Text><Text>会员专属 · 开通后可查看已收录联系人</Text></View><Text>查看权益 →</Text></View> : <Text className='company-detail__empty-copy'>暂未收录联系人</Text>
+    <View className='company-detail__contacts'>{fullContacts.map((contact) => <View className='company-contact' key={contact.id}><View className='company-contact__identity'><Text>{contact.name || contact.title || '企业联系信息'}</Text><Text>{contact.title || '企业联系人'}</Text></View>{renderContactChannels(contact)}</View>)}</View>
+    <View className='company-detail__copy-contacts' aria-role='button' aria-label='复制全部联系人信息' hoverClass='mini-action--pressed' onClick={() => void copyLink(buildCompanyContactsCopy(company.name, fullContacts), '联系人信息已复制')}><MiniIcon name='orders' size={18} /><Text>一键复制联系人</Text></View>
+  </View> : previews.length ? <View className='company-detail__contact-card company-detail__contact-card--preview'>
+    <View className='company-detail__contact-title'><MiniIcon name='shield' size={20} /><Text>企业联系人</Text><Text className='company-detail__member-badge'>会员可见</Text></View>
+    <View className='company-detail__contacts'>{previews.map((contact) => <View className='company-contact company-contact--preview' key={contact.id}><View className='company-contact__identity'><Text>{contact.maskedName}</Text><Text>{contact.title || '企业联系人'}</Text></View><MiniIcon name='shield' size={17} /></View>)}</View>
+    <View className='company-detail__unlock' aria-role='button' aria-label='查看会员企业联系人权益' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}>查看会员权益</View>
+  </View> : access?.contacts && Number(company.contactCount || 0) > 0 ? <View className='company-detail__contact-card'><Text className='company-detail__contact-error'>联系人信息暂时无法加载</Text><Text className='company-detail__unlock' aria-role='button' onClick={() => void load()}>重新加载</Text></View> : Number(company.contactCount || 0) > 0 ? <View className='company-detail__contact-card company-detail__contact-card--locked' aria-role='button' aria-label='查看会员企业联系人权益' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}><View className='company-detail__contact-icon'><MiniIcon name='shield' size={20} /></View><View><Text>已收录企业联系人</Text><Text>升级会员后可查看联系人信息</Text></View><Text>查看权益 →</Text></View> : null
 
-  return <View className='page-shell company-detail'>
+  return <View className='page-shell company-detail' aria-busy={refreshing} style={footerHeight ? { paddingBottom: `${footerHeight}px` } : undefined}>
     <View className='company-detail__summary'>
       <View className='company-detail__brand-row'>
-        <View className='company-detail__mark'>{company.logoUrl && !logoFailed ? <Image src={company.logoUrl} mode='aspectFit' onError={() => setLogoFailed(true)} /> : <MiniIcon name='building' size={38} />}</View>
-        <View className='company-detail__identity'><View><Text>{company.name}</Text>{company.tags[0] ? <Text>{company.tags[0]}</Text> : null}</View>{company.industry ? <Text>{company.industry}</Text> : null}{company.address ? <View><MiniIcon name='location' size={16} /><Text>{company.address}</Text></View> : null}</View>
+        <View className='company-detail__mark'><CompanyLogo name={company.name} logoUrl={company.logoUrl} logoFileId={company.logoFileId} /></View>
+        <View className='company-detail__identity'><View className='company-detail__name-row'><Text className='company-detail__name'>{company.name}</Text>{company.tags[0] ? <Text className='company-detail__badge'>{company.tags[0]}</Text> : null}</View>{company.industry ? <Text className='company-detail__industry'>{company.industry}</Text> : null}{company.address ? <View className='company-detail__location'><MiniIcon name='location' size={16} /><Text>{company.address}</Text></View> : null}</View>
       </View>
       <View className='company-detail__metrics'>
         <View><MiniIcon name='star' size={19} /><Text>{company.rating !== null ? company.rating.toFixed(1) : '—'}</Text><Text>{company.ratingSource || '企业评分'}</Text></View>
@@ -178,10 +181,10 @@ export default function CompanyDetailPage() {
       {activeTab === 'overview' ? <>
         <View className='company-detail__section company-detail__about'><Text className='company-detail__eyebrow'>关于企业</Text><Text className='company-detail__body'>{company.description || '暂未收录公开企业介绍。'}</Text>{company.specialties.length ? <View className='company-detail__tags'>{company.specialties.map((item) => <Text key={item}>{item}</Text>)}</View> : null}</View>
         {contactSection}
-        {jobs.length ? <View className='company-detail__section'><View className='company-detail__section-heading'><Text className='company-detail__eyebrow'>热门职位</Text>{jobs.length > 1 ? <Text aria-role='button' onClick={() => setActiveTab('jobs')}>查看全部</Text> : null}</View>{renderJobs(jobs.slice(0, 1))}</View> : null}
+        {jobs.length ? <View className='company-detail__section company-detail__popular'><View className='company-detail__section-heading'><Text className='company-detail__eyebrow'>热门职位</Text>{jobs.length > 1 ? <Text className='company-detail__view-all' aria-role='button' onClick={() => setActiveTab('jobs')}>查看全部</Text> : null}</View>{renderJobs(jobs.slice(0, 1))}</View> : null}
       </> : null}
 
-      {activeTab === 'jobs' ? <View className='company-detail__section'><View className='company-detail__jobs-heading'><Text className='company-detail__eyebrow'>{officialJobCount} 个开放岗位</Text><Text className='company-detail__jobs-source'>岗位来自企业官网</Text></View>{renderJobs()}</View> : null}
+      {activeTab === 'jobs' ? <View className='company-detail__section'><View className='company-detail__jobs-heading'><Text className='company-detail__eyebrow'>岗位数据来自企业官网公开信息</Text></View>{renderJobs()}</View> : null}
 
       {activeTab === 'culture' ? <>
         <View className='company-detail__culture-facts'>
@@ -198,7 +201,8 @@ export default function CompanyDetailPage() {
     </View>
 
     <View className='company-detail__footer'>
-      <View className={`company-detail__subscribe ${subscriptionBusy ? 'is-busy' : ''}`} aria-role='button' aria-disabled={subscriptionBusy} aria-label={subscribed ? `取消订阅 ${company.name} 更新` : `订阅 ${company.name} 更新`} hoverClass='mini-action--pressed' onClick={subscriptionBusy ? undefined : () => void toggleSubscription()}>{subscriptionBusy ? '正在处理…' : subscribed ? '取消订阅' : '订阅更新'}</View>
+      <View className='company-detail__follow-control'><CompanyFollowAction companyId={company.id} companyName={company.name} followed={followed} reminderEnabled={subscribed} unfollowedLabel='订阅更新' onChanged={(nextFollowed) => { setFollowed(nextFollowed); if (!nextFollowed) setSubscribed(false); else void requestReminderAfterFollow() }} /></View>
+      {followed ? <View className='company-detail__reminder-control'><WechatReminderAction companyId={company.id} available={subscriptionConfig.available} templateId={subscriptionConfig.templateId} enabled={subscribed} onChanged={setSubscribed} /></View> : null}
       {company.careersUrl || company.websiteUrl ? <View className='company-detail__website' aria-role='button' hoverClass='mini-action--pressed' onClick={() => void copyLink(company.careersUrl || company.websiteUrl || '', '官网链接已复制')}>复制官网链接</View> : null}
     </View>
   </View>

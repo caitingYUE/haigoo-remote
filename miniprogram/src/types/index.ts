@@ -17,25 +17,47 @@ export interface MiniCompany {
   careersUrl?: string
   hasPublicOpportunity?: boolean
   publicOpportunityUpdatedAt?: string | null
+  newJobsUntil?: string | null
+  latestPublicJobAt?: string | null
   openJobCount?: number
   publicJobTitles?: string[]
+  openRoleCategories?: string[]
   jobs?: MiniCompanyJob[]
   contacts?: MemberOnlyContact[]
   contactCount?: number
+  contactPreviews?: CompanyContactPreview[]
   remoteWork?: string[]
   culture?: ContentBlock[]
   ceoInsights?: ContentBlock[]
   insightsLocked?: boolean
 }
 
+export interface CompanyContactPreview {
+  id: string
+  maskedName: string
+  title: string
+}
+
+export interface CompanyAccess {
+  scope: 'free_fixed' | 'member_all'
+  fullDirectory: boolean
+  contacts: boolean
+  contactPreview: boolean
+}
+
 export interface MiniCompanyJob {
   id: string
   title: string
+  category?: string
   titleZh?: string
   titleOriginal?: string
   location: string
   salary: string
   jobType: string
+  experienceLevel?: string
+  companyId?: string
+  company?: string
+  publishedAt?: string | null
   sourceLabel?: string
   updatedAt: string | null
 }
@@ -202,7 +224,7 @@ export interface MemberServiceEntitlement {
   key: 'career_direction_diagnosis' | 'bilingual_resume_optimization' | 'custom_job_search_materials'
   title: string
   description: string
-  status: 'available' | 'requested' | 'in_progress' | 'completed'
+  status: 'available' | 'requested' | 'in_progress' | 'completed' | 'unavailable'
   totalQuota: number
   remainingQuota: number
   expiresAt: string | null

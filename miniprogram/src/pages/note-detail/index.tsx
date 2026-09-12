@@ -1,8 +1,10 @@
 import { Button, Image, Text, View } from '@tarojs/components'
 import { navigateBack, navigateTo, useRouter } from '@tarojs/taro'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect } from 'react'
+import ContentSkeleton from '../../components/content-skeleton'
 import MiniIcon from '../../components/mini-icon'
 import useMiniShare from '../../hooks/use-mini-share'
+import useRetainedResource from '../../hooks/use-retained-resource'
 import { trackMiniEvent } from '../../services/analytics-service'
 import { fetchGrowthNote, fetchGrowthNotes } from '../../services/content-service'
 import type { ContentBlock, GrowthNote } from '../../types'
@@ -22,22 +24,21 @@ function NoteBlock({ block, index }: { block: ContentBlock; index: number }) {
 export default function NoteDetailPage() {
   const router = useRouter()
   const id = String(router.params.id || '')
-  const [note, setNote] = useState<GrowthNote | null>(null)
-  const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [related, setRelated] = useState<GrowthNote[]>([])
+  const resourceKey = `growth-note:${id}`
+  const { data, loading, refreshing, error, load: loadResource } = useRetainedResource<{
+    result: Awaited<ReturnType<typeof fetchGrowthNote>>
+    related: GrowthNote[]
+  }>(resourceKey)
+  const note = data?.result.note || null
+  const message = data?.result.access.message || ''
+  const related = data?.related || []
   const load = useCallback(async (force = false) => {
-    setError('')
-    try {
+    await loadResource(resourceKey, async () => {
       const [result, allNotes] = await Promise.all([fetchGrowthNote(id, force), fetchGrowthNotes(force).catch((): GrowthNote[] => [])])
-      setNote(result.note)
-      setMessage(result.access.message || '')
-      setRelated(allNotes.filter((item) => item.id !== id).slice(0, 2))
       if (!result.access.unlocked) void trackMiniEvent('mini_membership_wall_view', { entity_id: id, source_page: 'note_detail' })
-    } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : '笔记加载失败')
-    }
-  }, [id])
+      return { result, related: allNotes.filter((item) => item.id !== id).slice(0, 2) }
+    }, force)
+  }, [id, loadResource, resourceKey])
   useEffect(() => { void load() }, [load])
   useMiniShare(note?.titleZh || note?.title || 'Haigoo 职业笔记', `/pages/note-detail/index?id=${encodeURIComponent(id)}`)
 
@@ -45,9 +46,9 @@ export default function NoteDetailPage() {
   const sourceMeta = note ? [formatPublishedAt(note.publishedAt), note.durationMinutes ? `${note.durationMinutes} 分钟阅读` : '', note.sourceName && note.sourceName !== sourceTitle ? note.sourceName : ''].filter(Boolean).join(' · ') : ''
 
   if (error) return <View className='page-shell note-detail'><View className='empty-state' aria-live='polite'><Text className='empty-state__title'>无法打开笔记</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' aria-role='button' aria-label='重新加载笔记' hoverClass='mini-action--pressed' onClick={() => void load(true)}>重新加载</View><View className='note-detail__back' aria-role='button' aria-label='返回笔记列表' hoverClass='mini-action--pressed' onClick={() => navigateBack()}>返回笔记列表</View></View></View>
-  if (!note) return <View className='page-shell note-loading'>正在打开笔记…</View>
+  if (!note) return <View className='page-shell note-loading'><ContentSkeleton rows={4} /></View>
   return (
-    <View className='page-shell note-detail'>
+    <View className='page-shell note-detail' aria-busy={refreshing || loading}>
       <View className='note-detail__hero'>
         <Text className='eyebrow'>{note.category || '职业成长'}</Text>
         <Text className='note-detail__title'>{note.titleZh || note.title}</Text>

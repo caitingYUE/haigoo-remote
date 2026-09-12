@@ -3,6 +3,7 @@ import path from 'node:path'
 import process from 'node:process'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+import { MINI_SMOKE_FIXTURES } from '../../scripts/mini-smoke-fixtures.mjs'
 
 const projectDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const rootDir = path.resolve(projectDir, '..')
@@ -56,12 +57,20 @@ run(process.execPath, [
   '--via-cloudrun',
   '--action=career_watch_options'
 ])
-run(process.execPath, [
+const companyVerificationArgs = [
   path.join(rootDir, 'scripts/verify-mini-gateway.mjs'),
   `--target=${channel === 'experience' ? 'development' : 'production'}`,
   '--via-cloudrun',
   '--action=companies'
-])
+]
+if (channel === 'experience') {
+  companyVerificationArgs.push(
+    `--openid=${MINI_SMOKE_FIXTURES.member.openid}`,
+    '--expect-company-scope=member_all',
+    '--expect-open-companies'
+  )
+}
+run(process.execPath, companyVerificationArgs)
 runDevToolsUpload(cli, [
   'upload',
   '--project', uploadBundle,

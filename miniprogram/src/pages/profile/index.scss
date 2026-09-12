@@ -1,14 +1,20 @@
 .profile-page { min-height: 100vh; padding-top: calc(52px + env(safe-area-inset-top)); padding-bottom: calc(148px + env(safe-area-inset-bottom)); background: #f7f7f7; }
 .profile-identity { display: flex; min-height: 164px; padding: 24px 0; align-items: center; }
-.profile-identity__avatar { display: flex; width: 116px; height: 116px; flex-shrink: 0; overflow: hidden; align-items: center; justify-content: center; border-radius: 36px; background: #f06434; }
-.profile-identity__avatar > image { width: 100%; height: 100%; }
-.profile-identity__avatar > .profile-identity__default { width: 50px; height: 50px; }
+.profile-identity__avatar { position: relative; display: flex; width: 116px; height: 116px; box-sizing: border-box; flex-shrink: 0; align-items: center; justify-content: center; }
+.profile-identity__avatar-image { display: flex; width: 100%; height: 100%; overflow: hidden; align-items: center; justify-content: center; border-radius: 36px; background: #f06434; }
+.profile-identity__avatar-image > image { width: 100%; height: 100%; }
+.profile-identity__avatar-image > .profile-identity__default { width: 50px; height: 50px; }
+.profile-identity__avatar.is-member { padding: 5px; border: 3PX solid #ffad8c; border-radius: 50%; background: #fff; }
+.profile-identity__avatar.is-member .profile-identity__avatar-image { border-radius: 50%; }
+.profile-identity__member-badge { position: absolute; top: -10px; right: -10px; display: flex; width: 44px; height: 44px; align-items: center; justify-content: center; border: 3PX solid #fff; border-radius: 50%; background: var(--color-brand-soft); box-shadow: 0 4px 12px rgba(201, 79, 34, .18); }
+.profile-identity__member-badge image { width: 28px; height: 28px; }
 .profile-identity__copy { min-width: 0; flex: 1; margin-left: 32px; }
 .profile-identity__copy text { display: block; }
 .profile-identity__copy text:first-child { color: var(--color-ink); font-size: 33px; font-weight: 700; }
 .profile-identity__copy text:last-child { margin-top: 7px; overflow: hidden; color: #999; font-size: 23px; line-height: 1.45; text-overflow: ellipsis; white-space: nowrap; }
 .profile-login { display: flex; min-width: 144px; min-height: 88px; margin-left: 16px; padding: 0 20px; align-items: center; justify-content: center; border-radius: 12px; background: var(--color-ink); color: #fff; font-size: 25px; font-weight: 600; }
 .profile-edit { display: flex; min-width: 100px; min-height: 80px; margin-left: 16px; align-items: center; justify-content: center; border: 1PX solid #e5e5e5; border-radius: 18px; background: #f7f7f7; color: #555; font-size: 23px; }
+.profile-auth-notice { color: var(--color-secondary); font-size: 24px; line-height: 1.6; }
 .profile-facts { display: grid; margin-top: 20px; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .profile-facts > view { min-height: 116px; padding: 20px 16px; border: 1PX solid #e5e5e5; border-radius: 22px; background: #f7f7f7; text-align: center; }
 .profile-facts > view + view { border-left: 0; }
@@ -27,12 +33,13 @@
 .profile-section__title { display: block; margin-bottom: 12px; color: #999; font-size: 23px; font-weight: 550; }
 .profile-services, .profile-menu { overflow: hidden; padding: 0 32px; border: 1PX solid #e5e5e5; border-radius: 28px; background: #fff; }
 .profile-service { display: flex; min-height: 126px; padding: 20px 0; align-items: center; justify-content: space-between; gap: 18px; border-bottom: 1PX solid var(--color-border); }
-.profile-service > view { min-width: 0; flex: 1; }
-.profile-service text { display: block; }
-.profile-service view text:first-child { color: var(--color-ink); font-size: 27px; font-weight: 620; }
-.profile-service view text:last-child { margin-top: 6px; color: var(--color-muted); font-size: 22px; line-height: 1.5; }
-.profile-service view .profile-service__updated { margin-top: 5px; color: var(--color-muted); font-size: 20px; }
-.profile-service__status { display: flex; min-width: 118px; min-height: 88px; padding: 0 15px; align-items: center; justify-content: center; flex-shrink: 0; border: 1PX solid var(--color-border); border-radius: 999px; color: var(--color-muted); font-size: 22px; font-weight: 600; }
+.profile-service__info { min-width: 0; flex: 1; }
+.profile-service__info text { display: block; }
+.profile-service__info text:first-child { color: var(--color-ink); font-size: 27px; font-weight: 620; }
+.profile-service__info text:last-child { margin-top: 6px; color: var(--color-muted); font-size: 22px; line-height: 1.5; }
+.profile-service__info .profile-service__updated { margin-top: 5px; color: var(--color-muted); font-size: 20px; }
+.profile-service__status { display: flex; min-width: 118px; min-height: 44PX; box-sizing: border-box; padding: 8px 16px; text-align: center; line-height: 1.4; align-items: center; justify-content: center; flex-shrink: 0; border: 1PX solid var(--color-border); border-radius: 999px; color: var(--color-muted); font-size: 22px; font-weight: 600; }
+.profile-service:last-child { border-bottom: 0; }
 .profile-service__status--available { border-color: var(--color-brand); color: var(--color-brand-strong); }
 .profile-service__status--in_progress, .profile-service__status--requested { background: var(--color-surface-soft); color: var(--color-secondary); }
 .profile-service__status--completed { border-color: #bdd7c8; color: var(--color-success); }

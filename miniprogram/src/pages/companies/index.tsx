@@ -1,7 +1,8 @@
-import { Image, Text, View } from '@tarojs/components'
+import { Text, View } from '@tarojs/components'
 import Taro, { navigateTo, stopPullDownRefresh, switchTab, useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CompanyFollowAction from '../../components/company-follow-action'
+import CompanyLogo from '../../components/company-logo'
 import ContentSkeleton from '../../components/content-skeleton'
 import EditorialTopBar from '../../components/editorial-top-bar'
 import EditorialRow from '../../components/editorial-row'
@@ -9,95 +10,105 @@ import EditorialSearch from '../../components/editorial-search'
 import EditorialState from '../../components/editorial-state'
 import MiniIcon from '../../components/mini-icon'
 import TopicScroller from '../../components/topic-scroller'
-import { fetchCompanies, fetchCompany } from '../../services/content-service'
-import type { CompaniesResponse } from '../../services/content-service'
-import type { MiniCompanyJob } from '../../types'
+import { fetchCompanies } from '../../services/content-service'
+import type { CompaniesResponse, CompanyDirectorySort } from '../../services/content-service'
 import { fetchCareerWatch, fetchCompanyFollows } from '../../services/career-match-service'
+import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
+import type { CareerWatchResponse } from '../../services/career-match-service'
 import { onCompanyFollowChange } from '../../services/company-follow-state'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import useMiniShare from '../../hooks/use-mini-share'
-import { roleLabelsFromTitles } from '../../utils/match-card-presentation'
+import { buildCompanyRoleSummary } from '../../utils/company-role-summary'
+import useRetainedResource, { miniContentScope } from '../../hooks/use-retained-resource'
+import { companyUpdateDeadline } from '../../utils/company-update-badge'
 import './index.scss'
 
-function companyInitial(name: string) {
-  const value = String(name || '').trim()
-  if (!value) return '企'
-  const latin = value.match(/[A-Za-z0-9]+/g)
-  if (latin?.length) return latin.slice(0, 2).map((part) => part[0]).join('').toUpperCase()
-  return value.slice(0, 2)
-}
-
-function companyOpenRoleSummary(company: CompaniesResponse['companies'][number], detailJobs?: MiniCompanyJob[]) {
-  const titles = [
-    ...(company.publicJobTitles || []),
-    ...(detailJobs || company.jobs || []).flatMap((job) => [job.titleZh, job.title, job.titleOriginal])
-  ].filter((title): title is string => Boolean(String(title || '').trim()))
-  const labels = roleLabelsFromTitles(titles)
-  if (labels.length === 1) return `${labels[0]}可申请`
-  if (labels.length > 1) return `${labels.join('、')}等可申请`
-  if (titles.length) return '其他方向可申请'
-  return detailJobs === undefined ? '方向加载中…' : '暂无可申请岗位'
-}
+const sortOptions: Array<{ value: CompanyDirectorySort; label: string }> = [
+  { value: 'latest', label: '按最新' },
+  { value: 'relevance', label: '按相关度' }
+]
+const companyResourceKey = (search: string, industry: string, sortBy: CompanyDirectorySort) => JSON.stringify([search.trim(), industry, sortBy])
 
 export default function CompaniesPage() {
-  const [data, setData] = useState<CompaniesResponse | null>(null)
-  const [failedLogoIds, setFailedLogoIds] = useState<Set<string>>(new Set())
+  const { data, setData, loading, refreshing, error, load: loadResource } = useRetainedResource<CompaniesResponse>(companyResourceKey('', '', 'latest'))
   const [followed, setFollowed] = useState<Set<string>>(new Set())
   const [unread, setUnread] = useState(0)
+  const [watchState, setWatchState] = useState<CareerWatchResponse | null>(null)
   const [search, setSearch] = useState('')
   const [appliedSearch, setAppliedSearch] = useState('')
   const [industry, setIndustry] = useState('')
-  const [detailJobs, setDetailJobs] = useState<Record<string, MiniCompanyJob[]>>({})
-  const directionRequests = useRef<Record<string, MiniCompanyJob[] | null>>({})
-  const [loading, setLoading] = useState(true)
+  const [sortBy, setSortBy] = useState<CompanyDirectorySort>('latest')
+  const [sortOpen, setSortOpen] = useState(false)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState('')
+  const [badgeTime, setBadgeTime] = useState(0)
+  const requestSequence = useRef(0)
+  const followRevision = useRef(0)
+  const lastScope = useRef('')
   useMiniShare('Haigoo 远程企业名单', '/pages/companies/index')
 
-  const loadCompanyDirections = useCallback((companies: CompaniesResponse['companies'], accessSearch = '') => {
-    companies.forEach((company) => {
-      if (
-        company.publicJobTitles?.length ||
-        company.jobs?.length ||
-        Object.prototype.hasOwnProperty.call(directionRequests.current, company.id)
-      ) return
-      directionRequests.current[company.id] = null
-      void fetchCompany(company.id, false, accessSearch)
-        .then((detail) => {
-          const jobs = detail.jobs || []
-          directionRequests.current[company.id] = jobs
-          setDetailJobs((current) => ({ ...current, [company.id]: jobs }))
-        })
-        .catch(() => {
-          directionRequests.current[company.id] = []
-          setDetailJobs((current) => ({ ...current, [company.id]: [] }))
-        })
-    })
-  }, [])
-
-  const load = useCallback(async (force = false) => {
-    setLoading(true); setError('')
-    try {
+  const load = useCallback(async (force = false, query = appliedSearch, category = industry, nextSort = sortBy) => {
+    const scope = miniContentScope()
+    const scopeChanged = lastScope.current !== scope
+    if (scopeChanged) {
+      lastScope.current = scope
+      setFollowed(new Set())
+      setWatchState(null)
+      setUnread(0)
+    }
+    // Keep the submitted query even if it fails, so retry never reloads an old search.
+    setAppliedSearch(query.trim())
+    setSortBy(nextSort)
+    await loadResource(companyResourceKey(query, category, nextSort), async () => {
+      const sequence = ++requestSequence.current
+      const revision = followRevision.current
       const authenticated = hasAuthenticatedSession()
-      const emptyFollows = { success: true as const, follows: [] as Array<{ company_id: string; name: string; industry: string; wechat_enabled?: boolean; wechat_template_status?: string }> }
-      const [result, follows, watch] = await Promise.all([
-        fetchCompanies({ search, industry, page: 1, pageSize: 20, force }),
-        authenticated ? fetchCompanyFollows().catch(() => emptyFollows) : Promise.resolve(emptyFollows),
-        authenticated ? fetchCareerWatch().catch(() => null) : Promise.resolve(null)
-      ])
-      setData(result)
-      setAppliedSearch(search.trim())
-      setFollowed(new Set(follows.follows.map((item) => String(item.company_id))))
-      setUnread(watch?.followedUpdates.length || 0)
-      loadCompanyDirections(result.companies, search.trim())
-    } catch (loadError) { setError(loadError instanceof Error ? loadError.message : '企业名单加载失败') } finally { setLoading(false) }
-  }, [industry, loadCompanyDirections, search])
+      // Refresh the pages already loaded so returning from a detail keeps list depth.
+      const pageCount = !scopeChanged && query.trim() === appliedSearch && category === industry && nextSort === sortBy ? data?.page || 1 : 1
+      const first = await fetchCompanies({ search: query, industry: category, sortBy: nextSort, page: 1, pageSize: 20, force })
+      const pages = [first]
+      const lastPage = first.access.scope === 'member_all' ? Math.min(pageCount, Math.max(1, Math.ceil(first.total / first.pageSize))) : 1
+      // Bound fan-out when a long list is refreshed.
+      for (let page = 2; page <= lastPage; page += 4) {
+        const fetchedPages = await Promise.all(Array.from({ length: Math.min(4, lastPage - page + 1) }, (_, index) =>
+          fetchCompanies({ search: query, industry: category, sortBy: nextSort, page: page + index, pageSize: 20, force })
+        ))
+        fetchedPages.forEach((item) => pages.push(item))
+      }
+      const result = pages[pages.length - 1]
+      const seen = new Set<string>()
+      const companies = pages.flatMap((page) => page.companies).filter((company) => {
+        if (seen.has(company.id)) return false
+        seen.add(company.id)
+        return true
+      })
+      if (scope === miniContentScope() && sequence === requestSequence.current) {
+        // Secondary badges must never hold up the directory itself.
+        void Promise.allSettled([
+          authenticated ? fetchCompanyFollows() : Promise.resolve({ follows: [] }),
+          authenticated ? fetchCareerWatch() : Promise.resolve(null)
+        ]).then(([follows, watch]) => {
+          if (scope !== miniContentScope() || sequence !== requestSequence.current) return
+          if (follows.status === 'fulfilled' && revision === followRevision.current) setFollowed(new Set(follows.value.follows.map((item) => String(item.company_id))))
+          if (watch.status === 'fulfilled') {
+            setUnread(watch.value?.followedUpdates.length || 0)
+            setWatchState(watch.value)
+          }
+        })
+      }
+      return { ...result, companies }
+    }, force)
+  }, [appliedSearch, data?.page, industry, loadResource, sortBy])
 
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/companies/index')
-    void load()
+    const previousScope = miniContentScope()
+    void load(false)
+    if (hasAuthenticatedSession()) void refreshWechatSessionIfStale().catch(() => null).then(() => {
+      if (previousScope !== miniContentScope()) void load(true)
+    })
   })
   useEffect(() => onCompanyFollowChange(({ companyId, followed: nextFollowed }) => {
+    followRevision.current++
     setFollowed((current) => {
       const next = new Set(current)
       if (nextFollowed) next.add(companyId)
@@ -105,40 +116,58 @@ export default function CompaniesPage() {
       return next
     })
   }), [])
+  useEffect(() => () => { requestSequence.current++ }, [])
+  useEffect(() => {
+    const syncUnread = (count?: number) => setUnread(Math.max(0, Number(count || 0)))
+    Taro.eventCenter.on('haigoo:unread-change', syncUnread)
+    return () => { Taro.eventCenter.off('haigoo:unread-change', syncUnread) }
+  }, [])
   usePullDownRefresh(async () => { await load(true); stopPullDownRefresh() })
+
+  useEffect(() => {
+    const parsedServerTime = Date.parse(data?.serverTime || '')
+    const serverTime = Number.isFinite(parsedServerTime) ? parsedServerTime : Date.now()
+    const receivedAt = Date.now()
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const refreshBadges = () => {
+      const now = serverTime + Math.max(0, Date.now() - receivedAt)
+      setBadgeTime(now)
+      const expiries = (data?.companies || []).map((company) => companyUpdateDeadline(company, now)).filter((expiry) => expiry > now)
+      if (expiries.length) timer = setTimeout(refreshBadges, expiries.reduce((earliest, value) => Math.min(earliest, value)) - now + 1)
+    }
+    refreshBadges()
+    return () => { if (timer) clearTimeout(timer) }
+  }, [data])
 
   const selectIndustry = async (key: string) => {
     setIndustry(key)
-    setLoading(true); setError('')
-    try {
-      const next = await fetchCompanies({ search, industry: key, page: 1, pageSize: 20, force: true })
-      setData(next)
-      loadCompanyDirections(next.companies, search.trim())
-    }
-    catch (loadError) { setError(loadError instanceof Error ? loadError.message : '企业名单加载失败') }
-    finally { setLoading(false) }
+    await load(true, appliedSearch, key, sortBy)
+  }
+
+  const selectSort = async (nextSort: CompanyDirectorySort) => {
+    setSortOpen(false)
+    if (nextSort === sortBy) return
+    await load(true, appliedSearch, industry, nextSort)
   }
 
   const loadMore = async () => {
-    if (!data?.hasMore || loadingMore) return
+    if (!data?.hasMore || loadingMore || refreshing) return
+    const requestId = requestSequence.current
+    const scope = miniContentScope()
     setLoadingMore(true)
     try {
-      const next = await fetchCompanies({ search, industry, page: data.page + 1, pageSize: data.pageSize, force: true })
-      setData({ ...next, companies: [...data.companies, ...next.companies] })
-      loadCompanyDirections(next.companies, search.trim())
+      const next = await fetchCompanies({ search: appliedSearch, industry, sortBy, page: data.page + 1, pageSize: data.pageSize, force: true })
+      if (requestId !== requestSequence.current || scope !== miniContentScope()) return
+      setData((current) => current ? {
+        ...next,
+        companies: current.companies.concat(next.companies.filter((item) => !current.companies.some((existing) => existing.id === item.id)))
+      } : current)
     } catch (loadError) { Taro.showToast({ title: loadError instanceof Error ? loadError.message : '更多企业加载失败', icon: 'none' }) } finally { setLoadingMore(false) }
   }
 
   const clearFilters = async () => {
-    setSearch(''); setIndustry(''); setLoading(true); setError('')
-    try {
-      const next = await fetchCompanies({ search: '', industry: '', page: 1, pageSize: 20, force: true })
-      setData(next)
-      setAppliedSearch('')
-      loadCompanyDirections(next.companies)
-    }
-    catch (loadError) { setError(loadError instanceof Error ? loadError.message : '企业名单加载失败') }
-    finally { setLoading(false) }
+    setSearch(''); setIndustry('')
+    await load(true, '', '')
   }
 
   const industries = useMemo(() => data?.industries.map((item) => ({ key: item.name, label: item.name })) || [], [data?.industries])
@@ -146,35 +175,53 @@ export default function CompaniesPage() {
   const isMemberDirectory = data?.access.scope === 'member_all'
   const isFreeExactSearch = data?.access.searchMode === 'exact' && Boolean(appliedSearch)
   const visibleFreeCount = data?.companies.length ?? 0
-  const countLabel = isMemberDirectory ? `会员版${data?.total || 0}家` : `免费版${visibleFreeCount}家`
+  const countLabel = isFreeExactSearch ? `找到${visibleFreeCount}家` : isMemberDirectory ? `会员版${data?.total || 0}家` : `免费版${visibleFreeCount}家`
+  const searchTooBroad = data?.searchOutcome === 'too_broad'
   const companyDetailUrl = (companyId: string) => `/pages/company-detail/index?id=${encodeURIComponent(companyId)}${isFreeExactSearch ? `&search=${encodeURIComponent(appliedSearch)}` : ''}`
 
   const user = getMiniUser()
   return <View className='companies-root'>
     <EditorialTopBar authenticated={hasAuthenticatedSession()} avatar={user?.avatar} unread={unread} />
     <View className='page-shell companies-page'>
-    <View className='companies-heading'><View><Text className='page-heading'>远程企业</Text><Text className='page-subtitle'>仅展示有开放申请的企业</Text></View>{data && !loading && !matchRequired ? <Text>{countLabel}</Text> : null}</View>
-    <View className='companies-tools'><EditorialSearch value={search} placeholder='搜索企业或岗位名称' iconSize='30rpx' onInput={setSearch} onSubmit={() => void load(true)} />{industries.length ? <TopicScroller activeKey={industry} onSelect={(key) => void selectIndustry(key)} items={[{ key: '', label: '全部' }, ...industries]} /> : null}</View>
+    <View className='companies-heading'><View><Text className='page-heading'>远程企业</Text><Text className='page-subtitle'>{isFreeExactSearch ? '搜索企业或岗位' : '仅展示有开放申请的企业'}</Text></View>{data && !loading && !matchRequired ? <Text>{countLabel}</Text> : null}</View>
+    <View className='companies-tools'><View className='companies-tools__search-row'><EditorialSearch value={search} placeholder='搜索企业或岗位名称' iconSize='30rpx' onInput={setSearch} onSubmit={() => void load(true, search, industry, sortBy)} />{data && !matchRequired ? <View className='companies-sort-control'>
+      <View className='companies-sort-toggle' aria-role='button' aria-haspopup='listbox' aria-expanded={sortOpen} aria-label={`当前${sortBy === 'latest' ? '按最新' : '按相关度'}排序`} hoverClass='mini-action--pressed' onClick={(event) => { event.stopPropagation(); setSortOpen((current) => !current) }}><Text>{sortBy === 'latest' ? '按最新' : '按相关度'}</Text><MiniIcon name='chevronRight' className={`companies-sort-toggle__icon ${sortOpen ? 'is-open' : ''}`} size='20rpx' /></View>
+      {sortOpen ? <><View className='companies-sort-dismiss' aria-role='button' aria-label='关闭排序菜单' onClick={() => setSortOpen(false)} /><View className='companies-sort-menu' aria-role='listbox' aria-label='企业排序方式' onClick={(event) => event.stopPropagation()}>
+        {sortOptions.map((option) => <View className={option.value === sortBy ? 'is-selected' : ''} data-sort={option.value} aria-role='option' aria-selected={option.value === sortBy} hoverClass='mini-action--pressed' key={option.value} onClick={() => void selectSort(option.value)}><Text>{option.label}</Text>{option.value === sortBy ? <MiniIcon name='check' size='20rpx' /> : null}</View>)}
+      </View></> : null}
+    </View> : null}</View>{industries.length && !isFreeExactSearch ? <TopicScroller activeKey={industry} onSelect={(key) => void selectIndustry(key)} items={[{ key: '', label: '全部' }].concat(industries)} /> : null}</View>
     {error ? <EditorialState title='企业名单暂时无法加载' copy={error} actionLabel='重新加载' onAction={() => void load(true)} /> : null}
-    {loading ? <ContentSkeleton rows={5} /> : null}
+    {loading && !data ? <ContentSkeleton rows={5} /> : null}
+    {refreshing && data && !loadingMore ? <View className='companies-refreshing' aria-live='polite' aria-busy><View className='companies-refreshing__spinner' /><Text>正在更新企业</Text></View> : null}
     {!loading && !error && matchRequired ? <View className='companies-match-required'><Text>先完成匹配</Text><Text>设置求职方向后查看企业。</Text><View className='primary-button' aria-role='button' aria-label='去设置匹配方向' hoverClass='mini-action--pressed' onClick={() => switchTab({ url: '/pages/index/index' })}>去匹配</View></View> : null}
-    {!loading && !error && !matchRequired && data?.companies.length === 0 ? <EditorialState title='没有找到相关企业' copy='请检查名称或清除筛选条件。' actionLabel={industry || search ? '清除筛选' : undefined} onAction={() => void clearFilters()} /> : null}
+    {!loading && !error && !matchRequired && data?.companies.length === 0 ? <EditorialState title={searchTooBroad ? '请输入完整企业或岗位名称' : search ? '未找到已审核的公开岗位' : '暂无开放申请的企业'} copy={searchTooBroad ? '免费版支持精准搜索完整企业或岗位名称；更多结果请升级会员' : '请检查企业或岗位名称，或清除筛选条件。'} actionLabel={searchTooBroad ? '查看会员' : industry || search ? '清除筛选' : undefined} onAction={() => searchTooBroad ? void navigateTo({ url: '/pages/membership/index' }) : void clearFilters()} /> : null}
     {!loading && !error && data?.companies.length ? <View className='company-list'>
       {data.companies.map((company) => {
-        const meta = [company.industry, company.employeeCount].filter(Boolean).join(' · ')
+        const meta = [company.industry, company.address, company.employeeCount].filter(Boolean).join(' · ')
         const ratingVisible = Boolean(company.ratingSource?.trim()) && company.rating !== null && Number.isFinite(Number(company.rating)) && Number(company.rating) > 0 && Number(company.rating) <= 5
-        const directions = companyOpenRoleSummary(company, detailJobs[company.id])
-        const hasApplicationDirections = directions !== '方向加载中…' && directions !== '暂无可申请岗位'
+        const roleSummary = buildCompanyRoleSummary(
+          company.openRoleCategories || [],
+          watchState?.profile || null,
+          watchState?.filterOptions || { roles: [], roleGroups: [], teamSizes: [], ratings: [], companyAges: [], industries: [] }
+        )
         return <EditorialRow className='company-card' key={company.id} label={`查看 ${company.name} 企业资料`}>
           <View className='company-card__main' aria-role='button' aria-label={`查看 ${company.name} 企业资料`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: companyDetailUrl(company.id) })}>
-            <View className='company-card__logo'>{company.logoUrl && !failedLogoIds.has(company.id) ? <Image src={company.logoUrl} mode='aspectFit' lazyLoad onError={() => setFailedLogoIds((current) => new Set(current).add(company.id))} /> : <Text>{companyInitial(company.name)}</Text>}</View>
+            <View className='company-card__logo'><CompanyLogo name={company.name} logoUrl={company.logoUrl} logoFileId={company.logoFileId} lazyLoad /></View>
             <View className='company-card__identity'>
               <View className='company-card__title-row'>
                 <Text className='company-card__name'>{company.name}</Text>
                 {ratingVisible ? <View className='company-card__rating' aria-label={`企业评分 ${company.rating?.toFixed(1)}`}><MiniIcon name='starFilled' size='20rpx' /><Text>{company.rating?.toFixed(1)}</Text></View> : null}
+                {badgeTime > 0 && companyUpdateDeadline(company, badgeTime) > badgeTime ? <Text className='company-card__new' aria-label='近三天有新岗位'>NEW</Text> : null}
               </View>
               <Text className='company-card__industry'>{meta || '企业信息待补充'}</Text>
-              <Text className={`company-card__roles ${hasApplicationDirections ? 'has-directions' : ''}`}>{directions}</Text>
+              <View className='company-card__roles' aria-label={roleSummary.ariaLabel}>
+                {roleSummary.segments.length ? <>
+                  <Text className='company-card__role-types'>{roleSummary.segments.map((segment, index) => <Text className={segment.matched ? 'company-card__role--matched' : ''} key={segment.label}>
+                    {segment.label}{index < roleSummary.segments.length - 1 ? '、' : ''}
+                  </Text>)}</Text>
+                  <Text className='company-card__role-suffix'>{roleSummary.suffix}</Text>
+                </> : <Text>{roleSummary.suffix}</Text>}
+              </View>
             </View>
             <View className='company-card__footer'>
               <CompanyFollowAction companyId={company.id} companyName={company.name} followed={followed.has(company.id)} compact unfollowedIcon='plus' onChanged={(nextFollowed) => setFollowed((current) => { const next = new Set(current); if (nextFollowed) next.add(company.id); else next.delete(company.id); return next })} />

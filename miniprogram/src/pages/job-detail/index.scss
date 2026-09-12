@@ -7,6 +7,8 @@
 
 .job-detail__hero { position: relative; padding: 18px 0 34px; text-align: center; }
 .job-detail__mark { display: flex; width: 104px; height: 104px; margin: 0 auto; align-items: center; justify-content: center; border: 1PX solid var(--color-border); border-radius: 22px; background: #fff; color: var(--color-secondary); font-size: 28px; font-weight: 700; letter-spacing: -.02em; }
+.job-detail__mark { overflow: hidden; }
+.job-detail__mark image { width: 82%; height: 82%; }
 .job-detail__company { display: block; margin-top: 20px; color: var(--color-brand-strong); font-size: 23px; font-weight: 650; }
 .job-detail__title { display: block; max-width: 610px; margin: 12px auto 0; color: var(--color-ink); font-size: 42px; font-weight: 720; line-height: 1.28; letter-spacing: -.025em; }
 .job-detail__original-title { display: block; max-width: 600px; margin: 10px auto 0; color: var(--color-muted); font-size: 22px; line-height: 1.45; }

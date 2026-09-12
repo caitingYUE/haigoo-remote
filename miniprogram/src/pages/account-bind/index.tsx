@@ -1,5 +1,5 @@
 import { Button, Input, Text, View } from '@tarojs/components'
-import { navigateBack, navigateTo, showModal, showToast, useRouter } from '@tarojs/taro'
+import { navigateBack, showModal, showToast, useRouter } from '@tarojs/taro'
 import { useState } from 'react'
 import {
   bindWebsiteAccount,
@@ -9,6 +9,7 @@ import {
 } from '../../services/mini-auth-service'
 import { getMiniSessionToken } from '../../services/session'
 import MiniIcon from '../../components/mini-icon'
+import AuthConsent from '../../components/auth-consent'
 import './index.scss'
 
 type AuthMode = 'bind' | 'register' | 'forgot'
@@ -36,10 +37,15 @@ export default function AccountBindPage() {
   const [consentAccepted, setConsentAccepted] = useState(false)
 
   const ensureWechatSession = async () => {
-    if (!getMiniSessionToken()) await loginWithWechat()
+    if (!getMiniSessionToken()) await loginWithWechat(consentAccepted)
   }
 
   const handleBind = async () => {
+    if (submitting) return
+    if (!consentAccepted) {
+      showToast({ title: '请先阅读并同意用户服务协议和隐私政策', icon: 'none' })
+      return
+    }
     if (!email.trim() || !password) {
       showToast({ title: '请输入 Haigoo 账号和密码', icon: 'none' })
       return
@@ -47,7 +53,7 @@ export default function AccountBindPage() {
     setSubmitting(true)
     try {
       await ensureWechatSession()
-      await bindWebsiteAccount(email.trim(), password)
+      await bindWebsiteAccount(email.trim(), password, consentAccepted)
       setCompleted(true)
     } catch (error) {
       showModal({
@@ -61,13 +67,14 @@ export default function AccountBindPage() {
   }
 
   const handleRegister = async () => {
+    if (submitting) return
+    if (!consentAccepted) {
+      showToast({ title: '请先阅读并同意用户服务协议和隐私政策', icon: 'none' })
+      return
+    }
     const validationMessage = validateRegistration(email, password, confirmPassword)
     if (validationMessage) {
       showToast({ title: validationMessage, icon: 'none' })
-      return
-    }
-    if (!consentAccepted) {
-      showToast({ title: '请先阅读并同意用户协议和隐私政策', icon: 'none' })
       return
     }
     setSubmitting(true)
@@ -87,6 +94,11 @@ export default function AccountBindPage() {
   }
 
   const handlePasswordReset = async () => {
+    if (submitting) return
+    if (!consentAccepted) {
+      showToast({ title: '请先阅读并同意用户服务协议和隐私政策', icon: 'none' })
+      return
+    }
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
       showToast({ title: '请输入正确的注册邮箱', icon: 'none' })
       return
@@ -94,7 +106,7 @@ export default function AccountBindPage() {
     setSubmitting(true)
     try {
       await ensureWechatSession()
-      const response = await requestPasswordReset(email.trim())
+      const response = await requestPasswordReset(email.trim(), consentAccepted)
       showModal({
         title: '请检查邮箱',
         content: response.message || '如果该邮箱已注册，密码重置邮件会发送到该邮箱。',
@@ -185,6 +197,7 @@ export default function AccountBindPage() {
               : '输入注册邮箱，我们会发送一封密码重置邮件。为保护账号安全，无论邮箱是否存在都会显示相同结果。'}
         </Text>
 
+        <Text className='account-bind-copy'>邮箱用于账号登录与验证、密码重置，以及会员生效/失效等服务通知。仅在你同意协议并提交后发送至服务端。</Text>
         <Text className='account-bind-label'>邮箱</Text>
         <Input
           className='account-bind-input'
@@ -242,22 +255,7 @@ export default function AccountBindPage() {
           <Text className='account-auth-forgot' onClick={() => setMode('forgot')}>忘记密码？通过邮箱找回</Text>
         ) : null}
 
-        {mode === 'register' ? (
-          <View className='account-auth-consent'>
-            <View
-              className={`account-auth-consent__checkbox ${consentAccepted ? 'account-auth-consent__checkbox--checked' : ''}`}
-              aria-role='checkbox'
-              aria-checked={consentAccepted}
-              onClick={() => setConsentAccepted((value) => !value)}
-            >
-              {consentAccepted ? <MiniIcon name='check' size={14} /> : null}
-            </View>
-            <Text className='account-auth-consent__copy'>我已阅读并同意</Text>
-            <Text className='account-auth-consent__link' onClick={() => navigateTo({ url: '/pages/legal/index?type=terms' })}>《用户服务协议》</Text>
-            <Text className='account-auth-consent__copy'>和</Text>
-            <Text className='account-auth-consent__link' onClick={() => navigateTo({ url: '/pages/legal/index?type=privacy' })}>《隐私政策》</Text>
-          </View>
-        ) : null}
+        <AuthConsent accepted={consentAccepted} onChange={setConsentAccepted} />
 
         <Button
           className='account-auth-primary-button'

@@ -2,19 +2,21 @@ import { Image, RootPortal, Text, View } from '@tarojs/components'
 import { useMemo, useRef, useState } from 'react'
 import CompanyFollowAction from '../company-follow-action'
 import MiniIcon from '../mini-icon'
+import WechatReminderAction from '../wechat-reminder-action'
 import type { WatchFeedItem } from '../../services/career-match-service'
 import { buildMatchCardPresentation } from '../../utils/match-card-presentation'
-import { formatCalendarDate } from '../../utils/runtime-compat'
 import './index.scss'
 
 interface MatchCompanyCardProps {
   company: WatchFeedItem
   active: boolean
+  reminderAvailable: boolean
+  reminderTemplateId: string
   onFollowChanged: (companyId: string, followed: boolean) => void
+  onReminderChanged: (companyId: string, enabled: boolean) => void
   onOpenCompany: (company: WatchFeedItem) => void
   onOpenJob: (company: WatchFeedItem) => void
   onScoreOpened: (company: WatchFeedItem) => void
-  isMember?: boolean
 }
 
 function companyInitial(name: string) {
@@ -24,14 +26,14 @@ function companyInitial(name: string) {
   return value.slice(0, 2) || '企'
 }
 
-export default function MatchCompanyCard({ company, active, onFollowChanged, onOpenCompany, onOpenJob, onScoreOpened, isMember = false }: MatchCompanyCardProps) {
+export default function MatchCompanyCard({ company, active, reminderAvailable, reminderTemplateId, onFollowChanged, onReminderChanged, onOpenCompany, onOpenJob, onScoreOpened }: MatchCompanyCardProps) {
   const [scoreOpen, setScoreOpen] = useState(false)
   const [logoFailed, setLogoFailed] = useState(false)
   const touch = useRef({ x: 0, y: 0, moved: false })
   const presentation = useMemo(() => buildMatchCardPresentation(company), [company])
-  const freshnessDate = formatCalendarDate(company.updatedAt) || formatCalendarDate(company.publishedAt || company.verifiedAt)
   const numericScore = presentation.showNumericScore ? Math.round(company.score) : null
-  const hasJudgments = Boolean(presentation.directionMatch || presentation.remoteCulture.length || presentation.ratingLabel)
+  const hasRating = company.rating !== null && Boolean(company.ratingSource)
+  const hasJudgments = Boolean(presentation.directionMatch || presentation.remoteCulture.length || hasRating)
   const hasOpportunity = Boolean(company.jobId && presentation.jobTitle)
   const scoreRows = presentation.scoreBreakdown
     ? [
@@ -43,7 +45,7 @@ export default function MatchCompanyCard({ company, active, onFollowChanged, onO
 
   const openScore = (event) => {
     event.stopPropagation()
-    if (!active) return
+    if (!active || touch.current.moved) return
     setScoreOpen(true)
     onScoreOpened(company)
   }
@@ -64,8 +66,9 @@ export default function MatchCompanyCard({ company, active, onFollowChanged, onO
       onTouchMove={(event) => {
         const point = (event as any).touches?.[0]
         if (!point) return
-        touch.current.moved = Math.abs(point.clientX - touch.current.x) > 12 || Math.abs(point.clientY - touch.current.y) > 12
+        touch.current.moved ||= Math.abs(point.clientX - touch.current.x) > 8 || Math.abs(point.clientY - touch.current.y) > 8
       }}
+      onTouchCancel={() => { touch.current.moved = true }}
       onClick={(event) => {
         if (touch.current.moved) {
           event.stopPropagation()
@@ -79,21 +82,24 @@ export default function MatchCompanyCard({ company, active, onFollowChanged, onO
           <View className='match-company-card__identity-main'>
             <View className='match-company-card__logo'>
               {company.logoUrl && !logoFailed
-                ? <Image src={company.logoUrl} mode='aspectFit' lazyLoad onError={() => setLogoFailed(true)} />
+                ? <Image src={company.logoUrl} mode='aspectFit' lazyLoad={false} onError={() => setLogoFailed(true)} />
                 : <Text>{companyInitial(company.companyName)}</Text>}
             </View>
             <Text className='match-company-card__name'>{company.companyName}</Text>
-            {presentation.meta ? <Text className='match-company-card__meta'>{presentation.meta}</Text> : null}
+            {(company.industry || company.headquarters) ? <View className='match-company-card__meta'>
+              {company.industry ? <Text>{company.industry}</Text> : null}
+              {company.industry && company.headquarters ? <Text className='match-company-card__meta-separator'>·</Text> : null}
+              {company.headquarters ? <Text>{company.headquarters}</Text> : null}
+            </View> : null}
           </View>
           {numericScore !== null ? <View
             className='match-company-card__score'
             aria-role='button'
             aria-label={`${numericScore}%匹配度，查看匹配度说明`}
-            onTouchStart={(event) => event.stopPropagation()}
             onClick={openScore}
           >
             <Text>{numericScore}%</Text>
-            <Text>匹配度</Text>
+            <Text>MATCH</Text>
           </View> : null}
         </View>
       </View>
@@ -111,27 +117,26 @@ export default function MatchCompanyCard({ company, active, onFollowChanged, onO
               <Text className='match-company-card__judgment-label'>远程协作文化</Text>
               <Text className='match-company-card__judgment-result'>{presentation.remoteCulture.join(' · ')}</Text>
             </View> : null}
-          {presentation.ratingLabel ? <View className='match-company-card__judgment'>
+          {hasRating ? <View className='match-company-card__judgment'>
               <Text className='match-company-card__judgment-label'>企业综合评分</Text>
-              <View className='match-company-card__rating-result' aria-label={`${presentation.ratingSource || '公开来源'}评分 ${presentation.ratingLabel}`}><MiniIcon name='starFilled' size={14} /><Text>{presentation.ratingLabel}</Text></View>
+              <View className='match-company-card__rating-result' aria-label={`${presentation.ratingSource}评分 ${company.rating?.toFixed(1)}`}><MiniIcon name='starFilled' size={14} /><Text>{company.rating?.toFixed(1)}</Text></View>
             </View> : null}
         </View> : null}
         {hasOpportunity ? <View
           className='match-company-card__opportunity'
           aria-role='button'
-          onTouchStart={(event) => event.stopPropagation()}
-          onClick={(event) => { event.stopPropagation(); if (company.jobId) onOpenJob(company) }}
+          onClick={(event) => { event.stopPropagation(); if (active && !touch.current.moved && company.jobId) onOpenJob(company) }}
         >
           <View className='match-company-card__opportunity-copy'>
             <Text>{presentation.jobTitle}</Text>
-            {presentation.jobLocation ? <Text className='match-company-card__opportunity-location'>{presentation.jobLocation}</Text> : null}
+            {presentation.jobLocation ? <View className='match-company-card__opportunity-location'><MiniIcon name='location' size={13} /><Text>{presentation.jobLocation}</Text></View> : null}
           </View>
-          <Text className='match-company-card__opportunity-apply'>去申请</Text>
+          <View className='match-company-card__opportunity-action'><Text>去申请</Text><MiniIcon name='chevronRight' size={15} /></View>
         </View> : null}
       </View>
 
-      <View className='match-company-card__footer'>
-        {active ? <CompanyFollowAction
+      <View className={`match-company-card__footer ${active ? '' : 'match-company-card__footer--inactive'}`}>
+        <CompanyFollowAction
           companyId={company.companyId}
           companyName={company.companyName}
           followed={company.isFollowed}
@@ -140,15 +145,14 @@ export default function MatchCompanyCard({ company, active, onFollowChanged, onO
           unfollowedLabel='关注企业'
           unfollowedIcon='plus'
           onChanged={(followed) => onFollowChanged(company.companyId, followed)}
-        /> : null}
-        <View
-          className='match-company-card__open'
-          aria-role='button'
-          aria-label={`查看 ${company.companyName} 企业详情`}
-          onTouchStart={(event) => event.stopPropagation()}
-          onClick={(event) => { event.stopPropagation(); onOpenCompany(company) }}
-        ><Text>查看企业详情</Text><MiniIcon name='chevronRight' size={15} /></View>
-        <Text className='match-company-card__freshness'>更新于{freshnessDate || '日期待确认'} · {isMember ? '会员日更中' : '非会员仅一次'}</Text>
+        />
+        {company.isFollowed ? <View className='match-company-card__reminder'><WechatReminderAction
+            companyId={company.companyId}
+            available={reminderAvailable}
+            templateId={reminderTemplateId}
+            enabled={Boolean(company.isSubscribed)}
+            onChanged={(enabled) => onReminderChanged(company.companyId, enabled)}
+          /></View> : null}
       </View>
     </View>
 

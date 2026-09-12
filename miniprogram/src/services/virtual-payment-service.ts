@@ -14,6 +14,8 @@ interface VirtualPaymentOrder {
   paymentId: string
   planId: string
   amountCents: number
+  refundedAmountCents?: number
+  refundStatus?: string | null
   currency: string
   status: 'pending' | 'completed' | 'cancelled' | 'failed' | 'refunded' | string
   createdAt?: string | null

@@ -66,3 +66,7 @@ export function clearMiniSession() {
 export function hasAuthenticatedSession(): boolean {
   return Boolean(getMiniSession()?.token && getMiniSession()?.userId)
 }
+
+export function careerWatchStorageKey(userId: string) {
+  return `haigoo-career-watch:${CLOUD_ENV_ID || 'default'}:${userId}`
+}

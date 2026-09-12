@@ -8,6 +8,7 @@ interface ApiRequestOptions {
   data?: Record<string, unknown>
   authenticated?: boolean
   timeout?: number
+  suppressErrorLog?: boolean
 }
 
 interface TaroRequestFailure {
@@ -94,6 +95,7 @@ export async function requestJson<T>(
   } catch {
     throw new ApiRequestError('当前服务尚未就绪，请稍后重试')
   }
+  const sessionToken = options.authenticated ? getMiniSessionToken() : ''
   let response
   const timeout = options.timeout || 30000
   const requestId = createRequestKey('mini-api')
@@ -113,8 +115,8 @@ export async function requestJson<T>(
           'X-WX-SERVICE': CLOUD_SERVICE_NAME,
           'X-Haigoo-Request-Id': requestId,
           ...(options.method && options.method !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
-          ...(options.authenticated && getMiniSessionToken()
-            ? { 'X-Haigoo-Mini-Session': getMiniSessionToken() }
+          ...(sessionToken
+            ? { 'X-Haigoo-Mini-Session': sessionToken }
             : {})
         }
       }),
@@ -151,18 +153,23 @@ export async function requestJson<T>(
       : {}
     const upstreamMessage = String(payload.error || payload.message || '')
     const message = getResponseFailureMessage(response.statusCode, upstreamMessage)
-    console.error('[Haigoo API] response failed', {
-      path,
-      env: CLOUD_ENV_ID,
-      service: CLOUD_SERVICE_NAME,
-      requestId,
-      statusCode: response.statusCode,
-      code: String(payload.code || '')
-    })
-    if (response.statusCode === 401) clearMiniSession()
+    if (!options.suppressErrorLog) {
+      console.error('[Haigoo API] response failed', {
+        path,
+        env: CLOUD_ENV_ID,
+        service: CLOUD_SERVICE_NAME,
+        requestId,
+        statusCode: response.statusCode,
+        code: String(payload.code || '')
+      })
+    }
+    if (response.statusCode === 401 && sessionToken && sessionToken === getMiniSessionToken()) clearMiniSession()
     throw new ApiRequestError(message, response.statusCode, payload)
   }
 
+  if (options.authenticated && sessionToken !== getMiniSessionToken()) {
+    throw new ApiRequestError('账号状态已变化，请重新加载', 409, { code: 'SESSION_CHANGED' })
+  }
   return parseJsonResponse(response.data)
 }
 

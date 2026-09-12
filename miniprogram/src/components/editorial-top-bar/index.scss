@@ -17,6 +17,8 @@
 .editorial-topbar__brand {
   display: flex;
   min-width: 0;
+  flex: 1;
+  overflow: hidden;
   align-items: baseline;
   gap: 12px;
   white-space: nowrap;
@@ -41,6 +43,7 @@
   position: relative;
   display: flex;
   width: 44PX;
+  flex: 0 0 44PX;
   height: 44PX;
   margin-left: auto;
   padding: 0;

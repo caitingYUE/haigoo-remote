@@ -1,7 +1,7 @@
 .company-detail {
   min-height: 100vh;
   min-height: 100dvh;
-  padding: 0 0 calc(166px + env(safe-area-inset-bottom));
+  padding: 0 0 calc(280px + env(safe-area-inset-bottom));
   background: #f7f7f7;
 }
 
@@ -18,23 +18,23 @@
   overflow: hidden;
   border: 1PX solid #e2e3e7;
   border-radius: 24px;
-  background: #f4f5ff;
-  color: #4960e8;
+  background: var(--color-surface-soft);
+  color: var(--color-muted);
 }
+.company-detail__mark > text { font-size: 40px; font-weight: 600; }
 .company-detail__mark image { width: 82%; height: 82%; }
 .company-detail__identity { min-width: 0; flex: 1; }
-.company-detail__identity > view:first-child { display: flex; min-width: 0; align-items: center; gap: 12px; }
-.company-detail__identity > view:first-child > text:first-child {
+.company-detail__name-row { display: flex; min-width: 0; align-items: center; flex-wrap: wrap; gap: 12px; }
+.company-detail__name {
   min-width: 0;
   overflow: hidden;
   color: #111;
   font-size: 44px;
-  font-weight: 560;
+  font-weight: 600;
   line-height: 54px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
-.company-detail__identity > view:first-child > text:last-child {
+.company-detail__badge {
   max-width: 128px;
   padding: 6px 10px;
   overflow: hidden;
@@ -46,7 +46,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.company-detail__identity > text {
+.company-detail__industry {
   display: block;
   margin-top: 14px;
   overflow: hidden;
@@ -56,8 +56,8 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.company-detail__identity > view:last-child { display: flex; margin-top: 12px; align-items: center; gap: 9px; color: #aaa; }
-.company-detail__identity > view:last-child text { overflow: hidden; font-size: 25px; line-height: 36px; text-overflow: ellipsis; white-space: nowrap; }
+.company-detail__location { display: flex; margin-top: 12px; align-items: center; gap: 9px; color: #aaa; }
+.company-detail__location text { overflow: hidden; font-size: 25px; line-height: 36px; text-overflow: ellipsis; white-space: nowrap; }
 .company-detail__metrics { display: grid; margin-top: 42px; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .company-detail__metrics > view {
   display: flex;
@@ -98,10 +98,9 @@
   content: '';
   transform: translateX(50%);
 }
-.company-detail__content { padding: 36px 32px 40px; }
+.company-detail__content { display: flex; flex-direction: column; gap: 28px; padding: 32px 32px 40px; }
 .company-detail__section {
-  margin-bottom: 32px;
-  padding: 38px 36px;
+  padding: 32px;
   overflow: hidden;
   border: 1PX solid #e2e2e2;
   border-radius: 24px;
@@ -112,28 +111,29 @@
 .company-detail__tags { display: flex; margin-top: 28px; flex-wrap: wrap; gap: 14px; }
 .company-detail__tags text { display: inline-flex; min-height: 52px; padding: 0 18px; align-items: center; border-radius: 11px; background: #fff1eb; color: #ed6038; font-size: 22px; line-height: 30px; }
 .company-detail__section-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
-.company-detail__section-heading > text:last-child { color: #f05e34; font-size: 24px; }
+.company-detail__view-all { display: flex; min-height: 88px; margin: -24px 0; align-items: center; color: var(--color-brand-strong); font-size: 24px; }
 .company-detail__jobs-heading { display: flex; align-items: flex-start; flex-direction: column; gap: 8px; }
-.company-detail__jobs-source { color: #999; font-size: 22px; line-height: 32px; }
-.company-detail__jobs,
+.company-detail__jobs { margin-top: 20px; }
+.company-detail__popular { padding: 28px 30px; }
+.company-detail__popular .company-detail__eyebrow { font-size: 24px; font-weight: 400; }
 .company-detail__contacts { margin-top: 24px; }
-.company-job,
-.company-contact { display: flex; min-height: 136px; align-items: center; gap: 22px; border-top: 1PX solid #ededed; }
-.company-job:first-child,
-.company-contact:first-child { border-top: 0; }
-.company-job__icon { display: flex; width: 72px; height: 72px; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 16px; background: #fff1eb; color: #f05e34; }
-.company-job__copy,
-.company-contact > view { min-width: 0; flex: 1; }
-.company-job__copy text,
-.company-contact text { display: block; }
-.company-job__copy text:first-child,
-.company-contact view text:first-child { overflow: hidden; color: #111; font-size: 29px; font-weight: 540; line-height: 40px; text-overflow: ellipsis; white-space: nowrap; }
-.company-job__copy > text:nth-child(2),
-.company-contact view text:last-child { margin-top: 7px; overflow: hidden; color: #8f8f8f; font-size: 23px; line-height: 32px; text-overflow: ellipsis; white-space: nowrap; }
-.company-job__salary { max-width: 184px; flex-shrink: 0; overflow: hidden; color: #111; font-size: 24px; text-overflow: ellipsis; white-space: nowrap; }
+.company-job { display: flex; min-height: 88px; padding: 22px 0; align-items: center; gap: 16px; border-top: 1PX solid #ededed; }
+.company-job:first-child { padding-top: 0; border-top: 0; }
+.company-job:last-child { padding-bottom: 0; }
+.company-job__copy { min-width: 0; flex: 1; }
+.company-job__heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; }
+.company-job__title { min-width: 0; flex: 1 1 240px; color: #111; font-size: 28px; font-weight: 500; line-height: 40px; overflow-wrap: anywhere; }
+.company-job__salary { max-width: 100%; color: #111; font-size: 24px; line-height: 36px; overflow-wrap: anywhere; }
+.company-job__facts, .company-job__date { display: block; margin-top: 6px; color: var(--color-muted); font-size: 22px; line-height: 32px; overflow-wrap: anywhere; }
 .company-job > .mini-icon { flex: 0 0 auto; color: #aaa; }
+.company-contact { display: flex; min-height: 136px; align-items: center; gap: 22px; border-top: 1PX solid #ededed; }
+.company-contact:first-child { border-top: 0; }
+.company-contact__identity { min-width: 0; flex: 1; }
+.company-contact__identity text { display: block; }
+.company-contact__identity text:first-child { overflow: hidden; color: #111; font-size: 29px; font-weight: 540; line-height: 40px; overflow-wrap: anywhere; white-space: normal; }
+.company-contact__identity text:last-child { margin-top: 7px; overflow: hidden; color: #8f8f8f; font-size: 23px; line-height: 32px; overflow-wrap: anywhere; white-space: normal; }
 .company-detail__empty-copy { display: block; margin-top: 24px; color: #aaa; font-size: 22px; line-height: 34px; }
-.company-detail__contact-card { margin-bottom: 32px; padding: 32px 36px; border: 1PX solid #e2e2e2; border-radius: 24px; background: #fff; }
+.company-detail__contact-card { padding: 32px 36px; border: 1PX solid #e2e2e2; border-radius: 24px; background: #fff; }
 .company-detail__contact-title { display: flex; align-items: center; gap: 12px; color: #111; }
 .company-detail__contact-title text { font-size: 29px; font-weight: 540; }
 .company-detail__contact-title .company-detail__member-badge { display: inline-flex; min-height: 36px; padding: 0 11px; align-items: center; border-radius: 8px; background: #fff1eb; color: #f05e34; font-size: 18px; font-weight: 600; line-height: 1; }
@@ -144,8 +144,16 @@
 .company-detail__contact-card--locked > view:nth-child(2) text:first-child { color: #111; font-size: 29px; font-weight: 520; }
 .company-detail__contact-card--locked > view:nth-child(2) text:last-child { margin-top: 8px; overflow: hidden; color: #999; font-size: 23px; line-height: 32px; text-overflow: ellipsis; white-space: nowrap; }
 .company-detail__contact-card--locked > text { flex-shrink: 0; color: #f05e34; font-size: 24px; }
-.company-contact > text { display: flex; min-height: 60px; padding: 0 18px; align-items: center; justify-content: center; flex-shrink: 0; border-radius: 10px; background: #fff1eb; color: #f05e34; font-size: 22px; }
-.company-detail__culture-facts { display: flex; margin-bottom: 32px; flex-direction: column; gap: 18px; }
+.company-detail__contact-card--preview { padding-bottom: 24px; }
+.company-contact--preview > .mini-icon { flex-shrink: 0; color: #aaa; }
+.company-contact__channels { display: flex; flex: none; gap: 16px; align-items: center; }
+.company-contact__channel { display: flex; min-width: 52px; align-items: center; gap: 4px; color: var(--color-muted); }
+.company-contact__channel.is-available { color: var(--color-brand-strong); }
+.company-contact__linkedin { display: flex; width: 30px; height: 30px; align-items: center; justify-content: center; border: 1PX solid currentColor; border-radius: 4px; font-size: 23px; font-weight: 700; line-height: 1; }
+.company-detail__copy-contacts { display: flex; min-height: 44PX; margin-top: 12px; align-items: center; justify-content: center; gap: 12px; border-radius: 14px; background: var(--color-brand-soft); color: var(--color-brand-strong); font-size: 24px; }
+.company-detail__unlock { display: flex; min-height: 88px; margin-top: 20px; align-items: center; justify-content: center; border-radius: 16px; background: #111; color: #fff; font-size: 24px; font-weight: 600; }
+.company-detail__contact-error { display: block; color: #777; font-size: 24px; line-height: 36px; }
+.company-detail__culture-facts { display: flex; flex-direction: column; gap: 18px; }
 .company-detail__culture-facts > view { display: flex; min-height: 108px; padding: 0 36px; align-items: center; justify-content: space-between; gap: 24px; border: 1PX solid #e2e2e2; border-radius: 20px; background: #fff; }
 .company-detail__culture-facts text:first-child { color: #8f8f8f; font-size: 26px; }
 .company-detail__culture-facts text:last-child { overflow: hidden; color: #111; font-size: 29px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
@@ -161,20 +169,22 @@
   bottom: 0;
   left: 0;
   display: grid;
-  min-height: 148px;
   padding: 20px 32px calc(20px + env(safe-area-inset-bottom));
   align-items: center;
   border-top: 1PX solid #e5e5e5;
-  background: rgba(255, 255, 255, .98);
+  background: #fff;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
 }
-.company-detail__subscribe,
-.company-detail__website { display: flex; min-height: 92px; align-items: center; justify-content: center; border-radius: 20px; font-size: 26px; font-weight: 500; }
-.company-detail__subscribe { border: 2PX solid #f05e34; background: #fff; color: #f05e34; }
-.company-detail__subscribe.is-busy { opacity: .62; }
+.company-detail__follow-control,
+.company-detail__reminder-control { min-width: 0; }
+.company-detail__follow-control .company-follow-action,
+.company-detail__reminder-control .wechat-reminder-action,
+.company-detail__website { display: flex; min-height: 92px; align-items: center; justify-content: center; gap: 10px; border-radius: 20px; font-size: 26px; font-weight: 500; }
+.company-detail__follow-control .company-follow-action { padding: 0 16px; }
+.company-detail__reminder-control .wechat-reminder-action { padding: 0 16px; border: 1PX solid var(--color-brand-line); background: #fff; color: var(--color-brand-dark); }
 .company-detail__website { background: #111; color: #fff; }
-.company-detail__footer > view:only-child { grid-column: 1 / -1; }
+.company-detail__footer > view:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 @media (max-width: 340px) {
   .company-detail__summary,
@@ -183,5 +193,8 @@
   .company-detail__mark { width: 106px; height: 106px; }
   .company-detail__metrics { gap: 8px; }
   .company-detail__metrics text:nth-child(2) { font-size: 19px; }
-  .company-job__salary { display: none; }
+  .company-contact { align-items: flex-start; flex-direction: column; padding: 22px 0; gap: 14px; }
+  .company-contact__channels { align-self: flex-start; }
+  .company-detail__footer { gap: 14px; }
+  .company-detail__footer button, .company-detail__website { font-size: 23px; }
 }

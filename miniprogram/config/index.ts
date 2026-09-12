@@ -43,10 +43,6 @@ export default defineConfig<'webpack5'>(async (merge) => {
     copy: {
       patterns: [
         {
-          from: path.resolve(__dirname, '../assets/home-hero-bg.webp'),
-          to: path.resolve(__dirname, `../${outputRoot}/assets/home-hero-bg.webp`)
-        },
-        {
           from: path.resolve(__dirname, '../../public/assets/brandlogo.png'),
           to: path.resolve(__dirname, `../${outputRoot}/assets/haigoo-brand-logo.png`)
         },

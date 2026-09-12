@@ -11,7 +11,8 @@ import TopicScroller from '../../components/topic-scroller'
 import { fetchGrowthNotes } from '../../services/content-service'
 import type { GrowthNote } from '../../types'
 import useMiniShare from '../../hooks/use-mini-share'
-import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
+import { careerWatchStorageKey, getMiniUser, hasAuthenticatedSession } from '../../services/session'
+import useRetainedResource from '../../hooks/use-retained-resource'
 import './index.scss'
 
 const difficultyLabels: Record<string, string> = { entry: '入门', intermediate: '进阶', advanced: '深入' }
@@ -22,21 +23,17 @@ const noteMetadata = (note: GrowthNote) => [
 ].filter(Boolean).join(' · ')
 
 export default function GrowthPage() {
-  const [notes, setNotes] = useState<GrowthNote[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const { data, loading, refreshing, error, load: loadResource } = useRetainedResource<GrowthNote[]>('growth-notes')
+  const notes = data || []
   const [search, setSearch] = useState('')
   const [topic, setTopic] = useState('')
   const [unread, setUnread] = useState(0)
   useMiniShare('Haigoo 职业笔记｜远程工作的实用方法', '/pages/growth/index')
-  const load = useCallback(async (force = false) => {
-    setLoading(true); setError('')
-    try { setNotes(await fetchGrowthNotes(force)) } catch (loadError) { setError(loadError instanceof Error ? loadError.message : '笔记加载失败') } finally { setLoading(false) }
-  }, [])
+  const load = useCallback((force = false) => loadResource('growth-notes', () => fetchGrowthNotes(force), force), [loadResource])
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/growth/index')
     const userId = getMiniUser()?.userId
-    if (userId) setUnread(Number(Taro.getStorageSync(`haigoo-career-watch:${userId}`)?.followedUpdates?.length || 0))
+    setUnread(userId ? Number(Taro.getStorageSync(careerWatchStorageKey(userId))?.followedUpdates?.length || 0) : 0)
     void load()
   })
   useEffect(() => {
@@ -83,11 +80,17 @@ export default function GrowthPage() {
       </View>
       <EditorialSearch value={search} placeholder='搜索笔记、主题或关键词' onInput={setSearch} />
       {topics.length ? <TopicScroller activeKey={topic && !topics.slice(0, 4).includes(topic) ? '__more' : topic} onSelect={(key) => key === '__more' ? void chooseMoreTopic() : setTopic(key)} items={[{ key: '', label: '全部' }, ...topics.slice(0, 4).map((item) => ({ key: item, label: item })), ...(topics.length > 4 ? [{ key: '__more', label: '更多' }] : [])]} /> : null}
-      <View className='growth-meta'><Text>{loading ? '正在加载笔记' : `${visibleNotes.length} 篇笔记`}</Text><Text>Haigoo 职业研究</Text></View>
+      <View className='growth-meta'><Text>{notes.length ? `${visibleNotes.length} 篇笔记${refreshing ? ' · 正在更新' : ''}` : loading ? '正在加载笔记' : '0 篇笔记'}</Text><Text>Haigoo 职业研究</Text></View>
       {error ? <EditorialState title='笔记暂时无法加载' copy={error} actionLabel='重新加载' onAction={() => void load(true)} /> : null}
-      {!loading && !error && featured ? <View aria-role='button' aria-label={`阅读 ${featured.titleZh || featured.title}`} className='growth-featured' hoverClass='mini-action--pressed' onClick={() => open(featured)}><View className='growth-featured__media'><Image src={featured.coverUrl!} mode='aspectFill' lazyLoad /><View className='growth-featured__shade' /><Text className='growth-featured__category'>{featured.category}</Text><Text className='growth-featured__title'>{featured.titleZh || featured.title}</Text></View><View className='growth-featured__body'><View className='growth-featured__meta'><Text>{noteMetadata(featured)}</Text>{!featured.unlocked ? <Text>会员</Text> : null}</View></View></View> : null}
+      {!loading && !error && featured ? <View aria-role='button' aria-label={`阅读 ${featured.titleZh || featured.title}`} className='growth-featured' hoverClass='mini-action--pressed' onClick={() => open(featured)}>
+        <View className='growth-featured__media'><Image src={featured.coverUrl!} mode='aspectFill' lazyLoad /></View>
+        <View className='growth-featured__body'>
+          <Text className='growth-featured__title'>{featured.titleZh || featured.title}</Text>
+          <View className='growth-featured__meta'><Text>{noteMetadata(featured)}</Text>{!featured.unlocked ? <Text className='growth-featured__access'>会员</Text> : null}</View>
+        </View>
+      </View> : null}
       <View className='growth-list'>
-        {loading ? <ContentSkeleton rows={4} /> : null}
+        {loading && notes.length === 0 ? <ContentSkeleton rows={4} /> : null}
         {!loading && !error && visibleNotes.length === 0 ? <View className='growth-empty'><Text>没有找到相关笔记</Text><Text onClick={() => { setSearch(''); setTopic('') }}>清除筛选</Text></View> : null}
         {listNotes.map((note) => (
           <EditorialRow className={`growth-card ${note.coverUrl ? '' : 'growth-card--no-cover'}`} key={note.id} label={`阅读 ${note.titleZh || note.title}`} onClick={() => open(note)}>

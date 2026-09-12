@@ -1,5 +1,5 @@
 import Taro from '@tarojs/taro'
-import { getMiniUser } from './session'
+import { careerWatchStorageKey, getMiniUser } from './session'
 
 export const COMPANY_FOLLOW_CHANGE_EVENT = 'haigoo:company-follow-change'
 
@@ -12,7 +12,7 @@ export interface CompanyFollowChange {
 export function emitCompanyFollowChange(change: CompanyFollowChange) {
   const userId = getMiniUser()?.userId
   if (userId) {
-    const key = `haigoo-career-watch:${userId}`
+    const key = careerWatchStorageKey(userId)
     try {
       const cached = Taro.getStorageSync(key)
       if (cached && Array.isArray(cached.recommendations)) {

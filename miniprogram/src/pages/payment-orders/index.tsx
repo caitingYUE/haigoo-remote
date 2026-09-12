@@ -8,16 +8,18 @@ import {
   useDidShow,
   usePullDownRefresh
 } from '@tarojs/taro'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import MiniIcon from '../../components/mini-icon'
 import {
   getVirtualPaymentOrders,
   type VirtualPaymentOrder
 } from '../../services/virtual-payment-service'
 import { hasAuthenticatedSession } from '../../services/session'
+import { miniContentScope } from '../../hooks/use-retained-resource'
 import './index.scss'
 
 const PAGE_SIZE = 20
+const RETAINED_TTL_MS = 60000
 
 const PLAN_NAMES: Record<string, string> = {
   mini_club_quarter_2026: '季度会员',
@@ -44,6 +46,7 @@ function formatAmount(amountCents: number, currency: string) {
 
 function getOrderStatus(order: VirtualPaymentOrder) {
   if (order.status === 'completed') return { key: 'completed', label: '支付成功' }
+  if (order.status === 'partially_refunded') return { key: 'refunded', label: '部分退款' }
   if (order.status === 'refunded') return { key: 'refunded', label: '已退款' }
   if (order.status === 'cancelled') return { key: 'cancelled', label: '已取消' }
   if (order.status === 'failed') return { key: 'failed', label: '支付失败' }
@@ -62,9 +65,23 @@ export default function PaymentOrdersPage() {
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const lastScope = useRef('')
+  const lastLoadedAt = useRef(0)
+  const hasLoaded = useRef(false)
+  const loadSequence = useRef(0)
   const authenticated = hasAuthenticatedSession()
 
-  const loadOrders = useCallback(async (requestedPage = 1, append = false) => {
+  const loadOrders = useCallback(async (requestedPage = 1, append = false, preserve = false) => {
+    const scope = miniContentScope()
+    const sequence = ++loadSequence.current
+    if (lastScope.current !== scope) {
+      lastScope.current = scope
+      lastLoadedAt.current = 0
+      hasLoaded.current = false
+      setOrders([])
+      setTotal(0)
+      setHasMore(false)
+    }
     if (!hasAuthenticatedSession()) {
       setOrders([])
       setTotal(0)
@@ -72,24 +89,34 @@ export default function PaymentOrdersPage() {
       setLoading(false)
       return
     }
-    append ? setLoadingMore(true) : setLoading(true)
+    append ? setLoadingMore(true) : (!preserve || !hasLoaded.current) && setLoading(true)
     setError('')
     try {
       const result = await getVirtualPaymentOrders(requestedPage, PAGE_SIZE)
+      if (sequence !== loadSequence.current || scope !== miniContentScope()) return
       setOrders((current) => append ? [...current, ...result.orders] : result.orders)
       setPage(result.page)
       setTotal(result.total)
       setHasMore(result.hasMore)
+      hasLoaded.current = true
+      lastLoadedAt.current = Date.now()
     } catch (loadError) {
+      if (sequence !== loadSequence.current) return
       setError(loadError instanceof Error ? loadError.message : '订单加载失败，请稍后重试')
     } finally {
-      setLoading(false)
-      setLoadingMore(false)
+      if (sequence === loadSequence.current) {
+        setLoading(false)
+        setLoadingMore(false)
+      }
     }
   }, [])
 
-  useDidShow(() => { void loadOrders(1, false) })
-  usePullDownRefresh(() => loadOrders(1, false).finally(() => stopPullDownRefresh()))
+  useDidShow(() => {
+    const sameScope = lastScope.current === miniContentScope()
+    if (sameScope && hasLoaded.current && Date.now() - lastLoadedAt.current < RETAINED_TTL_MS) return
+    void loadOrders(1, false, sameScope && hasLoaded.current)
+  })
+  usePullDownRefresh(() => loadOrders(1, false, hasLoaded.current).finally(() => stopPullDownRefresh()))
 
   const copyOrderId = async (paymentId: string) => {
     try {
@@ -163,6 +190,8 @@ export default function PaymentOrdersPage() {
                       <Text>创建时间</Text>
                       <Text>{formatDate(order.createdAt)}</Text>
                     </View>
+                    {Number(order.refundedAmountCents || 0) > 0 ? <View className='payment-order-card__detail'><Text>已退金额</Text><Text>{formatAmount(order.refundedAmountCents || 0, order.currency)}</Text></View> : null}
+                    {order.refundStatus === 'REVIEW_REQUIRED' ? <View className='payment-order-card__detail'><Text>权益状态</Text><Text>客服核验中</Text></View> : null}
                     {order.paidAt ? (
                       <View className='payment-order-card__detail'>
                         <Text>支付时间</Text>

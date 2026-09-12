@@ -6,12 +6,17 @@ import type {
   CareerRetentionPolicy
 } from '../types'
 import Taro from '@tarojs/taro'
-import { createRequestKey, requestJson } from './api-client'
+import { ApiRequestError, createRequestKey, requestJson } from './api-client'
 import { isRenderableImageSource, resolveCloudFileUrls } from './cloud-asset-service'
 import { getMiniUser } from './session'
 import { normalizeComparableText } from '../utils/runtime-compat'
 
 export const CAREER_PRIVACY_VERSION = '2026-08-14-match-v1'
+
+// Older local/preview Cloud Run revisions do not expose the visit-refresh
+// route yet. Keep the client usable during a rolling deployment and avoid
+// repeating a known 404 on every tab return.
+let careerWatchRefreshUnsupported = false
 
 export function fetchCareerMatchState() {
   return requestJson<CareerMatchState>('/mini/match', { authenticated: true })
@@ -51,6 +56,19 @@ export function setMatchNotifications(companyId: string, enabled: boolean, templ
   return requestJson<{ success: true; enabled: boolean; templateStatus: string }>(`/mini/match/follows/${encodeURIComponent(companyId)}/notifications`, {
     method: 'POST', authenticated: true, data: { enabled, templateStatus }
   })
+}
+
+export interface CompanyFollowSummary {
+  company_id: string
+  name: string
+  industry: string
+  logoFileId?: string
+  logoUrl?: string
+  openJobCount: number
+  openRoleCategories: string[]
+  followedAt: string | null
+  wechat_enabled: boolean
+  wechat_template_status: string
 }
 
 export function parseCareerResume(filename: string, fileBase64: string) {
@@ -270,7 +288,7 @@ export interface CareerWatchResponse {
   followedUpdates: Array<{ inboxId: string; companyId: string; companyName: string; eventType: string; hasPublicOpportunity: boolean; occurredAt: string; status: string }>
   generatedAt: string
   snapshotId: string
-  validUntil: string
+  validUntil: string | null
   source?: 'empty' | 'cached' | 'recomputed' | 'stale'
   stale?: boolean
   emptyReason: 'watch_not_configured' | 'strict_filters' | 'no_role_update' | null
@@ -285,7 +303,7 @@ function arrayValue<T>(value: unknown): T[] {
 
 function validIsoValue(value: unknown) {
   const source = String(value || '')
-  return Number.isFinite(new Date(source).getTime()) ? source : new Date().toISOString()
+  return Number.isFinite(new Date(source).getTime()) ? source : ''
 }
 
 export function normalizeCareerWatchResponse(value: unknown): CareerWatchResponse {
@@ -362,44 +380,49 @@ export function normalizeCareerWatchResponse(value: unknown): CareerWatchRespons
     followedUpdates: arrayValue<CareerWatchResponse['followedUpdates'][number]>(source.followedUpdates),
     generatedAt,
     snapshotId: String(source.snapshotId || `${profile?.version || 0}:${generatedAt}`),
-    validUntil: Number.isFinite(new Date(String(source.validUntil || '')).getTime()) ? String(source.validUntil) : '1970-01-01T00:00:00.000Z',
+    validUntil: matchState === 'fixed_free' ? null : Number.isFinite(new Date(String(source.validUntil || '')).getTime()) ? String(source.validUntil) : '1970-01-01T00:00:00.000Z',
     emptyReason
   }
 }
 
 export function isCareerWatchCacheValid(response: CareerWatchResponse, now = Date.now()) {
-  const expiresAt = new Date(response.validUntil).getTime()
+  if (response.matchState === 'fixed_free') return response.recommendations.length > 0
+  const expiresAt = new Date(response.validUntil || '').getTime()
   return response.matchState !== 'unused' && Number.isFinite(expiresAt) && expiresAt > now
 }
 
 async function hydrateCareerWatch(value: unknown) {
   const response = normalizeCareerWatchResponse(value)
-  const needsCompanyFacts = response.recommendations.some((company) => !company.headquarters || company.rating === null)
-  const [urls, directory] = await Promise.all([
-    resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId)),
-    needsCompanyFacts
-      ? requestJson<{ companies?: Array<{ id?: string; companyId?: string; address?: string; rating?: number | null; ratingSource?: string }> }>('/mini/companies?page=1&pageSize=12', { authenticated: true }).catch(() => ({ companies: [] }))
-      : Promise.resolve({ companies: [] })
-  ])
-  const facts = new Map((directory.companies || []).map((company) => [String(company.id || company.companyId || ''), company]))
+  // The feed already carries verified company facts. Missing facts are unknown;
+  // fetching a directory page per feed adds a waterfall and cannot fill every ID.
+  const urls = await resolveCloudFileUrls(response.recommendations.map((company) => company.logoFileId))
   return {
     ...response,
-    recommendations: response.recommendations.map((company) => {
-      const companyFacts = facts.get(company.companyId)
-      const rating = Number(companyFacts?.rating)
-      return {
-        ...company,
-        headquarters: company.headquarters || String(companyFacts?.address || '').trim(),
-        rating: company.rating !== null ? company.rating : Number.isFinite(rating) && rating > 0 && rating <= 5 ? rating : null,
-        ratingSource: company.ratingSource || String(companyFacts?.ratingSource || '').trim(),
-        logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
-      }
-    })
+    recommendations: response.recommendations.map((company) => ({
+      ...company,
+      logoUrl: urls.get(company.logoFileId || '') || (isRenderableImageSource(company.logoUrl) ? company.logoUrl : '') || (isRenderableImageSource(company.logoFileId) ? company.logoFileId : '')
+    }))
   }
 }
 
-export async function fetchCareerWatch() {
-  return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
+export async function fetchCareerWatch(refreshKey = '') {
+  if (!refreshKey || careerWatchRefreshUnsupported) {
+    return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
+  }
+  try {
+    return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch/refresh', {
+      authenticated: true,
+      method: 'POST',
+      data: { refreshKey },
+      suppressErrorLog: true
+    }))
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.statusCode === 404) {
+      careerWatchRefreshUnsupported = true
+      return hydrateCareerWatch(await requestJson<unknown>('/mini/career-watch', { authenticated: true }))
+    }
+    throw error
+  }
 }
 
 export function fetchCareerWatchOptions() {
@@ -424,10 +447,18 @@ export function setCareerWatchNotifications(enabled: boolean, templateStatus: Wa
   })
 }
 
-export function fetchCompanyFollows() {
-  return requestJson<{ success: true; follows: Array<{ company_id: string; name: string; industry: string; wechat_enabled?: boolean; wechat_template_status?: string }> }>('/mini/match/follows', {
+export async function fetchCompanyFollows() {
+  const response = await requestJson<{ success: true; follows: CompanyFollowSummary[] }>('/mini/match/follows', {
     authenticated: true
   })
+  const urls = await resolveCloudFileUrls(response.follows.flatMap((company) => [company.logoFileId, company.logoUrl]))
+  return {
+    ...response,
+    follows: response.follows.map((company) => ({
+      ...company,
+      logoUrl: urls.get(company.logoFileId || '') || urls.get(company.logoUrl || '') || ''
+    }))
+  }
 }
 
 export function markCareerWatchUpdatesRead(inboxIds: string[]) {

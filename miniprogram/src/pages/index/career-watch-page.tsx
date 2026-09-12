@@ -16,20 +16,24 @@ import {
 } from '../../services/career-match-service'
 import type { CareerWatchResponse, WatchFeedItem, WatchFilterOptions, WatchPreferenceKey, WatchProfile, WatchRoleFamily } from '../../services/career-match-service'
 import { trackMiniEvent } from '../../services/analytics-service'
-import { loginWithWechat } from '../../services/mini-auth-service'
-import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
+import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
+import { careerWatchStorageKey, getMiniUser, hasAuthenticatedSession } from '../../services/session'
+import { createRequestKey } from '../../services/api-client'
+import { miniContentScope } from '../../hooks/use-retained-resource'
 import useMiniShare from '../../hooks/use-mini-share'
 import { matchDeckStorageKey, wrapDeckIndex } from '../../utils/match-deck'
-import heroImage from '../../../assets/home-hero-bg.webp'
+import { formatCalendarDate } from '../../utils/runtime-compat'
+// JPEG is derived from home-hero-bg.webp for native image decoding across devices.
+import heroImage from '../../../assets/home-hero-bg.jpg'
 
 type WatchStep = 'loading' | 'start' | 'setup' | 'feed' | 'error'
 type WatchDraft = Omit<WatchProfile, 'profileId' | 'updatedAt' | 'sourcePlatform' | 'version' | 'inAppEnabled' | 'wechatEnabled' | 'wechatTemplateStatus'> & { version?: number }
 type RoleOption = { value: string; label: string; families: WatchRoleFamily[] }
 
 const START_FEATURES = [
-  '用真实企业与岗位信息解释推荐',
-  '关注企业，持续接收信息更新',
-  '掌上笔记，随时提升远程技能。'
+  '经过审核的真实企业与远程岗位信息',
+  '关注企业，及时接收岗位更新提醒',
+  '掌上笔记，随时随地提升远程技能'
 ]
 
 function emptyDraft(): WatchDraft {
@@ -40,12 +44,37 @@ function emptyDraft(): WatchDraft {
   }
 }
 
+function draftFromWatch(watch: CareerWatchResponse | null): WatchDraft {
+  const profile = watch?.profile
+  return profile ? {
+    sourceMode: profile.sourceMode,
+    roleFamilies: profile.roleFamilies,
+    customRoleTerms: profile.customRoleTerms,
+    companyPreferences: profile.companyPreferences,
+    activePreferenceKeys: profile.activePreferenceKeys,
+    toleranceMode: profile.toleranceMode,
+    status: profile.status,
+    resumeId: profile.resumeId,
+    careerProfileId: profile.careerProfileId,
+    version: profile.version
+  } : emptyDraft()
+}
+
+function readValidCachedWatch(): CareerWatchResponse | null {
+  const user = getMiniUser()
+  if (!user?.userId || !hasAuthenticatedSession()) return null
+  const cached = normalizeCareerWatchResponse(Taro.getStorageSync(careerWatchStorageKey(user.userId)))
+  const activeMember = Boolean(user.isMember && (!user.memberExpireAt || Date.parse(user.memberExpireAt) > Date.now()))
+  return cached && isCareerWatchCacheValid(cached) && cached.entitlements.isMember === activeMember ? cached : null
+}
+
 export default function CareerWatchPage() {
   const authenticated = hasAuthenticatedSession()
-  const [step, setStep] = useState<WatchStep>(authenticated ? 'loading' : 'start')
-  const [watch, setWatch] = useState<CareerWatchResponse | null>(null)
+  const initialWatch = useMemo(() => readValidCachedWatch(), [authenticated])
+  const [step, setStep] = useState<WatchStep>(initialWatch ? initialWatch.matchState === 'unused' ? 'start' : 'feed' : authenticated ? 'loading' : 'start')
+  const [watch, setWatch] = useState<CareerWatchResponse | null>(initialWatch)
   const [standaloneOptions, setStandaloneOptions] = useState<WatchFilterOptions | null>(null)
-  const [draft, setDraft] = useState<WatchDraft>(emptyDraft)
+  const [draft, setDraft] = useState<WatchDraft>(() => draftFromWatch(initialWatch))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [activeCompanyIndex, setActiveCompanyIndex] = useState(0)
@@ -53,6 +82,11 @@ export default function CareerWatchPage() {
   const [expandedRoleGroups, setExpandedRoleGroups] = useState<Record<string, boolean>>({})
   const [industriesExpanded, setIndustriesExpanded] = useState(false)
   const resumeFlowActive = useRef(false)
+  const loadSequence = useRef(0)
+  const pendingLoad = useRef('')
+  const lastScope = useRef('')
+  const visitKey = useRef('')
+  const hasEntered = useRef(false)
   useMiniShare('HaigooRemote｜找到更适合你的远程方向', '/pages/index/index')
 
   useEffect(() => {
@@ -63,22 +97,9 @@ export default function CareerWatchPage() {
   const applyResponse = useCallback((result: CareerWatchResponse) => {
     setWatch(result)
     const activeUser = getMiniUser()
-    if (activeUser?.userId) Taro.setStorageSync(`haigoo-career-watch:${activeUser.userId}`, result)
+    if (activeUser?.userId) Taro.setStorageSync(careerWatchStorageKey(activeUser.userId), result)
     Taro.eventCenter.trigger('haigoo:unread-change', result.followedUpdates.length)
-    if (result.profile) {
-      setDraft({
-        sourceMode: result.profile.sourceMode,
-        roleFamilies: result.profile.roleFamilies,
-        customRoleTerms: result.profile.customRoleTerms,
-        companyPreferences: result.profile.companyPreferences,
-        activePreferenceKeys: result.profile.activePreferenceKeys,
-        toleranceMode: result.profile.toleranceMode,
-        status: result.profile.status,
-        resumeId: result.profile.resumeId,
-        careerProfileId: result.profile.careerProfileId,
-        version: result.profile.version
-      })
-    }
+    if (result.profile) setDraft(draftFromWatch(result))
     setStep(result.matchState === 'unused' ? 'start' : 'feed')
   }, [])
 
@@ -92,58 +113,82 @@ export default function CareerWatchPage() {
     void trackMiniEvent('mini_match_card_view', { snapshot_id: watch.snapshotId, entity_id: watch.recommendations[nextIndex]?.companyId, card_index: nextIndex, presentation_version: 'immersive_v2_1' })
   }, [watch?.snapshotId])
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (newVisit = false) => {
+    const scope = miniContentScope()
+    if (lastScope.current !== scope) {
+      lastScope.current = scope
+      pendingLoad.current = ''
+      visitKey.current = ''
+      setWatch(null)
+      setDraft(emptyDraft)
+      setActiveCompanyIndex(0)
+      setStep(hasAuthenticatedSession() ? 'loading' : 'start')
+    }
     if (!hasAuthenticatedSession()) { setStep('start'); return }
+    if (pendingLoad.current === scope) return
+    if (newVisit || !visitKey.current) visitKey.current = createRequestKey('match-visit')
+    pendingLoad.current = scope
+    const sequence = ++loadSequence.current
     setError('')
-    const activeUser = getMiniUser()
-    const cached = activeUser?.userId
-      ? normalizeCareerWatchResponse(Taro.getStorageSync(`haigoo-career-watch:${activeUser.userId}`))
-      : null
-    const validCached = cached && isCareerWatchCacheValid(cached) ? cached : null
+    const validCached = readValidCachedWatch()
     if (validCached && !resumeFlowActive.current) applyResponse(validCached)
     try {
-      const result = await fetchCareerWatch()
-      if (resumeFlowActive.current) return
+      const result = await fetchCareerWatch(visitKey.current)
+      if (scope !== miniContentScope() || sequence !== loadSequence.current || resumeFlowActive.current) return
       applyResponse(result)
+      if (result.stale) setError('暂时无法更新，仍在展示上次结果。')
       void trackMiniEvent('mini_watch_feed_loaded', { result_count: result.recommendations.length, match_state: result.matchState })
     } catch (loadError) {
+      if (sequence !== loadSequence.current) return
+      if (scope !== miniContentScope()) {
+        setWatch(null)
+        setDraft(emptyDraft)
+        setStep(hasAuthenticatedSession() ? 'error' : 'start')
+        setError('账号状态已变化，请重新加载')
+        return
+      }
       if (validCached) {
         setError('暂时无法更新，仍在展示有效期内的上次结果。')
       } else {
         setError(loadError instanceof Error ? loadError.message : '方向结果暂时无法加载')
         setStep('error')
       }
+    } finally {
+      if (sequence === loadSequence.current) pendingLoad.current = ''
     }
   }, [applyResponse])
 
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/index/index')
     if (resumeFlowActive.current) return
-    const pendingIntent = String(Taro.getStorageSync('haigoo:match-intent') || '')
-    if (hasAuthenticatedSession() && pendingIntent) {
-      Taro.removeStorageSync('haigoo:match-intent')
-      if (pendingIntent === 'resume') void uploadResume()
-      else if (pendingIntent === 'save') void save(true)
-      else void load()
-      return
-    }
-    void load()
+    const previousScope = miniContentScope()
+    const authenticatedNow = hasAuthenticatedSession()
+    const refresh = authenticatedNow ? refreshWechatSessionIfStale().catch(() => null) : Promise.resolve(null)
+    void refresh.then(() => {
+      const pendingIntent = String(Taro.getStorageSync('haigoo:match-intent') || '')
+      if (hasAuthenticatedSession() && pendingIntent) {
+        Taro.removeStorageSync('haigoo:match-intent')
+        if (pendingIntent === 'resume') void uploadResume()
+        else if (pendingIntent === 'save') void save(true)
+        else void load(true)
+        return
+      }
+      const newVisit = !hasEntered.current
+      hasEntered.current = true
+      const cached = readValidCachedWatch()
+      if (!newVisit && previousScope === miniContentScope() && cached) {
+        applyResponse(cached)
+        return
+      }
+      void load(newVisit)
+    })
   })
 
   const ensureAccount = async (intent = '') => {
     if (hasAuthenticatedSession()) return true
-    try {
-      const session = await loginWithWechat()
-      if (!session.bound) {
-        if (intent) Taro.setStorageSync('haigoo:match-intent', intent)
-        navigateTo({ url: '/pages/account-bind/index' })
-        return false
-      }
-      return true
-    } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : '微信登录失败，请重试')
-      return false
-    }
+    if (intent) Taro.setStorageSync('haigoo:match-intent', intent)
+    await navigateTo({ url: '/pages/profile/index' })
+    return false
   }
 
   const startSetup = async () => {
@@ -281,14 +326,19 @@ export default function CareerWatchPage() {
       if (!result.confirm) return
     }
     if (!await ensureAccount('save')) return
+    const scope = miniContentScope()
+    ++loadSequence.current
+    pendingLoad.current = ''
     let shouldRetry = false
     setBusy(true); setError('')
     try {
       const result = await saveCareerWatch(draft)
+      if (scope !== miniContentScope()) return
       applyResponse(result)
       showToast({ title: result.matchState === 'fixed_free' ? '方向结果已生成' : '职业方向已更新', icon: 'success' })
       void trackMiniEvent('mini_watch_saved', { role_count: draft.roleFamilies.length, match_state: result.matchState })
     } catch (saveError: any) {
+      if (scope !== miniContentScope()) return
       let reconciled: CareerWatchResponse | null = null
       for (let attempt = 0; attempt < 3 && !reconciled; attempt += 1) {
         if (attempt) await new Promise((resolve) => setTimeout(resolve, attempt * 500))
@@ -300,6 +350,7 @@ export default function CareerWatchPage() {
           if (latest.matchState !== 'unused' && sameDirections) reconciled = latest
         } catch { /* Retry the authoritative state read. */ }
       }
+      if (scope !== miniContentScope()) return
       if (reconciled) {
         applyResponse(reconciled)
         showToast({ title: reconciled.matchState === 'fixed_free' ? '方向结果已生成' : '职业方向已更新', icon: 'success' })
@@ -327,6 +378,7 @@ export default function CareerWatchPage() {
     (draft.companyPreferences.industries || []).slice(0, 2).join('/'),
     draft.companyPreferences.teamSize ? filterOptions?.teamSizes.find((item) => item.value === draft.companyPreferences.teamSize)?.label : ''
   ].filter(Boolean).join(' · ')
+  const recentMatchDate = formatCalendarDate(watch?.generatedAt)
   const activeUser = getMiniUser()
   const updateCompanyState = (companyId: string, state: Partial<Pick<WatchFeedItem, 'isFollowed' | 'isSubscribed'>>) => setWatch((current) => current ? {
     ...current,
@@ -358,8 +410,19 @@ export default function CareerWatchPage() {
       presentation_version: 'immersive_v2_1'
     })
   }
+  const focusFirstSelectedRoleGroup = () => {
+    const selectedTerm = draft.customRoleTerms.find((term) => roleGroups.some((group) => group.options.some((option) => option.value === term)))
+    let groupIndex = selectedTerm
+      ? roleGroups.findIndex((group) => group.options.some((option) => option.value === selectedTerm))
+      : roleGroups.findIndex((group) => group.options.some((option) => option.families.some((family) => draft.roleFamilies.includes(family))))
+    if (groupIndex < 0) groupIndex = 0
+    setActiveRoleGroup(groupIndex)
+    const group = roleGroups[groupIndex]
+    const optionIndex = selectedTerm ? group?.options.findIndex((option) => option.value === selectedTerm) ?? -1 : -1
+    if (group && optionIndex >= 6) setExpandedRoleGroups((current) => ({ ...current, [group.key]: true }))
+  }
   const openMatchSettings = () => {
-    if (watch?.matchState === 'member_dynamic') { setStep('setup'); return }
+    if (watch?.matchState === 'member_dynamic') { focusFirstSelectedRoleGroup(); setStep('setup'); return }
     void showModal({
       title: '当前个性化设置',
       content: `当前方向：${feedSummary || '暂未设置'}。免费匹配结果生成后会固定保留，会员可随时修改方向和企业偏好。`,
@@ -368,10 +431,14 @@ export default function CareerWatchPage() {
     })
   }
 
-  return <View className={`watch-root ${step === 'start' ? 'watch-root--start' : ''} ${step === 'feed' ? 'watch-root--feed' : ''}`}>
-    <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={watch?.followedUpdates.length || 0} showAccount={step !== 'start' && step !== 'setup'} />
+  return <View className={`watch-root ${step === 'loading' ? 'watch-root--loading' : ''} ${step === 'start' ? 'watch-root--start' : ''} ${step === 'feed' ? 'watch-root--feed' : ''}`}>
+    <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={watch?.followedUpdates.length || 0} showAccount={step !== 'setup'} />
     <View className={`page-shell watch-page ${step === 'feed' ? 'watch-page--feed' : ''} ${step === 'start' || step === 'setup' ? 'watch-page--flow' : ''}`}>
-    {step === 'loading' ? <View className='watch-loading'><Text className='watch-loading__label'>正在整理匹配企业</Text><View className='match-deck-skeleton'><View /></View></View> : null}
+    {step === 'loading' ? <View className='watch-loading' aria-live='polite' aria-busy aria-label='正在匹配中'>
+      <View className='watch-loading__visual'><MiniIcon name='search' size={30} /></View>
+      <Text className='watch-loading__label'>正在匹配中</Text>
+      <Text className='watch-loading__status'>正在根据你的方向整理企业信息</Text>
+    </View> : null}
 
     {step === 'start' ? <View className='watch-start'>
       <View className='watch-start__hero'>
@@ -380,14 +447,14 @@ export default function CareerWatchPage() {
       </View>
       <View className='watch-start__content'>
         <View className='watch-brand'>
-          <Text className='watch-brand__title'>找到适合你的</Text>
-          <Text className='watch-brand__title watch-brand__title--accent'>远程方向</Text>
-          <Text className='watch-brand__copy'>根据你的经历和兴趣，梳理职业方向并推荐值得关注的远程企业。</Text>
+          <Text className='watch-brand__title'>你的掌上</Text>
+          <Text className='watch-brand__title watch-brand__title--accent'>远程工作助手</Text>
         </View>
         <View className='watch-start__features'>{START_FEATURES.map((feature) => <View key={feature}><View><MiniIcon name='check' size={15} /></View><Text>{feature}</Text></View>)}</View>
         <View className='watch-start__actions'>
           <View className={`primary-button watch-primary ${busy ? 'primary-button--disabled' : ''}`} aria-role='button' aria-label={busy ? '正在准备匹配' : '开始设置偏好'} hoverClass={busy ? undefined : 'mini-action--pressed'} onClick={busy ? undefined : () => void startSetup()}><Text>{busy ? '正在准备…' : '开始设置偏好'}</Text><MiniIcon name='chevronRight' size={18} /></View>
           <View className='watch-secondary' aria-role='button' aria-label='上传简历，快速识别方向' hoverClass='mini-action--pressed' onClick={busy ? undefined : () => void uploadResume()}><MiniIcon name='application' size={20} />上传简历，快速识别方向</View>
+          {!authenticated ? <View className='watch-start__login' aria-role='button' aria-label='已有账号，前往登录' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/account-bind/index' })}>已有账号，前往登录</View> : null}
           {error ? <View className='watch-start__error' aria-live='polite'><Text>{error}</Text><Text aria-role='button' aria-label='重试匹配设置' onClick={busy ? undefined : () => void startSetup()}>重试</Text></View> : null}
         </View>
       </View>
@@ -416,29 +483,37 @@ export default function CareerWatchPage() {
 
     {step === 'feed' && watch ? <View className='watch-feed'>
       <View className='watch-feed__heading'>
-        <View className='watch-feed__heading-copy'><Text className='watch-feed__title'>为你匹配</Text></View>
-        <View className='watch-feed__heading-actions'>
-          {!watch.entitlements.isMember ? <View className='watch-feed__membership' aria-role='button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>升级会员</View> : null}
-          <View className='watch-feed__settings' aria-role='button' aria-label='修改个性化设置' onClick={openMatchSettings}><MiniIcon name='settings' size={18} /></View>
-        </View>
+        <View className='watch-feed__heading-copy'><Text className='watch-feed__title'>为你匹配</Text><Text className='watch-feed__count'>{activeCompanyIndex + 1}/{watch.recommendations.length}</Text></View>
         <View className='watch-feed__summary'>
           <Text className='watch-feed__summary-copy'>{feedSummary}</Text>
-          <Text className='watch-feed__summary-action' aria-role='button' aria-label='编辑个性化设置' onClick={openMatchSettings}>编辑</Text>
+          <View className='watch-feed__summary-action' aria-role='button' aria-label='编辑个性化设置' onClick={openMatchSettings}><MiniIcon name='settings' size={16} /></View>
+        </View>
+        <View className='watch-feed__meta'>
+          <Text className='watch-feed__freshness'>
+            {recentMatchDate ? `更新于 ${recentMatchDate}` : '本次 Match 结果'}
+            {!watch.entitlements.isMember ? ' · 非会员仅匹配一次' : ''}
+          </Text>
+          {!watch.entitlements.isMember ? <View className='watch-feed__membership' aria-role='button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>升级会员</View> : null}
+          {watch.entitlements.isMember ? <Text className='watch-feed__daily'>会员日更</Text> : null}
         </View>
       </View>
       {watch.recommendations.length ? <>
         <MatchCompanyDeck items={watch.recommendations} snapshotId={watch.snapshotId} activeIndex={activeCompanyIndex} onActiveIndexChange={changeActiveCompany} renderCard={(company, active) => <MatchCompanyCard
           company={company}
           active={active}
+          reminderAvailable={watch.entitlements.wechatSubscriptionAvailable}
+          reminderTemplateId={watch.entitlements.wechatTemplateId}
           onFollowChanged={(companyId, followed) => updateCompanyState(companyId, followed
             ? { isFollowed: true }
             : { isFollowed: false, isSubscribed: false })}
+          onReminderChanged={(companyId, enabled) => updateCompanyState(companyId, { isSubscribed: enabled })}
           onOpenCompany={openCompany}
           onOpenJob={openJob}
           onScoreOpened={openScore}
-          isMember={watch.entitlements.isMember}
         />} />
-        <View className='watch-deck-meta'><View className='watch-deck-dots'>{watch.recommendations.map((item, index) => <View className={index === activeCompanyIndex ? 'is-active' : ''} key={item.companyId} />)}</View><Text>{activeCompanyIndex + 1} / {watch.recommendations.length} · 左右滑动，反复比较</Text></View>
+        <View className='watch-deck-meta'>
+          <View className='watch-deck-dots'>{watch.recommendations.map((item, index) => <View className={index === activeCompanyIndex ? 'is-active' : ''} key={item.companyId} />)}</View>
+        </View>
       </> : <View className='watch-empty'><MiniIcon name='target' size={30} /><Text>{watch.emptyReason === 'strict_filters' ? '当前条件下暂无合适企业' : '当前方向暂无合适企业'}</Text><Text>{watch.emptyReason === 'strict_filters' ? '可以放宽一项企业条件后再试。' : '调整职业方向后，我们会重新整理。'}</Text>{watch.matchState === 'member_dynamic' ? <View className='primary-button' onClick={() => setStep('setup')}>{watch.emptyReason === 'strict_filters' ? '放宽企业条件' : '调整求职方向'}</View> : <View className='primary-button' onClick={() => void load()}>重新加载</View>}</View>}
     </View> : null}
     </View>

@@ -23,10 +23,6 @@
 .account-bind-input--password { padding-right: 104px; }
 .account-bind-password-toggle { position: absolute; top: 0; right: 0; display: flex; width: 88px; height: 88px; align-items: center; justify-content: center; color: var(--color-brand-text); font-size: 25px; font-weight: 500; }
 .account-auth-forgot { display: flex; min-height: 88px; align-items: center; align-self: flex-end; color: var(--color-brand-text); font-size: 25px; font-weight: 500; }
-.account-auth-consent { display: flex; min-height: 88px; margin-top: 16px; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--color-secondary); font-size: 24px; line-height: 38px; }
-.account-auth-consent__checkbox { display: flex; width: 40px; height: 40px; margin-right: 4px; align-items: center; justify-content: center; border: 1PX solid var(--color-border-strong); border-radius: 6px; background: #fff; color: #fff; font-size: 22px; font-weight: 600; }
-.account-auth-consent__checkbox--checked { border-color: var(--color-ink); background: var(--color-ink); }
-.account-auth-consent__link { color: var(--color-brand-text); font-weight: 500; }
 .account-auth-primary-button { display: flex; min-height: 96px; margin-top: 32px; align-items: center; justify-content: center; border-radius: 14px; background: var(--color-ink); color: #fff; font-size: 28px; font-weight: 600; }
 .account-auth-security { display: flex; margin-top: 18px; align-items: center; justify-content: center; gap: 8px; color: var(--color-muted); font-size: 24px; }
 .account-auth-security__icon { color: #26734d; font-weight: 600; }
