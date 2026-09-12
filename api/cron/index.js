@@ -6,6 +6,13 @@ export default async function handler(req, res) {
   // Allow passing task in body as well (for manual POSTs)
   const taskName = task || req.body?.task;
 
+  if (taskName === 'stream-crawl-trusted-jobs') {
+    return res.status(410).json({
+      success: false,
+      error: 'Trusted-company job crawling is disabled. Only URL validity verification remains enabled.'
+    });
+  }
+
   console.log(`[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`);
   sendLog(
     `[CronRouter] Received request for task: ${taskName}, method: ${req.method}, query: ${JSON.stringify(req.query)}, body: ${JSON.stringify(req.body)}`,
@@ -17,13 +24,6 @@ export default async function handler(req, res) {
     return res.status(400).json({
       error: 'Missing task parameter',
       usage: 'GET/POST /api/cron/index?task=<task-name>'
-    });
-  }
-
-  if (taskName === 'stream-crawl-trusted-jobs') {
-    return res.status(410).json({
-      success: false,
-      error: 'Trusted-company job crawling is disabled. Only URL validity verification remains enabled.'
     });
   }
 
