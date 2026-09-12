@@ -3,7 +3,6 @@ import fs from 'node:fs'
 import vm from 'node:vm'
 import ts from 'typescript'
 import { normalizeCompanyName, matchCompanyNames, rankDirectoryCompanies } from './lib/services/mini-company-search-service.js'
-import { createPublicSnapshotCache } from './lib/services/public-snapshot-cache.js'
 
 // Local test fixtures only; never persisted or served as product data.
 const companies = [
@@ -38,7 +37,9 @@ console.log('Named company search: normalization, typo bounds, aliases, short na
 const read = (file) => fs.readFileSync(file, 'utf8')
 const gateway = read('lib/api-handlers/mini-gateway.js')
 const directorySource = gateway.slice(gateway.indexOf('const companyDirectorySnapshotSql'), gateway.indexOf('async function readMiniNotes('))
-assert.match(directorySource, /JOIN jobs j ON j\.job_id = h\.source_job_id/)
+assert.match(directorySource, /JOIN jobs j ON j\.company_id = tc\.company_id/)
+assert.match(directorySource, /LEFT JOIN company_job_history h ON h\.company_id = tc\.company_id[\s\S]+h\.source_job_id = j\.job_id/)
+assert.match(directorySource, /COALESCE\([\s\S]+h\.first_seen_at[\s\S]+j\.created_at[\s\S]+j\.updated_at[\s\S]+j\.published_at/)
 assert.match(directorySource, /j\.is_approved IS TRUE/)
 assert.match(directorySource, /COALESCE\(j\.member_only, FALSE\) IS FALSE/)
 assert.match(directorySource, /new_jobs_until/)

@@ -134,14 +134,14 @@ await hook.load('companies', fetchList)
 assert.equal(reads, 1, 'rapid tab returns do not fetch')
 now += 60001
 let release
-const refreshing = hook.load('companies', () => new Promise(resolve => { release = resolve }))
+const refreshing = hook.load('companies', () => new Promise(resolve => { release = resolve }), true)
 assert.deepEqual(state[0], ['first']); assert.equal(state[1], false, 'background refresh never shows full skeleton')
-await Promise.resolve()
+await new Promise(resolve => setImmediate(resolve))
 release(['new']); await refreshing
 await hook.load('companies', async () => { throw new Error('offline') }, true)
 assert.deepEqual(state[0], ['new']); assert.equal(notices.length, 1)
 const oldPending = hook.load('companies', () => new Promise(resolve => { release = resolve }), true)
-await Promise.resolve()
+await new Promise(resolve => setImmediate(resolve))
 user = { userId: 'b', isMember: false }; token = 'b'
 const changedAccount = hook.load('companies', async () => ['free'])
 assert.equal(state[0], null, 'old account data is cleared immediately')
@@ -167,8 +167,9 @@ await expiredMembership
 assert.deepEqual(state[0], ['public'])
 
 const gateway = read('lib/api-handlers/mini-gateway.js')
-const badgeSql = gateway.slice(gateway.indexOf('MAX(CASE WHEN h.first_seen_at'), gateway.indexOf('AS new_jobs_until') + 17)
+const badgeSql = gateway.slice(gateway.indexOf('CASE WHEN h.first_seen_at'), gateway.indexOf('AS new_jobs_until') + 17)
 assert.match(badgeSql, /first_seen_at <= NOW\(\)/)
+assert.match(badgeSql, /j\.created_at <= NOW\(\)/)
 assert.doesNotMatch(badgeSql, /h\.(?:source_published_at|last_seen_at|updated_at)/)
 assert.match(badgeSql, /INTERVAL '72 hours'/)
 assert.match(read('cloudrun/index.mjs'), /career_watch_refresh.*method: 'POST'/)
