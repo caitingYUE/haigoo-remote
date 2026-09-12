@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+
+const handler = fs.readFileSync('lib/api-handlers/processed-jobs.js', 'utf8')
+const translation = fs.readFileSync('lib/services/translation-service.cjs', 'utf8')
+const modal = fs.readFileSync('src/components/AdminCompanyJobsModal.tsx', 'utf8')
+
+assert.match(handler, /waitUntil\(rebuildCompanyHiringProfile\(companyId\)/)
+assert.doesNotMatch(handler, /for \(const companyId of companyIds\) \{\s*try \{\s*await rebuildCompanyHiringProfile/)
+assert.match(handler, /jobIds\.length > 5/)
+assert.match(handler, /configureTranslation\(\{ aiEnabled: true, aiFirst: true \}\)/)
+assert.match(translation, /TRANSLATION_REQUEST_TIMEOUT_MS \|\| 8000/)
+assert.match(translation, /AbortSignal\.timeout\(REQUEST_TIMEOUT_MS\)/)
+assert.equal((translation.match(/fetchWithTimeout\(/g) || []).length, 5)
+assert.match(modal, /index \+= 2/)
+assert.match(modal, /if \(!saved\) throw new Error\('岗位新增未成功写入'\)/)
+assert.match(modal, /await fetchJobs\(\)/)
+
+console.log('Admin job save and translation reliability contracts passed')

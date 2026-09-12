@@ -56,6 +56,8 @@ async function startServer() {
         console.log('Importing home handler...');
         const homeHandler = (await import('./api/home.js')).default;
         app.all('/api/home', async (req, res) => { await homeHandler(req, res); });
+        const careerWatchHandler = (await import('./api/career-watch.js')).default;
+        app.all('/api/career-watch', async (req, res) => { await careerWatchHandler(req, res); });
         console.log('Home handler imported.');
 
         console.log('Importing analytics-stats handler...');

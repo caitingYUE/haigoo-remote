@@ -93,3 +93,4 @@ SELECT
   created_by, updated_by, created_at, updated_at
 FROM source_notes
 ON CONFLICT (note_id) DO NOTHING;
+

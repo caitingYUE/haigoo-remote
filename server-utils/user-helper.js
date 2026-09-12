@@ -915,23 +915,17 @@ const userHelper = {
             const offsetParam = addParam(offset)
             const accountCte = `
                 WITH mini_identity_summary AS (
-                    SELECT user_id,
-                           COUNT(*)::int AS mini_account_count,
-                           MIN(created_at) AS mini_created_at,
-                           MAX(linked_at) AS mini_linked_at
-                      FROM mini_wechat_identities
-                     GROUP BY user_id
-                ),
-                admin_accounts AS (
+                    SELECT user_id, COUNT(*)::int AS mini_account_count,
+                           MIN(created_at) AS mini_created_at, MAX(linked_at) AS mini_linked_at
+                      FROM mini_wechat_identities GROUP BY user_id
+                ), admin_accounts AS (
                     SELECT u.*,
                            CASE WHEN mini.user_id IS NULL THEN 'website' ELSE 'both' END AS account_source,
                            COALESCE(mini.mini_account_count, 0)::int AS mini_account_count,
-                           mini.mini_created_at,
-                           mini.mini_linked_at,
+                           mini.mini_created_at, mini.mini_linked_at,
                            TRUE AS has_website_account,
                            (mini.user_id IS NOT NULL) AS has_mini_account
-                      FROM users u
-                      LEFT JOIN mini_identity_summary mini ON mini.user_id = u.user_id
+                      FROM users u LEFT JOIN mini_identity_summary mini ON mini.user_id = u.user_id
                 )`
 
             const listQuery = `

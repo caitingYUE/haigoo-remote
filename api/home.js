@@ -164,7 +164,7 @@ async function getHomeTickerJobs(req, res) {
       j.can_refer,
       j.member_only,
       j.is_featured,
-      j.featured_reason,
+      to_jsonb(j)->>'featured_reason' AS featured_reason,
       j.translations,
       j.is_translated,
       j.translated_at,

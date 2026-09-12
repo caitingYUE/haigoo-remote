@@ -67,6 +67,10 @@ export default async function handler(req, res) {
         const { default: cleanupAnalyticsHandler } = await import('../../lib/cron-handlers/cleanup-analytics.js');
         return await cleanupAnalyticsHandler(req, res);
       }
+      case 'mini-career-retention': {
+        const { default: miniCareerRetentionHandler } = await import('../../lib/cron-handlers/mini-career-retention.js');
+        return await miniCareerRetentionHandler(req, res);
+      }
 
       case 'test-smtp': {
         const { sendTestEmail } = await import('../../server-utils/email-service.js');
@@ -88,8 +92,7 @@ export default async function handler(req, res) {
 
       case 'daily-enrich': {
         const { default: streamTranslateJobsHandler } = await import('../../lib/cron-handlers/stream-translate-jobs.js');
-        // Daily enrich is now limited to translating recent RSS drafts only.
-        // Trusted-company crawl remains a manual/admin-only tool.
+        // Trusted-company crawl runs on its own controlled six-hour schedule.
         return await runSequence(req, res, [
           { name: 'stream-translate-jobs', handler: streamTranslateJobsHandler }
         ]);
@@ -109,11 +112,12 @@ export default async function handler(req, res) {
             'daily-digest',
             'membership-lifecycle',
             'cleanup-analytics',
+            'mini-career-retention',
             'daily-ingest',
             'daily-enrich'
           ],
           taskNotes: {
-            'stream-crawl-trusted-jobs': 'manual/admin-only'
+            'stream-crawl-trusted-jobs': 'scheduled every six hours; AI fallback disabled'
           }
         });
     }
