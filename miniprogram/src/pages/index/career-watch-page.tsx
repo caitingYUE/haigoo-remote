@@ -33,7 +33,7 @@ type RoleOption = { value: string; label: string; families: WatchRoleFamily[] }
 
 const START_FEATURES = [
   '经过审核的真实企业与远程岗位信息',
-  '关注企业，及时接收岗位更新提醒',
+  '关注企业查看更新，可授权一次微信提醒',
   '掌上笔记，随时随地提升远程技能'
 ]
 

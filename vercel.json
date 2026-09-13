@@ -49,6 +49,10 @@
   ],
   "crons": [
     {
+      "path": "/api/cron/mini-wechat-reminders",
+      "schedule": "*/5 * * * *"
+    },
+    {
       "path": "/api/cron/daily-enrich",
       "schedule": "50 1 * * *"
     },

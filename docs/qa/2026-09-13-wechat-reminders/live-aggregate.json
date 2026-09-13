@@ -1,0 +1,120 @@
+[
+  {
+    "target": "production",
+    "at": "2026-09-13T08:17:21.180Z",
+    "follows": [
+      {
+        "total": 42,
+        "active": 40,
+        "authorized": 6,
+        "authorized_users": 2
+      }
+    ],
+    "directions": [
+      {
+        "total": 93,
+        "authorized": 0
+      }
+    ],
+    "events": [],
+    "inbox": [],
+    "eligible_follow_links": [
+      {
+        "total": 6,
+        "missing_wechat_identity": 0,
+        "inactive_users": 0
+      }
+    ],
+    "follow_job_events": [
+      {
+        "jobs_created_after_authorization_update": 0,
+        "without_event": 0
+      }
+    ],
+    "schema": [
+      {
+        "column_name": "inbox_id"
+      },
+      {
+        "column_name": "user_id"
+      },
+      {
+        "column_name": "event_id"
+      },
+      {
+        "column_name": "status"
+      },
+      {
+        "column_name": "notification_status"
+      },
+      {
+        "column_name": "read_at"
+      },
+      {
+        "column_name": "notified_at"
+      },
+      {
+        "column_name": "created_at"
+      }
+    ]
+  },
+  {
+    "target": "preview",
+    "at": "2026-09-13T08:17:22.883Z",
+    "follows": [
+      {
+        "total": 13,
+        "active": 9,
+        "authorized": 3,
+        "authorized_users": 1
+      }
+    ],
+    "directions": [
+      {
+        "total": 4,
+        "authorized": 1
+      }
+    ],
+    "events": [],
+    "inbox": [],
+    "eligible_follow_links": [
+      {
+        "total": 3,
+        "missing_wechat_identity": 0,
+        "inactive_users": 0
+      }
+    ],
+    "follow_job_events": [
+      {
+        "jobs_created_after_authorization_update": 1,
+        "without_event": 1
+      }
+    ],
+    "schema": [
+      {
+        "column_name": "inbox_id"
+      },
+      {
+        "column_name": "user_id"
+      },
+      {
+        "column_name": "event_id"
+      },
+      {
+        "column_name": "status"
+      },
+      {
+        "column_name": "notification_status"
+      },
+      {
+        "column_name": "read_at"
+      },
+      {
+        "column_name": "notified_at"
+      },
+      {
+        "column_name": "created_at"
+      }
+    ]
+  }
+]

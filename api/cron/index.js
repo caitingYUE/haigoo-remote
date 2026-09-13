@@ -6,6 +6,12 @@ export default async function handler(req, res) {
   // Allow passing task in body as well (for manual POSTs)
   const taskName = task || req.body?.task;
 
+  // Authenticate the reminder task before the legacy logging/notification path.
+  if (taskName === 'mini-wechat-reminders') {
+    const { default: reminders } = await import('../../lib/cron-handlers/mini-wechat-reminders.js');
+    return reminders(req, res);
+  }
+
   if (taskName === 'stream-crawl-trusted-jobs') {
     return res.status(410).json({
       success: false,

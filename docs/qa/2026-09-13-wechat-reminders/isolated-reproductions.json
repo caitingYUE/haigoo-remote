@@ -1,0 +1,47 @@
+{
+  "at": "2026-09-13T08:26:09.772Z",
+  "results": [
+    {
+      "name": "正常授权的上新发送一次，字段及跳转正确；下一次上新需重新授权",
+      "verified": true,
+      "kind": "happy_path"
+    },
+    {
+      "name": "已关闭、已取关、其他企业及其他小程序身份均不收到本企业提醒",
+      "verified": true,
+      "kind": "recipient_filter"
+    },
+    {
+      "name": "未审核、已下架及会员专属岗位不会生成公开上新提醒",
+      "verified": true,
+      "kind": "job_filter"
+    },
+    {
+      "name": "方向提醒只触达匹配方向的有效会员，普通用户不收到会员方向提醒",
+      "verified": true,
+      "kind": "recipient_filter"
+    },
+    {
+      "name": "微信凭证短暂失败后事件留在 pending，重放同一事件不会补发",
+      "verified": true,
+      "kind": "defect_reproduced"
+    },
+    {
+      "name": "微信返回 43101 后记录 failed，但前端授权标志仍显示开启",
+      "verified": true,
+      "kind": "defect_reproduced"
+    },
+    {
+      "name": "101 个有效接收者只处理 100 个，剩余 1 个 pending 且事件重放不续发",
+      "verified": true,
+      "kind": "defect_reproduced"
+    },
+    {
+      "name": "事件已保存而收件箱写入失败，重试同一事件后仍无收件箱",
+      "verified": true,
+      "kind": "defect_reproduced"
+    }
+  ],
+  "realMessagesSent": 0,
+  "note": "Verified describes reproduction accuracy, not release readiness. Current defects are intentionally asserted."
+}

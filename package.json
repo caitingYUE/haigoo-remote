@@ -18,6 +18,8 @@
     "test:job-access-policy": "node test-job-access-policy.js",
     "test:featured-home-jobs": "node test-featured-home-jobs.js",
     "test:free-usage-monthly-quota": "node test-free-usage-monthly-quota.js",
+    "test:mini-reminders": "node scripts/test-mini-wechat-reminders.mjs",
+    "test:mini-reminder-client": "node scripts/test-mini-wechat-reminder-client.mjs",
     "test:mini-gateway": "node test-mini-gateway-signature.js",
     "test:mini-auth-consent": "node test-mini-auth-consent.js",
     "test:mini-payment": "node test-mini-virtual-payment.js",

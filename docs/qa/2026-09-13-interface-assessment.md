@@ -51,6 +51,6 @@ node scripts/test-mini-production-readonly.mjs --rounds=5 --output=tmp/mini-prod
 
 该命令只调用固定的四个游客读取接口，最多 20 次，失败保留并返回非零退出状态。检查数据结构、会员方案价格、支付可用标识；输出请求耗时与成功率，不触发真实购买。
 
-本轮接口检查通过，可继续微信提审准备。微信审核和正式发布状态均未变更。提审后仍应关注后续真实流量及下一次定时同步结果。
+本轮页面数据接口检查通过，微信审核和正式发布状态均未变更。后续真实流量及下一次定时同步结果仍需观察。**同日后续的[微信提醒专项检查](2026-09-13-wechat-reminders.md)发现事件触发与漏发缺陷，提醒模块尚未通过；本报告不能作为该功能或整个版本已可发布的依据。**
 
 打包依据：[sharp 平台依赖说明](https://sharp.pixelplumbing.com/install/)、[Vercel 函数文件包含配置](https://vercel.com/docs/project-configuration/vercel-json)。

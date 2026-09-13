@@ -11,6 +11,7 @@ import useRetainedResource, { miniContentScope } from '../../hooks/use-retained-
 import { fetchCompanyDetail } from '../../services/content-service'
 import { fetchCareerWatch, fetchCompanyFollows, setMatchNotifications } from '../../services/career-match-service'
 import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
+import { emitCompanyFollowChange, invalidateReminderSnapshot } from '../../services/company-follow-state'
 import { hasAuthenticatedSession } from '../../services/session'
 import type { ContentBlock, MemberOnlyContact, MiniCompanyJob } from '../../types'
 import { formatCalendarDate } from '../../utils/runtime-compat'
@@ -99,22 +100,30 @@ export default function CompanyDetailPage() {
   })
 
   const requestReminderAfterFollow = async () => {
+    const scope = miniContentScope()
+    invalidateReminderSnapshot()
     if (!subscriptionConfig.available || !subscriptionConfig.templateId) {
       showToast({ title: '已关注，可稍后开启微信提醒', icon: 'none' })
       return
     }
     try {
       const status = await requestWechatReminderAuthorization(subscriptionConfig.templateId)
+      if (scope !== miniContentScope()) return
       if (status === 'accepted') {
         await setMatchNotifications(id, true, status)
+        if (scope !== miniContentScope()) return
+        emitCompanyFollowChange({ companyId: id, followed: true, reminderEnabled: true })
         setSubscribed(true)
-        showToast({ title: '微信提醒已开启', icon: 'success' })
+        showToast({ title: '已预约下一次上新提醒', icon: 'success' })
       } else {
         await setMatchNotifications(id, false, status).catch(() => undefined)
+        if (scope !== miniContentScope()) return
+        emitCompanyFollowChange({ companyId: id, followed: true, reminderEnabled: false })
         setSubscribed(false)
         showToast({ title: status === 'unavailable' ? '请在小程序设置中开启订阅消息' : '已关注，可稍后开启微信提醒', icon: 'none' })
       }
     } catch {
+      if (scope !== miniContentScope()) return
       setSubscribed(false)
       showToast({ title: '微信提醒未开启，关注状态已保留', icon: 'none' })
     }

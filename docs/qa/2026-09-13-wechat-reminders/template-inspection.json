@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-13T08:18:07.222Z",
+  "credentialsConfigured": true,
+  "source": "production CloudRun WeChat app credentials; no send endpoint called",
+  "tokenStatus": {
+    "http": 200,
+    "errcode": 0,
+    "available": true
+  },
+  "templates": {
+    "http": 200,
+    "errcode": 0,
+    "items": [
+      {
+        "title": "新职位更新提醒",
+        "type": 2,
+        "fields": "招聘企业名称:{{thing2.DATA}}\n职位名称:{{thing1.DATA}}\n工作地点:{{thing6.DATA}}\n工作类型:{{thing7.DATA}}\n更新时间:{{time4.DATA}}\n"
+      }
+    ]
+  }
+}
