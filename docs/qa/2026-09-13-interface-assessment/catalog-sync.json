@@ -1,0 +1,57 @@
+[
+  {
+    "target": "development",
+    "collectedAt": "2026-09-13T08:02:05.474Z",
+    "syncEnabled": "true",
+    "sourceOrigin": "https://haigooremote.com",
+    "syncState": {
+      "lastSuccessAt": 0,
+      "lastSuccessSource": null,
+      "lastSuccessVersion": null,
+      "lastSuccessCompanies": null,
+      "lastSuccessJobs": null,
+      "consecutiveFailures": 2584,
+      "lastFailureAt": 1789285996257,
+      "lastFailure": "当前服务暂时不可用，请稍后重试"
+    },
+    "catalog": {
+      "success": true,
+      "companies": 154,
+      "jobs": 418,
+      "version": "6c214089801032c92eaeafe37ffb28bc",
+      "durationMs": 3237
+    },
+    "syncAttempt": {
+      "status": 200,
+      "data": {
+        "success": true,
+        "skipped": false,
+        "source": "snapshot",
+        "version": "6c214089801032c92eaeafe37ffb28bc",
+        "companies": 154,
+        "jobs": 418,
+        "durationMs": 5390,
+        "imported": true
+      }
+    }
+  },
+  {
+    "target": "production",
+    "collectedAt": "2026-09-13T08:02:19.277Z",
+    "sourceOrigin": "https://haigooremote.com",
+    "syncState": {
+      "lastSuccessAt": null,
+      "lastSuccessSource": null,
+      "lastSuccessVersion": null,
+      "lastSuccessCompanies": null,
+      "lastSuccessJobs": null,
+      "consecutiveFailures": null,
+      "lastFailureAt": null,
+      "lastFailure": null
+    },
+    "catalog": {
+      "skipped": true,
+      "reason": "Catalog mirror disabled; production reads the authoritative directory directly"
+    }
+  }
+]

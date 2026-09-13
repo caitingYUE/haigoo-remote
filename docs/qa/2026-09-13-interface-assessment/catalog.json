@@ -1,0 +1,44 @@
+[
+  {
+    "target": "development",
+    "collectedAt": "2026-09-13T08:04:01.158Z",
+    "syncEnabled": "true",
+    "sourceOrigin": "https://haigooremote.com",
+    "syncState": {
+      "lastSuccessAt": 1789286538691,
+      "lastSuccessSource": "snapshot",
+      "lastSuccessVersion": "6c214089801032c92eaeafe37ffb28bc",
+      "lastSuccessCompanies": 154,
+      "lastSuccessJobs": 418,
+      "consecutiveFailures": 0,
+      "lastFailureAt": 0,
+      "lastFailure": ""
+    },
+    "catalog": {
+      "success": true,
+      "companies": 154,
+      "jobs": 418,
+      "version": "6c214089801032c92eaeafe37ffb28bc",
+      "durationMs": 3917
+    }
+  },
+  {
+    "target": "production",
+    "collectedAt": "2026-09-13T08:04:07.415Z",
+    "sourceOrigin": "https://haigooremote.com",
+    "syncState": {
+      "lastSuccessAt": null,
+      "lastSuccessSource": null,
+      "lastSuccessVersion": null,
+      "lastSuccessCompanies": null,
+      "lastSuccessJobs": null,
+      "consecutiveFailures": null,
+      "lastFailureAt": null,
+      "lastFailure": null
+    },
+    "catalog": {
+      "skipped": true,
+      "reason": "Catalog mirror disabled; production reads the authoritative directory directly"
+    }
+  }
+]

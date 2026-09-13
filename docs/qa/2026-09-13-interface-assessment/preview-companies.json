@@ -1,0 +1,77 @@
+{
+  "action": "companies",
+  "target": "development",
+  "envId": "haigoo-dev-d2gctbzxma401b345",
+  "serviceName": "haigoo-mini",
+  "transport": "gateway",
+  "minInstances": null,
+  "scope": "account",
+  "origin": "https://haigoo-remote-bqbmkftbr-caitlinyct.vercel.app",
+  "status": 200,
+  "requestDurationMs": 10654,
+  "returnedCompanies": 12,
+  "returnedNotes": null,
+  "returnedJobs": null,
+  "returnedRecommendations": null,
+  "matchState": null,
+  "returnedRoleGroups": null,
+  "returnedRoles": null,
+  "returnedPlans": null,
+  "paymentAvailable": null,
+  "companyAccessScope": "free_fixed",
+  "search": "",
+  "sortBy": "latest",
+  "sampleCompanies": [
+    {
+      "id": "company_1775466083303_b9xojgjg9",
+      "name": "GoPro",
+      "openJobCount": 1,
+      "openRoleCategories": [
+        "硬件开发"
+      ]
+    },
+    {
+      "id": "company_1777190809619_ots4xngqm",
+      "name": "Minuttia - AEO Agency",
+      "openJobCount": 2,
+      "openRoleCategories": [
+        "市场营销",
+        "客户服务"
+      ]
+    },
+    {
+      "id": "company_1764764359445_54yeeyh1w",
+      "name": "XapoBank",
+      "openJobCount": 10,
+      "openRoleCategories": [
+        "财务",
+        "测试/QA",
+        "后端开发",
+        "架构师",
+        "移动开发",
+        "商业分析"
+      ]
+    },
+    {
+      "id": "company_1788943239118_elaiqhdq4",
+      "name": "Scalerrs",
+      "openJobCount": 3,
+      "openRoleCategories": [
+        "内容创作",
+        "市场营销"
+      ]
+    },
+    {
+      "id": "company_1788941529662_xv547uksc",
+      "name": "Manicule",
+      "openJobCount": 1,
+      "openRoleCategories": [
+        "内容创作"
+      ]
+    }
+  ],
+  "profile": null,
+  "matchMeta": null,
+  "sampleJobs": [],
+  "totalJobs": 12
+}

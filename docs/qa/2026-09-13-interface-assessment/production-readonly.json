@@ -1,0 +1,389 @@
+{
+  "startedAt": "2026-09-13T08:01:17.283Z",
+  "transport": "CloudBase SDK → production CloudRun → Vercel",
+  "rounds": 5,
+  "samples": [
+    {
+      "round": 1,
+      "action": "career_watch_options",
+      "at": "2026-09-13T08:01:23.433Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 3449,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": 11,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 1,
+      "action": "companies",
+      "at": "2026-09-13T08:01:30.332Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 4721,
+      "companyAccessScope": "free_fixed",
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 1,
+      "action": "membership_plans",
+      "at": "2026-09-13T08:01:33.416Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1509,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": [
+        {
+          "id": "club_starter_monthly",
+          "price": 99
+        },
+        {
+          "id": "mini_club_quarter_2026",
+          "price": 199
+        },
+        {
+          "id": "mini_club_half_year_2026",
+          "price": 699
+        }
+      ],
+      "paymentAvailable": true
+    },
+    {
+      "round": 1,
+      "action": "content_home",
+      "at": "2026-09-13T08:01:38.656Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 3677,
+      "companyAccessScope": null,
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": 3,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 2,
+      "action": "career_watch_options",
+      "at": "2026-09-13T08:01:41.945Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1727,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": 11,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 2,
+      "action": "companies",
+      "at": "2026-09-13T08:01:45.299Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1854,
+      "companyAccessScope": "free_fixed",
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 2,
+      "action": "membership_plans",
+      "at": "2026-09-13T08:01:49.373Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 2514,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": [
+        {
+          "id": "club_starter_monthly",
+          "price": 99
+        },
+        {
+          "id": "mini_club_quarter_2026",
+          "price": 199
+        },
+        {
+          "id": "mini_club_half_year_2026",
+          "price": 699
+        }
+      ],
+      "paymentAvailable": true
+    },
+    {
+      "round": 2,
+      "action": "content_home",
+      "at": "2026-09-13T08:01:53.316Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1928,
+      "companyAccessScope": null,
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": 3,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 3,
+      "action": "career_watch_options",
+      "at": "2026-09-13T08:01:59.812Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 2833,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": 11,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 3,
+      "action": "companies",
+      "at": "2026-09-13T08:02:03.339Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1899,
+      "companyAccessScope": "free_fixed",
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 3,
+      "action": "membership_plans",
+      "at": "2026-09-13T08:02:11.541Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 4922,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": [
+        {
+          "id": "club_starter_monthly",
+          "price": 99
+        },
+        {
+          "id": "mini_club_quarter_2026",
+          "price": 199
+        },
+        {
+          "id": "mini_club_half_year_2026",
+          "price": 699
+        }
+      ],
+      "paymentAvailable": true
+    },
+    {
+      "round": 3,
+      "action": "content_home",
+      "at": "2026-09-13T08:02:16.054Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 2610,
+      "companyAccessScope": null,
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": 3,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 4,
+      "action": "career_watch_options",
+      "at": "2026-09-13T08:02:20.835Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1664,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": 11,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 4,
+      "action": "companies",
+      "at": "2026-09-13T08:02:24.528Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1870,
+      "companyAccessScope": "free_fixed",
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 4,
+      "action": "membership_plans",
+      "at": "2026-09-13T08:02:27.930Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1847,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": [
+        {
+          "id": "club_starter_monthly",
+          "price": 99
+        },
+        {
+          "id": "mini_club_quarter_2026",
+          "price": 199
+        },
+        {
+          "id": "mini_club_half_year_2026",
+          "price": 699
+        }
+      ],
+      "paymentAvailable": true
+    },
+    {
+      "round": 4,
+      "action": "content_home",
+      "at": "2026-09-13T08:02:31.824Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 2281,
+      "companyAccessScope": null,
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": 3,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 5,
+      "action": "career_watch_options",
+      "at": "2026-09-13T08:02:37.739Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 2101,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": 11,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 5,
+      "action": "companies",
+      "at": "2026-09-13T08:02:43.477Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 4225,
+      "companyAccessScope": "free_fixed",
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    },
+    {
+      "round": 5,
+      "action": "membership_plans",
+      "at": "2026-09-13T08:02:49.751Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 1672,
+      "companyAccessScope": null,
+      "returnedCompanies": null,
+      "returnedRoles": null,
+      "returnedNotes": null,
+      "returnedPlans": [
+        {
+          "id": "club_starter_monthly",
+          "price": 99
+        },
+        {
+          "id": "mini_club_quarter_2026",
+          "price": 199
+        },
+        {
+          "id": "mini_club_half_year_2026",
+          "price": 699
+        }
+      ],
+      "paymentAvailable": true
+    },
+    {
+      "round": 5,
+      "action": "content_home",
+      "at": "2026-09-13T08:02:53.656Z",
+      "passed": true,
+      "status": 200,
+      "requestDurationMs": 2377,
+      "companyAccessScope": null,
+      "returnedCompanies": 12,
+      "returnedRoles": null,
+      "returnedNotes": 3,
+      "returnedPlans": null,
+      "paymentAvailable": null
+    }
+  ],
+  "finishedAt": "2026-09-13T08:02:53.657Z",
+  "summary": [
+    {
+      "action": "career_watch_options",
+      "total": 5,
+      "passed": 5,
+      "minMs": 1664,
+      "medianMs": 2101,
+      "maxMs": 3449
+    },
+    {
+      "action": "companies",
+      "total": 5,
+      "passed": 5,
+      "minMs": 1854,
+      "medianMs": 1899,
+      "maxMs": 4721
+    },
+    {
+      "action": "membership_plans",
+      "total": 5,
+      "passed": 5,
+      "minMs": 1509,
+      "medianMs": 1847,
+      "maxMs": 4922
+    },
+    {
+      "action": "content_home",
+      "total": 5,
+      "passed": 5,
+      "minMs": 1928,
+      "medianMs": 2377,
+      "maxMs": 3677
+    }
+  ],
+  "passed": true,
+  "limitations": "Small guest-only sample, includes SDK/network time; not a load test or a guarantee of future availability. Account lifecycle tests run in isolation."
+}

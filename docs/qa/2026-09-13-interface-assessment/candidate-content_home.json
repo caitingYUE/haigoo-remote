@@ -1,0 +1,75 @@
+{
+  "action": "content_home",
+  "target": "production",
+  "envId": "cloud1-d8ggt7rbl273f83c7",
+  "serviceName": "haigoo-mini-prod",
+  "transport": "gateway",
+  "minInstances": null,
+  "scope": "account",
+  "origin": "https://haigoo-remote-gep8hh0pb-caitlinyct.vercel.app",
+  "status": 200,
+  "requestDurationMs": 8444,
+  "returnedCompanies": 12,
+  "returnedNotes": 3,
+  "returnedJobs": null,
+  "returnedRecommendations": null,
+  "matchState": null,
+  "returnedRoleGroups": null,
+  "returnedRoles": null,
+  "returnedPlans": null,
+  "paymentAvailable": null,
+  "companyAccessScope": null,
+  "search": null,
+  "sortBy": null,
+  "sampleCompanies": [
+    {
+      "id": "company_1778663866668_npebij4a4",
+      "name": "Remote",
+      "openJobCount": 3,
+      "openRoleCategories": [
+        "客户服务",
+        "人力资源"
+      ]
+    },
+    {
+      "id": "company_1775486154820_mnh3xvfkg",
+      "name": "Clipboard",
+      "openJobCount": 2,
+      "openRoleCategories": [
+        "客户服务",
+        "行政"
+      ]
+    },
+    {
+      "id": "company_1764764359445_wtvcpym36",
+      "name": "Safetywing",
+      "openJobCount": 3,
+      "openRoleCategories": [
+        "全栈开发",
+        "市场营销",
+        "增长黑客"
+      ]
+    },
+    {
+      "id": "company_1775466083303_b9xojgjg9",
+      "name": "GoPro",
+      "openJobCount": 1,
+      "openRoleCategories": [
+        "硬件开发"
+      ]
+    },
+    {
+      "id": "company_1777190809619_ots4xngqm",
+      "name": "Minuttia - AEO Agency",
+      "openJobCount": 2,
+      "openRoleCategories": [
+        "市场营销",
+        "客户服务"
+      ]
+    }
+  ],
+  "profile": null,
+  "matchMeta": null,
+  "sampleJobs": [],
+  "totalJobs": 0
+}

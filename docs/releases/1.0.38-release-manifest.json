@@ -1,0 +1,102 @@
+{
+  "releaseVersion": "1.0.38",
+  "sourceCommit": "f0552d20581245c2bf276b31122ada934bd16daf",
+  "cloudrunRollbackCommit": "924dd11473f55ff569d07f1fed1924b2b46ddc03",
+  "deviceAcceptance": {
+    "status": "passed",
+    "evidence": "User explicitly confirmed real-device acceptance in this task on 2026-09-13"
+  },
+  "wechat": {
+    "appId": "wxc61db5b8b472925a",
+    "uploadedVersion": "1.0.38",
+    "uploadedPackageBytes": 1113840,
+    "bundleSha256": "ee5ec34cb014aff6914cd31754a78c09f99771e3bb1f9c97b43102404c2a5047",
+    "reviewSubmitted": false,
+    "published": false
+  },
+  "vercel": {
+    "projectId": "prj_3vdzvfhSK5SVPgaw5011ORjMVt6H",
+    "productionDomain": "https://haigooremote.com",
+    "rollbackDeploymentId": "dpl_DaSFjE3tjuJKNSPjwwSLf8RMtWwx",
+    "rollbackDeploymentUrl": "https://haigoo-remote-aac6mcvg9-caitlinyct.vercel.app",
+    "baselineSourceCommit": "9a06d5e85919f7fa88034a6c7db4a93e45eae538",
+    "candidateBuild": "Vercel Linux x64 cloud build; npm ci --include=optional; explicit Linux x64 sharp assets",
+    "candidateDeployed": true,
+    "activeDeploymentId": "dpl_2Dv7tzHyBdndHdvTjTqAyFkDPCt3",
+    "activeDeploymentUrl": "https://haigoo-remote-gep8hh0pb-caitlinyct.vercel.app"
+  },
+  "cloudrun": {
+    "envId": "cloud1-d8ggt7rbl273f83c7",
+    "serviceName": "haigoo-mini-prod",
+    "sourceRevision": "6e26516a030b8b7ec63f2b38fe015abc73683a100adaa86f97bd3eaba623824b",
+    "candidateSourceRevision": "6e26516a030b8b7ec63f2b38fe015abc73683a100adaa86f97bd3eaba623824b",
+    "accessTypes": [
+      "MINIAPP",
+      "OA"
+    ],
+    "minNum": 1,
+    "maxNum": 2,
+    "paymentEnvironment": "0",
+    "candidateDeployed": true
+  },
+  "databaseMigrationRequired": false,
+  "deploymentInputAudit": {
+    "files": 934,
+    "bytes": 23015614,
+    "localEnvironmentFilesIncluded": false
+  },
+  "artifacts": {
+    "cloudrun-rollback.tar.gz": {
+      "sha256": "9a1923204700cde2a4f2ff991610b78b55d02b527eb31ad78893685838fa9108",
+      "bytes": 41169
+    },
+    "cloudrun-candidate.tar.gz": {
+      "sha256": "ec8dc13c4d02af74bc3792805feb826ea834cd35a21fef82798f2af15290009d",
+      "bytes": 41186
+    },
+    "vercel-production-prebuilt.tar.gz": {
+      "sha256": "7a17f398bcfdc9551826e17c3d08b3650b59d192a52f47c5e36f1b56712fcae5",
+      "bytes": 115427583,
+      "deployable": false,
+      "reason": "Rejected after deployment: macOS prebuilt artifact omitted Linux sharp runtime assets. Use verified Vercel cloud build instead."
+    }
+  },
+  "runtimeSourceSha256": {
+    "api/auth.js": "d104ae516d3c89531ce487c29e7051c71f9262c3370deaef38d84f4fff2a2cd1",
+    "lib/api-handlers/mini-gateway.js": "4c27696ed1df156b8e39fb669437015696dcdefcd236ebec30064014c465fdfb",
+    "cloudrun/index.mjs": "7e89ff9386a14462035b225ab0212aefe630c2eaf72bb5ccfd7241216a9f7e70",
+    ".vercelignore": "7d0f6344e36a23c30e40bced180091b3686ae9a6e3c9a7b5166e96a6f797564c",
+    "vercel.json": "d814611912c7aa25884347f5989fbd43273c9c2cf76a7e1906d3caf2dd89dbd4",
+    "src/components/admin/AdminTrackingDashboard.tsx": "7be6969bc8d372eed307bc2d7e1dee14a907137b59ac86da8295b457652de8ee",
+    "scripts/verify-mini-gateway.mjs": "b346f0a2be34030ce7b2b003a0549e2392ff96bf48a6e8356f73b96769910a80",
+    "scripts/test-mini-production-readonly.mjs": "65531c375ba3c9d5bcd52a6f25b6ff83aa01bf7eee27ea991b5d4a44a3d25a9c"
+  },
+  "prebuiltRestoreRehearsal": {
+    "status": "passed",
+    "mode": "deploy --prebuilt --prod --dry",
+    "fileCount": 8640,
+    "bytes": 336366271,
+    "deploymentCreated": false,
+    "scope": "Upload/source audit only; did not validate Linux native runtime. Superseded by live cloud-build checks."
+  },
+  "preview": {
+    "activeDeploymentId": "dpl_982h3mWZAvgbofWUYxeYYbFii5fS",
+    "activeDeploymentUrl": "https://haigoo-remote-bqbmkftbr-caitlinyct.vercel.app",
+    "domain": "https://mini-preview.haigooremote.com",
+    "catalogImportEnabled": true,
+    "differentDatabaseHostFromProductionVerified": true
+  },
+  "interfaceAssessment": {
+    "report": "docs/qa/2026-09-13-interface-assessment.md",
+    "productionReadOnlyPassed": 20,
+    "productionReadOnlyTotal": 20,
+    "boundaryPassed": 6,
+    "boundaryTotal": 6,
+    "productionAccountWritesPerformed": false,
+    "wechatReviewSubmitted": false,
+    "catalogSyncFailuresAfterRepair": 0,
+    "catalogCompanies": 154,
+    "catalogJobs": 418
+  },
+  "acceptedApplicationCommit": "65209d9e0e6623d73b019b2f42f2be62bf423955"
+}

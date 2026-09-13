@@ -1,0 +1,42 @@
+{
+  "action": "membership_plans",
+  "target": "production",
+  "envId": "cloud1-d8ggt7rbl273f83c7",
+  "serviceName": "haigoo-mini-prod",
+  "transport": "gateway",
+  "minInstances": null,
+  "scope": "account",
+  "origin": "https://haigoo-remote-gep8hh0pb-caitlinyct.vercel.app",
+  "status": 200,
+  "requestDurationMs": 9151,
+  "returnedCompanies": null,
+  "returnedNotes": null,
+  "returnedJobs": null,
+  "returnedRecommendations": null,
+  "matchState": null,
+  "returnedRoleGroups": null,
+  "returnedRoles": null,
+  "returnedPlans": [
+    {
+      "id": "club_starter_monthly",
+      "price": 99
+    },
+    {
+      "id": "mini_club_quarter_2026",
+      "price": 199
+    },
+    {
+      "id": "mini_club_half_year_2026",
+      "price": 699
+    }
+  ],
+  "paymentAvailable": true,
+  "companyAccessScope": null,
+  "search": null,
+  "sortBy": null,
+  "sampleCompanies": [],
+  "profile": null,
+  "matchMeta": null,
+  "sampleJobs": [],
+  "totalJobs": 0
+}
