@@ -75,6 +75,14 @@ const previewContractKeys = [
   'MINI_ALLOW_CATALOG_IMPORT'
 ]
 const effectiveEnvironment = { ...previewEnvironment, ...developmentContract, MINI_ALLOW_CATALOG_IMPORT: 'true' }
+if (effectiveEnvironment.MINI_WECHAT_REMINDERS_ENABLED === 'true') {
+  for (const key of ['WECHAT_MINI_APP_SECRET', 'WECHAT_MINI_COMPANY_UPDATE_TEMPLATE_ID', 'CRON_SECRET']) {
+    if (!effectiveEnvironment[key] || effectiveEnvironment[key] === '[SENSITIVE]') {
+      throw new Error(`Preview reminder configuration is unavailable: ${key}`)
+    }
+  }
+  effectiveEnvironment.WECHAT_MINI_PROGRAM_STATE = 'trial'
+}
 const previewDeploymentEnvironment = Object.fromEntries(
   previewContractKeys.map((key) => [key, effectiveEnvironment[key]]).filter(([, value]) => value)
 )
