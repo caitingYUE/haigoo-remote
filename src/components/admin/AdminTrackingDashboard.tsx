@@ -818,8 +818,8 @@ export default function AdminTrackingDashboard() {
                                         />
                                         <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
                                         <Tooltip
-                                            labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                                            formatter={(value: any, name?: string) => [value, name === 'uv' ? 'UV' : 'PV']}
+                                            labelFormatter={(label) => typeof label === 'string' || typeof label === 'number' ? new Date(label).toLocaleDateString() : ''}
+                                            formatter={(value, name) => [value, name === 'uv' ? 'UV' : 'PV']}
                                             contentStyle={{ borderRadius: '16px', borderColor: '#e2e8f0' }}
                                         />
                                         <Line type="monotone" dataKey="uv" stroke="#345d88" strokeWidth={3} dot={false} />
@@ -1021,8 +1021,8 @@ export default function AdminTrackingDashboard() {
                                             />
                                             <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
                                             <Tooltip
-                                                labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                                                formatter={(value: any, name?: string) => [
+                                                labelFormatter={(label) => typeof label === 'string' || typeof label === 'number' ? new Date(label).toLocaleDateString() : ''}
+                                                formatter={(value, name) => [
                                                     value,
                                                     name === 'emptyPv' ? '无结果 PV' : name === 'searchUv' ? '搜索 UV' : '搜索 PV',
                                                 ]}
@@ -1121,8 +1121,8 @@ export default function AdminTrackingDashboard() {
                                         />
                                         <YAxis tick={{ fontSize: 12, fill: '#64748b' }} axisLine={false} tickLine={false} allowDecimals={false} />
                                         <Tooltip
-                                            labelFormatter={(label) => new Date(label).toLocaleDateString()}
-                                            formatter={(value: any, name?: string) => [value, name === 'submitUv' ? '提交 UV' : '提交 PV']}
+                                            labelFormatter={(label) => typeof label === 'string' || typeof label === 'number' ? new Date(label).toLocaleDateString() : ''}
+                                            formatter={(value, name) => [value, name === 'submitUv' ? '提交 UV' : '提交 PV']}
                                             contentStyle={{ borderRadius: '16px', borderColor: '#e2e8f0' }}
                                         />
                                         <Line type="monotone" dataKey="submitUv" stroke="#466f9d" strokeWidth={3} dot={false} />

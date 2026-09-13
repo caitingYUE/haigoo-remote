@@ -130,6 +130,8 @@ let responseStatus
 let payload
 let transportRequestId = ''
 let transportResponseRequestId = ''
+let requestStartedAt
+let requestDurationMs
 if (viaCloudrun) {
   const { globalModules, require, detail } = cloudbaseContext
   if (Number(detail.ServerConfig?.MinNum || 0) < 1) {
@@ -158,6 +160,7 @@ if (viaCloudrun) {
   }[action]
   if (openid && !sessionSignature) throw new Error('CloudRun verification cannot create an authenticated test session')
   transportRequestId = `smoke-${crypto.randomUUID()}`
+  requestStartedAt = performance.now()
   const response = await app.callContainer({
     name: selected.serviceName,
     method: 'GET',
@@ -175,7 +178,9 @@ if (viaCloudrun) {
       || ''
   )
   payload = parseResponsePayload(response.data)
+  requestDurationMs = Math.round(performance.now() - requestStartedAt)
 } else if (useVercelCurl) {
+  requestStartedAt = performance.now()
   const output = execFileSync('npx', [
     'vercel', 'curl', `/api/mini?${params}`,
     '--deployment', origin,
@@ -186,17 +191,20 @@ if (viaCloudrun) {
   const lines = output.trimEnd().split('\n')
   responseStatus = Number(lines.pop())
   payload = JSON.parse(lines.join('\n') || 'null')
+  requestDurationMs = Math.round(performance.now() - requestStartedAt)
 } else {
+  requestStartedAt = performance.now()
   const response = await fetch(`${origin}/api/mini?${params}`, {
     signal: AbortSignal.timeout(20000),
     headers: requestHeaders
   })
   responseStatus = response.status
   payload = await response.json().catch(() => null)
+  requestDurationMs = Math.round(performance.now() - requestStartedAt)
 }
 
 if (responseStatus < 200 || responseStatus >= 300 || !payload?.success) {
-  const errorSummary = typeof payload?.error === 'string' ? payload.error : 'invalid response'
+  const errorSummary = typeof payload?.error === 'string' ? payload.error : payload?.error?.message || 'invalid response'
   const transportSummary = viaCloudrun
     ? ` request-trace=${transportResponseRequestId === transportRequestId ? 'forwarded' : 'missing'}`
     : ''
@@ -255,6 +263,7 @@ if (action === 'companies') {
 }
 
 console.log(JSON.stringify({
+  action,
   target,
   envId: selected.envId,
   serviceName: selected.serviceName,
@@ -263,6 +272,7 @@ console.log(JSON.stringify({
   scope,
   origin,
   status: responseStatus,
+  requestDurationMs,
   returnedCompanies: Array.isArray(payload.companies) ? payload.companies.length : null,
   returnedNotes: Array.isArray(payload.notes) ? payload.notes.length : null,
   returnedJobs: Array.isArray(payload.jobs) ? payload.jobs.length : null,
