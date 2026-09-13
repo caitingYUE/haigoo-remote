@@ -121,6 +121,7 @@ assert.ok(fallback.recommendations.every(item => Number(item.companyId.split('-'
 let state = [], user = { userId: 'a', isMember: true, memberType: 'quarter' }, token = 'a', notices = []
 class ApiRequestError extends Error { constructor(message, statusCode) { super(message); this.statusCode = statusCode } }
 const hook = load('miniprogram/src/hooks/use-retained-resource.ts', {
+  '../services/retained-resource-cache': load('miniprogram/src/services/retained-resource-cache.ts'),
   react: { useState: value => { const index = state.length; state.push(value); return [value, next => { state[index] = typeof next === 'function' ? next(state[index]) : next }] }, useRef: value => ({ current: value }), useCallback: callback => callback, useEffect: () => {} },
   '@tarojs/taro': { showToast: notice => { notices.push(notice); return Promise.resolve() } },
   '../services/api-client': { ApiRequestError },

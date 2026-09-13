@@ -14,6 +14,7 @@ import {
   getVirtualPaymentOrders,
   type VirtualPaymentOrder
 } from '../../services/virtual-payment-service'
+import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
 import { hasAuthenticatedSession } from '../../services/session'
 import { miniContentScope } from '../../hooks/use-retained-resource'
 import './index.scss'
@@ -69,8 +70,10 @@ export default function PaymentOrdersPage() {
   const authenticated = hasAuthenticatedSession()
 
   const loadOrders = useCallback(async (requestedPage = 1, append = false, preserve = false) => {
-    const scope = miniContentScope()
     const sequence = ++loadSequence.current
+    await refreshWechatSessionIfStale(0).catch(() => null)
+    if (sequence !== loadSequence.current) return
+    const scope = miniContentScope()
     if (lastScope.current !== scope) {
       lastScope.current = scope
       hasLoaded.current = false

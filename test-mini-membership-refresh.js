@@ -27,9 +27,9 @@ for (const [path, payloadCall] of [
 ]) {
   const source = read(path)
   assert.match(source, /useDidShow\(\(\) =>/)
-  assert.match(source, /refreshWechatSession\(\)/)
+  assert.match(source, /refreshWechatSessionIfStale\(/)
   assert.ok(
-    source.indexOf('refreshWechatSession()') < source.indexOf(`${payloadCall}(`),
+    source.indexOf('await refreshWechatSession') < source.indexOf(`${payloadCall}(`),
     `${path} must refresh the session before loading page payloads`
   )
   assert.match(source, /useRef\(0\)/, `${path} must guard overlapping page loads`)
@@ -38,7 +38,7 @@ for (const [path, payloadCall] of [
 const companiesPage = read('miniprogram/src/pages/companies/index.tsx')
 assert.match(companiesPage, /refreshWechatSessionIfStale\(\)/)
 assert.ok(
-  companiesPage.indexOf('refreshWechatSessionIfStale()') < companiesPage.indexOf('else void load(false)'),
+  companiesPage.indexOf('refreshWechatSessionIfStale()') < companiesPage.indexOf('else void load(false,'),
   'company directory must validate membership before restoring retained data'
 )
 assert.doesNotMatch(companiesPage, /useDidShow\(\(\) => \{[\s\S]{0,500}setData\(null\)/)
@@ -55,7 +55,7 @@ assert.doesNotMatch(companyDetail, /useDidShow\(\(\) => \{[\s\S]{0,400}setData\(
 const profilePage = read('miniprogram/src/pages/profile/index.tsx')
 assert.match(profilePage, /const activeMembership = dashboardLoaded \? membership : null/)
 const miniAuthSource = read('miniprogram/src/services/mini-auth-service.ts')
-assert.match(miniAuthSource, /refreshWechatSessionIfStale\(maxAgeMs = 0\)/)
+assert.match(miniAuthSource, /refreshWechatSessionIfStale\(maxAgeMs = 5 \* 60 \* 1000\)/)
 
 let resolveFirst
 let loginCount = 0
@@ -75,6 +75,8 @@ const auth = load('miniprogram/src/services/mini-auth-service.ts', {
   },
   './analytics-service': { trackMiniEvent: async () => {} },
   './session': {
+    getMiniSessionCacheKey: () => 'user-1',
+    getMiniUser: () => ({ userId: 'user-1' }),
     clearMiniSession: () => {},
     getMiniSessionToken: () => 'current-token',
     hasAuthenticatedSession: () => true,
@@ -105,6 +107,8 @@ const logoutAuth = load('miniprogram/src/services/mini-auth-service.ts', {
   './api-client': { requestJson: async () => new Promise((resolve) => { resolveLogoutRefresh = resolve }) },
   './analytics-service': { trackMiniEvent: async () => {} },
   './session': {
+    getMiniSessionCacheKey: () => 'user-1',
+    getMiniUser: () => ({ userId: 'user-1' }),
     clearMiniSession: () => { cleared += 1 },
     getMiniSessionToken: () => 'current-token',
     hasAuthenticatedSession: () => true,
@@ -131,6 +135,8 @@ const bindAuth = load('miniprogram/src/services/mini-auth-service.ts', {
   },
   './analytics-service': { trackMiniEvent: async () => {} },
   './session': {
+    getMiniSessionCacheKey: () => 'user-1',
+    getMiniUser: () => ({ userId: 'user-1' }),
     clearMiniSession: () => {},
     getMiniSessionToken: () => 'current-token',
     hasAuthenticatedSession: () => true,

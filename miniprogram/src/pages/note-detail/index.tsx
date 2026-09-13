@@ -1,6 +1,6 @@
 import { Button, Image, Text, View } from '@tarojs/components'
-import { navigateBack, navigateTo, useRouter } from '@tarojs/taro'
-import { useCallback, useEffect } from 'react'
+import { navigateBack, navigateTo, useDidShow, useRouter } from '@tarojs/taro'
+import { useCallback } from 'react'
 import ContentSkeleton from '../../components/content-skeleton'
 import MiniIcon from '../../components/mini-icon'
 import useMiniShare from '../../hooks/use-mini-share'
@@ -39,7 +39,7 @@ export default function NoteDetailPage() {
       return { result, related: allNotes.filter((item) => item.id !== id).slice(0, 2) }
     }, force)
   }, [id, loadResource, resourceKey])
-  useEffect(() => { void load() }, [load])
+  useDidShow(() => { void load() })
   useMiniShare(note?.titleZh || note?.title || 'Haigoo 职业笔记', `/pages/note-detail/index?id=${encodeURIComponent(id)}`)
 
   const sourceTitle = note?.authorName || note?.sourceName || ''

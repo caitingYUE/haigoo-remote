@@ -61,6 +61,7 @@ const assets = {
 }
 let directoryCompanies = logos
 const content = loadTs('miniprogram/src/services/content-service.ts', {
+  './retained-resource-cache': { invalidateMiniResource() {} },
   './cloud-asset-service': assets,
   './api-client': { requestJson: async () => ({ companies: directoryCompanies, access: { scope: 'free_fixed' } }) }
 })

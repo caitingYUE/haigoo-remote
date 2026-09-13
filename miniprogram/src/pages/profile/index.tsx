@@ -1,5 +1,5 @@
 import { Image, Text, View } from '@tarojs/components'
-import Taro, { navigateTo, showModal, showToast, useDidShow } from '@tarojs/taro'
+import Taro, { navigateTo, showModal, showToast, stopPullDownRefresh, useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import MiniIcon from '../../components/mini-icon'
 import AuthConsent from '../../components/auth-consent'
@@ -8,11 +8,12 @@ import defaultUserIcon from '../../../assets/icons/default-user.svg'
 import memberCrown from '../../../assets/icons/member-crown.svg'
 import { claimMemberService, fetchMemberServices } from '../../services/content-service'
 import { fetchCareerMatchState, fetchCareerWatch, fetchCompanyFollows } from '../../services/career-match-service'
-import type { CareerWatchResponse } from '../../services/career-match-service'
-import { loginWithWechat, refreshWechatSession } from '../../services/mini-auth-service'
+import { loginWithWechat, refreshWechatSessionIfStale } from '../../services/mini-auth-service'
 import { getMiniUser, hasAuthenticatedSession } from '../../services/session'
-import type { CareerMatchState, MemberServiceEntitlement } from '../../types'
+import type { MemberServiceEntitlement } from '../../types'
 import { formatCalendarDate } from '../../utils/runtime-compat'
+import useRetainedResource, { miniContentScope } from '../../hooks/use-retained-resource'
+import { onCompanyFollowChange } from '../../services/company-follow-state'
 import './index.scss'
 
 const profileMenus = [
@@ -34,43 +35,42 @@ export default function ProfilePage() {
   const [consentAccepted, setConsentAccepted] = useState(false)
   const [loggingIn, setLoggingIn] = useState(false)
   const [avatarFailed, setAvatarFailed] = useState(false)
-  const [followCount, setFollowCount] = useState<number | null>(null)
-  const [unreadCount, setUnreadCount] = useState<number | null>(null)
-  const [membership, setMembership] = useState<{ isMember: boolean; memberType: string; memberExpireAt?: string | null } | null>(null)
-  const [watchState, setWatchState] = useState<CareerWatchResponse | null>(null)
-  const [careerState, setCareerState] = useState<CareerMatchState | null>(null)
-  const [services, setServices] = useState<MemberServiceEntitlement[]>([])
+  const { data: dashboard, setData: setDashboard, error: dashboardError, load: loadResource } = useRetainedResource<{
+    follows: Awaited<ReturnType<typeof fetchCompanyFollows>>
+    watch: Awaited<ReturnType<typeof fetchCareerWatch>>
+    career: Awaited<ReturnType<typeof fetchCareerMatchState>>
+    memberServices: Awaited<ReturnType<typeof fetchMemberServices>>
+  }>('profile-dashboard')
+  const followCount = dashboard?.follows.follows.length ?? null
+  const unreadCount = dashboard?.watch.followedUpdates.length ?? null
+  const membership = dashboard?.memberServices.membership || null
+  const watchState = dashboard?.watch || null
+  const careerState = dashboard?.career || null
+  const services = dashboard?.memberServices.entitlements || []
+  const dashboardLoaded = Boolean(dashboard)
   const [claiming, setClaiming] = useState('')
-  const [dashboardLoaded, setDashboardLoaded] = useState(false)
-  const [dashboardError, setDashboardError] = useState('')
   const isAuthenticated = hasAuthenticatedSession()
   const user = getMiniUser()
   const avatarUrl = resolveMiniAvatarUrl(user?.avatar)
   useEffect(() => setAvatarFailed(false), [avatarUrl])
 
-  const loadDashboard = useCallback(async () => {
+  const loadDashboard = useCallback(async (force = false) => {
     const loadVersion = ++dashboardLoadVersion.current
-    if (!hasAuthenticatedSession()) { setFollowCount(null); setUnreadCount(null); setMembership(null); setWatchState(null); setCareerState(null); setServices([]); setDashboardLoaded(false); setDashboardError(''); return }
-    setDashboardLoaded(false)
-    setDashboardError('')
-    const refreshFailed = await refreshWechatSession().then(() => false).catch(() => true)
-    const [follows, watch, career, memberServices] = await Promise.all([
-      fetchCompanyFollows().catch(() => null),
-      fetchCareerWatch().catch(() => null),
-      fetchCareerMatchState().catch(() => null),
-      fetchMemberServices().catch(() => null)
-    ])
+    if (!hasAuthenticatedSession()) { setDashboard(null); return }
+    await refreshWechatSessionIfStale(force ? 0 : undefined).catch(() => null)
     if (loadVersion !== dashboardLoadVersion.current) return
-    setFollowCount(follows ? follows.follows.length : null)
-    setUnreadCount(watch ? watch.followedUpdates.length : null)
-    setWatchState(watch)
-    setCareerState(career)
-    if (watch) Taro.eventCenter.trigger('haigoo:unread-change', watch.followedUpdates.length)
-    setMembership(memberServices?.membership || null)
-    setServices(memberServices?.entitlements || [])
-    setDashboardLoaded(true)
-    if (refreshFailed || !follows || !watch || !career || !memberServices) setDashboardError('部分信息暂时无法加载')
-  }, [])
+    const scope = miniContentScope()
+    await loadResource('profile-dashboard', async () => {
+      const [follows, watch, career, memberServices] = await Promise.all([
+        fetchCompanyFollows(), fetchCareerWatch(), fetchCareerMatchState(), fetchMemberServices()
+      ])
+      if (scope === miniContentScope()) Taro.eventCenter.trigger('haigoo:unread-change', watch.followedUpdates.length)
+      return { follows, watch, career, memberServices }
+    }, force)
+  }, [loadResource, setDashboard])
+  useEffect(() => onCompanyFollowChange(() => { void loadDashboard() }), [loadDashboard])
+  useEffect(() => () => { dashboardLoadVersion.current++ }, [])
+  usePullDownRefresh(() => loadDashboard(true).finally(() => stopPullDownRefresh()))
 
   useDidShow(() => {
     setSessionVersion((value) => value + 1)
@@ -106,13 +106,12 @@ export default function ProfilePage() {
     setClaiming(service.key)
     try {
       const result = await claimMemberService(service.key)
-      setServices((current) => current.map((item) => item.key === result.entitlement.key ? result.entitlement : item))
+      setDashboard((current) => current ? { ...current, memberServices: { ...current.memberServices, entitlements: current.memberServices.entitlements.map((item) => item.key === result.entitlement.key ? result.entitlement : item) } } : current)
       showToast({ title: '已提交申请', icon: 'success' })
     } catch (error) { showModal({ title: '申请没有完成', content: error instanceof Error ? error.message : '请稍后重试', showCancel: false }) } finally { setClaiming('') }
   }
 
-  // The locally persisted user can be stale after a refund. Only render a
-  // membership badge once the authoritative dashboard request has completed.
+  // Reuse the last server-confirmed dashboard until account/entitlement changes.
   const activeMembership = dashboardLoaded ? membership : null
   const membershipPending = isAuthenticated && !dashboardLoaded
   const memberExpireAt = formatCalendarDate(activeMembership?.memberExpireAt)
@@ -135,7 +134,7 @@ export default function ProfilePage() {
     {!isAuthenticated ? <View className='profile-auth-notice'><Text>登录将使用微信身份标识，并在已连接账号时同步邮箱和会员状态。不同意也可继续浏览公开企业与岗位。</Text><AuthConsent accepted={consentAccepted} onChange={setConsentAccepted} /></View> : null}
 
     {isAuthenticated ? <View className='profile-facts'><View aria-role='button' aria-label={`查看关注企业，共 ${followCount ?? '—'} 家`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/followed-companies/index' })}><Text>{followCount ?? '—'}</Text><Text>关注企业</Text></View><View aria-role='button' aria-label={`查看未读岗位更新，共 ${unreadCount ?? '—'} 条`} hoverClass='mini-action--pressed' onClick={() => Taro.switchTab({ url: '/pages/index/index' })}><Text>{unreadCount ?? '—'}</Text><Text>未读岗位更新</Text></View></View> : null}
-    {isAuthenticated && dashboardError ? <View className='profile-dashboard-error' aria-live='polite'><Text>{dashboardError}</Text><Text aria-role='button' aria-label='重新加载个人信息' onClick={() => void loadDashboard()}>重新加载</Text></View> : null}
+    {isAuthenticated && dashboardError ? <View className='profile-dashboard-error' aria-live='polite'><Text>{dashboardError}</Text><Text aria-role='button' aria-label='重新加载个人信息' onClick={() => void loadDashboard(true)}>重新加载</Text></View> : null}
 
     <View className='profile-membership' aria-role='button' aria-label='查看会员方案' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}>
       <View><MiniIcon name='club' size={25} /><View><Text>{membershipPending ? '正在确认会员状态' : activeMembership?.isMember ? '会员权益正在生效' : '开通会员，查看更多企业'}</Text><Text>{membershipPending ? '请稍候' : activeMembership?.isMember ? `${membershipLabel(activeMembership.memberType)}${memberExpireAt ? ` · 有效期至 ${memberExpireAt}` : ''}` : '岗位提醒 · 内部联系人 · 求职支持'}</Text></View></View><MiniIcon name='chevronRight' size={19} />

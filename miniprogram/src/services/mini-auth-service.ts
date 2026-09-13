@@ -1,7 +1,7 @@
 import Taro from '@tarojs/taro'
 import { requestJson } from './api-client'
 import { trackMiniEvent } from './analytics-service'
-import { clearMiniSession, getMiniSessionToken, hasAuthenticatedSession, saveMiniSession } from './session'
+import { clearMiniSession, getMiniSessionCacheKey, getMiniUser, getMiniSessionToken, hasAuthenticatedSession, saveMiniSession } from './session'
 import { MINI_AGREEMENT_VERSION, MINI_PRIVACY_VERSION } from '../config/legal'
 
 interface MiniUser {
@@ -25,6 +25,25 @@ interface SessionResponse {
 let sessionRequestVersion = 0
 let sessionRefreshPending: Promise<SessionResponse> | null = null
 let lastSessionRefreshAt = 0
+let lastSessionRefreshScope = ''
+let accountMutationPending = false
+let accountLifecycleVersion = 0
+
+async function mutateAccount<T>(operation: () => Promise<T>, commit?: (result: T) => void): Promise<T> {
+  if (accountMutationPending) throw new Error('账号操作正在进行，请稍候')
+  accountMutationPending = true
+  const lifecycle = accountLifecycleVersion
+  const scope = getMiniSessionCacheKey()
+  sessionRequestVersion++
+  try {
+    const result = await operation()
+    if (lifecycle !== accountLifecycleVersion || scope !== getMiniSessionCacheKey()) throw new Error('账号状态已变化，请重新操作')
+    commit?.(result)
+    return result
+  } finally {
+    accountMutationPending = false
+  }
+}
 
 function saveAuthoritativeSession(session: Parameters<typeof saveMiniSession>[0]) {
   sessionRequestVersion += 1
@@ -37,28 +56,35 @@ function requireConsent(accepted: boolean) {
 
 export async function loginWithWechat(consentAccepted = false) {
   requireConsent(consentAccepted)
-  return createWechatSession()
+  if (accountMutationPending) throw new Error('账号操作正在进行，请稍候')
+  const lifecycle = accountLifecycleVersion
+  const session = await createWechatSession()
+  if (lifecycle !== accountLifecycleVersion) throw new Error('账号状态已变化，请重新登录')
+  return session
 }
 
 // Refresh existing membership after payment; this is not a guest login entry.
 export async function refreshWechatSession() {
   if (!hasAuthenticatedSession()) throw new Error('请先登录账号')
+  if (accountMutationPending) throw new Error('账号操作正在进行，请稍候')
   const session = await createWechatSession()
-  lastSessionRefreshAt = Date.now()
   return session
 }
 
-// Sensitive pages validate server-side membership on every return. Requests
-// are still deduplicated while in flight.
-export async function refreshWechatSessionIfStale(maxAgeMs = 0) {
-  if (!hasAuthenticatedSession()) return null
-  if (Date.now() - lastSessionRefreshAt < Math.max(0, maxAgeMs)) return null
+// Recheck remote refunds/changes at most every five minutes during navigation.
+// Purchases explicitly refresh; local expiry and account changes bypass the window.
+export async function refreshWechatSessionIfStale(maxAgeMs = 5 * 60 * 1000) {
+  if (!hasAuthenticatedSession() || accountMutationPending) return null
+  const expiresAt = Date.parse(getMiniUser()?.memberExpireAt || '')
+  const justExpired = expiresAt <= Date.now() && lastSessionRefreshAt < expiresAt
+  if (!justExpired && lastSessionRefreshScope === getMiniSessionCacheKey() && Date.now() - lastSessionRefreshAt < Math.max(0, maxAgeMs)) return null
   if (sessionRefreshPending) return sessionRefreshPending
-  sessionRefreshPending = refreshWechatSession()
+  const pending = refreshWechatSession()
+  sessionRefreshPending = pending
   try {
-    return await sessionRefreshPending
+    return await pending
   } finally {
-    sessionRefreshPending = null
+    if (sessionRefreshPending === pending) sessionRefreshPending = null
   }
 }
 
@@ -82,6 +108,8 @@ async function createWechatSession() {
       memberType: session.user?.memberType,
       memberExpireAt: session.user?.memberExpireAt
     })
+    lastSessionRefreshAt = Date.now()
+    lastSessionRefreshScope = getMiniSessionCacheKey()
   }
   void trackMiniEvent('mini_login', { status: session.bound ? 'bound' : 'unbound' })
   return session
@@ -89,22 +117,25 @@ async function createWechatSession() {
 
 export async function bindWebsiteAccount(email: string, password: string, consentAccepted = false) {
   requireConsent(consentAccepted)
-  const response = await requestJson<SessionResponse>('/mini/account/bind', {
+  if (!getMiniSessionToken()) await loginWithWechat(consentAccepted)
+  const response = await mutateAccount(() => requestJson<SessionResponse>('/mini/account/bind', {
     method: 'POST',
     authenticated: true,
-    data: { email, password }
+    data: { email: email.trim().toLowerCase(), password }
+  }), (response) => {
+    if (!response.token || !response.user?.userId) throw new Error('账号连接没有完成，请重试')
+    saveAuthoritativeSession({
+      token: response.token,
+      userId: response.user.userId,
+      username: response.user.username,
+      email: response.user.email,
+      avatar: response.user.avatar,
+      isMember: response.user.isMember,
+      memberType: response.user.memberType,
+      memberExpireAt: response.user.memberExpireAt
+    })
   })
-  if (!response.token || !response.user?.userId) throw new Error('账号连接没有完成，请重试')
-  saveAuthoritativeSession({
-    token: response.token,
-    userId: response.user.userId,
-    username: response.user.username,
-    email: response.user.email,
-    avatar: response.user.avatar,
-    isMember: response.user.isMember,
-    memberType: response.user.memberType,
-    memberExpireAt: response.user.memberExpireAt
-  })
+
   void trackMiniEvent('mini_account_bind', { status: 'succeeded' })
   return response
 }
@@ -117,29 +148,31 @@ export async function registerAndBindWebsiteAccount(
 ) {
   requireConsent(consentAccepted)
   if (!getMiniSessionToken()) await loginWithWechat(consentAccepted)
-  const response = await requestJson<SessionResponse>('/mini/account/register', {
+  const response = await mutateAccount(() => requestJson<SessionResponse>('/mini/account/register', {
     method: 'POST',
     authenticated: true,
     data: {
-      email,
+      email: email.trim().toLowerCase(),
       password,
       username: username?.trim() || undefined,
       agreementVersion: MINI_AGREEMENT_VERSION,
       privacyVersion: MINI_PRIVACY_VERSION,
       acceptedAt: new Date().toISOString()
     }
+  }), (response) => {
+    if (!response.token || !response.user?.userId) throw new Error('账号创建未完成，请稍后重试')
+    saveAuthoritativeSession({
+      token: response.token,
+      userId: response.user.userId,
+      username: response.user.username,
+      email: response.user.email,
+      avatar: response.user.avatar,
+      isMember: response.user.isMember,
+      memberType: response.user.memberType,
+      memberExpireAt: response.user.memberExpireAt
+    })
   })
-  if (!response.token || !response.user?.userId) throw new Error('账号创建未完成，请稍后重试')
-  saveAuthoritativeSession({
-    token: response.token,
-    userId: response.user.userId,
-    username: response.user.username,
-    email: response.user.email,
-    avatar: response.user.avatar,
-    isMember: response.user.isMember,
-    memberType: response.user.memberType,
-    memberExpireAt: response.user.memberExpireAt
-  })
+
   void trackMiniEvent('mini_account_register', { status: 'succeeded' })
   return response
 }
@@ -157,23 +190,21 @@ export async function requestPasswordReset(email: string, consentAccepted = fals
 }
 
 export async function unbindWebsiteAccount(password: string) {
-  sessionRequestVersion += 1
-  const response = await requestJson<{ success?: boolean; message?: string }>('/mini/account/unbind', {
+  const response = await mutateAccount(() => requestJson<{ success?: boolean; message?: string }>('/mini/account/unbind', {
     method: 'POST',
     authenticated: true,
     data: { password }
-  })
+  }))
   void trackMiniEvent('mini_account_unbound', { status: 'succeeded' })
   return response
 }
 
 export async function deleteMiniAccount(password: string) {
-  sessionRequestVersion += 1
-  const response = await requestJson<{ success?: boolean; message?: string }>('/mini/account/delete', {
+  const response = await mutateAccount(() => requestJson<{ success?: boolean; message?: string }>('/mini/account/delete', {
     method: 'POST',
     authenticated: true,
     data: { password }
-  })
+  }))
   void trackMiniEvent('mini_account_deleted', { status: 'succeeded' })
   return response
 }
@@ -187,6 +218,7 @@ export async function submitMiniFeedback(content: string) {
 }
 
 export function logoutMiniAccount() {
+  accountLifecycleVersion += 1
   sessionRequestVersion += 1
   lastSessionRefreshAt = 0
   sessionRefreshPending = null

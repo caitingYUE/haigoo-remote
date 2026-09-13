@@ -54,6 +54,7 @@ export default function CompanyDetailPage() {
   const [activeTab, setActiveTab] = useState<'overview' | 'jobs' | 'culture'>('overview')
   const [footerHeight, setFooterHeight] = useState(0)
   const loadSequence = useRef(0)
+  const secondaryScope = useRef('')
   useEffect(() => () => { loadSequence.current++ }, [])
   const measureFooter = useCallback(() => {
     nextTick(() => {
@@ -71,12 +72,15 @@ export default function CompanyDetailPage() {
     const authenticated = hasAuthenticatedSession()
     const emptyFollows = { success: true as const, follows: [] as Array<{ company_id: string; name: string; industry: string; wechat_enabled?: boolean; wechat_template_status?: string }> }
     const detailRequest = loadResource(resourceKey, () => fetchCompanyDetail(id, force, accessSearch), force)
+    if (!force && secondaryScope.current === scope) { await detailRequest; return }
     const [follows, watch] = await Promise.all([
-      authenticated ? fetchCompanyFollows().catch(() => emptyFollows) : Promise.resolve(emptyFollows),
+      authenticated ? fetchCompanyFollows().catch(() => null) : Promise.resolve(emptyFollows),
       authenticated ? fetchCareerWatch().catch(() => null) : Promise.resolve(null)
     ])
     await detailRequest
     if (sequence !== loadSequence.current || scope !== miniContentScope()) return
+    if (follows && (!authenticated || watch)) secondaryScope.current = scope
+    if (!follows) return
     const companyFollow = follows.follows.find((item) => String(item.company_id) === id)
     setFollowed(Boolean(companyFollow))
     setSubscribed(Boolean(companyFollow?.wechat_enabled && companyFollow.wechat_template_status === 'accepted'))

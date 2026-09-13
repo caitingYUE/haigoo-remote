@@ -1,5 +1,5 @@
 import { Checkbox, CheckboxGroup, Image, Input, Radio, RadioGroup, Text, Textarea, View } from '@tarojs/components'
-import { navigateTo, showModal, useDidShow, useRouter, vibrateShort } from '@tarojs/taro'
+import { navigateTo, showModal, stopPullDownRefresh, useDidShow, usePullDownRefresh, useRouter, vibrateShort } from '@tarojs/taro'
 import { useCallback, useState } from 'react'
 import { MINI_PRIVACY_VERSION } from '../../config/legal'
 import advisorImage from '../../../assets/haigoo-advisor.png'
@@ -7,6 +7,7 @@ import { createRequestKey } from '../../services/api-client'
 import { trackMiniEvent } from '../../services/analytics-service'
 import { fetchConsultations, submitConsultation } from '../../services/content-service'
 import { hasAuthenticatedSession } from '../../services/session'
+import useRetainedResource from '../../hooks/use-retained-resource'
 import type { ConsultationRequest } from '../../types'
 import './index.scss'
 
@@ -36,17 +37,15 @@ export default function ConsultationPage() {
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
   const [success, setSuccess] = useState(false)
-  const [history, setHistory] = useState<ConsultationRequest[]>([])
-  const [historyError, setHistoryError] = useState(false)
+  const { data: historyData, error: historyError, load: loadHistory } = useRetainedResource<ConsultationRequest[]>('consultation-history')
+  const history = historyData || []
 
-  const refresh = useCallback(async () => {
-    if (!hasAuthenticatedSession()) return
-    setHistoryError(false)
-    const result = await fetchConsultations().catch(() => null)
-    if (result) setHistory(result.consultations)
-    else setHistoryError(true)
-  }, [])
+  const refresh = useCallback(async (force = false) => {
+    await loadHistory('consultation-history', async () => hasAuthenticatedSession()
+      ? (await fetchConsultations()).consultations : [], force)
+  }, [loadHistory])
   useDidShow(() => { void refresh() })
+  usePullDownRefresh(() => refresh(true).finally(() => stopPullDownRefresh()))
 
   const ensureBound = async () => {
     if (hasAuthenticatedSession()) return true
@@ -84,7 +83,7 @@ export default function ConsultationPage() {
       setSuccess(true)
       void vibrateShort({ type: 'light' }).catch(() => undefined)
       void trackMiniEvent('mini_consultation_submitted', { topic: TOPICS[topicIndex].value, source_page: String(router.params.sourcePage || 'mini_consultation') })
-      await refresh()
+      await refresh(true)
     } catch (error) {
       showModal({ title: '提交未完成', content: error instanceof Error ? error.message : '请稍后重试', showCancel: false })
     } finally { setSubmitting(false) }
@@ -115,7 +114,7 @@ export default function ConsultationPage() {
         <View className={`primary-button consultation-submit ${submitting ? 'primary-button--disabled' : ''}`} onClick={submitting ? undefined : handleSubmit}>{submitting ? '正在提交…' : '提交咨询'}</View>
       </View>
       {history.length > 0 ? <View className='consultation-history'><Text className='consultation-history__title'>最近咨询记录</Text>{history.slice(0, 3).map((item) => <View className='consultation-history__item' key={item.id}><Text>{TOPICS.find((topic) => topic.value === item.consultation_topic)?.label || '职业咨询'}</Text><Text>{CONSULTATION_STATUS_LABELS[item.status] || '处理中'}</Text></View>)}</View> : null}
-      {historyError ? <View className='consultation-history'><Text className='consultation-error'>咨询记录暂时无法加载</Text><Text aria-role='button' onClick={() => void refresh()}>重新加载</Text></View> : null}
+      {historyError ? <View className='consultation-history'><Text className='consultation-error'>咨询记录暂时无法加载</Text><Text aria-role='button' onClick={() => void refresh(true)}>重新加载</Text></View> : null}
     </View>
   )
 }

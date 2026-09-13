@@ -19,6 +19,7 @@ export default function MatchCompanyDeck({ items, snapshotId, activeIndex, onAct
     <Swiper
       className='match-deck__swiper'
       current={current}
+      autoplay={false}
       circular={items.length > 1}
       duration={280}
       easingFunction='easeOutCubic'

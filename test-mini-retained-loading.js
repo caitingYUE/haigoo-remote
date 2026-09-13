@@ -5,7 +5,7 @@ const read = (path) => fs.readFileSync(new URL(path, import.meta.url), 'utf8')
 const hook = read('./miniprogram/src/hooks/use-retained-resource.ts')
 
 assert.match(hook, /const CACHE_LIMIT = 40/)
-assert.match(hook, /const retainedResources = new Map/)
+assert.match(read('./miniprogram/src/services/retained-resource-cache.ts'), /const retainedResources = new Map/)
 assert.match(hook, /useRetainedResource<T>\(initialKey = ''\)/)
 assert.match(hook, /scopeChanged \? null : current\.data/)
 assert.match(hook, /CACHE_TTL_MS = Number\.POSITIVE_INFINITY/)
@@ -56,7 +56,7 @@ for (const path of [
   const retainedPage = read(path)
   assert.match(retainedPage, /hasLoaded/)
   assert.match(retainedPage, /sameScope/)
-  assert.match(retainedPage, /if \(sameScope && hasLoaded\.current\) return/)
+  assert.match(retainedPage, /if \(sameScope && hasLoaded\.current(?: && favoriteRevision\.current === resourceRevision\('favorite-state'\))?\) return/)
 }
 
 const favorites = read('./miniprogram/src/pages/favorite-jobs/index.tsx')

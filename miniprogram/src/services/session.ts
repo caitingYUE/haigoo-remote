@@ -6,6 +6,9 @@ const PRODUCTION_CLOUD_ENV_ID = 'cloud1-d8ggt7rbl273f83c7'
 
 export const MINI_SESSION_STORAGE_KEY = `${LEGACY_MINI_SESSION_STORAGE_KEY}:${CLOUD_ENV_ID || 'default'}`
 
+// A token renewal is not an account change. Logout/rebinding starts new page memory.
+let accountGeneration = 0
+
 interface MiniSession {
   token: string
   userId?: string | null
@@ -34,6 +37,8 @@ function getMiniSession(): MiniSession | null {
 }
 
 export function saveMiniSession(session: MiniSession) {
+  const previous = getMiniSession()
+  if (!previous || previous.userId !== session.userId) accountGeneration++
   setStorageSync(MINI_SESSION_STORAGE_KEY, session)
 }
 
@@ -45,7 +50,7 @@ export function getMiniSessionCacheKey(): string {
   const session = getMiniSession()
   const token = String(session?.token || '').trim()
   if (!token) return 'none'
-  return `${session?.userId || 'anonymous'}:${token.slice(-16)}`
+  return `${session?.userId || `anonymous:${token.slice(-16)}`}:${accountGeneration}`
 }
 
 export function hasMiniSession(): boolean {
@@ -57,6 +62,10 @@ export function getMiniUser() {
 }
 
 export function clearMiniSession() {
+  const previous = getMiniSession()
+  if (previous?.userId) removeStorageSync(careerWatchStorageKey(previous.userId))
+  removeStorageSync('haigoo:match-intent')
+  accountGeneration++
   removeStorageSync(MINI_SESSION_STORAGE_KEY)
   if (CLOUD_ENV_ID === PRODUCTION_CLOUD_ENV_ID) {
     removeStorageSync(LEGACY_MINI_SESSION_STORAGE_KEY)

@@ -5,6 +5,7 @@ import MiniIcon from '../../components/mini-icon'
 import { fetchFavoriteJobs, setJobFavorite } from '../../services/content-service'
 import type { FavoriteJobRecord } from '../../services/content-service'
 import { hasAuthenticatedSession } from '../../services/session'
+import { resourceRevision } from '../../services/retained-resource-cache'
 import { miniContentScope } from '../../hooks/use-retained-resource'
 import './index.scss'
 
@@ -20,6 +21,7 @@ export default function FavoriteJobsPage() {
   const lastScope = useRef('')
   const hasLoaded = useRef(false)
   const loadSequence = useRef(0)
+  const favoriteRevision = useRef(-1)
 
   const load = async (reset = false, preserve = false) => {
     const scope = miniContentScope()
@@ -39,6 +41,7 @@ export default function FavoriteJobsPage() {
       setRecords([]); setLoading(false); setError('请先登录并绑定 Haigoo 账号'); Taro.stopPullDownRefresh(); return
     }
     pending.current = true
+    const revision = resourceRevision('favorite-state')
     const sequence = ++loadSequence.current
     if (!preserve || !hasLoaded.current) setLoading(true)
     setError('')
@@ -50,6 +53,7 @@ export default function FavoriteJobsPage() {
       page.current = result.page
       setHasMore(result.hasMore)
       hasLoaded.current = true
+      favoriteRevision.current = revision
     } catch (cause) {
       if (sequence !== loadSequence.current) return
       if (scope !== miniContentScope()) setRecords([])
@@ -60,7 +64,7 @@ export default function FavoriteJobsPage() {
 
   useDidShow(() => {
     const sameScope = lastScope.current === miniContentScope()
-    if (sameScope && hasLoaded.current) return
+    if (sameScope && hasLoaded.current && favoriteRevision.current === resourceRevision('favorite-state')) return
     void load(true, sameScope && hasLoaded.current)
   })
   usePullDownRefresh(() => { void load(true, hasLoaded.current) })

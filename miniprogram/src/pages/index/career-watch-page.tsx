@@ -6,6 +6,7 @@ import MatchCompanyCard from '../../components/match-company-card'
 import MatchCompanyDeck from '../../components/match-company-deck'
 import MiniIcon from '../../components/mini-icon'
 import {
+  careerWatchDailyRefreshKey,
   fetchCareerWatch,
   fetchCareerWatchOptions,
   isCareerWatchCacheValid,
@@ -18,7 +19,7 @@ import type { CareerWatchResponse, WatchFeedItem, WatchFilterOptions, WatchPrefe
 import { trackMiniEvent } from '../../services/analytics-service'
 import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
 import { careerWatchStorageKey, getMiniUser, hasAuthenticatedSession } from '../../services/session'
-import { createRequestKey } from '../../services/api-client'
+import { invalidateMiniResource } from '../../services/retained-resource-cache'
 import { miniContentScope } from '../../hooks/use-retained-resource'
 import useMiniShare from '../../hooks/use-mini-share'
 import { matchDeckStorageKey, wrapDeckIndex } from '../../utils/match-deck'
@@ -68,25 +69,35 @@ function readValidCachedWatch(): CareerWatchResponse | null {
   return cached && isCareerWatchCacheValid(cached) && cached.entitlements.isMember === activeMember ? cached : null
 }
 
+function savedDeckIndex(watch: CareerWatchResponse | null) {
+  if (!watch?.snapshotId) return 0
+  const stored = Number(Taro.getStorageSync(matchDeckStorageKey(getMiniUser()?.userId || 'guest', watch.snapshotId)) || 0)
+  return wrapDeckIndex(Number.isFinite(stored) ? stored : 0, watch.recommendations.length)
+}
+
 export default function CareerWatchPage() {
   const authenticated = hasAuthenticatedSession()
   const initialWatch = useMemo(() => readValidCachedWatch(), [authenticated])
   const [step, setStep] = useState<WatchStep>(initialWatch ? initialWatch.matchState === 'unused' ? 'start' : 'feed' : authenticated ? 'loading' : 'start')
+  const stepRef = useRef(step)
+  stepRef.current = step
   const [watch, setWatch] = useState<CareerWatchResponse | null>(initialWatch)
   const [standaloneOptions, setStandaloneOptions] = useState<WatchFilterOptions | null>(null)
   const [draft, setDraft] = useState<WatchDraft>(() => draftFromWatch(initialWatch))
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
-  const [activeCompanyIndex, setActiveCompanyIndex] = useState(0)
+  const [activeCompanyIndex, setActiveCompanyIndex] = useState(() => savedDeckIndex(initialWatch))
   const [activeRoleGroup, setActiveRoleGroup] = useState(0)
   const [expandedRoleGroups, setExpandedRoleGroups] = useState<Record<string, boolean>>({})
   const [industriesExpanded, setIndustriesExpanded] = useState(false)
   const resumeFlowActive = useRef(false)
   const loadSequence = useRef(0)
   const pendingLoad = useRef('')
-  const lastScope = useRef('')
-  const visitKey = useRef('')
-  const hasEntered = useRef(false)
+  const lastScope = useRef(miniContentScope())
+  const watchRef = useRef(initialWatch)
+  const [pendingWatch, setPendingWatch] = useState<CareerWatchResponse | null>(null)
+  const pendingWatchRef = useRef<CareerWatchResponse | null>(null)
+  useEffect(() => () => { loadSequence.current++ }, [])
   useMiniShare('HaigooRemote｜找到更适合你的远程方向', '/pages/index/index')
 
   useEffect(() => {
@@ -95,6 +106,13 @@ export default function CareerWatchPage() {
   }, [step])
 
   const applyResponse = useCallback((result: CareerWatchResponse) => {
+    if (watchRef.current?.snapshotId !== result.snapshotId) invalidateMiniResource('profile-dashboard')
+    if (watchRef.current?.profile?.version !== result.profile?.version) invalidateMiniResource('companies:')
+    // Restore the position with the snapshot, before the native swiper mounts.
+    if (watchRef.current?.snapshotId !== result.snapshotId) setActiveCompanyIndex(savedDeckIndex(result))
+    pendingWatchRef.current = null
+    setPendingWatch(null)
+    watchRef.current = result
     setWatch(result)
     const activeUser = getMiniUser()
     if (activeUser?.userId) Taro.setStorageSync(careerWatchStorageKey(activeUser.userId), result)
@@ -105,20 +123,19 @@ export default function CareerWatchPage() {
 
   useEffect(() => {
     if (!watch?.snapshotId || !watch.recommendations.length) return
-    const userId = getMiniUser()?.userId || 'guest'
-    const stored = Number(Taro.getStorageSync(matchDeckStorageKey(userId, watch.snapshotId)) || 0)
-    const nextIndex = wrapDeckIndex(Number.isFinite(stored) ? stored : 0, watch.recommendations.length)
-    setActiveCompanyIndex(nextIndex)
+    const nextIndex = savedDeckIndex(watch)
     void trackMiniEvent('mini_match_deck_view', { snapshot_id: watch.snapshotId, result_count: watch.recommendations.length, presentation_version: 'immersive_v2_1' })
     void trackMiniEvent('mini_match_card_view', { snapshot_id: watch.snapshotId, entity_id: watch.recommendations[nextIndex]?.companyId, card_index: nextIndex, presentation_version: 'immersive_v2_1' })
   }, [watch?.snapshotId])
 
-  const load = useCallback(async (newVisit = false) => {
+  const load = useCallback(async (force = false) => {
     const scope = miniContentScope()
     if (lastScope.current !== scope) {
       lastScope.current = scope
       pendingLoad.current = ''
-      visitKey.current = ''
+      pendingWatchRef.current = null
+      setPendingWatch(null)
+      watchRef.current = null
       setWatch(null)
       setDraft(emptyDraft)
       setActiveCompanyIndex(0)
@@ -126,16 +143,26 @@ export default function CareerWatchPage() {
     }
     if (!hasAuthenticatedSession()) { setStep('start'); return }
     if (pendingLoad.current === scope) return
-    if (newVisit || !visitKey.current) visitKey.current = createRequestKey('match-visit')
+    if (!force && pendingWatchRef.current && isCareerWatchCacheValid(pendingWatchRef.current)) return
     pendingLoad.current = scope
     const sequence = ++loadSequence.current
     setError('')
     const validCached = readValidCachedWatch()
-    if (validCached && !resumeFlowActive.current) applyResponse(validCached)
+    if (validCached && !resumeFlowActive.current) {
+      applyResponse(validCached)
+      if (!force) { pendingLoad.current = ''; return }
+    }
     try {
-      const result = await fetchCareerWatch(visitKey.current)
-      if (scope !== miniContentScope() || sequence !== loadSequence.current || resumeFlowActive.current) return
-      applyResponse(result)
+      let result = await fetchCareerWatch()
+      if (scope !== miniContentScope() || sequence !== loadSequence.current) return
+      if (result.entitlements.isMember && result.matchState !== 'unused' && !isCareerWatchCacheValid(result)) {
+        result = await fetchCareerWatch(careerWatchDailyRefreshKey())
+      }
+      if (scope !== miniContentScope() || sequence !== loadSequence.current || resumeFlowActive.current || stepRef.current === 'setup') return
+      if (watchRef.current && watchRef.current.snapshotId !== result.snapshotId && !force) {
+        pendingWatchRef.current = result
+        setPendingWatch(result)
+      } else applyResponse(result)
       if (result.stale) setError('暂时无法更新，仍在展示上次结果。')
       void trackMiniEvent('mini_watch_feed_loaded', { result_count: result.recommendations.length, match_state: result.matchState })
     } catch (loadError) {
@@ -147,8 +174,8 @@ export default function CareerWatchPage() {
         setError('账号状态已变化，请重新加载')
         return
       }
-      if (validCached) {
-        setError('暂时无法更新，仍在展示有效期内的上次结果。')
+      if (validCached || watchRef.current) {
+        setError('暂时无法更新，仍在展示上次结果。')
       } else {
         setError(loadError instanceof Error ? loadError.message : '方向结果暂时无法加载')
         setStep('error')
@@ -160,7 +187,7 @@ export default function CareerWatchPage() {
 
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/index/index')
-    if (resumeFlowActive.current) return
+    if (resumeFlowActive.current || (stepRef.current === 'setup' && lastScope.current === miniContentScope())) return
     const previousScope = miniContentScope()
     const authenticatedNow = hasAuthenticatedSession()
     const refresh = authenticatedNow ? refreshWechatSessionIfStale().catch(() => null) : Promise.resolve(null)
@@ -173,14 +200,14 @@ export default function CareerWatchPage() {
         else void load(true)
         return
       }
-      const newVisit = !hasEntered.current
-      hasEntered.current = true
       const cached = readValidCachedWatch()
-      if (!newVisit && previousScope === miniContentScope() && cached) {
-        applyResponse(cached)
+      if (lastScope.current === miniContentScope() && previousScope === miniContentScope() && cached) {
+        // Returning must preserve the current step, edits and card position.
+        watchRef.current = cached
+        setWatch(cached)
         return
       }
-      void load(newVisit)
+      void load()
     })
   })
 
@@ -494,11 +521,13 @@ export default function CareerWatchPage() {
             {!watch.entitlements.isMember ? ' · 非会员仅匹配一次' : ''}
           </Text>
           {!watch.entitlements.isMember ? <View className='watch-feed__membership' aria-role='button' onClick={() => navigateTo({ url: '/pages/membership/index' })}>升级会员</View> : null}
-          {watch.entitlements.isMember ? <Text className='watch-feed__daily'>会员日更</Text> : null}
+          {watch.entitlements.isMember ? pendingWatch
+            ? <Text className='watch-feed__update' aria-role='button' onClick={() => applyResponse(pendingWatch)}>今日已更新 · 点击查看</Text>
+            : <Text className='watch-feed__daily'>会员日更</Text> : null}
         </View>
       </View>
       {watch.recommendations.length ? <>
-        <MatchCompanyDeck items={watch.recommendations} snapshotId={watch.snapshotId} activeIndex={activeCompanyIndex} onActiveIndexChange={changeActiveCompany} renderCard={(company, active) => <MatchCompanyCard
+        <MatchCompanyDeck key={watch.snapshotId} items={watch.recommendations} snapshotId={watch.snapshotId} activeIndex={activeCompanyIndex} onActiveIndexChange={changeActiveCompany} renderCard={(company, active) => <MatchCompanyCard
           company={company}
           active={active}
           reminderAvailable={watch.entitlements.wechatSubscriptionAvailable}

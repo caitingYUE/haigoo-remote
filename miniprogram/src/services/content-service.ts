@@ -1,4 +1,5 @@
 import type { CompanyAccess, ConsultationRequest, GrowthNote, MemberServiceEntitlement, MiniCompany, MiniCompanyJob, MiniCompanyJobDetail, MiniMembershipPlan } from '../types'
+import { invalidateMiniResource } from './retained-resource-cache'
 import { createRequestKey, requestJson } from './api-client'
 import { isRenderableImageSource, resolveCloudFileUrls } from './cloud-asset-service'
 
@@ -204,6 +205,9 @@ export function setJobFavorite(jobId: string, favorite: boolean, companyId = '')
     method: 'POST',
     authenticated: true,
     data: { jobId, favorite, companyId, idempotencyKey: createRequestKey(`favorite-${jobId}`) }
+  }).then((result) => {
+    invalidateMiniResource('favorite-state')
+    return result
   })
 }
 

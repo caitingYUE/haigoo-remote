@@ -19,7 +19,7 @@ import {
   sanitizeUser,
   isTokenExpired
 } from '../server-utils/auth-helpers.js'
-import { getUserByEmail, getUserById, saveUser, updateUser, deleteUserById } from '../server-utils/user-helper.js'
+import { getUserByEmail, getUserById, saveUser, updateUser } from '../server-utils/user-helper.js'
 import { sendVerificationEmail, sendPasswordResetEmail, isEmailServiceConfigured } from '../server-utils/email-service.js'
 import { OAuth2Client } from 'google-auth-library'
 import crypto from 'crypto'
@@ -281,18 +281,12 @@ async function handleRegister(req, res) {
 
   const emailExists = await getUserByEmail(normalizedEmail)
   if (emailExists) {
-    if (!emailExists.emailVerified) {
-      if (isTokenExpired(emailExists.verificationExpires)) {
-        // Delete expired unverified account and proceed as new user
-        await deleteUserById(emailExists.user_id)
-        console.log(`[auth] Deleted expired unverified account: ${emailExists.user_id}`)
-        // Fall through to register
-      } else {
-        return res.status(409).json({ success: false, error: '该邮箱已注册但尚未验证，请查看您的收件箱。如需重新注册请等待24小时验证过期。' })
-      }
-    } else {
-      return res.status(409).json({ success: false, error: '该邮箱已被注册' })
-    }
+    return res.status(409).json({
+      success: false,
+      error: emailExists.emailVerified
+        ? '该邮箱已被注册'
+        : '该邮箱已注册但尚未验证，请登录后重新发送验证邮件；忘记密码可通过邮箱重置。'
+    })
   }
 
   const userId = crypto.randomUUID()
@@ -402,16 +396,6 @@ async function handleLogin(req, res) {
   const passwordMatch = await comparePassword(password, user.passwordHash)
   if (!passwordMatch) {
     return res.status(401).json({ success: false, error: '邮箱或密码错误' })
-  }
-
-  // Force admin role for test user (Temporary fix for local dev)
-  if (normalizedEmail === 'test@example.com') {
-    console.log('[Auth] Force updating admin role for test user')
-    if (!user.roles || !user.roles.admin) {
-      user.roles = { ...user.roles, admin: true }
-      await saveUser(user)
-      console.log('[Auth] Admin role updated and saved')
-    }
   }
 
   if (isSuperAdminEmail(normalizedEmail)) {

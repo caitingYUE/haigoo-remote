@@ -87,6 +87,7 @@ function shouldClearMiniSession(statusCode: number, payload: Record<string, unkn
   if (statusCode !== 401) return false
   const code = String(payload.code || '').trim()
   const message = String(payload.error || payload.message || '').trim()
+  if (code === 'INVALID_CREDENTIALS' || ['邮箱或密码错误', '账号密码验证失败'].includes(message)) return false
   return code !== 'UPSTREAM_GATEWAY_AUTH_FAILED' && message !== 'Unauthorized gateway request'
 }
 
@@ -97,12 +98,15 @@ export async function requestJson<T>(
   if (!CLOUD_ENV_ID) {
     throw new ApiRequestError('当前服务尚未开放')
   }
+  const sessionToken = options.authenticated ? getMiniSessionToken() : ''
   try {
     await waitForCloudRuntime()
   } catch {
     throw new ApiRequestError('当前服务尚未就绪，请稍后重试')
   }
-  const sessionToken = options.authenticated ? getMiniSessionToken() : ''
+  if (options.authenticated && sessionToken !== getMiniSessionToken()) {
+    throw new ApiRequestError('账号状态已变化，请重新操作', 409, { code: 'SESSION_CHANGED' })
+  }
   let response
   const timeout = options.timeout || 30000
   const requestId = createRequestKey('mini-api')

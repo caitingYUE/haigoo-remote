@@ -1,12 +1,12 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { navigateBack, navigateTo, showModal, showToast, useDidShow } from '@tarojs/taro'
+import Taro, { navigateBack, navigateTo, showModal, showToast, stopPullDownRefresh, useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { trackMiniEvent } from '../../services/analytics-service'
 import ContentSkeleton from '../../components/content-skeleton'
 import MiniIcon from '../../components/mini-icon'
 import useRetainedResource from '../../hooks/use-retained-resource'
 import { fetchMembershipPlans } from '../../services/content-service'
-import { refreshWechatSession } from '../../services/mini-auth-service'
+import { refreshWechatSession, refreshWechatSessionIfStale } from '../../services/mini-auth-service'
 import { hasAuthenticatedSession } from '../../services/session'
 import { isVirtualPaymentSupported, purchaseClubPlan } from '../../services/virtual-payment-service'
 import type { MiniMembershipPlan } from '../../types'
@@ -75,17 +75,20 @@ export default function MembershipPage() {
   const [paying, setPaying] = useState('')
   const [sessionError, setSessionError] = useState('')
   const error = resourceError || sessionError
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     const currentLoadVersion = ++loadVersion.current
     setSessionError('')
     try {
-      if (hasAuthenticatedSession()) await refreshWechatSession()
+      if (hasAuthenticatedSession()) {
+        if (force) await refreshWechatSession()
+        else await refreshWechatSessionIfStale()
+      }
       if (currentLoadVersion !== loadVersion.current) return
       await loadResource('membership-plans', async () => {
         const result = await fetchMembershipPlans()
         void trackMiniEvent('mini_membership_plans_view', { payment_available: result.paymentAvailable, client_payment_supported: isVirtualPaymentSupported() })
         return result
-      }, true)
+      }, force)
     } catch (loadError) {
       if (currentLoadVersion === loadVersion.current) {
         const message = loadError instanceof Error ? loadError.message : '会员状态加载失败'
@@ -94,7 +97,8 @@ export default function MembershipPage() {
       }
     }
   }, [data, loadResource])
-  useDidShow(() => { void load() })
+  useDidShow(() => { if (!paying) void load() })
+  usePullDownRefresh(() => load(true).finally(() => stopPullDownRefresh()))
   useEffect(() => {
     setSelectedPlanId((current) => {
       if (current && plans.some((plan) => plan.id === current)) return current
@@ -123,7 +127,7 @@ export default function MembershipPage() {
     setPaying(plan.id)
     try {
       const order = await purchaseClubPlan(plan.id)
-      if (order.status === 'completed') { await load(); showToast({ title: isRenewal ? '续费成功' : '会员权益已开通', icon: 'success' }) }
+      if (order.status === 'completed') { await load(true); showToast({ title: isRenewal ? '续费成功' : '会员权益已开通', icon: 'success' }) }
       else showModal({ title: '支付结果确认中', content: '稍后可在订单记录中查看结果。', showCancel: false })
     } catch (purchaseError) {
       const message = purchaseError instanceof Error ? purchaseError.message : '支付未完成'

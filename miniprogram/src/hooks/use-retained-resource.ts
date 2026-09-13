@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Dispatch, SetStateAction } from 'react'
 import { showToast } from '@tarojs/taro'
+import { retainedResources, resourceRevision } from '../services/retained-resource-cache'
 import { ApiRequestError } from '../services/api-client'
 import { getMiniSessionCacheKey, getMiniUser } from '../services/session'
 
@@ -14,7 +15,6 @@ export function miniContentScope() {
 const CACHE_LIMIT = 40
 // Keep page data stable until an explicit pull-to-refresh or account change.
 const CACHE_TTL_MS = Number.POSITIVE_INFINITY
-const retainedResources = new Map<string, { data: unknown; loadedAt: number }>()
 interface RetainedState<T> {
   key: string
   scope: string
@@ -22,6 +22,7 @@ interface RetainedState<T> {
   loaded: boolean
   loadedAt: number
   sequence: number
+  revision: number
   pending: Promise<void> | null
 }
 
@@ -65,6 +66,7 @@ export default function useRetainedResource<T>(initialKey = '') {
     loaded: Boolean(initialEntry),
     loadedAt: initialEntry?.loadedAt || 0,
     sequence: 0,
+    revision: resourceRevision(initialKey),
     pending: null as Promise<void> | null
   })
   useEffect(() => () => { state.current.sequence++ }, [])
@@ -86,7 +88,7 @@ export default function useRetainedResource<T>(initialKey = '') {
     setDataState(value)
   }, [])
 
-  const load = useCallback((key: string, fetcher: () => Promise<T>, force = false) => {
+  const load = useCallback((key: string, fetcher: () => Promise<T>, force = false, options: { maxAgeMs?: number; silent?: boolean } = {}) => {
     const current = state.current
     const scope = miniContentScope()
     const scopeChanged = current.scope !== scope
@@ -107,8 +109,10 @@ export default function useRetainedResource<T>(initialKey = '') {
       setRefreshing(false)
       setError('')
     }
-    if (current.pending) return current.pending
-    if (!force && current.loaded && Date.now() - current.loadedAt < CACHE_TTL_MS) return Promise.resolve()
+    const revision = resourceRevision(key)
+    if (current.pending && current.revision === revision) return current.pending
+    if (!force && current.loaded && retainedResources.has(retainedKey(scope, key)) && Date.now() - current.loadedAt < (options.maxAgeMs ?? CACHE_TTL_MS)) return Promise.resolve()
+    current.revision = revision
     const sequence = ++current.sequence
     setRefreshing(true)
     setLoading(current.data === null)
@@ -117,7 +121,7 @@ export default function useRetainedResource<T>(initialKey = '') {
       try {
         // Defer synchronous throws until pending has been registered.
         const result = await Promise.resolve().then(fetcher)
-        if (sequence !== current.sequence) return
+        if (sequence !== current.sequence || revision !== resourceRevision(key)) return
         if (scope !== miniContentScope()) {
           current.loaded = false
           current.data = null
@@ -132,7 +136,7 @@ export default function useRetainedResource<T>(initialKey = '') {
         writeRetained(scope, key, result, current.loadedAt)
         setDataState(result)
       } catch (failure) {
-        if (sequence !== current.sequence) return
+        if (sequence !== current.sequence || revision !== resourceRevision(key)) return
         const message = failure instanceof Error ? failure.message : '加载失败，请稍后重试'
         if (scope !== miniContentScope() || (failure instanceof ApiRequestError && [401, 403].includes(failure.statusCode))) {
           current.loaded = false
@@ -140,7 +144,9 @@ export default function useRetainedResource<T>(initialKey = '') {
           deleteRetained(scope, key)
           setDataState(null)
         }
-        if (current.data !== null) void showToast({ title: '暂时无法更新，已保留上次内容', icon: 'none' })
+        if (current.data !== null) {
+          if (!options.silent) void showToast({ title: '暂时无法更新，已保留上次内容', icon: 'none' })
+        }
         else setError(message)
       } finally {
         if (sequence === current.sequence) {

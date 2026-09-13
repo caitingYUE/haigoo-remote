@@ -1,5 +1,5 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { navigateTo, stopPullDownRefresh, switchTab, useDidShow, usePullDownRefresh } from '@tarojs/taro'
+import Taro, { navigateTo, stopPullDownRefresh, switchTab, useDidHide, useDidShow, usePullDownRefresh } from '@tarojs/taro'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CompanyFollowAction from '../../components/company-follow-action'
 import CompanyLogo from '../../components/company-logo'
@@ -27,7 +27,8 @@ const sortOptions: Array<{ value: CompanyDirectorySort; label: string }> = [
   { value: 'latest', label: '按最新' },
   { value: 'relevance', label: '按相关度' }
 ]
-const companyResourceKey = (search: string, industry: string, sortBy: CompanyDirectorySort) => JSON.stringify([search.trim(), industry, sortBy])
+const COMPANY_CHECK_INTERVAL_MS = 2 * 60 * 1000
+const companyResourceKey = (search: string, industry: string, sortBy: CompanyDirectorySort) => `companies:${JSON.stringify([search.trim(), industry, sortBy])}`
 
 export default function CompaniesPage() {
   const { data, setData, loading, refreshing, error, load: loadResource } = useRetainedResource<CompaniesResponse>(companyResourceKey('', '', 'latest'))
@@ -44,9 +45,12 @@ export default function CompaniesPage() {
   const requestSequence = useRef(0)
   const followRevision = useRef(0)
   const lastScope = useRef('')
+  const [visible, setVisible] = useState(false)
+  const paginationPending = useRef(false)
   useMiniShare('Haigoo 远程企业名单', '/pages/companies/index')
 
-  const load = useCallback(async (force = false, query = appliedSearch, category = industry, nextSort = sortBy) => {
+  const load = useCallback(async (force = false, query = appliedSearch, category = industry, nextSort = sortBy, automatic = false) => {
+    if (automatic && paginationPending.current) return
     const scope = miniContentScope()
     const scopeChanged = lastScope.current !== scope
     if (scopeChanged) {
@@ -55,6 +59,7 @@ export default function CompaniesPage() {
       setWatchState(null)
       setUnread(0)
     }
+    if (query.trim() !== appliedSearch || category !== industry || nextSort !== sortBy) requestSequence.current++
     // Keep the submitted query even if it fails, so retry never reloads an old search.
     setAppliedSearch(query.trim())
     setSortBy(nextSort)
@@ -95,19 +100,32 @@ export default function CompaniesPage() {
           }
         })
       }
-      return { ...result, companies }
-    }, force)
-  }, [appliedSearch, data?.page, industry, loadResource, sortBy])
+      const next = { ...result, companies }
+      // serverTime changes on every check; unchanged content keeps its object and cards.
+      const { serverTime: _oldTime, ...previousContent } = data || {} as CompaniesResponse
+      const { serverTime: _newTime, ...nextContent } = next
+      return !scopeChanged && JSON.stringify(previousContent) === JSON.stringify(nextContent) ? data! : next
+    }, force, { maxAgeMs: COMPANY_CHECK_INTERVAL_MS, silent: automatic })
+  }, [appliedSearch, data, industry, loadResource, sortBy])
 
   useDidShow(() => {
+    setVisible(true)
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/companies/index')
     const previousScope = miniContentScope()
-    if (!hasAuthenticatedSession()) { void load(false); return }
+    if (!hasAuthenticatedSession()) { void load(false, appliedSearch, industry, sortBy, true); return }
     void refreshWechatSessionIfStale().catch(() => null).then(() => {
       if (previousScope !== miniContentScope()) void load(true)
-      else void load(false)
+      else void load(false, appliedSearch, industry, sortBy, true)
     })
   })
+  useDidHide(() => setVisible(false))
+  const latestCheck = useRef(() => Promise.resolve())
+  latestCheck.current = () => load(false, appliedSearch, industry, sortBy, true)
+  useEffect(() => {
+    if (!visible) return
+    const timer = setInterval(() => { void latestCheck.current() }, COMPANY_CHECK_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [visible])
   useEffect(() => onCompanyFollowChange(({ companyId, followed: nextFollowed }) => {
     followRevision.current++
     setFollowed((current) => {
@@ -142,17 +160,18 @@ export default function CompaniesPage() {
 
   const selectIndustry = async (key: string) => {
     setIndustry(key)
-    await load(true, appliedSearch, key, sortBy)
+    await load(false, appliedSearch, key, sortBy)
   }
 
   const selectSort = async (nextSort: CompanyDirectorySort) => {
     setSortOpen(false)
     if (nextSort === sortBy) return
-    await load(true, appliedSearch, industry, nextSort)
+    await load(false, appliedSearch, industry, nextSort)
   }
 
   const loadMore = async () => {
-    if (!data?.hasMore || loadingMore || refreshing) return
+    if (!data?.hasMore || paginationPending.current || refreshing) return
+    paginationPending.current = true
     const requestId = requestSequence.current
     const scope = miniContentScope()
     setLoadingMore(true)
@@ -163,12 +182,12 @@ export default function CompaniesPage() {
         ...next,
         companies: current.companies.concat(next.companies.filter((item) => !current.companies.some((existing) => existing.id === item.id)))
       } : current)
-    } catch (loadError) { Taro.showToast({ title: loadError instanceof Error ? loadError.message : '更多企业加载失败', icon: 'none' }) } finally { setLoadingMore(false) }
+    } catch (loadError) { Taro.showToast({ title: loadError instanceof Error ? loadError.message : '更多企业加载失败', icon: 'none' }) } finally { paginationPending.current = false; setLoadingMore(false) }
   }
 
   const clearFilters = async () => {
     setSearch(''); setIndustry('')
-    await load(true, '', '')
+    await load(false, '', '')
   }
 
   const industries = useMemo(() => data?.industries.map((item) => ({ key: item.name, label: item.name })) || [], [data?.industries])
@@ -192,8 +211,8 @@ export default function CompaniesPage() {
       </View></> : null}
     </View> : null}</View>{industries.length && !isFreeExactSearch ? <TopicScroller activeKey={industry} onSelect={(key) => void selectIndustry(key)} items={[{ key: '', label: '全部' }].concat(industries)} /> : null}</View>
     {error ? <EditorialState title='企业名单暂时无法加载' copy={error} actionLabel='重新加载' onAction={() => void load(true)} /> : null}
+    {data && refreshing ? <View className='companies-refreshing'><Text>正在更新企业…</Text></View> : null}
     {loading && !data ? <ContentSkeleton rows={5} /> : null}
-    {refreshing && data && !loadingMore ? <View className='companies-refreshing' aria-live='polite' aria-busy><View className='companies-refreshing__spinner' /><Text>正在更新企业</Text></View> : null}
     {!loading && !error && matchRequired ? <View className='companies-match-required'><Text>先完成匹配</Text><Text>设置求职方向后查看企业。</Text><View className='primary-button' aria-role='button' aria-label='去设置匹配方向' hoverClass='mini-action--pressed' onClick={() => switchTab({ url: '/pages/index/index' })}>去匹配</View></View> : null}
     {!loading && !error && !matchRequired && data?.companies.length === 0 ? <EditorialState title={searchTooBroad ? '请输入完整企业或岗位名称' : search ? '未找到已审核的公开岗位' : '暂无开放申请的企业'} copy={searchTooBroad ? '免费版支持精准搜索完整企业或岗位名称；更多结果请升级会员' : '请检查企业或岗位名称，或清除筛选条件。'} actionLabel={searchTooBroad ? '查看会员' : industry || search ? '清除筛选' : undefined} onAction={() => searchTooBroad ? void navigateTo({ url: '/pages/membership/index' }) : void clearFilters()} /> : null}
     {!loading && !error && data?.companies.length ? <View className='company-list'>

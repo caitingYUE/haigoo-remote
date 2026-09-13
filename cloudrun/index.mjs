@@ -2173,12 +2173,13 @@ async function route(req, res) {
     }
     if (req.method === 'POST' && url.pathname === '/mini/account/unbind') {
       const session = getSession(req)
-      if (!session) return send(res, 401, { error: '微信登录已失效，请重新登录' })
+      if (!session?.userId) return send(res, 401, { error: '微信登录已失效，请重新登录' })
       const body = await readBody(req)
       const result = await gatewayRequest('unbind_wechat', {
         method: 'POST',
         body: {
           openid: session.openid,
+          expectedUserId: session.userId,
           password: body.password,
           clientKey: requestClientKey(req)
         }
@@ -2187,12 +2188,13 @@ async function route(req, res) {
     }
     if (req.method === 'POST' && url.pathname === '/mini/account/delete') {
       const session = getSession(req)
-      if (!session) return send(res, 401, { error: '微信登录已失效，请重新登录' })
+      if (!session?.userId) return send(res, 401, { error: '微信登录已失效，请重新登录' })
       const body = await readBody(req)
       const result = await gatewayRequest('delete_account', {
         method: 'POST',
         body: {
           openid: session.openid,
+          expectedUserId: session.userId,
           password: body.password,
           clientKey: requestClientKey(req)
         }

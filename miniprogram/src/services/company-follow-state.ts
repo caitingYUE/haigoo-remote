@@ -1,4 +1,5 @@
 import Taro from '@tarojs/taro'
+import { invalidateMiniResource } from './retained-resource-cache'
 import { careerWatchStorageKey, getMiniUser } from './session'
 
 export const COMPANY_FOLLOW_CHANGE_EVENT = 'haigoo:company-follow-change'
@@ -10,6 +11,7 @@ export interface CompanyFollowChange {
 }
 
 export function emitCompanyFollowChange(change: CompanyFollowChange) {
+  invalidateMiniResource('profile-dashboard')
   const userId = getMiniUser()?.userId
   if (userId) {
     const key = careerWatchStorageKey(userId)

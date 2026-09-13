@@ -6,10 +6,12 @@ import ts from 'typescript'
 const tick = () => new Promise(setImmediate)
 const deferred = () => { let resolve, reject; const promise = new Promise((a, b) => { resolve = a; reject = b }); return { promise, resolve, reject } }
 function harness(file, dependencies = {}) {
-  let cursor = 0, shown, scope = 'account-a', authenticated = true
+  let cursor = 0, shown, hidden, scope = 'account-a', authenticated = true, now = Date.now()
+  const timers = new Map()
+  class Clock extends Date { static now() { return now } }
   const slots = [], events = new Map(), modules = new Map()
   const taro = {
-    useDidShow: fn => { shown = fn }, usePullDownRefresh() {}, useReachBottom() {}, useResize() {},
+    useDidShow: fn => { shown = fn }, useDidHide: fn => { hidden = fn }, usePullDownRefresh() {}, useReachBottom() {}, useResize() {},
     useRouter: () => ({ params: { id: 'company' } }),
     eventCenter: { trigger() {}, on() {}, off() {} }, getStorageSync: () => null,
     showToast() {}, stopPullDownRefresh() {}, nextTick() {}, navigateTo() {}
@@ -18,7 +20,7 @@ function harness(file, dependencies = {}) {
     useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === 'function' ? initial() : initial; return [slots[index], value => { slots[index] = typeof value === 'function' ? value(slots[index]) : value }] },
     useRef(initial) { const index = cursor++; if (!(index in slots)) slots[index] = { current: initial }; return slots[index] },
     useCallback: fn => fn, useMemo: fn => fn(),
-    useEffect(fn) { const index = cursor++; if (!(index in slots)) { slots[index] = true; fn() } }
+    useEffect(fn, deps) { const index = cursor++; const previous = slots[index]; if (!previous || deps?.some((value, i) => !Object.is(value, previous.deps[i]))) { previous?.cleanup?.(); slots[index] = { deps, cleanup: fn() } } }
   }
   function load(relative) {
     const resolved = relative.replace(/\.tsx?$/, '')
@@ -43,19 +45,20 @@ function harness(file, dependencies = {}) {
       if (name === '../../hooks/use-retained-resource') return {
         ...load('miniprogram/src/hooks/use-retained-resource.ts'), miniContentScope: () => scope
       }
+      if (name === '../services/retained-resource-cache' || name === '../../services/retained-resource-cache') return load('miniprogram/src/services/retained-resource-cache.ts')
       if (name === '../services/session') return { getMiniUser: () => ({ userId: scope }), getMiniSessionCacheKey: () => scope }
       if (name === '../services/api-client') return { ApiRequestError: class extends Error {} }
       if (name in mocks) return mocks[name]
       if (name.includes('/components/') || name.includes('use-mini-share')) return { default: name.includes('use-mini-share') ? () => {} : name }
       if (name.endsWith('.scss') || name.includes('/utils/')) return {}
       throw new Error(`Unexpected dependency: ${name}`)
-    }, setTimeout, clearTimeout, console, Date, Error })
+    }, setTimeout, clearTimeout, setInterval: fn => { const id = Symbol(); timers.set(id, fn); return id }, clearInterval: id => timers.delete(id), console, Date: Clock, Error })
     modules.set(resolved, module.exports)
     return module.exports
   }
   const Component = load(file).default
   const render = () => { cursor = 0; return Component() }
-  return { slots, events, render, show: () => shown(), account(value) { scope = value; authenticated = value !== 'guest' } }
+  return { slots, events, render, show: () => shown(), hide: () => hidden(), advance: ms => { now += ms; for (const fn of timers.values()) fn() }, timers, account(value) { scope = value; authenticated = value !== 'guest' } }
 }
 function find(tree, predicate) {
   if (!tree || typeof tree !== 'object') return null
@@ -130,3 +133,35 @@ assert.equal(detail.slots[0], null, 'returning guest cannot see previously loade
 nextDetail.resolve({ company: { id: 'company', contacts: [] }, access: { contacts: false } }); await tick()
 assert.equal(detail.slots[0].company.contacts.length, 0)
 console.log('Mini page races passed: account isolation, query ordering/retry, follow mutation ordering and contact access revalidation')
+
+// Visible-page automatic sync, narrow transient status and no work while hidden.
+const autoRequests = []
+const automatic = harness('miniprogram/src/pages/companies/index.tsx', {
+  '../../services/content-service': { fetchCompanies: params => { const request = deferred(); autoRequests.push({ ...request, params }); return request.promise } },
+  '../../services/career-match-service': { fetchCompanyFollows: async () => ({ follows: [] }), fetchCareerWatch: async () => null }
+})
+automatic.render(); automatic.show(); await tick()
+autoRequests[0].resolve(companyData('original')); await tick()
+let autoTree = automatic.render()
+assert.equal(find(autoTree, n => n.props?.className === 'companies-load-more'), null, 'single page has no permanent refresh entry')
+assert.equal(find(autoTree, n => n.props?.className === 'companies-refreshing'), null)
+automatic.show(); await tick(); assert.equal(autoRequests.length, 1, 'rapid tab return reuses cache')
+automatic.advance(120001); await tick(); autoTree = automatic.render()
+assert.equal(autoRequests.length, 2)
+assert.ok(find(autoTree, n => n.props?.className === 'companies-refreshing'))
+assert.ok(find(autoTree, n => n.props?.className === 'company-list'), 'old cards remain during update')
+autoRequests[1].resolve(companyData('updated')); await tick(); autoTree = automatic.render()
+assert.equal(automatic.slots[0].companies[0].name, 'updated')
+assert.equal(find(autoTree, n => n.props?.className === 'companies-refreshing'), null, 'status collapses on completion')
+const sameData = automatic.slots[0]
+automatic.advance(120001); await tick()
+autoRequests[2].resolve({ ...companyData('updated'), serverTime: new Date().toISOString() }); await tick(); automatic.render()
+assert.equal(automatic.slots[0], sameData, 'unchanged data keeps its reference despite a new server timestamp')
+automatic.advance(120001); await tick(); autoRequests[3].reject(Error('offline')); await tick(); autoTree = automatic.render()
+assert.equal(automatic.slots[0], sameData)
+assert.equal(find(autoTree, n => n.props?.className === 'companies-refreshing'), null, 'failure also collapses status')
+automatic.hide(); automatic.render(); automatic.advance(120001); await tick()
+assert.equal(autoRequests.length, 4, 'hidden pages do not poll')
+automatic.show(); await tick(); assert.equal(autoRequests.length, 5, 'stale return automatically checks')
+autoRequests[4].resolve(companyData('returned')); await tick()
+console.log('PASS: automatic directory sync, cache freshness, stable cards, transient narrow status, unchanged payloads, offline retention and hidden-page pause')

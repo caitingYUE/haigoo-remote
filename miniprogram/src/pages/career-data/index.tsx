@@ -1,5 +1,7 @@
 import { Text, View } from '@tarojs/components'
-import Taro, { navigateBack, showModal, showToast, switchTab, useDidShow } from '@tarojs/taro'
+import Taro, { navigateBack, showModal, showToast, switchTab, stopPullDownRefresh, useDidShow, usePullDownRefresh } from '@tarojs/taro'
+import useRetainedResource from '../../hooks/use-retained-resource'
+import { invalidateMiniResource } from '../../services/retained-resource-cache'
 import { useState } from 'react'
 import MiniIcon from '../../components/mini-icon'
 import { deleteCareerData, fetchCareerMatchState, syncCareerResumeFile } from '../../services/career-match-service'
@@ -21,17 +23,20 @@ function formatDate(value?: string | null) {
 }
 
 export default function CareerDataPage() {
-  const [state, setState] = useState<CareerMatchState | null>(null)
-  const [error, setError] = useState('')
+  const { data: state, error: loadError, load: loadResource } = useRetainedResource<CareerMatchState>('career-data')
+  const [actionError, setError] = useState('')
+  const error = actionError || loadError
   const [deleting, setDeleting] = useState(false)
   const [deletingResume, setDeletingResume] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  const load = async () => {
+  const load = async (force = true) => {
     setError('')
-    try { setState(await fetchCareerMatchState()) } catch (loadError) { setError(loadError instanceof Error ? loadError.message : '职业资料加载失败') }
+    if (force) invalidateMiniResource('profile-dashboard')
+    await loadResource('career-data', fetchCareerMatchState, force)
   }
-  useDidShow(() => { void load() })
+  useDidShow(() => { void load(false) })
+  usePullDownRefresh(() => load(true).finally(() => stopPullDownRefresh()))
 
   const remove = async () => {
     const confirmation = await showModal({
@@ -93,7 +98,7 @@ export default function CareerDataPage() {
   return (
     <View className='page-shell career-data-page'>
       <View className='career-data-heading'><Text>职业资料</Text><Text>管理用于匹配的职业资料与简历。</Text></View>
-      {error ? <View className='empty-state'><Text className='empty-state__title'>暂时无法读取</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' onClick={load}>重新加载</View></View> : null}
+      {error ? <View className='empty-state'><Text className='empty-state__title'>暂时无法读取</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' onClick={() => void load()}>重新加载</View></View> : null}
       {!error && !state ? <Text className='career-data-loading'>正在读取资料…</Text> : null}
       {state && !state.profile ? (
         <View className='career-data-empty'><View className='career-data-empty__icon'><MiniIcon name='application' size={30} /></View><Text className='career-data-empty__title'>{state.importedResume ? '简历已保存' : '还没有职业资料'}</Text><Text className='career-data-empty__copy'>{state.importedResume?.filename || '上传简历，或手动设置求职方向。'}</Text><View className={`primary-button ${uploading ? 'primary-button--disabled' : ''}`} onClick={uploading ? undefined : () => void uploadResume()}>{uploading ? '正在上传…' : state.importedResume ? '更新简历' : '上传简历'}</View><View className='career-data-secondary' onClick={() => switchTab({ url: '/pages/index/index' })}>设置求职方向</View>{state.importedResume?.resumeId ? <View className={`career-data-delete ${deletingResume ? 'is-disabled' : ''}`} onClick={deletingResume ? undefined : () => void removeResume()}>{deletingResume ? '正在删除…' : '删除已保存简历'}</View> : null}</View>

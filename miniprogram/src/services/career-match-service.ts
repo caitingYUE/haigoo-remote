@@ -387,10 +387,16 @@ export function normalizeCareerWatchResponse(value: unknown): CareerWatchRespons
   }
 }
 
+export function careerWatchDailyRefreshKey(now = Date.now()) {
+  // Match follows the product's calendar day in China, independent of device timezone.
+  return `match-day:${new Date(now + 8 * 3600000).toISOString().slice(0, 10)}`
+}
+
 export function isCareerWatchCacheValid(response: CareerWatchResponse, now = Date.now()) {
   if (response.matchState === 'fixed_free') return response.recommendations.length > 0
-  const expiresAt = new Date(response.validUntil || '').getTime()
-  return response.matchState !== 'unused' && Number.isFinite(expiresAt) && expiresAt > now
+  const generatedAt = Date.parse(response.generatedAt)
+  return Number.isFinite(generatedAt)
+    && careerWatchDailyRefreshKey(generatedAt) === careerWatchDailyRefreshKey(now)
 }
 
 async function hydrateCareerWatch(value: unknown) {

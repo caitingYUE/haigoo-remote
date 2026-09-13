@@ -23,7 +23,7 @@ const auth = load('miniprogram/src/services/mini-auth-service.ts', {
   '@tarojs/taro': { default: { login: async () => { calls.push('wechat'); return { code: 'test-only' } } } },
   './api-client': { requestJson: async (path, options) => { calls.push({ path, options }); return { token: 'test-only', user: { userId: 'test-only' } } } },
   './analytics-service': { trackMiniEvent: async () => {} },
-  './session': { clearMiniSession: () => {}, getMiniSessionToken: () => token, hasAuthenticatedSession: () => authenticated, saveMiniSession: (session) => saved.push(session) },
+  './session': { getMiniSessionCacheKey: () => 'test-user', getMiniUser: () => ({}), clearMiniSession: () => {}, getMiniSessionToken: () => token, hasAuthenticatedSession: () => authenticated, saveMiniSession: (session) => saved.push(session) },
   '../config/legal': legal
 })
 for (token of ['', 'existing-session']) {
@@ -75,12 +75,12 @@ for (const mode of ['bind', 'register', 'forgot']) {
     const states = [mode, 'test@example.com', 'Password123', 'Password123', '', false, false, false, accepted]
     const Page = load('miniprogram/src/pages/account-bind/index.tsx', {
       'react/jsx-runtime': { jsx, jsxs: jsx },
-      react: { useState: () => [states[stateIndex++], () => {}] },
+      react: { useRef: value => ({ current: value }), useState: () => [states[stateIndex++], () => {}] },
       '@tarojs/components': Object.fromEntries(['Button', 'Input', 'Text', 'View'].map((name) => [name, name])),
       '@tarojs/taro': { useRouter: () => ({ params: {} }), navigateBack: () => {}, showToast: () => {}, showModal: () => {} },
       '../../services/mini-auth-service': { loginWithWechat: async (consent) => { assert.equal(consent, true); wechatCalls++ },
         bindWebsiteAccount: async (...args) => { assert.equal(args[2], true); writes++ },
-        registerAndBindWebsiteAccount: async (...args) => { assert.equal(args[3], true); writes++ },
+        registerAndBindWebsiteAccount: async (...args) => { assert.equal(args[3], true); writes++; return {} },
         requestPasswordReset: async (...args) => { assert.equal(args[1], true); writes++; return {} } },
       '../../services/session': { getMiniSessionToken: () => '' },
       '../../components/mini-icon': { default: () => null }, '../../components/auth-consent': { default: Consent }, './index.scss': {}

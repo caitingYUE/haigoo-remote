@@ -86,6 +86,7 @@ assert.equal((await offline.resolveCloudFileUrls([ids[0]])).get(ids[0]), ids[0],
 
 const client = loadTs('./miniprogram/src/services/career-match-service.ts', {
   '@tarojs/taro': { default: taro },
+  './retained-resource-cache': { invalidateMiniResource() {} },
   './api-client': { requestJson: async () => ({ success: true, follows: [{ company_id: 'c', logoFileId: ids[0] }] }) },
   './cloud-asset-service': assets,
   './session': {},
@@ -160,6 +161,7 @@ let jobRequests = 0
 let failJobRequest = false
 const jobClient = loadTs('./miniprogram/src/services/content-service.ts', {
   './cloud-asset-service': assets,
+  './retained-resource-cache': { invalidateMiniResource() {} },
   './api-client': { requestJson: async () => {
     jobRequests++
     if (failJobRequest) throw new Error('permission denied')

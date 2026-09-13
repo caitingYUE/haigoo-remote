@@ -1,6 +1,6 @@
 import { Button, Input, Text, View } from '@tarojs/components'
 import { navigateBack, showModal, showToast, useRouter } from '@tarojs/taro'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import {
   bindWebsiteAccount,
   loginWithWechat,
@@ -36,12 +36,15 @@ export default function AccountBindPage() {
   const [completed, setCompleted] = useState(false)
   const [consentAccepted, setConsentAccepted] = useState(false)
 
+  const submitLock = useRef(false)
+  const [completionCopy, setCompletionCopy] = useState('')
+
   const ensureWechatSession = async () => {
     if (!getMiniSessionToken()) await loginWithWechat(consentAccepted)
   }
 
   const handleBind = async () => {
-    if (submitting) return
+    if (submitLock.current) return
     if (!consentAccepted) {
       showToast({ title: '请先阅读并同意用户服务协议和隐私政策', icon: 'none' })
       return
@@ -50,10 +53,12 @@ export default function AccountBindPage() {
       showToast({ title: '请输入 Haigoo 账号和密码', icon: 'none' })
       return
     }
+    submitLock.current = true
     setSubmitting(true)
     try {
       await ensureWechatSession()
       await bindWebsiteAccount(email.trim(), password, consentAccepted)
+      setCompletionCopy('当前微信已连接 Haigoo 账号，会员与服务记录已同步。')
       setCompleted(true)
     } catch (error) {
       showModal({
@@ -62,12 +67,13 @@ export default function AccountBindPage() {
         showCancel: false
       })
     } finally {
+      submitLock.current = false
       setSubmitting(false)
     }
   }
 
   const handleRegister = async () => {
-    if (submitting) return
+    if (submitLock.current) return
     if (!consentAccepted) {
       showToast({ title: '请先阅读并同意用户服务协议和隐私政策', icon: 'none' })
       return
@@ -77,10 +83,12 @@ export default function AccountBindPage() {
       showToast({ title: validationMessage, icon: 'none' })
       return
     }
+    submitLock.current = true
     setSubmitting(true)
     try {
       await ensureWechatSession()
-      await registerAndBindWebsiteAccount(email.trim(), password, username, consentAccepted)
+      const result = await registerAndBindWebsiteAccount(email.trim(), password, username, consentAccepted)
+      setCompletionCopy(result.message || '账号已创建，请前往邮箱完成验证。')
       setCompleted(true)
     } catch (error) {
       showModal({
@@ -89,12 +97,13 @@ export default function AccountBindPage() {
         showCancel: false
       })
     } finally {
+      submitLock.current = false
       setSubmitting(false)
     }
   }
 
   const handlePasswordReset = async () => {
-    if (submitting) return
+    if (submitLock.current) return
     if (!consentAccepted) {
       showToast({ title: '请先阅读并同意用户服务协议和隐私政策', icon: 'none' })
       return
@@ -103,6 +112,7 @@ export default function AccountBindPage() {
       showToast({ title: '请输入正确的注册邮箱', icon: 'none' })
       return
     }
+    submitLock.current = true
     setSubmitting(true)
     try {
       await ensureWechatSession()
@@ -120,6 +130,7 @@ export default function AccountBindPage() {
         showCancel: false
       })
     } finally {
+      submitLock.current = false
       setSubmitting(false)
     }
   }
@@ -131,12 +142,12 @@ export default function AccountBindPage() {
           <Text className='account-auth-hero__brand'>HaigooRemote</Text>
           <View className='account-auth-complete__mark'><MiniIcon name='check' size={30} /></View>
           <Text className='account-auth-hero__title'>账号已连接</Text>
-          <Text className='account-auth-hero__copy'>当前微信已连接 Haigoo 账号。若刚注册，请前往邮箱完成验证。</Text>
+          <Text className='account-auth-hero__copy'>{completionCopy}</Text>
         </View>
         <View className='account-auth-complete-card'>
           <Text className='account-auth-complete-card__title'>接下来你可以</Text>
-          <Text className='account-auth-complete-card__item'>1. 在邮箱中完成账号验证</Text>
-          <Text className='account-auth-complete-card__item'>2. 浏览远程企业与职业笔记</Text>
+          {mode === 'register' ? <Text className='account-auth-complete-card__item'>在邮箱中完成账号验证；如未收到邮件，可在网站重新发送。</Text> : null}
+          <Text className='account-auth-complete-card__item'>浏览远程企业与职业笔记</Text>
           <Button className='account-auth-primary-button' onClick={() => navigateBack()}>
             返回上一页
           </Button>
@@ -162,7 +173,7 @@ export default function AccountBindPage() {
 
       <View className='account-bind-card'>
         {mode === 'forgot' ? (
-          <View className='account-auth-back' onClick={() => setMode('bind')}>
+          <View className='account-auth-back' onClick={() => { if (!submitLock.current) setMode('bind') }}>
             <Text>‹ 返回账号绑定</Text>
           </View>
         ) : (
@@ -171,7 +182,7 @@ export default function AccountBindPage() {
               className={'account-auth-tabs__item ' + (mode === 'bind' ? 'account-auth-tabs__item--active' : '')}
               aria-role='tab'
               aria-selected={mode === 'bind'}
-              onClick={() => setMode('bind')}
+              onClick={() => { if (!submitLock.current) setMode('bind') }}
             >
               <Text>已有账号</Text>
             </View>
@@ -179,7 +190,7 @@ export default function AccountBindPage() {
               className={'account-auth-tabs__item ' + (mode === 'register' ? 'account-auth-tabs__item--active' : '')}
               aria-role='tab'
               aria-selected={mode === 'register'}
-              onClick={() => setMode('register')}
+              onClick={() => { if (!submitLock.current) setMode('register') }}
             >
               <Text>创建账号</Text>
             </View>
@@ -252,7 +263,7 @@ export default function AccountBindPage() {
         ) : null}
 
         {mode === 'bind' ? (
-          <Text className='account-auth-forgot' onClick={() => setMode('forgot')}>忘记密码？通过邮箱找回</Text>
+          <Text className='account-auth-forgot' onClick={() => { if (!submitLock.current) setMode('forgot') }}>忘记密码？通过邮箱找回</Text>
         ) : null}
 
         <AuthConsent accepted={consentAccepted} onChange={setConsentAccepted} />

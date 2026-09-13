@@ -1,3 +1,10 @@
+# Environment files are local inputs, never deployment source files.
+# Vercel injects the selected environment from the project configuration.
+.env
+.env.*
+**/.env
+**/.env.*
+
 # Local design, audit, and generated artifacts are not website runtime inputs.
 .impeccable/
 .superpowers/

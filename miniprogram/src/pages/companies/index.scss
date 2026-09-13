@@ -33,9 +33,7 @@
 .companies-match-required > text:nth-child(2) { margin: 10px auto 22px; color: var(--color-secondary); font-size: 21px; line-height: 1.5; }
 .companies-match-required .primary-button { max-width: 440px; margin: 0 auto; }
 .company-list { display: flex; margin: 0 -40px; padding: 24px 32px; flex-direction: column; gap: 16px; background: var(--color-page); }
-.companies-refreshing { display: flex; min-height: 56px; margin: 0 -40px; align-items: center; justify-content: center; gap: 10px; border-bottom: 1PX solid #e7e7e7; background: #fff; color: var(--color-secondary); font-size: 20px; line-height: 1; }
-.companies-refreshing__spinner { width: 20px; height: 20px; box-sizing: border-box; border: 2PX solid #f3c4b1; border-top-color: var(--color-brand-strong); border-radius: 50%; animation: companies-refresh-spin .8s linear infinite; }
-@keyframes companies-refresh-spin { to { transform: rotate(360deg); } }
+.companies-refreshing { display: flex; min-height: 36px; margin: 0 -40px; align-items: center; justify-content: center; gap: 10px; border-bottom: 1PX solid #e7e7e7; background: #fff; color: var(--color-secondary); font-size: 20px; line-height: 28px; }
 .company-card { overflow: hidden; border: 1PX solid var(--color-border); border-radius: 24px; background: #fff; }
 .company-card__main { display: grid; min-height: 176px; box-sizing: border-box; padding: 24px; align-items: center; grid-template-columns: 72px minmax(0, 1fr) 80px; column-gap: 16px; }
 .company-card__logo { display: flex; width: 72px; height: 72px; align-items: center; justify-content: center; overflow: hidden; border: 1PX solid #e5e5e5; border-radius: 16px; background: #fafafa; color: var(--color-muted); font-size: 19px; font-weight: 600; }
@@ -66,7 +64,4 @@
 @media (max-width: 340px) {
   .companies-heading .page-subtitle { max-width: 390px; }
   .companies-sort-toggle { min-width: 116px; padding: 0 14px; font-size: 19px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .companies-refreshing__spinner { animation: none; }
 }

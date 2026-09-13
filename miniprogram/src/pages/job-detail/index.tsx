@@ -5,6 +5,7 @@ import ContentSkeleton from '../../components/content-skeleton'
 import MiniIcon from '../../components/mini-icon'
 import CompanyLogo from '../../components/company-logo'
 import useMiniShare from '../../hooks/use-mini-share'
+import { resourceRevision } from '../../services/retained-resource-cache'
 import useRetainedResource, { miniContentScope } from '../../hooks/use-retained-resource'
 import { fetchCompanyJob, fetchFavoriteJobIds, setJobFavorite } from '../../services/content-service'
 import { hasAuthenticatedSession } from '../../services/session'
@@ -35,33 +36,43 @@ export default function JobDetailPage() {
   const [favorite, setFavorite] = useState<boolean | null>(null)
   const [favoriteBusy, setFavoriteBusy] = useState(false)
   const loadSequence = useRef(0)
+  const favoriteRevision = useRef(-1)
   const favoriteScope = useRef(miniContentScope())
   useMiniShare(job ? `${job.title}｜${companyName || job.company}` : 'HaigooRemote 公开岗位信息', `/pages/job-detail/index?companyId=${encodeURIComponent(companyId)}&jobId=${encodeURIComponent(jobId)}${accessSearch ? `&search=${encodeURIComponent(accessSearch)}` : ''}`)
 
   const load = useCallback(async () => {
     const sequence = ++loadSequence.current
     const scope = miniContentScope()
-    if (favoriteScope.current !== scope) {
+    const sameScope = favoriteScope.current === scope
+    if (!sameScope) {
       favoriteScope.current = scope
       setFavorite(null)
     }
-    const detailRequest = loadResource(resourceKey, () => fetchCompanyJob(companyId, jobId, accessSearch), true)
+    const detailRequest = loadResource(resourceKey, () => fetchCompanyJob(companyId, jobId, accessSearch))
+    const revision = resourceRevision('favorite-state')
+    if (sameScope && favorite !== null && favoriteRevision.current === revision) { await detailRequest; return }
     setFavoriteBusy(true)
     try {
       if (hasAuthenticatedSession()) {
         try {
           const favorites = await fetchFavoriteJobIds()
-          if (sequence === loadSequence.current && scope === miniContentScope()) setFavorite(favorites.has(jobId))
+          if (sequence === loadSequence.current && scope === miniContentScope() && revision === resourceRevision('favorite-state')) {
+            favoriteRevision.current = revision
+            setFavorite(favorites.has(jobId))
+          }
         }
         catch {
           if (sequence === loadSequence.current && scope === miniContentScope()) setFavorite(null)
         }
-      } else if (sequence === loadSequence.current && scope === miniContentScope()) setFavorite(false)
+      } else if (sequence === loadSequence.current && scope === miniContentScope()) {
+        favoriteRevision.current = revision
+        setFavorite(false)
+      }
     } finally {
       await detailRequest
       if (sequence === loadSequence.current && scope === miniContentScope()) setFavoriteBusy(false)
     }
-  }, [accessSearch, companyId, jobId, loadResource, resourceKey])
+  }, [accessSearch, companyId, favorite, jobId, loadResource, resourceKey])
 
   useDidShow(() => { void load() })
   useEffect(() => () => { loadSequence.current++ }, [])
@@ -85,6 +96,7 @@ export default function JobDetailPage() {
       }
       const next = !favorite
       await setJobFavorite(jobId, next, companyId)
+      favoriteRevision.current = resourceRevision('favorite-state')
       setFavorite(next)
       showToast({ title: next ? '已收藏，同步至官网' : '已取消收藏', icon: 'success' })
     } catch (favoriteError) {

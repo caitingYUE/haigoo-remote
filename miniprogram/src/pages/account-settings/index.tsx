@@ -1,101 +1,75 @@
 import { Button, Input, Text, Textarea, View } from '@tarojs/components'
-import { getCurrentPages, navigateBack, navigateTo, reLaunch, setClipboardData, showModal, showToast } from '@tarojs/taro'
-import { useState } from 'react'
+import { navigateTo, reLaunch, setClipboardData, showModal, showToast } from '@tarojs/taro'
+import { useRef, useState } from 'react'
 import {
   deleteMiniAccount,
   logoutMiniAccount,
   submitMiniFeedback,
   unbindWebsiteAccount
 } from '../../services/mini-auth-service'
-import { getMiniUser } from '../../services/session'
+import { getMiniSessionCacheKey, getMiniUser, hasAuthenticatedSession } from '../../services/session'
 import './index.scss'
 
 export default function AccountSettingsPage() {
   const user = getMiniUser()
   const [password, setPassword] = useState('')
   const [feedback, setFeedback] = useState('')
-  const [pending, setPending] = useState<'unbind' | 'delete' | 'feedback' | ''>('')
+  const [pending, setPending] = useState<'logout' | 'unbind' | 'delete' | 'feedback' | ''>('')
 
-  const finishSession = (message: string) => {
+  const operationLock = useRef(false)
+  const finishSession = (message: string, scope: string) => {
+    if (scope !== getMiniSessionCacheKey()) return
     logoutMiniAccount()
+    setPassword('')
+    void reLaunch({ url: '/pages/index/index' })
     showToast({ title: message, icon: 'success' })
-    if (getCurrentPages().length > 1) navigateBack()
-    else reLaunch({ url: '/pages/index/index' })
   }
 
-  const handleLogout = () => {
-    showModal({
-      title: '退出当前账号？',
-      content: '退出不会删除 Haigoo 账号、会员或咨询记录。',
-      confirmText: '退出登录',
-      success: ({ confirm }) => {
-        if (confirm) finishSession('已退出登录')
-      }
-    })
-  }
-
-  const handleUnbind = () => {
-    if (!password) {
+  const handleAccountAction = async (action: 'logout' | 'unbind' | 'delete') => {
+    if (operationLock.current) return
+    if (action !== 'logout' && !hasAuthenticatedSession()) {
+      showToast({ title: '请先登录并连接 Haigoo 账号', icon: 'none' })
+      return
+    }
+    if (action !== 'logout' && !password) {
       showToast({ title: '请输入 Haigoo 账号密码', icon: 'none' })
       return
     }
-    showModal({
-      title: '解除微信绑定？',
-      content: '解绑后账号和数据仍会保留。下次使用会员或咨询服务时，需要重新连接。',
-      confirmText: '确认解绑',
-      success: async ({ confirm }) => {
-        if (!confirm) return
-        setPending('unbind')
-        try {
-          await unbindWebsiteAccount(password)
-          finishSession('已解除绑定')
-        } catch (error) {
-          showModal({ title: '解绑失败', content: error instanceof Error ? error.message : '请稍后重试', showCancel: false })
-        } finally {
-          setPending('')
-        }
-      }
-    })
-  }
-
-  const handleDelete = () => {
-    if (!password) {
-      showToast({ title: '请输入 Haigoo 账号密码', icon: 'none' })
-      return
+    operationLock.current = true
+    setPending(action)
+    const scope = getMiniSessionCacheKey()
+    const labels = {
+      logout: { title: '退出当前账号？', content: '退出不会删除 Haigoo 账号、会员或咨询记录。', confirmText: '退出登录', done: '已退出登录' },
+      unbind: { title: '解除微信绑定？', content: '解绑后账号和数据仍会保留。下次使用会员或咨询服务时，需要重新连接。', confirmText: '确认解绑', done: '已解除绑定' },
+      delete: { title: '永久注销账号？', content: '账号及相关服务数据将被删除且无法恢复，同一邮箱 30 天内不能重新注册。', confirmText: '继续注销', done: '账号已注销' }
+    }[action]
+    try {
+      if (!(await showModal(labels)).confirm) return
+      if (action === 'delete' && !(await showModal({
+        title: '请再次确认', content: '这是不可撤销操作。确认永久注销 HaigooRemote 账号吗？', confirmText: '永久注销'
+      })).confirm) return
+      if (scope !== getMiniSessionCacheKey()) return
+      if (action === 'unbind') await unbindWebsiteAccount(password)
+      if (action === 'delete') await deleteMiniAccount(password)
+      finishSession(labels.done, scope)
+    } catch (error) {
+      showModal({ title: '操作未完成', content: error instanceof Error ? error.message : '请稍后重试', showCancel: false })
+    } finally {
+      operationLock.current = false
+      setPending('')
     }
-    showModal({
-      title: '永久注销账号？',
-      content: '账号及相关服务数据将被删除且无法恢复，同一邮箱 30 天内不能重新注册。',
-      cancelText: '取消',
-      confirmText: '继续注销',
-      success: ({ confirm }) => {
-        if (!confirm) return
-        showModal({
-          title: '请再次确认',
-          content: '这是不可撤销操作。确认永久注销 HaigooRemote 账号吗？',
-          confirmText: '永久注销',
-          success: async ({ confirm: finalConfirm }) => {
-            if (!finalConfirm) return
-            setPending('delete')
-            try {
-              await deleteMiniAccount(password)
-              finishSession('账号已注销')
-            } catch (error) {
-              showModal({ title: '注销失败', content: error instanceof Error ? error.message : '请稍后重试', showCancel: false })
-            } finally {
-              setPending('')
-            }
-          }
-        })
-      }
-    })
   }
+  const handleLogout = () => handleAccountAction('logout')
+  const handleUnbind = () => handleAccountAction('unbind')
+  const handleDelete = () => handleAccountAction('delete')
 
   const handleFeedback = async () => {
+    if (operationLock.current) return
     if (feedback.trim().length < 5) {
       showToast({ title: '请至少输入 5 个字的问题或建议', icon: 'none' })
       return
     }
+    operationLock.current = true
     setPending('feedback')
     try {
       await submitMiniFeedback(feedback)
@@ -104,6 +78,7 @@ export default function AccountSettingsPage() {
     } catch (error) {
       showModal({ title: '提交失败', content: error instanceof Error ? error.message : '请稍后重试', showCancel: false })
     } finally {
+      operationLock.current = false
       setPending('')
     }
   }

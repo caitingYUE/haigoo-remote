@@ -124,6 +124,7 @@ console.log('Favorites legacy/modern schema, account isolation, source validatio
 // A legacy payload must not masquerade as two unavailable saved jobs.
 let favoriteResponse = { favorites: [{ jobId: 'j' }], jobs: [job] }
 const favoritesClient = load(read('miniprogram/src/services/content-service.ts'), {
+  './retained-resource-cache': { invalidateMiniResource() {} },
   './api-client': { requestJson: async () => favoriteResponse }, './cloud-asset-service': {}
 })
 await assert.rejects(favoritesClient.fetchFavoriteJobs(), /收藏记录暂时无法加载/)

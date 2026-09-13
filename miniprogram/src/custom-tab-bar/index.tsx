@@ -38,6 +38,7 @@ export default function CustomTabBar() {
   }, [])
 
   const selectTab = (path: string) => {
+    if (path === currentPath()) return
     setActivePath(path)
     setFlowHidden(false)
     Taro.eventCenter.trigger('haigoo:tab-change', path)
