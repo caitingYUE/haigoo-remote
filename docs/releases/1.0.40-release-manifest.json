@@ -1,6 +1,6 @@
 {
   "version": "1.0.40",
-  "sourceCommit": "f2bd7d538ab0724d2eccca6b9a39a302216ec526",
+  "sourceCommit": "76b5f494d855c22db94bfa53309c487829762f5d",
   "deploymentId": "dpl_GXFL1sYe42UPQBkKjwjUsPHX2rEz",
   "deploymentUrl": "https://haigoo-remote-l25c7t2fc-caitlinyct.vercel.app",
   "productionDomain": "https://haigooremote.com",
@@ -352,12 +352,12 @@
     "appid": "wxc61db5b8b472925a",
     "description": "Haigoo Remote production 1.0.40",
     "uploadConfirmed": true,
-    "uploadBytes": 1120270,
+    "uploadBytes": 1122240,
     "evidence": "CLI: ✔ upload; Uploaded WeChat production bundle 1.0.40",
     "reviewSubmitted": false
   },
   "archive": {
-    "path": "artifacts/releases/1.0.40/wechat-production-hotfix-f2bd7d53.tar.gz",
-    "sha256": "7fa03ed3f45b06e5ff0c1a18f524d64de53bf3ada55655aaf001f424e807e94f"
+    "path": "artifacts/releases/1.0.40/wechat-production-read-state-76b5f494.tar.gz",
+    "sha256": "901c426814d7abe690db68e150250332432bf198fc04b6dcbbad1f5155b6a5e6"
   }
 }
