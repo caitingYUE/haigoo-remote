@@ -287,7 +287,8 @@ export interface CareerWatchResponse {
     wechatSubscriptionAvailable: boolean
   }
   recommendations: WatchFeedItem[]
-  followedUpdates: Array<{ inboxId: string; companyId: string; companyName: string; eventType: string; hasPublicOpportunity: boolean; occurredAt: string; status: string }>
+  followedUpdates: Array<{ inboxId: string; companyId: string; companyName: string; eventType: string; hasPublicOpportunity: boolean; occurredAt: string; status: string; jobId?: string | null; jobTitle?: string; jobCategory?: string; jobStatus?: string; publishedAt?: string; subscribedAt?: string | null }>
+  unreadFollowedUpdateCount?: number
   generatedAt: string
   snapshotId: string
   validUntil: string | null
@@ -380,6 +381,7 @@ export function normalizeCareerWatchResponse(value: unknown): CareerWatchRespons
     },
     recommendations,
     followedUpdates: arrayValue<CareerWatchResponse['followedUpdates'][number]>(source.followedUpdates),
+    unreadFollowedUpdateCount: Math.max(0, Number(source.unreadFollowedUpdateCount ?? arrayValue(source.followedUpdates).filter((item: any) => item.status === 'unread').length)),
     generatedAt,
     snapshotId: String(source.snapshotId || `${profile?.version || 0}:${generatedAt}`),
     validUntil: matchState === 'fixed_free' ? null : Number.isFinite(new Date(String(source.validUntil || '')).getTime()) ? String(source.validUntil) : '1970-01-01T00:00:00.000Z',

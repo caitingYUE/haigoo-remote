@@ -18,10 +18,11 @@ interface CompanyFollowActionProps {
   compact?: boolean
   unfollowedLabel?: string
   unfollowedIcon?: MiniIconName
+  followedToast?: string
   onChanged?: (followed: boolean) => void
 }
 
-export default function CompanyFollowAction({ companyId, companyName, followed, reminderEnabled = false, compact = false, unfollowedLabel, unfollowedIcon = 'subscription', onChanged }: CompanyFollowActionProps) {
+export default function CompanyFollowAction({ companyId, companyName, followed, reminderEnabled = false, compact = false, unfollowedLabel, unfollowedIcon = 'subscription', followedToast, onChanged }: CompanyFollowActionProps) {
   const [busy, setBusy] = useState(false)
   const applyState = (nextFollowed: boolean) => {
     emitCompanyFollowChange({ companyId, followed: nextFollowed, reminderEnabled: nextFollowed && reminderEnabled })
@@ -39,7 +40,7 @@ export default function CompanyFollowAction({ companyId, companyName, followed, 
       void trackMiniEvent('mini_company_unfollow_request', { entity_id: companyId, company_name: companyName })
       const result = await showModal({
         title: '取消关注？',
-        content: '取消关注后，将不再在关注动态中展示这家企业的新岗位。是否继续？',
+        content: reminderEnabled ? '取消关注后，岗位订阅提醒也会关闭。是否继续？' : '取消关注后，将不再在关注动态中展示这家企业的新岗位。是否继续？',
         confirmText: '取消关注',
         confirmColor: '#C94F22'
       })
@@ -54,7 +55,7 @@ export default function CompanyFollowAction({ companyId, companyName, followed, 
       if (followed) await unfollowCompany(companyId)
       else await followCompany(companyId)
       applyState(!followed)
-      showToast({ title: followed ? '已取消关注' : '已关注企业', icon: 'success' })
+      showToast({ title: followed ? '已取消关注' : (followedToast || '已关注企业'), icon: 'success' })
       void trackMiniEvent(followed ? 'mini_company_unfollow_success' : 'mini_company_follow_success', { entity_id: companyId })
     } catch (error) {
       if (error instanceof ApiRequestError && error.payload.code === 'COMPANY_FOLLOW_LIMIT_REACHED') {

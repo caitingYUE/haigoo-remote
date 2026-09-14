@@ -42,7 +42,7 @@ export default function ProfilePage() {
     memberServices: Awaited<ReturnType<typeof fetchMemberServices>>
   }>('profile-dashboard')
   const followCount = dashboard?.follows.follows.length ?? null
-  const unreadCount = dashboard?.watch.followedUpdates.length ?? null
+  const unreadCount = dashboard?.watch.unreadFollowedUpdateCount ?? dashboard?.watch.followedUpdates.length ?? null
   const membership = dashboard?.memberServices.membership || null
   const watchState = dashboard?.watch || null
   const careerState = dashboard?.career || null
@@ -133,7 +133,7 @@ export default function ProfilePage() {
 
     {!isAuthenticated ? <View className='profile-auth-notice'><Text>登录将使用微信身份标识，并在已连接账号时同步邮箱和会员状态。不同意也可继续浏览公开企业与岗位。</Text><AuthConsent accepted={consentAccepted} onChange={setConsentAccepted} /></View> : null}
 
-    {isAuthenticated ? <View className='profile-facts'><View aria-role='button' aria-label={`查看关注企业，共 ${followCount ?? '—'} 家`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/followed-companies/index' })}><Text>{followCount ?? '—'}</Text><Text>关注企业</Text></View><View aria-role='button' aria-label={`查看未读岗位更新，共 ${unreadCount ?? '—'} 条`} hoverClass='mini-action--pressed' onClick={() => Taro.switchTab({ url: '/pages/index/index' })}><Text>{unreadCount ?? '—'}</Text><Text>未读岗位更新</Text></View></View> : null}
+    {isAuthenticated ? <View className='profile-facts'><View aria-role='button' aria-label={`查看关注企业，共 ${followCount ?? '—'} 家`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/followed-companies/index' })}><Text>{followCount ?? '—'}</Text><Text>关注企业</Text></View><View aria-role='button' aria-label={`查看未读岗位更新，共 ${unreadCount ?? '—'} 条`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/unread-updates/index' })}><Text>{unreadCount ?? '—'}</Text><Text>未读岗位更新</Text></View></View> : null}
     {isAuthenticated && dashboardError ? <View className='profile-dashboard-error' aria-live='polite'><Text>{dashboardError}</Text><Text aria-role='button' aria-label='重新加载个人信息' onClick={() => void loadDashboard(true)}>重新加载</Text></View> : null}
 
     <View className='profile-membership' aria-role='button' aria-label='查看会员方案' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}>

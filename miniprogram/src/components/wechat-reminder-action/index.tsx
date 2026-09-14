@@ -14,6 +14,8 @@ interface WechatReminderActionProps {
   available: boolean
   templateId: string
   enabled: boolean
+  idleLabel?: string
+  enabledLabel?: string
   onChanged?: (enabled: boolean) => void
 }
 
@@ -47,7 +49,7 @@ export async function requestMatchingReminderAuthorization(templateId: string, i
   return requestWechatReminderAuthorization(templateId)
 }
 
-export default function WechatReminderAction({ companyId, available, templateId, enabled, onChanged }: WechatReminderActionProps) {
+export default function WechatReminderAction({ companyId, available, templateId, enabled, idleLabel = '订阅匹配更新', enabledLabel = '已订阅匹配提醒', onChanged }: WechatReminderActionProps) {
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
   const [currentEnabled, setCurrentEnabled] = useState(enabled)
@@ -140,6 +142,6 @@ export default function WechatReminderAction({ companyId, available, templateId,
     onClick={(event) => { event.stopPropagation(); void toggle() }}
   >
     <MiniIcon name={currentEnabled ? 'check' : 'subscription'} size={17} />
-    <Text>{busy ? '正在处理…' : currentEnabled ? '已订阅匹配提醒' : '订阅匹配更新'}</Text>
+    <Text>{busy ? '正在处理…' : currentEnabled ? enabledLabel : idleLabel}</Text>
   </Button>
 }

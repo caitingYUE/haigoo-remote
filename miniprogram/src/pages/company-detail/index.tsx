@@ -5,13 +5,12 @@ import ContentSkeleton from '../../components/content-skeleton'
 import CompanyLogo from '../../components/company-logo'
 import CompanyFollowAction from '../../components/company-follow-action'
 import MiniIcon from '../../components/mini-icon'
-import WechatReminderAction, { requestMatchingReminderAuthorization } from '../../components/wechat-reminder-action'
+import WechatReminderAction from '../../components/wechat-reminder-action'
 import useMiniShare from '../../hooks/use-mini-share'
 import useRetainedResource, { miniContentScope } from '../../hooks/use-retained-resource'
 import { fetchCompanyDetail } from '../../services/content-service'
-import { fetchCareerWatch, fetchCompanyFollows, setMatchNotifications } from '../../services/career-match-service'
+import { fetchCareerWatch, fetchCompanyFollows } from '../../services/career-match-service'
 import { refreshWechatSessionIfStale } from '../../services/mini-auth-service'
-import { emitCompanyFollowChange, invalidateReminderSnapshot } from '../../services/company-follow-state'
 import { hasAuthenticatedSession } from '../../services/session'
 import type { ContentBlock, MemberOnlyContact, MiniCompanyJob } from '../../types'
 import { formatCalendarDate } from '../../utils/runtime-compat'
@@ -51,7 +50,6 @@ export default function CompanyDetailPage() {
   const access = data?.access || null
   const [followed, setFollowed] = useState(false)
   const [subscribed, setSubscribed] = useState(false)
-  const reminderBusy = useRef(false)
   const [subscriptionConfig, setSubscriptionConfig] = useState({ available: false, templateId: '' })
   const [activeTab, setActiveTab] = useState<'overview' | 'jobs' | 'culture'>('overview')
   const [footerHeight, setFooterHeight] = useState(0)
@@ -100,39 +98,6 @@ export default function CompanyDetailPage() {
     })
   })
 
-  const requestReminderAfterFollow = async () => {
-    if (reminderBusy.current) return
-    const scope = miniContentScope()
-    const sequence = loadSequence.current
-    const isCurrent = () => scope === miniContentScope() && sequence === loadSequence.current
-    invalidateReminderSnapshot()
-    if (!subscriptionConfig.available || !subscriptionConfig.templateId) {
-      showToast({ title: '已关注，可稍后开启微信提醒', icon: 'none' })
-      return
-    }
-    reminderBusy.current = true
-    try {
-      const status = await requestMatchingReminderAuthorization(subscriptionConfig.templateId, isCurrent)
-      if (!isCurrent() || status === null) return
-      if (status === 'accepted') {
-        await setMatchNotifications(id, true, status)
-        if (!isCurrent()) return
-        emitCompanyFollowChange({ companyId: id, followed: true, reminderEnabled: true })
-        setSubscribed(true)
-        showToast({ title: '企业有匹配的岗位时提醒你', icon: 'none', duration: 3000 })
-      } else {
-        await setMatchNotifications(id, false, status).catch(() => undefined)
-        if (!isCurrent()) return
-        emitCompanyFollowChange({ companyId: id, followed: true, reminderEnabled: false })
-        setSubscribed(false)
-        showToast({ title: status === 'unavailable' ? '请在小程序设置中开启订阅消息' : '已关注，可稍后开启微信提醒', icon: 'none' })
-      }
-    } catch {
-      if (!isCurrent()) return
-      setSubscribed(false)
-      showToast({ title: '微信提醒未开启，关注状态已保留', icon: 'none' })
-    } finally { reminderBusy.current = false }
-  }
 
   if (error) return <View className='page-shell'><View className='empty-state' aria-live='polite'><Text className='empty-state__title'>无法查看企业资料</Text><Text className='empty-state__copy'>{error}</Text><View className='empty-state__action' aria-role='button' aria-label='重新加载企业资料' hoverClass='mini-action--pressed' onClick={() => void load(true)}>重新加载</View></View></View>
   if (!company) return <View className='page-shell company-detail-loading'><ContentSkeleton rows={4} /></View>
@@ -220,8 +185,8 @@ export default function CompanyDetailPage() {
     </View>
 
     <View className='company-detail__footer'>
-      <View className='company-detail__follow-control'><CompanyFollowAction companyId={company.id} companyName={company.name} followed={followed} reminderEnabled={subscribed} unfollowedLabel='订阅匹配更新' onChanged={(nextFollowed) => { setFollowed(nextFollowed); if (!nextFollowed) setSubscribed(false); else void requestReminderAfterFollow() }} /></View>
-      {followed ? <View className='company-detail__reminder-control'><WechatReminderAction companyId={company.id} available={subscriptionConfig.available} templateId={subscriptionConfig.templateId} enabled={subscribed} onChanged={setSubscribed} /></View> : null}
+      <View className='company-detail__follow-control'><CompanyFollowAction companyId={company.id} companyName={company.name} followed={followed} reminderEnabled={subscribed} unfollowedLabel='关注企业' followedToast='已关注，可在个人中心查看' onChanged={(nextFollowed) => { setFollowed(nextFollowed); if (!nextFollowed) setSubscribed(false) }} /></View>
+      {followed ? <View className='company-detail__reminder-control'><WechatReminderAction companyId={company.id} available={subscriptionConfig.available} templateId={subscriptionConfig.templateId} enabled={subscribed} idleLabel='下次更新提醒' enabledLabel='已订阅下次提醒' onChanged={setSubscribed} /></View> : null}
       {company.careersUrl || company.websiteUrl ? <View className='company-detail__website' aria-role='button' hoverClass='mini-action--pressed' onClick={() => void copyLink(company.careersUrl || company.websiteUrl || '', '官网链接已复制')}>复制官网链接</View> : null}
     </View>
   </View>

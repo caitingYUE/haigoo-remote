@@ -5,6 +5,7 @@ export default defineAppConfig({
     'pages/companies/index',
     'pages/growth/index',
     'pages/profile/index',
+    'pages/unread-updates/index',
     'pages/company-detail/index',
     'pages/followed-companies/index',
     'pages/job-detail/index',
