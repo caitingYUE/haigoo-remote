@@ -1,0 +1,337 @@
+{
+  "version": "1.0.40",
+  "sourceCommit": "2a71c83bf70afd05de6c696265187c5ea998c5f8",
+  "deploymentId": "dpl_HzTDVELfLoZrYBekbHsRpT2ZXhpc",
+  "deploymentUrl": "https://haigoo-remote-eqx7oci5e-caitlinyct.vercel.app",
+  "productionDomain": "https://haigooremote.com",
+  "migration": {
+    "at": "2026-09-14T06:03:11.712Z",
+    "target": "production",
+    "migration": "090_mini_wechat_matching_reminders.sql",
+    "before": {
+      "follows": 47
+    },
+    "after": {
+      "follows": 47,
+      "matching_function_exists": true
+    },
+    "cloudrun": {
+      "status": "normal",
+      "minNum": 1,
+      "maxNum": 2,
+      "paymentEnvironment": 0,
+      "origin": "https://haigooremote.com"
+    }
+  },
+  "candidateChecks": {
+    "at": "2026-09-14T06:08:09.864Z",
+    "origin": "https://haigoo-remote-eqx7oci5e-caitlinyct.vercel.app",
+    "passed": true,
+    "reports": [
+      {
+        "action": "career_watch_options",
+        "status": 200,
+        "durationMs": 6622
+      },
+      {
+        "action": "companies",
+        "status": 200,
+        "durationMs": 6656
+      },
+      {
+        "action": "membership_plans",
+        "status": 200,
+        "durationMs": 5539
+      },
+      {
+        "action": "content_home",
+        "status": 200,
+        "durationMs": 6623
+      },
+      {
+        "action": "sync",
+        "status": 200,
+        "durationMs": 5628
+      },
+      {
+        "action": "missing_cron_auth",
+        "status": 401
+      },
+      {
+        "action": "forged_cron_auth",
+        "status": 401
+      }
+    ]
+  },
+  "productionChecks": {
+    "startedAt": "2026-09-14T06:08:51.940Z",
+    "transport": "CloudBase SDK → production CloudRun → Vercel",
+    "rounds": 3,
+    "samples": [
+      {
+        "round": 1,
+        "action": "career_watch_options",
+        "at": "2026-09-14T06:08:58.188Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 3314,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": 11,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 1,
+        "action": "companies",
+        "at": "2026-09-14T06:09:03.990Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 3411,
+        "companyAccessScope": "free_fixed",
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 1,
+        "action": "membership_plans",
+        "at": "2026-09-14T06:09:07.207Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1467,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": [
+          {
+            "id": "club_starter_monthly",
+            "price": 99
+          },
+          {
+            "id": "mini_club_quarter_2026",
+            "price": 199
+          },
+          {
+            "id": "mini_club_half_year_2026",
+            "price": 699
+          }
+        ],
+        "paymentAvailable": true
+      },
+      {
+        "round": 1,
+        "action": "content_home",
+        "at": "2026-09-14T06:09:13.314Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 4454,
+        "companyAccessScope": null,
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": 3,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 2,
+        "action": "career_watch_options",
+        "at": "2026-09-14T06:09:19.305Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 2454,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": 11,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 2,
+        "action": "companies",
+        "at": "2026-09-14T06:09:27.027Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 5894,
+        "companyAccessScope": "free_fixed",
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 2,
+        "action": "membership_plans",
+        "at": "2026-09-14T06:09:33.986Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 3422,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": [
+          {
+            "id": "club_starter_monthly",
+            "price": 99
+          },
+          {
+            "id": "mini_club_quarter_2026",
+            "price": 199
+          },
+          {
+            "id": "mini_club_half_year_2026",
+            "price": 699
+          }
+        ],
+        "paymentAvailable": true
+      },
+      {
+        "round": 2,
+        "action": "content_home",
+        "at": "2026-09-14T06:09:39.681Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 2156,
+        "companyAccessScope": null,
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": 3,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 3,
+        "action": "career_watch_options",
+        "at": "2026-09-14T06:09:46.128Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 4949,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": 11,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 3,
+        "action": "companies",
+        "at": "2026-09-14T06:09:51.829Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 2430,
+        "companyAccessScope": "free_fixed",
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 3,
+        "action": "membership_plans",
+        "at": "2026-09-14T06:09:54.723Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1415,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": [
+          {
+            "id": "club_starter_monthly",
+            "price": 99
+          },
+          {
+            "id": "mini_club_quarter_2026",
+            "price": 199
+          },
+          {
+            "id": "mini_club_half_year_2026",
+            "price": 699
+          }
+        ],
+        "paymentAvailable": true
+      },
+      {
+        "round": 3,
+        "action": "content_home",
+        "at": "2026-09-14T06:10:01.142Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1950,
+        "companyAccessScope": null,
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": 3,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      }
+    ],
+    "finishedAt": "2026-09-14T06:10:01.142Z",
+    "summary": [
+      {
+        "action": "career_watch_options",
+        "total": 3,
+        "passed": 3,
+        "minMs": 2454,
+        "medianMs": 3314,
+        "maxMs": 4949
+      },
+      {
+        "action": "companies",
+        "total": 3,
+        "passed": 3,
+        "minMs": 2430,
+        "medianMs": 3411,
+        "maxMs": 5894
+      },
+      {
+        "action": "membership_plans",
+        "total": 3,
+        "passed": 3,
+        "minMs": 1415,
+        "medianMs": 1467,
+        "maxMs": 3422
+      },
+      {
+        "action": "content_home",
+        "total": 3,
+        "passed": 3,
+        "minMs": 1950,
+        "medianMs": 2156,
+        "maxMs": 4454
+      }
+    ],
+    "passed": true,
+    "limitations": "Small guest-only sample, includes SDK/network time; not a load test or a guarantee of future availability. Account lifecycle tests run in isolation."
+  },
+  "cloudrun": {
+    "checkedAt": "2026-09-14T06:04:31.407Z",
+    "status": 200,
+    "sourceRevision": "6e26516a030b8b7ec63f2b38fe015abc73683a100adaa86f97bd3eaba623824b",
+    "sourceMatchesLocal": true,
+    "redeployRequired": false
+  },
+  "wechat": {
+    "version": "1.0.40",
+    "appid": "wxc61db5b8b472925a",
+    "description": "Haigoo Remote production 1.0.40",
+    "uploadConfirmed": true,
+    "uploadBytes": 1120259,
+    "evidence": "CLI: ✔ upload; Uploaded WeChat production bundle 1.0.40",
+    "reviewSubmitted": false
+  },
+  "archive": {
+    "path": "artifacts/releases/1.0.40/wechat-production.tar.gz",
+    "sha256": "ec59c6c3784555da97cc00d26f9b3010f2cd7bde5659dc11ecf7eb750e8a60bf"
+  }
+}
