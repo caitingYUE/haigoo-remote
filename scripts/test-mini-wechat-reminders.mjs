@@ -15,9 +15,11 @@ function functions(file, names) {
   return ast.statements.filter(n => ts.isFunctionDeclaration(n) && (!names || names.includes(n.name?.text)))
     .map(n => n.getText(ast).replace(/^export\s+(default\s+)?/,'')).join('\n')
 }
-const prepareCode = functions('lib/services/mini-company-match-service.js',['unique','prepareCompanyUpdateEvents'])
+const matchSource = fs.readFileSync('lib/services/mini-company-match-service.js','utf8')
+const aliases = matchSource.slice(matchSource.indexOf('const ROLE_FAMILY_ALIASES ='),matchSource.indexOf('const ROLE_FAMILY_LABELS ='))
+const prepareCode = aliases + functions('lib/services/mini-company-match-service.js',['unique','roleFamiliesForText','prepareCompanyUpdateEvents','setFollowNotifications'])
 const workerCode = functions('lib/services/mini-wechat-reminder-service.js').replace("const { prepareCompanyUpdateEvents } = await import('./mini-company-match-service.js')",'')
-const migration = fs.readFileSync('server-utils/dal/migrations/089_mini_wechat_reminder_delivery.sql','utf8')
+const migration = ['089_mini_wechat_reminder_delivery.sql','090_mini_wechat_matching_reminders.sql'].map(file=>fs.readFileSync(`server-utils/dal/migrations/${file}`,'utf8')).join('\n')
 const db = new PGlite()
 const q = async (sql, params=[]) => (await db.query(sql,params)).rows
 const results = []
@@ -39,6 +41,7 @@ async function reset(n=1) {
   await q("INSERT INTO users(user_id) SELECT 'user-'||n FROM generate_series(0,$1::int-1) n",[n])
   await q("INSERT INTO mini_wechat_identities(user_id,app_id,openid) SELECT user_id,'audit-app','fake-'||user_id FROM users")
   await q("INSERT INTO mini_company_follows(user_id,company_id) SELECT user_id,'company-a' FROM users")
+  await q("INSERT INTO career_watch_profiles(user_id) SELECT user_id FROM users")
 }
 async function job({id='job-a',approved=true,status='active',memberOnly=false,source='admin',url='https://example.invalid/job/a'}={}) {
   await q(`INSERT INTO jobs(job_id,title,description,location,job_type,category,company_id,company,is_approved,status,member_only,source_type,url)
@@ -51,8 +54,14 @@ function runtime({sendCodes=[],tokenDown=false,rejectInbox=false,onSend=null,ena
     process:{env:{WECHAT_MINI_APP_ID:'audit-app',WECHAT_MINI_APP_SECRET:'fake',WECHAT_MINI_COMPANY_UPDATE_TEMPLATE_ID:'audit-template',MINI_WECHAT_REMINDERS_ENABLED:String(enabled),VERCEL_ENV:'production'}},
     EVENTS_TABLE:'mini_company_update_events',FOLLOWS_TABLE:'mini_company_follows',INBOX_TABLE:'mini_company_update_inbox',
     wechatAccessTokenCache:{token:'',expiresAt:0},wechatTemplateFieldsCache:new Map(),
-    extractStructuredResume:()=>({roleFamilies:['engineering']}),roleFamiliesForText:()=>['engineering'],
-    neonHelper:{query:async(sql,p)=>{
+    neonHelper:{getClient:()=>({
+      query:(sql,params)=>({sql,params}),
+      transaction:async queries=>db.transaction(async tx=>{
+        const results=[]
+        for(const item of queries)results.push((await tx.query(item.sql,item.params)).rows)
+        return results
+      })
+    }),query:async(sql,p)=>{
       if(state.rejectInbox && sql.includes('WITH event AS')) { state.rejectInbox=false; throw new Error('inbox unavailable') }
       return q(sql,p)
     }},
@@ -66,7 +75,7 @@ function runtime({sendCodes=[],tokenDown=false,rejectInbox=false,onSend=null,ena
       return {ok:true,json:async()=>code==='missing'?{}:{errcode:code,msgid:code===0?'fake-msg-id':undefined}}
     }
   })
-  const f=vm.runInContext(`${prepareCode}\n${workerCode}\n;({runWechatReminderDelivery,prepareCompanyUpdateEvents})`,context)
+  const f=vm.runInContext(`${prepareCode}\n${workerCode}\n;({runWechatReminderDelivery,prepareCompanyUpdateEvents,setFollowNotifications})`,context)
   return {...f,state,requests}
 }
 async function test(name,fn) { await reset(); await fn(); results.push(name); console.log('PASS',name) }
@@ -173,14 +182,55 @@ await test('晚关注/晚授权不补发旧事件，未来上新正常触发',as
 })
 await test('会员方向匹配与到期边界，企业关注+方向同人只发一次',async()=>{
   await reset(3);await q('UPDATE mini_company_follows SET wechat_enabled=false')
-  await q("INSERT INTO career_watch_profiles(user_id) SELECT user_id FROM users")
   await q("UPDATE users SET member_status='active',member_type='year',member_expire_at=NOW()+INTERVAL '1 day' WHERE user_id IN ('user-0','user-1')")
   await job();const r=runtime();await r.prepareCompanyUpdateEvents()
   await q("UPDATE users SET member_expire_at=NOW()-INTERVAL '1 day' WHERE user_id='user-1'")
   await r.runWechatReminderDelivery();assert.deepEqual(r.requests.map(x=>x.touser),['fake-user-0'])
-  await reset();await q("INSERT INTO career_watch_profiles(user_id) VALUES('user-0')")
+  await reset()
   await q("UPDATE users SET member_status='active',member_type='year'");await job();const r2=runtime()
   await r2.runWechatReminderDelivery();assert.equal(r2.requests.length,1)
+})
+await test('订阅接口要求已保存岗位偏好，无偏好时仍允许取消提醒',async()=>{
+  const r=runtime();const user={user_id:'user-0'}
+  await q('DELETE FROM career_watch_profiles')
+  await assert.rejects(r.setFollowNotifications({user,companyId:'company-a',enabled:true,templateStatus:'accepted'}),e=>e.code==='WATCH_ROLE_REQUIRED')
+  const disabled=await r.setFollowNotifications({user,companyId:'company-a',enabled:false})
+  assert.equal(disabled.enabled,false)
+  await q("INSERT INTO career_watch_profiles(user_id) VALUES('user-0')")
+  const enabled=await r.setFollowNotifications({user,companyId:'company-a',enabled:true,templateStatus:'accepted'})
+  assert.equal(enabled.enabled,true)
+})
+await test('企业关注必须匹配岗位，不匹配不占用授权，后续匹配仍提醒',async()=>{
+  await q("UPDATE career_watch_profiles SET role_families='[\"design\"]'")
+  await job();const r=runtime();await r.runWechatReminderDelivery()
+  assert.equal(r.requests.length,0);assert.equal((await pending()).length,0)
+  assert.equal((await q('SELECT wechat_enabled FROM mini_company_follows'))[0].wechat_enabled,true)
+  await q("UPDATE career_watch_profiles SET role_families='[\"engineering\"]'")
+  await job({id:'matching'});await r.runWechatReminderDelivery();assert.equal(r.requests.length,1)
+})
+await test('自定义、简历、混合来源均按具体岗位类型匹配，关键词不作为SQL通配符',async()=>{
+  for(const mode of ['manual','resume','mixed']) {
+    for(const term of ['前端开发','%','_','后端开发']) {
+      await reset();await q('UPDATE career_watch_profiles SET source_mode=$1,custom_role_terms=$2::jsonb',[mode,JSON.stringify([term])])
+      await job();const r=runtime();await r.runWechatReminderDelivery()
+      assert.equal(r.requests.length,term==='后端开发'?1:0,`${mode}:${term}`)
+    }
+  }
+})
+await test('缺少/暂停/空岗位偏好不通知，岗位描述提到其他团队不算匹配',async()=>{
+  for(const change of ['DELETE FROM career_watch_profiles',"UPDATE career_watch_profiles SET status='paused'","UPDATE career_watch_profiles SET role_families='[]'","UPDATE career_watch_profiles SET in_app_enabled=false"]) {
+    await reset();await q(change);await job();const r=runtime();await r.runWechatReminderDelivery();assert.equal(r.requests.length,0,change)
+  }
+  await reset();await q("UPDATE career_watch_profiles SET role_families='[\"design\"]'");await job()
+  await q("UPDATE mini_company_update_events SET job_snapshot=jsonb_set(job_snapshot,'{description}','\"和设计师协作 design team\"')")
+  const r=runtime();await r.runWechatReminderDelivery();assert.equal(r.requests.length,0)
+})
+await test('领取前再次核对岗位偏好、岗位标题和分类，拦截旧队列但保留授权',async()=>{
+  for(const change of ["UPDATE career_watch_profiles SET role_families='[\"design\"]'","UPDATE career_watch_profiles SET custom_role_terms='[\"前端开发\"]'","DELETE FROM career_watch_profiles","UPDATE jobs SET title='前端开发'","UPDATE jobs SET category='design'"]) {
+    await reset();await job();const r=runtime();await r.prepareCompanyUpdateEvents();assert.equal((await pending())[0].notification_status,'pending')
+    await q(change);await r.runWechatReminderDelivery();assert.equal(r.requests.length,0,change)
+    assert.equal((await q('SELECT wechat_enabled FROM mini_company_follows'))[0].wechat_enabled,true)
+  }
 })
 await test('发送开关默认关闭，无secret或伪造cron标头不能启动发送',async()=>{
   await job();const r=runtime({enabled:false});await r.runWechatReminderDelivery();assert.equal(r.requests.length,0)

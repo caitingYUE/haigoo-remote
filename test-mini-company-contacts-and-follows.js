@@ -106,7 +106,7 @@ assert.match(followedPage, /fetchCompanyFollows/)
 assert.match(followedPage, /WechatReminderAction/)
 assert.match(followedPage, /CompanyFollowAction/)
 assert.match(companyDetailPage, /WechatReminderAction/)
-assert.match(companyDetailPage, /unfollowedLabel='订阅更新'/)
+assert.match(companyDetailPage, /unfollowedLabel='订阅匹配更新'/)
 assert.doesNotMatch(companyDetailPage, /requestSubscribeMessage|unfollowCompany|取消订阅/)
 
 console.log('mini company contacts and follows checks passed')

@@ -1,5 +1,5 @@
 import { Button, Text } from '@tarojs/components'
-import Taro, { navigateTo, showModal, showToast, useDidShow } from '@tarojs/taro'
+import Taro, { navigateTo, switchTab, showModal, showToast, useDidShow } from '@tarojs/taro'
 import { useEffect, useRef, useState } from 'react'
 import MiniIcon from '../mini-icon'
 import { setMatchNotifications } from '../../services/career-match-service'
@@ -24,6 +24,27 @@ export async function requestWechatReminderAuthorization(templateId: string): Pr
   const result = await requestSubscribeMessage({ tmplIds: [templateId] })
   const rawStatus = String(result[templateId] || '')
   return rawStatus === 'accept' ? 'accepted' : rawStatus === 'ban' ? 'unavailable' : 'rejected'
+}
+
+export async function requestMatchingReminderAuthorization(templateId: string, isCurrent: () => boolean): Promise<WechatReminderAuthorization | null> {
+  const snapshot = await refreshCompanyReminderSnapshot()
+  if (!isCurrent()) return null
+  if (!snapshot) {
+    showToast({ title: '暂时无法读取岗位偏好，请重试', icon: 'none' })
+    return null
+  }
+  if (!snapshot.matchingPreferencesReady) {
+    const result = await showModal({ title: '先设置匹配岗位', content: '请在 Match 中选择岗位类型，或上传简历并确认匹配方向。设置后才能订阅匹配更新。', confirmText: '去设置', cancelText: '暂不设置' })
+    if (result.confirm && isCurrent()) await switchTab({ url: '/pages/index/index' })
+    return null
+  }
+  const result = await showModal({
+    title: '订阅匹配更新',
+    content: '企业有匹配的岗位时提醒你\n\n按你在自定义设置或简历中确认的岗位类型匹配。当前微信每次授权可接收一条提醒，收到后可再次订阅。',
+    confirmText: '微信提醒', cancelText: '暂不开启'
+  })
+  if (!result.confirm || !isCurrent()) return null
+  return requestWechatReminderAuthorization(templateId)
 }
 
 export default function WechatReminderAction({ companyId, available, templateId, enabled, onChanged }: WechatReminderActionProps) {
@@ -78,13 +99,13 @@ export default function WechatReminderAction({ companyId, available, templateId,
     busyRef.current = true
     void trackMiniEvent('mini_wechat_reminder_prompt', { entity_id: companyId })
     try {
-      const status = await requestWechatReminderAuthorization(templateId)
-      if (!isCurrent()) return
+      const status = await requestMatchingReminderAuthorization(templateId, isCurrent)
+      if (!isCurrent() || status === null) return
       if (status === 'accepted') {
         await setMatchNotifications(companyId, true, status)
         if (!isCurrent()) return
         updateState(true, scope)
-        showToast({ title: '已预约下一次上新提醒', icon: 'success' })
+        showToast({ title: '企业有匹配的岗位时提醒你', icon: 'none', duration: 3000 })
         void trackMiniEvent('mini_wechat_reminder_accepted', { entity_id: companyId })
       } else {
         await setMatchNotifications(companyId, false, status).catch(() => undefined)
@@ -95,6 +116,11 @@ export default function WechatReminderAction({ companyId, available, templateId,
       }
     } catch (error) {
       if (!isCurrent()) return
+      if (error instanceof ApiRequestError && error.payload.code === 'WATCH_ROLE_REQUIRED') {
+        const result = await showModal({ title: '请更新岗位偏好', content: '岗位偏好已变更，请在 Match 中确认后重新订阅。', confirmText: '去设置' })
+        if (result.confirm && isCurrent()) await switchTab({ url: '/pages/index/index' })
+        return
+      }
       if (error instanceof ApiRequestError && error.payload.code === 'COMPANY_REMINDER_LIMIT_REACHED') {
         const result = await showModal({ title: '微信提醒已达免费上限', content: '免费版可开启 5 家企业的微信提醒，开通会员可开启更多。', confirmText: '开通会员', cancelText: '管理订阅', confirmColor: '#C94F22' })
         if (result.confirm || result.cancel) navigateTo({ url: result.confirm ? '/pages/membership/index' : '/pages/followed-companies/index' })
@@ -109,11 +135,11 @@ export default function WechatReminderAction({ companyId, available, templateId,
   return <Button
     className={`wechat-reminder-action ${currentEnabled ? 'is-enabled' : ''} ${busy ? 'is-busy' : ''}`}
     aria-disabled={busy}
-    aria-label={currentEnabled ? '取消下一次微信岗位提醒' : '授权一次微信岗位提醒，收到后可再次授权'}
+    aria-label={currentEnabled ? '取消匹配岗位微信提醒' : '订阅匹配更新，企业有匹配的岗位时提醒你'}
     onTouchStart={(event) => event.stopPropagation()}
     onClick={(event) => { event.stopPropagation(); void toggle() }}
   >
     <MiniIcon name={currentEnabled ? 'check' : 'subscription'} size={17} />
-    <Text>{busy ? '正在处理…' : currentEnabled ? '已预约一次提醒' : '提醒我一次'}</Text>
+    <Text>{busy ? '正在处理…' : currentEnabled ? '已订阅匹配提醒' : '订阅匹配更新'}</Text>
   </Button>
 }

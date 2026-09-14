@@ -29,7 +29,7 @@ assert.equal(await fromA,null,'account changes discard an old response')
 scope='guest';assert.equal(await service.refreshCompanyReminderSnapshot(),null)
 console.log('PASS shared status: deduplication, 60s quiet refresh, mutation ordering, account isolation')
 
-let cursor=0,shown,apiCalls=0,auth=deferred(),statusRead=deferred()
+let cursor=0,shown,apiCalls=0,authCalls=0,redirects=0,auth=deferred(),statusRead=deferred(),modalResult={confirm:true},modals=[]
 const slots=[]
 const react={
   useState(initial){const i=cursor++;if(!(i in slots))slots[i]=initial;return [slots[i],value=>{slots[i]=value}]},
@@ -39,7 +39,7 @@ const react={
 const Component=moduleFrom('miniprogram/src/components/wechat-reminder-action/index.tsx',{
   react,'react/jsx-runtime':{jsx:(type,props)=>({type,props}),jsxs:(type,props)=>({type,props})},
   '@tarojs/components':{Button:'button',Text:'text'},
-  '@tarojs/taro':{requestSubscribeMessage:()=>auth.promise,useDidShow:fn=>{shown=fn},showToast(){},navigateTo(){},showModal:async()=>({cancel:true})},
+  '@tarojs/taro':{requestSubscribeMessage:()=>{authCalls++;return auth.promise},useDidShow:fn=>{shown=fn},showToast(){},navigateTo(){},switchTab:async()=>{redirects++},showModal:async options=>{modals.push(options);return modalResult}},
   '../mini-icon':()=>null,'../../services/career-match-service':{setMatchNotifications:async()=>{apiCalls++;return {success:true}}},
   '../../services/company-follow-state':{emitCompanyFollowChange(){},invalidateReminderSnapshot(){},refreshCompanyReminderSnapshot:()=>statusRead.promise},
   '../../services/session':{getMiniSessionCacheKey:()=>scope},'../../services/analytics-service':{trackMiniEvent(){}},'../../services/api-client':{ApiRequestError:class extends Error {}}
@@ -47,12 +47,19 @@ const Component=moduleFrom('miniprogram/src/components/wechat-reminder-action/in
 scope='user-a'
 const props={companyId:'company-a',available:true,templateId:'template',enabled:false}
 const render=()=>{cursor=0;return Component(props)}
-let tree=render();statusRead.resolve(null);await tick();const click=()=>tree.props.onClick({stopPropagation(){}})
+let tree=render();statusRead.resolve({matchingPreferencesReady:true,follows:[]});await tick();const click=()=>tree.props.onClick({stopPropagation(){}})
 click();click();auth.resolve({template:'accept'});await tick();assert.equal(apiCalls,1,'rapid double click must not record two authorizations')
-tree=render();assert.equal(tree.props.children[1].props.children,'已预约一次提醒')
+tree=render();assert.equal(tree.props.children[1].props.children,'已订阅匹配提醒')
+assert.equal(authCalls,1)
+assert.ok(modals[0].content.startsWith('企业有匹配的岗位时提醒你'))
+assert.ok(modals[0].content.includes('每次授权可接收一条提醒'),'must not imply long-term WeChat permission')
 // An authoritative read only changes the button, without loading or rebuilding page data.
-statusRead=deferred();shown();statusRead.resolve({follows:[]});await tick();tree=render();assert.equal(tree.props.children[1].props.children,'提醒我一次')
-auth=deferred();click();scope='user-b';auth.resolve({template:'accept'});await tick()
+statusRead=deferred();shown();statusRead.resolve({matchingPreferencesReady:true,follows:[]});await tick();tree=render();assert.equal(tree.props.children[1].props.children,'订阅匹配更新')
+modalResult={cancel:true};click();await tick();assert.equal(authCalls,1,'cancel never opens native authorization')
+modalResult={confirm:true};statusRead=deferred();statusRead.resolve({matchingPreferencesReady:false,follows:[]});click();await tick()
+assert.equal(redirects,1);assert.equal(authCalls,1,'missing role preferences never asks for native authorization')
+statusRead=deferred();statusRead.resolve({matchingPreferencesReady:true,follows:[]})
+auth=deferred();click();await tick();assert.equal(authCalls,2);scope='user-b';auth.resolve({template:'accept'});await tick()
 assert.equal(apiCalls,1,'native prompt acceptance for an old account cannot enable the new account')
 assert.equal(typeof shown,'function')
 console.log('PASS reminder control: double-click exclusion, silent server status, native authorization account isolation')

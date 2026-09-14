@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-09-14T03:14:57.390Z",
+  "appId": "wxc61db5b8b472925a",
+  "configuredTemplates": [
+    {
+      "title": "新职位更新提醒",
+      "type": 2
+    }
+  ],
+  "categories": [
+    {
+      "id": 1363,
+      "name": "信息资讯"
+    },
+    {
+      "id": 612,
+      "name": "信息查询"
+    }
+  ],
+  "publicTemplateCount": 1520,
+  "publicTemplateTypes": [
+    2,
+    4
+  ],
+  "longTermTemplates": [],
+  "mutationsPerformed": false,
+  "messagesSent": 0
+}

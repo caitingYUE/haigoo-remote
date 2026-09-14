@@ -11,7 +11,7 @@ export interface CompanyFollowChange {
   reminderEnabled: boolean
 }
 
-type ReminderSnapshot = { follows: Array<{ company_id: string; wechat_enabled?: boolean; wechat_template_status?: string }> }
+type ReminderSnapshot = { matchingPreferencesReady?: boolean; follows: Array<{ company_id: string; wechat_enabled?: boolean; wechat_template_status?: string }> }
 let reminderRevision = 0
 let reminderSnapshot: { scope: string; at: number; value: ReminderSnapshot } | null = null
 let reminderRequest: { scope: string; revision: number; promise: Promise<ReminderSnapshot | null> } | null = null
