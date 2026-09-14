@@ -95,7 +95,7 @@ async function run() {
 
     assert.equal(failed.isTranslated, false)
     assert.equal(failed.translations, null)
-    assert.equal(failed.translationError, 'Zero Chinese Characters')
+    assert.equal(failed.translationError, 'Required fields not translated: title, description')
     assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Google Translate"') && line.includes('"status":"failed"')))
     assert(providerLogs.some(line => line.includes('"event":"exhausted"') && line.includes('"jobId":"all-providers-failed"')))
     assert.equal(providerLogs.some(line => line.includes('Google Cloud Translation')), false)
@@ -117,6 +117,52 @@ async function run() {
     })
     assert.equal(retried, '重试后翻译成功。')
     assert.equal(retryAttempts, 2)
+
+    let deadlineFetches = 0
+    global.fetch = async () => {
+      deadlineFetches += 1
+      return googleResponse('不应请求。')
+    }
+    const expired = await service.translateText('Expired translation input.', 'zh', 'en', {
+      jobId: 'expired-deadline',
+      field: 'description',
+      deadlineAt: Date.now() - 1,
+      returnMetadata: true
+    })
+    assert.deepEqual(expired, { text: 'Expired translation input.', translated: false })
+    assert.equal(deadlineFetches, 0, 'expired translation jobs must not start another provider request')
+
+    global.fetch = async (url, options) => {
+      assert.ok(options.signal)
+      if (!String(url).includes('/translate_a/single')) return failedResponse()
+      const source = new URLSearchParams(options.body).get('q')
+      return googleResponse(source === 'Sales' ? 'Sales' : '负责财务管理和合规工作。')
+    }
+    const unchangedRequiredField = await service.translateJob({
+      id: 'unchanged-required-field',
+      title: 'Sales',
+      description: 'Manage finance operations and compliance.',
+      requirements: [],
+      benefits: []
+    }, true)
+    assert.equal(unchangedRequiredField.isTranslated, false)
+    assert.equal(unchangedRequiredField.translationError, 'Required fields not translated: title')
+
+    global.fetch = async (url, options) => {
+      assert.ok(options.signal)
+      if (!String(url).includes('/translate_a/single')) return failedResponse()
+      const source = new URLSearchParams(options.body).get('q')
+      return googleResponse(source === 'Sales' ? 'Sales role' : '负责财务管理和合规工作。')
+    }
+    const englishRewrite = await service.translateJob({
+      id: 'english-rewrite-required-field',
+      title: 'Sales',
+      description: 'Manage finance operations and compliance.',
+      requirements: [],
+      benefits: []
+    }, true)
+    assert.equal(englishRewrite.isTranslated, false)
+    assert.equal(englishRewrite.translationError, 'Required fields not translated: title')
 
     service.configure({ aiEnabled: false, aiFirst: false })
     const retryStartedAt = Date.now()
