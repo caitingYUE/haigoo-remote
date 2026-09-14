@@ -142,6 +142,8 @@ export default function FollowedCompaniesPage() {
                 available={reminderConfig.available}
                 templateId={reminderConfig.templateId}
                 enabled={reminderEnabled}
+                idleLabel='下次更新提醒'
+                enabledLabel='已订阅下次提醒'
                 onChanged={(enabled) => updateReminder(company.company_id, enabled)}
               />
             </View>

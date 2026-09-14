@@ -33,7 +33,8 @@ export default function GrowthPage() {
   useDidShow(() => {
     Taro.eventCenter.trigger('haigoo:tab-change', '/pages/growth/index')
     const userId = getMiniUser()?.userId
-    setUnread(userId ? Number(Taro.getStorageSync(careerWatchStorageKey(userId))?.followedUpdates?.length || 0) : 0)
+    const cached = userId ? Taro.getStorageSync(careerWatchStorageKey(userId)) : null
+    setUnread(userId ? Number((cached?.unreadFollowedUpdateCount ?? cached?.followedUpdates?.filter((item: any) => item.status === 'unread').length) || 0) : 0)
     void load()
   })
   useEffect(() => {

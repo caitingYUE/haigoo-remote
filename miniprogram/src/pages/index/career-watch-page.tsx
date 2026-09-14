@@ -116,7 +116,7 @@ export default function CareerWatchPage() {
     setWatch(result)
     const activeUser = getMiniUser()
     if (activeUser?.userId) Taro.setStorageSync(careerWatchStorageKey(activeUser.userId), result)
-    Taro.eventCenter.trigger('haigoo:unread-change', result.followedUpdates.length)
+    Taro.eventCenter.trigger('haigoo:unread-change', result.unreadFollowedUpdateCount ?? result.followedUpdates.filter((item) => item.status === 'unread').length)
     if (result.profile) setDraft(draftFromWatch(result))
     setStep(result.matchState === 'unused' ? 'start' : 'feed')
   }, [])
@@ -459,7 +459,7 @@ export default function CareerWatchPage() {
   }
 
   return <View className={`watch-root ${step === 'loading' ? 'watch-root--loading' : ''} ${step === 'start' ? 'watch-root--start' : ''} ${step === 'feed' ? 'watch-root--feed' : ''}`}>
-    <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={watch?.followedUpdates.length || 0} showAccount={step !== 'setup'} />
+    <EditorialTopBar authenticated={authenticated} avatar={activeUser?.avatar} unread={(watch?.unreadFollowedUpdateCount ?? watch?.followedUpdates.filter((item) => item.status === 'unread').length) || 0} showAccount={step !== 'setup'} />
     <View className={`page-shell watch-page ${step === 'feed' ? 'watch-page--feed' : ''} ${step === 'start' || step === 'setup' ? 'watch-page--flow' : ''}`}>
     {step === 'loading' ? <View className='watch-loading' aria-live='polite' aria-busy aria-label='正在匹配中'>
       <View className='watch-loading__visual'><MiniIcon name='search' size={30} /></View>

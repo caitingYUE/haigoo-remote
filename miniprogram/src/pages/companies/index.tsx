@@ -95,7 +95,7 @@ export default function CompaniesPage() {
           if (scope !== miniContentScope() || sequence !== requestSequence.current) return
           if (follows.status === 'fulfilled' && revision === followRevision.current) setFollowed(new Set(follows.value.follows.map((item) => String(item.company_id))))
           if (watch.status === 'fulfilled') {
-            setUnread(watch.value?.followedUpdates.length || 0)
+            setUnread((watch.value?.unreadFollowedUpdateCount ?? watch.value?.followedUpdates.filter((item) => item.status === 'unread').length) || 0)
             setWatchState(watch.value)
           }
         })
