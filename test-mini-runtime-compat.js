@@ -23,6 +23,7 @@ const miniSources = [
   './miniprogram/src/pages/job-detail/index.tsx',
   './miniprogram/src/pages/membership/index.tsx',
   './miniprogram/src/pages/profile/index.tsx',
+  './miniprogram/src/pages/unread-updates/index.tsx',
   './miniprogram/src/services/career-match-service.ts'
 ].map(read).join('\n')
 assert.doesNotMatch(miniSources, /Intl\.DateTimeFormat|toLocaleDateString|\.normalize\(/)
