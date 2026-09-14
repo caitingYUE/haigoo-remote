@@ -3,13 +3,15 @@ const assert = require('node:assert/strict')
 process.env.PREFERRED_TRANSLATION_PROVIDER = 'google'
 process.env.TRANSLATION_AI_REQUEST_TIMEOUT_MS = '30000'
 process.env.TRANSLATION_REQUEST_TIMEOUT_MS = '8000'
+process.env.GOOGLE_TRANSLATE_API_KEY = 'test-google-key'
+delete process.env.GOOGLE_TRANSLATE_ALLOW_UNOFFICIAL_FALLBACK
 process.env.VITE_ALIBABA_BAILIAN_API_KEY = 'test-key'
 delete process.env.ALIBABA_BAILIAN_API_KEY
 delete process.env.VITE_DEEPSEEK_API_KEY
 delete process.env.DEEPSEEK_API_KEY
 
 const service = require('./lib/services/translation-service.cjs')
-service.configure({ aiEnabled: true })
+service.configure({ aiEnabled: true, aiFirst: false })
 
 const timeoutDurations = []
 const originalAbortSignalTimeout = AbortSignal.timeout
@@ -18,7 +20,7 @@ AbortSignal.timeout = (milliseconds) => {
   return originalAbortSignalTimeout(milliseconds)
 }
 
-const failedResponse = () => new Response('{}', { status: 503 })
+const failedResponse = () => new Response('{}', { status: 503, headers: { 'Retry-After': '0' } })
 
 async function run() {
   const providerLogs = []
@@ -28,14 +30,22 @@ async function run() {
   console.warn = (...args) => providerLogs.push(args.join(' '))
 
   try {
+    const googleRequests = []
     global.fetch = async (url, options) => {
       assert.ok(options.signal, 'all translation providers must have a request timeout signal')
-      if (!String(url).includes('dashscope.aliyuncs.com')) return failedResponse()
-
-      return new Response(JSON.stringify({
-        choices: [{ message: { content: '财务运营专员，负责本地实体的财务管理与合规工作。' } }],
-        usage: { prompt_tokens: 10, completion_tokens: 8, total_tokens: 18 }
-      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (String(url).includes('translation.googleapis.com/language/translate/v2')) {
+        googleRequests.push({ url: String(url), options })
+        return new Response(JSON.stringify({
+          data: {
+            translations: [{
+              translatedText: '财务运营专员，负责本地实体的财务管理与合规工作。',
+              detectedSourceLanguage: 'en'
+            }]
+          }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+      if (String(url).includes('dashscope.aliyuncs.com')) throw new Error('AI must not run before Google Cloud')
+      return failedResponse()
     }
 
     const translated = await service.translateJob({
@@ -49,6 +59,11 @@ async function run() {
     assert.equal(translated.isTranslated, true)
     assert.match(translated.translations.description, /[\u4e00-\u9fa5]/)
     assert.equal(translated.translationError, undefined)
+    assert.ok(googleRequests.length >= 2)
+    assert.ok(googleRequests.every(request => request.options.method === 'POST'))
+    assert.ok(googleRequests.every(request => !request.url.includes('test-google-key')))
+    assert.ok(googleRequests.every(request => request.options.headers['X-Goog-Api-Key'] === 'test-google-key'))
+    assert.ok(googleRequests.every(request => JSON.parse(request.options.body).target === 'zh'))
 
     global.fetch = async (_url, options) => {
       assert.ok(options.signal, 'fallback providers must have a request timeout signal')
@@ -67,10 +82,30 @@ async function run() {
     assert.equal(failed.translations, null)
     assert.equal(failed.translationError, 'Zero Chinese Characters')
 
-    assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Google Translate"') && line.includes('"status":"failed"')))
-    assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Bailian"') && line.includes('"status":"success"')))
+    assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Google Cloud Translation"') && line.includes('"status":"failed"')))
+    assert(providerLogs.some(line => line.includes('[translation-provider]') && line.includes('"provider":"Google Cloud Translation"') && line.includes('"status":"success"')))
     assert(providerLogs.some(line => line.includes('"event":"exhausted"') && line.includes('"jobId":"all-providers-failed"')))
     assert.equal(providerLogs.some(line => line.includes('Manage finance operations')), false)
+    assert.equal(providerLogs.some(line => line.includes('Google Translate (unofficial)')), false)
+
+    service.configure({ aiEnabled: false, aiFirst: false })
+    let retryAttempts = 0
+    global.fetch = async (url, options) => {
+      assert.ok(options.signal)
+      if (!String(url).includes('translation.googleapis.com/language/translate/v2')) return failedResponse()
+      retryAttempts += 1
+      if (retryAttempts === 1) return new Response('{}', { status: 429, headers: { 'Retry-After': '0' } })
+      return new Response(JSON.stringify({
+        data: { translations: [{ translatedText: '重试后翻译成功。', detectedSourceLanguage: 'en' }] }
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+    }
+
+    const retried = await service.translateText('Unique retry translation input.', 'zh', 'en', {
+      jobId: 'google-retry',
+      field: 'description'
+    })
+    assert.equal(retried, '重试后翻译成功。')
+    assert.equal(retryAttempts, 2)
 
     service.configure({ aiEnabled: true, aiFirst: true })
     const aiChunkLengths = []
@@ -126,6 +161,27 @@ async function run() {
     assert.equal(memoryFallback.isTranslated, true)
     assert.ok(memoryUrls.length > 0, 'MyMemory fallback should be attempted')
     assert.ok(memoryUrls.every(url => url.includes('langpair=en|zh') && !url.includes('langpair=auto|zh')))
+
+    const servicePath = require.resolve('./lib/services/translation-service.cjs')
+    delete require.cache[servicePath]
+    delete process.env.GOOGLE_TRANSLATE_API_KEY
+    const noKeyService = require(servicePath)
+    noKeyService.configure({ aiEnabled: false, aiFirst: false })
+    let officialGoogleCalled = false
+    global.fetch = async (url, options) => {
+      assert.ok(options.signal)
+      if (String(url).includes('translation.googleapis.com')) officialGoogleCalled = true
+      if (String(url).includes('api.mymemory.translated.net')) {
+        return new Response(JSON.stringify({
+          responseStatus: 200,
+          responseData: { translatedText: '无密钥时使用备用服务。', match: 100 }
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+      return failedResponse()
+    }
+    const noKeyFallback = await noKeyService.translateText('No API key fallback input.', 'zh', 'en')
+    assert.equal(noKeyFallback, '无密钥时使用备用服务。')
+    assert.equal(officialGoogleCalled, false)
   } finally {
     console.log = originalLog
     console.warn = originalWarn
