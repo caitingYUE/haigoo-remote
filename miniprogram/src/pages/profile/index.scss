@@ -18,9 +18,11 @@
 .profile-facts { display: grid; margin-top: 20px; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .profile-facts > view { min-height: 116px; padding: 20px 16px; border: 1PX solid #e5e5e5; border-radius: 22px; background: #f7f7f7; text-align: center; }
 .profile-facts > view + view { border-left: 0; }
-.profile-facts text { display: block; }
-.profile-facts text:first-child { color: #f06434; font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.profile-facts text:last-child { margin-top: 5px; color: #999; font-size: 22px; }
+.profile-facts__count { display: block; color: #f06434; font-size: 34px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.profile-facts__label-row { display: flex; margin-top: 5px; align-items: center; justify-content: center; gap: 8px; }
+.profile-facts__label { display: block; margin-top: 5px; color: #999; font-size: 22px; }
+.profile-facts__label-row .profile-facts__label { margin-top: 0; }
+.profile-facts__unread-dot { display: block; width: 12px; height: 12px; flex: 0 0 12px; border-radius: 50%; background: var(--color-brand-strong); }
 .profile-dashboard-error { display: flex; min-height: 44PX; padding: 8px 0; align-items: center; justify-content: space-between; gap: 16px; color: var(--color-muted); font-size: 23px; }
 .profile-dashboard-error text:last-child { display: flex; min-height: 44PX; align-items: center; color: var(--color-brand-strong); font-weight: 600; }
 .profile-membership { display: flex; min-height: 144px; margin-top: 32px; padding: 24px 32px; align-items: center; justify-content: space-between; gap: 16px; border-radius: 28px; background: #111; color: #f06434; }

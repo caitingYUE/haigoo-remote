@@ -42,7 +42,8 @@ export default function ProfilePage() {
     memberServices: Awaited<ReturnType<typeof fetchMemberServices>>
   }>('profile-dashboard')
   const followCount = dashboard?.follows.follows.length ?? null
-  const unreadCount = dashboard?.watch.unreadFollowedUpdateCount ?? dashboard?.watch.followedUpdates.length ?? null
+  const subscribedJobCount = dashboard?.watch.followedUpdates.length ?? null
+  const unreadCount = dashboard?.watch.unreadFollowedUpdateCount ?? dashboard?.watch.followedUpdates.filter((item) => item.status === 'unread').length ?? null
   const membership = dashboard?.memberServices.membership || null
   const watchState = dashboard?.watch || null
   const careerState = dashboard?.career || null
@@ -64,7 +65,7 @@ export default function ProfilePage() {
       const [follows, watch, career, memberServices] = await Promise.all([
         fetchCompanyFollows(), fetchCareerWatch(), fetchCareerMatchState(), fetchMemberServices()
       ])
-      if (scope === miniContentScope()) Taro.eventCenter.trigger('haigoo:unread-change', watch.followedUpdates.length)
+      if (scope === miniContentScope()) Taro.eventCenter.trigger('haigoo:unread-change', watch.unreadFollowedUpdateCount ?? watch.followedUpdates.filter((item) => item.status === 'unread').length)
       return { follows, watch, career, memberServices }
     }, force)
   }, [loadResource, setDashboard])
@@ -133,7 +134,16 @@ export default function ProfilePage() {
 
     {!isAuthenticated ? <View className='profile-auth-notice'><Text>登录将使用微信身份标识，并在已连接账号时同步邮箱和会员状态。不同意也可继续浏览公开企业与岗位。</Text><AuthConsent accepted={consentAccepted} onChange={setConsentAccepted} /></View> : null}
 
-    {isAuthenticated ? <View className='profile-facts'><View aria-role='button' aria-label={`查看关注企业，共 ${followCount ?? '—'} 家`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/followed-companies/index' })}><Text>{followCount ?? '—'}</Text><Text>关注企业</Text></View><View aria-role='button' aria-label={`查看未读岗位更新，共 ${unreadCount ?? '—'} 条`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/unread-updates/index' })}><Text>{unreadCount ?? '—'}</Text><Text>未读岗位更新</Text></View></View> : null}
+    {isAuthenticated ? <View className='profile-facts'>
+      <View aria-role='button' aria-label={`查看关注企业，共 ${followCount ?? '—'} 家`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/followed-companies/index' })}>
+        <Text className='profile-facts__count'>{followCount ?? '—'}</Text>
+        <Text className='profile-facts__label'>关注企业</Text>
+      </View>
+      <View aria-role='button' aria-label={`查看订阅岗位更新，共 ${subscribedJobCount ?? '—'} 个岗位${unreadCount ? `，有 ${unreadCount} 条未读更新` : '，没有未读更新'}`} hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/unread-updates/index' })}>
+        <Text className='profile-facts__count'>{subscribedJobCount ?? '—'}</Text>
+        <View className='profile-facts__label-row'><Text className='profile-facts__label'>订阅岗位更新</Text>{unreadCount ? <Text className='profile-facts__unread-dot' aria-hidden /> : null}</View>
+      </View>
+    </View> : null}
     {isAuthenticated && dashboardError ? <View className='profile-dashboard-error' aria-live='polite'><Text>{dashboardError}</Text><Text aria-role='button' aria-label='重新加载个人信息' onClick={() => void loadDashboard(true)}>重新加载</Text></View> : null}
 
     <View className='profile-membership' aria-role='button' aria-label='查看会员方案' hoverClass='mini-action--pressed' onClick={() => navigateTo({ url: '/pages/membership/index' })}>
