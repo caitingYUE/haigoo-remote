@@ -1,8 +1,8 @@
 {
   "version": "1.0.40",
-  "sourceCommit": "2a71c83bf70afd05de6c696265187c5ea998c5f8",
-  "deploymentId": "dpl_HzTDVELfLoZrYBekbHsRpT2ZXhpc",
-  "deploymentUrl": "https://haigoo-remote-eqx7oci5e-caitlinyct.vercel.app",
+  "sourceCommit": "f2bd7d538ab0724d2eccca6b9a39a302216ec526",
+  "deploymentId": "dpl_GXFL1sYe42UPQBkKjwjUsPHX2rEz",
+  "deploymentUrl": "https://haigoo-remote-l25c7t2fc-caitlinyct.vercel.app",
   "productionDomain": "https://haigooremote.com",
   "migration": {
     "at": "2026-09-14T06:03:11.712Z",
@@ -321,17 +321,43 @@
     "sourceMatchesLocal": true,
     "redeployRequired": false
   },
+  "jobUpdateHotfix": {
+    "recordedAt": "2026-09-14T07:24:10.000Z",
+    "reason": "Use current approved public job state for followed updates and pass companyId/jobId to job detail",
+    "candidateChecks": {
+      "passed": true,
+      "actions": [
+        "career_watch_options",
+        "companies",
+        "membership_plans",
+        "content_home",
+        "sync"
+      ],
+      "missingSignatureStatus": 401,
+      "forgedSignatureStatus": 401
+    },
+    "productionChecks": {
+      "transport": "CloudBase SDK → production CloudRun → Vercel",
+      "rounds": 3,
+      "passed": 12,
+      "total": 12,
+      "minMs": 1612,
+      "maxMs": 5909
+    },
+    "rollbackDeploymentId": "dpl_HzTDVELfLoZrYBekbHsRpT2ZXhpc",
+    "rollbackDeploymentUrl": "https://haigoo-remote-eqx7oci5e-caitlinyct.vercel.app"
+  },
   "wechat": {
     "version": "1.0.40",
     "appid": "wxc61db5b8b472925a",
     "description": "Haigoo Remote production 1.0.40",
     "uploadConfirmed": true,
-    "uploadBytes": 1120259,
+    "uploadBytes": 1120270,
     "evidence": "CLI: ✔ upload; Uploaded WeChat production bundle 1.0.40",
     "reviewSubmitted": false
   },
   "archive": {
-    "path": "artifacts/releases/1.0.40/wechat-production.tar.gz",
-    "sha256": "ec59c6c3784555da97cc00d26f9b3010f2cd7bde5659dc11ecf7eb750e8a60bf"
+    "path": "artifacts/releases/1.0.40/wechat-production-hotfix-f2bd7d53.tar.gz",
+    "sha256": "7fa03ed3f45b06e5ff0c1a18f524d64de53bf3ada55655aaf001f424e807e94f"
   }
 }
