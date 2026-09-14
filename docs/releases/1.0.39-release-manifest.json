@@ -1,0 +1,305 @@
+{
+  "releaseVersion": "1.0.39",
+  "sourceCommit": "749815ef",
+  "runtimeCommit": "ceaced7328d3c2e605e766b915b30959cfb22715",
+  "deviceAcceptance": {
+    "status": "passed",
+    "evidence": "User confirmed in this task on 2026-09-14"
+  },
+  "vercel": {
+    "deploymentId": "dpl_6pceeacB2j1PK73z4MnC565JxDZF",
+    "url": "https://haigoo-remote-mtejx0rks-caitlinyct.vercel.app",
+    "productionDomain": "https://haigooremote.com",
+    "status": "Ready",
+    "promoted": true,
+    "rollbackDeploymentId": "dpl_GuPHzeSUTyAwfag2G8kiH3X2z8vq"
+  },
+  "wechat": {
+    "appId": "wxc61db5b8b472925a",
+    "uploadedVersion": "1.0.39",
+    "channel": "production",
+    "description": "Haigoo Remote production 1.0.39",
+    "uploadedPackageBytes": 1115924,
+    "cliConfirmedUpload": true,
+    "backendUiVerified": false,
+    "backendUiLimitation": "Computer Use URL policy blocked UI verification",
+    "reviewSubmitted": false,
+    "published": false,
+    "archive": "artifacts/releases/1.0.39/wechat-production.tar.gz",
+    "archiveSha256": "b05839827deebcede30390b14ea491fb9452eb6d9c04e20dd526fe25236fef3f"
+  },
+  "migration": {
+    "at": "2026-09-14T02:46:57.051Z",
+    "migration": "089_mini_wechat_reminder_delivery.sql",
+    "before": {
+      "follows": 42
+    },
+    "after": {
+      "follows": 42,
+      "unprepared": 0,
+      "pending": 0
+    }
+  },
+  "cloudrun": {
+    "checkedAt": "2026-09-14T02:48:23.823Z",
+    "status": 200,
+    "sourceRevision": "6e26516a030b8b7ec63f2b38fe015abc73683a100adaa86f97bd3eaba623824b",
+    "sourceMatchesLocal": true,
+    "redeployRequired": false
+  },
+  "candidateChecks": [
+    {
+      "action": "career_watch_options",
+      "status": 200,
+      "durationMs": 6804
+    },
+    {
+      "action": "companies",
+      "status": 200,
+      "durationMs": 6397
+    },
+    {
+      "action": "membership_plans",
+      "status": 200,
+      "durationMs": 6464
+    },
+    {
+      "action": "content_home",
+      "status": 200,
+      "durationMs": 7022
+    },
+    {
+      "action": "sync",
+      "status": 200,
+      "durationMs": 6905
+    }
+  ],
+  "boundaries": [
+    {
+      "check": "missing_cron_auth",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "check": "forged_cron_header",
+      "status": 401,
+      "passed": true
+    },
+    {
+      "check": "company_image_runtime",
+      "status": 200,
+      "format": "webp",
+      "width": 32,
+      "height": 32,
+      "passed": true
+    }
+  ],
+  "payment": {
+    "developmentPaymentEnvironment": 1,
+    "productionPaymentEnvironment": 0,
+    "previewCallbackApplicationStatus": 401,
+    "productionCallbackApplicationStatus": 401,
+    "unsignedCallbacksRejected": true
+  },
+  "productionReadOnly": {
+    "startedAt": "2026-09-14T02:53:42.585Z",
+    "transport": "CloudBase SDK → production CloudRun → Vercel",
+    "rounds": 2,
+    "samples": [
+      {
+        "round": 1,
+        "action": "career_watch_options",
+        "at": "2026-09-14T02:53:48.782Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 3242,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": 11,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 1,
+        "action": "companies",
+        "at": "2026-09-14T02:53:55.819Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 4933,
+        "companyAccessScope": "free_fixed",
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 1,
+        "action": "membership_plans",
+        "at": "2026-09-14T02:54:00.097Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1799,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": [
+          {
+            "id": "club_starter_monthly",
+            "price": 99
+          },
+          {
+            "id": "mini_club_quarter_2026",
+            "price": 199
+          },
+          {
+            "id": "mini_club_half_year_2026",
+            "price": 699
+          }
+        ],
+        "paymentAvailable": true
+      },
+      {
+        "round": 1,
+        "action": "content_home",
+        "at": "2026-09-14T02:54:03.602Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1892,
+        "companyAccessScope": null,
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": 3,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 2,
+        "action": "career_watch_options",
+        "at": "2026-09-14T02:54:07.002Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1384,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": 11,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 2,
+        "action": "companies",
+        "at": "2026-09-14T02:54:10.153Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1680,
+        "companyAccessScope": "free_fixed",
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      },
+      {
+        "round": 2,
+        "action": "membership_plans",
+        "at": "2026-09-14T02:54:13.270Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 1364,
+        "companyAccessScope": null,
+        "returnedCompanies": null,
+        "returnedRoles": null,
+        "returnedNotes": null,
+        "returnedPlans": [
+          {
+            "id": "club_starter_monthly",
+            "price": 99
+          },
+          {
+            "id": "mini_club_quarter_2026",
+            "price": 199
+          },
+          {
+            "id": "mini_club_half_year_2026",
+            "price": 699
+          }
+        ],
+        "paymentAvailable": true
+      },
+      {
+        "round": 2,
+        "action": "content_home",
+        "at": "2026-09-14T02:54:21.608Z",
+        "passed": true,
+        "status": 200,
+        "requestDurationMs": 5504,
+        "companyAccessScope": null,
+        "returnedCompanies": 12,
+        "returnedRoles": null,
+        "returnedNotes": 3,
+        "returnedPlans": null,
+        "paymentAvailable": null
+      }
+    ],
+    "finishedAt": "2026-09-14T02:54:21.609Z",
+    "summary": [
+      {
+        "action": "career_watch_options",
+        "total": 2,
+        "passed": 2,
+        "minMs": 1384,
+        "medianMs": 2313,
+        "maxMs": 3242
+      },
+      {
+        "action": "companies",
+        "total": 2,
+        "passed": 2,
+        "minMs": 1680,
+        "medianMs": 3306.5,
+        "maxMs": 4933
+      },
+      {
+        "action": "membership_plans",
+        "total": 2,
+        "passed": 2,
+        "minMs": 1364,
+        "medianMs": 1581.5,
+        "maxMs": 1799
+      },
+      {
+        "action": "content_home",
+        "total": 2,
+        "passed": 2,
+        "minMs": 1892,
+        "medianMs": 3698,
+        "maxMs": 5504
+      }
+    ],
+    "passed": true,
+    "limitations": "Small guest-only sample, includes SDK/network time; not a load test or a guarantee of future availability. Account lifecycle tests run in isolation."
+  },
+  "reminders": {
+    "enabled": true,
+    "programState": "formal",
+    "schedule": "every 5 minutes",
+    "cronSecret": "existing value retained",
+    "observedScheduledRuns": [
+      {
+        "at": "2026-09-14T02:55:06.076Z",
+        "status": 200,
+        "logs": [
+          {
+            "level": "info",
+            "message": "[mini-reminders] delivery summary {\"prepared\":0,\"sent\":0,\"retry\":0,\"failed\":0,\"unknown\":0,\"cancelled\":0,\"pending\":0,\"unresolved\":0}"
+          }
+        ]
+      }
+    ]
+  },
+  "manualRealMessageTests": 0
+}
