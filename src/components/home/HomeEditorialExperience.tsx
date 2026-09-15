@@ -16,7 +16,6 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { useAuth } from '../../contexts/AuthContext'
 import type { TrustedCompany } from '../../services/trusted-companies-service'
 import MemberEmailSubscriptionCard from '../MemberEmailSubscriptionCard'
-import CareerWatchSection from './CareerWatchSection'
 
 type EditorialTab = {
   id: string
@@ -394,7 +393,80 @@ export default function HomeEditorialExperience({
         </div>
       </section>
 
-      <CareerWatchSection onOpenJob={onOpenJob} />
+      <section className="haigoo-shell haigoo-home__section" aria-labelledby="latest-jobs-title">
+        <header className="haigoo-home__section-header">
+          <div>
+            <p className="haigoo-editorial-label">Recently updated</p>
+            <h2 id="latest-jobs-title">{text('最近更新的远程机会', 'Recently updated remote roles')}</h2>
+            <p>{text('按公开信息的更新时间呈现。', 'Shown by public update time.')}</p>
+          </div>
+          <button type="button" className="haigoo-home__section-link" onClick={onViewAllJobs}>
+            {text('浏览全部岗位', 'Browse all roles')}
+            <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="haigoo-home__tabs" role="tablist" aria-label={text('岗位类型', 'Role types')}>
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === tab.id}
+              className="haigoo-home__tab"
+              onClick={() => onTabChange(tab.id)}
+            >
+              {isEnglish ? tab.englishLabel : tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="haigoo-home__jobs">
+          {jobsLoading ? (
+            Array.from({ length: 5 }, (_, index) => <div key={index} className="haigoo-home__jobs-skeleton" aria-hidden="true" />)
+          ) : jobs.length === 0 ? (
+            <div className="haigoo-home__empty">
+              {text('这个分类暂时没有可展示的岗位，换个方向看看。', 'No roles are available in this category right now. Try another direction.')}
+            </div>
+          ) : (
+            jobs.slice(0, 6).map((job) => {
+              const date = getJobDate(job)
+              return (
+                <button
+                  key={getJobValue(job, 'id', 'jobId', 'job_id') || `${getCompanyName(job)}-${getJobTitle(job)}`}
+                  type="button"
+                  className="haigoo-home__job-row"
+                  onClick={() => onOpenJob(job)}
+                  aria-label={text(`查看 ${getJobTitle(job)} 岗位`, `View ${getJobTitle(job)}`)}
+                >
+                  <span>
+                    <span className="haigoo-home__job-company">{getCompanyName(job)}</span>
+                    <span className="haigoo-home__job-title">{getJobTitle(job)}</span>
+                    <span className="haigoo-home__job-meta">
+                      <span>{getJobFunction(job, isEnglish)}</span>
+                      <span>{getJobType(job, isEnglish)}</span>
+                      <span>{getJobLocation(job, isEnglish)}</span>
+                    </span>
+                  </span>
+                  <span className="haigoo-home__job-cell">
+                    <span className="haigoo-home__job-cell-label">{text('工作方式', 'Work mode')}</span>
+                    <span className="haigoo-home__job-cell-value">{getJobLocation(job, isEnglish)}</span>
+                  </span>
+                  <span className="haigoo-home__job-cell">
+                    <span className="haigoo-home__job-cell-label">{text('来源与更新', 'Source & update')}</span>
+                    <span className="haigoo-home__job-cell-value">
+                      {getSourceLabel(job, isEnglish)} · <time dateTime={date?.toISOString()}>{formatRelativeDate(date, isEnglish)}</time>
+                    </span>
+                  </span>
+                  <span className="haigoo-home__job-arrow" aria-hidden="true">
+                    <ArrowRight size={17} />
+                  </span>
+                </button>
+              )
+            })
+          )}
+        </div>
+      </section>
 
       {careerGuides ? <div className="haigoo-shell haigoo-home__career-wrap">{careerGuides}</div> : null}
 
