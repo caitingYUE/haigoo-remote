@@ -16,6 +16,8 @@ assert.doesNotMatch(translation, /getDistributedRateClient|redis rate limiter er
 assert.match(translation, /fanyi-api\.baidu\.com\/api\/trans\/vip\/translate/)
 assert.match(translation, /BAIDU_TRANSLATE_APPID/)
 assert.match(translation, /Baidu Translate/)
+assert.match(handler, /providers: providerCounts/)
+assert.match(modal, /服务：/)
 assert.match(translation, /remainingTimeout\(deadlineAt, configuredTimeout\)/)
 assert.doesNotMatch(translation, /server-utils\/kv-client\.js|import\('redis'\)/)
 assert.match(translation, /TRANSLATION_AI_REQUEST_TIMEOUT_MS \|\| 30000/)

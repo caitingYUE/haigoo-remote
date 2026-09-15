@@ -135,6 +135,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             setTranslating(true);
             let translatedCount = 0;
             let failedCount = 0;
+            const providers = new Set<string>();
             for (let index = 0; index < jobIds.length; index += 2) {
                 const batch = jobIds.slice(index, index + 2);
                 const res = await fetch(`/api/data/processed-jobs?action=translate`, {
@@ -154,11 +155,12 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                 }
                 translatedCount += Number(data.count || 0);
                 failedCount += Number(data.failedCount || 0);
+                Object.keys(data.providers || {}).forEach(provider => providers.add(provider));
             }
             await fetchJobs();
             alert(failedCount > 0
                 ? `翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个，可稍后重试失败岗位`
-                : `成功翻译 ${translatedCount} 个职位`);
+                : `成功翻译 ${translatedCount} 个职位${providers.size ? `（服务：${[...providers].join('、')}）` : ''}`);
         } catch (error) {
             alert(`翻译请求失败: ${error instanceof Error ? error.message : '请稍后重试'}`);
         } finally {
