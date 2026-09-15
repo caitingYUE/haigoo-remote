@@ -146,13 +146,18 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                     body: JSON.stringify({ jobIds: batch })
                 });
                 const data = await res.json().catch(() => ({}));
-                if (!res.ok) throw new Error(data.error || `翻译请求失败 (${res.status})`);
+                if (!res.ok) {
+                    const detail = Array.isArray(data.failures) && data.failures.length > 0
+                        ? `：${data.failures.map((failure: { id?: string; reason?: string }) => `${failure.id || '岗位'} ${failure.reason || ''}`).join('；')}`
+                        : '';
+                    throw new Error((data.error || `翻译请求失败 (${res.status})`) + detail);
+                }
                 translatedCount += Number(data.count || 0);
                 failedCount += Number(data.failedCount || 0);
             }
             await fetchJobs();
             alert(failedCount > 0
-                ? `翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个`
+                ? `翻译完成：成功 ${translatedCount} 个，失败 ${failedCount} 个，可稍后重试失败岗位`
                 : `成功翻译 ${translatedCount} 个职位`);
         } catch (error) {
             alert(`翻译请求失败: ${error instanceof Error ? error.message : '请稍后重试'}`);

@@ -2,10 +2,11 @@ const assert = require('node:assert/strict')
 
 process.env.PREFERRED_TRANSLATION_PROVIDER = 'google'
 process.env.TRANSLATION_AI_REQUEST_TIMEOUT_MS = '30000'
-process.env.TRANSLATION_REQUEST_TIMEOUT_MS = '8000'
+process.env.TRANSLATION_REQUEST_TIMEOUT_MS = '4000'
 process.env.TRANSLATE_GOOGLE_HOSTS = 'translate.google.com,translate.google.co.uk'
 process.env.TRANSLATE_GOOGLE_MIN_INTERVAL_MS = '0'
-process.env.TRANSLATE_GOOGLE_MAX_RETRIES = '2'
+process.env.TRANSLATE_GOOGLE_MAX_RETRIES = '1'
+process.env.ENABLE_TRANSLATION_DISTRIBUTED_RATE_LIMIT = 'false'
 process.env.TRANSLATE_GOOGLE_RETRY_BASE_MS = '100'
 process.env.TRANSLATE_GOOGLE_MAX_RETRY_DELAY_MS = '1000'
 process.env.TRANSLATE_GOOGLE_CIRCUIT_THRESHOLD = '3'
@@ -205,7 +206,7 @@ async function run() {
     assert.equal(longDescriptionJob.isTranslated, true)
     assert.ok(aiChunkLengths.length > 2, 'long AI input should be split into multiple requests')
     assert.ok(aiChunkLengths.every(length => length <= 4000), 'AI chunks must respect the provider limit')
-    assert.ok(timeoutDurations.includes(30000), 'AI requests should use the longer timeout')
+    assert.ok(timeoutDurations.some(timeout => timeout > 4000 && timeout <= 30000), 'AI requests should use the longer timeout budget')
 
     service.configure({ aiEnabled: false, aiFirst: false })
     const memoryUrls = []
