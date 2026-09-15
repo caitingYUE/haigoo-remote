@@ -4,6 +4,7 @@ import { processedJobsService } from '../services/processed-jobs-service'
 import { rawJobsService } from '../services/raw-jobs-service'
 import { Job as RSSJob } from '../types/rss-types';
 import { dataRetentionService, RetentionStats } from '../services/data-retention-service';
+import brandLogo from '../assets/logo.webp';
 import './AdminPanel.css';
 
 interface AdminPanelProps {
@@ -248,7 +249,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ className }) => {
       <aside className="admin-sidebar">
         <div>
           <div className="sidebar-logo">
-            <div className="logo-icon">海</div>
+            <div className="logo-icon">
+              <img src={brandLogo} alt="Haigoo" />
+            </div>
             <div className="logo-text">
               <h1>海狗招聘</h1>
               <p>数据管理后台</p>

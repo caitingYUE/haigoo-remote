@@ -70,7 +70,7 @@ export default function HaigooClubInfoCard({ className = '' }: HaigooClubInfoCar
               >
                 <div className="text-xs font-black text-slate-700">{text('微信小程序', 'WeChat Mini Program')}</div>
                 <div className="haigoo-brand-footer__qr-image">
-                  <img src="/miniprogram_qrcode.jpg" alt={text('Haigoo Remote 微信小程序二维码', 'Haigoo Remote WeChat Mini Program QR code')} className="h-full w-full object-contain" />
+                  <img src="/miniprogram_qrcode.webp" alt={text('Haigoo Remote 微信小程序二维码', 'Haigoo Remote WeChat Mini Program QR code')} className="h-full w-full object-contain" />
                 </div>
                 <div className="mt-2 text-[11px] font-bold leading-5 text-slate-500">{text('微信扫码打开', 'Scan in WeChat to open')}</div>
                 <div className="haigoo-brand-footer__qr-caret" />

@@ -182,14 +182,18 @@
 .logo-icon {
   width: 2.5rem;
   height: 2.5rem;
-  background: var(--primary);
-  border-radius: 50%;
+  background: transparent;
+  border-radius: 0.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: 700;
-  font-size: 1.125rem;
+  overflow: hidden;
+}
+
+.logo-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .logo-text h1 {
