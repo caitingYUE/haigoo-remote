@@ -318,22 +318,31 @@ class TrustedCompaniesService {
         }
     }
 
-    async deleteCompany(id: string): Promise<boolean> {
+    async deleteCompany(id: string, deactivate = false): Promise<{ success: boolean; error?: string; code?: string }> {
         try {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies');
             queryParams.append('id', id);
+            if (deactivate) queryParams.append('action', 'deactivate');
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
-                method: 'DELETE',
+                method: deactivate ? 'POST' : 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('haigoo_auth_token')}`
                 }
             });
-            return response.ok;
+            const data = await response.json().catch(() => null);
+            if (response.ok && data?.success === true) return { success: true };
+            return {
+                success: false,
+                code: data?.code,
+                error: data?.error || (response.status === 403
+                    ? '没有删除企业的权限，请确认管理员登录状态。'
+                    : `删除失败（HTTP ${response.status}），请稍后重试。`)
+            };
         } catch (error) {
             console.error('Error deleting company:', error);
-            return false;
+            return { success: false, error: '删除请求未完成，请检查网络后重试。' };
         }
     }
 

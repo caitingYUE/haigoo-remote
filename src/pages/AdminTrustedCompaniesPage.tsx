@@ -284,14 +284,19 @@ export default function AdminTrustedCompaniesPage() {
     }
 
     const handleDelete = async (id: string) => {
-        if (!confirm('确定要删除这个可信企业吗？删除后相关的岗位也会被删除。')) return
+        if (!confirm('确定要删除这个可信企业吗？相关岗位将下架；有招聘历史或用户关联记录的企业无法直接删除。')) return
 
         try {
-            const success = await trustedCompaniesService.deleteCompany(id)
-            if (success) {
-                setCompanies(companies.filter(c => c.id !== id))
+            let result = await trustedCompaniesService.deleteCompany(id)
+            if (!result.success && ['COMPANY_HISTORY_EXISTS', 'COMPANY_REFERENCES_EXIST'].includes(result.code || '')) {
+                if (!confirm(`${result.error}\n\n是否改为停用企业？企业将移出列表并停止自动抓取，相关岗位下架，招聘历史保留。`)) return
+                result = await trustedCompaniesService.deleteCompany(id, true)
+            }
+            if (result.success) {
+                setCompanies(current => current.filter(c => c.id !== id))
+                await loadCompanies()
             } else {
-                alert('删除失败')
+                alert(result.error || '删除失败，请稍后重试。')
             }
         } catch (error) {
             console.error('Delete failed:', error)
