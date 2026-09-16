@@ -289,7 +289,7 @@ export default function AdminTrustedCompaniesPage() {
         try {
             let result = await trustedCompaniesService.deleteCompany(id)
             if (!result.success && ['COMPANY_HISTORY_EXISTS', 'COMPANY_REFERENCES_EXIST'].includes(result.code || '')) {
-                if (!confirm(`${result.error}\n\n是否改为停用企业？企业将移出列表并停止自动抓取，相关岗位下架，招聘历史保留。`)) return
+                if (!confirm(`${result.error}\n\n是否改为停用企业？企业将移出列表，相关岗位下架，招聘历史保留。`)) return
                 result = await trustedCompaniesService.deleteCompany(id, true)
             }
             if (result.success) {
