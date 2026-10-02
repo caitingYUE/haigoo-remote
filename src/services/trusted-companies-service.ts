@@ -46,6 +46,7 @@ export interface TrustedCompany {
     canRefer: boolean;
     memberOnly: boolean;
     jobCount?: number;
+    pendingReviewCount?: number;
     lastCrawledAt?: string; // New field
     translations?: { description?: string;[key: string]: any };
     createdAt: string;
@@ -369,7 +370,7 @@ class TrustedCompaniesService {
         }
     }
 
-    async crawlJobs(companyId: string, fetchDetails: boolean = false, maxDetails: number = 100): Promise<{ success: boolean; count?: number; error?: string }> {
+    async crawlJobs(companyId: string, fetchDetails: boolean = false, maxDetails: number = 100): Promise<{ success: boolean; taskId?: string; error?: string }> {
         try {
             const queryParams = new URLSearchParams();
             queryParams.append('resource', 'companies');
@@ -386,7 +387,7 @@ class TrustedCompaniesService {
             });
             const data = await response.json();
             if (!response.ok) throw new Error(data.error || 'Failed to crawl jobs');
-            return { success: true, count: data.count };
+            return data.taskId ? { success: true, taskId: data.taskId } : { success: false, error: data.tasks?.[0]?.error || '请先配置并启用招聘来源' };
         } catch (error) {
             console.error('Error crawling jobs:', error);
             return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };

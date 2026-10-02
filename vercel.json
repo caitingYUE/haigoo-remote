@@ -7,6 +7,12 @@
     "api/*": {
       "maxDuration": 300,
       "includeFiles": "node_modules/@img/{sharp-linux-x64,sharp-libvips-linux-x64}/**"
+    },
+    "api/cron/index.js": {
+      "maxDuration": 300
+    },
+    "api/admin/job-sync.js": {
+      "maxDuration": 300
     }
   },
   "headers": [
@@ -59,10 +65,6 @@
     {
       "path": "/api/cron/rotate-featured",
       "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/stream-verify-links",
-      "schedule": "10 4 * * *"
     },
     {
       "path": "/api/cron/membership-lifecycle",

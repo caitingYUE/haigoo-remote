@@ -1,0 +1,350 @@
+{
+  "releasedAt": "2026-09-29T04:56:16.048Z",
+  "origin": "https://haigoo-remote-ivri1cde8-caitlinyct.vercel.app",
+  "alias": "https://mini-preview.haigooremote.com",
+  "previous": "haigoo-remote-cedi4ip58-caitlinyct.vercel.app",
+  "sourceHash": "ce3d5771fdc78ae63f948f71dfd65e7095fe95db743c5a33c5da2ff8803fa0c9",
+  "baseline": {
+    "jobs": 1981,
+    "jobs_hash": "9d1b47241ad798e7c03ad75b44a992ff",
+    "companies": 410,
+    "companies_hash": "a3fe92d8f37f7479027861498efa9c94"
+  },
+  "after": {
+    "jobs": 1981,
+    "jobs_hash": "9d1b47241ad798e7c03ad75b44a992ff",
+    "companies": 410,
+    "companies_hash": "a3fe92d8f37f7479027861498efa9c94"
+  },
+  "migrations": [
+    "091_trusted_job_sync.sql",
+    "092_job_sync_manual_gate.sql",
+    "093_manual_crawl_workflow.sql"
+  ],
+  "automaticSchedules": false,
+  "translation": false,
+  "liveProbes": [
+    {
+      "name": "RWS",
+      "mode": "crawl",
+      "adapter": "lever",
+      "jobs": 46,
+      "validSamples": 46,
+      "complete": true,
+      "samples": [
+        {
+          "title": "*Future Opportunities: Join our global TrainAI talent pool",
+          "url": "https://jobs.lever.co/rws/f4e3ba40-dc02-4f86-a88a-9cc7e7891ede",
+          "descriptionLength": 1981
+        },
+        {
+          "title": "AI Conversation Specialist - (Asir) Saudi Arabic",
+          "url": "https://jobs.lever.co/rws/2a72f4e3-c54e-4c7e-a5a6-1cc9e8e448d8",
+          "descriptionLength": 2796
+        }
+      ],
+      "fieldSample": {
+        "title": "AI Conversation Specialist - (Asir) Saudi Arabic",
+        "url": "https://jobs.lever.co/rws/2a72f4e3-c54e-4c7e-a5a6-1cc9e8e448d8",
+        "salary": "15 USD/Hour",
+        "location": "Riyadh",
+        "job_type": "Temporary/Contract",
+        "is_remote": true,
+        "evidence": {
+          "job_type": [
+            "Freelance"
+          ],
+          "location": [
+            "Work from home"
+          ],
+          "schedule": [
+            "Part-time - 10+ hours per week. Flexible - work whenever you want."
+          ],
+          "salary": [
+            "15 USD/Hour"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Telnyx",
+      "mode": "crawl",
+      "adapter": "greenhouse",
+      "jobs": 55,
+      "validSamples": 55,
+      "complete": true,
+      "samples": [
+        {
+          "title": "Account Executive, ANZ",
+          "url": "https://job-boards.greenhouse.io/telnyx54/jobs/7647941003",
+          "descriptionLength": 4704
+        },
+        {
+          "title": "Account Executive, APAC (ANZ)",
+          "url": "https://job-boards.greenhouse.io/telnyx54/jobs/7983581003",
+          "descriptionLength": 5860
+        }
+      ]
+    },
+    {
+      "name": "The Meliore Foundation",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 1,
+      "validSamples": 1,
+      "complete": false,
+      "reason": "已取得岗位样本，列表完整性尚未确认",
+      "samples": [
+        {
+          "title": "GSCC | Associate – South Korean Industrial & Trade Specialist",
+          "url": "https://meliore.meliorefoundation.org/en/jobs/584433",
+          "descriptionLength": 5629
+        }
+      ]
+    },
+    {
+      "name": "Manicule",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 5,
+      "validSamples": 5,
+      "complete": false,
+      "reason": "未验证列表完整性",
+      "samples": [
+        {
+          "title": "Designer / Design Engineer",
+          "url": "https://www.ycombinator.com/companies/manicule/jobs/PCYoCAU-designer-design-engineer",
+          "descriptionLength": 1516
+        },
+        {
+          "title": "Freelance Technical Content Writer",
+          "url": "https://www.ycombinator.com/companies/manicule/jobs/SeUD1cG-freelance-technical-content-writer",
+          "descriptionLength": 1106
+        }
+      ],
+      "fieldSample": {
+        "title": "Freelance Technical Content Writer",
+        "url": "https://www.ycombinator.com/companies/manicule/jobs/SeUD1cG-freelance-technical-content-writer",
+        "salary": "USD 20000–60000 YEAR",
+        "location": "US",
+        "job_type": "CONTRACTOR",
+        "is_remote": true,
+        "evidence": {
+          "salary": [
+            "$200 - $300/article (can negotiate)"
+          ]
+        }
+      }
+    },
+    {
+      "name": "澳大利亚格里菲斯大学",
+      "mode": "crawl",
+      "adapter": "smartrecruiters",
+      "jobs": 5,
+      "validSamples": 5,
+      "complete": false,
+      "reason": null,
+      "samples": [
+        {
+          "title": "Senior Lecturer / Associate Professor in Clinical Education Phase 2 and 3 Lead, Doctor of Medicine",
+          "url": "https://jobs.smartrecruiters.com/GriffithUniversity/744000152320829",
+          "descriptionLength": 6883
+        },
+        {
+          "title": "Academic Support Officer (Griffith Health)",
+          "url": "https://jobs.smartrecruiters.com/GriffithUniversity/744000152075555",
+          "descriptionLength": 5385
+        }
+      ]
+    },
+    {
+      "name": "Braintrust",
+      "mode": "crawl",
+      "validSamples": 0,
+      "error": "此页面只返回网页程序，岗位需在浏览器中动态加载；当前入口无法直接提取。请更换公开招聘列表，或跳过本家继续。"
+    },
+    {
+      "name": "Hackmamba",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 4,
+      "validSamples": 4,
+      "complete": false,
+      "reason": "未验证列表完整性",
+      "samples": [
+        {
+          "title": "Developer Marketing Writer",
+          "url": "https://hackmamba.io/career/developer-marketing-writer",
+          "descriptionLength": 2524
+        },
+        {
+          "title": "Product Growth Marketer",
+          "url": "https://hackmamba.io/career/product-growth-marketer",
+          "descriptionLength": 3345
+        }
+      ],
+      "fieldSample": {
+        "title": "Product Growth Marketer",
+        "url": "https://hackmamba.io/career/product-growth-marketer",
+        "evidence": {
+          "salary": [
+            "Competitive, and we will be specific once we talk"
+          ]
+        }
+      }
+    },
+    {
+      "name": "AB Agri",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 5,
+      "validSamples": 5,
+      "complete": false,
+      "reason": "未验证列表完整性",
+      "samples": [
+        {
+          "title": "HGV Drivers - Walsingham",
+          "url": "https://careers.abagri.com/vacancies/24236/hgv-drivers--walsingham.html",
+          "descriptionLength": 5152
+        },
+        {
+          "title": "Customer Service Co-ordinator (Fixed Term Contract)",
+          "url": "https://careers.abagri.com/vacancies/24216/customer-service-co-ordinator-fixed-term-contract.html",
+          "descriptionLength": 3957
+        }
+      ],
+      "fieldSample": {
+        "title": "Utility Operator",
+        "url": "https://careers.abagri.com/vacancies/24182/utility-operator.html",
+        "salary": "£32,531.91",
+        "location": "Cupar, Fife, United Kingdom",
+        "job_type": "Permanent",
+        "evidence": {
+          "location": [
+            "Cupar"
+          ],
+          "salary": [
+            "£32,531.91"
+          ]
+        }
+      }
+    },
+    {
+      "name": "花旗",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 5,
+      "validSamples": 5,
+      "complete": false,
+      "reason": "未验证列表完整性",
+      "samples": [
+        {
+          "title": "Python Developer",
+          "url": "https://jobs.citi.com/job/pune/python-developer/287/99709927232",
+          "descriptionLength": 3474
+        },
+        {
+          "title": "Fraud Ops Analyst - Pune",
+          "url": "https://jobs.citi.com/job/pune/fraud-ops-analyst-pune/287/99709906416",
+          "descriptionLength": 3031
+        }
+      ]
+    },
+    {
+      "name": "Cochrane",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 6,
+      "validSamples": 6,
+      "complete": false,
+      "reason": "已读取招聘页内嵌岗位数据，列表完整性尚未确认",
+      "samples": [
+        {
+          "title": "Managing Editor - Maternity Cover - Internal",
+          "url": "https://jobs.deel.com/Cochrane/job-details/7646b32a-fdaa-4ad2-a0bb-a7e8e08ccac8/overview",
+          "descriptionLength": 4585
+        },
+        {
+          "title": "Chief Operating Officer",
+          "url": "https://jobs.deel.com/Cochrane/job-details/0f8acebf-23e0-4581-9b69-65dee3c29e39/overview",
+          "descriptionLength": 4319
+        }
+      ],
+      "fieldSample": {
+        "title": "Managing Editor - Maternity Cover - Internal",
+        "url": "https://jobs.deel.com/Cochrane/job-details/7646b32a-fdaa-4ad2-a0bb-a7e8e08ccac8/overview",
+        "salary": "£42,000 FTE",
+        "location": "Anywhere",
+        "job_type": "Full-time",
+        "is_remote": true,
+        "evidence": {
+          "salary": [
+            "£42,000 FTE"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Cummins 康明斯",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 6,
+      "validSamples": 6,
+      "complete": true,
+      "samples": [
+        {
+          "title": "Sourcing Manager-2438801",
+          "url": "https://cummins.jobs/shanghai-chn/sourcing-manager-2438801/63425DAE219D434F8BD464FF15E6137A/job",
+          "descriptionLength": 6592
+        },
+        {
+          "title": "Sr. Supplier Quality Engineer 高级供应商质量工程师",
+          "url": "https://cummins.jobs/chongqing-chn/sr-supplier-quality-engineer-%E9%AB%98%E7%BA%A7%E4%BE%9B%E5%BA%94%E5%95%86%E8%B4%A8%E9%87%8F%E5%B7%A5%E7%A8%8B%E5%B8%88/1399597263C34A4F96EF90D30EA3BE9C/job",
+          "descriptionLength": 6208
+        }
+      ]
+    },
+    {
+      "name": "Pearson 培生",
+      "mode": "crawl",
+      "adapter": "html",
+      "jobs": 15,
+      "validSamples": 15,
+      "complete": false,
+      "samples": [
+        {
+          "title": "Specialist, Content Developer English Language Arts",
+          "url": "https://pearson.jobs/virtual-usa/specialist-content-developer-english-language-arts/E5CB1BDF94434A849D0336F8252713CE/job",
+          "descriptionLength": 5244
+        },
+        {
+          "title": "Software Engineer III",
+          "url": "https://pearson.jobs/virtual-usa/software-engineer-iii/371407000CBD4023915239EAE0DA499E/job",
+          "descriptionLength": 4907
+        }
+      ]
+    },
+    {
+      "name": "RWS",
+      "mode": "verify",
+      "url": "https://jobs.lever.co/rws/43a2f881-8469-4389-ae46-3fc30a73905c",
+      "state": "closed",
+      "reason": "官方岗位接口确认该岗位已不可用（HTTP 404）",
+      "checked_at": "2026-09-29T04:54:31.671Z"
+    },
+    {
+      "name": "Telnyx",
+      "mode": "verify",
+      "url": "https://job-boards.greenhouse.io/telnyx54/jobs/7995402003",
+      "state": "open",
+      "reason": "官方岗位接口返回相同岗位 ID 的在招详情"
+    },
+    {
+      "name": "澳大利亚格里菲斯大学",
+      "mode": "verify",
+      "url": "https://jobs.smartrecruiters.com/GriffithUniversity/744000148923906-consultant-opportunity-regional-marketing-manager-greater-china-",
+      "state": "open",
+      "reason": "官方岗位接口返回相同岗位 ID 的在招详情"
+    }
+  ]
+}

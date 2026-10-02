@@ -1,0 +1,227 @@
+{
+  "releasedAt": "2026-10-02T00:51:55.139Z",
+  "origin": "https://haigoo-remote-bj3o54iej-caitlinyct.vercel.app",
+  "alias": "https://mini-preview.haigooremote.com",
+  "previous": "haigoo-remote-6wf0f15gs-caitlinyct.vercel.app",
+  "sourceHash": "c7fe0db4c4af1c0224d9c0296163867f2935decfb62f16084146385ca301f903",
+  "baseline": {
+    "jobs": 1981,
+    "jobs_hash": "9d1b47241ad798e7c03ad75b44a992ff",
+    "companies": 410,
+    "companies_hash": "a3fe92d8f37f7479027861498efa9c94"
+  },
+  "after": {
+    "jobs": 1981,
+    "jobs_hash": "9d1b47241ad798e7c03ad75b44a992ff",
+    "companies": 410,
+    "companies_hash": "a3fe92d8f37f7479027861498efa9c94"
+  },
+  "migrations": [
+    "091_trusted_job_sync.sql",
+    "092_job_sync_manual_gate.sql",
+    "093_manual_crawl_workflow.sql",
+    "094_company_list_checks.sql"
+  ],
+  "automaticSchedules": false,
+  "translation": false,
+  "liveProbes": [
+    {
+      "name": "RWS",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 48,
+      "complete": true,
+      "requestCount": 1,
+      "requests": [
+        "https://api.lever.co/v0/postings/rws?mode=json&limit=100&skip=0"
+      ],
+      "new": 0,
+      "missing": 1,
+      "unknown": true,
+      "reasons": [
+        "48 个未录入岗位缺少明确地区或远程信息"
+      ]
+    },
+    {
+      "name": "Telnyx",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 53,
+      "complete": true,
+      "requestCount": 1,
+      "requests": [
+        "https://boards-api.greenhouse.io/v1/boards/telnyx54/jobs?content=false"
+      ],
+      "new": 1,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "47 个未录入岗位缺少明确地区或远程信息"
+      ]
+    },
+    {
+      "name": "The Meliore Foundation",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 1,
+      "complete": false,
+      "requestCount": 1,
+      "requests": [
+        "https://careers.meliorefoundation.org/"
+      ],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "招聘网站未提供可验证的完整列表",
+        "1 个未录入岗位缺少明确地区或远程信息",
+        "3 个在招岗位无法与当前招聘来源匹配"
+      ]
+    },
+    {
+      "name": "Manicule",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 9,
+      "complete": false,
+      "requestCount": 1,
+      "requests": [
+        "https://www.ycombinator.com/companies/manicule/jobs/"
+      ],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "已读取岗位链接，但网站未提供可验证的完整列表",
+        "8 个未录入岗位缺少明确地区或远程信息"
+      ]
+    },
+    {
+      "name": "澳大利亚格里菲斯大学",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 40,
+      "complete": true,
+      "requestCount": 1,
+      "requests": [
+        "https://api.smartrecruiters.com/v1/companies/GriffithUniversity/postings?limit=100&offset=0"
+      ],
+      "new": 0,
+      "missing": 1,
+      "unknown": false,
+      "reasons": []
+    },
+    {
+      "name": "Braintrust",
+      "mode": "listing",
+      "pages": 0,
+      "listed": 0,
+      "complete": false,
+      "requestCount": 0,
+      "requests": [],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "该入口包含多个雇主，无法确认本企业的岗位范围",
+        "25 个在招岗位无法与当前招聘来源匹配"
+      ]
+    },
+    {
+      "name": "Hackmamba",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 3,
+      "complete": false,
+      "requestCount": 1,
+      "requests": [
+        "https://hackmamba.io/career/"
+      ],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "已读取岗位链接，但网站未提供可验证的完整列表",
+        "3 个未录入岗位缺少明确地区或远程信息",
+        "2 个在招岗位无法与当前招聘来源匹配"
+      ]
+    },
+    {
+      "name": "AB Agri",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 0,
+      "complete": false,
+      "requestCount": 1,
+      "requests": [
+        "https://careers.abagri.com/working-here.aspx"
+      ],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "未读取到可确认的招聘列表（可能需要登录或动态加载）",
+        "1 个在招岗位无法与当前招聘来源匹配"
+      ]
+    },
+    {
+      "name": "花旗",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 15,
+      "complete": false,
+      "requestCount": 1,
+      "requests": [
+        "https://jobs.citi.com/search-jobs"
+      ],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "已读取岗位链接，但网站未提供可验证的完整列表",
+        "15 个未录入岗位缺少明确地区或远程信息",
+        "1 个在招岗位无法与当前招聘来源匹配"
+      ]
+    },
+    {
+      "name": "Cummins 康明斯",
+      "mode": "listing",
+      "pages": 1,
+      "listed": 5,
+      "complete": true,
+      "requestCount": 1,
+      "requests": [
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?location=chn&jobtype=off-site-remote&num_items=20&offset=0"
+      ],
+      "new": 5,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "3 个在招岗位无法与当前招聘来源匹配"
+      ]
+    },
+    {
+      "name": "Pearson 培生",
+      "mode": "listing",
+      "pages": 6,
+      "listed": 85,
+      "complete": true,
+      "requestCount": 6,
+      "requests": [
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?workplacetype=remote&num_items=20&offset=0",
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?workplacetype=remote&num_items=20&offset=15",
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?workplacetype=remote&num_items=20&offset=30",
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?workplacetype=remote&num_items=20&offset=45",
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?workplacetype=remote&num_items=20&offset=60",
+        "https://prod-search-api.jobsyn.org/api/v1/solr/search?workplacetype=remote&num_items=20&offset=75"
+      ],
+      "new": 0,
+      "missing": 0,
+      "unknown": true,
+      "reasons": [
+        "61 个未录入岗位缺少明确地区或远程信息",
+        "3 个在招岗位无法与当前招聘来源匹配"
+      ]
+    }
+  ]
+}

@@ -76,31 +76,12 @@ assert.ok(
   filters.includes('COMPLIANCE_FEATURES.memberOnlyJobFilter && isMember'),
   'Club filter must not be visible to guests or free accounts'
 )
-assert.ok(
-  /NULLIF\(BTRIM\((?:jobs\.)?url\), ''\) IS NOT NULL/.test(linkVerifier),
-  'link verification must not deactivate email-only roles that intentionally have no website URL'
-)
+// The manual-only design retires automatic URL deactivation AND restoration.
+assert.match(linkVerifier, /export default jobSyncHandler/)
+await import('./test-cron-policy.js') // Exercise both anonymous and scheduler-authenticated rejection.
 assert.ok(
   dataManagement.includes("queryParams.append('isAdmin', 'true')"),
   'admin job reads must use the authenticated admin-list switch so pending jobs can be edited'
-)
-assert.ok(
-  linkVerifier.includes("return { status: 'error_retry', reason: `Blocked or Authwall (HTTP ${statusCode})` }")
-    && !linkVerifier.includes("last_verified_at < NOW() - INTERVAL '30 days'"),
-  'auth walls and elapsed time must not automatically unapprove or deactivate jobs'
-)
-assert.ok(
-  linkVerifier.includes("String(rawUrl || '').trim()") &&
-    linkVerifier.includes("return { status: 'ambiguous', reason: 'Invalid URL format' }") &&
-    !linkVerifier.includes("return { status: 'dead', reason: 'Invalid URL format' }"),
-  'URL whitespace and malformed values must not permanently deactivate jobs'
-)
-assert.ok(
-  linkVerifier.includes("jobs.status = 'inactive'") &&
-    linkVerifier.includes("jobs.haigoo_comment LIKE '[自动巡查] 判定链接彻底死亡并下线，原因:%'") &&
-    linkVerifier.includes("SET status = 'active'") &&
-    linkVerifier.includes("CASE WHEN status = 'inactive' THEN NULL ELSE haigoo_comment END"),
-  'automatically deactivated jobs must be rechecked and restored when their links recover'
 )
 assert.ok(
   processedJobs.includes("jobs.url IS DISTINCT FROM EXCLUDED.url") &&

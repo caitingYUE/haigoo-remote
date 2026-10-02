@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 import {
     Building2, Search, Plus, Edit2, Trash2,
     ExternalLink, X, Loader2,
-    Wand2, DownloadCloud, Upload, Image as ImageIcon, RefreshCw,
+    Wand2, Upload, Image as ImageIcon, RefreshCw,
     Globe as GlobeIcon, Briefcase as BriefcaseIcon, Linkedin as LinkedinIcon,
     ChevronDown, Check
 } from 'lucide-react'
@@ -11,12 +11,18 @@ import { CompanyIndustry } from '../types/rss-types'
 import Cropper, { Area } from 'react-easy-crop'
 import getCroppedImg, { compressImage } from '../utils/cropImage'
 import { ClassificationService } from '../services/classification-service'
+import CompanyListCheckPanel, { CheckCompany } from '../components/CompanyListCheckPanel'
+import { ListCheckState, listCheckLabel, listCheckRequest } from '../services/company-list-check-service'
 import AdminCompanyJobsModal from '../components/AdminCompanyJobsModal'
 import { joinTagInput, splitTagInput } from '../utils/tag-input'
 
 export default function AdminTrustedCompaniesPage() {
+    const [checkPanel, setCheckPanel] = useState<{ companies: CheckCompany[]; page: number; start: boolean; reset: boolean; requestId: string } | null>(null)
+    const [checkStates, setCheckStates] = useState<Record<string, ListCheckState>>({})
+    const [checkStateError, setCheckStateError] = useState('')
     const [companies, setCompanies] = useState<TrustedCompany[]>([])
     const [loading, setLoading] = useState(true)
+    const [loadError, setLoadError] = useState('')
     const [searchTerm, setSearchTerm] = useState('')
     const [debouncedSearch, setDebouncedSearch] = useState('')
 
@@ -32,18 +38,15 @@ export default function AdminTrustedCompaniesPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingCompany, setEditingCompany] = useState<TrustedCompany | null>(null)
     const [selectedCompanyForJobs, setSelectedCompanyForJobs] = useState<TrustedCompany | null>(null)
+    const [companyJobsView, setCompanyJobsView] = useState<'active' | 'pending' | 'all'>('active')
     const [formData, setFormData] = useState<Partial<TrustedCompany>>({})
     const [saving, setSaving] = useState(false)
     const [industryDropdownOpen, setIndustryDropdownOpen] = useState(false)
 
     // New states for automation features
-    const [crawlingId, setCrawlingId] = useState<string | null>(null)
     const [autoFilling, setAutoFilling] = useState(false)
     const [filterMemberOnly, setFilterMemberOnly] = useState<'all' | 'yes' | 'no'>('all')
 
-    // Batch crawl state
-    const [batchCrawling, setBatchCrawling] = useState(false)
-    const [batchProgress, setBatchProgress] = useState('')
 
     // Cover image upload & crop
     const [coverSource, setCoverSource] = useState<string>('')
@@ -168,6 +171,7 @@ export default function AdminTrustedCompaniesPage() {
     const loadCompanies = async () => {
         try {
             setLoading(true)
+            setLoadError('')
             const data = await trustedCompaniesService.getAllCompanies({
                 page,
                 limit: PAGE_SIZE,
@@ -189,6 +193,7 @@ export default function AdminTrustedCompaniesPage() {
             }
         } catch (error) {
             console.error('Failed to load companies:', error)
+            setLoadError('读取最新企业与岗位统计失败；当前数据可能过期，请刷新后重试。')
         } finally {
             setLoading(false)
         }
@@ -392,32 +397,6 @@ export default function AdminTrustedCompaniesPage() {
         }
     }
 
-    const handleCrawlJobs = async (id: string) => {
-        try {
-            setCrawlingId(id)
-            const result = await trustedCompaniesService.crawlJobs(id, true, 100) // Increase limit to 100
-            if (result.success) {
-                alert(`抓取成功！当前共 ${result.count || 0} 个岗位`)
-
-                // Optimistic Update
-                setCompanies(prev => prev.map(c => c.id === id ? {
-                    ...c,
-                    jobCount: result.count || 0,
-                    lastCrawledAt: new Date().toISOString()
-                } : c));
-
-                // loadCompanies() // reload to update job counts
-            } else {
-                alert('抓取失败: ' + (result.error || '未知错误'))
-            }
-        } catch (error) {
-            console.error('Crawl jobs failed:', error)
-            alert('抓取请求失败')
-        } finally {
-            setCrawlingId(null)
-        }
-    }
-
     const openCropperWithSource = (source: string) => {
         // Fix CORS issues by proxying remote images
         if (source.startsWith('http') && !source.includes('/api/images')) {
@@ -507,97 +486,40 @@ export default function AdminTrustedCompaniesPage() {
 
 
 
-    const handleSyncData = async () => {
-        if (!confirm('确定要同步所有岗位数据并重新计算企业岗位数量吗？这可能需要几分钟。')) return
+    const checkReadVersion = useRef(0)
+    const checkCompaniesRef = useRef(companies)
+    checkCompaniesRef.current = companies
+    const refreshCheckStates = useCallback(async () => {
+        const version = ++checkReadVersion.current
+        const scope = checkCompaniesRef.current
+        if (!scope.length) { setCheckStates({}); return }
         try {
-            setLoading(true)
-            const response = await fetch('/api/data/trusted-companies?action=sync-jobs')
-            const data = await response.json()
-            if (data.success) {
-                alert(data.message)
-                loadCompanies()
-            } else {
-                alert('同步失败: ' + (data.error || '未知错误'))
-            }
-        } catch (error) {
-            console.error('Sync failed:', error)
-            alert('同步请求失败')
-        } finally {
-            setLoading(false)
-        }
-    }
+            const result = await listCheckRequest(undefined, { companyIds: scope.map(c => c.id).join(',') })
+            if (version !== checkReadVersion.current) return
+            setCheckStates(result.states || {})
+            setCheckStateError('')
+        } catch (error) { if (version === checkReadVersion.current) setCheckStateError((error as Error).message) }
+    }, [])
 
-    const handleBatchCrawl = async () => {
-        if (batchCrawling) return
-        if (!companies.length) {
-            alert('当前列表无企业')
-            return
-        }
-        if (!confirm(`确定要批量抓取当前页的 ${companies.length} 家企业的岗位吗？这可能需要较长时间。`)) return
+    useEffect(() => { void refreshCheckStates(); return () => { checkReadVersion.current++ } }, [companies, refreshCheckStates])
 
-        setBatchCrawling(true)
-        setBatchProgress('初始化...')
-
-        let successCount = 0
-        let failCount = 0
-
-        try {
-            for (let i = 0; i < companies.length; i++) {
-                const company = companies[i]
-                setBatchProgress(`正在抓取 (${i + 1}/${companies.length}): ${company.name}`)
-
-                try {
-                    // Reuse existing service method with default options (force=true, limit=10)
-                    const result = await trustedCompaniesService.crawlJobs(company.id, true, 100)
-                    if (result.success) {
-                        successCount++
-                    } else {
-                        failCount++
-                        console.error(`Failed to crawl ${company.name}:`, result.error)
-                    }
-                } catch (err) {
-                    failCount++
-                    console.error(`Error crawling ${company.name}:`, err)
-                }
-            }
-
-            alert(`批量抓取完成！成功: ${successCount}, 失败: ${failCount}`)
-            loadCompanies() // Reload to update counts
-        } catch (error) {
-            console.error('Batch crawl failed:', error)
-            alert('批量抓取过程中断')
-        } finally {
-            setBatchCrawling(false)
-            setBatchProgress('')
-        }
+    const openCheck = (start = true, scope = companies, reset = false) => {
+        setCheckPanel({ start, page, reset, requestId: crypto.randomUUID(), companies: scope.map(c => ({ id: c.id, name: c.name, careersPage: c.careersPage })) })
     }
 
     return (
         <div className="p-6 max-w-[1600px] mx-auto">
+            {loadError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">{loadError}<button className="ml-3 underline" onClick={()=>void loadCompanies()}>重新读取</button></p>}
+            {checkStateError && <p role="alert" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">检查记录暂未读取：{checkStateError}<button className="ml-3 underline" onClick={() => void refreshCheckStates()}>重新读取</button></p>}
+            {checkPanel && <CompanyListCheckPanel key={checkPanel.requestId} {...checkPanel} onClose={() => { setCheckPanel(null); void refreshCheckStates() }} onChanged={() => { void refreshCheckStates() }} onManageJobs={id => { const company = companies.find(c => c.id === id); if (company) { setCheckPanel(null); setCompanyJobsView('all'); setSelectedCompanyForJobs(company) } }} />}
             <div className="flex justify-between items-center mb-6">
                 <h1 className="text-2xl font-bold flex items-center gap-2">
                     <Building2 className="w-6 h-6" />
                     可信企业管理
                 </h1>
-                <div className="flex gap-3">
-                    <button
-                        onClick={handleBatchCrawl}
-                        disabled={batchCrawling || loading}
-                        className="px-4 py-2 bg-white text-[#466f9d] border border-[#466f9d] rounded hover:bg-[#eff5fb] flex items-center gap-2 disabled:opacity-50"
-                    >
-                        {batchCrawling ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <DownloadCloud className="w-4 h-4" />
-                        )}
-                        {batchCrawling ? '抓取中...' : '爬取本页岗位'}
-                    </button>
-                    <button
-                        onClick={handleSyncData}
-                        className="px-4 py-2 bg-white text-[#466f9d] border border-[#466f9d] rounded hover:bg-[#eff5fb] flex items-center gap-2"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                        同步数据
+                <div className="flex flex-wrap gap-3">
+                    <button onClick={() => openCheck()} disabled={loading || !companies.length} className="px-4 py-2 bg-white text-[#466f9d] border border-[#466f9d] rounded hover:bg-[#eff5fb] flex items-center gap-2 disabled:opacity-50">
+                        <RefreshCw className="w-4 h-4" />更新检查
                     </button>
                     <button
                         onClick={handleAdd}
@@ -609,12 +531,7 @@ export default function AdminTrustedCompaniesPage() {
                 </div>
             </div>
 
-            {batchCrawling && (
-                <div className="mb-6 p-4 bg-blue-50 text-blue-700 rounded-lg flex items-center gap-3 border border-blue-200">
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span className="font-medium">{batchProgress}</span>
-                </div>
-            )}
+            <p className="mb-4 text-xs text-gray-500">更新检查仅处理当前页企业，提醒新增和疑似失效；岗位录入、内容和状态由人工管理。</p>
 
             <div className="mb-6 flex flex-wrap gap-3 items-center">
                 <div className="relative flex-1 min-w-[260px]">
@@ -679,6 +596,7 @@ export default function AdminTrustedCompaniesPage() {
                                             )}
                                         </div>
                                     </th>
+                                    <th className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 w-[85px]">待审核</th>
                                     <th
                                         className="px-4 py-2 text-left text-[11px] font-medium text-gray-500 uppercase tracking-wider w-[120px] cursor-pointer hover:bg-gray-100 select-none"
                                         onClick={() => handleSort('updatedAt')}
@@ -709,6 +627,13 @@ export default function AdminTrustedCompaniesPage() {
                                                 <div className="ml-3 max-w-xs">
                                                     <div className="font-medium text-gray-900 flex items-center gap-2 text-[13px]">
                                                         {company.name}
+                                                        {(['new', 'missing'] as const).map(kind => {
+                                                            const count = checkStates[company.id]?.findings.filter(f => f.kind === kind).length || 0
+                                                            return count > 0 && <button key={kind} onClick={() => openCheck(false, [company])} className={`whitespace-nowrap rounded border px-1.5 py-1 text-[10px] ${kind === 'new' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>{kind === 'new' ? '有新增' : '有失效'} · {count}</button>
+                                                        })}
+                                                        {['unknown', 'skipped'].includes(checkStates[company.id]?.status) && <button onClick={() => openCheck(false, [company])} title={checkStates[company.id]?.reasons.join('；')} className="whitespace-nowrap rounded border border-gray-200 bg-gray-50 px-1.5 py-1 text-[10px] text-gray-600">{listCheckLabel(checkStates[company.id])}</button>}
+                                                        {['unknown', 'skipped'].includes(checkStates[company.id]?.status) && <button onClick={() => openCheck(true, [company], checkStates[company.id]?.status === 'skipped')} className="p-1 text-gray-500 hover:text-[#466f9d]" title={`重新检查 ${company.name}`} aria-label={`重置并重新检查 ${company.name}`}><RefreshCw size={13} /></button>}
+                                                        {checkStates[company.id]?.status === 'checked' && !checkStates[company.id]?.findings.length && <button onClick={() => openCheck(false, [company])} className="whitespace-nowrap text-[10px] font-normal text-gray-400" title={checkStates[company.id]?.checked_at}>未发现变化</button>}
                                                         {company.memberOnly && (
                                                             <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200 whitespace-nowrap leading-none">
                                                                 仅 Club 可申请
@@ -740,10 +665,15 @@ export default function AdminTrustedCompaniesPage() {
                                         </td>
                                         <td
                                             className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-700 cursor-pointer hover:text-[#466f9d] hover:font-medium underline decoration-dashed underline-offset-4"
-                                            onClick={() => setSelectedCompanyForJobs(company)}
-                                            title="点击管理岗位"
+                                            onClick={() => {setCompanyJobsView('active');setSelectedCompanyForJobs(company)}}
+                                            title="查看已审核在招岗位"
                                         >
                                             {company.jobCount ?? 0}
+                                        </td>
+                                        <td className="px-4 py-2.5 whitespace-nowrap text-[13px]">
+                                            <button className="text-amber-700 underline decoration-dashed underline-offset-4" title="查看已录入待审核岗位" onClick={() => { setCompanyJobsView('pending'); setSelectedCompanyForJobs(company) }}>
+                                                {company.pendingReviewCount ?? 0}
+                                            </button>
                                         </td>
                                         <td className="px-4 py-2.5 whitespace-nowrap text-[13px] text-gray-500">
                                             {company.updatedAt ? (
@@ -776,18 +706,6 @@ export default function AdminTrustedCompaniesPage() {
                                         </td>
                                         <td className="px-4 py-2.5 whitespace-nowrap text-[13px] font-medium">
                                             <div className="flex items-center justify-end gap-3">
-                                                <button
-                                                    onClick={() => handleCrawlJobs(company.id)}
-                                                    disabled={crawlingId === company.id}
-                                                    className="text-gray-600 hover:text-[#466f9d] disabled:opacity-50 transition-colors"
-                                                    title="抓取岗位数据"
-                                                >
-                                                    {crawlingId === company.id ? (
-                                                        <Loader2 className="w-[15px] h-[15px] animate-spin" />
-                                                    ) : (
-                                                        <DownloadCloud className="w-[15px] h-[15px]" />
-                                                    )}
-                                                </button>
                                                 <button onClick={() => handleEdit(company)} className="text-[#466f9d] hover:text-[#243f5c] transition-colors" title="编辑企业">
                                                     <Edit2 className="w-[15px] h-[15px]" />
                                                 </button>
@@ -851,8 +769,11 @@ export default function AdminTrustedCompaniesPage() {
             {selectedCompanyForJobs && (
                 <AdminCompanyJobsModal
                     company={selectedCompanyForJobs}
+                    initialView={companyJobsView}
+                    onUpdate={count => setCompanies(previous => previous.some(c=>c.id===selectedCompanyForJobs.id && c.jobCount!==count) ? previous.map(c=>c.id===selectedCompanyForJobs.id?{...c,jobCount:count}:c) : previous)}
                     onClose={() => {
                         setSelectedCompanyForJobs(null)
+                        void loadCompanies()
                     }}
                 />
             )}

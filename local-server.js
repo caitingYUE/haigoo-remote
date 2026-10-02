@@ -79,6 +79,8 @@ async function startServer() {
         const adminContentPushSocialReplaceHandler = (await import('./api/admin/content-push/social-push/replace.js')).default;
         const adminContentPushSocialManualSearchHandler = (await import('./api/admin/content-push/social-push/manual-search.js')).default;
         const adminSearchInsightsHandler = (await import('./api/admin/search-insights.js')).default;
+        const jobSyncHandler = (await import('./api/admin/job-sync.js')).default;
+        app.all('/api/admin/job-sync', jobSyncHandler);
         const adminJobBundlesHandler = (await import('./api/admin/job-bundles.js')).default;
         const adminMemberCrmHandler = (await import('./api/admin/member-crm.js')).default;
         const adminMemberCrmAgentHandler = (await import('./api/admin/member-crm-agent.js')).default;

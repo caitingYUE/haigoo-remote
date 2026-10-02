@@ -1,0 +1,29 @@
+{
+  "releasedAt": "2026-10-02T07:25:11.464Z",
+  "origin": "https://haigoo-remote-n6scfqyqe-caitlinyct.vercel.app",
+  "alias": "https://mini-preview.haigooremote.com",
+  "previous": "haigoo-remote-gri745vo1-caitlinyct.vercel.app",
+  "sourceHash": "2dfa0a9da2caa79bf8f9c467fb8de2f7914d37f4e698139636496014d588e9ea",
+  "baseline": {
+    "jobs": 1981,
+    "jobs_hash": "9d1b47241ad798e7c03ad75b44a992ff",
+    "companies": 410,
+    "companies_hash": "c80b7de28f9fc8c1d218bf4db168adf6"
+  },
+  "after": {
+    "jobs": 1981,
+    "jobs_hash": "9d1b47241ad798e7c03ad75b44a992ff",
+    "companies": 410,
+    "companies_hash": "c80b7de28f9fc8c1d218bf4db168adf6"
+  },
+  "migrations": [
+    "091_trusted_job_sync.sql",
+    "092_job_sync_manual_gate.sql",
+    "093_manual_crawl_workflow.sql",
+    "094_company_list_checks.sql"
+  ],
+  "automaticSchedules": false,
+  "translation": false,
+  "liveProbes": [],
+  "cohortChecks": []
+}

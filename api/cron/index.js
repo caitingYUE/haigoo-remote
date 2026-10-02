@@ -6,6 +6,11 @@ export default async function handler(req, res) {
   // Allow passing task in body as well (for manual POSTs)
   const taskName = task || req.body?.task;
 
+  if (['job-sync','job-sync-enrich','job-sync-publish','stream-verify-links'].includes(taskName)) {
+    const { default: handler } = await import('../../lib/cron-handlers/job-sync.js');
+    return handler(req, res);
+  }
+
   // Authenticate the reminder task before the legacy logging/notification path.
   if (taskName === 'mini-wechat-reminders') {
     const { default: reminders } = await import('../../lib/cron-handlers/mini-wechat-reminders.js');
@@ -15,7 +20,7 @@ export default async function handler(req, res) {
   if (taskName === 'stream-crawl-trusted-jobs') {
     return res.status(410).json({
       success: false,
-      error: 'Trusted-company job crawling is disabled. Only URL validity verification remains enabled.'
+      error: 'Automatic company crawling and URL verification are disabled. Use the manual trusted-company workflow.'
     });
   }
 
@@ -124,7 +129,7 @@ export default async function handler(req, res) {
             'daily-enrich'
           ],
           taskNotes: {
-            'stream-verify-links': 'scheduled daily; checks approved job URLs only'
+            'stream-verify-links': 'disabled; use manual trusted-company update checks'
           }
         });
     }

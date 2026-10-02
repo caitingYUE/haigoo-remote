@@ -7,6 +7,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "test:job-category-search": "node test-job-category-search.js",
     "dev": "node scripts/dev-with-api.mjs",
     "dev:web": "vite",
     "build": "tsc && vite build",
@@ -68,7 +69,14 @@
     "server": "npm run server:api",
     "server:api": "node local-server.js",
     "test:mini-company-polish": "node test-mini-company-detail-polish.js",
-    "check:mini-company-polish:dev": "node scripts/verify-mini-company-detail.mjs"
+    "check:mini-company-polish:dev": "node scripts/verify-mini-company-detail.mjs",
+    "test:job-sync": "node scripts/test-job-sync.mjs",
+    "job-sync:inventory": "node scripts/job-sync-cohort.mjs",
+    "job-sync:probe": "node scripts/probe-job-sync.mjs",
+    "deploy:job-sync-preview": "node scripts/deploy-job-sync-preview.mjs",
+    "test:job-sync-preview": "node scripts/test-job-sync-preview.mjs",
+    "test:manual-crawl": "node scripts/test-manual-crawl-integration.mjs && node scripts/test-crawl-source-recovery.mjs",
+    "test:company-list-check": "node scripts/test-company-list-check.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",
@@ -115,6 +123,7 @@
     "zustand": "^4.4.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^24.9.2",

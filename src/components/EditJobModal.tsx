@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useId } from 'react';
 import { ChevronLeft, ChevronRight, X, CheckCircle, Info, Star, ArrowDown, Loader2, Sparkles } from 'lucide-react';
 import { ProcessedJobData } from '../services/data-management-service';
 import { JobCategory } from '../types/rss-types';
@@ -16,6 +16,8 @@ import {
 import { extractJobSkillKeywords } from '../utils/job-skill-extractor';
 import { appendTagInput, joinTagInput, splitTagInput } from '../utils/tag-input';
 import { JOB_LOCATION_ADMIN_QUICK_TAGS } from '../../lib/shared/job-location-taxonomy.js';
+import { JOB_CATEGORY_OPTIONS } from '../../lib/shared/job-categories.js';
+import { rankJobCategories } from '../utils/job-category-search';
 
 const APPLICATION_GUIDE_LIMIT = 1200;
 
@@ -107,6 +109,54 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
 
   const [isSaving, setIsSaving] = useState(false);
   const [isGuideEditorExpanded, setIsGuideEditorExpanded] = useState(false);
+  const [categoryMenuOpen, setCategoryMenuOpen] = useState(false);
+  const [categoryQuery, setCategoryQuery] = useState('');
+  const [activeCategoryIndex, setActiveCategoryIndex] = useState(0);
+  const categoryMenuRef = useRef<HTMLDivElement | null>(null);
+  const categoryButtonRef = useRef<HTMLButtonElement | null>(null);
+  const categoryListId = useId();
+
+  const categoryOptions = useMemo(() => {
+    const options = availableCategories.length > 0 ? availableCategories : JOB_CATEGORY_OPTIONS;
+    return formData.category && !options.includes(formData.category)
+      ? [formData.category, ...options]
+      : options;
+  }, [availableCategories, formData.category]);
+
+  const filteredCategoryOptions = useMemo(
+    () => rankJobCategories(categoryOptions, categoryQuery),
+    [categoryOptions, categoryQuery]
+  );
+
+  const closeCategoryMenu = (restoreFocus = false) => {
+    setCategoryMenuOpen(false);
+    setCategoryQuery('');
+    setActiveCategoryIndex(0);
+    if (restoreFocus) categoryButtonRef.current?.focus();
+  };
+  const selectCategory = (category: string) => {
+    setFormData(prev => ({ ...prev, category: category as JobCategory }));
+    closeCategoryMenu(true);
+  };
+
+  useEffect(() => {
+    if (categoryMenuOpen) document.getElementById(`${categoryListId}-${activeCategoryIndex}`)?.scrollIntoView({ block: 'nearest' });
+  }, [categoryMenuOpen, activeCategoryIndex, categoryListId, categoryQuery]);
+
+  useEffect(() => {
+    setCategoryMenuOpen(false);
+    setCategoryQuery('');
+    setActiveCategoryIndex(0);
+  }, [job.id]);
+
+  useEffect(() => {
+    if (!categoryMenuOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!categoryMenuRef.current?.contains(event.target as Node)) closeCategoryMenu();
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [categoryMenuOpen]);
 
   const updateTranslationField = (field: 'title' | 'description', value: string) => {
     setFormData(prev => ({
@@ -745,30 +795,78 @@ export const EditJobModal: React.FC<EditJobModalProps> = ({
             </div>
 
             <div className="lg:col-span-4">
-              <label className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位分类</label>
-              <select
-                value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value as JobCategory })}
-                className="w-full px-2.5 py-1.5 text-[13px] border border-slate-300 rounded-md focus:ring-1 focus:ring-[#587faa] focus:border-[#587faa]"
-              >
-                {/* Dynamically populated categories or fallback */}
-                {availableCategories.length > 0 ? (
-                  availableCategories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))
-                ) : (
-                  <>
-                    <option value="全栈开发">全栈开发</option>
-                    <option value="前端开发">前端开发</option>
-                    <option value="后端开发">后端开发</option>
-                    <option value="UI/UX设计">UI/UX设计</option>
-                    <option value="数据分析">数据分析</option>
-                    <option value="DevOps">DevOps</option>
-                    <option value="产品管理">产品管理</option>
-                    <option value="市场营销">市场营销</option>
-                  </>
+              <label htmlFor={`${categoryListId}-trigger`} className="block text-[13px] font-medium text-slate-700 mb-1.5">岗位分类</label>
+              <div ref={categoryMenuRef} className="relative" onBlur={event => {
+                if (!event.currentTarget.contains(event.relatedTarget as Node)) closeCategoryMenu();
+              }}>
+                <button
+                  ref={categoryButtonRef}
+                  id={`${categoryListId}-trigger`}
+                  type="button"
+                  aria-haspopup="listbox"
+                  aria-expanded={categoryMenuOpen}
+                  aria-controls={categoryMenuOpen ? categoryListId : undefined}
+                  onClick={() => categoryMenuOpen ? closeCategoryMenu() : setCategoryMenuOpen(true)}
+                  onKeyDown={event => {
+                    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      setCategoryMenuOpen(true);
+                    }
+                  }}
+                  className="flex w-full items-center justify-between rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-left text-[13px] focus:border-[#587faa] focus:ring-1 focus:ring-[#587faa]"
+                >
+                  <span className={formData.category ? 'text-slate-700' : 'text-slate-400'}>{formData.category || '选择岗位分类'}</span>
+                  <ChevronRight className={`h-3.5 w-3.5 text-slate-400 transition-transform ${categoryMenuOpen ? 'rotate-90' : ''}`} />
+                </button>
+                {categoryMenuOpen && (
+                  <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-md border border-slate-200 bg-white shadow-lg">
+                    <div className="border-b border-slate-100 p-1.5">
+                      <input
+                        autoFocus
+                        role="combobox"
+                        aria-expanded="true"
+                        aria-autocomplete="list"
+                        aria-controls={categoryListId}
+                        aria-activedescendant={filteredCategoryOptions[activeCategoryIndex] ? `${categoryListId}-${activeCategoryIndex}` : undefined}
+                        value={categoryQuery}
+                        onChange={event => { setCategoryQuery(event.target.value); setActiveCategoryIndex(0); }}
+                        onKeyDown={event => {
+                          if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+                          if (['ArrowDown', 'ArrowUp', 'Enter', 'Escape'].includes(event.key)) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                          }
+                          if (event.key === 'Escape') closeCategoryMenu(true);
+                          if (event.key === 'Enter' && filteredCategoryOptions[activeCategoryIndex]) selectCategory(filteredCategoryOptions[activeCategoryIndex]);
+                          if (event.key === 'ArrowDown') setActiveCategoryIndex(index => Math.max(0, Math.min(index + 1, filteredCategoryOptions.length - 1)));
+                          if (event.key === 'ArrowUp') setActiveCategoryIndex(index => Math.max(index - 1, 0));
+                        }}
+                        aria-label="搜索岗位分类"
+                        placeholder="搜索名称或关键词，如：设计、backend"
+                        className="w-full rounded border border-slate-200 px-2 py-1.5 text-[13px] outline-none focus:border-[#587faa]"
+                      />
+                    </div>
+                    <div id={categoryListId} role="listbox" tabIndex={-1} aria-label="岗位分类" className="max-h-52 overflow-y-auto p-1">
+                      {filteredCategoryOptions.map((category, index) => (
+                        <button
+                          id={`${categoryListId}-${index}`}
+                          key={category}
+                          type="button"
+                          role="option"
+                          tabIndex={-1}
+                          aria-selected={formData.category === category}
+                          onMouseDown={event => event.preventDefault()}
+                          onClick={() => selectCategory(category)}
+                          className={`block w-full rounded px-2 py-1.5 text-left text-[13px] hover:bg-slate-100 ${activeCategoryIndex === index ? 'bg-slate-100' : ''} ${formData.category === category ? 'text-[#466f9d] font-medium' : 'text-slate-700'}`}
+                        >
+                          {category}{formData.category === category ? ' ✓' : ''}
+                        </button>
+                      ))}
+                    </div>
+                    {filteredCategoryOptions.length === 0 && <p role="status" className="px-3 py-4 text-[13px] text-slate-500">未找到匹配分类，请尝试更短的关键词。</p>}
+                  </div>
                 )}
-              </select>
+              </div>
             </div>
 
             <div className="lg:col-span-12 rounded-lg border border-slate-200 bg-slate-50/70 p-3">

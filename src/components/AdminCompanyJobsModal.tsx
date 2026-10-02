@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { ListCheckState, listCheckRequest } from '../services/company-list-check-service'
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { X, Plus, ExternalLink, Trash2, Loader2, Search, Edit2, Languages } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service';
@@ -10,9 +11,28 @@ interface AdminCompanyJobsModalProps {
     company: TrustedCompany;
     onClose: () => void;
     onUpdate?: (count: number) => void;
+    initialView?: 'active' | 'pending' | 'all';
 }
 
-export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: AdminCompanyJobsModalProps) {
+export default function AdminCompanyJobsModal({ company, onClose, onUpdate, initialView = 'active' }: AdminCompanyJobsModalProps) {
+    const [view, setView] = useState(initialView);
+    const [checkState, setCheckState] = useState<ListCheckState>();
+    const [checkError, setCheckError] = useState('');
+    const checkReadVersion = useRef(0);
+    const refreshCheckState = useCallback(async () => {
+        const version = ++checkReadVersion.current;
+        try {
+            const result = await listCheckRequest(undefined, {companyId: company.id});
+            if (version !== checkReadVersion.current) return;
+            setCheckState(result.states?.[company.id]);
+            setCheckError('');
+        } catch (error) {
+            if (version === checkReadVersion.current) setCheckError((error as Error).message);
+        }
+    }, [company.id]);
+    useEffect(() => { setCheckState(undefined); void refreshCheckState(); return () => { checkReadVersion.current++ } }, [refreshCheckState]);
+    const updateRef = useRef(onUpdate);
+    updateRef.current = onUpdate;
     const { token } = useAuth();
     const [jobs, setJobs] = useState<ProcessedJobData[]>([]);
     const [loading, setLoading] = useState(true);
@@ -92,7 +112,8 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             // Use companyId for exact filtering
             const companyFilter = company.id ? `companyId=${company.id}` : `company=${encodeURIComponent(company.name)}`;
             const searchParam = debouncedSearch ? `&search=${encodeURIComponent(debouncedSearch)}` : '';
-            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}&isAdmin=true${searchParam}`, {
+            const scope = view === 'all' ? '' : `&status=active&isApproved=${view === 'active'}`;
+            const res = await fetch(`/api/data/processed-jobs?${companyFilter}&limit=${PAGE_SIZE}&page=${page}&isAdmin=true${scope}${searchParam}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -101,16 +122,14 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             if (data.jobs) {
                 setJobs(data.jobs);
                 setTotal(data.total || 0);
-                // Do NOT update parent count here, as data.total includes unapproved jobs (isAdmin=true),
-                // while the parent list usually displays only approved/active jobs.
-                // Updating it would cause a mismatch (showing total instead of approved).
+                if (view === 'active' && !debouncedSearch) updateRef.current?.(data.total || 0);
             }
         } catch (error) {
             console.error('Failed to fetch jobs:', error);
         } finally {
             setLoading(false);
         }
-    }, [company.id, company.name, token, page, onUpdate, debouncedSearch]);
+    }, [company.id, company.name, token, page, view, debouncedSearch]);
 
     // Fetch jobs when page or debouncedSearch changes
     useEffect(() => {
@@ -181,6 +200,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
             
             if (res.ok) {
                 setJobs(prev => prev.filter(j => j.id !== jobId));
+                void refreshCheckState();
                 
                 // Optimistic update for local total count
                 const newTotal = Math.max(0, total - 1);
@@ -286,6 +306,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                 await fetchJobs();
             }
             
+            void refreshCheckState();
             if (shouldClose) {
                 setEditingJob(null);
             } else {
@@ -306,6 +327,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
     return (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-xl">
+                {checkError && <p role="alert" className="p-3 text-sm text-amber-800">检查提醒暂未读取：{checkError}</p>}
                 {/* Header */}
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-white rounded-t-2xl">
                     <div>
@@ -313,7 +335,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                             {company.logo && <img src={company.logo} className="w-6 h-6 object-contain rounded" alt="" />}
                             {company.name} - 职位管理
                         </h2>
-                        <p className="text-sm text-slate-500 mt-1">共 {total} 个职位</p>
+                        <p className="text-sm text-slate-500 mt-1">{view === 'active' ? '已审核在招' : view === 'pending' ? '已录入待审核' : '全部'} · 共 {total} 个职位</p>
                     </div>
                     <button onClick={onClose} className="text-slate-400 hover:text-slate-600">
                         <X className="w-6 h-6" />
@@ -321,6 +343,9 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                 </div>
 
                 {/* Toolbar */}
+                <nav aria-label="岗位范围" className="px-4 pt-3 flex gap-3 text-sm">
+                    {(['active','pending','all'] as const).map(key => <button key={key} aria-pressed={view===key} className={view===key?'font-semibold text-[#466f9d]':'text-gray-500'} onClick={()=>{setView(key);setPage(1)}}>{key==='active'?'已审核在招':key==='pending'?'已录入待审核':'全部岗位'}</button>)}
+                </nav>
                 <div className="p-4 border-b border-slate-100 flex gap-4 items-center bg-slate-50">
                     <div className="flex-1 relative">
                         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -377,7 +402,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                                     jobs.map(job => (
                                         <tr key={job.id} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
-                                                <div className="font-medium text-slate-900">{job.title}</div>
+                                                <div className="font-medium text-slate-900">{job.title}{checkState?.findings.some(f => f.kind === 'missing' && f.jobId === job.id) && <span className="ml-2 rounded bg-amber-50 px-2 py-1 text-xs text-amber-800" title="完整招聘列表中未找到此岗位，请人工确认；岗位状态未改变">疑似失效</span>}</div>
                                                 <div className="text-xs text-slate-500 mt-0.5">{job.jobType}</div>
                                                 <div className="text-[11px] text-slate-400 mt-1">
                                                     {job.referralContactMode === 'custom'
@@ -490,7 +515,7 @@ export default function AdminCompanyJobsModal({ company, onClose, onUpdate }: Ad
                     hasPrev={currentJobIndex > 0}
                     hasNext={currentJobIndex < jobs.length - 1}
                     availableReferralContacts={companyDetails?.referralContacts || []}
-                    availableCategories={availableCategories.length > 0 ? availableCategories : ['前端开发', '后端开发', '全栈开发', '移动开发', 'UI/UX设计', '产品经理', '数据分析', '运维/SRE', '市场营销', '人工智能', 'Web3/区块链']}
+                    availableCategories={availableCategories}
                 />
             )}
         </div>
