@@ -1,0 +1,235 @@
+{
+  "releasedAt": "2026-10-03T01:00:57.851Z",
+  "sourceCommit": "23370f258a01ede92c7bd2a75d3c50cce5c075d3",
+  "origin": "https://haigooremote.com",
+  "deployment": {
+    "id": "dpl_6NcMRN1jrnaZ69GCC4V6n52Mg5Mb",
+    "url": "https://haigoo-remote-ntzoitz5c-caitlinyct.vercel.app",
+    "target": "production"
+  },
+  "rollback": {
+    "id": "dpl_29NkHgCuza7brpNJa7xbjHgmBQVk",
+    "url": "https://haigoo-remote-a3zas7iii-caitlinyct.vercel.app"
+  },
+  "migration": {
+    "at": "2026-10-03T00:48:43.372Z",
+    "migration": "094_company_list_checks.sql",
+    "before": {
+      "jobs": 13731,
+      "jobs_hash": "47de90486ce42522dd543689d0fa8d90",
+      "companies": 366,
+      "companies_hash": "07ec3f4db5b7d6a8f20cdb4673b71cc8"
+    },
+    "after": {
+      "jobs": 13731,
+      "jobs_hash": "47de90486ce42522dd543689d0fa8d90",
+      "companies": 366,
+      "companies_hash": "07ec3f4db5b7d6a8f20cdb4673b71cc8"
+    },
+    "unchanged": true
+  },
+  "baseline": {
+    "at": "2026-10-03T00:58:05.644Z",
+    "origin": "https://haigooremote.com",
+    "checks": [
+      {
+        "route": "/",
+        "status": 200
+      },
+      {
+        "route": "/assets/index-CVo0lNeV.js",
+        "status": 200
+      },
+      {
+        "route": "/jobs",
+        "status": 200
+      },
+      {
+        "route": "/companies",
+        "status": 200
+      },
+      {
+        "route": "/admin/trusted-companies",
+        "status": 200
+      },
+      {
+        "route": "/api/data/processed-jobs?status=active&isApproved=true&limit=5&page=1",
+        "status": 200
+      },
+      {
+        "route": "/api/data/processed-jobs?action=featured_home",
+        "status": 200
+      },
+      {
+        "route": "/api/data?resource=companies&page=1&limit=5",
+        "status": 200
+      }
+    ],
+    "limitations": [
+      "Signed production gateway smoke unavailable from exported environment; unchanged gateway module checked against deployed base."
+    ],
+    "publicCounts": {
+      "jobs": 5,
+      "featured": 6,
+      "companies": 5
+    },
+    "fingerprint": {
+      "jobs": 13731,
+      "jobs_hash": "47de90486ce42522dd543689d0fa8d90",
+      "companies": 366,
+      "companies_hash": "07ec3f4db5b7d6a8f20cdb4673b71cc8"
+    }
+  },
+  "candidate": {
+    "at": "2026-10-03T00:58:14.816Z",
+    "origin": "https://haigoo-remote-ntzoitz5c-caitlinyct.vercel.app",
+    "checks": [
+      {
+        "route": "/",
+        "status": 200
+      },
+      {
+        "route": "/assets/index-DKTPueIg.js",
+        "status": 200
+      },
+      {
+        "route": "/jobs",
+        "status": 200
+      },
+      {
+        "route": "/companies",
+        "status": 200
+      },
+      {
+        "route": "/admin/trusted-companies",
+        "status": 200
+      },
+      {
+        "route": "/api/data/processed-jobs?status=active&isApproved=true&limit=5&page=1",
+        "status": 200
+      },
+      {
+        "route": "/api/data/processed-jobs?action=featured_home",
+        "status": 200
+      },
+      {
+        "route": "/api/data?resource=companies&page=1&limit=5",
+        "status": 200
+      },
+      {
+        "route": "/api/admin/job-sync?workflow=listing",
+        "status": 403
+      },
+      {
+        "route": "/api/cron/job-sync",
+        "status": 403
+      },
+      {
+        "route": "/api/cron/stream-verify-links",
+        "status": 403
+      },
+      {
+        "check": "production DB listing state and pending count reads",
+        "companies": 20,
+        "passed": true
+      }
+    ],
+    "limitations": [
+      "Deployed authenticated admin requests not verified: production JWT secret is non-exportable; authenticated browser unavailable. Production DB read path verified directly.",
+      "Signed production gateway smoke unavailable from exported environment; unchanged gateway module checked against deployed base."
+    ],
+    "publicCounts": {
+      "jobs": 5,
+      "featured": 6,
+      "companies": 5
+    },
+    "fingerprint": {
+      "jobs": 13731,
+      "jobs_hash": "47de90486ce42522dd543689d0fa8d90",
+      "companies": 366,
+      "companies_hash": "07ec3f4db5b7d6a8f20cdb4673b71cc8"
+    }
+  },
+  "production": {
+    "at": "2026-10-03T01:00:11.206Z",
+    "origin": "https://haigooremote.com",
+    "checks": [
+      {
+        "route": "/",
+        "status": 200
+      },
+      {
+        "route": "/assets/index-DKTPueIg.js",
+        "status": 200
+      },
+      {
+        "route": "/jobs",
+        "status": 200
+      },
+      {
+        "route": "/companies",
+        "status": 200
+      },
+      {
+        "route": "/admin/trusted-companies",
+        "status": 200
+      },
+      {
+        "route": "/api/data/processed-jobs?status=active&isApproved=true&limit=5&page=1",
+        "status": 200
+      },
+      {
+        "route": "/api/data/processed-jobs?action=featured_home",
+        "status": 200
+      },
+      {
+        "route": "/api/data?resource=companies&page=1&limit=5",
+        "status": 200
+      },
+      {
+        "route": "/api/admin/job-sync?workflow=listing",
+        "status": 403
+      },
+      {
+        "route": "/api/cron/job-sync",
+        "status": 403
+      },
+      {
+        "route": "/api/cron/stream-verify-links",
+        "status": 403
+      },
+      {
+        "check": "production DB listing state and pending count reads",
+        "companies": 20,
+        "passed": true
+      }
+    ],
+    "limitations": [
+      "Deployed authenticated admin requests not verified: production JWT secret is non-exportable; authenticated browser unavailable. Production DB read path verified directly.",
+      "Signed production gateway smoke unavailable from exported environment; unchanged gateway module checked against deployed base."
+    ],
+    "publicCounts": {
+      "jobs": 5,
+      "featured": 6,
+      "companies": 5
+    },
+    "fingerprint": {
+      "jobs": 13731,
+      "jobs_hash": "47de90486ce42522dd543689d0fa8d90",
+      "companies": 366,
+      "companies_hash": "07ec3f4db5b7d6a8f20cdb4673b71cc8"
+    }
+  },
+  "removedSchedule": "/api/cron/stream-verify-links",
+  "addedSchedules": [],
+  "businessDataUnchanged": true,
+  "liveCrawlRun": false,
+  "businessWrites": false,
+  "gitMainUpdated": false,
+  "limitations": [
+    "Deployed authenticated admin requests not verified: production JWT secret is non-exportable; authenticated browser unavailable. Production DB read path verified directly.",
+    "Signed production gateway smoke unavailable from exported environment; unchanged gateway module checked against deployed base.",
+    "Existing CloudBase service credential refresh failed; signed gateway smoke could not be completed. Gateway and authentication source files are unchanged from the previous production version."
+  ],
+  "priorValidation": "Build, regression tests, browser category interactions and authenticated admin smoke passed in preview before production release."
+}
