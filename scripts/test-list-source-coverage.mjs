@@ -1,16 +1,23 @@
 import assert from 'node:assert/strict'
 import {scanListing} from '../lib/services/job-sync/list-scanner.js'
 import {compareListing,listingEligibility,listingIdentity} from '../lib/services/job-sync/list-policy.js'
-import {SourceError} from '../lib/services/job-sync/http.js'
+import {detectSource} from '../lib/services/job-sync/adapters.js'
+import {SourceError,isPublicAddress} from '../lib/services/job-sync/http.js'
 for(const location of ['Remote SG','Remote - Germany','Virtual, IND','Irvine, CA','Remote USA','Russia; Perm'])assert.equal(listingEligibility({location}), 'excluded',location)
 for(const location of ['Remote China','Remote - APAC','Remote Beijing','Remote CN'])assert.equal(listingEligibility({location}), 'eligible',location)
 for(const location of ['Remote','USA or Remote','Other locations','Beijing'])assert.equal(listingEligibility({location}), 'unknown',location)
+assert.equal(listingEligibility({location:'Remote; United States'}),'excluded')
+assert.equal(listingEligibility({location:'Remote; CN'}),'eligible')
 assert.equal(listingEligibility({location:'Remote',title:'Motion Designer (EU)'}),'excluded')
 assert.equal(listingEligibility({location:'Remote APAC',title:'Designer (EU)'}),'eligible','Explicit broad location is not narrowed by title')
 assert.equal(listingEligibility({location:'Remote Shanghai',is_remote:false}),'excluded')
 const id='12345678-1234-1234-1234-123456789012',leverUrl='https://jobs.lever.co/demo/'+id
 const lever=await scanListing({url:'https://jobs.lever.co/demo'},{fetcher:async u=>({url:u,status:200,text:JSON.stringify([{id,text:'Engineer',hostedUrl:leverUrl,country:'CN',categories:{location:'Beijing',allLocations:['Beijing']},workplaceType:'remote'},{id:id.replace(/2$/,'3'),text:'Engineer',hostedUrl:leverUrl.replace(/2$/,'3'),country:'CA',categories:{location:'Canada',allLocations:['Canada','Shanghai']},workplaceType:'remote'}])})})
 assert.equal(lever.jobs.length,2);assert(lever.jobs.every(j=>listingEligibility(j)==='eligible'));assert.equal(lever.jobs[0].description,undefined)
+const ashby=await scanListing({url:'https://jobs.ashbyhq.com/demo/'},{fetcher:async u=>({url:u,status:200,text:JSON.stringify({jobs:[{id:'ashby-1',title:'US remote role',jobUrl:'https://jobs.ashbyhq.com/demo/ashby-1',location:'Remote',address:{postalAddress:{addressCountry:'US'}},isListed:true,isRemote:true}]})})})
+assert.equal(ashby.jobs[0].location,'Remote; United States');assert.equal(listingEligibility(ashby.jobs[0]),'excluded')
+const smart=await scanListing({url:'https://jobs.smartrecruiters.com/demo/'},{fetcher:async u=>({url:u,status:200,text:JSON.stringify({content:[{id:'smart-1',name:'Shanghai engineer',location:{city:'Shanghai',country:'CN',remote:true}}],totalFound:1})})})
+assert.equal(smart.jobs[0].location,'Shanghai, China');assert.equal(listingEligibility(smart.jobs[0]),'eligible')
 assert.equal(listingIdentity('https://www.ycombinator.com/companies/demo/jobs/SeUD1cG-old-title'),listingIdentity('https://www.ycombinator.com/companies/demo/jobs/SeUD1cG-new-title'),'YC job title slugs do not change identity')
 const ycUrl='https://www.ycombinator.com/companies/demo/jobs/'
 const ycJob={id:1,title:'Engineer',url:'/companies/demo/jobs/AbC1234-engineer',companyUrl:'/companies/demo',location:'Remote APAC',isIncomplete:false}
@@ -35,4 +42,12 @@ let requests=0
 const retried=await scanListing({url:'https://jobs.lever.co/demo'},{fetcher:async u=>{if(++requests===1)throw new SourceError('来源暂时不可用（HTTP 504）');return {url:u,status:200,text:'[]'}}})
 assert.equal(retried.complete,true);assert.equal(requests,2)
 requests=0;await scanListing({url:'https://jobs.lever.co/demo'},{fetcher:async()=>{requests++;throw new SourceError('访问受限（HTTP 403）','blocked')}});assert.equal(requests,1)
-console.log('PASS: country/multi-location metadata, list-only YC/Hackmamba, employer/count boundaries, stale JSON-LD, label separation, bounded transient retry')
+assert.equal(isPublicAddress('192.0.78.24'),true,'Public 192.0.78 address must not be blocked')
+assert.equal(isPublicAddress('192.0.2.24'),false,'TEST-NET-1 remains blocked')
+assert.deepEqual(detectSource('https://wd3.myworkdaysite.com/en-US/recruiting/mdlz/External').config,{tenant:'mdlz',site:'External',locale:'en-US'})
+const teamtailor=await scanListing({url:'https://careers.example.com/jobs/'},{fetcher:async u=>({url:u,status:200,text:u.includes('show_more')?'<a href="/jobs/c">C</a>':'<h2>3 jobs</h2><a href="/jobs/a">A</a><a href="/jobs/b">B</a><a href="/jobs/show_more?page=2">Show 1 more</a>'})})
+assert.equal(teamtailor.complete,true,'Teamtailor show-more pages should be counted as one complete list')
+assert.deepEqual(teamtailor.jobs.map(j=>j.title),['A','B','C'])
+const breezy=await html('https://demo.breezy.hr/','<a href="/p/job-1">Remote China Engineer</a>');assert.equal(breezy.complete,true);assert.equal(breezy.jobs.length,1)
+const applyToJob=await html('https://demo.applytojob.com/apply/','<div><a href="/apply/job-1/Remote-APAC-Engineer">Remote APAC Engineer</a><span>Remote APAC</span></div>');assert.equal(applyToJob.complete,true);assert.equal(listingEligibility(applyToJob.jobs[0]),'eligible')
+console.log('PASS: country/multi-location metadata, list-only YC/Hackmamba, employer/count boundaries, stale JSON-LD, label separation, bounded transient retry, public IP guard, show-more, Breezy and ApplyToJob lists')
