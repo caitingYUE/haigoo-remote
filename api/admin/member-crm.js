@@ -323,6 +323,7 @@ async function listMembers(req) {
               GROUP BY record.service_type
             ) latest) AS flow_snapshot
       ) service ON TRUE
+      WHERE COALESCE(u.auth_provider, '') <> 'mini_smoke'
     )`
 
   const baseParams = [allowedTypes, APPLICATION_TYPES, SERVICE_FLOW_TYPES]

@@ -1,9 +1,9 @@
-import fs from 'node:fs'
 import crypto from 'node:crypto'
-import dotenv from 'dotenv'
 import {neon} from '@neondatabase/serverless'
+import { loadIsolatedPreviewEnvironment } from './preview-database-safety.mjs'
 const file=process.argv.find(a=>a.startsWith('--env-file='))?.slice(11)
-const env=file?dotenv.parse(fs.readFileSync(file)):process.env
+const productionEnvFile=process.argv.find(a=>a.startsWith('--production-env-file='))?.slice(22)
+const env=loadIsolatedPreviewEnvironment({envFile:file,productionEnvFile})
 if(env.VERCEL_ENV!=='preview'||!env.DATABASE_URL)throw Error('Preview only')
 const sql=neon(env.DATABASE_URL)
 const id=crypto.randomUUID()

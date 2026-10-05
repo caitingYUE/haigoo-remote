@@ -1,16 +1,20 @@
-import 'dotenv/config'
 import { neon } from '@neondatabase/serverless'
 import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
+import { loadIsolatedPreviewEnvironment } from './preview-database-safety.mjs'
 
-if (process.env.VERCEL_ENV !== 'preview' || process.env.MINI_SMOKE_ALLOW_SETUP !== 'true') {
+const envFile = process.argv.find(argument => argument.startsWith('--env-file='))?.slice(11)
+const productionEnvFile = process.argv.find(argument => argument.startsWith('--production-env-file='))?.slice(22)
+const environment = loadIsolatedPreviewEnvironment({ envFile, productionEnvFile })
+if (environment.VERCEL_ENV !== 'preview' || process.env.MINI_SMOKE_ALLOW_SETUP !== 'true') {
   throw new Error('Smoke identities can only be prepared in an explicitly authorized Preview environment')
 }
 
-const databaseUrl = process.env.NEON_DATABASE_DATABASE_URL || process.env.DATABASE_URL
-const appId = String(process.env.WECHAT_MINI_APP_ID || '').trim()
+const databaseUrl = environment.DATABASE_URL
+const appId = String(environment.WECHAT_MINI_APP_ID || '').trim()
 if (!databaseUrl || !appId) throw new Error('Preview database or Mini Program App ID is unavailable')
 
-const sql = neon(databaseUrl)
+const dryRun = process.argv.includes('--dry-run')
+const sql = dryRun ? null : neon(databaseUrl)
 
 async function upsertUser(key, fixture) {
   const isMember = key === 'member'
@@ -54,19 +58,22 @@ async function upsertUser(key, fixture) {
   )
 }
 
-for (const [key, fixture] of Object.entries(MINI_SMOKE_FIXTURES)) {
-  await upsertUser(key, fixture)
-}
+if (!dryRun) {
+  for (const [key, fixture] of Object.entries(MINI_SMOKE_FIXTURES)) {
+    await upsertUser(key, fixture)
+  }
 
-// The unused identity is reset on every release check. These rows belong only
-// to the dedicated Preview smoke fixture and never contain customer data.
-const unusedUserId = MINI_SMOKE_FIXTURES.unused.userId
-await sql.query('DELETE FROM career_watch_feed_snapshots WHERE user_id = $1', [unusedUserId])
-await sql.query('DELETE FROM career_watch_profiles WHERE user_id = $1', [unusedUserId])
-await sql.query('DELETE FROM mini_career_entitlements WHERE user_id = $1', [unusedUserId])
+  // Reset only the unused fixture in the verified, isolated Preview database.
+  const unusedUserId = MINI_SMOKE_FIXTURES.unused.userId
+  await sql.query('DELETE FROM career_watch_feed_snapshots WHERE user_id = $1', [unusedUserId])
+  await sql.query('DELETE FROM career_watch_profiles WHERE user_id = $1', [unusedUserId])
+  await sql.query('DELETE FROM mini_career_entitlements WHERE user_id = $1', [unusedUserId])
+}
 
 console.log(JSON.stringify({
   environment: 'preview',
-  prepared: Object.keys(MINI_SMOKE_FIXTURES),
+  databaseIsolationVerified: true,
+  dryRun,
+  prepared: dryRun ? [] : Object.keys(MINI_SMOKE_FIXTURES),
   customerRecordsChanged: false
 }, null, 2))

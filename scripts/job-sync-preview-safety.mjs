@@ -1,23 +1,11 @@
 import assert from 'node:assert/strict'
+import { assertPreviewDatabaseIsolation } from './preview-database-safety.mjs'
 
-export const databaseKeys = ['DATABASE_URL', 'NEON_DATABASE_URL', 'NEON_DATABASE_DATABASE_URL', 'HAIGOO_DATABASE_URL', 'haigoo_DATABASE_URL', 'pre_haigoo_DATABASE_URL', 'PRE_HAIGOO_DATABASE_URL']
-const endpoint = value => {
-  const url = new URL(value)
-  assert(['postgres:', 'postgresql:'].includes(url.protocol), 'Expected a PostgreSQL connection')
-  return url.hostname.toLowerCase().replace(/-pooler(?=\.)/, '')
-}
+export { databaseKeys } from './preview-database-safety.mjs'
 
 export function assertPreviewIsolation(preview, production) {
-  assert.equal(preview.VERCEL_ENV, 'preview', 'Preview environment is required')
-  assert.equal(production.VERCEL_ENV, 'production', 'Production comparison environment is required')
-  assert(preview.DATABASE_URL && preview.JWT_SECRET, 'Preview database and JWT secret are required')
-  const productionEndpoints = databaseKeys.filter(k => production[k]).map(k => endpoint(production[k]))
-  assert(productionEndpoints.length, 'Production comparison database is required')
-  const previewEndpoint = endpoint(preview.DATABASE_URL)
-  for (const key of databaseKeys.filter(k => preview[k])) {
-    assert.equal(endpoint(preview[key]), previewEndpoint, `Conflicting preview connection: ${key}`)
-    assert(!productionEndpoints.includes(endpoint(preview[key])), 'Preview must use a separate database endpoint (including pooled aliases)')
-  }
+  assertPreviewDatabaseIsolation(preview, production)
+  assert(preview.JWT_SECRET, 'Preview JWT secret is required')
   const productionCaches = Object.entries(production).filter(([k, v]) => v && /(?:REDIS_URL|KV_URL|KV_REST_API_URL)$/.test(k)).map(([, v]) => new URL(v).hostname)
   for (const [key, value] of Object.entries(preview)) {
     if (value && /(?:REDIS_URL|KV_URL|KV_REST_API_URL)$/.test(key)) {

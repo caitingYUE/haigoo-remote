@@ -1,9 +1,8 @@
 import crypto from 'node:crypto'
 import { execFileSync } from 'node:child_process'
-import fs from 'node:fs'
 import path from 'node:path'
-import dotenv from 'dotenv'
 import { MINI_SMOKE_DIRECTION, MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
+import { databaseKeys, loadIsolatedPreviewEnvironment } from './preview-database-safety.mjs'
 
 const envFile = process.argv.find((argument) => argument.startsWith('--env-file='))?.slice('--env-file='.length) || ''
 const originArgument = process.argv.find((argument) => argument.startsWith('--origin='))?.slice('--origin='.length) || ''
@@ -13,7 +12,8 @@ if (!envFile || (!originArgument && !useLocalHandler)) {
   throw new Error('Usage: node scripts/verify-mini-experience-smoke.mjs --env-file=/path/to/preview.env (--origin=https://preview.example|--local-handler)')
 }
 
-const environment = dotenv.parse(fs.readFileSync(path.resolve(envFile)))
+const productionEnvFile = process.argv.find(argument => argument.startsWith('--production-env-file='))?.slice(22)
+const environment = loadIsolatedPreviewEnvironment({ envFile: path.resolve(envFile), productionEnvFile })
 if (environment.VERCEL_ENV !== 'preview') throw new Error('Experience smoke tests require Preview environment configuration')
 const origin = useLocalHandler ? 'local-handler' : originArgument.replace(/\/+$/, '')
 const gatewaySecret = String(environment.MINI_GATEWAY_SHARED_SECRET || '')
@@ -22,6 +22,7 @@ if (!gatewaySecret) throw new Error('Preview gateway signature configuration is 
 let localHandler = null
 if (useLocalHandler) {
   Object.assign(process.env, environment)
+  for (const key of databaseKeys) process.env[key] = environment.DATABASE_URL
   localHandler = (await import('../lib/api-handlers/mini-gateway.js')).default
 }
 

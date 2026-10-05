@@ -4,8 +4,8 @@ import os from 'node:os'
 import path from 'node:path'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
-import dotenv from 'dotenv'
 import { MINI_SMOKE_FIXTURES } from './mini-smoke-fixtures.mjs'
+import { loadIsolatedPreviewEnvironment } from './preview-database-safety.mjs'
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const stableOrigin = 'https://mini-preview.haigooremote.com'
@@ -25,7 +25,8 @@ const contractActions = ['sync', 'career_watch_options', 'companies', 'membershi
 if (!envFile || !fs.existsSync(path.resolve(envFile))) {
   throw new Error('Preview deployment requires --env-file=/path/to/preview.env for authenticated release smoke tests')
 }
-const previewEnvironment = dotenv.parse(fs.readFileSync(path.resolve(envFile)))
+const productionEnvFile = process.argv.find(argument => argument.startsWith('--production-env-file='))?.slice(22)
+const previewEnvironment = loadIsolatedPreviewEnvironment({ envFile: path.resolve(envFile), productionEnvFile })
 if (previewEnvironment.VERCEL_ENV !== 'preview' || !previewEnvironment.DATABASE_URL) {
   throw new Error('Preview deployment contract must contain VERCEL_ENV=preview and DATABASE_URL')
 }
@@ -133,6 +134,7 @@ function verifySmoke(origin) {
   run('node', [
     'scripts/verify-mini-experience-smoke.mjs',
     `--env-file=${effectiveEnvFile}`,
+    ...(productionEnvFile ? [`--production-env-file=${productionEnvFile}`] : []),
     `--origin=${origin}`,
     '--vercel-curl'
   ], { stdio: 'inherit' })
@@ -224,11 +226,14 @@ function runPreflight() {
   }
   run('npm', ['--prefix', 'miniprogram', 'run', 'type-check'], { stdio: 'inherit' })
   run('npm', ['--prefix', 'miniprogram', 'run', 'build:weapp:experience'], { stdio: 'inherit' })
-  run('node', ['-r', 'dotenv/config', 'scripts/setup-mini-smoke-identities.mjs'], {
+  run('node', [
+    'scripts/setup-mini-smoke-identities.mjs',
+    `--env-file=${effectiveEnvFile}`,
+    ...(productionEnvFile ? [`--production-env-file=${productionEnvFile}`] : [])
+  ], {
     stdio: 'inherit',
     env: {
       ...process.env,
-      DOTENV_CONFIG_PATH: effectiveEnvFile,
       MINI_SMOKE_ALLOW_SETUP: 'true'
     }
   })

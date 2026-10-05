@@ -753,11 +753,12 @@ const userHelper = {
                free_company_info_count, free_email_apply_count, free_referral_count,
                free_unlocked_companies, free_website_apply_count, free_website_apply_job_ids,
                free_website_apply_limit, free_referral_limit
-        FROM users 
+        FROM users
+        WHERE COALESCE(auth_provider, '') <> 'mini_smoke'
         ORDER BY created_at DESC
       `)
 
-            if (!result?.[0]) return null
+            if (!result) return null
 
             // 为每个用户获取收藏信息
             const usersWithFavorites = await Promise.all(
@@ -926,6 +927,7 @@ const userHelper = {
                            TRUE AS has_website_account,
                            (mini.user_id IS NOT NULL) AS has_mini_account
                       FROM users u LEFT JOIN mini_identity_summary mini ON mini.user_id = u.user_id
+                     WHERE COALESCE(u.auth_provider, '') <> 'mini_smoke'
                 )`
 
             const listQuery = `
