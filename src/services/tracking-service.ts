@@ -74,7 +74,8 @@ function derivePageKey(pathname = '/') {
   if (pathname.startsWith('/profile')) return 'profile';
   if (pathname.startsWith('/membership')) return 'membership';
   if (pathname.startsWith('/careerlearning') || pathname.startsWith('/corporate-english')) return 'corporate_english';
-  if (pathname.startsWith('/companies/') || pathname.startsWith('/c/')) return 'company_detail';
+  if (pathname.endsWith('/trusted-companies/top-100')) return 'company_top100';
+  if (pathname.startsWith('/company/') || pathname.startsWith('/companies/') || pathname.startsWith('/c/')) return 'company_detail';
   if (pathname.startsWith('/trusted-companies')) return 'trusted_companies';
   if (pathname.startsWith('/login')) return 'login';
   if (pathname.startsWith('/register')) return 'register';

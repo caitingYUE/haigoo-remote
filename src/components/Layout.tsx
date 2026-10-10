@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import Header from './Header'
 import Footer from './Footer'
 import { useAuth } from '../contexts/AuthContext'
+import { stripLanguagePrefix } from '../utils/language-path'
 import { useLanguage } from '../contexts/LanguageContext'
 
 const LazyHappinessCard = lazy(() => import('./Christmas/HappinessCard').then((module) => ({ default: module.HappinessCard })))
@@ -32,6 +33,7 @@ export default function Layout({ children }: LayoutProps) {
   const isJobsPage = pathname === '/jobs' || pathname.startsWith('/jobs/')
   const isHome = pathname === '/'
   const isMembership = pathname === '/membership'
+  const isCompanyTop100 = stripLanguagePrefix(pathname) === '/trusted-companies/top-100'
   const isCompanies = pathname === '/trusted-companies' || pathname.startsWith('/trusted-companies/') || pathname.startsWith('/companies/') || pathname.startsWith('/c/')
   const isCorporateEnglish = pathname.startsWith('/careerlearning') || pathname.startsWith('/corporate-english')
   const isAbout = pathname === '/about'
@@ -54,7 +56,9 @@ export default function Layout({ children }: LayoutProps) {
   }, [])
 
   useEffect(() => {
-    const pageName = isJobsPage
+    const pageName = isCompanyTop100
+      ? text('Top 100 · 大陆远程企业关注榜', 'Top 100 · Remote companies for mainland China')
+      : isJobsPage
       ? text('远程工作', 'Remote Jobs')
       : isCompanies
         ? text('远程企业', 'Remote Companies')
@@ -62,7 +66,7 @@ export default function Layout({ children }: LayoutProps) {
           ? text('职业成长', 'Career Growth')
           : text('全球远程工作平台', 'Global Remote Work')
     document.title = `${pageName} | Haigoo Remote`
-  }, [isEnglish, isJobsPage, isCompanies, isCorporateEnglish, text])
+  }, [isEnglish, isJobsPage, isCompanies, isCompanyTop100, isCorporateEnglish, text])
 
   useEffect(() => {
     // Listen for custom event from Header to open Happiness Card

@@ -30,6 +30,7 @@ const AdminTagManagementPage = lazy(() => import('./pages/AdminTagManagementPage
 const AdminCompanyManagementPage = lazy(() => import('./pages/AdminCompanyManagementPage'))
 const AdminTrustedCompaniesPage = lazy(() => import('./pages/AdminTrustedCompaniesPage'))
 const AdminApplicationsPage = lazy(() => import('./pages/AdminApplicationsPage'))
+const CompanyTop100Page = lazy(() => import('./pages/CompanyTop100Page'))
 const CompanyProfilePage = lazy(() => import('./pages/CompanyProfilePage'))
 const TrustedCompaniesPage = lazy(() => import('./pages/TrustedCompaniesPage'))
 const CompanyDetailPage = lazy(() => import('./pages/CompanyDetailPage'))
@@ -211,6 +212,7 @@ function App() {
                             <Route path="/job/:id" element={<JobDetailPage />} />
                             <Route path="/companies" element={<TrustedCompaniesPage />} />
                             <Route path="/trusted-companies" element={<TrustedCompaniesPage />} />
+                            <Route path="/trusted-companies/top-100" element={<CompanyTop100Page />} />
                             <Route path="/careerlearning" element={<CorporateEnglishPage />} />
                             <Route path="/careerlearning/watch/:source/:id" element={<CorporateEnglishWatchPage />} />
                             <Route path="/careerlearning/notes/:id" element={<CorporateEnglishVideoNotesPage />} />

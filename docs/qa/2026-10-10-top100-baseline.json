@@ -1,0 +1,17 @@
+{
+  "baselineDeployment": "dpl_D4E8uMc4S8PTWDd64qXM3mzKWHQh",
+  "baselineCommit": "009c255b07fcd755a2bd89af183a31e00503c1dd",
+  "sourceFiles": 707,
+  "changedExisting": [
+    ".vercelignore",
+    "index.html",
+    "lib/api-handlers/trusted-companies.js",
+    "src/App.tsx",
+    "src/components/Header.tsx",
+    "src/components/Layout.tsx",
+    "src/pages/CompanyProfilePage.tsx",
+    "src/pages/TrustedCompaniesPage.tsx",
+    "src/services/tracking-service.ts"
+  ],
+  "missing": []
+}

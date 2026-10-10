@@ -6,6 +6,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useNotificationHelpers } from './NotificationSystem'
 import { useLanguage } from '../contexts/LanguageContext'
 import LanguageToggle from './LanguageToggle'
+import RemoteCompaniesNav from './RemoteCompaniesNav'
 import { COMPLIANCE_FEATURES } from '../config/compliance'
 
 interface HeaderProps {
@@ -303,13 +304,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               {text('远程工作', 'Remote jobs')}
             </Link>
 
-            <Link
-              to={path('/trusted-companies')}
-              className="haigoo-site-header__nav-link whitespace-nowrap"
-              aria-current={location.pathname.startsWith('/trusted-companies') ? 'page' : undefined}
-            >
-              {text('远程企业', 'Remote companies')}
-            </Link>
+            <RemoteCompaniesNav />
 
             <Link
               to={path('/careerlearning')}
@@ -608,16 +603,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
               >
                 {text('远程工作', 'Remote jobs')}
               </Link>
-              <Link
-                to={path('/trusted-companies')}
-                className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/trusted-companies')
-                  ? 'bg-[#eff5fb] text-[#345d88]'
-                  : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {text('远程企业', 'Remote companies')}
-              </Link>
+              <RemoteCompaniesNav mobile onNavigate={() => setIsMenuOpen(false)} />
               <Link
                 to={path('/careerlearning')}
                 className={`block px-3 py-2 text-base font-medium rounded-lg transition-colors ${location.pathname.startsWith('/careerlearning') || location.pathname.startsWith('/corporate-english')

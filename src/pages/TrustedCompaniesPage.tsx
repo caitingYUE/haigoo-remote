@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { ArrowRight, Briefcase, Building, Search } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
@@ -25,7 +25,7 @@ const FALLBACK_JOB_CATEGORIES = [
 export default function TrustedCompaniesPage() {
     const navigate = useNavigate()
     const { membershipCapabilities } = useAuth()
-    const { isEnglish, text } = useLanguage()
+    const { isEnglish, text, path } = useLanguage()
     // The directory is a Club Partner benefit. A verified free account should
     // retain the same 12-company preview as a guest instead of bypassing it.
     const canAccessTrustedCompaniesPage = membershipCapabilities.canAccessTrustedCompaniesPage
@@ -196,6 +196,7 @@ export default function TrustedCompaniesPage() {
                     <div className="hg-companies-hero__deck">
                         <p>{text('了解它们做什么、如何工作，以及在哪里查看最新机会。', 'Learn what they do, how they work, and where to find their latest openings.')}</p>
                         <p>{text('企业资料与岗位线索整理自官网、官方 Careers 页面及公开渠道。公开信息可能随时变化，请以企业官方页面为准。', 'Profiles and role signals come from official websites, Careers pages, and public sources. Always confirm the latest information on the company site.')}</p>
+                        <Link to={path('/trusted-companies/top-100')} className="hg-company-top100-entry">Top 100 · {text('大陆远程企业关注榜', 'Remote companies for mainland China')}<ArrowRight size={16} aria-hidden="true" /></Link>
                     </div>
                 </div>
 

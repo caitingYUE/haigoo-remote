@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { useParams } from 'react-router-dom'
-import { ArrowLeft, Briefcase, Clock3 } from 'lucide-react'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { ArrowLeft, Briefcase, Clock3, ExternalLink } from 'lucide-react'
 import { trustedCompaniesService, TrustedCompany } from '../services/trusted-companies-service'
 import { processedJobsService } from '../services/processed-jobs-service'
 import { Job } from '../types'
@@ -10,6 +10,8 @@ import JobDetailModal from '../components/JobDetailModal'
 import { getCompanyLogoSources } from '../utils/company-logo'
 import { useReturnNavigation } from '../hooks/useReturnNavigation'
 import { useLanguage } from '../contexts/LanguageContext'
+import { trackingService } from '../services/tracking-service'
+import '../styles/company-top100.css'
 
 const formatProfileDate = (value?: string) => {
     if (!value) return ''
@@ -23,10 +25,14 @@ const formatProfileDate = (value?: string) => {
 }
 
 export default function CompanyProfilePage() {
-    const handleBack = useReturnNavigation('/jobs')
+    const { text, path } = useLanguage()
+    const handleBack = useReturnNavigation(path('/trusted-companies'))
+    const location = useLocation()
+    const fromTop100 = new URLSearchParams(location.search).get('source') === 'company_top100'
+    const backToRanking = new URLSearchParams(location.search).get('returnTo') || path('/trusted-companies/top-100')
+    const safeRankingReturn = backToRanking.startsWith('/') && !backToRanking.startsWith('//') ? backToRanking : path('/trusted-companies/top-100')
     const { id } = useParams<{ id: string }>()
     const { showError } = useNotificationHelpers()
-    const { text } = useLanguage()
     const textRef = useRef(text)
 
     useEffect(() => {
@@ -37,39 +43,35 @@ export default function CompanyProfilePage() {
     const [loading, setLoading] = useState(true)
     const [selectedJob, setSelectedJob] = useState<Job | null>(null)
     const [searchTerm, setSearchTerm] = useState('')
+    const [jobsLoading, setJobsLoading] = useState(true)
+    const [jobsError, setJobsError] = useState(false)
+    const [jobsRefresh, setJobsRefresh] = useState(0)
+    const companyGeneration = useRef(0)
+    const jobsQueryKey = useRef('')
+    const [jobPage, setJobPage] = useState(1)
+    const [jobTotal, setJobTotal] = useState(0)
+    const [hasMoreJobs, setHasMoreJobs] = useState(false)
+    const [loadingMore, setLoadingMore] = useState(false)
+    const hashScrolled = useRef('')
     const [typeFilter, setTypeFilter] = useState<'all' | 'full-time' | 'part-time' | 'contract' | 'internship'>('all')
     const [remoteFilter, setRemoteFilter] = useState<'all' | 'remote' | 'onsite'>('all')
 
     const loadData = useCallback(async (companyId: string) => {
+        const generation = ++companyGeneration.current
         try {
             setLoading(true)
             // 1. Fetch Company Details
             const companyData = await trustedCompaniesService.getCompanyById(companyId)
-            setCompany(companyData)
+            if (generation === companyGeneration.current) setCompany(companyData)
 
-            // 2. Fetch Related Jobs (Filter by company name)
-            // Note: This is a simple client-side filter. ideally backend should support filtering by company ID if linked.
-            // For now we match by name.
-            // const allJobs = await processedJobsService.getAllProcessedJobs(1000) // Fetch enough jobs
-            // Use specific company filter query to backend
-            const jobsResponse = await processedJobsService.getProcessedJobs(1, 100, { company: companyData?.name });
-            const allJobs = jobsResponse.jobs;
-            
-            const relatedJobs = allJobs.filter(job => {
-                // Check by ID first (more accurate for trusted companies)
-                if (job.companyId && job.companyId === companyId) return true
-
-                // Fallback to name matching
-                return job.company && companyData && companyData.name &&
-                    job.company.toLowerCase().includes(companyData.name.toLowerCase())
-            })
-            setJobs(relatedJobs)
 
         } catch (error) {
+            if (generation !== companyGeneration.current) return
+            setCompany(null)
             console.error('Failed to load company data:', error)
             showError(textRef.current('加载失败', 'Load failed'), textRef.current('无法获取企业信息', 'Could not load company information.'))
         } finally {
-            setLoading(false)
+            if (generation === companyGeneration.current) setLoading(false)
         }
     }, [showError])
 
@@ -79,20 +81,57 @@ export default function CompanyProfilePage() {
         }
     }, [id, loadData])
 
-    const filteredJobs = useMemo(() => {
-        const keyword = searchTerm.trim().toLowerCase()
-        return jobs.filter(job => {
-            const matchKeyword = keyword.length === 0 || (
-                (job.title || '').toLowerCase().includes(keyword) ||
-                (job.location || '').toLowerCase().includes(keyword) ||
-                (job.type || '').toLowerCase().includes(keyword)
-            )
-            const matchType = typeFilter === 'all' || ((job.type || '').toLowerCase() === typeFilter)
-            const isRemote = job.isRemote === true || /remote/i.test(job.location || '')
-            const matchRemote = remoteFilter === 'all' || (remoteFilter === 'remote' ? isRemote : !isRemote)
-            return matchKeyword && matchType && matchRemote
-        })
-    }, [jobs, searchTerm, typeFilter, remoteFilter])
+    jobsQueryKey.current = `${id}:${searchTerm}:${typeFilter}:${remoteFilter}:${jobsRefresh}`
+    useEffect(() => {
+        if (!id) return
+        let active = true
+        setJobsLoading(true); setJobsError(false); setSelectedJob(null)
+        const timer = setTimeout(() => {
+            processedJobsService.getProcessedJobs(1, 24, {
+                companyId: id, status: 'active', isApproved: true,
+                search: searchTerm || undefined,
+                type: typeFilter === 'all' ? undefined : typeFilter,
+                isRemote: remoteFilter === 'all' ? undefined : remoteFilter === 'remote'
+            }).then(result => {
+                if (!active) return
+                setJobs(result.jobs); setJobTotal(result.total); setHasMoreJobs(result.hasMore); setJobPage(1)
+            }).catch(() => { if (active) { setJobs([]); setJobsError(true) } })
+                .finally(() => { if (active) setJobsLoading(false) })
+        }, 220)
+        return () => { active = false; clearTimeout(timer) }
+    }, [id, searchTerm, typeFilter, remoteFilter, jobsRefresh])
+
+    useEffect(() => {
+        const key = `${id}:${location.hash}`
+        if (loading || jobsLoading || location.hash !== '#company-profile-open-roles' || hashScrolled.current === key) return
+        hashScrolled.current = key
+        requestAnimationFrame(() => document.getElementById('company-profile-open-roles')?.scrollIntoView({ block: 'start' }))
+    }, [id, loading, jobsLoading, location.hash])
+
+    const loadMoreJobs = async () => {
+        if (!id || loadingMore) return
+        setLoadingMore(true)
+        const requestKey = jobsQueryKey.current
+        try {
+            const result = await processedJobsService.getProcessedJobs(jobPage + 1, 24, {
+                companyId: id, status: 'active', isApproved: true,
+                search: searchTerm || undefined,
+                type: typeFilter === 'all' ? undefined : typeFilter,
+                isRemote: remoteFilter === 'all' ? undefined : remoteFilter === 'remote'
+            })
+            if (requestKey !== jobsQueryKey.current) return
+            setJobs(previous => [...new Map([...previous, ...result.jobs].map(job => [job.id, job])).values()])
+            setHasMoreJobs(result.hasMore); setJobPage(result.page); setJobTotal(result.total)
+        } catch { showError(text('岗位载入失败', 'Could not load more roles'), text('请重试或查看官方招聘页。', 'Retry or check the official careers page.')) }
+        finally { setLoadingMore(false) }
+    }
+    const filteredJobs = jobs
+    const officialCareers = useMemo(() => {
+        for (const value of [company?.careersPage, company?.website]) {
+            try { const url = new URL(value || ''); if (['https:','http:'].includes(url.protocol)) return { url: url.href, careers: value === company?.careersPage } } catch { /* Invalid URLs are not application links. */ }
+        }
+        return null
+    }, [company?.careersPage, company?.website])
 
     const currentJobIndex = selectedJob ? filteredJobs.findIndex(j => j.id === selectedJob.id) : -1
     const logoSources = useMemo(() => getCompanyLogoSources({
@@ -130,7 +169,7 @@ export default function CompanyProfilePage() {
         return (
             <div className="hg-company-detail-page flex min-h-screen flex-col items-center justify-center p-4 text-center">
                 <h1 className="font-[var(--hg-font-editorial)] text-3xl font-semibold text-[var(--hg-text-primary)]">{text('未找到该企业', 'Company not found')}</h1>
-                <button type="button" onClick={handleBack} className="mt-5 min-h-11 text-sm font-bold text-[var(--hg-action-brand)]">{text('返回远程企业', 'Back to remote companies')}</button>
+                <button type="button" onClick={handleBack} className="mt-5 min-h-11 text-sm font-bold text-[var(--hg-action-brand)]">{fromTop100 ? text('返回 Top 100', 'Back to Top 100') : text('返回远程企业', 'Back to remote companies')}</button>
             </div>
         )
     }
@@ -142,8 +181,13 @@ export default function CompanyProfilePage() {
             <div className="haigoo-shell hg-company-detail hg-company-profile">
                 <button type="button" onClick={handleBack} className="hg-company-detail__back">
                     <ArrowLeft aria-hidden="true" />
-                    {text('返回远程企业', 'Back to remote companies')}
+                    {fromTop100 ? text('返回 Top 100', 'Back to Top 100') : text('返回远程企业', 'Back to remote companies')}
                 </button>
+
+                {fromTop100 && <aside className="hg-company-profile__ranking-context">
+                    <p>{text('你正在从 Top 100 关注榜查看这家企业。此页岗位不限大陆，请核对具体职位的所在地、合同与工作时段。', 'You arrived from the Top 100 research list. Openings here may include other locations; confirm the role’s country, contract and working hours.')}</p>
+                    <Link to={safeRankingReturn}>{text('返回榜单查看研究说明', 'Return to ranking research')}</Link>
+                </aside>}
 
                 <header className="hg-company-detail__hero">
                     <div className="hg-company-detail__identity">
@@ -181,11 +225,8 @@ export default function CompanyProfilePage() {
                             <dd>{updatedLabel || text('待补充', 'Not available')}</dd>
                         </div>
                         <div>
-                            <dt>{text('公开在招', 'Public openings')}</dt>
-                            <dd>{(() => {
-                                const roles = [...new Set(jobs.map((job) => String((job as any).category || '').trim()).filter(Boolean))].slice(0, 3)
-                                return roles.length > 0 ? roles.join(' / ') : text('暂未公开', 'Not currently listed')
-                            })()}</dd>
+                            <dt>{text('当前匹配岗位', 'Matching openings')}</dt>
+                            <dd>{jobsLoading ? text('载入中', 'Loading') : jobsError ? text('暂无法获取', 'Unavailable') : text(`${jobTotal} 个`, `${jobTotal} roles`)}</dd>
                         </div>
                     </dl>
                 </header>
@@ -213,6 +254,9 @@ export default function CompanyProfilePage() {
                             <p className="haigoo-editorial-label">{text('OPEN ROLES · 公开岗位', 'OPEN ROLES')}</p>
                             <h2 id="company-profile-open-roles">{text('最近公开的岗位', 'Latest public openings')}</h2>
                         </div>
+                        {officialCareers && <a className="hg-company-profile__official-careers" href={officialCareers.url} target="_blank" rel="noopener noreferrer" onClick={() => trackingService.track('company_official_careers_click', { entity_id: id || '', source_key: fromTop100 ? 'company_top100' : 'company_profile', page_key: 'company_detail' })}>
+                            {officialCareers.careers ? text('企业官方招聘页', 'Official careers page') : text('查看企业官网', 'Company website')}<ExternalLink size={15} aria-hidden="true" />
+                        </a>}
                     </header>
 
                     <div className="hg-company-profile__filters">
@@ -239,13 +283,13 @@ export default function CompanyProfilePage() {
                             <span>{text('工作地点', 'Work location')}</span>
                             <select value={remoteFilter} onChange={(event) => setRemoteFilter(event.target.value as typeof remoteFilter)}>
                                 <option value="all">{text('全部地点', 'All locations')}</option>
-                                <option value="remote">{text('仅远程', 'Remote only')}</option>
-                                <option value="onsite">{text('非远程', 'On-site')}</option>
+                                <option value="remote">{text('标注为远程', 'Marked remote')}</option>
+                                <option value="onsite">{text('未标注远程', 'Not marked remote')}</option>
                             </select>
                         </label>
                     </div>
 
-                    {filteredJobs.length > 0 ? (
+                    {jobsLoading ? <p className="hg-company-profile__jobs-status" role="status">{text('正在载入岗位…', 'Loading openings…')}</p> : jobsError ? <div className="hg-company-detail__jobs-empty"><Briefcase aria-hidden="true" /><div><h3>{text('岗位信息暂不可用', 'Openings are temporarily unavailable')}</h3><p>{text('可重试载入，或通过上方入口查看官方招聘页。', 'Retry loading or check the official careers page above.')}</p><button type="button" className="hg-company-profile__load-more" onClick={() => setJobsRefresh(value => value+1)}>{text('重新载入', 'Retry')}</button></div></div> : filteredJobs.length > 0 ? (
                         <div className="hg-company-detail__job-list">
                             {filteredJobs.map((job) => (
                                 <JobCardNew
@@ -264,10 +308,11 @@ export default function CompanyProfilePage() {
                             <Briefcase aria-hidden="true" />
                             <div>
                                 <h3>{text('没有匹配的公开岗位', 'No matching public openings')}</h3>
-                                <p>{text('试试缩短关键词，或调整一个筛选条件。', 'Try a shorter keyword or change a filter.')}</p>
+                                <p>{searchTerm.trim() || typeFilter !== 'all' || remoteFilter !== 'all' ? text('试试缩短关键词，或调整一个筛选条件。', 'Try a shorter keyword or change a filter.') : text('站内暂无公开岗位，可通过上方入口查看企业官方招聘页。', 'No roles are currently listed here. Check the official careers page above.')}</p>
                             </div>
                         </div>
                     )}
+                    {!jobsLoading && !jobsError && jobs.length > 0 && <div className="hg-company-profile__pagination"><span>{text(`已载入 ${jobs.length} / ${jobTotal} 个岗位`, `${jobs.length} / ${jobTotal} openings loaded`)}</span>{hasMoreJobs && <button type="button" disabled={loadingMore} onClick={loadMoreJobs}>{loadingMore ? text('正在载入…', 'Loading…') : text('载入更多岗位', 'Load more roles')}</button>}</div>}
                 </section>
 
                 <p className="hg-company-profile__source-note">
