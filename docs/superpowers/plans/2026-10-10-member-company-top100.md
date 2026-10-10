@@ -49,6 +49,6 @@
 - [x] Run meaningful API/data/member tests, type-check and production build; verify server snapshot is absent from public dist assets.
 - [x] Start isolated local/preview fixtures, test guest/free/trial/full/admin and invalid/expired token outcomes.
 - [x] Batched real-browser screenshots at1440desktop/768tablet/390mobile; check dropdown, filters, score/evidence, company entry, zero jobs, back restoration and overflow.
-- [ ] Fix issues once as a batch, confirm once; run scoped Impeccable detector, finish review and documentation.
-- [ ] Compare production baseline deployment metadata; build/publish only reviewed task changes; keep previous production URL for rollback.
-- [ ] Verify live route/API and navigation after release, report live URL and remaining evidence uncertainty.
+- [x] Fix issues once as a batch, confirm once; run scoped Impeccable detector, finish review and documentation.
+- [x] Compare production baseline deployment metadata; build/publish only reviewed task changes; keep previous production URL for rollback.
+- [x] Verify live route/API and navigation after release, report live URL and remaining evidence uncertainty.

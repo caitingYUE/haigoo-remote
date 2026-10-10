@@ -1,0 +1,46 @@
+[
+  {
+    "path": "/api/data?resource=trusted-companies&action=top100",
+    "status": 401,
+    "cache": "private, no-store",
+    "code": "LOGIN_REQUIRED"
+  },
+  {
+    "path": "/api/data?resource=trusted-companies&action=top100",
+    "status": 401,
+    "cache": "private, no-store",
+    "code": "LOGIN_REQUIRED"
+  },
+  {
+    "path": "/api/admin-ops?action=application_stats",
+    "status": 401,
+    "cache": "public, max-age=0, must-revalidate",
+    "code": "Unauthorized"
+  },
+  {
+    "path": "/api/mini?action=companies",
+    "status": 401,
+    "cache": "public, max-age=0, must-revalidate",
+    "code": "Unauthorized gateway request"
+  },
+  {
+    "path": "/trusted-companies/top-100",
+    "status": 200,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "path": "/en/trusted-companies/top-100",
+    "status": 200,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "path": "/lib/data/company-top100-2026-10-10.json",
+    "status": 200,
+    "contentType": "text/html; charset=utf-8"
+  },
+  {
+    "path": "public jobs",
+    "status": 200,
+    "rows": 1
+  }
+]
