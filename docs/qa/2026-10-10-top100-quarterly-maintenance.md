@@ -25,4 +25,4 @@
 
 隔离真实浏览器：guest0/private rows，free0，完整member100。guest/free CTA打开同一个QR，image naturalWidth430；Escape返回权益按钮且恢复body overflow，外部backdrop关闭。手机390×844中英弹窗与会员榜单无横向溢出；旧tier=B URL显示全部100，Supabase搜索1、清除100。未真实扫码绑定或支付，未代登录生产会员。
 
-季度heartbeat `top-100` ACTIVE，首月10日9点北京时间；下次计划2027-01-10。主线程维护，原周报automation没有改动。一次scoped detector []；fresh独立review最终disposition ship，公共metadata严格四字段material项resolved，回归clear。局部surface同步。正式发布结果另记。
+季度heartbeat `top-100` ACTIVE，首月10日9点北京时间；下次计划2027-01-10。主线程维护，原周报automation没有改动。一次scoped detector []；fresh独立review最终disposition ship，公共metadata严格四字段material项resolved，回归clear。局部surface同步。正式域名10项检查通过，已上线；见本轮quarterly-release.md。

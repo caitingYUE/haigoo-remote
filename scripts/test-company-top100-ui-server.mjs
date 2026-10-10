@@ -71,6 +71,7 @@ app.all('/api/users',(req,res)=>res.json({success:true,feedbacks:[],user:viewer(
 app.all('/api/membership',(req,res)=>res.json({success:true,plans:[],membership:{memberType:viewer(req)?.memberType,expireAt:viewer(req)?.memberExpireAt}}))
 app.all('/api/analytics',(req,res)=>res.json({success:true}))
 app.all(/^\/api\//,(req,res)=>res.json({success:true,data:[],items:[]}))
+app.get('/miniprogram_qrcode.webp',(req,res,next)=>control().qrStatus?res.status(control().qrStatus).end():next())
 app.use(express.static(path.join(root,'dist'),{dotfiles:'allow',setHeaders:res=>res.setHeader('Cache-Control','no-store')}))
 app.get(/.*/,(req,res)=>res.sendFile(path.join(root,'dist/index.html'),{dotfiles:'allow'}))
 app.listen(3100,'127.0.0.1',()=>console.log('Local Top100 acceptance server: http://127.0.0.1:3100 — fixtures only, no database writes'))

@@ -1,0 +1,86 @@
+[
+  {
+    "name": "guest",
+    "path": "/api/data?resource=trusted-companies&action=top100",
+    "status": 401,
+    "cache": "private, no-store",
+    "contentType": "application/json; charset=utf-8",
+    "robots": "noindex",
+    "code": "LOGIN_REQUIRED"
+  },
+  {
+    "name": "invalid-token",
+    "path": "/api/data?resource=trusted-companies&action=top100",
+    "status": 401,
+    "cache": "private, no-store",
+    "contentType": "application/json; charset=utf-8",
+    "robots": "noindex",
+    "code": "LOGIN_REQUIRED"
+  },
+  {
+    "name": "method",
+    "path": "/api/data?resource=trusted-companies&action=top100",
+    "status": 405,
+    "cache": "private, no-store",
+    "contentType": "application/json; charset=utf-8",
+    "robots": "noindex",
+    "code": "METHOD_NOT_ALLOWED"
+  },
+  {
+    "name": "admin-gate",
+    "path": "/api/admin-ops?action=application_stats",
+    "status": 401,
+    "cache": "public, max-age=0, must-revalidate",
+    "contentType": "application/json; charset=utf-8",
+    "robots": null
+  },
+  {
+    "name": "mini-gate",
+    "path": "/api/mini?action=companies",
+    "status": 401,
+    "cache": "public, max-age=0, must-revalidate",
+    "contentType": "application/json; charset=utf-8",
+    "robots": null
+  },
+  {
+    "name": "page-zh",
+    "path": "/trusted-companies/top-100",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "contentType": "text/html; charset=utf-8",
+    "robots": "noindex, follow"
+  },
+  {
+    "name": "page-en",
+    "path": "/en/trusted-companies/top-100",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "contentType": "text/html; charset=utf-8",
+    "robots": "noindex, follow"
+  },
+  {
+    "name": "raw-snapshot",
+    "path": "/lib/data/company-top100-current.json",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "contentType": "text/html; charset=utf-8",
+    "robots": null
+  },
+  {
+    "name": "qr-asset",
+    "path": "/miniprogram_qrcode.webp",
+    "status": 200,
+    "cache": "public, max-age=0, must-revalidate",
+    "contentType": "image/webp",
+    "robots": null
+  },
+  {
+    "name": "public-jobs",
+    "path": "/api/data?resource=processed-jobs&limit=1&status=active&isApproved=true",
+    "status": 200,
+    "cache": "public",
+    "contentType": "application/json; charset=utf-8",
+    "robots": null,
+    "rows": 1
+  }
+]

@@ -176,6 +176,8 @@ guest/free/trial/expired 权益区 h2 精确为“优先选择榜单内企业，
 
 **此前加固生产发布（历史）：** dpl_Cyw4dQ1oji2A623GNKHwrj3PsZij，正式域名9项HTTP检查通过，访客浏览器私有条目0；完整会员流程仍为隔离fixture，未代登录生产会员。见 `docs/qa/2026-10-10-top100-hardening-release.md`。
 
-**本轮季度调整验证与待办：** 主线程已完成本地相关 Top100 测试、季度边界与候选 staging 测试及构建，隔离 fixture 正式会员100条、免费账号0条，并验证中英手机二维码链路、关闭/焦点/滚动恢复和图片重试。上述证据不代表生产会员端到端或真实支付验证。本记录仅对照现有实现，不实施新功能或重复测试。当前独立 finish review pending，主线程随后记录最终复审与发布结果；在此之前不标记本轮 ship 或生产已发布。
+**本轮季度调整验证与待办：** 主线程已完成本地相关 Top100 测试、季度边界与候选 staging 测试及构建，隔离 fixture 正式会员100条、免费账号0条，并验证中英手机二维码链路、关闭/焦点/滚动恢复和图片重试。上述证据不代表生产会员端到端或真实支付验证。本记录仅对照现有实现，不实施新功能或重复测试。独立复审最终ship，metadata额外字段边界已修复；本轮生产发布及验收结果见quarterly-release记录。
 
 **2026-10-10 本轮复审最终：** `docs/qa/2026-10-10-top100-quarterly-finish-review.md` disposition **ship**；公共edition严格四字段material项 **resolved**，回归 **clear**。服务启动/prebuild/staging writer均拒绝额外字段。生产部署结果另记。
+
+**本轮季度调整正式发布：** dpl_ABEnLax6PdTydmpy9Gtz1Hmjd9LZ，正式域名10项HTTP及guest二维码浏览器验收通过，源文件哈希相同。真实扫码支付与生产会员完整登录流程未执行。见 `docs/qa/2026-10-10-top100-quarterly-release.md`。
