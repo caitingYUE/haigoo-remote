@@ -253,7 +253,9 @@ class TrustedCompaniesService {
         }
     }
 
-    async getCompanyById(id: string, jobId?: string): Promise<TrustedCompany | null> {
+    async getCompanyById(id: string, jobId?: string, options?: {throwOnError?:boolean}): Promise<TrustedCompany | null> {
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(),15000)
         try {
             const queryParams = new URLSearchParams();
             const token = getAuthToken();
@@ -264,15 +266,18 @@ class TrustedCompaniesService {
             queryParams.append('_t', Date.now().toString());
 
             const response = await fetch(`${this.API_BASE}?${queryParams.toString()}`, {
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined
-            });
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined, signal:controller.signal
+            })
+            if(response.status === 404) return null
             if (!response.ok) throw new Error('Failed to fetch company');
             const data = await response.json();
+            if(options?.throwOnError && (!data.success || !data.company)) throw new Error('Invalid company response')
             return data.company || null;
         } catch (error) {
             console.error('Error fetching company:', error);
+            if(options?.throwOnError) throw error
             return null;
-        }
+        } finally { clearTimeout(timeout) }
     }
 
     async saveCompany(company: Partial<TrustedCompany>): Promise<{ success: boolean; company?: TrustedCompany; error?: string }> {

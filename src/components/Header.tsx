@@ -23,37 +23,52 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState<any[]>([])
+  const [notificationOwner,setNotificationOwner] = useState<string|null>(null)
   const [headerSearchTerm, setHeaderSearchTerm] = useState('')
   const location = useLocation()
   const navigate = useNavigate()
   const { user, isAuthenticated, logout, token, isMember, isTrialMember, memberType, isLoading: authLoading } = useAuth()
+  const visibleNotifications = notificationOwner===token ? notifications : []
   const { showWarning } = useNotificationHelpers()
   const { isEnglish, text, path } = useLanguage()
 
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<number | null>(null)
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null)
   const userMenuButtonRef = useRef<HTMLButtonElement>(null)
 
+  useEffect(() => {
+    setIsMenuOpen(false); setIsUserMenuOpen(false); setIsNotificationOpen(false)
+  }, [location.pathname,location.search])
+  useEffect(() => {
+    if(!isUserMenuOpen)return
+    const outside = (event:PointerEvent) => {if(!userMenuRef.current?.contains(event.target as Node))setIsUserMenuOpen(false)}
+    document.addEventListener('pointerdown',outside)
+    return () => document.removeEventListener('pointerdown',outside)
+  }, [isUserMenuOpen])
+
   // Fetch notifications
   useEffect(() => {
+    let active = true
+    setNotifications([])
     if (isAuthenticated && token) {
       fetch('/api/user-profile?action=notifications', {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())
         .then(data => {
-          if (data.success) {
+          if (active && data.success) {
+            setNotificationOwner(token)
             setNotifications(data.notifications || [])
           }
         })
         .catch(console.error)
     }
+    return () => {active=false}
   }, [isAuthenticated, token])
 
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  const unreadCount = visibleNotifications.filter(n => !n.isRead).length
   const isDeepLegacyMember = memberType === 'quarter_pro'
   const isQuarterMember = memberType === 'quarter'
   const shouldShowMemberTextBadge = isMember && isTrialMember && !isQuarterMember && !isDeepLegacyMember
@@ -120,15 +135,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
     navigate(path('/login'))
   }
 
-  // 清理定时器
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current)
-      }
-    }
-  }, [])
-
   // 键盘事件处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -149,21 +155,6 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [isMenuOpen, isUserMenuOpen])
 
-  // 处理鼠标进入用户菜单区域
-  const handleMouseEnter = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-    }
-    setIsUserMenuOpen(true)
-  }
-
-  // 处理鼠标离开用户菜单区域
-  const handleMouseLeave = () => {
-    timeoutRef.current = window.setTimeout(() => {
-      setIsUserMenuOpen(false)
-    }, 300) // 300ms延迟，给用户足够时间移动鼠标
-  }
-
   // 键盘事件处理函数
   const handleKeyDown = (e: React.KeyboardEvent, action: () => void) => {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -174,10 +165,7 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
 
   // 用户菜单键盘导航
   const handleUserMenuKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      setIsUserMenuOpen(!isUserMenuOpen)
-    } else if (e.key === 'ArrowDown' && !isUserMenuOpen) {
+    if (e.key === 'ArrowDown' && !isUserMenuOpen) {
       e.preventDefault()
       setIsUserMenuOpen(true)
     }
@@ -377,21 +365,21 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                       <div className="flex items-center justify-between border-b border-[#e6e1d8] px-4 py-3.5">
                         <h3 className="text-sm font-semibold text-slate-900">{text('消息通知', 'Notifications')}</h3>
                         <div className="flex gap-2">
-                          <button onClick={() => handleMarkRead()} disabled={notifications.length === 0 || unreadCount === 0} className="inline-flex h-9 w-9 items-center justify-center border border-transparent text-[#466f9d] hover:border-[#c9dce8] hover:bg-[#eff5fb] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-transparent disabled:hover:bg-transparent" title={text('全部已读', 'Mark all as read')} aria-label={text('全部已读', 'Mark all as read')}>
+                          <button onClick={() => handleMarkRead()} disabled={visibleNotifications.length === 0 || unreadCount === 0} className="inline-flex h-9 w-9 items-center justify-center border border-transparent text-[#466f9d] hover:border-[#c9dce8] hover:bg-[#eff5fb] disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-transparent disabled:hover:bg-transparent" title={text('全部已读', 'Mark all as read')} aria-label={text('全部已读', 'Mark all as read')}>
                             <Check className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDelete()} disabled={notifications.length === 0} className="inline-flex h-9 w-9 items-center justify-center border border-transparent text-slate-400 hover:border-red-100 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-transparent disabled:hover:bg-transparent" title={text('清空全部', 'Clear all')} aria-label={text('清空全部', 'Clear all')}>
+                          <button onClick={() => handleDelete()} disabled={visibleNotifications.length === 0} className="inline-flex h-9 w-9 items-center justify-center border border-transparent text-slate-400 hover:border-red-100 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:border-transparent disabled:hover:bg-transparent" title={text('清空全部', 'Clear all')} aria-label={text('清空全部', 'Clear all')}>
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
                       <div className="max-h-80 overflow-y-auto">
-                        {notifications.length === 0 ? (
+                        {visibleNotifications.length === 0 ? (
                           <div className="px-4 py-8 text-center text-slate-500 text-sm">
                             {text('暂无消息', 'No notifications')}
                           </div>
                         ) : (
-                          notifications.map(notification => (
+                          visibleNotifications.map(notification => (
                             <div key={notification.id} className={`group relative border-b border-[#e6e1d8] px-4 py-3.5 last:border-0 hover:bg-[#f4f8fb] ${!notification.isRead ? 'bg-[#eff5fb] shadow-[inset_3px_0_0_#466f9d]' : ''}`}>
                               <div className="flex justify-between items-start mb-1">
                                 <span className={`border px-2 py-1 text-[11px] font-bold ${notification.type === 'feedback_reply' ? 'border-[#c9dce8] bg-[#eff5fb] text-[#466f9d]' :
@@ -427,12 +415,11 @@ export default function Header({ showUpgradeNotice = false }: HeaderProps) {
                 <div
                   ref={userMenuRef}
                   className="relative hidden lg:block"
-                  onMouseEnter={handleMouseEnter}
-                  onMouseLeave={handleMouseLeave}
                 >
                   <button
                     ref={userMenuButtonRef}
                     className="hg-header-account-trigger flex max-w-[210px] items-center gap-1.5 p-1.5 text-slate-700 transition-[background-color,color,box-shadow] duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9a6c] focus-visible:ring-offset-2 2xl:gap-2 2xl:p-2"
+                    type="button" onClick={() => setIsUserMenuOpen(value=>!value)}
                     onKeyDown={handleUserMenuKeyDown}
                     aria-expanded={isUserMenuOpen}
                     aria-haspopup="menu"

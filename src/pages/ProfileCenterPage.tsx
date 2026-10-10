@@ -1,3 +1,6 @@
+import ProfileFeedbackTab from '../components/ProfileFeedbackTab'
+import { getTop100ReturnTo } from '../utils/company-top100-navigation'
+import '../styles/company-top100.css'
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useLocation, useNavigate, Link } from 'react-router-dom'
@@ -3510,180 +3513,6 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
     </div>
   )
 
-  const FeedbackTab = () => {
-    const [accuracy, setAccuracy] = useState<'accurate' | 'inaccurate' | 'unknown'>('unknown')
-    const [content, setContent] = useState('')
-    const [contact, setContact] = useState('')
-    const [submitting, setSubmitting] = useState(false)
-    const [myFeedbacks, setMyFeedbacks] = useState<any[]>([])
-    const feedbackSource = new URLSearchParams(location.search).get('source') || 'profile_feedback'
-
-    const fetchMyFeedbacks = async () => {
-      try {
-        const res = await fetch('/api/user-profile?action=my_feedbacks', {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        const data = await res.json()
-        if (data.success) {
-          setMyFeedbacks(data.feedbacks || [])
-        }
-      } catch (e) {
-        console.error('Failed to fetch feedbacks', e)
-      }
-    }
-
-    useEffect(() => {
-      fetchMyFeedbacks()
-    }, [])
-
-    const submit = async () => {
-      if (!content.trim()) { showError('请填写反馈内容'); return }
-      try {
-        setSubmitting(true)
-        const r = await fetch('/api/user-profile?action=submit_feedback', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            accuracy,
-            content,
-            contact,
-            source: feedbackSource,
-            sourceUrl: `${location.pathname}${location.search || ''}`
-          })
-        })
-        const j = await r.json().catch(() => ({ success: false }))
-        if (r.ok && j.success) {
-          trackingService.track('feedback_submit', {
-            page_key: 'profile',
-            module: 'feedback_tab',
-            feature_key: 'platform_feedback',
-            source_key: feedbackSource
-          })
-          showSuccess('反馈已提交');
-          setAccuracy('unknown');
-          setContent('');
-          setContact('');
-          fetchMyFeedbacks(); // Refresh list
-        }
-        else { showError('提交失败', j.error || '请稍后重试') }
-      } catch (e) {
-        showError('提交失败', '网络错误')
-      } finally { setSubmitting(false) }
-    }
-
-    return (
-      <div className="hg-profile-document hg-feedback space-y-6">
-        <div className="hg-profile-document__header flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">我要反馈</h2>
-            <p className="text-slate-500 mt-1">反馈岗位或平台信息问题与建议。</p>
-          </div>
-        </div>
-
-        <div className="hg-profile-document__sheet p-6">
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-3">信息准确度</label>
-              <div className="flex items-center gap-6">
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={accuracy === 'accurate'}
-                    onChange={() => setAccuracy('accurate')}
-                    className="text-[#466f9d] focus:ring-[#466f9d]"
-                  />
-                  <span className="text-sm text-slate-700">准确</span>
-                </label>
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={accuracy === 'inaccurate'}
-                    onChange={() => setAccuracy('inaccurate')}
-                    className="text-[#466f9d] focus:ring-[#466f9d]"
-                  />
-                  <span className="text-sm text-slate-700">不准确</span>
-                </label>
-                <label className="inline-flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    checked={accuracy === 'unknown'}
-                    onChange={() => setAccuracy('unknown')}
-                    className="text-[#466f9d] focus:ring-[#466f9d]"
-                  />
-                  <span className="text-sm text-slate-700">不确定</span>
-                </label>
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">反馈内容</label>
-              <textarea
-                rows={5}
-                value={content}
-                onChange={e => setContent(e.target.value)}
-                className="hg-profile-document__field w-full border p-3 outline-none transition-all"
-                placeholder="请描述遇到的问题，或希望我们改进的地方"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-900 mb-2">联系方式（可选）</label>
-              <input
-                value={contact}
-                onChange={e => setContact(e.target.value)}
-                className="hg-profile-document__field w-full border p-3 outline-none transition-all"
-                placeholder="邮箱或微信"
-              />
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={submit}
-                disabled={submitting}
-                className="hg-profile-document__primary-action px-6 py-2.5 font-medium disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {submitting ? '提交中…' : '提交反馈'}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Feedback History */}
-        <div className="hg-profile-document__sheet overflow-hidden">
-          <div className="p-6 border-b border-slate-100">
-            <h3 className="font-bold text-slate-900">历史反馈记录</h3>
-          </div>
-          <div className="divide-y divide-slate-100">
-            {myFeedbacks.length === 0 ? (
-              <div className="p-8 text-center text-slate-500 text-sm">暂无反馈记录</div>
-            ) : (
-              myFeedbacks.map(item => (
-                <div key={item.id} className="p-6 hover:bg-slate-50 transition-colors">
-                  <div className="flex justify-between items-start mb-2">
-                    <span className={`text-xs font-medium px-2 py-1 border ${item.accuracy === 'accurate' ? 'bg-green-100 text-green-700' :
-                      item.accuracy === 'inaccurate' ? 'bg-red-100 text-red-700' :
-                        'bg-slate-100 text-slate-600'
-                      }`}>
-                      {item.accuracy === 'accurate' ? '准确' : item.accuracy === 'inaccurate' ? '不准确' : '平台建议/未知'}
-                    </span>
-                    <span className="text-xs text-slate-400">{new Date(item.createdAt).toLocaleString()}</span>
-                  </div>
-                  <p className="text-slate-800 text-sm mb-3 whitespace-pre-wrap">{item.content}</p>
-                  {item.replyContent && (
-                    <div className="mt-3 border border-[#dce9f5] bg-[#eff5fb] p-4">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-bold text-[#345d88]">管理员回复</span>
-                        <span className="text-xs text-[#7f9fbc]">{new Date(item.repliedAt).toLocaleString()}</span>
-                      </div>
-                      <p className="text-sm text-[#243f5c]">{item.replyContent}</p>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   const SettingsTab = () => {
     const [isDeleting, setIsDeleting] = useState(false)
 
@@ -5635,6 +5464,10 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
         <div className="absolute inset-x-0 top-0 h-[360px] bg-white/36" />
       </div>
       <div className="hg-profile-shell relative mx-auto min-h-full px-4 py-4 sm:px-6 lg:px-8 lg:py-8">
+        {['membership','feedback'].includes(tab) && new URLSearchParams(location.search).get('source')==='company_top100' && getTop100ReturnTo(new URLSearchParams(location.search).get('returnTo')) && <aside className="hg-top100-profile-return">
+          <p>{text('你从 Top 100 企业研究进入此页，可完成当前操作后返回榜单。','You arrived from Top 100 employer research. Return to the ranking when you finish here.')}</p>
+          <Link to={getTop100ReturnTo(new URLSearchParams(location.search).get('returnTo'))!} state={{restoreTop100:true,recheckMembership:tab==='membership'}}>{text('返回 Top 100','Return to Top 100')}<ArrowRight size={16} aria-hidden="true" /></Link>
+        </aside>}
         <div className="flex min-h-full flex-col gap-5 lg:flex-row lg:gap-10">
           <nav className="lg:hidden" role="tablist" aria-label={text('我的 Haigoo 移动端目录', 'My Haigoo mobile navigation')}>
             <div className="hg-profile-mobile-nav flex gap-1 overflow-x-auto">
@@ -5904,7 +5737,7 @@ export default function ProfileCenterPage({ publicAboutOnly = false }: ProfileCe
                   <LazyMyApplicationsTab />
                 </Suspense>
               )}
-              {tab === 'feedback' && <FeedbackTab />}
+              {tab === 'feedback' && <ProfileFeedbackTab key={token || 'guest'} />}
               {tab === 'membership' && <MembershipTab />}
               {COMPLIANCE_FEATURES.paypalCheckout && tab === 'orders' && <OrdersTab />}
               {tab === 'about' && <AboutTab />}

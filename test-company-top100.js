@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import jwt from 'jsonwebtoken'
-import { companyTop100Snapshot as data, validateCompanyTop100, createCompanyTop100Handler, getCompanyTop100LiveData } from './lib/services/company-top100-service.js'
+import { companyTop100Snapshot as data, validateCompanyTop100, createCompanyTop100Handler, getCompanyTop100LiveData, getCompanyTop100AccessUser } from './lib/services/company-top100-service.js'
 
 assert.equal(data.companies.length, 100)
 assert.equal(data.companies.filter(c => c.tier === 'A').length, 49)
@@ -12,6 +12,15 @@ const badScore = structuredClone(data); badScore.companies[0].score = 99
 assert.throws(() => validateCompanyTop100(badScore))
 const unsafeSource = structuredClone(data); unsafeSource.companies[0].sources = ['javascript:alert(1)']
 assert.throws(() => validateCompanyTop100(unsafeSource))
+for (const mutate of [
+    d => { d.companies[0].score = NaN },
+    d => { d.weights.mainland = -1; d.weights.remote = 46 },
+    d => { d.researchedAt = '2026-02-30' },
+    d => { d.companies[0].reviewedAt = '2026-99-99' },
+    d => { d.companies[0].remoteClass = 'invented' },
+    d => { d.companies[0].roles = null },
+    d => { d.companies[0].sources = ['https://user:secret@example.com/path'] }
+]) { const changed = structuredClone(data); mutate(changed); assert.throws(() => validateCompanyTop100(changed)) }
 const secret = 'isolated-test-secret-not-a-production-credential'
 const future = new Date(Date.now() + 86400000).toISOString(), past = new Date(Date.now() - 86400000).toISOString()
 const users = {
@@ -64,3 +73,23 @@ assert.equal(noStats[0].jobCount, null, 'A failed count query must never become 
 const unknown = await getCompanyTop100LiveData(pair, async () => { throw Error('query failed') })
 assert.equal(unknown[0].availability, 'unknown'); assert.equal(unknown[0].jobCount, null)
 console.log('PASS: ranking integrity, all100 identities, unknown contract values, current membership guards, no unauthorized payload, exact company selection and live-data degradation')
+
+const nullQueries = await getCompanyTop100LiveData(pair, async () => null)
+assert.equal(nullQueries[0].availability, 'unknown')
+assert.equal(nullQueries[0].jobCount, null)
+const invalidCounts = await getCompanyTop100LiveData(pair, async sql => sql.startsWith('SELECT *') ? pair.map(c => ({company_id:c.companyId,status:'active'})) : [{company_id:pair[0].companyId,count:'not-a-count'}])
+assert.equal(invalidCounts[0].jobCount, null)
+assert.equal(invalidCounts[1].jobCount, 0)
+console.log('PASS: malformed snapshots and null/invalid database responses remain safe')
+
+assert.equal((await invoke('full', {companyId:''})).statusCode,400)
+assert.equal((await invoke('full', {companyId:'   '})).statusCode,400)
+
+await assert.rejects(getCompanyTop100AccessUser('full',async()=>null),/verification unavailable/)
+assert.equal(await getCompanyTop100AccessUser('missing',async()=>[]),null)
+const accessQueries=[]
+const authoritative=await getCompanyTop100AccessUser('full',async(sql,params)=>{accessQueries.push(sql);assert.deepEqual(params,['full']);return [{...users.full,roles:'{"admin":"false","user":true}'}]})
+assert.equal(authoritative.roles.admin,false)
+assert.equal(accessQueries.length,1)
+assert.ok(accessQueries.every(sql=>sql.trim().startsWith('SELECT')))
+console.log('PASS: access verification is authoritative, read-only, fail-closed and has no local-user fallback')

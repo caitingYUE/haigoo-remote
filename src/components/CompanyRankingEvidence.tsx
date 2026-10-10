@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import { top100ProfilePath } from '../utils/company-top100-navigation'
 import { ExternalLink } from 'lucide-react'
 import { useLanguage } from '../contexts/LanguageContext'
 import type { CompanyTop100Entry, Top100Factor } from '../types/company-top100'
@@ -8,12 +10,12 @@ export const RANKING_FACTORS: [Top100Factor, string, string][] = [
   ['basics','企业基本面','Company fundamentals'], ['business','业务与异步','Work & asynchronous fit']
 ]
 
-export default function CompanyRankingEvidence({ entry, weights }: { entry: CompanyTop100Entry; weights: Record<Top100Factor, number> }) {
-  const { text, isEnglish } = useLanguage()
+export default function CompanyRankingEvidence({ entry, weights, version, returnTo }: { entry: CompanyTop100Entry; weights: Record<Top100Factor, number>; version?: string; returnTo?: string }) {
+  const { text, isEnglish, path } = useLanguage()
   return <div className="hg-top100-evidence">
     <dl className="hg-top100-evidence__scores">{RANKING_FACTORS.map(([key, zh, en]) => <div key={key}>
       <dt>{text(zh,en)}</dt><dd>{entry.components[key] === null ? text('待确认','Unconfirmed') : <>{entry.components[key]}<span> / {weights[key]}</span></>}</dd>
-      {entry.unknown[key] && entry.components[key] !== null ? <small>{text('部分信息待确认','Partially unconfirmed')}</small> : key === 'payment' && entry.contractClass === 'employee_unconfirmed' ? <small>{text('签约主体待确认','Signing entity unconfirmed')}</small> : null}
+      {entry.unknown[key] && entry.components[key] !== null ? <small>{text('部分信息待确认','Partially unconfirmed')}</small> : key === 'payment' && entry.contractClass === 'employee_unconfirmed' ? <small>{text('主体待确认；尚未核实 EoR','Entity and EoR arrangement unconfirmed')}</small> : null}
     </div>)}</dl>
     {isEnglish && <p className="hg-top100-evidence__original">Research notes are shown in their original Chinese wording.</p>}
     <div className="hg-top100-evidence__body">
@@ -29,8 +31,8 @@ export default function CompanyRankingEvidence({ entry, weights }: { entry: Comp
         <p>{text('人工复核','Reviewed')}：{entry.reviewedAt}</p>
         <ul className="hg-top100-evidence__sources">{entry.sources.map((source, i) => <li key={source}><a href={source} target="_blank" rel="noopener noreferrer">{i+1}. {new URL(source).hostname.replace(/^www\./,'')}<ExternalLink size={13} aria-hidden="true" /></a></li>)}</ul>
         <p className="hg-top100-evidence__basic-note">{text('员工评分、规模和多数成立年沿用后台记录，未全面实时核验。','Employee ratings, size and most founding years use existing database records and have not all been reverified.')}</p>
-        <p className="hg-top100-evidence__basic-note">{text('经营起源','Business origin')}：{entry.basics.foundedYear || text('待补充','Unconfirmed')} · {entry.basics.employeeCount || text('规模待补充','Size unconfirmed')}{entry.basics.rating !== null ? ` · Glassdoor ${entry.basics.rating}/5` : ''}</p>
-      </section>
+        <p className="hg-top100-evidence__basic-note">{text('经营起源','Business origin')}：{entry.basics.foundedYear || text('待补充','Unconfirmed')} · {entry.basics.employeeCount || text('规模待补充','Size unconfirmed')}{entry.basics.rating !== null ? ` · ${entry.basics.ratingSource || text('员工评分','Employee rating')} ${entry.basics.rating}/5` : ''}</p>
+      <p className="hg-top100-evidence__feedback"><Link to={path(top100ProfilePath('feedback',returnTo || '/trusted-companies/top-100',entry.companyId,version,entry.name))}>{text('反馈此企业的研究信息','Report a research update for this company')}</Link></p></section>
     </div>
   </div>
 }

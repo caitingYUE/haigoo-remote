@@ -51,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   const logout = useCallback(() => {
+    setIsLoading(false)
     setToken(null)
     setUser(null)
     localStorage.removeItem(TOKEN_KEY)
@@ -65,22 +66,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const refreshUserSilently = useCallback(async (authToken: string) => {
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(),15000)
     try {
       const response = await fetch(`${API_BASE}?action=me`, {
-        headers: { Authorization: `Bearer ${authToken}` }
+        headers: { Authorization: `Bearer ${authToken}` }, signal:controller.signal
       })
+      if(localStorage.getItem(TOKEN_KEY)!==authToken)return
       if (response.ok) {
         const data = await response.json()
+        if(localStorage.getItem(TOKEN_KEY)!==authToken)return
         if (data.success && data.user) {
           setUser(data.user)
           localStorage.setItem(USER_KEY, JSON.stringify(data.user))
         }
-      } else {
+      } else if ([401,403].includes(response.status)) {
         logout()
       }
     } catch (error) {
       console.error('[AuthContext] Silent refresh failed:', error)
-    }
+    } finally { clearTimeout(timer) }
   }, [logout])
 
   // 从 localStorage 恢复认证状态
@@ -109,6 +113,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [refreshUserSilently])
 
+  // Account changes in another same-origin tab must invalidate this tab's
+  // private lists too. Only token changes reverify, avoiding USER_KEY loops.
+  useEffect(() => {
+    const syncAccount = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage || (event.key !== null && event.key !== TOKEN_KEY && event.key !== USER_KEY)) return
+      const clearLocalState = () => { setToken(null); setUser(null); setIsLoading(false); trackingService.reset() }
+      const savedToken = localStorage.getItem(TOKEN_KEY), savedUser = localStorage.getItem(USER_KEY)
+      // A storage observer must not write back: queued removal events can
+      // otherwise erase a login completed in another tab.
+      if (!savedToken || !savedUser) { clearLocalState(); return }
+      try {
+        const nextUser = JSON.parse(savedUser)
+        if (!nextUser || typeof nextUser !== 'object') { clearLocalState(); return }
+        const changed = savedToken !== token
+        setToken(savedToken); setUser(nextUser); setIsLoading(false)
+        const userId = resolveTrackingUserId(nextUser)
+        if (changed && userId) trackingService.identify(userId)
+        if (changed) void refreshUserSilently(savedToken)
+      } catch { clearLocalState() }
+    }
+    window.addEventListener('storage', syncAccount)
+    return () => window.removeEventListener('storage', syncAccount)
+  }, [token,logout,refreshUserSilently])
+
   // Admin entitlement changes must become visible without requiring a full reload.
   useEffect(() => {
     if (!token) return
@@ -131,23 +159,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = useCallback(async () => {
     if (!token) return
     setIsLoading(true)
+    const controller = new AbortController(), timer = setTimeout(() => controller.abort(),15000)
     try {
       const response = await fetch(`${API_BASE}?action=me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` }, signal:controller.signal
       })
+      if(localStorage.getItem(TOKEN_KEY)!==token)return
       if (response.ok) {
         const data = await response.json()
+        if(localStorage.getItem(TOKEN_KEY)!==token)return
         if (data.success && data.user) {
           setUser(data.user)
           localStorage.setItem(USER_KEY, JSON.stringify(data.user))
         }
-      } else {
+      } else if ([401,403].includes(response.status)) {
         logout()
       }
     } catch (error) {
       console.error('[AuthContext] Refresh failed:', error)
     } finally {
-      setIsLoading(false)
+      clearTimeout(timer)
+      if(localStorage.getItem(TOKEN_KEY)===token || !localStorage.getItem(TOKEN_KEY))setIsLoading(false)
     }
   }, [token, logout])
 
