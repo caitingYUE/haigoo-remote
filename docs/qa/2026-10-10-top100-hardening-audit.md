@@ -30,6 +30,6 @@
 
 当前运行前置截图为01-entry/02-ranking/03-company/04-role。被菜单遮挡的03-company-top及05-return不采用。最终截图final-desktop、final-mobile、final-mobile-en及after-company-research；after-feedback仅为功能上下文证据，其按钮颜色之后已修正。截图与测试/原始研究不随部署发布。
 
-独立审查和上线尚待完成，最终disposition、部署与正式域名HTTP结果另记。
+独立复审最终disposition ship，两项material fixes均resolved；已上线，正式域名9项HTTP检查通过。部署与验证边界见本轮hardening-release.md。
 
 独立审查修复验证：隔离反馈延迟24秒，20秒后出现“提交状态未确认”，草稿原值保留，提交按钮恢复可用；重新载入历史记录可操作。最终按钮实测墨色rgb(24,32,51)／白字。无生产反馈提交。最终截图新增final-feedback.jpg。

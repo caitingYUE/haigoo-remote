@@ -17,4 +17,4 @@ User requested code/requirements review, fixes and product/design/taste interact
 - [x] Meaningful server null/NaN/date/enum/weight/failed-user tests and frontend malformed-response/return-path tests.
 - [x] Controlled local fixtures for delayed/401/403/503/malformed ranking, jobs pagination/error, auth changes. Real browser flow, keyboard, mobile/English, retry/return/feedback checks.
 - [x] Build, relevant membership/job regressions, scoped detector once, fresh finish review, local surface documentation update.
-- [ ] Reverify actual current production baseline; normal per-file source manifest/hash verification; publish authorized task changes with rollback retained and verify live public/API gates.
+- [x] Reverify actual current production baseline; normal per-file source manifest/hash verification; publish authorized task changes with rollback retained and verify live public/API gates.

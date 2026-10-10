@@ -157,3 +157,5 @@ description: 已实现的正式会员研究目录局部扩展，继承既有 Hai
 **未规范化：** 已移除的标题上方eyebrow不记录为继承样式；单次字标/页头构图只属于本surface，不升级为全站规范。未新增全局 `.impeccable/design.json`，因为本次不刷新根DESIGN.md；局部响应式、动效与状态在此文件内完整记录，无需第二份并行token权威。
 
 **本轮独立复审最终结论：** `docs/qa/2026-10-10-top100-hardening-finish-review.md` 为 disposition **ship**；反馈长期等待与文档/最终按钮证据两项均 **resolved**，material_fixes clear。仅为本地实现复审，生产发布另记。反馈历史始终提供“重新载入记录”。
+
+**本轮生产发布：** dpl_Cyw4dQ1oji2A623GNKHwrj3PsZij，正式域名9项HTTP检查通过，访客浏览器私有条目0；完整会员流程仍为隔离fixture，未代登录生产会员。见 `docs/qa/2026-10-10-top100-hardening-release.md`。
