@@ -1,0 +1,5066 @@
+{
+  "version": "2026-10-10.v1",
+  "researchedAt": "2026-10-10",
+  "weights": {
+    "mainland": 30,
+    "remote": 15,
+    "payment": 15,
+    "timezone": 15,
+    "basics": 15,
+    "business": 10
+  },
+  "companies": [
+    {
+      "companyId": "company_1764764359443_cuqw0fhj2",
+      "name": "Nagarro",
+      "rank": 1,
+      "score": 89,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "WFA/远程友好（官方）",
+      "contractClass": "employee_unconfirmed",
+      "contractNote": "雇员类别已明示；直接/EoR主体待核",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Staff Engineer（Remote, China）",
+        "Associate Principal Consultant (Sales support)"
+      ],
+      "notes": [
+        "中国官网明确WFA/Remote Employee，雇员模式最低按EoR档12分，不推定本地直接签约。",
+        "部分Rust岗位正文可能要求北京项目现场，必须逐岗核对，不将所有中国岗位视为全远程。",
+        "官网以1996为业务起源；后台2020是分拆上市年份。评分采用持续经营口径，不等同现法律实体注册年。"
+      ],
+      "pending": "实际签约主体、直接雇佣或EoR、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://www.nagarro.com/en/careers/china",
+        "https://jobs.smartrecruiters.com/nagarro1/744000152585399",
+        "https://www.nagarro.com/en/news-press-release/media-kit"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.nagarro.com/en",
+      "careersPage": "https://www.nagarro.com/en/careers/job-search?country=%E4%B8%AD%E5%9B%BD&city=wfa/remote",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": 12,
+        "timezone": 15,
+        "basics": 14,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1996,
+        "employeeCount": "10,001+ 位员工",
+        "source": "https://www.nagarro.com/en/news-press-release/media-kit"
+      }
+    },
+    {
+      "companyId": "company_1777192118054_jzme99ew5",
+      "name": "Yodo1 Games",
+      "rank": 2,
+      "score": 83.3,
+      "tier": "A",
+      "industry": "游戏",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Player Support Representative (China Games)",
+        "Marketing Manager/Lead (BiG) - China",
+        "Game Operations Manager - China"
+      ],
+      "notes": [
+        "公司不限定地点和工时；客服岗位仍有实时聊天和SLA，不能把公司自由工时理解为客服无响应要求。",
+        "公开可选支付币种；雇员/EoR/Contractor和大陆签约主体未明确，不为支付类型补分。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障",
+      "sources": [
+        "https://careers.yodo1.com/",
+        "https://careers.yodo1.com/jobs/8333317-player-support-representative-china-games",
+        "https://www.yodo1.com/culture"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.yodo1.com/",
+      "careersPage": "https://www.yodo1.com/careers",
+      "components": {
+        "mainland": 30,
+        "remote": 15,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.3,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2011,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1789556266757_r1giojqij",
+      "name": "Blue Education",
+      "rank": 3,
+      "score": 80.5,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程优先（官方）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Careers Tutor (Part-Time / Freelance)",
+        "Become A Part-Time Tutor"
+      ],
+      "notes": [
+        "上海/伦敦fully remote，兼职freelance导师；1对1实时辅导不能计为异步。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.blueeducation.org/jobs/8358099-careers-tutor-part-time-freelance",
+        "https://careers.blueeducation.org/jobs/4708573-become-a-part-time-tutor",
+        "https://careers.blueeducation.org/jobs/8358099-careers-tutor-part-time-freelance#main-content",
+        "https://careers.blueeducation.org/jobs"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.blueeducation.org/",
+      "careersPage": "https://careers.blueeducation.org/jobs",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 11.5,
+        "business": 4
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2017,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1790408040438_chjvxmohn",
+      "name": "Cadence 凯韵翻译",
+      "rank": 4,
+      "score": 80,
+      "tier": "A",
+      "industry": "语言/翻译",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程优先（官方）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "允许选择APAC/EMEA/AMER对齐",
+      "opportunityScore": 6,
+      "roles": [
+        "Client Service Associate (Translation)"
+      ],
+      "notes": [
+        "中国远程Contractor；客户服务职位负责翻译项目管理，不是本人做翻译。",
+        "可选APAC工作时段，比只按中国地理标签判断时区更可靠。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://cadencetranslate.bamboohr.com/careers/44/detail"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.cadencetranslate.com/",
+      "careersPage": "https://cadencetranslate.bamboohr.com/careers",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": 8,
+        "timezone": 12,
+        "basics": 12,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2014,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1790305493048_z347ag50n",
+      "name": "Omilia",
+      "rank": 5,
+      "score": 80,
+      "tier": "A",
+      "industry": "人工智能",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Language Expert for Mandarin Chinese"
+      ],
+      "notes": [
+        "语音/语言项目freelance，不把Temporary当正式雇员；需求期限和任务量待核。",
+        "该普通话项目预计8–9个月、每周少量小时；不是稳定全职收入依据。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/omilia-natural-language-solutions-ua-ltd",
+        "https://apply.workable.com/omilia-natural-language-solutions-ua-ltd/j/BE42646E42/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://omilia.com/",
+      "careersPage": "https://apply.workable.com/omilia-natural-language-solutions-ua-ltd/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 14,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2002,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784106459336_0tmsprun3",
+      "name": "LILT",
+      "rank": 6,
+      "score": 79.8,
+      "tier": "A",
+      "industry": "语言/翻译",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Subject Matter Expert – Robotics (Mandarin) – Remote",
+        "Literary Transcreator - Tibetan - Remote",
+        "Subject Matter Expert – Mathematics (Mandarin) – Remote"
+      ],
+      "notes": [
+        "大陆AI语言/专业学科岗位多为Contract；核验具体计价、项目期限和个人资质。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/lilt-production",
+        "https://jobs.ashbyhq.com/lilt-production/0618cc34-164c-4d0d-9b47-7ba1d4bc2ae3?locationId=8c555c2e-3fb8-4e19-929c-2f38175abe0c"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://lilt.com/",
+      "careersPage": "https://jobs.ashbyhq.com/lilt-production",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 13.8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2015,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1782382111971_65ekzedty",
+      "name": "Keywords Studios",
+      "rank": 7,
+      "score": 79.4,
+      "tier": "A",
+      "industry": "游戏",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Chinese to Korean game translator (Freelance/remote Job) 중한 게임 번역 프리랜서 中韩游戏自由译者",
+        "Social Media Manager with Chinese - Gaming - Fixed-term"
+      ],
+      "notes": [
+        "中国游戏翻译为freelance，部分社媒岗位是fixed-term；不得将固定期雇员与独立承包者混同。",
+        "官网补充业务成立1998年；原库年份缺失。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v2/accounts/keywords-intl1/jobs/1489DE2A6D",
+        "https://apply.workable.com/api/v1/widget/accounts/keywords-intl1",
+        "https://apply.workable.com/keywords-intl1/j/1489DE2A6D/",
+        "https://www.keywordsstudios.com/en/about-us/global-offer/locations-studios/keywords-studios/europe/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.keywordsstudios.com/",
+      "careersPage": "https://apply.workable.com/keywords-intl1/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 13.4,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1998,
+        "employeeCount": "10,001+ 位员工",
+        "source": "https://www.keywordsstudios.com/en/about-us/global-offer/locations-studios/keywords-studios/europe/"
+      }
+    },
+    {
+      "companyId": "company_1786790768176_zymcyysb6",
+      "name": "Gain",
+      "rank": 8,
+      "score": 79.1,
+      "tier": "A",
+      "industry": "金融/Fintech",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "明确大陆地点、交付自主排程（需核客户会议）",
+      "opportunityScore": 6,
+      "roles": [
+        "Freelance Investment Research Analyst - China"
+      ],
+      "notes": [
+        "中国投资研究freelance岗位，是按任务的专业研究合作；工作量保障与支付周期须确认。",
+        "官方明确自主排程；约120项目日，金融/咨询实习与中英双语门槛。雇主提示应届身份可能受影响，申请前应自行核对，未验证其法律判断。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期",
+      "sources": [
+        "https://gain.recruitee.com/o/freelance-investment-research-analyst-china",
+        "https://gain.recruitee.com/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.gain.ai/",
+      "careersPage": "https://gain.recruitee.com/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 13.1,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.1,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2018,
+        "employeeCount": "501-1,000 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775033263626_oityun3wt",
+      "name": "Remote People",
+      "rank": 9,
+      "score": 78.6,
+      "tier": "A",
+      "industry": "人力资源服务",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "Remote-first（内部/客户岗位分开）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "DevOps Engineer",
+        "Global Workforce Compliance Advisor (Shanghai)",
+        "Product Manager - Payroll"
+      ],
+      "notes": [
+        "DevOps/Payroll产品岗位明确中国远程；其他是客户招聘，不能将所有职位的雇主待遇归于Remote People。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障",
+      "sources": [
+        "https://boards-api.greenhouse.io/v1/boards/remotepeople/jobs?content=true",
+        "https://job-boards.eu.greenhouse.io/remotepeople",
+        "https://job-boards.eu.greenhouse.io/remotepeople/jobs/4975169101"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://remotepeople.com/",
+      "careersPage": "https://job-boards.eu.greenhouse.io/remotepeople",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.6,
+        "business": 8
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2018,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359441_zh4xetm08",
+      "name": "Deel",
+      "rank": 10,
+      "score": 77.5,
+      "tier": "A",
+      "industry": "人力资源服务",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Sales Development Representative, Mid Market | China",
+        "Senior Customer Support Specialist | Mandarin Speaker"
+      ],
+      "notes": [
+        "官网中国岗位有地点与全职标注。提供EoR服务不证明内部中国员工的合同方式。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://www.deel.com/our-culture/",
+        "https://www.deel.com/careers/job/?ats_id=5ec4ea78-d59a-49de-9cc9-27737e7f5199"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.deel.com",
+      "careersPage": "https://www.deel.com/careers/",
+      "components": {
+        "mainland": 30,
+        "remote": 15,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.5,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2019,
+        "employeeCount": "5,001-10,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1782134660977_pqzepui8a",
+      "name": "Lionbridge",
+      "rank": 11,
+      "score": 77.5,
+      "tier": "A",
+      "industry": "语言/翻译",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "语言/AI项目远程（官方）",
+      "contractClass": "contractor",
+      "contractNote": "Freelance / Independent Contractor",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 4,
+      "roles": [
+        "Chinese Transcriber",
+        "General Application - GLOBAL"
+      ],
+      "notes": [
+        "部分为项目储备/通用申请，接单量与持续性不等同正式工作保障。",
+        "Chinese Transcriber面向即将开始项目的onboarding，2026续单属可能性；有排班至少4小时可用要求。当前明确项目量未证实，机会按4分。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.eu.lever.co/lionbridge/fe808a19-da01-4df8-bae9-00e0ab0f8608",
+        "https://jobs.eu.lever.co/lionbridge/?location=China"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.lionbridge.com/",
+      "careersPage": "https://jobs.eu.lever.co/lionbridge?location=China",
+      "components": {
+        "mainland": 28,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 13.5,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1996,
+        "employeeCount": "5,001-10,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775472803434_9ydflwr1o",
+      "name": "Intellect",
+      "rank": 12,
+      "score": 76.4,
+      "tier": "A",
+      "industry": "大健康/医疗",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Clinical Provider (China)",
+        "Behavioral Health Coach (China)",
+        "Crisis Helpline Responder (Lao Speaker)"
+      ],
+      "notes": [
+        "心理健康岗位明确freelance；实时视频/热线，不给异步分。当地临床资质、语言与排班是实质门槛。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/intellecthq",
+        "https://apply.workable.com/intellecthq/j/15B89B2B28/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://intellect.co/",
+      "careersPage": "https://apply.workable.com/intellecthq/#jobs",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 12.4,
+        "business": 4
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2019,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1773126932938_muk0tqhos",
+      "name": "AVOMIND",
+      "rank": 13,
+      "score": 75.8,
+      "tier": "A",
+      "industry": "人力资源服务",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "内部团队全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "内部/客户岗位模式分别待核",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Talent Acquisition Associate (Mandarin Speaker)"
+      ],
+      "notes": [
+        "以内部人才招聘职位为主；食品顾问、Publisher岗位是客户招聘，不把客户的合作方式作为AVOMIND内部待遇。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/avomind",
+        "https://apply.workable.com/api/v2/accounts/avomind/jobs/1F2A39011C",
+        "https://apply.workable.com/avomind/j/8303EEEAAE/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.avomind.com/",
+      "careersPage": "https://apply.workable.com/avomind/",
+      "components": {
+        "mainland": 30,
+        "remote": 15,
+        "payment": null,
+        "timezone": 15,
+        "basics": 11.8,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2019,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775464605179_6dur7csk6",
+      "name": "TransPerfect",
+      "rank": 14,
+      "score": 75.1,
+      "tier": "A",
+      "industry": "企业服务/SaaS",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Chinese to English Game Localization Linguist",
+        "Freelance Simplified Chinese (China) into Korean Patent Translator"
+      ],
+      "notes": [
+        "以中国游戏本地化/专利翻译freelance岗位为依据；有项目量/专业领域门槛，不能将全公司的语言服务岗位都视为远程。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://transperfect.recruitee.com/o/chinese-to-english-game-localization-linguist",
+        "https://transperfect.recruitee.com/o/freelance-simplified-chinese-china-into-korean-patent-translator",
+        "https://transperfect.recruitee.com/",
+        "https://transperfect.recruitee.com/o/freelance-seo-specialist-cantonese"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.transperfect.com/",
+      "careersPage": "https://transperfect.recruitee.com/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 13.1,
+        "business": 2
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.1,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1992,
+        "employeeCount": "5,001-10,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1788771947320_feyaznips",
+      "name": "SkyBlueMedia",
+      "rank": 15,
+      "score": 75,
+      "tier": "A",
+      "industry": "广告/营销",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "全职Exclusive Consultant（顾问合作）",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Sales and Brand Partnerships - Films, OTT & TV_Beijing"
+      ],
+      "notes": [
+        "北京居家、每周5天；全职工作安排实际为顾问合作，非正式员工证明。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.skybluegroup.com/jobs/8228565-sales-and-brand-partnerships-films-ott-tv_beijing",
+        "https://careers.skybluegroup.com/jobs"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://skybluemedia.ae/",
+      "careersPage": "https://careers.skybluegroup.com/jobs",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 9,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2008,
+        "employeeCount": "51-200 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775406430281_mzlb8uvp8",
+      "name": "Crimson Education",
+      "rank": 16,
+      "score": 74.8,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "大多数角色可远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Education Strategy Consultant, Crimson Rise (English and Mandarin Speaking)"
+      ],
+      "notes": [
+        "教育咨询/辅导依赖学生和家长的实时预约；中英文沟通要求。",
+        "双语不等于大陆资格，本次依据北京/上海/深圳的fully remote岗位。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.crimsoneducation.org/jobs/7892585-education-strategy-consultant-crimson-rise-english-and-mandarin-speaking",
+        "https://jobs.crimsoneducation.org/jobs",
+        "https://jobs.crimsoneducation.org/jobs/7762205-local-admissions-counsellor-china"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.crimsoneducation.org",
+      "careersPage": "https://jobs.crimsoneducation.org/jobs",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.8,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2013,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1790306231456_8vfcazrkf",
+      "name": "GoGlobal",
+      "rank": 17,
+      "score": 73.6,
+      "tier": "A",
+      "industry": "人力资源服务",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "全远程/部分国家混合（官方）",
+      "contractClass": "unknown",
+      "contractNote": "员工福利体系已描述；候选人合同类型仍未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Associate Director, Sales - APAC",
+        "Account Manager - China"
+      ],
+      "notes": [
+        "内部员工参与利润/合伙人计划；具体大陆签约主体待核。",
+        "销售岗位涉及不定期客户出差，异步程度未证实。",
+        "“所有员工可合伙/利润分享”是公司福利体系说明，不足以证明该中国候选人签雇员合同；签约模式不计分。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/goglobal",
+        "https://apply.workable.com/goglobal/j/7B5000D9D6/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://goglobal.com/",
+      "careersPage": "https://apply.workable.com/goglobal/",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 12.6,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2018,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775579183474_9wglgtdvs",
+      "name": "Canonical",
+      "rank": 18,
+      "score": 73,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程优先（有少数办公室岗）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "IoT Field Engineer - China & Region"
+      ],
+      "notes": [
+        "中国IoT Field Engineer明确Home Based深圳；有客户支持和区域现场/出差属性。",
+        "Worldwide工程岗位与中国Office Based岗位不能混算，全球岗位仍需确认大陆合同。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://boards-api.greenhouse.io/v1/boards/canonical/jobs?content=true",
+        "https://job-boards.greenhouse.io/canonical/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://canonical.com/",
+      "careersPage": "https://job-boards.greenhouse.io/canonical/",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 10,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2004,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1773915932271_m1fat7y17",
+      "name": "Airbnb",
+      "rank": 19,
+      "score": 72.1,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方岗位明确China Based；线下频次待核",
+      "remoteClass": "remote_first",
+      "remoteNote": "Live and Work Anywhere，但具体岗可有办公室/offsite",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国/美国跨区团队",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Machine Learning Engineer, Assistance Engineering"
+      ],
+      "notes": [
+        "允许偶尔办公室或offsite；不能记为纯全远程。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.airbnb.com/positions/7975743/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "http://airbnb.com/",
+      "careersPage": "https://careers.airbnb.com/positions/",
+      "components": {
+        "mainland": 28,
+        "remote": 12,
+        "payment": null,
+        "timezone": 12,
+        "basics": 14.1,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.1,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2007,
+        "employeeCount": "5,001-10,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1777470345621_zlqzv4u8r",
+      "name": "Atria",
+      "rank": 20,
+      "score": 72,
+      "tier": "A",
+      "industry": "广告/营销",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程环境（官方岗位）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Senior Applied GenAI Video Engineer"
+      ],
+      "notes": [
+        "GenAI视频职位明确China和fully remote；企业规模小，合同与业务稳定性需跟进。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/atria",
+        "https://jobs.ashbyhq.com/atria/b29bfc20-f15a-4f57-b9cb-b3a8ee72aaf7?locationId=34add8bc-010c-4bff-b68d-4630d97cb1d6"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.tryatria.com/",
+      "careersPage": "https://jobs.ashbyhq.com/atria",
+      "components": {
+        "mainland": 30,
+        "remote": 15,
+        "payment": null,
+        "timezone": 15,
+        "basics": 6,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2022,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1779101040842_ummb3swcw",
+      "name": "CXG",
+      "rank": 21,
+      "score": 72,
+      "tier": "A",
+      "industry": "消费生活",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Freelance Operations and Community Associate - Korean Speaker",
+        "Freelance Traditional Chinese Translator 兼职繁体中文笔译员"
+      ],
+      "notes": [
+        "只选中国remote翻译/社群运营/问卷验证，排除需要实际到店的Luxury Brand Evaluator。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v2/accounts/cxg/jobs/0425BE0F81",
+        "https://apply.workable.com/api/v2/accounts/cxg/jobs/B4A4B01EA7"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.cxg.com/",
+      "careersPage": "https://apply.workable.com/cxg/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 10,
+        "business": 2
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2006,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1785318245894_dz70pto1v",
+      "name": "Sleek",
+      "rank": 22,
+      "score": 72,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程优先，所选岗位100%远程",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Accountant - Hong Kong Clients - Remote - China"
+      ],
+      "notes": [
+        "服务香港客户但岗位居住要求在中国大陆；要求广东佛山/中山/梅州等区域及大陆工作权，不能视为任意中国城市。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/careers-at-sleek",
+        "https://apply.workable.com/careers-at-sleek/j/52FCA2D70B/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://sleek.com/",
+      "careersPage": "https://apply.workable.com/careers-at-sleek/",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 9,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2017,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1785319027122_0vid52hai",
+      "name": "TrustFlight",
+      "rank": 23,
+      "score": 72,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Crisis Communication Associate Trainer"
+      ],
+      "notes": [
+        "培训师岗位为Contractor，并明确国际出差和客户训练；业务交付依赖实时培训，非纯异步。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.trustflight.io/o/crisis-communication-associate-trainer",
+        "https://jobs.trustflight.io/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.trustflight.com/",
+      "careersPage": "https://jobs.trustflight.io/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 8,
+        "business": 4
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2017,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1789637528438_51plxnhvv",
+      "name": "Telnyx",
+      "rank": 24,
+      "score": 71.7,
+      "tier": "A",
+      "industry": "人工智能",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Inference Infrastructure Architect (Remote)"
+      ],
+      "notes": [
+        "职位正文明确Based in mainland China，技术岗位依赖AI推理基础设施；需确认硬件现场/值班与签约主体。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://boards-api.greenhouse.io/v1/boards/telnyx54/jobs?content=true",
+        "https://job-boards.greenhouse.io/telnyx54",
+        "https://telnyx.com/careers",
+        "https://job-boards.greenhouse.io/telnyx54/jobs/7995402003"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://telnyx.com/",
+      "careersPage": "https://job-boards.greenhouse.io/telnyx54",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.7,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2009,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1777787705583_1aggaq58m",
+      "name": "Mapbox",
+      "rank": 25,
+      "score": 71.6,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Solutions Architect, Enterprise"
+      ],
+      "notes": [
+        "Solutions Architect China明确25%客户出差上限；英语和普通话流利，不能把remote理解为无出差。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/mapbox",
+        "https://jobs.ashbyhq.com/mapbox/ed7fc29b-9fa3-4649-b592-fd8114a940da"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.mapbox.com/",
+      "careersPage": "https://jobs.ashbyhq.com/mapbox",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.6,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2011,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1772529597117_xrz1hy9fb",
+      "name": "Wati",
+      "rank": 26,
+      "score": 71.6,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Sales Executive (App) - Shanghai/Hangzhou",
+        "WordPress Developer - Remote"
+      ],
+      "notes": [
+        "中国Sales/WordPress远程职位；公司其他香港或印度岗位不自动允许大陆。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/50C914BD03",
+        "https://apply.workable.com/api/v2/accounts/wati-dot-i-o/jobs/FB0D753342",
+        "https://apply.workable.com/wati-dot-i-o/j/50C914BD03/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.wati.io/",
+      "careersPage": "https://apply.workable.com/wati-dot-i-o/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.6,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2020,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775407631807_0ou1nvzpz",
+      "name": "Welocalize",
+      "rank": 27,
+      "score": 71.5,
+      "tier": "A",
+      "industry": "语言/翻译",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "正式岗位全职，但直接/EoR合同未明",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Chinese Translator（Jinan, China；Remote）"
+      ],
+      "notes": [
+        "本岗位属于Full Time，不将“协调freelancers”误判为候选人本人是自由职业。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.lever.co/weloglobal/947b2763-251c-41f9-b984-70fd52280fe2"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.welocalize.com/",
+      "careersPage": "https://jobs.lever.co/weloglobal?department=Welocalize",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.5,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1997,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1787106734433_tsppbyzcx",
+      "name": "Worldly",
+      "rank": 28,
+      "score": 71,
+      "tier": "A",
+      "industry": "互联网/软件",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程团队（官方岗位描述）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Product Marketing Manager, Supplier Network Growth"
+      ],
+      "notes": [
+        "官方明确中国薪酬区间40,000–48,000 USD/年；不能由工资数额推断直接雇佣/EoR。",
+        "供应商网络的市场角色以中国/亚太为重点；客户会议工时待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.ashbyhq.com/worldly/1f73fa11-a37c-4012-b569-03546bfc8221?locationId=2cc8c1e5-38ac-48a1-88ad-43d76d98160a"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://worldly.io/",
+      "careersPage": "https://jobs.ashbyhq.com/worldly",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2019,
+        "employeeCount": "51-200 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1788173425585_twxaxyypx",
+      "name": "Xsolla",
+      "rank": 29,
+      "score": 71,
+      "tier": "A",
+      "industry": "游戏",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分中国岗位远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Data Scientist（Canada / Remote / Shanghai）",
+        "Account Executive - Gaming/AdTech Sales（Beijing）"
+      ],
+      "notes": [
+        "以具体中国岗位为依据；付款主体及跨境业务条件须核对。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.lever.co/xsolla/1228b276-5183-4981-8620-4fc06632f268"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://xsolla.com/",
+      "careersPage": "https://jobs.lever.co/xsolla?workplaceType=remote",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2005,
+        "employeeCount": "1,001-5,000 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1782917146070_h51hj99nl",
+      "name": "Verve",
+      "rank": 30,
+      "score": 70.9,
+      "tier": "A",
+      "industry": "广告/营销",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Technical Account Management Director (APAC)"
+      ],
+      "notes": [
+        "北京APAC客户技术管理岗位；客户沟通响应和中国签约类型待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://boards-api.greenhouse.io/v1/boards/verve/jobs?content=true",
+        "https://job-boards.greenhouse.io/verve"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://verve.com/",
+      "careersPage": "https://job-boards.greenhouse.io/verve",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 12.9,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 2.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2005,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1781082543999_o0iq7dt92",
+      "name": "Cactus Communications",
+      "rank": 31,
+      "score": 70.7,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方政策支持所在国远程/全球自由职业；当前大陆岗待核",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程优先（官方）",
+      "contractClass": "contractor",
+      "contractNote": "Freelance通道已明；全职中国合同待核",
+      "timezoneNote": "远程优先、弹性排程（官方）",
+      "opportunityScore": 2,
+      "roles": [],
+      "notes": [
+        "官网政策以上海作示例并区分全职员工所在国远程与全球freelancer；旧jobs站未完成当前岗位核验。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://cactusglobal.com/careers/remote-first/",
+        "https://cactusglobal.com/careers/freelance/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://cactusglobal.com/",
+      "careersPage": "https://jobs.cactusglobal.com/jobs",
+      "components": {
+        "mainland": 22,
+        "remote": 12,
+        "payment": 8,
+        "timezone": 9,
+        "basics": 13.7,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2002,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775540168800_bi0hjnvp3",
+      "name": "QS",
+      "rank": 32,
+      "score": 70.6,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "field_work",
+      "remoteNote": "居家基地但高频招生展会/出差",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Regional Recruitment Manager",
+        "Regional Recruitment Manager"
+      ],
+      "notes": [
+        "Regional Recruitment Manager明确high travelling frequency、晚间/周末；不是纯居家岗位。",
+        "同时有RRS Contractors与Fixed-Term两种，选择对应具体岗位合同，不能互换。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://qs.bamboohr.com/careers/list",
+        "https://qs.bamboohr.com/careers/589"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.qs.com/",
+      "careersPage": "https://qs.bamboohr.com/careers",
+      "components": {
+        "mainland": 30,
+        "remote": 2,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 13.6,
+        "business": 2
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1990,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784803425665_ld0vp7zz3",
+      "name": "Rolling Arrays",
+      "rank": 33,
+      "score": 70.2,
+      "tier": "A",
+      "industry": "人力资源服务",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Workday (HRTA) - Associate Consultant",
+        "SAP SF CPI - Lead Consultant",
+        "Workday Core HCM - Consultant"
+      ],
+      "notes": [
+        "中国Workday/SAP顾问明确可远程；实施/客户现场及项目工时必须单独确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/rolling-arrays-consulting",
+        "https://apply.workable.com/api/v2/accounts/rolling-arrays-consulting/jobs/F2A13B0D0E",
+        "https://apply.workable.com/rolling-arrays-consulting/j/F2A13B0D0E/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://rollingarrays.com/",
+      "careersPage": "https://apply.workable.com/rolling-arrays-consulting/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 14.2,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.2,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2009,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1778210818693_4dp1j8vuq",
+      "name": "Novakid",
+      "rank": 34,
+      "score": 70,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "分布式团队及远程岗位（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Sales Manager China (Remote)"
+      ],
+      "notes": [
+        "官网销售中国岗位仍有申请入口；旧Growth Product岗位404，不计当前机会。",
+        "教育销售/授课需配合实时预约，岗位工时逐岗核对。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://hr.novakidschool.com/o/sales-manager-china-remote"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.novakidschool.com/",
+      "careersPage": "https://hr.novakidschool.com/",
+      "components": {
+        "mainland": 30,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 9,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2017,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359440_gqktsajg4",
+      "name": "Whatnot",
+      "rank": 35,
+      "score": 70,
+      "tier": "A",
+      "industry": "电子商务",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "Remote co-located，按团队/枢纽组织",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Android Engineer - China",
+        "Senior Fullstack Engineer - China"
+      ],
+      "notes": [
+        "中国工程团队岗位明确；企业并非全远程，所在团队、上海居住及聚会要求需确认。",
+        "官方ATS列表与职位页面呈现不完全一致，投递前再核对开放状态。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.ashbyhq.com/whatnot/3f1aad83-3751-4338-bde7-13d5cfe277bf?locationId=3124086e-5ac9-47ca-b13b-a78943e2c48b",
+        "https://jobs.ashbyhq.com/whatnot/8f392f8f-67d5-42f5-bf27-e1c0b79c3512?locationId=3124086e-5ac9-47ca-b13b-a78943e2c48b"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.whatnot.com/",
+      "careersPage": "https://jobs.ashbyhq.com/whatnot?locationId=3124086e-5ac9-47ca-b13b-a78943e2c48b",
+      "components": {
+        "mainland": 28,
+        "remote": 12,
+        "payment": null,
+        "timezone": 15,
+        "basics": 9,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2019,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775374757778_r1tklsp93",
+      "name": "In Marketing We Trust",
+      "rank": 36,
+      "score": 70,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "APAC且GMT+7至+12；大陆签约待核",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程（官方）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/ABN（岗位级）",
+      "timezoneNote": "明确允许GMT+8（需澳洲工作时段）",
+      "opportunityScore": 4,
+      "roles": [
+        "Paid Media Specialist (Remote/Freelance)",
+        "Data Engineer (Remote, Freelance)"
+      ],
+      "notes": [
+        "只有指定时区申请被处理；中国UTC+8满足时区条件，ABN/国际承包者资格须另问。",
+        "公开约15–16小时/月，是兼职项目，不作为全职收入承诺。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.inmarketingwetrust.com.au/jobs/8445742-paid-media-specialist-remote-freelance"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://inmarketingwetrust.com.au/",
+      "careersPage": "https://careers.inmarketingwetrust.com.au/jobs",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": 8,
+        "timezone": 15,
+        "basics": 8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2010,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1782918538659_excpo62y6",
+      "name": "Levanta",
+      "rank": 37,
+      "score": 69.8,
+      "tier": "A",
+      "industry": "广告/营销",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Manager, Business Development (China Based)"
+      ],
+      "notes": [
+        "岗位明确China Based/Shenzhen远程；跨境电商客户BD可能需要美洲会议，不能保证全天中国工时。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://boards-api.greenhouse.io/v1/boards/levanta/jobs?content=true",
+        "https://job-boards.greenhouse.io/levanta",
+        "https://job-boards.greenhouse.io/levanta/jobs/5205464008"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://levanta.io/",
+      "careersPage": "https://job-boards.greenhouse.io/levanta",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 11.8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2023,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784085610751_lu7y7anpg",
+      "name": "Precision for Medicine",
+      "rank": 38,
+      "score": 69.3,
+      "tier": "A",
+      "industry": "生物科学",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分临床/合同岗位远程",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Site Contracts Manager（Remote, China）"
+      ],
+      "notes": [
+        "合同管理岗位远程，但可有国内/国际出差；不把临床试验现场岗位都视为远程。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://job-boards.greenhouse.io/precisionmedicinegroup/jobs/6114314004"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.precisionformedicine.com/",
+      "careersPage": "https://job-boards.greenhouse.io/pfm?gh_src=yaoa4veg4us",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.3,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2010,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1791442162681_ihagjec2v",
+      "name": "Multiplier",
+      "rank": 39,
+      "score": 68.9,
+      "tier": "A",
+      "industry": "人力资源服务",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Manager, Reseller Partnerships - APAC (China)",
+        "Customer Success Manager - Shanghai based"
+      ],
+      "notes": [
+        "中国渠道/客户成功远程职位；内部签约支付与其提供的EoR产品分开核验。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.kula.ai/usemultiplier/54200-manager-reseller-partnerships-apac-china",
+        "https://careers.kula.ai/usemultiplier/29659-customer-success-manager-shanghai-based",
+        "https://careers.kula.ai/usemultiplier"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.usemultiplier.com/",
+      "careersPage": "https://careers.kula.ai/usemultiplier",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 12.9,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2020,
+        "employeeCount": "201-500 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784101871679_6h1lbolyn",
+      "name": "Berlitz",
+      "rank": 40,
+      "score": 68,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程（Mandarin Instructor）",
+      "remoteClass": "selected_roles",
+      "remoteNote": "教学岗位可远程",
+      "contractClass": "contractor",
+      "contractNote": "明确Contractor/Freelance",
+      "timezoneNote": "全球学员排程灵活，目标时区待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Remote Mandarin Instructor"
+      ],
+      "notes": [
+        "北京/中国远程自由职业教师，需实时授课和初期培训投入，不属于异步。",
+        "官网业务起源1878；不等同大陆签约法律主体成立年。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://berlitz.bamboohr.com/careers/45",
+        "https://berlitz.bamboohr.com/careers/45/detail",
+        "https://www.berlitz.com/en-de/about/our-story"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.berlitz.com/",
+      "careersPage": "https://berlitz.bamboohr.com/careers",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 9,
+        "basics": 10,
+        "business": 4
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 1878,
+        "employeeCount": "5,001-10,000 位员工",
+        "source": "https://www.berlitz.com/en-de/about/our-story"
+      }
+    },
+    {
+      "companyId": "company_1775476720208_ssi6jk5ra",
+      "name": "RateHawk",
+      "rank": 41,
+      "score": 67.9,
+      "tier": "A",
+      "industry": "旅游/生活服务",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "API Optimization Manager APAC"
+      ],
+      "notes": [
+        "中国API Optimization Manager APAC远程；旅游客户支持实时协作和英语门槛需确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v1/widget/accounts/ratehawk",
+        "https://apply.workable.com/ratehawk/j/B0C197A564/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.ratehawk.com/",
+      "careersPage": "https://apply.workable.com/ratehawk/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.9,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2016,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775489838673_kp3p9v0tg",
+      "name": "Circle",
+      "rank": 42,
+      "score": 67.9,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC岗位（具体重叠待核）",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Quality Engineer",
+        "Lead Engineer, AI Platform",
+        "Lead Engineer, AI Platform"
+      ],
+      "notes": [
+        "本库Circle是社区SaaS，不是Circle金融公司；具体大陆签约范围待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/circle"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://circle.so/",
+      "careersPage": "https://jobs.ashbyhq.com/circle",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": null,
+        "timezone": 12,
+        "basics": 12.9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2019,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359440_550he9u75",
+      "name": "Supabase",
+      "rank": 43,
+      "score": 67.9,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC岗位（具体排班待核）",
+      "opportunityScore": 4,
+      "roles": [
+        "Support Engineer (APAC)",
+        "Database Support Engineer (APAC)",
+        "Account Executive  (APAC)"
+      ],
+      "notes": [
+        "官方明确异步和无办公室，APAC不自动保证覆盖大陆。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/supabase",
+        "https://supabase.com/careers"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://supabase.com",
+      "careersPage": "https://jobs.ashbyhq.com/supabase/",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": null,
+        "timezone": 12,
+        "basics": 12.9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2020,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775470348125_srlxd5os5",
+      "name": "Oxylabs",
+      "rank": 44,
+      "score": 67.8,
+      "tier": "A",
+      "industry": "企业服务/SaaS",
+      "geoNote": "官方大陆远程已确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "中国营销岗位远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "大陆岗位/本地业务支持（工时仍须确认）",
+      "opportunityScore": 6,
+      "roles": [
+        "Performance Marketing Manager (China)"
+      ],
+      "notes": [
+        "上海/中国获客方向明确；内部全员远程比例未确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.lever.co/oxylabs/d7f65402-8ccd-4c00-ab90-327f80ed696d"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://oxylabs.io/",
+      "careersPage": "https://career.oxylabs.io/#jobs",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.8,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2015,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359441_ztqm73z36",
+      "name": "Bragi",
+      "rank": 45,
+      "score": 67,
+      "tier": "A",
+      "industry": "人工智能",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "特定深圳岗位居家，需现场支持",
+      "contractClass": "unknown",
+      "contractNote": "FTE标签；直接/EoR/承包者合同未证实",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Field Application Engineer – Mobile",
+        "Field Application Engineer  – Embedded",
+        "Technical Sales Support – Shenzhen-based "
+      ],
+      "notes": [
+        "官方明确深圳home-office/remote，ATS标FTE，但需travel for on-site customer support。",
+        "不能理解为无客户现场要求，后续须问每月出差与驻场频次。",
+        "ATS employmentStatusLabel为FTE而employmentType为空；全职编制标签不足以证明法律雇员身份，支付模式不计分。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://bragi.bamboohr.com/careers/343/detail",
+        "https://bragi.bamboohr.com/careers/344/detail",
+        "https://bragi.bamboohr.com/careers/list",
+        "https://bragi.bamboohr.com/careers/344"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://bragi.com",
+      "careersPage": "https://bragi.bamboohr.com/careers",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2013,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775489091880_7t3ph0nn2",
+      "name": "Wing Assistant",
+      "rank": 46,
+      "score": 66.7,
+      "tier": "A",
+      "industry": "企业服务/SaaS",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Product Manager - AI"
+      ],
+      "notes": [
+        "AI产品经理岗位明确China remote；不能把虚拟助理外包网络的模式当此产品团队的模式。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.lever.co/getwingapp/6de1ca37-69c0-4ba1-a7aa-82d4d19dcb4d",
+        "https://jobs.lever.co/getwingapp"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://wingassistant.com/",
+      "careersPage": "https://jobs.lever.co/getwingapp",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 12.7,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2018,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1785501787702_ylvdbf77z",
+      "name": "Endpoint Clinical",
+      "rank": 47,
+      "score": 66,
+      "tier": "A",
+      "industry": "大健康/医疗",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Business Solutions Architect"
+      ],
+      "notes": [
+        "官方列表有Remote China Business Solutions Architect；临床技术行业知识和客户支持工时需确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.lever.co/v0/postings/endpointclinical?mode=json",
+        "https://jobs.lever.co/endpointclinical",
+        "https://jobs.lever.co/endpointclinical/9c2b9577-7b0b-46a3-9017-e45d94f4dc91"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.endpointclinical.com/",
+      "careersPage": "https://jobs.lever.co/endpointclinical",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 10,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2009,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1780913110008_xj3vhi4km",
+      "name": "Global University Systems",
+      "rank": 48,
+      "score": 66,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Business Development Manager for International Student Recruitment"
+      ],
+      "notes": [
+        "中国国际招生BD可远程，但渠道/招聘展会有线下活动；不适合完全不能出差的候选人。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://gusglobaluniversitysystems-global-university-systems.teamtailor.com/jobs/7902482-business-development-manager-for-international-student-recruitment",
+        "https://gusglobaluniversitysystems-global-university-systems.teamtailor.com/jobs"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.globaluniversitysystems.com/",
+      "careersPage": "https://gusglobaluniversitysystems-global-university-systems.teamtailor.com/jobs",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 10,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2003,
+        "employeeCount": "10,001+ 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1787565052024_nxt0s4sf3",
+      "name": "Financial Finesse",
+      "rank": 49,
+      "score": 65.8,
+      "tier": "A",
+      "industry": "金融/Fintech",
+      "geoNote": "官方明确中国境内任意地点远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "中国财务教练岗远程",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "明确China境内业务，可弹性地点",
+      "opportunityScore": 4,
+      "roles": [
+        "Personal Finance Coach – China"
+      ],
+      "notes": [
+        "正文明确China flexible in-country location, remote work，偶尔境内workshop；财务规划知识与经验要求高。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://phh.tbe.taleo.net/phh03/ats/careers/v2/viewRequisition?org=FINAFINE&cws=37&rid=125"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.financialfinesse.com/",
+      "careersPage": "https://www.financialfinesse.com/careers/",
+      "components": {
+        "mainland": 28,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.8,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1999,
+        "employeeCount": "51-200 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1772529963117_6btyg8x0z",
+      "name": "Yuno",
+      "rank": 50,
+      "score": 64.7,
+      "tier": "A",
+      "industry": "金融/Fintech",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Technical Support Analyst - APAC",
+        "Staff Incident Manager",
+        "Sales Development Representative (Part Time, China)"
+      ],
+      "notes": [
+        "Technical Support Analyst明确APAC business hours及中文商户；有值班/事件响应，不能计纯异步。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.lever.co/yuno/9a3b8655-edfe-4678-b6e1-3de940cf8270",
+        "https://jobs.lever.co/yuno/b638c2de-cb8b-4e69-992f-8b0e7295479c",
+        "https://api.lever.co/v0/postings/yuno?mode=json"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://y.uno/",
+      "careersPage": "https://jobs.lever.co/yuno",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": null,
+        "timezone": 15,
+        "basics": 10.7,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2022,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1773226150873_tsigx48ng",
+      "name": "RevenueCat",
+      "rank": 51,
+      "score": 63.7,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方岗位）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC岗位（工时待核）",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Software Engineer, Internal Tooling"
+      ],
+      "notes": [
+        "APAC内部工具工程岗位，非中国定向；大陆签约资格待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/revenuecat"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.revenuecat.com/",
+      "careersPage": "https://jobs.ashbyhq.com/revenuecat",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": null,
+        "timezone": 12,
+        "basics": 12.7,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2017,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1780826760804_4st0pxr54",
+      "name": "Lovable",
+      "rank": 52,
+      "score": 63,
+      "tier": "B",
+      "industry": "人工智能",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程",
+      "contractClass": "contractor",
+      "contractNote": "岗位明确remote Contractor",
+      "timezoneNote": "明确APAC业务工时",
+      "opportunityScore": 4,
+      "roles": [
+        "Product Experience Specialist (APAC)"
+      ],
+      "notes": [
+        "FullTime字段同时正文写Contractor，采用正文合同性质。其他瑞典角色可能驻场。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/lovable"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://lovable.dev/",
+      "careersPage": "https://jobs.ashbyhq.com/lovable?workplaceType=Remote",
+      "components": {
+        "mainland": 18,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 12,
+        "basics": 12,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2023,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775486154820_mnh3xvfkg",
+      "name": "Clipboard",
+      "rank": 53,
+      "score": 62.8,
+      "tier": "B",
+      "industry": "大健康/医疗",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方岗位描述）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "仅选APAC文档/支持岗位",
+      "opportunityScore": 4,
+      "roles": [
+        "Onboarding Documents Associate",
+        "Documents Voice and Chat Specialist"
+      ],
+      "notes": [
+        "S&O Senior Associate虽写Global，正文仅允许美洲/欧洲且5小时PST重叠，已排除该岗位。",
+        "所选支持岗仍可能夜班，排班及大陆许可待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/clipboard"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.clipboardhealth.com/",
+      "careersPage": "https://jobs.ashbyhq.com/clipboard",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": null,
+        "timezone": 12,
+        "basics": 13.8,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2016,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1773911614462_5y19h1sk6",
+      "name": "The Flex",
+      "rank": 54,
+      "score": 62.7,
+      "tier": "A",
+      "industry": "房地产/物业",
+      "geoNote": "官方远程允许国家名单含China",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程优先、按结果工作（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球自主工时（官方）",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Software Engineer",
+        "Senior Full-Stack Product Engineer"
+      ],
+      "notes": [
+        "China在多国允许列表中；不是专门面向大陆招聘，不给中国定向满分。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障",
+      "sources": [
+        "https://jobs.ashbyhq.com/The-Flex/d9457005-2ae9-410f-8fe7-164ff0ad1840",
+        "https://jobs.ashbyhq.com/The-Flex/59e8ac69-8600-45b6-88ef-d558039023c6"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://theflex.global/",
+      "careersPage": "https://jobs.ashbyhq.com/The-Flex",
+      "components": {
+        "mainland": 24,
+        "remote": 12,
+        "payment": null,
+        "timezone": 9,
+        "basics": 11.7,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2019,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1771145074681_xq1yaqmmc",
+      "name": "Scopic",
+      "rank": 55,
+      "score": 62.5,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程/全虚拟（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球弹性排程，项目核心工时待核",
+      "opportunityScore": 4,
+      "roles": [
+        "Remote Fullstack JavaScript Developer"
+      ],
+      "notes": [
+        "官方允许世界各地工作；需逐项目确认大陆签约、客户时区和任务持续性。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://careers.scopicsoftware.com/",
+        "https://scopicsoftware.zohorecruit.com/jobs/Careers/741923000041731045/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://scopicsoftware.com/",
+      "careersPage": "https://scopicsoftware.zohorecruit.com/jobs/Careers/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 14.5,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2006,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1789557009980_b1bjd81m7",
+      "name": "Navitas",
+      "rank": 56,
+      "score": 62.4,
+      "tier": "A",
+      "industry": "教育/文化",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "field_work",
+      "remoteNote": "居家基地但频繁线下招聘/出差",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国岗位推断，核心工时待核",
+      "opportunityScore": 6,
+      "roles": [
+        "Future Student Officer - Nanjing/ Hangzhou/ Chengdu",
+        "Regional Marketing Manager – Shanghai/ East China/ Beijing"
+      ],
+      "notes": [
+        "官网岗位Open；正文明确frequent travel、非正常营业时段，纯居家/异步程度低。",
+        "若候选人不能出差，不推荐这些区域招生职位。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://navitasgsm.bamboohr.com/careers/374/detail",
+        "https://navitasgsm.bamboohr.com/careers/377/detail",
+        "https://navitasgsm.bamboohr.com/careers/374"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.navitas.com/",
+      "careersPage": "https://navitasgsm.bamboohr.com/careers",
+      "components": {
+        "mainland": 30,
+        "remote": 2,
+        "payment": null,
+        "timezone": 15,
+        "basics": 13.4,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 1994,
+        "employeeCount": "5,001-10,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1791277073367_cpy2wwl6g",
+      "name": "iLogos Game Studios",
+      "rank": 57,
+      "score": 62.3,
+      "tier": "B",
+      "industry": "游戏",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "职位明确Fully Remote/Anywhere",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "自己的工作日程（官方）",
+      "opportunityScore": 4,
+      "roles": [
+        "2D Artist Props and Customization",
+        "Financial Manager"
+      ],
+      "notes": [
+        "合同制岗位的Contract标签不足以确认独立承包者或固定期雇员，支付模式留待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://careers.ilogos.biz/jobs/8252054-2d-artist-props-and-customization",
+        "https://careers.ilogos.biz/jobs/8124395-financial-manager"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://ilogos.biz/",
+      "careersPage": "https://careers.ilogos.biz/jobs",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 14.3,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2006,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1773030126452_uh672ko2a",
+      "name": "Superside",
+      "rank": 58,
+      "score": 62.3,
+      "tier": "B",
+      "industry": "人工智能",
+      "geoNote": "官方全球（大陆待确认）",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全球分布式远程交付（官方）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "全球，核心工时未明",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Creative Strategist",
+        "Account Director",
+        "Conceptual Art Director"
+      ],
+      "notes": [
+        "全球创意交付团队，有freelance与正式岗位混合；不以某freelance岗位推定所有人的支付模式。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://jobs.lever.co/superside/2f9d8778-7440-4d62-9c3f-1fd8e1e04617",
+        "https://api.lever.co/v0/postings/superside?mode=json",
+        "http://careers.superside.com/",
+        "https://jobs.lever.co/superside/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.superside.com/",
+      "careersPage": "https://jobs.lever.co/superside/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": 8,
+        "timezone": 5,
+        "basics": 14.3,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2015,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1787107332664_vp6gxis4x",
+      "name": "AG1",
+      "rank": 59,
+      "score": 62.2,
+      "tier": "B",
+      "industry": "大健康/医疗",
+      "geoNote": "官方APAC（大陆待确认）",
+      "remoteClass": "fully_remote",
+      "remoteNote": "除实验室外100%远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC岗位推断，具体工时待核",
+      "opportunityScore": 4,
+      "roles": [
+        "Manager, Creative Strategist - APAC"
+      ],
+      "notes": [
+        "公司除实验室岗位外100%远程；当前APAC Creative Strategist需项目/client会议，大陆许可未确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://boards-api.greenhouse.io/v1/boards/ag1/jobs?content=true",
+        "https://job-boards.greenhouse.io/ag1"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://drinkag1.com/",
+      "careersPage": "https://job-boards.greenhouse.io/ag1",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": null,
+        "timezone": 12,
+        "basics": 13.2,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.2,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2010,
+        "employeeCount": "201-500 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1778228334937_5hpx2xnvt",
+      "name": "Metabase",
+      "rank": 60,
+      "score": 61.8,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球异步（官方）",
+      "opportunityScore": 4,
+      "roles": [
+        "Engineering Manager",
+        "CI Engineer",
+        "Engineering Manager"
+      ],
+      "notes": [
+        "多个worldwide岗位，合同及大陆居住许可仍需确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://jobs.lever.co/metabase/5bf3233d-a162-47b2-8d85-d3650b176c6e",
+        "https://api.lever.co/v0/postings/metabase?mode=json",
+        "https://jobs.lever.co/metabase/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.metabase.com/",
+      "careersPage": "https://jobs.lever.co/metabase/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 13.8,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2014,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784605283029_yr7yr00f1",
+      "name": "Dify",
+      "rank": 61,
+      "score": 61.6,
+      "tier": "B",
+      "industry": "人工智能",
+      "geoNote": "中国团队+远程角色支持（具体岗位待核）",
+      "remoteClass": "selected_roles",
+      "remoteNote": "支持合适岗位远程，必要时线下协作",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "苏州/上海/东京/美国分布，异步优先",
+      "opportunityScore": 2,
+      "roles": [],
+      "notes": [
+        "官网明确async-first和remote fully supported for right roles，也明确必要线下协作；不记全员全远程。",
+        "需确认具体岗位是否必须在苏州/上海、线下频次与合同方式。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://join.dify.ai/",
+        "https://join.dify.ai/roles"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://dify.ai",
+      "careersPage": "https://join.dify.ai/roles",
+      "components": {
+        "mainland": 22,
+        "remote": 7,
+        "payment": null,
+        "timezone": 12,
+        "basics": 10.6,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2023,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359439_uzv3i0pu5",
+      "name": "Doist",
+      "rank": 62,
+      "score": 61.5,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "自定工时（官方）",
+      "opportunityScore": 4,
+      "roles": [
+        "General Counsel"
+      ],
+      "notes": [
+        "官网明确不限制地点；当前已见岗位主要是General Counsel，职业资格门槛高。大陆合同模式待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://www.todoist.com/careers",
+        "https://jobs.ashbyhq.com/todoist-inc/464709c2-75ab-46d3-a416-6b91e8ca8b7f"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://doist.com",
+      "careersPage": "https://doist.com/careers#open-roles",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 13.5,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2007,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784616132961_hhwv9xkyd",
+      "name": "Singular",
+      "rank": 63,
+      "score": 61,
+      "tier": "B",
+      "industry": "大数据/云计算",
+      "geoNote": "官方China岗位+可选远程政策；具体团队待核",
+      "remoteClass": "remote_first",
+      "remoteNote": "办公室/混合/远程可选择（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "中国客户业务，具体工时待核",
+      "opportunityScore": 4,
+      "roles": [
+        "Technical Account Manager - China"
+      ],
+      "notes": [
+        "当前China TAM岗位未设置isRemote，但公司政策可选远程；需确认该团队的远程批准。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://www.singular.net/careers/",
+        "https://jobs.ashbyhq.com/singular/343e6afe-7653-4653-8fc2-e3e0a43611e7"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.singular.net/",
+      "careersPage": "https://www.singular.net/careers/",
+      "components": {
+        "mainland": 18,
+        "remote": 12,
+        "payment": null,
+        "timezone": 12,
+        "basics": 13,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2014,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1784867856235_bl2pcg9dm",
+      "name": "Law Offices of Sabrina Li",
+      "rank": 64,
+      "score": 60.8,
+      "tier": "A",
+      "industry": "法律",
+      "geoNote": "官方大陆远程",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "标准8:00–17:00 PST（大陆夜班）",
+      "opportunityScore": 6,
+      "roles": [
+        "Bilingual Client Intake Specialist (Mandarin & English)"
+      ],
+      "notes": [
+        "所选客户接待岗位标准工时为8:00–17:00 PST，其他排班可协商但不能预先按中国时区满分。",
+        "独立Contractor，在亚洲远程；候选人须确认夜班接受度。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://apply.workable.com/api/v2/accounts/lawofficesofsabrinali/jobs/3C8FB1AB5F",
+        "https://apply.workable.com/lawofficesofsabrinali/j/850E5B67F0/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.sabrinali.law/",
+      "careersPage": "https://apply.workable.com/lawofficesofsabrinali/",
+      "components": {
+        "mainland": 30,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 0,
+        "basics": 11.8,
+        "business": 4
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2012,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775536406105_bs3agl0fr",
+      "name": "ClickHouse",
+      "rank": 65,
+      "score": 60.6,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方中国团队/APJ岗位；长期远程方式待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "全球分布/Remote-friendly（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "China/APJ技术团队（具体工时待核）",
+      "opportunityScore": 4,
+      "roles": [
+        "Engineering Manager - China",
+        "Support Engineer - China (Alibaba Cloud Strategic Accounts)"
+      ],
+      "notes": [
+        "中国团队和岗位明确，实际地点标签APJ而isRemote字段未明；先核对manager是否必须线下。",
+        "其他APJ岗位可能明确Singapore，不一概视为大陆可申。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://clickhouse.com/company/careers",
+        "https://jobs.ashbyhq.com/clickhouse/4a653f45-fa03-4980-b366-60c10c6eae47"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://clickhouse.com/",
+      "careersPage": "https://jobs.ashbyhq.com/clickhouse/",
+      "components": {
+        "mainland": 18,
+        "remote": 12,
+        "payment": null,
+        "timezone": 12,
+        "basics": 12.6,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2021,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775490250077_2nn2557yk",
+      "name": "Railsware",
+      "rank": 66,
+      "score": 59.9,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "全球分布、自由工作地点（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "自主高效工时/异步（官方）",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "合约及大陆资格须确认；某些岗位可有更窄时区限制。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://railsware.com/team/",
+        "https://railsware.com/careers/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://railsware.com/",
+      "careersPage": "https://railsware.com/careers/",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 9,
+        "basics": 14.9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 4.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2007,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1778663866668_npebij4a4",
+      "name": "Remote",
+      "rank": 67,
+      "score": 58.4,
+      "tier": "B",
+      "industry": "人力资源服务",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程及异步（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球异步；岗位另有地域限制",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Backend Engineer"
+      ],
+      "notes": [
+        "APAC Lifecycle岗位仅列新加坡、香港、马来西亚，不纳入大陆机会；本企业以全球工程岗位观察。",
+        "自己提供中国EoR不证明当前内部中国招聘方式。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://remote.com/en-sg/careers",
+        "https://remote.com/openings"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://remote.com/",
+      "careersPage": "https://remote.com/openings#jobs-wrapper",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 12.4,
+        "business": 8
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2019,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359440_yvo7dw6t7",
+      "name": "Automattic",
+      "rank": 68,
+      "score": 58,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球异步（岗位/官方）",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Product Manager, Payments",
+        "Systems Engineer"
+      ],
+      "notes": [
+        "官方全球distributed/anywhere，具体中国签约和岗位是否支持大陆仍待确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://automattic.com/work-with-us/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://automattic.com",
+      "careersPage": "https://automattic.com/jobs/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 10,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2005,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359445_54yeeyh1w",
+      "name": "XapoBank",
+      "rank": 69,
+      "score": 57,
+      "tier": "B",
+      "industry": "金融/Fintech",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全分布式/100%远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "明确APAC客户成功职责",
+      "opportunityScore": 4,
+      "roles": [
+        "Customer Success Team Lead (APAC)"
+      ],
+      "notes": [
+        "岗位界面所在地为Gibraltar-Remote，正文Work from anywhere；大陆是否支持签约仍需问HR。",
+        "金融/数字资产业务需核对具体雇佣和业务限制，不假定代币支付或中国业务许可。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://job-boards.greenhouse.io/xapo61/jobs/7996968003"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.xapobank.com/en",
+      "careersPage": "https://job-boards.greenhouse.io/xapo61",
+      "components": {
+        "mainland": 18,
+        "remote": 15,
+        "payment": null,
+        "timezone": 12,
+        "basics": 10,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2013,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775483905689_kz64e6i8z",
+      "name": "MonetizeMore",
+      "rank": 70,
+      "score": 57,
+      "tier": "B",
+      "industry": "广告/营销",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "灵活全球排程（官方）",
+      "opportunityScore": 4,
+      "roles": [
+        "Group Product Manager (Remote)"
+      ],
+      "notes": [
+        "旧中国佣金销售职位410关闭；当前产品岗位未确认大陆地区，不沿用旧中国招聘资格。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://www.monetizemore.com/about-us/careers/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.monetizemore.com/",
+      "careersPage": "https://monetizem.applytojob.com/apply",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2010,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775050269724_91mpr2fyj",
+      "name": "Holafly",
+      "rank": 71,
+      "score": 56.7,
+      "tier": "B",
+      "industry": "通信/5G",
+      "geoNote": "官方APAC岗位（大陆待确认）",
+      "remoteClass": "remote_first",
+      "remoteNote": "部分远程、部分Dublin混合",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC运营岗位",
+      "opportunityScore": 4,
+      "roles": [
+        "Telco Network Operations Manager (APAC)"
+      ],
+      "notes": [
+        "旧Strategic Partnerships岗位已inactive；当前APAC/India岗位须核对大陆与技术排班。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.holafly.com/jobs/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://esim.holafly.com/zh/",
+      "careersPage": "https://careers.holafly.com/jobs/",
+      "components": {
+        "mainland": 18,
+        "remote": 12,
+        "payment": null,
+        "timezone": 12,
+        "basics": 12.7,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2017,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1781103161389_p2slo1w83",
+      "name": "Nuitée",
+      "rank": 72,
+      "score": 56.3,
+      "tier": "B",
+      "industry": "人工智能",
+      "geoNote": "官方全球/远程政策；大陆资格待核",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分APAC岗位远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC岗位，核心工时待核",
+      "opportunityScore": 4,
+      "roles": [
+        "Business Development Director (APAC/Remote)",
+        "Technical Integration Manager (APAC/Remote)"
+      ],
+      "notes": [
+        "泰语客户服务岗实际Thailand；选APAC通用业务/技术职位，不将Thailand角色当中国岗位。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://nuitee.com/careers",
+        "https://job-boards.eu.greenhouse.io/nuitee/jobs/4788540101"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://nuitee.com/",
+      "careersPage": "https://job-boards.greenhouse.io/nuitee",
+      "components": {
+        "mainland": 18,
+        "remote": 7,
+        "payment": null,
+        "timezone": 12,
+        "basics": 13.3,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2016,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1774279228787_cp5uysvea",
+      "name": "Adapty.io",
+      "rank": 73,
+      "score": 56,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "官方允许自定日程",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior DevOps Engineer",
+        "Growth Product Manager"
+      ],
+      "notes": [
+        "明确Join from anywhere，可选Belgrade/London办公室；大陆合同待核。",
+        "官网项目开始年份与库内成立年不是同一口径，基本面保留库内值并标注来源。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://adapty.io/careers/",
+        "https://adapty.io/careers/senior-devops-engineer/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://adapty.io/",
+      "careersPage": "https://adapty.io/careers/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 8,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2020,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359446_aa0htesa2",
+      "name": "Grafana Labs",
+      "rank": 74,
+      "score": 56,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球/远程政策；大陆资格待核",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "按结果与异步协作；岗位核心工时待核",
+      "opportunityScore": 2,
+      "roles": [],
+      "notes": [
+        "并非所有国家均可签约，需确认当前适配岗位是否含大陆。",
+        "官方自述员工敬业度不替代独立Glassdoor员工评分。",
+        "官网补充公司原名Raintank，2014成立；原库年份缺失。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://grafana.com/careers/",
+        "https://grafana.com/blog/the-story-of-grafana-documentary-the-business-of-open-source/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://grafana.com/",
+      "careersPage": "https://grafana.com/about/careers/open-positions/",
+      "components": {
+        "mainland": 12,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 10,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2014,
+        "employeeCount": "1,001-5,000 位员工",
+        "source": "https://grafana.com/blog/the-story-of-grafana-documentary-the-business-of-open-source/"
+      }
+    },
+    {
+      "companyId": "company_1785166658587_m1m4lg44n",
+      "name": "GreenTomatoMedia",
+      "rank": 75,
+      "score": 54.8,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "Remote-first（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球分布/自由地点，核心工时待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "全球40国团队，Work from anywhere；有iGaming/内容业务，具体项目、付款和大陆业务适用条件需核对。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://greentomatomedia.com/careers/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://greentomatomedia.com/",
+      "careersPage": "https://greentomatomedialimited.bamboohr.com/careers",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 9,
+        "basics": 13.8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.8,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2011,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359440_1md9lgd62",
+      "name": "Buffer",
+      "rank": 76,
+      "score": 54.7,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "非美Contractor历史政策，当前大陆方式待核",
+      "timezoneNote": "当前岗位偏好至少4小时EMEA重叠",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Infrastructure Engineer"
+      ],
+      "notes": [
+        "官网旧FAQ称非美成员是Contractor，距今多年，不直接当作当前支付类型给分。",
+        "当前工程岗位对EMEA重叠偏好影响北京时间工作安排。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://buffer.com/journey/1ee8b707-48a0-40cc-a319-3fb7c665a1e8",
+        "https://buffer.com/resources/working-at-buffer/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://buffer.com/",
+      "careersPage": "https://buffer.com/journey#open-roles",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 3,
+        "basics": 12.7,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.7,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2010,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1777273425421_oz4fgkvj7",
+      "name": "Chess.com",
+      "rank": 77,
+      "score": 54.2,
+      "tier": "B",
+      "industry": "游戏",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球，具体核心工时待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "公开分布60多个国家；仍需确认具体岗位可否从大陆履职。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://www.chess.com/jobs"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.chess.com/",
+      "careersPage": "https://www.chess.com/jobs",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 14.2,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.2,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2005,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1770120200957_1naw4mgb6",
+      "name": "AmpiFire",
+      "rank": 78,
+      "score": 54,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "全球远程团队（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "自由安排地点/日程（官方）",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "公司自述盈利和remote团队，不把盈利宣传当已审计财务；大陆合同、实际招聘岗位待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://ampifire.com/careers"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://ampifire.com/",
+      "careersPage": "https://ampifire.com/careers",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 9,
+        "basics": 9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2014,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359446_9hr9valcm",
+      "name": "Docker",
+      "rank": 79,
+      "score": 54,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "跨欧洲/APAC/美洲，核心工时待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "只选明确APAC/Worldwide职位，US/Europe restricted岗位不适合大陆。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://www.docker.com/career-openings/",
+        "https://www.docker.com/careers/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.docker.com",
+      "careersPage": "https://www.docker.com/career-openings/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 10,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2013,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359445_mdhyhhy7n",
+      "name": "Igalia",
+      "rank": 80,
+      "score": 54,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "全球远程友好（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "官方允许自定工作日程",
+      "opportunityScore": 4,
+      "roles": [
+        "Chromium Browser Developer",
+        "WebKit Browser Developer"
+      ],
+      "notes": [
+        "员工持有/民主治理，不能因此推定中国直接劳动合同；大陆支付方式待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://www.igalia.com/jobs/",
+        "https://www.igalia.com/jobs/open/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.igalia.com/",
+      "careersPage": "https://www.igalia.com/jobs/open/",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 9,
+        "basics": 9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2006,
+        "employeeCount": "100-150",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775487852570_u9nobeb2s",
+      "name": "Runpod",
+      "rank": 81,
+      "score": 53.9,
+      "tier": "B",
+      "industry": "人工智能",
+      "geoNote": "官方APAC（大陆待确认）",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "APAC岗位推断，具体工时待核",
+      "opportunityScore": 4,
+      "roles": [
+        "Forward Deployed Engineer APAC",
+        "Account Executive APAC"
+      ],
+      "notes": [
+        "选Remote APAC工程/销售，客户出差与技术支持排班须确认；中国国家许可尚未明确。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/runpod"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.runpod.io/",
+      "careersPage": "https://jobs.ashbyhq.com/runpod/",
+      "components": {
+        "mainland": 18,
+        "remote": 7,
+        "payment": null,
+        "timezone": 12,
+        "basics": 10.9,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2022,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359443_e1nwzgkwd",
+      "name": "MailerLite",
+      "rank": 82,
+      "score": 53.5,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程公司（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球团队，岗位重叠要求待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "官方远程分布40多个国家，不推定所有岗位允许中国大陆。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://www.mailerlite.com/about",
+        "https://www.mailerlite.com/jobs"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.mailerlite.com",
+      "careersPage": "https://www.mailerlite.com/jobs",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 13.5,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.5,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2010,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1778429520032_fd59phfj4",
+      "name": "VRChat",
+      "rank": 83,
+      "score": 53,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球（大陆待确认）",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程分布式团队（岗位描述）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球，核心工时未明",
+      "opportunityScore": 4,
+      "roles": [
+        "Engineer - Trust and Safety (Mid Level to Staff Level)",
+        "Staff Engineer - Recommendations",
+        "Engineer - Trust and Safety (Mid Level to Staff Level)"
+      ],
+      "notes": [
+        "全球remote工程岗位与员工待遇说明；中国国家许可/工具可访问性和时区仍待确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://jobs.lever.co/vrchat/cda69202-9770-4e3c-b476-f138e2a5b2c3",
+        "https://jobs.lever.co/vrchat/93875494-9d42-446d-a069-9c14296e46ed",
+        "https://api.lever.co/v0/postings/vrchat?mode=json",
+        "https://jobs.lever.co/vrchat"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://hello.vrchat.com/",
+      "careersPage": "https://jobs.lever.co/vrchat",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 9,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2014,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1791275305270_51ubl89h4",
+      "name": "Entermotion",
+      "rank": 84,
+      "score": 52,
+      "tier": "B",
+      "industry": "设计工作室",
+      "geoNote": "官方全球/远程政策；大陆资格待核",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程、异步默认（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "核心团队需至少4小时重叠；具体时区待核",
+      "opportunityScore": 4,
+      "roles": [
+        "Tech Delivery Manager",
+        "Product Designer",
+        "Marketing Copywriter"
+      ],
+      "notes": [
+        "全球/Worldwide标注；管理岗位要求每天4小时核心团队重叠，未见时区位置，不默认中国友好。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://entermotion.breezy.hr/",
+        "https://entermotion.breezy.hr/p/6fadb0164545-tech-delivery-manager"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://entermotion.com/",
+      "careersPage": "https://entermotion.breezy.hr/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 8,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2001,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1775405476508_mw4djrhyu",
+      "name": "ABC Education Group",
+      "rank": 85,
+      "score": 50.9,
+      "tier": "B",
+      "industry": "教育/文化",
+      "geoNote": "岗位允许全球地点；大陆居住须确认",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "project",
+      "contractNote": "按作业计费项目（$5/份）",
+      "timezoneNote": "批改岗位明确异步",
+      "opportunityScore": 4,
+      "roles": [
+        "Remote Assignment Grader (Grades 6–12)"
+      ],
+      "notes": [
+        "Remote Assignment Grader无实时教学、按作业付费；当前官方多地点未单独确认中国居住许可。",
+        "Program Manager China需线下招聘展会，不能用其中国市场职责证明纯远程。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://abceducation-1719511743.na.teamtailor.com/jobs/511455-remote-assignment-grader-grades-6-12",
+        "https://abceducation-1719511743.na.teamtailor.com/jobs",
+        "https://abceducation-1719511743.na.teamtailor.com/jobs/566154-program-manager-china"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.abceducationgroup.com/",
+      "careersPage": "https://abceducation-1719511743.na.teamtailor.com/jobs",
+      "components": {
+        "mainland": 14,
+        "remote": 7,
+        "payment": 3,
+        "timezone": 9,
+        "basics": 9.9,
+        "business": 8
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": false,
+        "business": false
+      },
+      "basics": {
+        "rating": 3.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2022,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359446_481sh7k0r",
+      "name": "MixRank",
+      "rank": 86,
+      "score": 50.9,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程政策；大陆许可待核",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球工作地点，核心时区待核",
+      "opportunityScore": 2,
+      "roles": [],
+      "notes": [
+        "官方明确任何地理位置/任意世界地点；未确认大陆签约和当前开放岗位。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://mixrank.com/careers/",
+        "https://mixrank.com/about/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://mixrank.com",
+      "careersPage": "https://app.dover.com/jobs/mixrank",
+      "components": {
+        "mainland": 12,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 12.9,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2011,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1788943239118_elaiqhdq4",
+      "name": "Scalerrs",
+      "rank": 87,
+      "score": 50,
+      "tier": "B",
+      "industry": "广告/营销",
+      "geoNote": "官方全球/远程政策；大陆资格待核",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "员工异步/自主安排（官方）",
+      "opportunityScore": 0,
+      "roles": [],
+      "notes": [
+        "官网目前无开放岗位；保留长期关注，不计当前招聘机会分。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://www.scalerrs.co/careers"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.scalerrs.co/",
+      "careersPage": "https://www.scalerrs.co/careers#jobs",
+      "components": {
+        "mainland": 10,
+        "remote": 15,
+        "payment": null,
+        "timezone": 9,
+        "basics": 6,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2023,
+        "employeeCount": "11-50 个员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1778426661586_xax4cvfrb",
+      "name": "OpenZeppelin",
+      "rank": 88,
+      "score": 49.4,
+      "tier": "B",
+      "industry": "金融/Fintech",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "远程团队（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球分布，核心工时待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "智能合约/安全岗位为主；需核对大陆雇佣及业务合规条件，不推定加密代币支付。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://www.openzeppelin.com/careers"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.openzeppelin.com/",
+      "careersPage": "https://www.openzeppelin.com/careers#positions",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 13.4,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.4,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2015,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359445_wtvcpym36",
+      "name": "Safetywing",
+      "rank": 89,
+      "score": 48,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "全远程（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球分布，具体工时待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "全球团队跨10个时区；不能由保险产品覆盖国家推定内部招聘国家。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://safetywing.pinpointhq.com/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://safetywing.com/",
+      "careersPage": "https://safetywing.pinpointhq.com/",
+      "components": {
+        "mainland": 14,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2018,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1773208298980_06nro9crk",
+      "name": "Sumsub",
+      "rank": 90,
+      "score": 47.3,
+      "tier": "B",
+      "industry": "金融/Fintech",
+      "geoNote": "多个地点的fully remote；大陆待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "Remote-first（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "岗位核心时区未明",
+      "opportunityScore": 4,
+      "roles": [
+        "DocuSign Workflow Manager",
+        "Product GTM Manager, KYB"
+      ],
+      "notes": [
+        "多个地点和自由工作地点宣传不能代替大陆雇佣许可；要核对Teamtailor完整locations。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://careers.sumsub.com/jobs/8113869-docusign-workflow-manager",
+        "https://careers.sumsub.com/jobs/7831074-product-gtm-manager-kyb"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://sumsub.com/",
+      "careersPage": "https://careers.sumsub.com/jobs",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 5,
+        "basics": 14.3,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2015,
+        "employeeCount": "501-1,000 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359447_5dh727o8p",
+      "name": "ChainLink Labs",
+      "rank": 91,
+      "score": 47,
+      "tier": "B",
+      "industry": "Web3/区块链",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "Work from anywhere（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球团队，核心工时未明",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "官网明确work anywhere；具体国家/合同/业务条件必须逐岗确认。",
+        "SEC发行文件称前身SmartContract.com于2014成立；2017为网络白皮书年份。企业前身经营年限不等同项目发布时间。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://chainlinklabs.com/careers",
+        "https://www.sec.gov/Archives/edgar/data/1852025/000119312526159183/424b3_link_final_pos_am.htm"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://chainlinklabs.com/",
+      "careersPage": "https://chainlinklabs.com/open-roles",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 5,
+        "basics": 10,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2014,
+        "employeeCount": "501-1,000 位员工",
+        "source": "https://www.sec.gov/Archives/edgar/data/1852025/000119312526159183/424b3_link_final_pos_am.htm"
+      }
+    },
+    {
+      "companyId": "company_1764764359444_owjjigy7z",
+      "name": "Semaphore",
+      "rank": 92,
+      "score": 47,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方Remote、国家范围未明",
+      "remoteClass": "remote_first",
+      "remoteNote": "Remote-first（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "官方异步（核心工时未明）",
+      "opportunityScore": 4,
+      "roles": [
+        "Senior Product Engineer"
+      ],
+      "notes": [
+        "地点为空并非全球任意国家获准；必须确认中国大陆签约资格。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作",
+      "sources": [
+        "https://semaphore.bamboohr.com/careers/45/detail"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://semaphoreci.com",
+      "careersPage": "https://semaphore.bamboohr.com/careers",
+      "components": {
+        "mainland": 8,
+        "remote": 12,
+        "payment": null,
+        "timezone": 9,
+        "basics": 8,
+        "business": 10
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2009,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1789746370749_papoyph87",
+      "name": "Future of Life Institute",
+      "rank": 93,
+      "score": 46,
+      "tier": "B",
+      "industry": "非营利组织/公益",
+      "geoNote": "官方全球（大陆待确认）",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "contractor",
+      "contractNote": "Contractor/自由职业（岗位级）",
+      "timezoneNote": "全球，核心工时未明",
+      "opportunityScore": 4,
+      "roles": [
+        "AI Offense-Defense Dynamics Lead Researcher",
+        "AI Safety Argumentation Platform Research Engineer",
+        "Communications Director and Staff Director"
+      ],
+      "notes": [
+        "正式岗位与研究contractor混合，部分职位仅写Global；研究/安全专业门槛高，大陆签约与受限业务须逐岗确认。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.lever.co/v0/postings/futureof-life?mode=json",
+        "https://jobs.lever.co/futureof-life/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://futureoflife.org/",
+      "careersPage": "https://jobs.lever.co/futureof-life/",
+      "components": {
+        "mainland": 14,
+        "remote": 7,
+        "payment": 8,
+        "timezone": 5,
+        "basics": 8,
+        "business": 4
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2014,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1774279888749_ym0605kd7",
+      "name": "Zencargo",
+      "rank": 94,
+      "score": 45.9,
+      "tier": "B",
+      "industry": "交通物流/运输",
+      "geoNote": "官方Remote，当前岗位国家待确认",
+      "remoteClass": "remote_first",
+      "remoteNote": "远程/混合灵活，部分全远程职位",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球标注，具体时区未明",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "保留技术/产品远程机会，不以仓储/物流现场岗位作推荐。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://zencargo.pinpointhq.com/",
+        "https://zencargo.pinpointhq.com/en/postings/b8992ad5-b4b4-40de-a73e-f10ef576e55b"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "http://zencargo.com",
+      "careersPage": "https://zencargo.pinpointhq.com/",
+      "components": {
+        "mainland": 14,
+        "remote": 12,
+        "payment": null,
+        "timezone": 5,
+        "basics": 12.9,
+        "business": 2
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.9,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2017,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359447_1zqyyhuph",
+      "name": "Linaro",
+      "rank": 95,
+      "score": 45,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球远程政策；大陆许可待核",
+      "remoteClass": "remote_first",
+      "remoteNote": "90%员工居家（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球26国，核心工时待核",
+      "opportunityScore": 2,
+      "roles": [],
+      "notes": [
+        "90%居家不等于任何国家均可聘用；保留Arm/Linux方向，具体大陆岗位与合同待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://www.linaro.org/careers/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.linaro.org/",
+      "careersPage": "https://www.linaro.org/careers",
+      "components": {
+        "mainland": 12,
+        "remote": 12,
+        "payment": null,
+        "timezone": 5,
+        "basics": 10,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2010,
+        "employeeCount": "201-500 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1782731767933_1krmglb0k",
+      "name": "Reviver Global",
+      "rank": 96,
+      "score": 43,
+      "tier": "B",
+      "industry": "语言/翻译",
+      "geoNote": "官方Remote，大陆地点待核",
+      "remoteClass": "selected_roles",
+      "remoteNote": "口译项目远程（官方）",
+      "contractClass": "contractor",
+      "contractNote": "明确Independent Contractor",
+      "timezoneNote": "On-Demand电话口译，排班待核",
+      "opportunityScore": 4,
+      "roles": [],
+      "notes": [
+        "电话口译为实时任务，不属于异步；表单China选项不证明允许大陆履职。"
+      ],
+      "pending": "合同期限、项目量、计价与支付周期；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://reviver.applytojob.com/apply",
+        "https://reviver.applytojob.com/apply/BwY0JxIUYs/Chinese-Mandarin-ConsecutiveInterpreter"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://reviver.global/",
+      "careersPage": "https://reviver.applytojob.com/apply",
+      "components": {
+        "mainland": 14,
+        "remote": 7,
+        "payment": 8,
+        "timezone": null,
+        "basics": 8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": false,
+        "timezone": true,
+        "basics": true,
+        "business": false
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2021,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1791297284965_vw65q67al",
+      "name": "Centre for Effective Altruism",
+      "rank": 97,
+      "score": 42.3,
+      "tier": "B",
+      "industry": "非营利组织/公益",
+      "geoNote": "官方全球（大陆待确认）",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球，核心工时未明",
+      "opportunityScore": 4,
+      "roles": [
+        "General Expression of Interest",
+        "Head of the EA Infrastructure Fund",
+        "Salesforce Developer"
+      ],
+      "notes": [
+        "全球基金/技术角色与人才池混合；法律实体、时区、公益岗位雇佣国家限制须确认。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/centreforeffectivealtruism"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.centreforeffectivealtruism.org/",
+      "careersPage": "https://jobs.ashbyhq.com/centreforeffectivealtruism",
+      "components": {
+        "mainland": 14,
+        "remote": 7,
+        "payment": null,
+        "timezone": 5,
+        "basics": 12.3,
+        "business": 4
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 4.3,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2009,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359441_7mxvginbv",
+      "name": "Appwrite",
+      "rank": 98,
+      "score": 42,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球/远程政策；大陆资格待核",
+      "remoteClass": "remote_first",
+      "remoteNote": "Global remote-first（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球跨时区，具体约束待核",
+      "opportunityScore": 2,
+      "roles": [],
+      "notes": [
+        "官方宣称全球招聘；旧岗位UTC+6至UTC-6团队描述不是现在允许国家列表，未把UTC+8直接排除或视为已允许。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次；官网当前适配岗位与有效申请入口",
+      "sources": [
+        "https://appwrite.io/company"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://appwrite.io",
+      "careersPage": "https://www.appwrite.careers/",
+      "components": {
+        "mainland": 12,
+        "remote": 12,
+        "payment": null,
+        "timezone": 5,
+        "basics": 7,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2020,
+        "employeeCount": "11-50 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1764764359441_ry9bi15u7",
+      "name": "Speechify",
+      "rank": 99,
+      "score": 42,
+      "tier": "B",
+      "industry": "人工智能",
+      "geoNote": "官方全球/Anywhere远程；大陆合同待确认",
+      "remoteClass": "fully_remote",
+      "remoteNote": "100%分布式、无办公室（官方）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球团队，但具体重叠时段未明",
+      "opportunityScore": 4,
+      "roles": [
+        "Software Engineer, Platform",
+        "Team Lead, Android Core Product"
+      ],
+      "notes": [
+        "当前官方Remote列表未确认中国，历史第三方“中国城市”铺量岗位不能当作当前大陆定向招聘证据。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://job-boards.greenhouse.io/speechify",
+        "https://speechify.com/careers/"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://speechify.com/",
+      "careersPage": "https://job-boards.greenhouse.io/speechify",
+      "components": {
+        "mainland": 8,
+        "remote": 15,
+        "payment": null,
+        "timezone": 5,
+        "basics": 8,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": true,
+        "business": true
+      },
+      "basics": {
+        "rating": null,
+        "ratingSource": null,
+        "foundedYear": 2017,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    },
+    {
+      "companyId": "company_1789714031956_d171tgk7b",
+      "name": "Pointr",
+      "rank": 100,
+      "score": 40.6,
+      "tier": "B",
+      "industry": "互联网/软件",
+      "geoNote": "官方全球（大陆待确认）",
+      "remoteClass": "selected_roles",
+      "remoteNote": "部分岗位远程（已确认）",
+      "contractClass": "unknown",
+      "contractNote": "签约支付未知",
+      "timezoneNote": "全球，核心工时未明",
+      "opportunityScore": 0,
+      "roles": [
+        "General Application"
+      ],
+      "notes": [
+        "当前全球General Application为人才池，不能计已开放的具体职位；研发/运营适配但大陆许可待核。"
+      ],
+      "pending": "大陆签约主体、雇员/EoR/Contractor身份、支付币种与保障；是否允许长期从中国大陆工作；每日核心重叠工时/排班与出差频次",
+      "sources": [
+        "https://api.ashbyhq.com/posting-api/job-board/pointr"
+      ],
+      "reviewedAt": "2026-10-10",
+      "website": "https://www.pointr.tech/",
+      "careersPage": "https://jobs.ashbyhq.com/pointr",
+      "components": {
+        "mainland": 10,
+        "remote": 7,
+        "payment": null,
+        "timezone": 5,
+        "basics": 12.6,
+        "business": 6
+      },
+      "unknown": {
+        "payment": true,
+        "timezone": false,
+        "basics": false,
+        "business": true
+      },
+      "basics": {
+        "rating": 3.6,
+        "ratingSource": "Glassdoor",
+        "foundedYear": 2014,
+        "employeeCount": "51-200 位员工",
+        "source": null
+      }
+    }
+  ]
+}
