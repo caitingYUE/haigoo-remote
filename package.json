@@ -76,7 +76,8 @@
     "deploy:job-sync-preview": "node scripts/deploy-job-sync-preview.mjs",
     "test:job-sync-preview": "node scripts/test-job-sync-preview.mjs",
     "test:manual-crawl": "node scripts/test-manual-crawl-integration.mjs && node scripts/test-crawl-source-recovery.mjs",
-    "test:company-list-check": "node scripts/test-company-list-check.mjs"
+    "test:company-list-check": "node scripts/test-company-list-check.mjs",
+    "prebuild": "node scripts/validate-company-top100-edition.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.2",

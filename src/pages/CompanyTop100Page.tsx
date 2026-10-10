@@ -9,6 +9,8 @@ import { withReturnTo } from '../hooks/useReturnNavigation'
 import { useCompanyTop100 } from '../hooks/useCompanyTop100'
 import { top100ProfilePath } from '../utils/company-top100-navigation'
 import { trackingService } from '../services/tracking-service'
+import MiniProgramMembershipDialog from '../components/MiniProgramMembershipDialog'
+import edition from '../../lib/data/company-top100-edition.json'
 import CompanyRankingEvidence, { RANKING_FACTORS } from '../components/CompanyRankingEvidence'
 import type { CompanyTop100Entry, CompanyTop100Response } from '../types/company-top100'
 import '../styles/company-top100.css'
@@ -28,12 +30,13 @@ export default function CompanyTop100Page() {
   const { user, token, isAuthenticated, isLoading: authLoading, refreshUser, logout } = useAuth()
   const { text, path, isEnglish } = useLanguage()
   const [params, setParams] = useSearchParams(), location = useLocation()
+  const [membershipQrOpen, setMembershipQrOpen] = useState(false)
   const {canRead,data,status,refreshing,sessionExpired,retry} = useCompanyTop100()
   const restored = useRef(false), tracked = useRef(''), membershipReturnChecked = useRef('')
   const capabilities = deriveMembershipCapabilities(user)
   const membershipEnds = new Date((user as unknown as {memberExpireAt?:string;member_expire_at?:string})?.memberExpireAt || (user as unknown as {member_expire_at?:string})?.member_expire_at || '').getTime()
   const memberExpired = Number.isFinite(membershipEnds) && membershipEnds <= Date.now() && !capabilities.isActive
-  const query = params.get('q') || '', tier = params.get('tier') || '', industry = params.get('industry') || ''
+  const query = params.get('q') || '', industry = params.get('industry') || ''
   const remote = params.get('remote') || '', contract = params.get('contract') || '', expanded = params.get('expanded') || ''
   const currentPath = `${location.pathname}${location.search}`
 
@@ -70,8 +73,8 @@ export default function CompanyTop100Page() {
   const industries = useMemo(() => [...new Set(data?.companies.map(row => row.industry).filter(Boolean) || [])].sort(), [data])
   const filtered = useMemo(() => {
     const needle = query.trim().normalize('NFKC').toLowerCase()
-    return (data?.companies || []).filter(row => (!needle || `${row.name} ${row.industry} ${row.roles.join(' ')}`.normalize('NFKC').toLowerCase().includes(needle)) && (!tier || row.tier === tier) && (!industry || row.industry === industry) && (!remote || row.remoteClass === remote) && (!contract || row.contractClass === contract))
-  }, [data, query, tier, industry, remote, contract])
+    return (data?.companies || []).filter(row => (!needle || `${row.name} ${row.industry} ${row.roles.join(' ')}`.normalize('NFKC').toLowerCase().includes(needle)) && (!industry || row.industry === industry) && (!remote || row.remoteClass === remote) && (!contract || row.contractClass === contract))
+  }, [data, query, industry, remote, contract])
 
   const change = (key: string, value: string) => {
     const next = new URLSearchParams(params)
@@ -85,31 +88,36 @@ export default function CompanyTop100Page() {
   }
   const companyUrl = (entry: CompanyTop100Entry, jobs = false) => `${withReturnTo(path(`/company/${encodeURIComponent(entry.companyId)}`), currentPath)}&source=company_top100${jobs ? '#company-profile-open-roles' : ''}`
   const showGate = !authLoading && (!canRead || status === 'denied' || sessionExpired)
-  const aCount = data?.companies.filter(row => row.tier === 'A').length || 0
   const weights = data?.weights || DEFAULT_WEIGHTS
 
+  useEffect(() => { if (!showGate) setMembershipQrOpen(false) }, [showGate])
+  const editionDate = data?.researchedAt || edition.researchedAt
+  const quarter = `${editionDate.slice(0,4)} Q${Math.ceil(Number(editionDate.slice(5,7))/3)}`
+
   return <div className="hg-top100-page"><div className="haigoo-shell hg-top100">
+    <div className="hg-top100-toolbar">
     <Link to={path('/trusted-companies')} className="hg-top100__back"><ArrowLeft size={15} aria-hidden="true" />{text('远程企业','Remote companies')}</Link>
+      <span className="hg-top100-edition" title={text(`截至 ${editionDate}`,`As of ${editionDate}`)}>{text(`${quarter} 统计数据，季度更新`,`${quarter} data · Updated quarterly`)}</span>
+    </div>
     <header className="hg-top100-hero">
       <div className="hg-top100-hero__mark" aria-label="Top 100"><span>TOP</span><strong>100</strong></div>
       <div className="hg-top100-hero__body">
         <h1>{isEnglish ? 'Remote companies worth following from mainland China' : <><span className="hg-top100-hero__headline-line">中国大陆候选人</span><span className="hg-top100-hero__headline-line">值得关注的远程企业</span></>}</h1>
         <p>{text('从现有企业库出发，综合大陆招聘线索、远程协作、签约支付与时区条件，整理值得优先关注的 100 家企业。','A researched shortlist of 100 employers, assessed for mainland eligibility, remote work, contracts, time zones and company fundamentals.')}</p>
-        <div className="hg-top100-hero__meta"><span><Crown size={14} aria-hidden="true" />{text('正式会员专属','Full-member research')}</span><span>{data?.researchedAt || '2026-10-10'} {text('研究版','research edition')}</span></div>
+        <div className="hg-top100-hero__meta"><span><Crown size={14} aria-hidden="true" />{text('正式会员专属','Full-member research')}</span>{data && <a href="#top100-method">{text('了解评分规则','How we assess employers')}<ArrowRight size={14} aria-hidden="true" /></a>}{refreshing && <span className="hg-top100-revalidating" role="status">{text('正在核验会员状态…','Checking membership…')}</span>}</div>
       </div>
     </header>
 
     {showGate ? <section className="hg-top100-gate" aria-labelledby="top100-access-title">
-      <LockKeyhole size={24} aria-hidden="true" /><div><h2 id="top100-access-title">{text('把企业研究，变成下一步行动','Turn company research into your next step')}</h2>
+      <LockKeyhole size={24} aria-hidden="true" /><div><h2 id="top100-access-title">{text('优先选择榜单内企业，成功率更高','Prioritise ranked employers for a better chance of success')}</h2>
       <p>{text('正式会员可查看完整排名、企业的大陆申请条件与评分依据，并进入企业详情查看岗位。','Full members can explore the complete ranking, mainland conditions and research evidence, then view company profiles and openings.')}</p>
       <ul><li>{text('100 家企业的研究排名','100 researched employer profiles')}</li><li>{text('大陆资格、合同与时区条件','Mainland eligibility, contracts and working hours')}</li><li>{text('官方来源与岗位入口','Official evidence and routes to openings')}</li></ul>
       {sessionExpired ? <p className="hg-top100-gate__status">{text('登录状态已失效，请重新登录后继续。','Your session has ended. Log in again to continue.')}</p> : memberExpired ? <p className="hg-top100-gate__status">{text('当前会员权益已到期，续费后可返回查看完整榜单。','Your membership has ended. Renew and return to view the full ranking.')}</p> : capabilities.isTrialMember ? <p className="hg-top100-gate__status">{text('你当前是体验周会员，完整榜单属于正式会员权益。','Your current trial does not include the full-member ranking.')}</p> : status === 'denied' && isAuthenticated ? <p className="hg-top100-gate__status">{text('当前账号尚未获得有效的正式会员权限，可查看权益或刷新会员状态。','This account has no verified active full-member access. Review benefits or refresh your membership.')}</p> : null}
-      <div className="hg-top100-gate__actions">{(!isAuthenticated || sessionExpired) ? <Link onClick={() => { if(sessionExpired) logout() }} className="hg-top100-action" to={path(`/login?redirect=${encodeURIComponent(currentPath)}`)}>{sessionExpired ? text('重新登录','Log in again') : text('登录查看','Log in to view')}<ArrowRight size={16} aria-hidden="true" /></Link> : <Link className="hg-top100-action" to={path(top100ProfilePath('membership',currentPath))}>{text('查看正式会员权益','View full-member benefits')}<ArrowRight size={16} aria-hidden="true" /></Link>}
-        {!isAuthenticated && <Link to={path(`/login?redirect=${encodeURIComponent(path(top100ProfilePath('membership',currentPath)))}`)}>{text('了解会员权益','Membership benefits')}</Link>}
+      <div className="hg-top100-gate__actions">{(!isAuthenticated || sessionExpired) ? <Link onClick={() => { if(sessionExpired) logout() }} className="hg-top100-action" to={path(`/login?redirect=${encodeURIComponent(currentPath)}`)}>{sessionExpired ? text('重新登录','Log in again') : text('登录查看','Log in to view')}<ArrowRight size={16} aria-hidden="true" /></Link> : <button type="button" className="hg-top100-action" onClick={() => setMembershipQrOpen(true)}>{text('了解会员权益','Membership benefits')}<ArrowRight size={16} aria-hidden="true" /></button>}
+        {(!isAuthenticated || sessionExpired) && <button type="button" onClick={() => setMembershipQrOpen(true)}>{text('了解会员权益','Membership benefits')}</button>}
         {isAuthenticated && !sessionExpired && <button type="button" onClick={async () => { await refreshUser(); retry() }}>{text('刷新会员状态','Refresh membership')}</button>}
       </div></div>
     </section> : authLoading || (canRead && status === 'loading' && !data) ? <div className="hg-top100-loading" aria-busy="true" aria-label={text('正在核验会员并载入榜单','Verifying access and loading ranking')}><span /><span /><span /></div> : canRead && status === 'error' ? <section className="hg-top100-error"><h2>{text('榜单暂时无法载入','The ranking could not be loaded')}</h2><p>{text('暂时无法获取榜单，请重试；你的筛选条件会保留。','The ranking is temporarily unavailable. Retry with your filters intact.')}</p><button type="button" className="hg-top100-action" onClick={retry}>{text('重新载入','Retry')}</button></section> : data ? <>
-      <div className="hg-top100-overview"><p>{text(`${aCount} 家有大陆远程线索 · ${data.total-aCount} 家大陆资格待确认`, `${aCount} with mainland remote evidence · ${data.total-aCount} needing mainland confirmation`)}</p>{refreshing && <span className="hg-top100-revalidating" role="status">{text('正在核验会员状态…','Checking membership…')}</span>}<a href="#top100-method">{text('了解评分规则','How we assess employers')}<ArrowRight size={14} aria-hidden="true" /></a></div>
       <section className="hg-top100-filters" aria-label={text('搜索和筛选榜单','Search and filter ranking')}>
         <label className="hg-top100-search"><Search size={18} aria-hidden="true" /><span className="sr-only">{text('搜索企业、行业或参考岗位','Search companies, industries or reference roles')}</span><input type="search" value={query} onChange={event => change('q', event.target.value)} placeholder={text('搜索企业、行业或参考岗位','Search a company, industry or role')} />{query && <button type="button" onClick={() => change('q','')} aria-label={text('清除关键词','Clear keyword')}><X size={16} aria-hidden="true" /></button>}</label>
         <div className="hg-top100-filter-options">
@@ -117,9 +125,7 @@ export default function CompanyTop100Page() {
           <label><span>{text('远程制度','Remote culture')}</span><select value={remote} onChange={event => change('remote',event.target.value)}><option value="">{text('全部方式','All arrangements')}</option>{Object.entries(REMOTE_LABELS).map(([key, labels]) => <option value={key} key={key}>{text(labels[0], labels[1])}</option>)}</select></label>
           <label><span>{text('合同模式','Contract evidence')}</span><select value={contract} onChange={event => change('contract',event.target.value)}><option value="">{text('全部模式','All modes')}</option>{Object.entries(CONTRACT_LABELS).map(([key,labels]) => <option value={key} key={key}>{text(labels[0], labels[1])}</option>)}</select></label>
         </div>
-        <div className="hg-top100-filter-bottom"><div className="hg-top100-scope" role="group" aria-label={text('大陆申请资格','Mainland eligibility')}>
-          {[['',text('全部 100','All 100')],['A',text(`大陆线索 ${aCount}`,`Mainland evidence ${aCount}`)],['B',text(`资格待确认 ${data.total-aCount}`,`Eligibility unconfirmed ${data.total-aCount}`)]].map(([value,label]) => <button type="button" key={value} aria-pressed={tier===value} onClick={() => change('tier',value)}>{label}</button>)}
-        </div><span className="hg-top100-filter-result" aria-live="polite">{text(`显示 ${filtered.length} / 100 家`,`${filtered.length} / 100 employers`)}{(query||tier||industry||remote||contract) && <button type="button" onClick={() => setParams({}, { replace: true })}>{text('清除筛选','Clear filters')}</button>}</span></div>
+        <div className="hg-top100-filter-bottom"><span className="hg-top100-filter-result" aria-live="polite">{text(`显示 ${filtered.length} / 100 家`,`${filtered.length} / 100 employers`)}{(query||industry||remote||contract) && <button type="button" onClick={() => setParams({}, { replace: true })}>{text('清除筛选','Clear filters')}</button>}</span></div>
       </section>
       <p className="hg-top100__scope-note">{text('名次为本研究版原排名；站内岗位不限大陆，申请条件请查看具体职位。','Ranks retain their research-edition order. Site openings may include other locations; check each role’s conditions.')}</p>
       {filtered.length ? <ol className="hg-top100-list" aria-label={text('企业关注排名','Company attention ranking')}>{filtered.map(entry => <li value={entry.rank} key={entry.companyId} id={`ranking-${entry.companyId}`} className="hg-top100-row" data-unavailable={entry.availability === 'unavailable'}>
@@ -141,5 +147,5 @@ export default function CompanyTop100Page() {
       <p className="hg-top100-method__feedback">{text('发现岗位关闭、地区限制或合同信息变更？','Found a closed role or a changed location or contract condition?')} <Link to={path(top100ProfilePath('feedback',currentPath,undefined,data?.version))}>{text('反馈给我们','Send feedback')}<ArrowRight size={14} aria-hidden="true" /></Link></p>
       {isEnglish && <p className="hg-top100-method__original">{text('','Detailed research notes retain their original Chinese wording for accuracy.')}</p>}
     </section>
-  </div></div>
+  </div><MiniProgramMembershipDialog isOpen={membershipQrOpen} onClose={() => setMembershipQrOpen(false)} /></div>
 }
